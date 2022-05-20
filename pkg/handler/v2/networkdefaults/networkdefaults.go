@@ -101,25 +101,7 @@ func GetNetworkDefaultsEndpoint(
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		provider := kubermaticv1.ProviderType(req.ProviderName)
-		datacenter := req.DC
-
-		networkDefaults := apiv2.NetworkDefaults{
-			IPv4: &apiv2.NetworkDefaultsIPFamily{
-				PodsCIDR:                resources.GetDefaultPodCIDRIPv4(provider),
-				ServicesCIDR:            resources.GetDefaultServicesCIDRIPv4(provider),
-				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
-				NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
-			},
-			IPv6: &apiv2.NetworkDefaultsIPFamily{
-				PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
-				ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
-				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
-				NodePortsAllowedIPRange: resources.IPv6MatchAnyCIDR,
-			},
-			ProxyMode:                resources.GetDefaultProxyMode(provider),
-			NodeLocalDNSCacheEnabled: resources.DefaultNodeLocalDNSCacheEnabled,
-		}
+		networkDefaults := generateNetworkDefaults(kubermaticv1.ProviderType(req.ProviderName))
 
 		// Fetching the defaulting ClusterTemplate.
 
@@ -130,7 +112,7 @@ func GetNetworkDefaultsEndpoint(
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		seed, _, err := kubermaticprovider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, datacenter)
+		seed, _, err := kubermaticprovider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -142,10 +124,29 @@ func GetNetworkDefaultsEndpoint(
 
 		// Using network defaults from the template defaults when it's available
 		if defaultingTemplate != nil {
-			networkDefaults = overrideNetworkDefaultsByDefaultingTemplate(networkDefaults, defaultingTemplate.Spec.ClusterNetwork, provider)
+			networkDefaults = overrideNetworkDefaultsByDefaultingTemplate(networkDefaults, defaultingTemplate.Spec.ClusterNetwork, kubermaticv1.ProviderType(req.ProviderName))
 		}
 
 		return networkDefaults, nil
+	}
+}
+
+func generateNetworkDefaults(provider kubermaticv1.ProviderType) apiv2.NetworkDefaults {
+	return apiv2.NetworkDefaults{
+		IPv4: &apiv2.NetworkDefaultsIPFamily{
+			PodsCIDR:                resources.GetDefaultPodCIDRIPv4(provider),
+			ServicesCIDR:            resources.GetDefaultServicesCIDRIPv4(provider),
+			NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
+			NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
+		},
+		IPv6: &apiv2.NetworkDefaultsIPFamily{
+			PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
+			ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
+			NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
+			NodePortsAllowedIPRange: resources.IPv6MatchAnyCIDR,
+		},
+		ProxyMode:                resources.GetDefaultProxyMode(provider),
+		NodeLocalDNSCacheEnabled: resources.DefaultNodeLocalDNSCacheEnabled,
 	}
 }
 
