@@ -33,5 +33,5 @@ func Hello(log *zap.SugaredLogger, app string, verbose bool, versions *kubermati
 		log = log.With("commit", versions.KubermaticCommit)
 	}
 
-	log.Infof("Starting Kubermatic %s (%s)...", app, versions.KubermaticEdition)
+	log.Infof("Starting KKP %s (%s)...", app, versions.KubermaticEdition)
 }

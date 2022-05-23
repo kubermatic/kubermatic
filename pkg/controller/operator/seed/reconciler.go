@@ -31,6 +31,7 @@ import (
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -186,6 +187,9 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return nil
 	}
 
+	// Note that this function does not remove CRDs, not because we're lazy, but because
+	// it's safer to keep them around and old resources do not hurt cluster performance.
+
 	log.Debug("Seed was deleted, cleaning up cluster-wide resources")
 
 	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRoleBinding{}, kubermaticseed.ClusterRoleBindingName(cfg)); err != nil {
@@ -292,6 +296,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
 	}
 
+	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileNamespaces(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -346,6 +354,34 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 
 	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling CRDs")
+
+	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{}
+
+	groups, err := crd.Groups()
+	if err != nil {
+		return fmt.Errorf("failed to list CRD groups in operator: %w", err)
+	}
+
+	for _, group := range groups {
+		crds, err := crd.CRDsForGroup(group)
+		if err != nil {
+			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
+		}
+
+		for i := range crds {
+			creators = append(creators, common.CRDCreator(&crds[i], log, r.versions))
+		}
+	}
+
+	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile CRDs: %w", err)
 	}
 
 	return nil

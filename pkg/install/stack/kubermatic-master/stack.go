@@ -277,17 +277,17 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
 
 	// install KKP CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io")); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
 		return err
 	}
 
 	// install VPA CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil); err != nil {
 		return err
 	}
 
 	// install OSM CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io")); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil); err != nil {
 		return err
 	}
 

@@ -158,6 +158,7 @@ cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # prepare CRDs
 copy_crds_to_chart
+set_crds_version_annotation
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \

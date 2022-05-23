@@ -202,6 +202,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableOpenstackCSIDriverMigration:  opt.MigrateOpenstackCSI,
 			EnableLogrotateMigration:           opt.MigrateLogrotate,
 			DisableTelemetry:                   opt.DisableTelemetry,
+			Versions:                           versions,
 		}
 
 		// validate the configuration

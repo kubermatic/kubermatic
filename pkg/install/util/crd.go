@@ -23,7 +23,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +34,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string) error {
+func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions) error {
 	crds, err := crd.LoadFromDirectory(directory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs: %w", err)
@@ -40,6 +42,15 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 
 	for _, crd := range crds {
 		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
+
+		if versions != nil {
+			// inject the current KKP version, so the operator and other controllers
+			// can react to the changed CRDs (the seed-operator will do the same when
+			// updating CRDs on seed clusters)
+			annotations := crd.GetAnnotations()
+			annotations[resources.VersionLabel] = versions.KubermaticCommit
+			crd.SetAnnotations(annotations)
+		}
 
 		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
 			return fmt.Errorf("failed to deploy CRD %s: %w", crd.GetName(), err)

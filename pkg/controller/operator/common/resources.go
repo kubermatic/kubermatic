@@ -17,11 +17,16 @@ limitations under the License.
 package common
 
 import (
+	semverlib "github.com/Masterminds/semver/v3"
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 const (
@@ -100,6 +105,59 @@ func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcili
 			return createSecretData(s, map[string]string{
 				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
 			}), nil
+		}
+	}
+}
+
+// CRDCreator will reconcile a CRD, but only if the existing CRD is older or the same
+// version (i.e. this function will never downgrade a CRD). Up- and downgrading is only
+// defined for KKP CRDs which have a version annotation.
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredLogger, versions kubermaticversion.Versions) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		log = log.With("crd", crd.Name)
+
+		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			currentVersion := versions.KubermaticCommit
+
+			if obj != nil {
+				existingVersion := obj.GetAnnotations()[resources.VersionLabel]
+				if existingVersion != "" {
+					existing, err := semverlib.NewVersion(existingVersion)
+					if err != nil {
+						log.Warnw("CRD has invalid version annotation", "annotation", existingVersion, zap.Error(err))
+						// continue to update the CRD
+					} else {
+						current, err := semverlib.NewVersion(currentVersion)
+						if err != nil {
+							// This should never happen.
+							log.Warnw("Built-in CRD has invalid version annotation", "version", currentVersion, zap.Error(err))
+							// continue to update the CRD
+						} else if existing.GreaterThan(current) {
+							log.Warnw("Refusing to downgrade CRD", "version", currentVersion, "crdversion", existingVersion)
+							return obj, nil
+						}
+					}
+				}
+			}
+
+			obj.Labels = crd.Labels
+			obj.Annotations = crd.Annotations
+			obj.Spec = crd.Spec
+
+			// inject the current KKP version, so the operator and other controllers
+			// can react to the changed CRDs (the KKP installer does the same when
+			// updating CRDs on the master cluster)
+			if obj.Annotations == nil {
+				obj.Annotations = map[string]string{}
+			}
+			obj.Annotations[resources.VersionLabel] = currentVersion
+
+			if crd.Spec.Conversion == nil {
+				// reconcile fails if conversion is not set as it's set by default to None
+				obj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+			}
+
+			return obj, nil
 		}
 	}
 }
