@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -249,7 +250,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 	}
 
 	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
-	cmd.Env = append(cmd.Env, "KUBECONFIG="+c.kubeconfig)
+	// "If Env contains duplicate environment keys, only the last
+	// value in the slice for each duplicate key is used."
+	// Source: https://pkg.go.dev/os/exec#Cmd.Env
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+c.kubeconfig)
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 
