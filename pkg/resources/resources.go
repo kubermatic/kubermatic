@@ -1581,9 +1581,7 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) string {
-	// TODO: (rastislavs) make ebpf the default proxy mode for Cilium CNI after Konenctivity is GA
-
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
 	if provider == kubermaticv1.HetznerCloudProvider {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392

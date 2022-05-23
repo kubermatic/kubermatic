@@ -38,19 +38,21 @@ func TestGetEndpoint(t *testing.T) {
 	testCases := []struct {
 		Name                      string
 		Provider                  kubermaticv1.ProviderType
-		CNI                       kubermaticv1.CNIPluginType
+		DC                        string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
 		ExpectedResponse          *apiv2.NetworkDefaults
 		ExpectedHTTPStatusCode    int
 	}{
 		{
-			Name:                      "AWS + Canal network settings",
-			Provider:                  kubermaticv1.AWSCloudProvider,
-			CNI:                       kubermaticv1.CNIPluginTypeCanal,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
-			ExistingAPIUser:           test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode:    http.StatusOK,
+			Name:     "AWS network settings",
+			Provider: kubermaticv1.AWSCloudProvider,
+			DC:       "fake-dc",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
 				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
@@ -69,36 +71,14 @@ func TestGetEndpoint(t *testing.T) {
 			},
 		},
 		{
-			Name:                      "AWS + Cilium network settings",
-			Provider:                  kubermaticv1.AWSCloudProvider,
-			CNI:                       kubermaticv1.CNIPluginTypeCilium,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
-			ExistingAPIUser:           test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode:    http.StatusOK,
-			ExpectedResponse: &apiv2.NetworkDefaults{
-				IPv4: &apiv2.NetworkDefaultsIPFamily{
-					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
-					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv4,
-					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
-					NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
-				},
-				IPv6: &apiv2.NetworkDefaultsIPFamily{
-					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
-					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
-					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
-					NodePortsAllowedIPRange: resources.IPv6MatchAnyCIDR,
-				},
-				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: true,
-			},
-		},
-		{
-			Name:                      "Kubevirt + Canal network settings",
-			Provider:                  kubermaticv1.KubevirtCloudProvider,
-			CNI:                       kubermaticv1.CNIPluginTypeCanal,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
-			ExistingAPIUser:           test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode:    http.StatusOK,
+			Name:     "Kubevirt network settings",
+			Provider: kubermaticv1.KubevirtCloudProvider,
+			DC:       "fake-dc",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
 				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4KubeVirt,
@@ -117,12 +97,14 @@ func TestGetEndpoint(t *testing.T) {
 			},
 		},
 		{
-			Name:                      "Hetzner + Canal network settings",
-			Provider:                  kubermaticv1.HetznerCloudProvider,
-			CNI:                       kubermaticv1.CNIPluginTypeCanal,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
-			ExistingAPIUser:           test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode:    http.StatusOK,
+			Name:     "Hetzner network settings",
+			Provider: kubermaticv1.HetznerCloudProvider,
+			DC:       "fake-dc",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
 				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
@@ -144,7 +126,7 @@ func TestGetEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/providers/%s/cni/%s/networkdefaults", tc.Provider, tc.CNI)
+			requestURL := fmt.Sprintf("/api/v2/providers/%s/dc/%s/networkdefaults", tc.Provider, tc.DC)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 

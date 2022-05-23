@@ -67,7 +67,7 @@ type GetNetworkDefaultsOK struct {
 }
 
 func (o *GetNetworkDefaultsOK) Error() string {
-	return fmt.Sprintf("[GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults][%d] getNetworkDefaultsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsOK  %+v", 200, o.Payload)
 }
 func (o *GetNetworkDefaultsOK) GetPayload() *models.NetworkDefaults {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetNetworkDefaultsUnauthorized struct {
 }
 
 func (o *GetNetworkDefaultsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults][%d] getNetworkDefaultsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsUnauthorized ", 401)
 }
 
 func (o *GetNetworkDefaultsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetNetworkDefaultsForbidden struct {
 }
 
 func (o *GetNetworkDefaultsForbidden) Error() string {
-	return fmt.Sprintf("[GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults][%d] getNetworkDefaultsForbidden ", 403)
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsForbidden ", 403)
 }
 
 func (o *GetNetworkDefaultsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetNetworkDefaultsDefault) Code() int {
 }
 
 func (o *GetNetworkDefaultsDefault) Error() string {
-	return fmt.Sprintf("[GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults][%d] getNetworkDefaults default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaults default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetNetworkDefaultsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

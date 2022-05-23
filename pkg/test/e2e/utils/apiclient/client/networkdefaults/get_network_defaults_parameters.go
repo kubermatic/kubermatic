@@ -59,8 +59,8 @@ func NewGetNetworkDefaultsParamsWithHTTPClient(client *http.Client) *GetNetworkD
 */
 type GetNetworkDefaultsParams struct {
 
-	// CniPluginType.
-	CNIPluginType string
+	// Dc.
+	DC string
 
 	// ProviderName.
 	ProviderName string
@@ -118,15 +118,15 @@ func (o *GetNetworkDefaultsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithCNIPluginType adds the cniPluginType to the get network defaults params
-func (o *GetNetworkDefaultsParams) WithCNIPluginType(cniPluginType string) *GetNetworkDefaultsParams {
-	o.SetCNIPluginType(cniPluginType)
+// WithDC adds the dc to the get network defaults params
+func (o *GetNetworkDefaultsParams) WithDC(dc string) *GetNetworkDefaultsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetCNIPluginType adds the cniPluginType to the get network defaults params
-func (o *GetNetworkDefaultsParams) SetCNIPluginType(cniPluginType string) {
-	o.CNIPluginType = cniPluginType
+// SetDC adds the dc to the get network defaults params
+func (o *GetNetworkDefaultsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProviderName adds the providerName to the get network defaults params
@@ -148,8 +148,8 @@ func (o *GetNetworkDefaultsParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 	var res []error
 
-	// path param cni_plugin_type
-	if err := r.SetPathParam("cni_plugin_type", o.CNIPluginType); err != nil {
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
