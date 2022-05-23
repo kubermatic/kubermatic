@@ -310,11 +310,10 @@ func (r *TestRunner) executeTests(
 	// We must store the name here because the cluster object may be nil on error
 	clusterName := cluster.Name
 
-	if r.opts.PrintContainerLogs {
-		// Print all controlplane logs to both make debugging easier and show issues
-		// that didn't result in test failures.
-		defer r.printAllControlPlaneLogs(ctx, log, clusterName)
-	}
+	// Print Cluster events and status information once the test has finished. Logs
+	// of the control plane or KKP should be collected outside of the conformance-tester,
+	// for example using protokol or similar tools.
+	defer r.dumpClusterInformation(ctx, log, clusterName)
 
 	var err error
 
@@ -384,10 +383,8 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to setup nodes: %w", err)
 	}
 
-	if r.opts.PrintContainerLogs {
-		defer logEventsForAllMachines(ctx, log, userClusterClient)
-		defer logUserClusterPodEventsAndLogs(ctx, log, r.opts.ClusterClientProvider, cluster.DeepCopy())
-	}
+	defer logEventsForAllMachines(ctx, log, userClusterClient)
+	deferredGatherUserClusterLogs(ctx, log, r.opts, cluster.DeepCopy())
 
 	overallTimeout := r.opts.NodeReadyTimeout
 	// The initialization of the external CCM is super slow
@@ -592,29 +589,17 @@ func (r *TestRunner) getCloudConfig(ctx context.Context, log *zap.SugaredLogger,
 	return filename, nil
 }
 
-func (r *TestRunner) printAllControlPlaneLogs(ctx context.Context, log *zap.SugaredLogger, clusterName string) {
-	log.Info("Printing control plane logs")
-
+func (r *TestRunner) dumpClusterInformation(ctx context.Context, log *zap.SugaredLogger, clusterName string) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		log.Errorw("Failed to get cluster", zap.Error(err))
 		return
 	}
 
-	log.Debugw("Cluster health status", "status", cluster.Status.ExtendedHealth)
+	log.Infow("Cluster health status", "status", cluster.Status.ExtendedHealth, "phase", cluster.Status.Phase)
 
 	log.Info("Logging events for cluster")
 	if err := logEventsObject(ctx, log, r.opts.SeedClusterClient, "default", cluster.UID); err != nil {
 		log.Errorw("Failed to log cluster events", zap.Error(err))
-	}
-
-	if err := printEventsAndLogsForAllPods(
-		ctx,
-		log,
-		r.opts.SeedClusterClient,
-		r.opts.SeedGeneratedClient,
-		cluster.Status.NamespaceName,
-	); err != nil {
-		log.Errorw("Failed to print events and logs of pods", zap.Error(err))
 	}
 }

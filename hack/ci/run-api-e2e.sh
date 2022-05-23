@@ -33,6 +33,10 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Creating Azure preset..."
@@ -133,18 +137,6 @@ spec:
   admin: true
 EOF
 retry 2 kubectl apply -f user.yaml
-
-function print_kubermatic_logs {
-  if [[ $? -ne 0 ]]; then
-    echodate "Printing logs for Kubermatic API"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
-    echodate "Printing logs for Master Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
-    echodate "Printing logs for Seed Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
-  fi
-}
-appendTrap print_kubermatic_logs EXIT
 
 echodate "Running API E2E tests..."
 

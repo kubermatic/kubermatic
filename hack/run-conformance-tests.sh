@@ -211,6 +211,7 @@ else
     -worker-name="$USER" \
     -kubeconfig=/kubeconfig \
     -reports-root=/reports \
+    -log-directory=/reports \
     -kubermatic-endpoint="$endpoint" \
     -kubermatic-oidc-token="$oidcToken" \
     -kubermatic-delete-cluster=true \

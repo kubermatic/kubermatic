@@ -38,9 +38,9 @@ func logEventsForAllMachines(ctx context.Context, log *zap.SugaredLogger, client
 	}
 
 	for _, machine := range machines.Items {
-		machineLog := log.With("name", machine.Name)
-		machineLog.Infow("Logging events for machine")
-		if err := logEventsObject(ctx, log, client, machine.Namespace, machine.UID); err != nil {
+		machineLog := log.With("machine", machine.Name)
+		machineLog.Info("Logging events for machine")
+		if err := logEventsObject(ctx, machineLog, client, machine.Namespace, machine.UID); err != nil {
 			machineLog.Errorw("Failed to log events for machine", "namespace", machine.Namespace, zap.Error(err))
 		}
 	}
