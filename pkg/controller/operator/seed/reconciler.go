@@ -338,6 +338,14 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	if err := r.migrateSeedClusterResources(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.reconcileAdmissionWebhooks(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileDeployments(ctx, cfg, seed, client, log, caBundle); err != nil {
 		return err
 	}
@@ -347,10 +355,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := r.reconcileServices(ctx, cfg, seed, client, log); err != nil {
-		return err
-	}
-
-	if err := r.reconcileAdmissionWebhooks(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
 
