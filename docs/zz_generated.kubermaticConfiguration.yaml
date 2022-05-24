@@ -501,6 +501,8 @@ spec:
         to: 1.23.*
       - from: 1.23.*
         to: 1.23.*
+      - from: 1.23.*
+        to: 1.24.*
       - from: 1.24.*
         to: 1.24.*
     # Versions lists the available versions.
