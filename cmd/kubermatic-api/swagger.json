@@ -21862,6 +21862,12 @@
       "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
       "type": "object",
       "properties": {
+        "coreDNSReplicas": {
+          "description": "CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "CoreDNSReplicas"
+        },
         "dnsDomain": {
           "description": "Domain name for services.",
           "type": "string",

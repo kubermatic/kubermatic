@@ -384,17 +384,17 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }
 
-func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, ipFamily kubermaticv1.IPFamily, k8sServiceApi *net.IP, reconcileK8sSvcEndpoints bool, err error) {
+func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, ipFamily kubermaticv1.IPFamily, k8sServiceApi *net.IP, reconcileK8sSvcEndpoints bool, coreDNSReplicas *int32, err error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err = r.seedClient.Get(ctx, types.NamespacedName{
 		Name: r.clusterName,
 	}, cluster); err != nil {
-		return nil, "", nil, false, fmt.Errorf("failed to get cluster: %w", err)
+		return nil, "", nil, false, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	ip, err := resources.InClusterApiserverIP(cluster)
 	if err != nil {
-		return nil, "", nil, false, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
+		return nil, "", nil, false, nil, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
 	}
 
 	// Reconcile kubernetes service endpoints, unless it is not supported or disabled in the apiserver override settings.
@@ -409,7 +409,7 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 		reconcileK8sSvcEndpoints = false
 	}
 
-	return &cluster.Address, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, nil
+	return &cluster.Address, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.

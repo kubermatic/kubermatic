@@ -1100,6 +1100,11 @@ spec:
                 description: ClusterNetworkingConfig specifies the different networking
                   parameters for a cluster.
                 properties:
+                  coreDNSReplicas:
+                    description: CoreDNSReplicas is the number of desired pods of
+                      user cluster coredns deployment.
+                    format: int32
+                    type: integer
                   dnsDomain:
                     description: Domain name for services.
                     type: string

@@ -51,7 +51,7 @@ var (
 )
 
 // DeploymentCreator returns the function to create and update the CoreDNS deployment.
-func DeploymentCreator(kubernetesVersion *semverlib.Version, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -59,6 +59,10 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, registryWithOverwri
 			dep.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
+			if replicas != nil {
+				dep.Spec.Replicas = replicas
+			}
+
 			// The Selector is immutable, so we don't change it if it's set. This happens in upgrade cases
 			// where coredns is switched from a manifest based addon to a user-cluster-controller-manager resource
 			if dep.Spec.Selector == nil {
