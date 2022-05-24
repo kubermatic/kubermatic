@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -126,7 +127,7 @@ func defaultClusterRequest() createClusterRequest {
 				Type:    "cilium",
 			},
 			ClusterNetwork: &netConfig,
-			Version:        "1.22.7",
+			Version:        models.Semver(utils.KubernetesVersion()),
 		},
 	}
 
