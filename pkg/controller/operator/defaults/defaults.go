@@ -209,7 +209,7 @@ var (
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			// Kubernetes 1.23
-			newSemver("v1.23.5"),
+			newSemver("v1.23.6"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
