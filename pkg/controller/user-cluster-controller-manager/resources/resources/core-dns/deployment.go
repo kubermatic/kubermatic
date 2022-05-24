@@ -108,6 +108,22 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, re
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.CoreDNSServiceAccountName
 
+			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+						{
+							Weight: 10,
+							PodAffinityTerm: corev1.PodAffinityTerm{
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil),
+								},
+								TopologyKey: resources.TopologyKeyHostname,
+							},
+						},
+					},
+				},
+			}
+
 			return dep, nil
 		}
 	}
