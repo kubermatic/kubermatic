@@ -215,10 +215,10 @@ var (
 		Versions: []semver.Semver{
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
-			newSemver("v1.21.10"),
+			newSemver("v1.21.12"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
-			newSemver("v1.22.7"),
+			newSemver("v1.22.9"),
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			// Kubernetes 1.24
