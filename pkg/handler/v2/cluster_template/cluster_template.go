@@ -355,7 +355,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 			Labels:      map[string]string{},
 			Annotations: map[string]string{},
 		},
-		Credential:             "",
+		Credential:             partialCluster.GetSecretName(),
 		ClusterLabels:          partialCluster.Labels,
 		InheritedClusterLabels: createCluster.Cluster.InheritedLabels,
 		Spec:                   partialCluster.Spec,
