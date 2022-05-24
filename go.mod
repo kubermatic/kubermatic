@@ -80,19 +80,19 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8c.io/operating-system-manager v0.4.1
-	k8s.io/api v0.23.0
-	k8s.io/apiextensions-apiserver v0.23.0
-	k8s.io/apimachinery v0.23.0
-	k8s.io/apiserver v0.23.0
+	k8s.io/api v0.23.6
+	k8s.io/apiextensions-apiserver v0.23.6
+	k8s.io/apimachinery v0.23.6
+	k8s.io/apiserver v0.23.6
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.23.0
+	k8s.io/code-generator v0.23.6
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.21.3
 	k8s.io/kubectl v0.21.3
-	k8s.io/metrics v0.23.0
+	k8s.io/metrics v0.23.6
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
-	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
+	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 	kubevirt.io/api v0.48.1
 	sigs.k8s.io/aws-iam-authenticator v0.5.3
 	sigs.k8s.io/controller-runtime v0.11.0
@@ -238,7 +238,7 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/component-base v0.23.0 // indirect
+	k8s.io/component-base v0.23.6 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
@@ -246,7 +246,7 @@ require (
 	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
 
 replace (
@@ -255,14 +255,14 @@ replace (
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
 	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190128024246-5eb7ae5bdb7a
-	k8s.io/api => k8s.io/api v0.23.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.0
-	k8s.io/client-go => k8s.io/client-go v0.23.0
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.0
-	k8s.io/code-generator => k8s.io/code-generator v0.23.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.0
-	k8s.io/kubectl => k8s.io/kubectl v0.23.0
-	k8s.io/kubelet => k8s.io/kubelet v0.23.0
-	k8s.io/metrics => k8s.io/metrics v0.23.0
+	k8s.io/api => k8s.io/api v0.23.6
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.6
+	k8s.io/apimachinery => k8s.io/apimachinery v0.23.6
+	k8s.io/client-go => k8s.io/client-go v0.23.6
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.6
+	k8s.io/code-generator => k8s.io/code-generator v0.23.6
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.6
+	k8s.io/kubectl => k8s.io/kubectl v0.23.6
+	k8s.io/kubelet => k8s.io/kubelet v0.23.6
+	k8s.io/metrics => k8s.io/metrics v0.23.6
 )
