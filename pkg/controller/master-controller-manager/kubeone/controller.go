@@ -338,7 +338,7 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	oldexternalCluster := externalCluster.DeepCopy()
 	externalCluster.Spec.KubeconfigReference = kubeconfigRef
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
-		r.log.Debugf("failed to add kubeconfig referece in external cluster %w", err)
+		r.log.Debugf("failed to add kubeconfig reference in external cluster %w", err)
 		return nil, err
 	}
 
@@ -820,22 +820,39 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 		envVar = setEnvForProvider(providerName, envVar, credentialSecret)
 	}
 
-	envVar = append(
-		envVar,
-		corev1.EnvVar{
-			Name: "PASSPHRASE",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: sshSecret.Name,
+	_, ok := sshSecret.Data[resources.KubeOneSSHPassphrase]
+	if ok {
+		envVar = append(
+			envVar,
+			corev1.EnvVar{
+				Name: "PASSPHRASE",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: sshSecret.Name,
+						},
+						Key: resources.KubeOneSSHPassphrase,
 					},
-					Key: "passphrase",
 				},
 			},
+		)
+	}
+
+	vm := []corev1.VolumeMount{}
+	vmInit := []corev1.VolumeMount{}
+
+	vmInit = append(
+		vmInit,
+		corev1.VolumeMount{
+			Name:      "rw-manifest-volume",
+			MountPath: "/kubeonemanifest",
+		},
+		corev1.VolumeMount{
+			Name:      "manifest-volume",
+			MountPath: "/manifest",
 		},
 	)
 
-	vm := []corev1.VolumeMount{}
 	vm = append(
 		vm,
 		corev1.VolumeMount{
@@ -852,18 +869,6 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 		},
 	)
 
-	vmInit := []corev1.VolumeMount{}
-	vmInit = append(
-		vmInit,
-		corev1.VolumeMount{
-			Name:      "rw-manifest-volume",
-			MountPath: "/kubeonemanifest",
-		},
-		corev1.VolumeMount{
-			Name:      "manifest-volume",
-			MountPath: "/manifest",
-		},
-	)
 	var kubeonePodName, kubeoneCMName string
 
 	switch {
