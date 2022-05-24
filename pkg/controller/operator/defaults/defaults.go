@@ -286,6 +286,11 @@ var (
 				From: "1.23.*",
 				To:   "1.23.*",
 			},
+			{
+				// Allow to next minor release
+				From: "1.23.*",
+				To:   "1.24.*",
+			},
 			// ======= 1.24 =======
 			{
 				// Allow to change to any patch version
