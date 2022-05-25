@@ -22,7 +22,7 @@
 
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
-{{ if eq .Cluster.CloudProviderName "openstack" }
+{{ if eq .Cluster.CloudProviderName "openstack" }}
 
 apiVersion: apps/v1
 kind: Deployment
