@@ -27,8 +27,7 @@ package metering
 import (
 	"context"
 	"fmt"
-	"strings"
-
+	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/lifecycle"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -137,8 +136,9 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 		return err
 	}
 	if err := mc.SetBucketLifecycle(ctx, bucket, config); err != nil {
-		// Ignore conflict error in case lock after previous reconciliation process still exists.
-		if strings.HasPrefix(err.Error(), "A conflicting conditional operation") {
+		// Ignore conflicts in case lock after previous reconciliation process still exists.
+		errResp := minio.ToErrorResponse(err)
+		if errResp.StatusCode == 409 && errResp.Code == "OperationAborted" {
 			return nil
 		}
 		return fmt.Errorf("failed to update bucket lifecycle: %w", err)
