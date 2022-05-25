@@ -18,8 +18,8 @@ package v1
 
 import (
 	semverlib "github.com/Masterminds/semver/v3"
-	corev1 "k8s.io/api/core/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,20 +82,20 @@ type GitCredentials struct {
 }
 
 type GitReference struct {
-	// Branch to checkout. Only the last commit of the branch will be checkout in oder to reduce tha amount of data to downlod.
+	// Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
 	// +optional
 	Branch string `json:"branch,omitempty"`
 
-	// Commit SHA to check out.
+	// Commit SHA to checkout.
 	//
-	// It can be used in conjunction with branch to to avoid to clone the all repository. The commit must blelong to this branch.
+	// It can be used in conjunction with branch to to avoid to clone the all repository. The commit must belong to this branch.
 	// +kubebuilder:validation:Pattern:=`^[a-f0-9]{40}$`
 	// +kubebuilder:validation:Type=string
 	// +optional
 	Commit string `json:"commit,omitempty"`
 
 	// Tag to check out.
-	// It can not be used in conjection with commit or branch.
+	// It can not be used in conjunction with commit or branch.
 	// +kubebuilder:validation:Type=string
 	// +optional
 	Tag string `json:"tag,omitempty"`
@@ -106,7 +106,7 @@ type GitSource struct {
 	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
-	// Git reference to check out
+	// Git reference to checkout
 	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root

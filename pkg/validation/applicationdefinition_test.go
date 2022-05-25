@@ -204,7 +204,7 @@ func TestValidateGitRef(t *testing.T) {
 		ad        appskubermaticv1.ApplicationDefinition
 		expErrLen int
 	}{
-		"valid Ref whcih is a branch": {
+		"valid Ref which is a branch": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
@@ -288,7 +288,7 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "helm"
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
@@ -304,7 +304,7 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "helm"
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Branch: "master"},
@@ -368,7 +368,7 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "helm"
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "abc"},
@@ -384,7 +384,7 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "helm"
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong"},
@@ -400,7 +400,7 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "helm"
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794"},
@@ -424,7 +424,6 @@ func TestValidateGitRef(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestValidateGitCredentials(t *testing.T) {
@@ -520,7 +519,7 @@ func TestValidateGitCredentials(t *testing.T) {
 			},
 			1,
 		},
-		"invalid unknow method": {
+		"invalid unknown method": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()

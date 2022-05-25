@@ -272,23 +272,23 @@ spec:
                                   default is repository root
                                 type: string
                               ref:
-                                description: Git reference to check out
+                                description: Git reference to checkout
                                 properties:
                                   branch:
                                     description: Branch to checkout. Only the last
-                                      commit of the branch will be checkout in oder
-                                      to reduce tha amount of data to downlod.
+                                      commit of the branch will be checkout in order
+                                      to reduce the amount of data to download.
                                     type: string
                                   commit:
-                                    description: "Commit SHA to check out. \n It can
+                                    description: "Commit SHA to checkout. \n It can
                                       be used in conjunction with branch to to avoid
                                       to clone the all repository. The commit must
-                                      blelong to this branch."
+                                      belong to this branch."
                                     pattern: ^[a-f0-9]{40}$
                                     type: string
                                   tag:
                                     description: Tag to check out. It can not be used
-                                      in conjection with commit or branch.
+                                      in conjunction with commit or branch.
                                     type: string
                                 type: object
                               remote:
