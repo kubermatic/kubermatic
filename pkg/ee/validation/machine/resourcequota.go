@@ -31,7 +31,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -41,54 +40,10 @@ import (
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
 func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
 	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
-	config, err := types.GetConfig(machine.Spec.ProviderSpec)
-	if err != nil {
-		return fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
-	}
 
-	// TODO add all providers
-	var quotaReq *ResourceDetails
-	switch config.CloudProvider {
-	// add this fake for test and so further code is reachable until more providers are implemented
-	case types.CloudProviderFake:
-		quotaReq, err = getFakeQuotaRequest(config)
-		if err != nil {
-			return fmt.Errorf("error getting fake resource requirements: %w", err)
-		}
-	case types.CloudProviderAWS:
-		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting aws resource requirements: %w", err)
-		}
-	case types.CloudProviderGoogle:
-		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting gcp resource requirements: %w", err)
-		}
-	case types.CloudProviderAzure:
-		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting azure resource requirements: %w", err)
-		}
-	case types.CloudProviderKubeVirt:
-		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting kubevirt resource requirements: %w", err)
-		}
-	case types.CloudProviderVsphere:
-		quotaReq, err = getVsphereResourceRequirements(config)
-		if err != nil {
-			return fmt.Errorf("error getting vsphere resource requirements: %w", err)
-		}
-	case types.CloudProviderOpenstack:
-		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
-		if err != nil {
-			return fmt.Errorf("error getting openstack resource requirements: %w", err)
-		}
-	default:
-		// TODO skip for now, when all providers are added, throw error
-		log.Debugf("provider %q not supported", config.CloudProvider)
-		return nil
+	quotaReq, err := GetMachineResourceUsage(ctx, userClient, machine, caBundle)
+	if err != nil {
+		return fmt.Errorf("error getting machine resource request: %w", err)
 	}
 
 	// TODO Get quota and usage from ResourceQuota CRD when its implemented

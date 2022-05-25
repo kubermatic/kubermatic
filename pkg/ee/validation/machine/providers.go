@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -44,6 +45,38 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *v1alpha1.Machine,
+	caBundle *certificates.CABundle) (*ResourceDetails, error) {
+	config, err := types.GetConfig(machine.Spec.ProviderSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
+	}
+
+	var quotaReq *ResourceDetails
+	// TODO add all providers
+	switch config.CloudProvider {
+	case types.CloudProviderFake:
+		quotaReq, err = getFakeQuotaRequest(config)
+	case types.CloudProviderAWS:
+		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderGoogle:
+		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderAzure:
+		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderKubeVirt:
+		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderVsphere:
+		quotaReq, err = getVsphereResourceRequirements(config)
+	case types.CloudProviderOpenstack:
+		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+	default:
+		// TODO skip for now, when all providers are added, throw error
+		return nil, fmt.Errorf("provider %q not supported for resource quotas", config.CloudProvider)
+	}
+
+	return quotaReq, err
+}
 
 func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
