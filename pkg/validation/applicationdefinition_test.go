@@ -27,7 +27,7 @@ import (
 
 var (
 	cs                = appskubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
-	secretKeySelector = &appskubermaticv1.GlobalSecretKeySelector{SecretReference: corev1.SecretReference{Name: "git-cred", Namespace: "kube-system"}, Key: "thekey"}
+	secretKeySelector = &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "git-cred"}, Key: "thekey"}
 	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}}}
 	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
 	spec              = appskubermaticv1.ApplicationDefinitionSpec{Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}

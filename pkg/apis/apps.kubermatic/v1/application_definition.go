@@ -18,16 +18,19 @@ package v1
 
 import (
 	semverlib "github.com/Masterminds/semver/v3"
+	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type HelmCredentials struct {
-	// Username holds the ref and key in the secret for the username credential
-	Username GlobalSecretKeySelector `json:"username"`
+	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Username corev1.SecretKeySelector `json:"username"`
 
-	// Password holds the ref and key in the secret for the Password credential
-	Password GlobalSecretKeySelector `json:"password"`
+	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Password corev1.SecretKeySelector `json:"password"`
 }
 
 type HelmSource struct {
@@ -61,17 +64,21 @@ type GitCredentials struct {
 	// Authentication method
 	Method GitAuthMethod `json:"method"`
 
-	// Username holds the ref and key in the secret for the username credential
-	Username *GlobalSecretKeySelector `json:"username,omitempty"`
+	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
-	// Password holds the ref and key in the secret for the Password credential
-	Password *GlobalSecretKeySelector `json:"password,omitempty"`
+	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
-	// Token holds the ref and key in the secret for the token credential
-	Token *GlobalSecretKeySelector `json:"token,omitempty"`
+	// Token holds the ref and key in the secret for the token credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Token *corev1.SecretKeySelector `json:"token,omitempty"`
 
-	// SSHKey holds the ref and key in the secret for the SshKey credential
-	SSHKey *GlobalSecretKeySelector `json:"sshKey,omitempty"`
+	// SSHKey holds the ref and key in the secret for the SshKey credential. Secret must exist in the namespace where
+	// KKP is installed.
+	SSHKey *corev1.SecretKeySelector `json:"sshKey,omitempty"`
 }
 
 type GitReference struct {
