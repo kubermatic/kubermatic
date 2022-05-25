@@ -36,7 +36,7 @@ presubmits:
             - name: PROVIDER
               value: openstack
             - name: VERSION_TO_TEST
-              value: "v1.22.5"
+              value: "v1.22.9"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -77,7 +77,7 @@ presubmits:
             - name: PROVIDER
               value: vsphere
             - name: VERSION_TO_TEST
-              value: "v1.22.5"
+              value: "v1.22.9"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
