@@ -1103,6 +1103,7 @@ type KubevirtCloudSpec struct {
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 
 	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+	InfraStorageClasses     []string                 `json:"infraStorageClasses,omitempty"`
 }
 
 type PreAllocatedDataVolume struct {

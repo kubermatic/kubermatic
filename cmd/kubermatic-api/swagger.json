@@ -25669,6 +25669,13 @@
           "type": "string",
           "x-go-name": "CSIKubeconfig"
         },
+        "infraStorageClasses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "InfraStorageClasses"
+        },
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"

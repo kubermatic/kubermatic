@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -54,6 +55,12 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
 func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
+	if spec.Kubevirt != nil {
+		err := k.updateInfraStorageClassesInfo(ctx, spec)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -176,4 +183,23 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return kubeconfig, nil
+}
+
+func (k *kubevirt) updateInfraStorageClassesInfo(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
+	kubeConfig, err := GetCredentialsForCluster(*spec, k.secretKeySelector)
+	if err != nil {
+		return err
+	}
+	client, _, err := NewClientWithRestConfig(kubeConfig)
+	if err != nil {
+		return err
+	}
+	storageClassList := storagev1.StorageClassList{}
+	if err = client.List(ctx, &storageClassList); err != nil {
+		return err
+	}
+	for _, sc := range storageClassList.Items {
+		spec.Kubevirt.InfraStorageClasses = append(spec.Kubevirt.InfraStorageClasses, sc.ObjectMeta.Name)
+	}
+	return nil
 }

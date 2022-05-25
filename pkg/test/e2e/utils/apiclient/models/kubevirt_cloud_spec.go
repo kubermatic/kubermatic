@@ -22,6 +22,9 @@ type KubevirtCloudSpec struct {
 	// c s i kubeconfig
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 
+	// infra storage classes
+	InfraStorageClasses []string `json:"infraStorageClasses"`
+
 	// kubeconfig
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 

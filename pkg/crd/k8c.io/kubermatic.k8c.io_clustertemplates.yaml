@@ -661,6 +661,10 @@ spec:
                         type: object
                       csiKubeconfig:
                         type: string
+                      infraStorageClasses:
+                        items:
+                          type: string
+                        type: array
                       kubeconfig:
                         type: string
                       preAllocatedDataVolumes:
