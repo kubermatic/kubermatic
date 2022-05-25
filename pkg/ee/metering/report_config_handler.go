@@ -389,7 +389,9 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Interval = uint32(*reportCfgReq.Body.Interval)
 	}
 
-	if reportCfgReq.Body.Retention != nil && *reportCfgReq.Body.Retention >= 1 {
+	if reportCfgReq.Body.Retention == nil {
+		reportConfiguration.Retention = nil
+	} else if *reportCfgReq.Body.Retention >= 1 {
 		retention := uint32(*reportCfgReq.Body.Retention)
 		reportConfiguration.Retention = &retention
 	}

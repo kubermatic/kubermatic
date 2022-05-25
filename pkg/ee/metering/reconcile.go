@@ -27,6 +27,7 @@ package metering
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/minio/minio-go/v7/pkg/lifecycle"
 
@@ -136,6 +137,10 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 		return err
 	}
 	if err := mc.SetBucketLifecycle(ctx, bucket, config); err != nil {
+		// Ignore conflict error in case lock after previous reconciliation process still exists.
+		if strings.HasPrefix(err.Error(), "A conflicting conditional operation") {
+			return nil
+		}
 		return fmt.Errorf("failed to update bucket lifecycle: %w", err)
 	}
 
