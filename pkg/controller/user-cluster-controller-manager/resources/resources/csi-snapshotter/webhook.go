@@ -28,7 +28,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI.
+// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
+// Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/admission-configuration-template
 func ValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
