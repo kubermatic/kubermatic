@@ -19,6 +19,9 @@ import (
 // swagger:model ClusterNetworkingConfig
 type ClusterNetworkingConfig struct {
 
+	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	CoreDNSReplicas int32 `json:"coreDNSReplicas,omitempty"`
+
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain,omitempty"`
 

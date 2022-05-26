@@ -1043,6 +1043,11 @@ func (in *ClusterNetworkingConfig) DeepCopyInto(out *ClusterNetworkingConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.CoreDNSReplicas != nil {
+		in, out := &in.CoreDNSReplicas, &out.CoreDNSReplicas
+		*out = new(int32)
+		**out = **in
+	}
 	if in.KonnectivityEnabled != nil {
 		in, out := &in.KonnectivityEnabled, &out.KonnectivityEnabled
 		*out = new(bool)

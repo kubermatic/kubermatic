@@ -775,6 +775,9 @@ type ClusterNetworkingConfig struct {
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
+	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
+
 	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
 	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 }

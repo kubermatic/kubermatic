@@ -99,7 +99,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	data.clusterAddress, data.ipFamily, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, err = r.networkingData(ctx)
+	data.clusterAddress, data.ipFamily, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, data.coreDNSReplicas, err = r.networkingData(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster address: %w", err)
 	}
@@ -973,7 +973,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
-		coredns.DeploymentCreator(r.clusterSemVer, r.overwriteRegistryFunc),
+		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.overwriteRegistryFunc),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1080,6 +1080,7 @@ type reconcileData struct {
 	k8sServiceApiIP             *net.IP
 	reconcileK8sSvcEndpoints    bool
 	kubernetesDashboardEnabled  bool
+	coreDNSReplicas             *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
