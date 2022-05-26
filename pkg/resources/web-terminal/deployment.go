@@ -36,7 +36,7 @@ var (
 				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
+				corev1.ResourceMemory: resource.MustParse("1Gi"),
 				corev1.ResourceCPU:    resource.MustParse("250m"),
 			},
 		},
@@ -44,7 +44,8 @@ var (
 )
 
 const (
-	name = "web-terminal"
+	name               = "web-terminal"
+	webTerminalStorage = "web-terminal-storage"
 )
 
 // DeploymentCreator returns the function to create WEB terminal deployment.
@@ -127,6 +128,11 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/kubeconfig",
 			ReadOnly:  true,
 		},
+		{
+			Name:      webTerminalStorage,
+			ReadOnly:  false,
+			MountPath: "/data/terminal",
+		},
 	}
 }
 
@@ -137,6 +143,14 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.AdminKubeconfigSecretName,
+				},
+			},
+		},
+		{
+			Name: webTerminalStorage,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium: corev1.StorageMediumMemory,
 				},
 			},
 		},

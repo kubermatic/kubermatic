@@ -35,7 +35,7 @@ spec:
         resources:
           limits:
             cpu: 250m
-            memory: 512Mi
+            memory: 1Gi
           requests:
             cpu: 100m
             memory: 256Mi
@@ -45,6 +45,8 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: web-terminal-kubeconfig
           readOnly: true
+        - mountPath: /data/terminal
+          name: web-terminal-storage
       dnsConfig:
         nameservers:
         - 192.0.2.14
@@ -68,4 +70,7 @@ spec:
       - name: web-terminal-kubeconfig
         secret:
           secretName: admin-kubeconfig
+      - emptyDir:
+          medium: Memory
+        name: web-terminal-storage
 status: {}

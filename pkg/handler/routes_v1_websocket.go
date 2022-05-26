@@ -80,7 +80,7 @@ var upgrader = websocket.Upgrader{
 
 type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
-type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string)
+type WebsocketTerminalWriter func(ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
@@ -211,7 +211,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			return
 		}
 
-		writer(ctx, providers, ws, k8sClusterProvider.GetSeedClusterAdminClient(), k8sClusterProvider.SeedAdminConfig(), namespace, podName)
+		writer(ws, k8sClusterProvider.GetSeedClusterAdminClient(), k8sClusterProvider.SeedAdminConfig(), namespace, podName)
 	}
 }
 
