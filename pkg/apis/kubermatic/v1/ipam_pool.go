@@ -32,8 +32,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// IPAMPool is the object representing IP Address Management (IPAM) configuration
-// for KKP user cluster applications.
+// IPAMPool is the object representing Multi-Cluster IP Address Management (IPAM)
+// configuration for KKP user cluster applications.
 type IPAMPool struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -41,8 +41,8 @@ type IPAMPool struct {
 	Spec IPAMPoolSpec `json:"spec,omitempty"`
 }
 
-// IPAMPoolSpec specifies the IP Address Management (IPAM) configuration
-// for KKP user cluster applications.
+// IPAMPoolSpec specifies the  Multi-Cluster IP Address Management (IPAM)
+// configuration for KKP user cluster applications.
 type IPAMPoolSpec struct {
 	// Type is the allocation type to be used.
 	Type IPAMPoolAllocationType `json:"type"`
@@ -52,20 +52,28 @@ type IPAMPoolSpec struct {
 
 // IPAMPoolDatacenterSettings contains IPAM Pool configuration for a datacenter.
 type IPAMPoolDatacenterSettings struct {
-	// PoolCIDR is the pool CIDR to be used for the allocation
-	PoolCIDR CIDR `json:"poolCIDR"`
+	// PoolCIDR is the pool CIDR to be used for the allocation.
+	PoolCIDR SubnetCIDR `json:"poolCIDR"`
 
 	// +kubebuilder:validation:Minimum:=1
-	// +kubebuilder:validation:Maximum:=32
+	// +kubebuilder:validation:Maximum:=128
+	// AllocationPrefix is the prefix for the allocation.
+	// Used when "type=prefix".
+	AllocationPrefix uint8 `json:"allocationPrefix,omitempty"`
 
-	// AllocationPrefix is the prefix for the allocation range
-	AllocationPrefix uint8 `json:"allocationPrefix"`
+	// +kubebuilder:validation:Minimum:=1
+	// AllocationRange is the range for the allocation.
+	// Used when "type=range".
+	AllocationRange uint32 `json:"allocationRange,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=subnet
+// +kubebuilder:validation:Pattern="((^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/([0-9]|[1-2][0-9]|3[0-2])$)|(^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))/([0-9]|[0-9][0-9]|1[0-1][0-9]|12[0-8])$))"
+// SubnetCIDR is used for validation of an IP subnet
+type SubnetCIDR string
 
+// +kubebuilder:validation:Enum=prefix;range
 // IPAMPoolAllocationType defines the type of allocation to be used.
-// Possible values are `subnet`.
+// Possible values are `prefix` and `range`.
 type IPAMPoolAllocationType string
 
 func (t IPAMPoolAllocationType) String() string {
@@ -73,6 +81,8 @@ func (t IPAMPoolAllocationType) String() string {
 }
 
 const (
-	// IPAMPoolAllocationType corresponds to subnet allocation type.
-	IPAMPoolAllocationTypeSubnet IPAMPoolAllocationType = "subnet"
+	// IPAMPoolAllocationTypePrefix corresponds to prefix allocation type.
+	IPAMPoolAllocationTypePrefix IPAMPoolAllocationType = "prefix"
+	// IPAMPoolAllocationTypeRange corresponds to range allocation type.
+	IPAMPoolAllocationTypeRange IPAMPoolAllocationType = "range"
 )
