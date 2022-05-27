@@ -87,3 +87,13 @@ const (
 	// IPAMPoolAllocationTypeRange corresponds to range allocation type.
 	IPAMPoolAllocationTypeRange IPAMPoolAllocationType = "range"
 )
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+type IPAMPoolList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []IPAMPool `json:"items"`
+}
