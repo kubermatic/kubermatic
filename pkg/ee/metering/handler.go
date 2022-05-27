@@ -110,11 +110,12 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 }
 
 func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) error {
-	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
-		Enabled:          meteringCfg.Enabled,
-		StorageClassName: meteringCfg.StorageClassName,
-		StorageSize:      meteringCfg.StorageSize,
+	if seed.Spec.Metering == nil {
+		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{}
 	}
+	seed.Spec.Metering.Enabled = meteringCfg.Enabled
+	seed.Spec.Metering.StorageClassName = meteringCfg.StorageClassName
+	seed.Spec.Metering.StorageSize = meteringCfg.StorageSize
 
 	if err := masterClient.Update(ctx, seed); err != nil {
 		return fmt.Errorf("failed to update seed %q: %w", seed.Name, err)
