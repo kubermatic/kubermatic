@@ -17,7 +17,6 @@ limitations under the License.
 package websocket
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +24,6 @@ import (
 	"github.com/gorilla/websocket"
 
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -171,7 +169,7 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string) {
+func Terminal(ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string) {
 	defer ws.Close()
 
 	err := startProcess(
@@ -179,7 +177,7 @@ func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Co
 		seedCfg,
 		namespace,
 		podName,
-		[]string{"bash"},
+		[]string{"bash", "-c", "cd /data/terminal && /bin/bash"},
 		TerminalSession{
 			websocketConn: ws,
 		},
