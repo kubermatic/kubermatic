@@ -54,7 +54,7 @@ type IPAMPoolSpec struct {
 // IPAMPoolDatacenterSettings contains IPAM Pool configuration for a datacenter.
 type IPAMPoolDatacenterSettings struct {
 	// PoolCIDR is the pool CIDR to be used for the allocation.
-	PoolCIDR SubnetCIDR `json:"poolCIDR"`
+	PoolCIDR SubnetCIDR `json:"poolCidr"`
 
 	// +kubebuilder:validation:Minimum:=1
 	// +kubebuilder:validation:Maximum:=128
