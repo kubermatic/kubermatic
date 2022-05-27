@@ -23,7 +23,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: IPAMPool is the object representing Multi-Cluster IP Address
-          Management (IPAM) configuration for KKP user cluster applications.
+          Management (IPAM) configuration for KKP user clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -39,7 +39,7 @@ spec:
             type: object
           spec:
             description: IPAMPoolSpec specifies the  Multi-Cluster IP Address Management
-              (IPAM) configuration for KKP user cluster applications.
+              (IPAM) configuration for KKP user clusters.
             properties:
               datacenters:
                 additionalProperties:
