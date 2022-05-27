@@ -30,6 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -52,7 +53,7 @@ var (
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
-func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versions []*version.Version, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.HumanReadableName == "" {
@@ -61,6 +62,23 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
 		allErrs = append(allErrs, field.Required(parentFieldPath.Child("version"), "version is required but was not specified"))
+	}
+
+	var (
+		validVersions []string
+		versionValid  bool
+	)
+
+	for _, availableVersion := range versions {
+		validVersions = append(validVersions, availableVersion.Version.String())
+		if spec.Version.Semver().Equal(availableVersion.Version) {
+			versionValid = true
+			break
+		}
+	}
+
+	if !versionValid {
+		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("version"), spec.Version.String(), validVersions))
 	}
 
 	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
@@ -116,8 +134,17 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	return allErrs
 }
 
-func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
-	allErrs := ValidateClusterSpec(spec, dc, enabledFeatures, parentFieldPath)
+func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName))
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(parentFieldPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
+	}
+
+	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versions, parentFieldPath); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
 
 	if cloudProvider != nil {
 		if err := cloudProvider.ValidateCloudSpec(ctx, spec.Cloud); err != nil {
@@ -133,12 +160,17 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 }
 
 // ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted.
-func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, features features.FeatureGate) field.ErrorList {
+func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, features features.FeatureGate) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
+	versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(oldCluster.Spec.Cloud.ProviderName))
+	if err != nil {
+		allErrs = append(allErrs, field.InternalError(specPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
+	}
+
 	// perform general basic checks on the new cluster spec
-	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, specPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versions, specPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
