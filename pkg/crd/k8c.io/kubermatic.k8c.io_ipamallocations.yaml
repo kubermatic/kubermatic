@@ -22,8 +22,8 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: IPAMAllocation is the object representing the allocation of the
-          Multi-Cluster IP Address Management (IPAM) in a KKP user cluster.
+        description: IPAMAllocation is the object representing an allocation from
+          an IPAMPool made for a particular KKP user cluster.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -38,8 +38,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: IPAMAllocationSpec specifies the allocation of the Multi-Cluster
-              IP Address Management (IPAM) in a KKP user cluster.
+            description: IPAMAllocationSpec specifies an allocation from an IPAMPool
+              made for a particular KKP user cluster.
             properties:
               addresses:
                 description: Addresses are the IP address ranges that are being used

@@ -32,8 +32,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// IPAMAllocation is the object representing the allocation of the
-// Multi-Cluster IP Address Management (IPAM) in a KKP user cluster.
+// IPAMAllocation is the object representing an allocation from an IPAMPool
+// made for a particular KKP user cluster.
 type IPAMAllocation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -41,8 +41,8 @@ type IPAMAllocation struct {
 	Spec IPAMAllocationSpec `json:"spec,omitempty"`
 }
 
-// IPAMAllocationSpec specifies the allocation of the
-// Multi-Cluster IP Address Management (IPAM) in a KKP user cluster.
+// IPAMAllocationSpec specifies an allocation from an IPAMPool
+// made for a particular KKP user cluster.
 type IPAMAllocationSpec struct {
 	// Type is the allocation type that is being used.
 	Type IPAMPoolAllocationType `json:"type"`
