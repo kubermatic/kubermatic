@@ -104,7 +104,7 @@ func NewTemplateData(
 
 	var kubeVirtStorageClasses []string
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		kubeVirtStorageClasses = append(kubeVirtStorageClasses, cluster.Spec.Cloud.Kubevirt.InfraStorageClasses...)
+		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
 	}
 
 	return &TemplateData{
@@ -207,7 +207,8 @@ type ClusterData struct {
 	MLA MLASettings
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
-	// KubeVirtInfraStorageClasses is a list of KubeVirt Infra-cluster storageClass
+	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
+	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	KubeVirtInfraStorageClasses []string
 }
 
