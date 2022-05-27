@@ -19,7 +19,7 @@ import (
 // swagger:model NodeDeploymentSpec
 type NodeDeploymentSpec struct {
 
-	// dynamic config
+	// Only supported for nodes with Kubernetes 1.23 or less.
 	DynamicConfig bool `json:"dynamicConfig,omitempty"`
 
 	// paused
