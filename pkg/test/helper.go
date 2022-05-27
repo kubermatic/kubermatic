@@ -17,6 +17,7 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -24,8 +25,10 @@ import (
 	"testing"
 
 	"github.com/pmezard/go-difflib/difflib"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"sigs.k8s.io/yaml"
@@ -70,6 +73,13 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
 	return func() (*kubermaticv1.Seed, error) {
 		return seed, nil
+	}
+}
+
+func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.KubermaticConfigurationGetter {
+	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	return func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+		return defaulted, err
 	}
 }
 
