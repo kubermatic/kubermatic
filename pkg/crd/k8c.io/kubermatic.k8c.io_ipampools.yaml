@@ -13,7 +13,7 @@ spec:
     listKind: IPAMPoolList
     plural: ipampools
     singular: ipampool
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
