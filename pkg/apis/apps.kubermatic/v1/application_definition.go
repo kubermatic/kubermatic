@@ -36,7 +36,7 @@ type HelmCredentials struct {
 type HelmSource struct {
 	// URl of the helm repository.
 	// It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
-	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern="^(http|https|oci)://.+"
 	URL string `json:"url"`
 
 	// Name of the Chart

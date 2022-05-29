@@ -366,7 +366,7 @@ spec:
                                 description: URl of the helm repository. It can be
                                   an HTTP(s) repository (e.g. https://localhost/myrepo)
                                   or on OCI repository (e.g. oci://localhost:5000/myrepo).
-                                minLength: 1
+                                pattern: ^(http|https|oci)://.+
                                 type: string
                             required:
                             - chartName

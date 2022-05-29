@@ -62,7 +62,7 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "https://kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
 					return *s
 				}(),
 			},
@@ -178,6 +178,153 @@ func TestValidateApplicationDefinition(t *testing.T) {
 						URL:          "https://localhost/myrepo",
 						ChartName:    "chartname",
 						ChartVersion: "",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+	}
+
+	for name, tc := range tt {
+		t.Run(name, func(t *testing.T) {
+			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+			errl := ValidateApplicationDefinition(tc.ad)
+
+			if len(errl) != tc.expErrLen {
+				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
+			}
+		})
+	}
+}
+
+func TestValidateHelmUrl(t *testing.T) {
+	tt := map[string]struct {
+		ad        appskubermaticv1.ApplicationDefinition
+		expErrLen int
+	}{
+		"valid url with http protocol": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "http://localhost/myrepo",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid url with https protocol": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "https://localhost/myrepo",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid url with oci protocol": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "oci://localhost:5000/myrepo",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"invalid empty url": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid url with unsupported protocol": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "ssh://localhost:5000/myrepo",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid url with only http scheme": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "http://",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid url with only https scheme": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "https://",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
+						Credentials:  nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid url with only oci scheme": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
+						URL:          "oci://",
+						ChartName:    "chartname",
+						ChartVersion: "1.0.0",
 						Credentials:  nil,
 					}}
 					return *s
