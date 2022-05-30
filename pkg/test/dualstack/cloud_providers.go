@@ -189,7 +189,7 @@ func (a azure) NodeSpec() models.NodeCloudSpec {
 
 func (a azure) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
-		DatacenterName: "azure-westeurope",
+		DatacenterName: "azure-eastus",
 		Azure: &models.AzureCloudSpec{
 			ClientID:        os.Getenv("AZURE_CLIENT_ID"),
 			ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),

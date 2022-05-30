@@ -91,6 +91,12 @@ spec:
       spec:
         azure:
           location: "westeurope"
+    azure-eastus:
+      location: "Azure East US"
+      country: US
+      spec:
+        azure:
+          location: "eastus"
     gcp-westeurope:
       location: "Europe West (Germany)"
       country: DE
