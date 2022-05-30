@@ -1,0 +1,62 @@
+# This is an example configuration file, demonstrating all options that
+# can be set. For testing you can use the "grouped" mapping type and
+# start a test Docker container using
+#
+#     docker run --rm -p 10389:10389 -p 10636:10636 rroemhild/test-openldap
+#
+
+# the address of the LDAP server, can use ldaps for secure communication
+address: ldap://localhost:10389
+
+# This section defines how the LDAP syncer is reading persons and
+# groups from LDAP. Only one of the two modes must be configured,
+# otherwise an error will be raised.
+mapping:
+  # This is a sample configuration for a setup where each person
+  # in LDAP has a "group" attribute that lists the groups this
+  # person should be assigned to.
+  # tagged:
+  #   # the root node from which to start the search for persons
+  #   baseDN: dc=planetexpress,dc=com
+
+  #   # the attribute in each person that contains the e-mail address
+  #   emailAttribute: mail
+
+  #   # the attribute that contains the group's name
+  #   groupNameAttribute: cn
+
+  #   # the attribute that contains the person's name
+  #   personNameAttribute: cn
+
+  #   # the attribute that contains the KKP group name DNs (each person
+  #   # can have multiple groups assigned)
+  #   groupAttribute: group
+
+  #   # the query to use to find all relevant persons
+  #   query: '(objectClass=person)'
+
+  # This mapping mode is used when a dedicated objectClass exists
+  # to represent KKP groups, and this objectClass has the members
+  # defined as its attributes.
+  # This is for example how the test-ldap-server structures the persons:
+  # https://github.com/rroemhild/docker-test-openldap/blob/master/rootfs/opt/openldap/bootstrap/data/30_groups_crew.ldif
+  grouped:
+    # the root node from which to start the search for persons
+    baseDN: dc=planetexpress,dc=com
+
+    # the attribute in each person that contains the e-mail address
+    emailAttribute: mail
+
+    # the attribute that contains the group's name
+    groupNameAttribute: cn
+
+    # the attribute that contains the person's name
+    personNameAttribute: cn
+
+    # the attribute that contains the DN of persons assigned to this group
+    # (can be used multiple times)
+    memberAttribute: member
+
+    # the query to use to find all relevant groups (for each group, the list
+    # of members is then fetched indivdually)
+    query: '(objectClass=Group)'
