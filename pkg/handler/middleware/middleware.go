@@ -284,7 +284,8 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				ObjectMeta: apiv1.ObjectMeta{
 					Name: claims.Name,
 				},
-				Email: claims.Email,
+				Email:  claims.Email,
+				Groups: claims.Groups,
 			}
 
 			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
