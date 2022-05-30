@@ -121,7 +121,31 @@ func (a *AmazonEC2) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (a *AmazonEC2) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *AmazonEC2) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	if oldSpec.AWS == nil || newSpec.AWS == nil {
+		return errors.New("'aws' spec is empty")
+	}
+
+	if oldSpec.AWS.VPCID != "" && oldSpec.AWS.VPCID != newSpec.AWS.VPCID {
+		return fmt.Errorf("updating AWS VPC ID is not supported (was %s, updated to %s)", oldSpec.AWS.VPCID, newSpec.AWS.VPCID)
+	}
+
+	if oldSpec.AWS.RouteTableID != "" && oldSpec.AWS.RouteTableID != newSpec.AWS.RouteTableID {
+		return fmt.Errorf("updating AWS route table ID is not supported (was %s, updated to %s)", oldSpec.AWS.RouteTableID, newSpec.AWS.RouteTableID)
+	}
+
+	if oldSpec.AWS.SecurityGroupID != "" && oldSpec.AWS.SecurityGroupID != newSpec.AWS.SecurityGroupID {
+		return fmt.Errorf("updating AWS security group ID is not supported (was %s, updated to %s)", oldSpec.AWS.SecurityGroupID, newSpec.AWS.SecurityGroupID)
+	}
+
+	if oldSpec.AWS.ControlPlaneRoleARN != "" && oldSpec.AWS.ControlPlaneRoleARN != newSpec.AWS.ControlPlaneRoleARN {
+		return fmt.Errorf("updating AWS control plane ARN is not supported (was %s, updated to %s)", oldSpec.AWS.ControlPlaneRoleARN, newSpec.AWS.ControlPlaneRoleARN)
+	}
+
+	if oldSpec.AWS.InstanceProfileName != "" && oldSpec.AWS.InstanceProfileName != newSpec.AWS.InstanceProfileName {
+		return fmt.Errorf("updating AWS instance profile name is not supported (was %s, updated to %s)", oldSpec.AWS.InstanceProfileName, newSpec.AWS.InstanceProfileName)
+	}
+
 	return nil
 }
 

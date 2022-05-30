@@ -451,7 +451,43 @@ func (a *Azure) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (a *Azure) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *Azure) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	if oldSpec.Azure == nil || newSpec.Azure == nil {
+		return errors.New("'azure' spec is empty")
+	}
+
+	// we validate that a couple of resources are not changed.
+	// the exception being the provider itself updating it in case the field
+	// was left empty to dynamically generate resources.
+
+	if oldSpec.Azure.ResourceGroup != "" && oldSpec.Azure.ResourceGroup != newSpec.Azure.ResourceGroup {
+		return fmt.Errorf("updating Azure resource group is not supported (was %s, updated to %s)", oldSpec.Azure.ResourceGroup, newSpec.Azure.ResourceGroup)
+	}
+
+	if oldSpec.Azure.VNetResourceGroup != "" && oldSpec.Azure.VNetResourceGroup != newSpec.Azure.VNetResourceGroup {
+		return fmt.Errorf("updating Azure vnet resource group is not supported (was %s, updated to %s)", oldSpec.Azure.VNetResourceGroup, newSpec.Azure.VNetResourceGroup)
+	}
+
+	if oldSpec.Azure.VNetName != "" && oldSpec.Azure.VNetName != newSpec.Azure.VNetName {
+		return fmt.Errorf("updating Azure vnet name is not supported (was %s, updated to %s)", oldSpec.Azure.VNetName, newSpec.Azure.VNetName)
+	}
+
+	if oldSpec.Azure.SubnetName != "" && oldSpec.Azure.SubnetName != newSpec.Azure.SubnetName {
+		return fmt.Errorf("updating Azure subnet name is not supported (was %s, updated to %s)", oldSpec.Azure.SubnetName, newSpec.Azure.SubnetName)
+	}
+
+	if oldSpec.Azure.RouteTableName != "" && oldSpec.Azure.RouteTableName != newSpec.Azure.RouteTableName {
+		return fmt.Errorf("updating Azure route table name is not supported (was %s, updated to %s)", oldSpec.Azure.RouteTableName, newSpec.Azure.RouteTableName)
+	}
+
+	if oldSpec.Azure.SecurityGroup != "" && oldSpec.Azure.SecurityGroup != newSpec.Azure.SecurityGroup {
+		return fmt.Errorf("updating Azure security group is not supported (was %s, updated to %s)", oldSpec.Azure.SecurityGroup, newSpec.Azure.SecurityGroup)
+	}
+
+	if oldSpec.Azure.AvailabilitySet != "" && oldSpec.Azure.AvailabilitySet != newSpec.Azure.AvailabilitySet {
+		return fmt.Errorf("updating Azure availability set is not supported (was %s, updated to %s)", oldSpec.Azure.AvailabilitySet, newSpec.Azure.AvailabilitySet)
+	}
+
 	return nil
 }
 

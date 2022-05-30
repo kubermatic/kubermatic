@@ -136,7 +136,19 @@ func (n *Nutanix) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 	return nil
 }
 
-func (n *Nutanix) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
+func (n *Nutanix) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	if oldSpec.Nutanix == nil || newSpec.Nutanix == nil {
+		return errors.New("'nutanix' spec is empty")
+	}
+
+	if oldSpec.Nutanix.ClusterName != newSpec.Nutanix.ClusterName {
+		return fmt.Errorf("updating Nutanix cluster name is not supported (was %s, updated to %s)", oldSpec.Nutanix.ClusterName, newSpec.Nutanix.ClusterName)
+	}
+
+	if oldSpec.Nutanix.ProjectName != newSpec.Nutanix.ProjectName {
+		return fmt.Errorf("updating Nutanix project name is not supported (was %s, updated to %s)", oldSpec.Nutanix.ProjectName, newSpec.Nutanix.ProjectName)
+	}
+
 	return nil
 }
 

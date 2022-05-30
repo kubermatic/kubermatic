@@ -347,7 +347,15 @@ func (v *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (v *Provider) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (v *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	if oldSpec.VSphere == nil || newSpec.VSphere == nil {
+		return errors.New("'vsphere' spec is empty")
+	}
+
+	if oldSpec.VSphere.Folder != "" && oldSpec.VSphere.Folder != newSpec.VSphere.Folder {
+		return fmt.Errorf("updating vSphere folder is not supported (was %s, updated to %s)", oldSpec.VSphere.Folder, newSpec.VSphere.Folder)
+	}
+
 	return nil
 }
 
