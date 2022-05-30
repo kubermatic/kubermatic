@@ -288,7 +288,8 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 					ID:   id,
 					Name: claims.Name,
 				},
-				Email: claims.Email,
+				Email:  claims.Email,
+				Groups: claims.Groups,
 			}
 
 			if user.ID == "" {
