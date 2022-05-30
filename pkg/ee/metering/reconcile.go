@@ -40,6 +40,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -166,7 +167,11 @@ func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimecli
 
 	for cronJobName, existingCronJob := range existingReportingCronJobNamedMap {
 		if orphanedCronJobNames.Has(cronJobName) {
-			if err := client.Delete(ctx, &existingCronJob); err != nil {
+			policy := metav1.DeletePropagationBackground
+			delOpts := &ctrlruntimeclient.DeleteOptions{
+				PropagationPolicy: &policy,
+			}
+			if err := client.Delete(ctx, &existingCronJob, delOpts); err != nil {
 				return fmt.Errorf("failed to remove an orphaned reporting cronjob (%s): %w", cronJobName, err)
 			}
 		}
