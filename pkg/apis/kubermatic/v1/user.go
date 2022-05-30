@@ -88,6 +88,7 @@ type UserSettings struct {
 	CollapseSidenav            bool   `json:"collapseSidenav,omitempty"`
 	DisplayAllProjectsForAdmin bool   `json:"displayAllProjectsForAdmin,omitempty"`
 	LastSeenChangelogVersion   string `json:"lastSeenChangelogVersion,omitempty"`
+	UseClustersView            bool   `json:"useClustersView"`
 }
 
 // +kubebuilder:object:generate=true
