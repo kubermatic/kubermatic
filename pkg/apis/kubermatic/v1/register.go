@@ -97,6 +97,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&MLAAdminSettingList{},
 		&KubermaticConfiguration{},
 		&KubermaticConfigurationList{},
+		&GroupProjectBinding{},
+		&GroupProjectBindingList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
