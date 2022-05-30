@@ -444,7 +444,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 
 func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params createMachineDeploymentParams) error {
 	mdParams := project.CreateMachineDeploymentParams(params)
-	return wait.Poll(30*time.Second, 2*time.Minute, func() (bool, error) {
+	return wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
 		_, err := apicli.GetKKPAPIClient().Project.CreateMachineDeployment(
 			&mdParams,
 			apicli.GetBearerToken())
