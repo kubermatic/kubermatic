@@ -51,6 +51,9 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 		if e := validateSemverRange(string(v.Constraints.KKPVersion), parentFieldPath.Child(curVField+".constraints.kkpVersion")); e != nil {
 			allErrs = append(allErrs, e)
 		}
+
+		allErrs = append(allErrs, validateSource(v.Template.Source, parentFieldPath.Child(curVField+".template.source"))...)
+
 		if _, ok := lookup[v.Version]; ok {
 			allErrs = append(allErrs, field.Duplicate(parentFieldPath.Child(curVField+".Version"), v.Version))
 		} else {
@@ -58,6 +61,75 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 		}
 	}
 
+	return allErrs
+}
+
+func validateSource(source appskubermaticv1.ApplicationSource, f *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+
+	switch {
+	case source.Helm != nil && source.Git != nil:
+		allErrs = append(allErrs, field.Forbidden(f, "only source type can be provided"))
+	case source.Git != nil:
+		allErrs = append(allErrs, validateGitSource(source.Git, f.Child("git"))...)
+	case source.Helm != nil:
+		break // all validations are in cr definition.
+	default:
+		allErrs = append(allErrs, field.Required(f, "no source provided"))
+	}
+
+	return allErrs
+}
+
+func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+
+	if e := validateGitRef(gitSource.Ref, f.Child("ref")); e != nil {
+		allErrs = append(allErrs, e)
+	}
+
+	allErrs = append(allErrs, validateGitCredentials(gitSource.Credentials, f.Child("credentials"))...)
+
+	return allErrs
+}
+
+func validateGitRef(ref appskubermaticv1.GitReference, f *field.Path) *field.Error {
+	if len(ref.Tag) == 0 && len(ref.Branch) == 0 && len(ref.Commit) == 0 {
+		return field.Required(f, "at least a branch, a commit or tag must be defined")
+	}
+
+	if len(ref.Tag) > 0 && (len(ref.Branch) > 0 || len(ref.Commit) > 0) {
+		return field.Forbidden(f.Child("tag"), "tag can not be used in conjunction with branch or commit")
+	}
+	return nil
+}
+
+func validateGitCredentials(credentials *appskubermaticv1.GitCredentials, f *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+	if credentials != nil {
+		switch credentials.Method {
+		case appskubermaticv1.GitAuthMethodPassword:
+			if credentials.Username == nil {
+				allErrs = append(allErrs, field.Required(f.Child("username"), "username is required when method is "+string(credentials.Method)))
+			}
+			if credentials.Password == nil {
+				allErrs = append(allErrs, field.Required(f.Child("password"), "password is required when method is "+string(credentials.Method)))
+			}
+
+		case appskubermaticv1.GitAuthMethodToken:
+			if credentials.Token == nil {
+				allErrs = append(allErrs, field.Required(f.Child("token"), "token is reuqied when method is "+string(credentials.Method)))
+			}
+
+		case appskubermaticv1.GitAuthMethodSSHKey:
+			if credentials.SSHKey == nil {
+				allErrs = append(allErrs, field.Required(f.Child("sshKey"), "sshKey is reuqied when method is "+string(credentials.Method)))
+			}
+
+		default: // This should never happen.
+			allErrs = append(allErrs, field.Invalid(f.Child("method"), credentials.Method, "unknown method"))
+		}
+	}
 	return allErrs
 }
 

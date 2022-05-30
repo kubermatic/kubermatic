@@ -19,25 +19,32 @@ package v1
 import (
 	semverlib "github.com/Masterminds/semver/v3"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type HelmCredentials struct {
-	// Username holds the ref and key in the secret for the username credential
-	Username GlobalSecretKeySelector `json:"username"`
+	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Username corev1.SecretKeySelector `json:"username"`
 
-	// Password holds the ref and key in the secret for the Password credential
-	Password GlobalSecretKeySelector `json:"password"`
+	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Password corev1.SecretKeySelector `json:"password"`
 }
 
 type HelmSource struct {
-	// URl of the helm repository
+	// URl of the helm repository.
+	// It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+	// +kubebuilder:validation:Pattern="^(http|https|oci)://.+"
 	URL string `json:"url"`
 
 	// Name of the Chart
+	// +kubebuilder:validation:MinLength=1
 	ChartName string `json:"chartName"`
 
 	// Version of the Chart
+	// +kubebuilder:validation:MinLength=1
 	ChartVersion string `json:"chartVersion"`
 
 	// Credentials hold the ref to the secret with helm credentials
@@ -57,25 +64,50 @@ type GitCredentials struct {
 	// Authentication method
 	Method GitAuthMethod `json:"method"`
 
-	// Username holds the ref and key in the secret for the username credential
-	Username *GlobalSecretKeySelector `json:"username,omitempty"`
+	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
-	// Password holds the ref and key in the secret for the Password credential
-	Password *GlobalSecretKeySelector `json:"password,omitempty"`
+	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
-	// Token holds the ref and key in the secret for the token credential
-	Token *GlobalSecretKeySelector `json:"token,omitempty"`
+	// Token holds the ref and key in the secret for the token credential. Secret must exist in the namespace where
+	// KKP is installed.
+	Token *corev1.SecretKeySelector `json:"token,omitempty"`
 
-	// SSHKey holds the ref and key in the secret for the SshKey credential
-	SSHKey *GlobalSecretKeySelector `json:"sshKey,omitempty"`
+	// SSHKey holds the ref and key in the secret for the SshKey credential. Secret must exist in the namespace where
+	// KKP is installed.
+	SSHKey *corev1.SecretKeySelector `json:"sshKey,omitempty"`
+}
+
+type GitReference struct {
+	// Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
+	// +optional
+	Branch string `json:"branch,omitempty"`
+
+	// Commit SHA to checkout.
+	//
+	// It can be used in conjunction with branch to to avoid to clone the all repository. The commit must belong to this branch.
+	// +kubebuilder:validation:Pattern:=`^[a-f0-9]{40}$`
+	// +kubebuilder:validation:Type=string
+	// +optional
+	Commit string `json:"commit,omitempty"`
+
+	// Tag to check out.
+	// It can not be used in conjunction with commit or branch.
+	// +kubebuilder:validation:Type=string
+	// +optional
+	Tag string `json:"tag,omitempty"`
 }
 
 type GitSource struct {
 	// URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
-	// Git reference to check out: can be a branch, tag, or sha1
-	Ref string `json:"ref"`
+	// Git reference to checkout
+	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root
 	Path string `json:"path,omitempty"`

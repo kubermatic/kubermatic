@@ -134,7 +134,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{
 								Remote:      "git@somerepo.local",
-								Ref:         "v13",
+								Ref:         appskubermaticv1.GitReference{Tag: "v13"},
 								Path:        "/",
 								Credentials: nil,
 							},

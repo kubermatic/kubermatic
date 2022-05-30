@@ -122,69 +122,91 @@ spec:
                                       type: string
                                     password:
                                       description: Password holds the ref and key
-                                        in the secret for the Password credential
+                                        in the secret for the Password credential.
+                                        Secret must exist in the namespace where KKP
+                                        is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
                                     sshKey:
                                       description: SSHKey holds the ref and key in
-                                        the secret for the SshKey credential
+                                        the secret for the SshKey credential. Secret
+                                        must exist in the namespace where KKP is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
                                     token:
                                       description: Token holds the ref and key in
-                                        the secret for the token credential
+                                        the secret for the token credential. Secret
+                                        must exist in the namespace where KKP is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
                                     username:
                                       description: Username holds the ref and key
-                                        in the secret for the username credential
+                                        in the secret for the username credential.
+                                        Secret must exist in the namespace where KKP
+                                        is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
@@ -196,11 +218,28 @@ spec:
                                     default is repository root
                                   type: string
                                 ref:
-                                  description: 'Git reference to check out: can be
-                                    a branch, tag, or sha1'
-                                  type: string
+                                  description: Git reference to checkout
+                                  properties:
+                                    branch:
+                                      description: Branch to checkout. Only the last
+                                        commit of the branch will be checkout in order
+                                        to reduce the amount of data to download.
+                                      type: string
+                                    commit:
+                                      description: "Commit SHA to checkout. \n It
+                                        can be used in conjunction with branch to
+                                        to avoid to clone the all repository. The
+                                        commit must belong to this branch."
+                                      pattern: ^[a-f0-9]{40}$
+                                      type: string
+                                    tag:
+                                      description: Tag to check out. It can not be
+                                        used in conjunction with commit or branch.
+                                      type: string
+                                  type: object
                                 remote:
                                   description: URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+                                  minLength: 1
                                   type: string
                               required:
                               - ref
@@ -212,9 +251,11 @@ spec:
                               properties:
                                 chartName:
                                   description: Name of the Chart
+                                  minLength: 1
                                   type: string
                                 chartVersion:
                                   description: Version of the Chart
+                                  minLength: 1
                                   type: string
                                 credentials:
                                   description: Credentials hold the ref to the secret
@@ -222,35 +263,47 @@ spec:
                                   properties:
                                     password:
                                       description: Password holds the ref and key
-                                        in the secret for the Password credential
+                                        in the secret for the Password credential.
+                                        Secret must exist in the namespace where KKP
+                                        is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
                                     username:
                                       description: Username holds the ref and key
-                                        in the secret for the username credential
+                                        in the secret for the username credential.
+                                        Secret must exist in the namespace where KKP
+                                        is installed.
                                       properties:
                                         key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
                                           type: string
                                         name:
-                                          description: Name is unique within a namespace
-                                            to reference a secret resource.
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
                                           type: string
-                                        namespace:
-                                          description: Namespace defines the space
-                                            within which the secret name must be unique.
-                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
                                       required:
                                       - key
                                       type: object
@@ -259,7 +312,10 @@ spec:
                                   - username
                                   type: object
                                 url:
-                                  description: URl of the helm repository
+                                  description: URl of the helm repository. It can
+                                    be an HTTP(s) repository (e.g. https://localhost/myrepo)
+                                    or on OCI repository (e.g. oci://localhost:5000/myrepo).
+                                  pattern: ^(http|https|oci)://.+
                                   type: string
                               required:
                               - chartName
