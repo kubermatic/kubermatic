@@ -123,6 +123,10 @@ spec:
                     type: string
                   selectedTheme:
                     type: string
+                  useClustersView:
+                    type: boolean
+                required:
+                - useClustersView
                 type: object
             required:
             - admin
