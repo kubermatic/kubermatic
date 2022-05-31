@@ -674,7 +674,7 @@ type ComponentSettings struct {
 	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
 	// strategy is configured.
 	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
-	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar
+	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
 	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy"`
 }
 
