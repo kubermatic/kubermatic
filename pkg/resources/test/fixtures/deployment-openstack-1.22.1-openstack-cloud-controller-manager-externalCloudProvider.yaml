@@ -111,6 +111,8 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      securityContext:
+        runAsUser: 1001
       volumes:
       - name: cloud-controller-manager-kubeconfig
         secret:
