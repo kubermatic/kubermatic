@@ -15,6 +15,10 @@
 # Sourced from
 # https://github.com/kubernetes-csi/external-snapshotter/tree/v5.0.1/client/config/crd
 
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
+
+
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -677,3 +681,5 @@ status:
   conditions: []
   storedVersions: []
 
+{{ end }}
+{{ end }}
