@@ -686,7 +686,7 @@ type APIServerSettings struct {
 }
 
 type KonnectvityProxySettings struct {
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControllerSettings struct {
