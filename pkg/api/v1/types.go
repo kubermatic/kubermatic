@@ -2242,6 +2242,7 @@ type NodeDeploymentSpec struct {
 	Template NodeSpec `json:"template"`
 	// required: false
 	Paused *bool `json:"paused,omitempty"`
+	// Only supported for nodes with Kubernetes 1.23 or less.
 	// required: false
 	DynamicConfig *bool `json:"dynamicConfig,omitempty"`
 }

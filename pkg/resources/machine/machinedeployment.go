@@ -89,6 +89,8 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
+	// Deprecated: This is not supported for 1.24 and higher and is blocked by
+	// Validate for 1.24+. Can be removed once 1.23 support is dropped.
 	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig {
 		kubeletVersion, err := semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
@@ -326,8 +328,13 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) 
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 
+	var (
+		kubeletVersion *semverlib.Version
+		err            error
+	)
+
 	if nd.Spec.Template.Versions.Kubelet != "" {
-		kubeletVersion, err := semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
+		kubeletVersion, err = semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
@@ -335,10 +342,19 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) 
 		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
 			return nil, err
 		}
-
-		nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()
 	} else {
-		nd.Spec.Template.Versions.Kubelet = controlPlaneVersion.String()
+		kubeletVersion = controlPlaneVersion
+	}
+
+	nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()
+
+	constraint124, err := semverlib.NewConstraint(">= 1.24")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse 1.24 constraint: %w", err)
+	}
+
+	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig && constraint124.Check(kubeletVersion) {
+		return nil, errors.New("dynamic config cannot be configured for Kubernetes 1.24 or higher")
 	}
 
 	// The default

@@ -26536,6 +26536,7 @@
       ],
       "properties": {
         "dynamicConfig": {
+          "description": "Only supported for nodes with Kubernetes 1.23 or less.",
           "type": "boolean",
           "x-go-name": "DynamicConfig"
         },
