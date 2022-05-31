@@ -54,9 +54,10 @@ var operatingSystems = map[string]models.OperatingSystemSpec{
 }
 
 var cloudProviders = map[string]clusterSpec{
-	"azure": azure{},
-	"gcp":   gcp{},
-	"aws":   aws{},
+	"azure":     azure{},
+	"gcp":       gcp{},
+	"aws":       aws{},
+	"openstack": openstack{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -176,6 +177,34 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
+		{
+			cloudName: "openstack",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", // others not tested
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "openstack",
+			osNames: []string{
+				"centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", // commented out os are not tested
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
 	}
 
 	retestBudget := 2
@@ -232,13 +261,21 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				mu.Unlock()
 			}()
 
+			nodeSpec := cloud.NodeSpec()
+
 			for _, osName := range test.osNames {
+				// TODO: why don't we need to do this for other clouds?
+				if test.cloudName == "openstack" {
+					img := openstack{}.getImage(osName)
+					nodeSpec.Openstack.Image = &img
+				}
+
 				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
 					WithClusterID(clusterID).
 					WithOS(operatingSystems[osName]).
-					WithNodeSpec(cloud.NodeSpec()),
+					WithNodeSpec(nodeSpec),
 				)
 				if err != nil {
 					t.Fatalf("failed to create machine deployment: %v", err)
