@@ -241,12 +241,14 @@ spec:
   # DefaultComponentSettings are default values to set for newly created clusters.
   # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
+    # Apiserver configures kube-apiserver settings.
     apiserver:
       endpointReconcilingDisabled: null
       nodePortRange: 30000-32767
       replicas: 2
       resources: null
       tolerations: null
+    # ControllerManager configures kube-controller-manager settings.
     controllerManager:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
@@ -262,12 +264,16 @@ spec:
       replicas: 1
       resources: null
       tolerations: null
+    # Etcd configures the etcd ring used to store Kubernetes data.
     etcd:
       clusterSize: 3
       diskSize: 5Gi
       resources: null
       storageClass: ""
       tolerations: null
+    # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+    # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+    # strategy is configured.
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: ""
@@ -281,8 +287,10 @@ spec:
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests: null
+    # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
       resources: null
+    # Scheduler configures kube-scheduler settings.
     scheduler:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates

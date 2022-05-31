@@ -503,6 +503,7 @@ spec:
                   newly created clusters. Deprecated: Use DefaultClusterTemplate instead.'
                 properties:
                   apiserver:
+                    description: Apiserver configures kube-apiserver settings.
                     properties:
                       endpointReconcilingDisabled:
                         type: boolean
@@ -582,6 +583,8 @@ spec:
                         type: array
                     type: object
                   controllerManager:
+                    description: ControllerManager configures kube-controller-manager
+                      settings.
                     properties:
                       leaderElection:
                         properties:
@@ -679,6 +682,8 @@ spec:
                         type: array
                     type: object
                   etcd:
+                    description: Etcd configures the etcd ring used to store Kubernetes
+                      data.
                     properties:
                       clusterSize:
                         format: int32
@@ -762,6 +767,9 @@ spec:
                         type: array
                     type: object
                   nodePortProxyEnvoy:
+                    description: NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy
+                      that is deployed if the `LoadBalancer` expose strategy is used.
+                      This is not effective if a different expose strategy is configured.
                     properties:
                       dockerRepository:
                         description: DockerRepository is the repository containing
@@ -797,6 +805,8 @@ spec:
                         type: object
                     type: object
                   prometheus:
+                    description: Prometheus configures the Prometheus instance deployed
+                      into the cluster control plane.
                     properties:
                       resources:
                         description: ResourceRequirements describes the compute resource
@@ -828,6 +838,7 @@ spec:
                         type: object
                     type: object
                   scheduler:
+                    description: Scheduler configures kube-scheduler settings.
                     properties:
                       leaderElection:
                         properties:
