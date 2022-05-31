@@ -1,0 +1,11 @@
+dn: cn=Andy Dwyer,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Andy Dwyer
+sn: Dwyer
+givenName: Andy
+mail: adwyer@pawnee.gov
+ou: Mouse Rat Shoeshine Emporium
+uid: adwyer

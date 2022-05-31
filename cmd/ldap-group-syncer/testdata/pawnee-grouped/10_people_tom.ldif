@@ -1,0 +1,11 @@
+dn: cn=Tom Haverford,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Tom Haverford
+sn: Haverford
+givenName: Tom
+mail: thaverford@pawnee.gov
+ou: Parks & Recreation
+uid: thaverford

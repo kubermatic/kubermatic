@@ -1,0 +1,12 @@
+dn: cn=Parks & Recreation,ou=people,dc=pawnee,dc=gov
+objectclass: Group
+objectclass: top
+groupType: 2147483650
+cn: Parks & Recreation
+member: cn=Leslie Knope,ou=people,dc=pawnee,dc=gov
+member: cn=Mark Brendanawicz,ou=people,dc=pawnee,dc=gov
+member: cn=Tom Haverford,ou=people,dc=pawnee,dc=gov
+member: cn=Ron Swanson,ou=people,dc=pawnee,dc=gov
+member: cn=Garry Gergich,ou=people,dc=pawnee,dc=gov
+member: cn=Donna Meagle,ou=people,dc=pawnee,dc=gov
+member: cn=April Ludgate,ou=people,dc=pawnee,dc=gov

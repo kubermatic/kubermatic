@@ -1,0 +1,7 @@
+dn: cn=The Dynamic Duo,ou=people,dc=pawnee,dc=gov
+objectclass: Group
+objectclass: top
+groupType: 2147483650
+cn: The Dynamic Duo
+member: cn=Chris Traeger,ou=people,dc=pawnee,dc=gov
+member: cn=Ben Wyatt,ou=people,dc=pawnee,dc=gov

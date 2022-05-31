@@ -1,0 +1,11 @@
+dn: cn=Ann Perkins,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Ann Perkins
+sn: Perkins
+givenName: Ann
+mail: aperkins@pawnee.gov
+ou: Health & Safety
+uid: aperkins

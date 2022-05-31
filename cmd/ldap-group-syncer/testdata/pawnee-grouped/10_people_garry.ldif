@@ -1,0 +1,11 @@
+dn: cn=Garry Gergich,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Garry Gergich
+sn: Gergich
+givenName: Garry
+mail: ggergich@pawnee.gov
+ou: Parks & Recreation
+uid: ggergich

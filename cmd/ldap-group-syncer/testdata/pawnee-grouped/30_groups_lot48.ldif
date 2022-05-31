@@ -1,0 +1,9 @@
+dn: cn=Lot 48 Project,ou=people,dc=pawnee,dc=gov
+objectclass: Group
+objectclass: top
+groupType: 2147483650
+cn: Lot 48 Project
+member: cn=Leslie Knope,ou=people,dc=pawnee,dc=gov
+member: cn=Ann Perkins,ou=people,dc=pawnee,dc=gov
+member: cn=Andy Dwyer,ou=people,dc=pawnee,dc=gov
+member: cn=Mark Brendanawicz,ou=people,dc=pawnee,dc=gov

@@ -1,0 +1,11 @@
+dn: cn=Ben Wyatt,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Ben Wyatt
+sn: Wyatt
+givenName: Ben
+mail: bwyatt@pawnee.gov
+ou: City Management
+uid: bwyatt

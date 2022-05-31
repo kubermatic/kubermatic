@@ -1,0 +1,11 @@
+dn: cn=April Ludgate,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: April Ludgate
+sn: Ludgate
+givenName: April
+mail: aludgate@pawnee.gov
+ou: parksrec
+uid: aludgate

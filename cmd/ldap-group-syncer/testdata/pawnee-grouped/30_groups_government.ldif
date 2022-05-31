@@ -1,0 +1,8 @@
+dn: cn=City Government,ou=people,dc=pawnee,dc=gov
+objectclass: Group
+objectclass: top
+groupType: 2147483650
+cn: City Government
+member: cn=Chris Traeger,ou=people,dc=pawnee,dc=gov
+member: cn=Ben Wyatt,ou=people,dc=pawnee,dc=gov
+member: cn=Leslie Knope,ou=people,dc=pawnee,dc=gov

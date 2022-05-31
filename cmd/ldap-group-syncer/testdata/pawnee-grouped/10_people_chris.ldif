@@ -1,0 +1,11 @@
+dn: cn=Chris Traeger,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Chris Traeger
+sn: Traeger
+givenName: Chris
+mail: ctrager@pawnee.gov
+ou: City Management
+uid: ctrager

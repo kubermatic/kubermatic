@@ -1,0 +1,5 @@
+dn: ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: organizationalUnit
+description: Pawnee, Indiana
+ou: people

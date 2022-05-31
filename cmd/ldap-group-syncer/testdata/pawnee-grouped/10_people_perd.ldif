@@ -1,0 +1,11 @@
+dn: cn=Perd Hapley,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Perd Hapley
+sn: Hapley
+givenName: Perd
+mail: phapley@pawnee.gov
+ou: Media Outlets
+uid: phapley

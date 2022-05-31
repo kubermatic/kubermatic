@@ -1,0 +1,11 @@
+dn: cn=Donna Meagle,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Donna Meagle
+sn: Meagle
+givenName: Donna
+mail: dmeagle@pawnee.gov
+ou: Parks & Recreation
+uid: dmeagle

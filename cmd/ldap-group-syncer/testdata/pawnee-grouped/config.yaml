@@ -1,0 +1,27 @@
+# the address of the LDAP server, can use ldaps for secure communication
+address: ldap://localhost:10389
+
+mapping:
+  # This mapping mode is used when a dedicated objectClass exists
+  # to represent KKP groups, and this objectClass has the members
+  # defined as its attributes.
+  grouped:
+    # the root node from which to start the search for persons
+    baseDN: dc=pawnee,dc=gov
+
+    # the attribute in each person that contains the e-mail address
+    emailAttribute: mail
+
+    # the attribute that contains the group's name
+    groupNameAttribute: cn
+
+    # the attribute that contains the person's name
+    personNameAttribute: cn
+
+    # the attribute that contains the DN of persons assigned to this group
+    # (can be used multiple times)
+    memberAttribute: member
+
+    # the query to use to find all relevant groups (for each group, the list
+    # of members is then fetched indivdually)
+    query: '(objectClass=Group)'

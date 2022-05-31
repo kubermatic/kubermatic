@@ -1,0 +1,11 @@
+dn: cn=Joan Callamezzo,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Joan Callamezzo
+sn: Callamezzo
+givenName: Joan
+mail: jcallamezzo@pawnee.gov
+ou: Media Outlets
+uid: jcallamezzo

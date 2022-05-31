@@ -1,0 +1,11 @@
+dn: cn=Mark Brendanawicz,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Mark Brendanawicz
+sn: Brendanawicz
+givenName: Mark
+mail: mbrendanawicz@pawnee.gov
+ou: Parks & Recreation
+uid: mbrendanawicz

@@ -1,0 +1,11 @@
+dn: cn=Tammy Swanson,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Tammy Swanson
+sn: Swanson
+givenName: Tammy
+mail: tswanson@pawnee.gov
+ou: Library Department
+uid: tswanson

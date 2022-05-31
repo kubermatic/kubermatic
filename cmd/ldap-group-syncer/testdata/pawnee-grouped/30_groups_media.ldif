@@ -1,0 +1,7 @@
+dn: cn=Media,ou=people,dc=pawnee,dc=gov
+objectclass: Group
+objectclass: top
+groupType: 2147483650
+cn: Media
+member: cn=Joan Callamezzo,ou=people,dc=pawnee,dc=gov
+member: cn=Perd Hapley,ou=people,dc=pawnee,dc=gov

@@ -1,0 +1,11 @@
+dn: cn=Leslie Knope,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Leslie Knope
+sn: Knope
+givenName: Leslie
+mail: lknope@pawnee.gov
+ou: Parks & Recreation
+uid: lknope

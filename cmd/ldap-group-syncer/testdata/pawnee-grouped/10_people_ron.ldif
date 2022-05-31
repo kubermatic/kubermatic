@@ -1,0 +1,11 @@
+dn: cn=Ron Swanson,ou=people,dc=pawnee,dc=gov
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Ron Swanson
+sn: Swanson
+givenName: Ron
+mail: rswanson@pawnee.gov
+ou: Parks & Recreation
+uid: rswanson
