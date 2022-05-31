@@ -29386,6 +29386,10 @@
         "selectedTheme": {
           "type": "string",
           "x-go-name": "SelectedTheme"
+        },
+        "useClustersView": {
+          "type": "boolean",
+          "x-go-name": "UseClustersView"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"

@@ -37,6 +37,9 @@ type UserSettings struct {
 
 	// selected theme
 	SelectedTheme string `json:"selectedTheme,omitempty"`
+
+	// use clusters view
+	UseClustersView bool `json:"useClustersView,omitempty"`
 }
 
 // Validate validates this user settings
