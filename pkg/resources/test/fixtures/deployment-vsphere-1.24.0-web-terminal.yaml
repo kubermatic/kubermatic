@@ -30,6 +30,8 @@ spec:
         env:
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
+        - name: PS1
+          value: '\$ '
         image: quay.io/kubermatic/util:2.1.0
         name: web-terminal
         resources:
