@@ -120,6 +120,7 @@ github.com/Azure/azure-sdk-for-go v46.3.0+incompatible/go.mod h1:9XXNKU+eRnpl9mo
 github.com/Azure/azure-sdk-for-go v49.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v56.3.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v59.3.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
+github.com/Azure/azure-sdk-for-go v62.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v64.1.0+incompatible h1:FpsZmWR9FfEr9hP6K9S7RP0EkSFgGd6P1F2scHtbhnU=
 github.com/Azure/azure-sdk-for-go v64.1.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-service-bus-go v0.9.1/go.mod h1:yzBx6/BUGfjfeqbRZny9AQIbIe3AcV9WZbAdpkoXOa0=
@@ -1703,8 +1704,8 @@ github.com/kubermatic/machine-controller v1.26.0/go.mod h1:dcJ+GdDSCxCwM0poxwOK8
 github.com/kubermatic/machine-controller v1.36.1/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
 github.com/kubermatic/machine-controller v1.40.1/go.mod h1:5LVcN4tCybGg+55hIHcVzCjNsBJy2PlnXG0xIzKmXGY=
 github.com/kubermatic/machine-controller v1.42.2/go.mod h1:vr6i5XWfd5FIq2yodXcgdlKvOhMnM5uzn2XEZ2wcoFM=
-github.com/kubermatic/machine-controller v1.43.0/go.mod h1:Ct66z/Ae/ctS0VnbA2N4eZp+MmyTKB5h6nlwNgKtdfc=
 github.com/kubermatic/machine-controller v1.44.0/go.mod h1:Ct66z/Ae/ctS0VnbA2N4eZp+MmyTKB5h6nlwNgKtdfc=
+github.com/kubermatic/machine-controller v1.47.0/go.mod h1:tkugKMblR+F54Qbp0jBWx4g8IwkNBCCwZQem7ubYiOc=
 github.com/kubermatic/machine-controller v1.50.0 h1:E1gMgncacu5kgp6GKGqPiUWBLhcg91FMNHNPqMPmEN8=
 github.com/kubermatic/machine-controller v1.50.0/go.mod h1:gKFisXS7akBxJZwYSf0scEds62iJ38VUtKV3c8ZMy0M=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
@@ -2671,8 +2672,9 @@ go.opentelemetry.io/otel/sdk/metric v0.20.0/go.mod h1:knxiS8Xd4E/N+ZqKmUPf3gTTZ4
 go.opentelemetry.io/otel/trace v0.20.0 h1:1DL6EXUdcg95gukhuRRvLDO/4X5THh/5dIV52lqtnbw=
 go.opentelemetry.io/otel/trace v0.20.0/go.mod h1:6GjCW8zgDjwGHGa6GkyeB8+/5vjT16gUEi0Nf1iBdgw=
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
-go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 h1:+FNtrFTmVw0YZGpBGX56XDee331t6JAXeK2bcyhLOOc=
 go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5/go.mod h1:nmDLcffg48OtT/PSW0Hg7FvpRQsQh5OSqIylirxKC7o=
+go.starlark.net v0.0.0-20220223235035-243c74974e97 h1:ghIB+2LQvihWROIGpcAVPq/ce5O2uMQersgxXiOeTS4=
+go.starlark.net v0.0.0-20220223235035-243c74974e97/go.mod h1:t3mmBBPzAVvK0L0n1drDmrQsJ8FoIx4INCqVMTr/Zo0=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.5.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=
@@ -3711,8 +3713,8 @@ honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt
 honnef.co/go/tools v0.0.1-2020.1.3/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 honnef.co/go/tools v0.1.4/go.mod h1:NgwopIslSNH47DimFoV78dnkksY2EFtX0ajyb3K/las=
-k8c.io/kubeone v1.4.3 h1:NBIFLjzF/7A1M4Xq1fM5/d9EB8AfyBLvOUL+NR1dmFI=
-k8c.io/kubeone v1.4.3/go.mod h1:LUHSwXFEkUenz0KVbHyGg2n6540MtjynL6XRCRzZgVM=
+k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a h1:cfYnH3dMnvm1Ke5DC82jA8C/wlTUglw3tcb4g002Ms0=
+k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a/go.mod h1:bI2YCskxM7yCbN2XJuKjuPAKWJr2Y7KKHSLjpi8J+NU=
 k8c.io/kubermatic/v2 v2.16.2/go.mod h1:NdW+2mq4ynRtfZs9yPnvcnFWQpzmM7ngntW6GeuQicU=
 k8c.io/operating-system-manager v0.1.0/go.mod h1:ULyZQO1irKjsQTNjIdrHld7SZ+joHjmPnOEs5Db8G8M=
 k8c.io/operating-system-manager v0.3.0/go.mod h1:ME5GOCNUrHG+57igEKP1JCJKVHynaLfodT8bRiYH3MY=

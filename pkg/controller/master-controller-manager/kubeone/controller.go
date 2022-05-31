@@ -30,6 +30,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
+	"k8c.io/kubeone/pkg/fail"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
@@ -120,7 +121,6 @@ func Add(
 	if err != nil {
 		return err
 	}
-
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, withEventFilter()); err != nil {
 		return fmt.Errorf("failed to create externalcluster watcher: %w", err)
 	}
@@ -580,17 +580,17 @@ func (r *reconciler) checkPodStatus(ctx context.Context,
 func determineExitCode(exitCode int32) kubermaticv1.ExternalClusterPhase {
 	var phaseError kubermaticv1.ExternalClusterPhase
 	switch {
-	case exitCode == resources.RuntimeErrorExitCode:
+	case exitCode == fail.RuntimeErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseRuntimeError
-	case exitCode == resources.EtcdErrorExitCode:
+	case exitCode == fail.EtcdErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseEtcdError
-	case exitCode == resources.KubeClientErrorExitCode:
+	case exitCode == fail.KubeClientErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseKubeClientError
-	case exitCode == resources.SSHErrorExitCode:
+	case exitCode == fail.SSHErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseSSHError
-	case exitCode == resources.ConnectionErrorExitCode:
+	case exitCode == fail.ConnectionErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConnectionError
-	case exitCode == resources.ConfigErrorExitCode:
+	case exitCode == fail.ConfigErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConfigError
 	default:
 		phaseError = kubermaticv1.ExternalClusterPhaseError
