@@ -686,7 +686,7 @@ type APIServerSettings struct {
 }
 
 type KonnectvityProxySettings struct {
-	DeploymentSettings `json:",inline"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControllerSettings struct {
