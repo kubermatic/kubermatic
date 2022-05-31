@@ -106,10 +106,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				},
 			)
 
-			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser: pointer.Int64(1001),
-			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
@@ -134,6 +130,9 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 							ReadOnly:  true,
 						},
 					),
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser: pointer.Int64(1001),
+					},
 				},
 			}
 
