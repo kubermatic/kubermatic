@@ -26,10 +26,6 @@ export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
 start_docker_daemon_ci
 
-# Prevent mtu-related timeouts
-echodate "Setting iptables rule to clamp mss to path mtu"
-iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
 # Make debugging a bit better
 echodate "Configuring bash"
 cat << EOF >> ~/.bashrc
@@ -167,10 +163,11 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
 
   echodate "Setting up iptables rules for to make nodeports available"
   KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
+  KIND_CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $KIND_CLUSTER_NAME-control-plane)
 
-  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
+  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination $KIND_CONTAINER_IP
   # By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
-  iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
+  iptables -t filter -I DOCKER-USER -d $KIND_CONTAINER_IP/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
   # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 
   echodate "Successfully set up iptables rules for nodeports"
