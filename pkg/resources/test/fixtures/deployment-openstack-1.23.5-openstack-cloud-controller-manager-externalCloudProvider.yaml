@@ -46,6 +46,8 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+        securityContext:
+          runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig
@@ -111,8 +113,6 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
-      securityContext:
-        runAsUser: 1001
       volumes:
       - name: cloud-controller-manager-kubeconfig
         secret:
