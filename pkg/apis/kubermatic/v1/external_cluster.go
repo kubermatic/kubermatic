@@ -119,6 +119,30 @@ const (
 	// ExternalClusterPhaseError status indicates the cluster is unusable. Details can be found in the
 	// `statusMessage` field.
 	ExternalClusterPhaseError ExternalClusterPhase = "Error"
+
+	// ExternalClusterPhaseRuntimeError status indicates cluster runtime error. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseRuntimeError ExternalClusterPhase = "RuntimeError"
+
+	// ExternalClusterPhaseEtcdError status indicates cluster etcd error. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseEtcdError ExternalClusterPhase = "EtcdError"
+
+	// ExternalClusterPhaseKubeClientError status indicates cluster kubeclient. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseKubeClientError ExternalClusterPhase = "KubeClientError"
+
+	// KubeOneExternalClusterPhaseSSHError status indicates cluster ssh error. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseSSHError ExternalClusterPhase = "SSHError"
+
+	// ExternalClusterPhaseConnectionError status indicates cluster connection error. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseConnectionError ExternalClusterPhase = "ConnectionError"
+
+	// ExternalClusterPhaseConfigError status indicates cluster config error. Details can be found in the
+	// `statusMessage` field.
+	ExternalClusterPhaseConfigError ExternalClusterPhase = "ConfigError"
 )
 
 type ExternalClusterGKECloudSpec struct {

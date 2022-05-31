@@ -555,6 +555,15 @@ const (
 )
 
 const (
+	// KubeOne errorcodes referred from
+	// https://github.com/kubermatic/kubeone/blob/a01b6a3e7ae82f239163b400140084e78e490c54/pkg/fail/exitcodes.go#L21-L29
+	DefaultExitCode         int32 = 1
+	RuntimeErrorExitCode    int32 = 10
+	EtcdErrorExitCode       int32 = 11
+	KubeClientErrorExitCode int32 = 12
+	SSHErrorExitCode        int32 = 13
+	ConnectionErrorExitCode int32 = 14
+	ConfigErrorExitCode     int32 = 15
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
 	KubeOneNamespacePrefix = "kubeone-"
 	// KubeOne secret names.

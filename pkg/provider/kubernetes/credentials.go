@@ -791,7 +791,7 @@ func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneClou
 
 	serviceAccount, err := base64.StdEncoding.DecodeString(encodedServiceAccount)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode gcp credential: %w", err)
 	}
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
