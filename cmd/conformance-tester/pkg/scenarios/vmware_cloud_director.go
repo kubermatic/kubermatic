@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+
 	"k8s.io/utils/pointer"
 )
 
@@ -117,12 +118,13 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						VmwareCloudDirector: &apimodels.VMwareCloudDirectorNodeSpec{
-							Template:   fmt.Sprintf("machine-controller-%s", osName),
-							Catalog:    vmwareCloudDirectorCatalog,
-							CPUs:       vmwareCloudDirectorCPUs,
-							CPUCores:   vmwareCloudDirectorCPUCores,
-							MemoryMB:   vmwareCloudDirectoMemoryMB,
-							DiskSizeGB: vmwareCloudDirectoDiskSize,
+							Template:         fmt.Sprintf("machine-controller-%s", osName),
+							Catalog:          vmwareCloudDirectorCatalog,
+							CPUs:             vmwareCloudDirectorCPUs,
+							CPUCores:         vmwareCloudDirectorCPUCores,
+							MemoryMB:         vmwareCloudDirectoMemoryMB,
+							DiskSizeGB:       vmwareCloudDirectoDiskSize,
+							IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -144,12 +146,13 @@ func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num 
 	template := fmt.Sprintf("machine-controller-%s", os)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVcloudDirector, vcdtypes.RawConfig{
-		Template:   providerconfig.ConfigVarString{Value: template},
-		Catalog:    providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
-		CPUs:       vmwareCloudDirectorCPUs,
-		MemoryMB:   vmwareCloudDirectoMemoryMB,
-		CPUCores:   vmwareCloudDirectorCPUCores,
-		DiskSizeGB: pointer.Int64(vmwareCloudDirectoDiskSize),
+		Template:         providerconfig.ConfigVarString{Value: template},
+		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
+		CPUs:             vmwareCloudDirectorCPUs,
+		MemoryMB:         vmwareCloudDirectoMemoryMB,
+		CPUCores:         vmwareCloudDirectorCPUCores,
+		DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
+		IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
 	})
 
 	if err != nil {
