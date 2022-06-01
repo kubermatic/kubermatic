@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+
 	"k8c.io/kubermatic/v2/cmd/ldap-group-syncer/pkg/ldap"
 	"k8c.io/kubermatic/v2/cmd/ldap-group-syncer/pkg/types"
 )

@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"k8c.io/kubermatic/v2/cmd/ldap-group-syncer/pkg/types"
+
 	"k8s.io/utils/diff"
 )
 

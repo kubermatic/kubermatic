@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"log"
 
-	"k8c.io/kubermatic/v2/cmd/ldap-group-syncer/pkg/types"
-
 	ldap3 "github.com/go-ldap/ldap/v3"
+
+	"k8c.io/kubermatic/v2/cmd/ldap-group-syncer/pkg/types"
 )
 
 type Client struct {
