@@ -72,25 +72,19 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := ensureClusterRBACRoleForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
 	}
-
-	// TODO change this
 	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), groupRoles); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %w", err)
 	}
-
-	// TODO change this
-	if err := c.ensureClusterRBACRoleBindingForResources(ctx, project.Name); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForResources(ctx, project.Name, groupRoles); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %w", err)
 	}
 	if err := c.ensureRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %w", err)
 	}
-
-	// TODO change this
-	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
+	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name, groupRoles); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}
 	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectActive); err != nil {
@@ -145,7 +139,7 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 	return nil
 }
 
-func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context.Context, projectName string) error {
+func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context.Context, projectName string, groupRoles []GroupRole) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
@@ -157,10 +151,11 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 			return err
 		}
 
-		for _, groupPrefix := range AllGroupsPrefixes {
-			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
+		for _, groupRole := range groupRoles {
+			groupName := GenerateActualGroupNameFor(projectName, groupRole.Group)
+			roleName := GenerateActualRoleNameFor(groupRole.Role, projectName)
 
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, roleName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -172,6 +167,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 						ctx,
 						seedClusterRESTClient,
 						groupName,
+						roleName,
 						rmapping.Resource.Resource)
 					if err != nil {
 						return err
@@ -182,6 +178,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 					ctx,
 					c.client,
 					groupName,
+					roleName,
 					rmapping.Resource.Resource)
 				if err != nil {
 					return err
@@ -221,8 +218,8 @@ func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogge
 	return c.Update(ctx, existingClusterRole)
 }
 
-func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
-	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
+func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, roleName, resource string) error {
+	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName, roleName)
 
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
 	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
@@ -329,7 +326,7 @@ func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ct
 	return c.Update(ctx, existingRole)
 }
 
-func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Context, projectName string) error {
+func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Context, projectName string, groupRules []GroupRole) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) == 0 {
 			continue
@@ -341,10 +338,11 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 			return err
 		}
 
-		for _, groupPrefix := range AllGroupsPrefixes {
-			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
+		for _, groupRule := range groupRules {
+			groupName := GenerateActualGroupNameFor(projectName, groupRule.Group)
+			roleName := GenerateActualRoleNameFor(groupRule.Role, projectName)
 
-			if skip, err := shouldSkipRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(c.log, roleName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -356,6 +354,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 						ctx,
 						seedClusterRESTClient,
 						groupName,
+						roleName,
 						rmapping.Resource.Resource,
 						projectResource.namespace)
 					if err != nil {
@@ -367,6 +366,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 					ctx,
 					c.client,
 					groupName,
+					roleName,
 					rmapping.Resource.Resource,
 					projectResource.namespace)
 				if err != nil {
@@ -378,8 +378,8 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 	return nil
 }
 
-func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
-	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
+func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, roleName, resource, namespace string) error {
+	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, roleName, namespace)
 
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: generatedRoleBinding.Namespace}
@@ -500,7 +500,8 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 }
 
 func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
-	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
+	// TODO make this also take the role name
+	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName, groupName)
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
 	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
 	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
@@ -528,7 +529,8 @@ func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.C
 }
 
 func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
-	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
+	// TODO handle group delete
+	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, groupName, namespace)
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: namespace}
 	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {

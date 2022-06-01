@@ -544,7 +544,11 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				projectResources: test.projectResourcesToSync,
 				log:              zap.NewNop().Sugar(),
 			}
-			err := target.ensureClusterRBACRoleBindingForResources(ctx, test.projectToSync)
+
+			groupRoles, err := getGroupRolesList(context.Background(), fakeMasterClient, test.projectToSync)
+			assert.NoError(t, err)
+
+			err = target.ensureClusterRBACRoleBindingForResources(ctx, test.projectToSync, groupRoles)
 			assert.NoError(t, err)
 
 			// validate master cluster
@@ -1863,7 +1867,10 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				projectResources: test.projectResourcesToSync,
 				log:              zap.NewNop().Sugar(),
 			}
-			err := target.ensureRBACRoleBindingForResources(ctx, test.projectToSync)
+			groupRoles, err := getGroupRolesList(context.Background(), fakeMasterClient, test.projectToSync)
+			assert.NoError(t, err)
+
+			err = target.ensureRBACRoleBindingForResources(ctx, test.projectToSync, groupRoles)
 			assert.Nil(t, err)
 
 			// validate master cluster
