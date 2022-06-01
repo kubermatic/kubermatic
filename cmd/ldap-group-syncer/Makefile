@@ -47,4 +47,4 @@ docker-env:
 		-e "LDAP_BINDDN=$${LDAP_BINDDN}" \
 		-e "LDAP_SECRET=$${LDAP_SECRET}" \
 		-v $(realpath testdata/pawnee-grouped):/bootstrap \
-		quay.io/kubermatic-labs/openldap-test:latest
+		quay.io/kubermatic-labs/openldap-test:latest || true

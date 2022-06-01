@@ -78,3 +78,6 @@ grep --files-with-matches --recursive --extended-regexp '//go:build.+integration
   xargs dirname |
   sort -u |
   xargs -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
+
+echodate "Running LDAP integration tests..."
+make -C cmd/ldap-group-syncer integration-tests
