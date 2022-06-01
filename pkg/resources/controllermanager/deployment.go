@@ -273,7 +273,13 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		if cloudProviderName == "azure" && version.GreaterThan(semverlib.MustParse("1.15.0")) {
+
+		constraint115, err := semverlib.NewConstraint(">= 1.15.0")
+		if err != nil {
+			return nil, err
+		}
+
+		if cloudProviderName == "azure" && constraint115.Check(version) {
 			// Required so multiple clusters using the same resource group can allocate public IPs.
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
 			flags = append(flags, "--cluster-name", cluster.Name)
