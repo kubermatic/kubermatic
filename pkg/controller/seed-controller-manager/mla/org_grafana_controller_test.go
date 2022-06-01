@@ -31,7 +31,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -394,11 +394,16 @@ func jsonEqual(expectedBody, body []byte) bool {
 func yamlEqual(expectedBody, body []byte) bool {
 	expectedBodyMap := map[string]interface{}{}
 	bodyMap := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict(expectedBody, &expectedBodyMap); err != nil {
+
+	decoder := yaml.NewDecoder(bytes.NewReader(expectedBody))
+	if err := decoder.Decode(&expectedBodyMap); err != nil {
 		return false
 	}
-	if err := yaml.UnmarshalStrict(body, &bodyMap); err != nil {
+
+	decoder = yaml.NewDecoder(bytes.NewReader(body))
+	if err := decoder.Decode(&bodyMap); err != nil {
 		return false
 	}
+
 	return reflect.DeepEqual(expectedBodyMap, bodyMap)
 }

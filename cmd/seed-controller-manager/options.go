@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -40,7 +41,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/yaml"
 )
 
 type controllerRunOptions struct {
@@ -219,13 +219,17 @@ type controllerContext struct {
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
-	content, err := os.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
+	defer f.Close()
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+	decoder := yaml.NewDecoder(f)
+	decoder.KnownFields(true)
+
+	if err := decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
