@@ -32,7 +32,7 @@ metadata:
   labels:
     app: snapshot-validation
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: snapshot-validation
