@@ -166,12 +166,6 @@ func runGinkgoRunWithRetries(
 				msg = fmt.Sprintf("%s. Retrying...", msg)
 			}
 			log.Info(msg)
-			if opts.PrintGinkoLogs {
-				if err := util.PrintFileUnbuffered(ginkgoRes.Logfile); err != nil {
-					log.Infof("Error printing ginkgo logfile: %v", err)
-				}
-				log.Info("Successfully printed logfile")
-			}
 			continue
 		}
 
@@ -251,7 +245,7 @@ func getGinkgoRuns(
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
 	var ginkgoRuns []*util.GinkgoRun
 	for _, run := range runs {
-		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
+		reportsDir := path.Join(opts.ReportsRoot, scenario.Name(), run.name)
 		env := []string{
 			// `kubectl diff` needs to find /usr/bin/diff
 			fmt.Sprintf("PATH=%s", os.Getenv("PATH")),

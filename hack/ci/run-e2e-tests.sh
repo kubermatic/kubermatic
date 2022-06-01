@@ -37,6 +37,10 @@ echodate "Creating kind cluster"
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
 
+# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
