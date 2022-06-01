@@ -25,11 +25,19 @@ build:
 docker: build
 	docker build -t quay.io/kubermatic/ldap-group-syncer:latest .
 
+.PHONY: integration-tests
+integration-tests: docker-env
+	sleep 10
+	go test -tags ldaptest -v ./...
+	docker stop openldap-test
+
 .PHONY: docker-env
 docker-env:
 	. testdata/pawnee-grouped/env.sh; \
 	docker run \
 		--rm \
+		--detach \
+		--name openldap-test \
 		-p 10389:10389 \
 		-p 10636:10636 \
 		-e "DATA_DIR=/bootstrap" \
