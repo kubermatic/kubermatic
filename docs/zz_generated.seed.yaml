@@ -271,6 +271,9 @@ spec:
       resources: null
       storageClass: ""
       tolerations: null
+    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+    konnectivityProxy:
+      resources: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
     # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
     # strategy is configured.
