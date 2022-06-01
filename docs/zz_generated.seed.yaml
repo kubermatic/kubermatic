@@ -277,6 +277,8 @@ spec:
       resources: null
       storageClass: ""
       tolerations: null
+    konnectivityProxy:
+      resources: null
     prometheus:
       resources: null
     scheduler:

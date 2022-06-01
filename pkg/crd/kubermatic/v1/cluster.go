@@ -456,11 +456,12 @@ type MLASettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         APIServerSettings       `json:"apiserver"`
-	ControllerManager ControllerSettings      `json:"controllerManager"`
-	Scheduler         ControllerSettings      `json:"scheduler"`
-	Etcd              EtcdStatefulSetSettings `json:"etcd"`
-	Prometheus        StatefulSetSettings     `json:"prometheus"`
+	Apiserver         APIServerSettings        `json:"apiserver"`
+	ControllerManager ControllerSettings       `json:"controllerManager"`
+	Scheduler         ControllerSettings       `json:"scheduler"`
+	Etcd              EtcdStatefulSetSettings  `json:"etcd"`
+	Prometheus        StatefulSetSettings      `json:"prometheus"`
+	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy"`
 }
 
 type APIServerSettings struct {
@@ -468,6 +469,10 @@ type APIServerSettings struct {
 
 	EndpointReconcilingDisabled *bool  `json:"endpointReconcilingDisabled,omitempty"`
 	NodePortRange               string `json:"nodePortRange,omitempty"`
+}
+
+type KonnectvityProxySettings struct {
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControllerSettings struct {

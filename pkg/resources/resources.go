@@ -1255,6 +1255,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
+	if componentSettings.KonnectivityProxy.Resources != nil {
+		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
+	}
 	if componentSettings.ControllerManager.Resources != nil {
 		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()
 	}
