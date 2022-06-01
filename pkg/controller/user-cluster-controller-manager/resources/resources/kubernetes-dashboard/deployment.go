@@ -49,7 +49,7 @@ var (
 const (
 	scraperName      = resources.MetricsScraperDeploymentName
 	scraperImageName = "kubernetesui/metrics-scraper"
-	scraperTag       = "v1.0.7"
+	scraperTag       = "v1.0.8"
 )
 
 // DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
