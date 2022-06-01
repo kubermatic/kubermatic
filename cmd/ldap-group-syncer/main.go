@@ -39,9 +39,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := runSync(config); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func runSync(config *types.Config) error {
 	l, err := ldap.NewClient(config.Address)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer l.Close()
 
@@ -54,13 +60,15 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	encoder := yaml.NewEncoder(os.Stdout)
 	encoder.SetIndent(2)
 
 	if err := encoder.Encode(org); err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }

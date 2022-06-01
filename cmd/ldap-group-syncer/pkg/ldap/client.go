@@ -26,7 +26,7 @@ import (
 )
 
 type Client struct {
-	ldap3.Conn
+	*ldap3.Conn
 }
 
 // NewClient returns a new LDAP client.
@@ -37,45 +37,45 @@ func NewClient(addr string) (*Client, error) {
 	}
 
 	return &Client{
-		Conn: *conn,
+		Conn: conn,
 	}, nil
 }
 
 // authenticate demonstrate a BIND operation using behera password auth.
-func authenticate() error {
-	// controls := []ldap.Control{}
-	// controls = append(controls, ldap.NewControlBeheraPasswordPolicy())
-	// bindRequest := ldap.NewSimpleBindRequest("cn=admin,dc=planetexpress,dc=com", "GoodNewsEveryone", controls)
+// func authenticate() error {
+// 	controls := []ldap.Control{}
+// 	controls = append(controls, ldap.NewControlBeheraPasswordPolicy())
+// 	bindRequest := ldap.NewSimpleBindRequest("cn=admin,dc=planetexpress,dc=com", "GoodNewsEveryone", controls)
 
-	// r, err := l.SimpleBind(bindRequest)
-	// ppolicyControl := ldap.FindControl(r.Controls, ldap.ControlTypeBeheraPasswordPolicy)
+// 	r, err := l.SimpleBind(bindRequest)
+// 	ppolicyControl := ldap.FindControl(r.Controls, ldap.ControlTypeBeheraPasswordPolicy)
 
-	// var ppolicy *ldap.ControlBeheraPasswordPolicy
-	// if ppolicyControl != nil {
-	// 	ppolicy = ppolicyControl.(*ldap.ControlBeheraPasswordPolicy)
-	// } else {
-	// 	log.Printf("ppolicyControl response not available.\n")
-	// }
-	// if err != nil {
-	// 	errStr := "ERROR: Cannot bind: " + err.Error()
-	// 	if ppolicy != nil && ppolicy.Error >= 0 {
-	// 		errStr += ":" + ppolicy.ErrorString
-	// 	}
-	// 	log.Print(errStr)
-	// } else {
-	// 	logStr := "Login Ok"
-	// 	if ppolicy != nil {
-	// 		if ppolicy.Expire >= 0 {
-	// 			logStr += fmt.Sprintf(". Password expires in %d seconds\n", ppolicy.Expire)
-	// 		} else if ppolicy.Grace >= 0 {
-	// 			logStr += fmt.Sprintf(". Password expired, %d grace logins remain\n", ppolicy.Grace)
-	// 		}
-	// 	}
-	// 	log.Print(logStr)
-	// }
+// 	var ppolicy *ldap.ControlBeheraPasswordPolicy
+// 	if ppolicyControl != nil {
+// 		ppolicy = ppolicyControl.(*ldap.ControlBeheraPasswordPolicy)
+// 	} else {
+// 		log.Printf("ppolicyControl response not available.\n")
+// 	}
+// 	if err != nil {
+// 		errStr := "ERROR: Cannot bind: " + err.Error()
+// 		if ppolicy != nil && ppolicy.Error >= 0 {
+// 			errStr += ":" + ppolicy.ErrorString
+// 		}
+// 		log.Print(errStr)
+// 	} else {
+// 		logStr := "Login Ok"
+// 		if ppolicy != nil {
+// 			if ppolicy.Expire >= 0 {
+// 				logStr += fmt.Sprintf(". Password expires in %d seconds\n", ppolicy.Expire)
+// 			} else if ppolicy.Grace >= 0 {
+// 				logStr += fmt.Sprintf(". Password expired, %d grace logins remain\n", ppolicy.Grace)
+// 			}
+// 		}
+// 		log.Print(logStr)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (c *Client) FetchGroupedData(config *types.GroupedConfig) (*types.Organization, error) {
 	groupAttributes := []string{
