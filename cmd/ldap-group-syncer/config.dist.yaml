@@ -72,5 +72,5 @@ mapping:
     memberAttribute: member
 
     # the query to use to find all relevant groups (for each group, the list
-    # of members is then fetched indivdually)
+    # of members is then fetched individually)
     query: '(objectClass=Group)'
