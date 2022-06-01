@@ -1444,7 +1444,7 @@ spec:
                     type: object
                   konnectivityProxy:
                     description: KonnectivityProxy configures resources limits/requests
-                      for konnectivity-server sidecar
+                      for konnectivity-server sidecar.
                     properties:
                       resources:
                         description: ResourceRequirements describes the compute resource

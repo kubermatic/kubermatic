@@ -271,7 +271,7 @@ spec:
       resources: null
       storageClass: ""
       tolerations: null
-    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar
+    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
     konnectivityProxy:
       resources: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
