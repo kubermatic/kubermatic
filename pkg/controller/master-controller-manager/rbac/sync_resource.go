@@ -83,11 +83,16 @@ func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Conte
 
 	log := c.log.With("project", projectName)
 
+	groupRoles, err := getGroupRolesList(ctx, c.client, projectName)
+	if err != nil {
+		return fmt.Errorf("failed to get group roles: %w", err)
+	}
+
 	if err := ensureClusterRBACRoleForNamedResource(ctx, log, c.client, projectName, resourceName, gvk.Kind, metaObject); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRole: %w", err)
 	}
 
-	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, log, c.client, projectName, resourceName, gvk.Kind, metaObject); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, log, c.client, projectName, resourceName, gvk.Kind, metaObject, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding: %w", err)
 	}
 
@@ -283,21 +288,22 @@ func ensureClusterRBACRoleForNamedResource(ctx context.Context, log *zap.Sugared
 	return nil
 }
 
-func ensureClusterRBACRoleBindingForNamedResource(ctx context.Context, log *zap.SugaredLogger, cli ctrlruntimeclient.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
-		skip, _, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
+func ensureClusterRBACRoleBindingForNamedResource(ctx context.Context, log *zap.SugaredLogger, cli ctrlruntimeclient.Client, projectName string, objectResource string, objectKind string, object metav1.Object, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
+		skip, _, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupRole.Role, object)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created", "group", groupPrefix, "resource", objectResource)
+			log.Debugw("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created", "role", groupRole.Role, "resource", objectResource)
 			continue
 		}
 
 		generatedRoleBinding := generateClusterRBACRoleBindingNamedResource(
 			objectKind,
 			object.GetName(),
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       objectKind,

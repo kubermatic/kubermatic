@@ -61,24 +61,35 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		}
 	}
 
+	groupRoles, err := getGroupRolesList(ctx, c.client, project.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get group roles: %w", err)
+	}
+
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %w", err)
 	}
 	if err := ensureClusterRBACRoleForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
 	}
-	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+
+	// TODO change this
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), groupRoles); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %w", err)
 	}
+
+	// TODO change this
 	if err := c.ensureClusterRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %w", err)
 	}
 	if err := c.ensureRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %w", err)
 	}
+
+	// TODO change this
 	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}

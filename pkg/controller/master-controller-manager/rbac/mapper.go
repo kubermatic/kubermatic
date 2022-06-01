@@ -71,6 +71,11 @@ func GenerateActualGroupNameFor(projectName, groupName string) string {
 	return fmt.Sprintf("%s-%s", groupName, projectName)
 }
 
+// GenerateActualRoleNameFor generates a role name for the given project and role prefix.
+func GenerateActualRoleNameFor(roleName, projectName string) string {
+	return fmt.Sprintf("%s-%s", roleName, projectName)
+}
+
 // ExtractGroupPrefix extracts only group prefix from the given group name.
 func ExtractGroupPrefix(groupName string) string {
 	ret := strings.Split(groupName, "-")
@@ -142,7 +147,7 @@ func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, polic
 
 // generateClusterRBACRoleBindingNamedResource generates ClusterRoleBiding for the given group
 // that will be bound to the corresponding ClusterRole.
-func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
+func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName, roleName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
@@ -158,7 +163,7 @@ func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName s
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
-			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, roleName),
 		},
 	}
 	return binding

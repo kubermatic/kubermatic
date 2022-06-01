@@ -33,10 +33,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func init() {
+	// ignore error, tests will fail if it doesn't work
+	kubermaticv1.AddToScheme(scheme.Scheme)
+}
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	tests := []struct {
@@ -1731,10 +1737,14 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindings {
 				objs = append(objs, existingClusterRoleBinding)
 			}
+
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
+			groupRoles, err := getGroupRolesList(context.Background(), fakeMasterClusterClient, test.projectToSync.Name)
+			assert.NoError(t, err)
+
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err = ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), groupRoles)
 			assert.NoError(t, err)
 
 			{
