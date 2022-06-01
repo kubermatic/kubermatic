@@ -51,7 +51,6 @@ type PresetSpec struct {
 	Hetzner             *Hetzner             `json:"hetzner,omitempty"`
 	Azure               *Azure               `json:"azure,omitempty"`
 	VSphere             *VSphere             `json:"vsphere,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
 	AWS                 *AWS                 `json:"aws,omitempty"`
 	Openstack           *Openstack           `json:"openstack,omitempty"`
 	Packet              *Packet              `json:"packet,omitempty"`
@@ -60,6 +59,7 @@ type PresetSpec struct {
 	Alibaba             *Alibaba             `json:"alibaba,omitempty"`
 	Anexia              *Anexia              `json:"anexia,omitempty"`
 	Nutanix             *Nutanix             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
 	GKE                 *GKE                 `json:"gke,omitempty"`
 	EKS                 *EKS                 `json:"eks,omitempty"`
 	AKS                 *AKS                 `json:"aks,omitempty"`

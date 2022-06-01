@@ -4613,11 +4613,6 @@ func (in *PresetSpec) DeepCopyInto(out *PresetSpec) {
 		*out = new(VSphere)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.VMwareCloudDirector != nil {
-		in, out := &in.VMwareCloudDirector, &out.VMwareCloudDirector
-		*out = new(VMwareCloudDirector)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.AWS != nil {
 		in, out := &in.AWS, &out.AWS
 		*out = new(AWS)
@@ -4656,6 +4651,11 @@ func (in *PresetSpec) DeepCopyInto(out *PresetSpec) {
 	if in.Nutanix != nil {
 		in, out := &in.Nutanix, &out.Nutanix
 		*out = new(Nutanix)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.VMwareCloudDirector != nil {
+		in, out := &in.VMwareCloudDirector, &out.VMwareCloudDirector
+		*out = new(VMwareCloudDirector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.GKE != nil {
