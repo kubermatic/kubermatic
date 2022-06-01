@@ -102,6 +102,11 @@ func NewTemplateData(
 		ipvs = *cluster.Spec.ClusterNetwork.IPVS
 	}
 
+	var kubeVirtStorageClasses []string
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -145,7 +150,8 @@ func NewTemplateData(
 				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
-			CSIMigration: csiMigration,
+			CSIMigration:                csiMigration,
+			KubeVirtInfraStorageClasses: kubeVirtStorageClasses,
 		},
 	}, nil
 }
@@ -201,6 +207,9 @@ type ClusterData struct {
 	MLA MLASettings
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
+	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
+	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
+	KubeVirtInfraStorageClasses []string
 }
 
 type ClusterNetwork struct {

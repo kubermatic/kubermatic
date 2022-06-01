@@ -143,7 +143,7 @@ func main() {
 	// setup Cluster webhooks
 
 	// validation webhook can already use ctrl-runtime boilerplate
-	clusterValidator := clustervalidation.NewValidator(mgr.GetClient(), seedGetter, options.featureGates, caPool)
+	clusterValidator := clustervalidation.NewValidator(mgr.GetClient(), seedGetter, configGetter, options.featureGates, caPool)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.Cluster{}).WithValidator(clusterValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
 	}

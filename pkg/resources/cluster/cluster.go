@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/utils/pointer"
 )
@@ -86,7 +87,9 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		return nil, err
 	}
 
-	if errs := validation.ValidateNewClusterSpec(ctx, spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
+	versionManager := version.NewFromConfiguration(config)
+
+	if errs := validation.ValidateNewClusterSpec(ctx, spec, dc, cloudProvider, versionManager, features, nil).ToAggregate(); errs != nil {
 		return spec, errs
 	}
 

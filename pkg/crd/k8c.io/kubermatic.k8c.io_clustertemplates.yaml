@@ -661,9 +661,20 @@ spec:
                         type: object
                       csiKubeconfig:
                         type: string
+                      infraStorageClasses:
+                        description: InfraStorageClasses is a list of storage classes
+                          from KubeVirt infra cluster that are used for initialization
+                          of user cluster storage classes by the CSI driver kubevirt
+                          (hot pluggable disks)
+                        items:
+                          type: string
+                        type: array
                       kubeconfig:
                         type: string
                       preAllocatedDataVolumes:
+                        description: PreAllocatedDataVolumes holds list of preallocated
+                          DataVolumes which can be used as reference for DataVolume
+                          cloning.
                         items:
                           properties:
                             name:
@@ -1510,6 +1521,39 @@ spec:
                           type: object
                         type: array
                     type: object
+                  konnectivityProxy:
+                    description: KonnectivityProxy configures resources limits/requests
+                      for konnectivity-server sidecar.
+                    properties:
+                      resources:
+                        description: ResourceRequirements describes the compute resource
+                          requirements.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                    type: object
                   nodePortProxyEnvoy:
                     description: NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy
                       that is deployed if the `LoadBalancer` expose strategy is used.
@@ -1683,6 +1727,7 @@ spec:
                 - apiserver
                 - controllerManager
                 - etcd
+                - konnectivityProxy
                 - nodePortProxyEnvoy
                 - prometheus
                 - scheduler

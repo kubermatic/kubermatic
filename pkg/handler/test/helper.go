@@ -254,6 +254,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 					Versions: []semver.Semver{
 						*semver.NewSemverOrDie("8.8.8"),
 						*semver.NewSemverOrDie("9.9.9"),
+						*semver.NewSemverOrDie("9.9.10"),
+						*semver.NewSemverOrDie("9.11.3"),
 					},
 				},
 			},

@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.24
 	github.com/aws/aws-sdk-go-v2/service/eks v1.20.7
 	github.com/cert-manager/cert-manager v1.8.0
-	github.com/cilium/cilium v1.11.4
+	github.com/cilium/cilium v1.11.5
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220421150455-af8435a41c4e
