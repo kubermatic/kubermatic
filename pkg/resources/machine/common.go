@@ -33,6 +33,7 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -218,6 +219,47 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 			vsphereTag.CategoryID = c.Spec.Cloud.VSphere.TagCategoryID
 		}
 		config.Tags = append(config.Tags, vsphereTag)
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	catalogName := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.Catalog, dc.Spec.VMwareCloudDirector.DefaultCatalog)
+	storageProfile := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.StorageProfile, dc.Spec.VMwareCloudDirector.DefaultStorageProfile)
+
+	config := vcd.RawConfig{
+		VApp:             providerconfig.ConfigVarString{Value: c.Spec.Cloud.VMwareCloudDirector.VApp},
+		Template:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VMwareCloudDirector.Template},
+		Catalog:          providerconfig.ConfigVarString{Value: catalogName},
+		Network:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.VMwareCloudDirector.OVDCNetwork},
+		CPUs:             int64(nodeSpec.Cloud.VMwareCloudDirector.CPUs),
+		CPUCores:         int64(nodeSpec.Cloud.VMwareCloudDirector.CPUCores),
+		MemoryMB:         int64(nodeSpec.Cloud.VMwareCloudDirector.MemoryMB),
+		IPAllocationMode: vcd.IPAllocationMode(nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode),
+	}
+
+	if storageProfile != "" {
+		config.StorageProfile = &storageProfile
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS != nil && *nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS >= 0 {
+		config.DiskIOPS = nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB != nil && *nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB > 4 {
+		config.DiskSizeGB = nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.Metadata != nil {
+		config.Metadata = &nodeSpec.Cloud.VMwareCloudDirector.Metadata
 	}
 
 	ext := &runtime.RawExtension{}

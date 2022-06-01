@@ -69,6 +69,9 @@ type PresetSpec struct {
 	// packet
 	Packet *Packet `json:"packet,omitempty"`
 
+	// vmware cloud director
+	VmwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+
 	// vsphere
 	Vsphere *VSphere `json:"vsphere,omitempty"`
 }
@@ -134,6 +137,10 @@ func (m *PresetSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePacket(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVmwareCloudDirector(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -432,6 +439,25 @@ func (m *PresetSpec) validatePacket(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *PresetSpec) validateVmwareCloudDirector(formats strfmt.Registry) error {
+	if swag.IsZero(m.VmwareCloudDirector) { // not required
+		return nil
+	}
+
+	if m.VmwareCloudDirector != nil {
+		if err := m.VmwareCloudDirector.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("vmwareCloudDirector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vmwareCloudDirector")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PresetSpec) validateVsphere(formats strfmt.Registry) error {
 	if swag.IsZero(m.Vsphere) { // not required
 		return nil
@@ -512,6 +538,10 @@ func (m *PresetSpec) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidatePacket(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVmwareCloudDirector(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -757,6 +787,22 @@ func (m *PresetSpec) contextValidatePacket(ctx context.Context, formats strfmt.R
 				return ve.ValidateName("packet")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("packet")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PresetSpec) contextValidateVmwareCloudDirector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.VmwareCloudDirector != nil {
+		if err := m.VmwareCloudDirector.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("vmwareCloudDirector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vmwareCloudDirector")
 			}
 			return err
 		}

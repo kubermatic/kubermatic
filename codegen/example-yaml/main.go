@@ -166,6 +166,9 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							Images: imageList,
 							Port:   pointer.Int32(9440),
 						},
+						VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
+							Templates: imageList,
+						},
 					},
 				},
 			},

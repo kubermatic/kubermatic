@@ -64,7 +64,6 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 
 var _ provider.ReconcilingCloudProvider = &gcp{}
 
-// TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
 func (g *gcp) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return g.reconcileCluster(ctx, cluster, update, false, true)

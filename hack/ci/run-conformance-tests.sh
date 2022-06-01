@@ -88,6 +88,12 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
+elif [[ $provider == "vmware-cloud-director" ]]; then
+  EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
+    -vmware-cloud-director-password=${VCD_PASSWORD}
+    -vmware-cloud-director-organization=${VCD_ORG}
+    -vmware-cloud-director-vdc=${VCD_VDC}
+    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}"
 fi
 
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),

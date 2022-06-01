@@ -342,7 +342,7 @@ func (r *Reconciler) deleteAddon(ctx context.Context, log *zap.SugaredLogger, ad
 	log.Infof("deleting addon %s from cluster %s", addon.Name, addon.Namespace)
 	err := r.Delete(ctx, &addon)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete addon %s from cluster %s: %w", addon.Name, addon.ClusterName, err)
+		return fmt.Errorf("failed to delete addon %s from cluster %s: %w", addon.Name, addon.Spec.Cluster.Name, err)
 	}
 	return nil
 }

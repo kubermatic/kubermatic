@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.50.0"
+	Tag  = "v1.51.0"
 )
 
 type machinecontrollerData interface {
@@ -267,6 +267,18 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		}
 
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: data.Cluster().Spec.Cloud.Nutanix.ClusterName})
+	}
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: data.DC().Spec.VMwareCloudDirector.URL})
+
+		if data.DC().Spec.VMwareCloudDirector.AllowInsecure {
+			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
+		}
+
+		vars = append(vars, corev1.EnvVar{Name: "VCD_USER", Value: credentials.VMwareCloudDirector.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_PASSWORD", Value: credentials.VMwareCloudDirector.Password})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_ORG", Value: credentials.VMwareCloudDirector.Organization})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_VDC", Value: credentials.VMwareCloudDirector.VDC})
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 

@@ -29,6 +29,10 @@ type SharedInformerFactory struct {
 	kubeinformers.SharedInformerFactory
 }
 
+func (i *dummySharedIndexInformer) SetTransform(handler cache.TransformFunc) error {
+	panic("implement me")
+}
+
 // NewFakeSharedInformerFactory returns a new factory.
 func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *SharedInformerFactory {
 	f := kubeinformers.NewFilteredSharedInformerFactory(kubeClient, time.Minute*5, namespace, nil)

@@ -414,6 +414,43 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedResponse: "{}",
 		},
 		{
+			name:             "test no credentials for VMware Cloud Director",
+			provider:         "vmware-cloud-director",
+			httpStatus:       http.StatusOK,
+			expectedResponse: "{}",
+		},
+		{
+			name:     "test list of credential names for VMware Cloud Director",
+			provider: "vmware-cloud-director",
+			credentials: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{test.RequiredEmailDomain},
+						VMwareCloudDirector: &kubermaticv1.VMwareCloudDirector{
+							Password: "password",
+							Username: "useranme",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "second",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						VSphere: &kubermaticv1.VSphere{
+							Password: "password",
+							Username: "useranme",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["first", "second"]}`,
+		},
+		{
 			name:       "test no existing provider",
 			provider:   "test",
 			httpStatus: http.StatusBadRequest,

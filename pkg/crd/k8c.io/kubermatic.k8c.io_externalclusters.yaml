@@ -56,7 +56,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -117,7 +117,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -171,7 +171,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -223,7 +223,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -263,7 +263,7 @@ spec:
                         type: object
                       manifestReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -309,7 +309,7 @@ spec:
                         type: string
                       sshReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -360,7 +360,7 @@ spec:
                 type: string
               kubeconfigReference:
                 description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
-                  because it is not cross namespace
+                  because it is not cross namespace.
                 properties:
                   apiVersion:
                     description: API version of the referent.

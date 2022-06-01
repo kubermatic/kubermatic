@@ -223,6 +223,10 @@ if [[ ! -z "${ANEXIA_LOCATION_ID:-}" ]]; then
   sed -i "s/__ANEXIA_LOCATION_ID__/$ANEXIA_LOCATION_ID/g" $SEED_MANIFEST
 fi
 
+if [[ ! -z "${VCD_URL:-}" ]]; then
+  sed -i "s#__VCD_URL__#$VCD_URL#g" $SEED_MANIFEST
+fi
+
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 

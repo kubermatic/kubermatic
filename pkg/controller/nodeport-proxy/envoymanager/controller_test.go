@@ -362,6 +362,7 @@ func TestSync(t *testing.T) {
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
 			s, _ := c.cache.GetSnapshot(c.EnvoyNodeName)
+
 			for name, res := range s.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.Resource.(*envoyclusterv3.Cluster)
 			}

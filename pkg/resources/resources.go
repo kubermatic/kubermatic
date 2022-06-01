@@ -570,17 +570,18 @@ const (
 	ContainerRuntimeDocker     = "docker"
 	ContainerRuntimeContainerd = "containerd"
 	// KubeOne natively-supported providers.
-	KubeOneAWS          = "aws"
-	KubeOneGCP          = "gcp"
-	KubeOneAzure        = "azure"
-	KubeOneDigitalOcean = "digitalocean"
-	KubeOneHetzner      = "hetzner"
-	KubeOneNutanix      = "nutanix"
-	KubeOneOpenStack    = "openstack"
-	KubeOneEquinix      = "equinix"
-	KubeOneVSphere      = "vsphere"
-	KubeOneImage        = "quay.io/kubermatic/kubeone"
-	KubeOneScript       = `
+	KubeOneAWS                 = "aws"
+	KubeOneGCP                 = "gcp"
+	KubeOneAzure               = "azure"
+	KubeOneDigitalOcean        = "digitalocean"
+	KubeOneHetzner             = "hetzner"
+	KubeOneNutanix             = "nutanix"
+	KubeOneVMwareCloudDirector = "vmwareCloudDirector"
+	KubeOneOpenStack           = "openstack"
+	KubeOneEquinix             = "equinix"
+	KubeOneVSphere             = "vsphere"
+	KubeOneImage               = "quay.io/kubermatic/kubeone"
+	KubeOneScript              = `
 #!/usr/bin/env bash
 
 eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
@@ -649,6 +650,13 @@ const (
 	NutanixAllowInsecure = "allowInsecure"
 	NutanixEndpoint      = "endpoint"
 	NutanixPort          = "port"
+
+	// VMware Cloud Director provider constants.
+	VMwareCloudDirectorUsername     = "username"
+	VMwareCloudDirectorPassword     = "password"
+	VMwareCloudDirectorOrganization = "organization"
+	VMwareCloudDirectorVDC          = "vdc"
+	VMwareCloudDirectorURL          = "url"
 
 	UserSSHKeys = "usersshkeys"
 )
