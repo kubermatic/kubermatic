@@ -15,4 +15,4 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/ldap-group-syncer /
+COPY ./ldap-group-syncer /usr/local/bin/

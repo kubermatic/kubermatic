@@ -14,14 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package types
 
 import (
 	"errors"
 	"os"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
+
+type Person struct {
+	DN    string `yaml:"dn"`
+	Name  string `yaml:"name"`
+	Email string `yaml:"email"`
+}
+
+func SortPersons(persons []Person) {
+	sort.Slice(persons, func(i, j int) bool {
+		return persons[i].Email < persons[j].Email
+	})
+}
+
+type Group struct {
+	DN      string   `yaml:"dn"`
+	Name    string   `yaml:"name"`
+	Members []Person `yaml:"members"`
+}
+
+func SortGroups(groups []Group) {
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].Name < groups[j].Name
+	})
+}
+
+type Organization struct {
+	Groups []Group `yaml:"groups"`
+}
 
 type Config struct {
 	Address string `yaml:"address"`
@@ -49,7 +78,7 @@ type GroupedConfig struct {
 	Query               string `yaml:"query"`
 }
 
-func loadConfig(filename string) (*Config, error) {
+func LoadConfig(filename string) (*Config, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
