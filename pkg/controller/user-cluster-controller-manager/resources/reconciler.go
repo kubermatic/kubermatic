@@ -832,6 +832,10 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
+	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+		creators = append(creators, csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
+	}
+
 	if r.userSSHKeyAgent {
 		creators = append(creators, usersshkeys.SecretCreator(data.userSSHKeys))
 	}
