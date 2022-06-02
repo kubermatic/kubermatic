@@ -74,14 +74,6 @@ func targetRouteTable(cloud kubermaticv1.CloudSpec, location string) *network.Ro
 	return &network.RouteTable{
 		Name:     to.StringPtr(cloud.Azure.RouteTableName),
 		Location: to.StringPtr(location),
-		RouteTablePropertiesFormat: &network.RouteTablePropertiesFormat{
-			Subnets: &[]network.Subnet{
-				{
-					Name: to.StringPtr(cloud.Azure.SubnetName),
-					ID:   to.StringPtr(assembleSubnetID(cloud)),
-				},
-			},
-		},
 	}
 }
 

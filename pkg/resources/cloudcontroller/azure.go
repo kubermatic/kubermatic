@@ -166,6 +166,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 }
 
 func getAzureVersion(version semver.Semver) (string, error) {
+	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
 	case "1.21":
 		return "1.0.18", nil
