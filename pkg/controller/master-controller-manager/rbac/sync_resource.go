@@ -181,10 +181,15 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 
 	log := c.log.With("namespace", cluster.Status.NamespaceName, "project", projectName)
 
+	groupRoles, err := getGroupRolesList(ctx, c.client, projectName)
+	if err != nil {
+		return fmt.Errorf("failed to get group roles: %w", err)
+	}
+
 	if err := c.ensureRBACRoleForClusterAddons(ctx, log, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC Role: %w", err)
 	}
-	if err := c.ensureRBACRoleBindingForClusterAddons(ctx, log, projectName, cluster); err != nil {
+	if err := c.ensureRBACRoleBindingForClusterAddons(ctx, log, projectName, cluster, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 	}
 	if err := c.ensureRBACForEtcdLauncher(ctx, c.client, cluster, projectName, rmapping); err != nil {
@@ -193,19 +198,19 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 	if err := c.ensureRBACRoleForClusterConstraints(ctx, log, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC Role: %w", err)
 	}
-	if err := c.ensureRBACRoleBindingForClusterConstraints(ctx, log, projectName, cluster); err != nil {
+	if err := c.ensureRBACRoleBindingForClusterConstraints(ctx, log, projectName, cluster, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 	}
 	if err := c.ensureRBACRoleForEtcdBackupConfigs(ctx, log, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC Role: %w", err)
 	}
-	if err := c.ensureRBACRoleBindingForEtcdBackupConfigs(ctx, log, projectName, cluster); err != nil {
+	if err := c.ensureRBACRoleBindingForEtcdBackupConfigs(ctx, log, projectName, cluster, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 	}
 	if err := c.ensureRBACRoleForEtcdRestores(ctx, log, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC Role: %w", err)
 	}
-	if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, log, projectName, cluster); err != nil {
+	if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, log, projectName, cluster, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 	}
 
@@ -213,19 +218,19 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 		if err := c.ensureRBACRoleForClusterAlertmanagers(ctx, log, projectName, cluster); err != nil {
 			return fmt.Errorf("failed to sync RBAC Role: %w", err)
 		}
-		if err := c.ensureRBACRoleBindingForClusterAlertmanagers(ctx, log, projectName, cluster); err != nil {
+		if err := c.ensureRBACRoleBindingForClusterAlertmanagers(ctx, log, projectName, cluster, groupRoles); err != nil {
 			return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 		}
 		if err := c.ensureRBACRoleForClusterAlertmanagerConfigSecrets(ctx, log, projectName, cluster); err != nil {
 			return fmt.Errorf("failed to sync RBAC Role: %w", err)
 		}
-		if err := c.ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx, log, projectName, cluster); err != nil {
+		if err := c.ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx, log, projectName, cluster, groupRoles); err != nil {
 			return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 		}
 		if err := c.ensureRBACRoleForClusterRuleGroups(ctx, log, projectName, cluster); err != nil {
 			return fmt.Errorf("failed to sync RBAC Role: %w", err)
 		}
-		if err := c.ensureRBACRoleBindingForClusterRuleGroups(ctx, log, projectName, cluster); err != nil {
+		if err := c.ensureRBACRoleBindingForClusterRuleGroups(ctx, log, projectName, cluster, groupRoles); err != nil {
 			return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 		}
 	}
@@ -535,26 +540,28 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(ctx context.Context
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
 			kubermaticv1.AddonResourceName,
 			kubermaticv1.GroupName,
 			kubermaticv1.AddonKindName,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster addons", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster addons", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.AddonKindName,
 		)
 
@@ -802,8 +809,9 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagers(ctx context.
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceNamedResource(
 			projectName,
 			cluster,
@@ -811,18 +819,19 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 			kubermaticv1.GroupName,
 			kubermaticv1.AlertmanagerResourceName,
 			kubermaticv1.AlertmanagerKindName,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster alertmanagers", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster alertmanagers", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceNamedResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.AlertmanagerKindName,
 			alertmanagerName,
 		)
@@ -904,8 +913,9 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagerConfigSecrets(
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceNamedResource(
 			projectName,
 			cluster,
@@ -913,18 +923,19 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagerConfigS
 			corev1.GroupName,
 			"secrets",
 			"Secret",
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster alertmanager config secrets", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster alertmanager config secrets", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceNamedResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			"Secret",
 			defaultAlertmanagerConfigSecretName,
 		)
@@ -1005,26 +1016,28 @@ func (c *resourcesController) ensureRBACRoleForClusterConstraints(ctx context.Co
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForClusterConstraints(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForClusterConstraints(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
 			kubermaticv1.ConstraintResourceName,
 			kubermaticv1.GroupName,
 			kubermaticv1.ConstraintKind,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster constraints", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster constraints", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.ConstraintKind,
 		)
 
@@ -1145,26 +1158,28 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForClusterRuleGroups(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForClusterRuleGroups(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
 			kubermaticv1.RuleGroupResourceName,
 			kubermaticv1.GroupName,
 			kubermaticv1.RuleGroupKindName,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster constraints", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster constraints", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.RuleGroupKindName,
 		)
 
@@ -1282,26 +1297,28 @@ func (c *resourcesController) ensureRBACRoleForEtcdBackupConfigs(ctx context.Con
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForEtcdBackupConfigs(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForEtcdBackupConfigs(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
 			kubermaticv1.EtcdBackupConfigResourceName,
 			kubermaticv1.GroupName,
 			kubermaticv1.EtcdBackupConfigKindName,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster etcdBackupConfigs", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster etcdBackupConfigs", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.EtcdBackupConfigKindName,
 		)
 
@@ -1381,26 +1398,28 @@ func (c *resourcesController) ensureRBACRoleForEtcdRestores(ctx context.Context,
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.Context, log *zap.SugaredLogger, projectName string, cluster *kubermaticv1.Cluster) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
+func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, cluster *kubermaticv1.Cluster, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
 			kubermaticv1.EtcdRestoreResourceName,
 			kubermaticv1.GroupName,
 			kubermaticv1.EtcdRestoreKindName,
-			groupPrefix)
+			groupRole.Role)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping RoleBinding generation for cluster etcdRestores", "group", groupPrefix)
+			log.Debugw("skipping RoleBinding generation for cluster etcdRestores", "role", groupRole.Role)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			kubermaticv1.EtcdRestoreKindName,
 		)
 

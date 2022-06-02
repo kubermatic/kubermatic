@@ -375,7 +375,7 @@ func generateRBACRoleForClusterNamespaceResource(cluster *kubermaticv1.Cluster, 
 }
 
 // generateRBACRoleBindingForClusterNamespaceResource generates per-cluster RoleBinding for the given cluster in the cluster namespace.
-func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) *rbacv1.RoleBinding {
+func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, roleName, kind string) *rbacv1.RoleBinding {
 	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
@@ -391,7 +391,7 @@ func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cl
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
-			Name:     generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
+			Name:     generateRBACRoleNameForClusterNamespaceResource(kind, roleName),
 		},
 	}
 	return binding
@@ -425,7 +425,7 @@ func generateRBACRoleForClusterNamespaceNamedResource(cluster *kubermaticv1.Clus
 }
 
 // generateRBACRoleBindingForClusterNamespaceNamedResource generates per-cluster RoleBinding for the given cluster in the cluster namespace.
-func generateRBACRoleBindingForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, kind, resourceName string) *rbacv1.RoleBinding {
+func generateRBACRoleBindingForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, roleName, kind, resourceName string) *rbacv1.RoleBinding {
 	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, groupName),
@@ -441,7 +441,7 @@ func generateRBACRoleBindingForClusterNamespaceNamedResource(cluster *kubermatic
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
-			Name:     generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, groupName),
+			Name:     generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, roleName),
 		},
 	}
 	return binding
