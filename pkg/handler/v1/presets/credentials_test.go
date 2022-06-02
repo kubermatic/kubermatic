@@ -440,7 +440,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "second",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						VSphere: &kubermaticv1.VSphere{
+						VMwareCloudDirector: &kubermaticv1.VMwareCloudDirector{
 							Password: "password",
 							Username: "useranme",
 						},
