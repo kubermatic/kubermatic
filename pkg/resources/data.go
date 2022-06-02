@@ -646,6 +646,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+		if cluster.Spec.Cloud.Azure != nil {
+			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
+		}
 
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
@@ -676,9 +679,6 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		switch {
 		case cluster.Spec.Cloud.AWS != nil:
 			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
-		case cluster.Spec.Cloud.Azure != nil:
-			// TODO(embik): set feature flags to true and move up in code once CSI drivers have been added.
-			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		case cluster.Spec.Cloud.GCP != nil:
 			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
 		case cluster.Spec.Cloud.VSphere != nil:
