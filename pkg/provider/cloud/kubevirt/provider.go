@@ -54,12 +54,6 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
 func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
-	if spec.Kubevirt != nil {
-		err := updateInfraStorageClassesInfo(ctx, spec, k.secretKeySelector)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
