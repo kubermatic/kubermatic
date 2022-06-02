@@ -148,14 +148,6 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		},
 	}
 
-	// setup indexer for GroupProjectBinding field selector
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &kubermaticv1.GroupProjectBinding{}, "projectID", func(rawObj ctrlruntimeclient.Object) []string {
-		gpb := rawObj.(*kubermaticv1.GroupProjectBinding)
-		return []string{gpb.Spec.ProjectID}
-	}); err != nil {
-		return nil, err
-	}
-
 	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, log, projectResources, workerPredicate); err != nil {
 		return nil, err
 	}

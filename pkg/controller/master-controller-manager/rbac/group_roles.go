@@ -22,7 +22,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,8 +38,12 @@ type GroupRole struct {
 func getGroupRolesList(ctx context.Context, client ctrlruntimeclient.Client, projectName string) ([]GroupRole, error) {
 	var groupRoles []GroupRole
 
+	projectReq, err := labels.NewRequirement("projectID", selection.Equals, []string{projectName})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get construct project label selector: %w", err)
+	}
 	gbpList := &kubermaticv1.GroupProjectBindingList{}
-	err := client.List(ctx, gbpList, &ctrlruntimeclient.ListOptions{FieldSelector: fields.OneTermEqualSelector("projectID", projectName)})
+	err = client.List(ctx, gbpList, &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectReq)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group project bindings: %w", err)
 	}
