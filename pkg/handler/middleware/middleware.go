@@ -181,7 +181,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name, authenticatedUser.Email)
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name, authenticatedUser.Email, authenticatedUser.Groups)
 				if err != nil {
 					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
@@ -201,6 +201,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			updatedUser := user.DeepCopy()
 			updatedUser.Status.LastSeen = metav1.NewTime(now)
+			updatedUser.Spec.Groups = authenticatedUser.Groups
 			updatedUser, err = userProvider.UpdateUser(ctx, updatedUser)
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
