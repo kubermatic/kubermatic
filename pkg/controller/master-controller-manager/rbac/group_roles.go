@@ -26,14 +26,14 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GroupRole Helper struct that holds a group and its assigned role
+// GroupRole Helper struct that holds a group and its assigned role.
 type GroupRole struct {
 	Group string
 	Role  string
 }
 
 // gets the groups and assigned roles for the given project
-// Combines the default groups and roles (viwers, editors...) with the one defined in the GroupProjectBindings
+// Combines the default groups and roles (viewers, editors...) with the one defined in the GroupProjectBindings.
 func getGroupRolesList(ctx context.Context, client ctrlruntimeclient.Client, projectName string) ([]GroupRole, error) {
 	var groupRoles []GroupRole
 

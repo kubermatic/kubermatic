@@ -33,16 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	// ignore error, tests will fail if it doesn't work
-	kubermaticv1.AddToScheme(scheme.Scheme)
-}
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	tests := []struct {
