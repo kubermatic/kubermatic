@@ -199,6 +199,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			updatedUser := user.DeepCopy()
 			updatedUser.Status.LastSeen = metav1.NewTime(now)
+			updatedUser.Spec.Groups = authenticatedUser.Groups
 			updatedUser, err = userProvider.UpdateUser(ctx, updatedUser)
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
