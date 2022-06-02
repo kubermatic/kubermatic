@@ -242,9 +242,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	}
 	clusterPhase := externalCluster.Status.Condition.Phase
 
-	if err := r.initiateImportAction(ctx, log, externalCluster, clusterPhase); err != nil {
-		log.Error(err)
+	// return if cluster in Error phase
+	if strings.HasSuffix(string(clusterPhase), "Error") {
 		return reconcile.Result{}, nil
+	}
+
+	if err := r.initiateImportAction(ctx, log, externalCluster); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
@@ -262,8 +266,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
 	if _, err = r.initiateUpgradeAction(ctx, log, externalCluster, externalClusterProvider, currentManifest, clusterPhase); err != nil {
-		log.Error(err)
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, err
 	}
 
 	if err = r.checkPodStatusIfExists(ctx, log, externalCluster, UpgradeControlPlaneAction, KubeOneUpgradePod); err != nil {
@@ -271,8 +274,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	}
 
 	if _, err = r.initiateMigrateAction(ctx, log, externalCluster, externalClusterProvider, currentManifest, clusterPhase); err != nil {
-		log.Error(err)
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, err
 	}
 
 	if err = r.checkPodStatusIfExists(ctx, log, externalCluster, MigrateContainerRuntimeAction, KubeOneMigratePod); err != nil {
@@ -285,11 +287,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 func (r *reconciler) initiateImportAction(
 	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster,
-	clusterPhase kubermaticv1.ExternalClusterPhase) error {
-	if strings.HasSuffix(string(clusterPhase), "Error") {
-		return fmt.Errorf("Cluster in failed state: %v", externalCluster.Status.Condition.Message)
-	}
+	externalCluster *kubermaticv1.ExternalCluster) error {
 	if externalCluster.Spec.KubeconfigReference == nil {
 		externalCluster, err := r.importCluster(ctx, log, externalCluster)
 		if err != nil {
@@ -381,6 +379,24 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	return externalCluster, nil
 }
 
+func verifyKubeconfig(ctx context.Context, config string) error {
+	// generate kubeconfig for cluster.
+	cfg, err := clientcmd.Load([]byte(config))
+	if err != nil {
+		return err
+	}
+	clientset, err := GenerateClient(cfg)
+	if err != nil {
+		return err
+	}
+	// connect to the kubernetes cluster.
+	err = clientset.List(ctx, &corev1.NodeList{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 	log *zap.SugaredLogger,
 	externalCluster *kubermaticv1.ExternalCluster,
@@ -393,14 +409,14 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 		return nil, err
 	}
 	currentVersion := version.String()
-	wantedVersion, err := getWantedVersion(currentManifest)
+	desiredVersion, err := getDesiredVersion(currentManifest)
 	if err != nil {
 		return nil, err
 	}
-	if clusterPhase != kubermaticv1.ExternalClusterPhaseRunning || currentVersion == wantedVersion {
+	if clusterPhase != kubermaticv1.ExternalClusterPhaseRunning || currentVersion == desiredVersion {
 		return nil, nil
 	}
-	log.Infow("Upgrading kubeone cluster...", "from", currentVersion, "to", wantedVersion)
+	log.Infow("Upgrading kubeone cluster...", "from", currentVersion, "to", desiredVersion)
 
 	upgradePod, err := r.upgradeCluster(ctx, log, externalCluster)
 	if err != nil {
@@ -428,16 +444,16 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	wantedContainerRuntime, err := returnWantedContainerRuntime(currentManifest)
+	desiredContainerRuntime, err := getDesiredContainerRuntime(currentManifest)
 	if err != nil {
 		return nil, err
 	}
 
-	if clusterPhase != kubermaticv1.ExternalClusterPhaseRunning || currentContainerRuntime == wantedContainerRuntime || wantedContainerRuntime != resources.ContainerRuntimeContainerd {
+	if clusterPhase != kubermaticv1.ExternalClusterPhaseRunning || currentContainerRuntime == desiredContainerRuntime || desiredContainerRuntime != resources.ContainerRuntimeContainerd {
 		return nil, nil
 	}
 
-	log.Infow("Migrating kubeone cluster container runtime...", "from", currentContainerRuntime, "to", wantedContainerRuntime)
+	log.Infow("Migrating kubeone cluster container runtime...", "from", currentContainerRuntime, "to", desiredContainerRuntime)
 	migratePod, err := r.migrateCluster(ctx, log, externalCluster)
 	if err != nil {
 		log.Errorw("failed to migrate kubeone cluster", zap.Error(err))
@@ -452,7 +468,7 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 	return migratePod, nil
 }
 
-func getWantedVersion(currentManifest []byte) (string, error) {
+func getDesiredVersion(currentManifest []byte) (string, error) {
 	cluster := &kubeonev1beta2.KubeOneCluster{}
 	if err := yaml.UnmarshalStrict(currentManifest, cluster); err != nil {
 		return "", fmt.Errorf("failed to decode manifest secret data: %w", err)
@@ -487,7 +503,7 @@ func (r *reconciler) checkPodStatusIfExists(ctx context.Context,
 	return nil
 }
 
-func returnWantedContainerRuntime(currentManifest []byte) (string, error) {
+func getDesiredContainerRuntime(currentManifest []byte) (string, error) {
 	cluster := &kubeonev1beta2.KubeOneCluster{}
 	if err := yaml.UnmarshalStrict(currentManifest, cluster); err != nil {
 		return "", fmt.Errorf("failed to decode manifest secret data: %w", err)
@@ -561,7 +577,7 @@ func (r *reconciler) checkPodStatus(ctx context.Context,
 			}
 		}
 
-		log.Errorw("failed operation on kubeone cluster", "operation", action)
+		log.Errorw("failed operation on kubeone cluster, for details check external cluster status", "operation", action)
 
 		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 			Phase:   phaseError,
@@ -596,24 +612,6 @@ func determineExitCode(exitCode int32) kubermaticv1.ExternalClusterPhase {
 		phaseError = kubermaticv1.ExternalClusterPhaseError
 	}
 	return phaseError
-}
-
-func verifyKubeconfig(ctx context.Context, config string) error {
-	// generate kubeconfig for cluster.
-	cfg, err := clientcmd.Load([]byte(config))
-	if err != nil {
-		return err
-	}
-	clientset, err := GenerateClient(cfg)
-	if err != nil {
-		return err
-	}
-	// connect to the kubernetes cluster.
-	err = clientset.List(ctx, &corev1.NodeList{})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (r *reconciler) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.ExternalCluster, kubeconfig, namespace string) (*providerconfig.GlobalSecretKeySelector, error) {
@@ -744,7 +742,7 @@ func getPodLogs(ctx context.Context, pod *corev1.Pod) (string, error) {
 	config := ctrlruntime.GetConfigOrDie()
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return "", fmt.Errorf("creating client: %w", err)
+		return "", fmt.Errorf("failed to create client: %w", err)
 	}
 
 	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{})
@@ -865,7 +863,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 	if action == UpgradeControlPlaneAction || action == MigrateContainerRuntimeAction {
 		credentialSecret, err := r.getKubeOneSecret(ctx, kubeOne.CredentialsReference)
 		if err != nil {
-			log.Errorw("Could not find kubeone credential secret", zap.Error(err))
+			log.Errorw("could not find kubeone credential secret", zap.Error(err))
 			return nil, err
 		}
 		envVar = setEnvForProvider(providerName, envVar, credentialSecret)
