@@ -22,14 +22,10 @@ type KubevirtCloudSpec struct {
 	// c s i kubeconfig
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 
-	// InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
-	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
-	InfraStorageClasses []string `json:"infraStorageClasses"`
-
 	// kubeconfig
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
-	// PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.
+	// pre allocated data volumes
 	PreAllocatedDataVolumes []*PreAllocatedDataVolume `json:"preAllocatedDataVolumes"`
 
 	// credentials reference

@@ -699,20 +699,9 @@ spec:
                         type: object
                       csiKubeconfig:
                         type: string
-                      infraStorageClasses:
-                        description: InfraStorageClasses is a list of storage classes
-                          from KubeVirt infra cluster that are used for initialization
-                          of user cluster storage classes by the CSI driver kubevirt
-                          (hot pluggable disks)
-                        items:
-                          type: string
-                        type: array
                       kubeconfig:
                         type: string
                       preAllocatedDataVolumes:
-                        description: PreAllocatedDataVolumes holds list of preallocated
-                          DataVolumes which can be used as reference for DataVolume
-                          cloning.
                         items:
                           properties:
                             name:

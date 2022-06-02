@@ -25669,20 +25669,11 @@
           "type": "string",
           "x-go-name": "CSIKubeconfig"
         },
-        "infraStorageClasses": {
-          "description": "InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for\ninitialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "InfraStorageClasses"
-        },
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"
         },
         "preAllocatedDataVolumes": {
-          "description": "PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/PreAllocatedDataVolume"
