@@ -2429,7 +2429,7 @@ type SeedSpec struct {
 	// A reference to the Kubeconfig of this cluster. The Kubeconfig must
 	// have cluster-admin privileges. This field is mandatory for every
 	// seed, even if there are no datacenters defined yet.
-	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
+	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
 	// Datacenters contains a map of the possible datacenters (DCs) in this seed.
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
@@ -2447,6 +2447,50 @@ type SeedSpec struct {
 	// Optional: EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed.
 	// When set, enables automatic etcd backup and restore controllers with given configuration.
 	EtcdBackupRestore *kubermaticv1.EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
+}
+
+// CreateSeedSpec is the structure that is used to create seed.
+// swagger:model CreateSeedSpec
+type CreateSeedSpec struct {
+	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+	// For informational purposes in the Kubermatic dashboard only.
+	Country string `json:"country,omitempty"`
+	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+	// For informational purposes in the Kubermatic dashboard only.
+	Location string `json:"location,omitempty"`
+	// The raw Kubeconfig encoded to base64. This field is used for cluster creation or update.
+	Kubeconfig string `json:"kubeconfig"`
+	// Optional: This can be used to override the DNS name used for this seed.
+	// By default the seed name is used.
+	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
+	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
+	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
+	ProxySettings *CreateSeedProxySettings `json:"proxy_settings,omitempty"`
+	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
+	ExposeStrategy string `json:"expose_strategy,omitempty"`
+	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+	MLA *CreateSeedMLASettings `json:"mla,omitempty"`
+	// DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
+	// to default all new created clusters
+	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
+}
+
+// CreateSeedProxySettings allow configuring a HTTP proxy for the controlplanes
+// and nodes.
+type CreateSeedProxySettings struct {
+	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
+	HTTPProxy string `json:"httpProxy,omitempty"`
+	// Optional: If set this will be set as NO_PROXY environment variable on the node;
+	// The value must be a comma-separated list of domains for which no proxy
+	// should be used, e.g. "*.example.com,internal.dev".
+	// Note that the in-cluster apiserver URL will be automatically prepended
+	// to this value.
+	NoProxy string `json:"noProxy,omitempty"`
+}
+
+type CreateSeedMLASettings struct {
+	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"` //nolint:tagliatelle
 }
 
 // swagger:model SeedNamesList

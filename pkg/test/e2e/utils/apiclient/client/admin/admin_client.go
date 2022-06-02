@@ -34,6 +34,8 @@ type ClientService interface {
 
 	CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error)
 
+	CreateSeed(params *CreateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSeedOK, error)
+
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
 	DeleteBackupDestination(params *DeleteBackupDestinationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBackupDestinationOK, error)
@@ -184,6 +186,44 @@ func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeterin
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateOrUpdateMeteringCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateSeed creates a new seed object
+*/
+func (a *Client) CreateSeed(params *CreateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateSeedParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createSeed",
+		Method:             "POST",
+		PathPattern:        "/api/v1/admin/seeds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateSeedDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

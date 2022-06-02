@@ -1267,4 +1267,12 @@ type SeedProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
 	UpdateUnsecured(ctx context.Context, seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+	// CreateUnsecured creates a new Seed
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	CreateUnsecured(ctx context.Context, seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+
+	// CreateOrUpdateKubeconfigSecretForSeed creates or update seed kubeconfig
+	CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context, seed *kubermaticv1.Seed, kubeconfig []byte) error
 }

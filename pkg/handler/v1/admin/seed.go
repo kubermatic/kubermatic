@@ -18,6 +18,7 @@ package admin
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -33,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +42,88 @@ import (
 )
 
 var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
+
+// CreateSeedEndpoint creates seed object.
+func CreateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedProvider provider.SeedProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if !userInfo.IsAdmin {
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
+		}
+
+		req, ok := request.(createSeedReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+
+		err = req.Validate(seedsGetter)
+		if err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		newSeed := genSeedFromRequest(req)
+
+		config, err := base64.StdEncoding.DecodeString(req.Body.Spec.Kubeconfig)
+		if err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		if err := seedProvider.CreateOrUpdateKubeconfigSecretForSeed(ctx, newSeed, config); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seed, err := seedProvider.CreateUnsecured(ctx, newSeed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return apiv1.Seed{
+			Name:     req.Body.Name,
+			SeedSpec: convertSeedSpec(seed.Spec, req.Body.Name),
+		}, nil
+	}
+}
+
+func genSeedFromRequest(req createSeedReq) *kubermaticv1.Seed {
+	newSeed := &kubermaticv1.Seed{}
+	newSeed.Name = req.Body.Name
+	newSeed.Namespace = resources.KubermaticNamespace
+	newSeed.Spec = kubermaticv1.SeedSpec{
+		Country:                req.Body.Spec.Country,
+		Location:               req.Body.Spec.Location,
+		Kubeconfig:             corev1.ObjectReference{},
+		SeedDNSOverwrite:       req.Body.Spec.SeedDNSOverwrite,
+		DefaultClusterTemplate: req.Body.Spec.DefaultClusterTemplate,
+	}
+	if req.Body.Spec.ProxySettings != nil {
+		newSeed.Spec.ProxySettings = &kubermaticv1.ProxySettings{}
+		if req.Body.Spec.ProxySettings.NoProxy != "" {
+			newSeed.Spec.ProxySettings.NoProxy = kubermaticv1.NewProxyValue(req.Body.Spec.ProxySettings.NoProxy)
+		}
+		if req.Body.Spec.ProxySettings.HTTPProxy != "" {
+			newSeed.Spec.ProxySettings.HTTPProxy = kubermaticv1.NewProxyValue(req.Body.Spec.ProxySettings.HTTPProxy)
+		}
+	}
+	if req.Body.Spec.ExposeStrategy != "" {
+		switch req.Body.Spec.ExposeStrategy {
+		case "NodePort":
+			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyNodePort
+		case "LoadBalancer":
+			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyLoadBalancer
+		case "Tunneling":
+			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyTunneling
+		}
+	}
+	if req.Body.Spec.MLA != nil {
+		newSeed.Spec.MLA = &kubermaticv1.SeedMLASettings{
+			UserClusterMLAEnabled: req.Body.Spec.MLA.UserClusterMLAEnabled,
+		}
+	}
+
+	return newSeed
+}
 
 // ListSeedsEndpoint returns seed list.
 func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
@@ -244,6 +328,45 @@ func (r updateSeedReq) Validate() error {
 			}
 		}
 	}
+	return nil
+}
+
+// createSeedReq defines HTTP request for createSeed
+// swagger:parameters createSeed
+type createSeedReq struct {
+	// in: body
+	Body struct {
+		Name string               `json:"name"`
+		Spec apiv1.CreateSeedSpec `json:"spec"`
+	}
+}
+
+func DecodeCreateSeedReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req createSeedReq
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func (r createSeedReq) Validate(seedsGetter provider.SeedsGetter) error {
+	if r.Body.Name == "" {
+		return fmt.Errorf("the seed name cannot be empty")
+	}
+	if r.Body.Spec.Kubeconfig == "" {
+		return fmt.Errorf("the kubeconfig cannot be empty")
+	}
+	seedMap, err := seedsGetter()
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	_, ok := seedMap[r.Body.Name]
+	if ok {
+		return fmt.Errorf("seed with the name %s already exists", r.Body.Name)
+	}
+
 	return nil
 }
 
