@@ -325,7 +325,7 @@ func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGro
 
 // generateRBACRoleBindingNamedResource generates RoleBiding for the given group
 // that will be bound to the corresponding Role.
-func generateRBACRoleBindingNamedResource(kind, resourceName, groupName, namespace string, oRef metav1.OwnerReference) *rbacv1.RoleBinding {
+func generateRBACRoleBindingNamedResource(kind, resourceName, groupName, roleName, namespace string, oRef metav1.OwnerReference) *rbacv1.RoleBinding {
 	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
@@ -342,7 +342,7 @@ func generateRBACRoleBindingNamedResource(kind, resourceName, groupName, namespa
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
-			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, roleName),
 		},
 	}
 	return binding

@@ -131,11 +131,16 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 
 	log := c.log.With("project", projectName)
 
+	groupRoles, err := getGroupRolesList(ctx, c.client, projectName)
+	if err != nil {
+		return fmt.Errorf("failed to get group roles: %w", err)
+	}
+
 	if err := c.ensureRBACRoleForNamedResource(ctx, log, projectName, resourceName, gvk, metaObject.GetNamespace(), metaObject); err != nil {
 		return fmt.Errorf("failed to sync RBAC Role: %w", err)
 	}
 
-	if err := c.ensureRBACRoleBindingForNamedResource(ctx, log, projectName, resourceName, gvk, metaObject.GetNamespace(), metaObject); err != nil {
+	if err := c.ensureRBACRoleBindingForNamedResource(ctx, log, projectName, resourceName, gvk, metaObject.GetNamespace(), metaObject, groupRoles); err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding: %w", err)
 	}
 
@@ -401,21 +406,23 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 	return nil
 }
 
-func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.Context, log *zap.SugaredLogger, projectName string, resourceName string, gvk schema.GroupVersionKind, namespace string, object metav1.Object) error {
-	for _, groupPrefix := range AllGroupsPrefixes {
-		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, resourceName, gvk, groupPrefix, namespace, object)
+func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.Context, log *zap.SugaredLogger,
+	projectName string, resourceName string, gvk schema.GroupVersionKind, namespace string, object metav1.Object, groupRoles []GroupRole) error {
+	for _, groupRole := range groupRoles {
+		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, resourceName, gvk, groupRole.Role, namespace, object)
 		if err != nil {
 			return err
 		}
 		if skip {
-			log.Debugw("skipping operation on RoleBinding because corresponding Role was not (will not be) created", "group", groupPrefix, "resource", resourceName, "namespace", namespace)
+			log.Debugw("skipping operation on RoleBinding because corresponding Role was not (will not be) created", "role", groupRole.Role, "resource", resourceName, "namespace", namespace)
 			continue
 		}
 
 		generatedRoleBinding := generateRBACRoleBindingNamedResource(
 			gvk.Kind,
 			object.GetName(),
-			GenerateActualGroupNameFor(projectName, groupPrefix),
+			GenerateActualGroupNameFor(projectName, groupRole.Group),
+			GenerateActualRoleNameFor(groupRole.Role, projectName),
 			namespace,
 			metav1.OwnerReference{
 				APIVersion: gvk.GroupVersion().String(),
