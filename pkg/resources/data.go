@@ -593,6 +593,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
+		if externalCloudProvider {
+			return cloudProviderExternalFlag
+		}
 		return "azure"
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
@@ -643,6 +646,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+		if cluster.Spec.Cloud.Azure != nil {
+			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
+		}
 
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
@@ -673,8 +679,6 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		switch {
 		case cluster.Spec.Cloud.AWS != nil:
 			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
-		case cluster.Spec.Cloud.Azure != nil:
-			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		case cluster.Spec.Cloud.GCP != nil:
 			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
 		case cluster.Spec.Cloud.VSphere != nil:

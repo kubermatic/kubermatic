@@ -69,6 +69,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	case cluster.Spec.Cloud.Kubevirt != nil:
 		return true
 
+	case cluster.Spec.Cloud.Azure != nil:
+		return AzureCloudControllerSupported(v)
+
 	default:
 		return false
 	}

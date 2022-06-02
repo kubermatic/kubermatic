@@ -403,6 +403,8 @@ const (
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay.
 	RegistryQuay = "quay.io"
+	// RegistryMCR defines the image registry at Microsoft.
+	RegistryMCR = "mcr.microsoft.com"
 	// RegistryAnexia defines the anexia specific docker registry.
 	RegistryAnexia = "anx-cr.io"
 

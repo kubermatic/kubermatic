@@ -53,6 +53,11 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		return cluster, err
 	}
 
+	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
+	if err != nil && !isNotFound(vnet.Response) {
+		return nil, err
+	}
+
 	subnet, err := clients.Subnets.Get(ctx, resourceGroup, *vnet.Name, cluster.Spec.Cloud.Azure.SubnetName, "")
 	if err != nil && !isNotFound(subnet.Response) {
 		return nil, err
@@ -75,7 +80,8 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	if cluster.IsIPv6Only() || cluster.IsDualStack() {
 		cidrs = append(cidrs, defaultSubnetCIDRIPv6)
 	}
-	target := targetSubnet(cluster.Spec.Cloud, cidrs)
+
+	target := targetSubnet(cluster.Spec.Cloud, routeTable.ID, cidrs)
 
 	// check for attributes of the existing subnet and skip ensuring if all values are already
 	// as expected. Since there are a lot of pointers in the network.Subnet struct, we need to
@@ -85,7 +91,9 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	// - Subnet CIDR
 	if !(subnet.SubnetPropertiesFormat != nil &&
 		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefix, target.SubnetPropertiesFormat.AddressPrefix) &&
-		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefixes, target.SubnetPropertiesFormat.AddressPrefixes)) {
+		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefixes, target.SubnetPropertiesFormat.AddressPrefixes) &&
+		reflect.DeepEqual(subnet.SubnetPropertiesFormat.RouteTable, target.SubnetPropertiesFormat.RouteTable)) {
+
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}
@@ -97,10 +105,14 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	})
 }
 
-func targetSubnet(cloud kubermaticv1.CloudSpec, cidrs []string) *network.Subnet {
+func targetSubnet(cloud kubermaticv1.CloudSpec, routeTableID *string, cidrs []string) *network.Subnet {
 	s := &network.Subnet{
-		Name:                   to.StringPtr(cloud.Azure.SubnetName),
-		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{},
+		Name: to.StringPtr(cloud.Azure.SubnetName),
+		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
+			RouteTable: &network.RouteTable{
+				ID: routeTableID,
+			},
+		},
 	}
 	if len(cidrs) == 1 {
 		s.SubnetPropertiesFormat.AddressPrefix = to.StringPtr(cidrs[0])
