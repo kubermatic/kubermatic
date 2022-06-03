@@ -96,7 +96,7 @@ presubmits:
               memory: 4Gi
   
   - name: pre-kubermatic-ccm-migration-azure-e2e
-    run_if_changed: "(pkg/|.prow/)"
+    run_if_changed: "(addons/azure-cloud-node-manager/|pkg/provider/cloud/azure/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
