@@ -93,7 +93,6 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefix, target.SubnetPropertiesFormat.AddressPrefix) &&
 		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefixes, target.SubnetPropertiesFormat.AddressPrefixes) &&
 		reflect.DeepEqual(subnet.SubnetPropertiesFormat.RouteTable, target.SubnetPropertiesFormat.RouteTable)) {
-
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}

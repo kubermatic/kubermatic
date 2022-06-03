@@ -144,7 +144,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName: osResourceRequirements.DeepCopy(),
+				ccmContainerName: azureResourceRequirements.DeepCopy(),
 			}
 
 			if !data.IsKonnectivityEnabled() {
@@ -168,13 +168,13 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 func getAzureVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
-	case "1.21":
+	case v121:
 		return "1.0.18", nil
-	case "1.22":
+	case v122:
 		return "1.1.14", nil
-	case "1.23":
+	case v123:
 		return "1.23.11", nil
-	case "1.24":
+	case v124:
 		fallthrough
 	default:
 		return "1.24.0", nil
