@@ -78,6 +78,7 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
     -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
     -azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
+    -azure-seed-datacenter=azure-westeurope
     "
 fi
 

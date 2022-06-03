@@ -41,6 +41,7 @@ type testOptions struct {
 
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
+	azureSeedDatacenter   string
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
@@ -61,6 +62,7 @@ func init() {
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
+	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
 
 	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
