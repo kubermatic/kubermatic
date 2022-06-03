@@ -66,7 +66,7 @@ type AzureClusterJig struct {
 
 	Credentials AzureCredentialsType
 
-	cluster *kubermaticv1.Cluster
+	cluster kubermaticv1.Cluster
 }
 
 func (c *AzureClusterJig) Setup(ctx context.Context) error {
@@ -96,13 +96,13 @@ func (c *AzureClusterJig) Setup(ctx context.Context) error {
 	}, projectID); err != nil {
 		return fmt.Errorf("failed to create user cluster: %w", err)
 	}
-	c.log.Debugw("Cluster created", "name", c.Name)
+	c.log.Debugw("Cluster created", "name", c.name)
 
 	if err := c.waitForClusterControlPlaneReady(ctx); err != nil {
 		return fmt.Errorf("failed to wait for cluster control plane: %w", err)
 	}
 
-	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: c.name}, c.cluster); err != nil {
+	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: c.name}, &c.cluster); err != nil {
 		return fmt.Errorf("failed to get user cluster: %w", err)
 	}
 
