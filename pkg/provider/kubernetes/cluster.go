@@ -397,9 +397,9 @@ func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userIn
 	parts := strings.Split(userInfo.Group, "-")
 	switch parts[0] {
 	case "editors":
-		return cluster.Status.Address.AdminToken, nil
+		return cluster.GetAddress().AdminToken, nil
 	case "owners":
-		return cluster.Status.Address.AdminToken, nil
+		return cluster.GetAddress().AdminToken, nil
 	case "viewers":
 		s := &corev1.Secret{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}

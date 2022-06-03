@@ -411,7 +411,7 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().Status.Address.Port, nil
+		return d.Cluster().GetAddress().Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
@@ -426,7 +426,7 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().Status.Address.Port, nil
+		return d.Cluster().GetAddress().Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}

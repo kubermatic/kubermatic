@@ -185,9 +185,9 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
 	}
 
-	if newCluster.Status.Address.AdminToken != "" {
-		if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Status.Address.AdminToken); err != nil {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), newCluster.Status.Address.AdminToken, err.Error()))
+	if address := newCluster.GetAddress(); address.AdminToken != "" {
+		if err := kuberneteshelper.ValidateKubernetesToken(address.AdminToken); err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), address.AdminToken, err.Error()))
 		}
 	}
 

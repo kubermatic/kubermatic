@@ -116,6 +116,41 @@ type Cluster struct {
 	Address ClusterAddress `json:"address,omitempty"`
 }
 
+// GetAddress returns the address and can handle both KKP 2.20 clusters
+// (where the address is a top-level element in the CRD) and 2.21+ clusters
+// (where the address is part of the ClusterStatus). In KKP 2.22+ this function
+// should be removed and all components should just use cluster.Status.Address
+// directly.
+func (c *Cluster) GetAddress() ClusterAddress {
+	address := c.Status.Address.DeepCopy()
+
+	if address.AdminToken == "" {
+		address.AdminToken = c.Address.AdminToken
+	}
+
+	if address.URL == "" {
+		address.URL = c.Address.URL
+	}
+
+	if address.ExternalName == "" {
+		address.ExternalName = c.Address.ExternalName
+	}
+
+	if address.InternalName == "" {
+		address.InternalName = c.Address.InternalName
+	}
+
+	if address.IP == "" {
+		address.IP = c.Address.IP
+	}
+
+	if address.Port == 0 {
+		address.Port = c.Address.Port
+	}
+
+	return *address
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 

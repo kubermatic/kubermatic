@@ -54,10 +54,11 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %w", err)
 			}
 
+			address := data.Cluster().GetAddress()
 			altNames := certutil.AltNames{
 				DNSNames: []string{
 					// ExternalName
-					data.Cluster().Status.Address.ExternalName,
+					address.ExternalName,
 					// User facing
 					"kubernetes",
 					"kubernetes.default",
@@ -76,7 +77,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			}
 
 			if data.Cluster().Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
-				externalIP := data.Cluster().Status.Address.IP
+				externalIP := address.IP
 				if externalIP == "" {
 					return nil, errors.New("externalIP is unset")
 				}

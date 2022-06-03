@@ -85,8 +85,9 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
+	address := c.GetAddress()
 	for _, cluster := range cfg.Clusters {
-		cluster.Server = c.Status.Address.URL
+		cluster.Server = address.URL
 	}
 	data, err := clientcmd.Write(*cfg)
 	if err != nil {
@@ -112,8 +113,9 @@ func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster,
 	}
 
 	if p.useExternalAddress {
+		address := c.GetAddress()
 		for _, cluster := range cfg.Clusters {
-			cluster.Server = c.Status.Address.URL
+			cluster.Server = address.URL
 		}
 	}
 

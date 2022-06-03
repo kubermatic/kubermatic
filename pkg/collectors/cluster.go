@@ -143,7 +143,7 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
-		cluster.Status.Address.IP,
+		cluster.GetAddress().IP,
 		cluster.Spec.Version.String(),
 		cluster.Status.Versions.ControlPlane.String(),
 		provider,
