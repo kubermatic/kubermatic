@@ -189,12 +189,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 			addCCMCSIMigrationAnnotations(newCluster)
 
 		case newCluster.Spec.Cloud.Azure != nil:
-			// TODO(embik): replace with call to addCCMCSIMigrationAnnotations once CSI drivers have been added.
-			if newCluster.ObjectMeta.Annotations == nil {
-				newCluster.ObjectMeta.Annotations = map[string]string{}
-			}
-
-			newCluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
+			addCCMCSIMigrationAnnotations(newCluster)
 		}
 	}
 

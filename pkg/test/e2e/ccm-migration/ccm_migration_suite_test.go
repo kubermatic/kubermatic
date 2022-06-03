@@ -44,6 +44,7 @@ type testOptions struct {
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
+	azureCredentials   providers.AzureCredentialsType
 }
 
 var (
@@ -75,6 +76,11 @@ func init() {
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
 	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
+
+	flag.StringVar(&options.azureCredentials.TenantID, "azure-tenant-id", "", "azure tenant id")
+	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
+	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
+	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
 }
 
 func TestCCMMigration(t *testing.T) {

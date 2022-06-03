@@ -110,6 +110,13 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		}
 		return supported
 
+	case cluster.Spec.Cloud.Azure != nil:
+		versionSupported, err := version.IsSupported(v.Semver(), kubermaticv1.AzureCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return versionSupported && AzureCloudControllerSupported(v)
+
 	default:
 		return false
 	}
@@ -120,6 +127,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 func ExternalCloudControllerClusterName(cluster *kubermaticv1.Cluster) bool {
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
+		return true
+	case cluster.Spec.Cloud.Azure != nil:
 		return true
 	default:
 		return false
