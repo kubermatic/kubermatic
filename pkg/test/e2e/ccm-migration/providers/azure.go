@@ -65,6 +65,8 @@ type AzureClusterJig struct {
 	log *zap.SugaredLogger
 
 	Credentials AzureCredentialsType
+
+	cluster *kubermaticv1.Cluster
 }
 
 func (c *AzureClusterJig) Setup(ctx context.Context) error {
@@ -96,11 +98,19 @@ func (c *AzureClusterJig) Setup(ctx context.Context) error {
 	}
 	c.log.Debugw("Cluster created", "name", c.Name)
 
-	return c.waitForClusterControlPlaneReady(ctx)
+	if err := c.waitForClusterControlPlaneReady(ctx); err != nil {
+		return fmt.Errorf("failed to wait for cluster control plane: %w", err)
+	}
+
+	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: c.name}, c.cluster); err != nil {
+		return fmt.Errorf("failed to get user cluster: %w", err)
+	}
+
+	return nil
 }
 
 func (c *AzureClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec()); err != nil {
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.cluster.Spec.Cloud.Azure)); err != nil {
 		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
@@ -156,11 +166,16 @@ func (c *AzureCredentialsType) GenerateSecretData() map[string][]byte {
 	}
 }
 
-func (c *AzureCredentialsType) GenerateProviderSpec() []byte {
-	return []byte(fmt.Sprintf(`{"cloudProvider": "azure", "cloudProviderSpec": {"tenantID": "%s", "clientID": "%s", "clientSecret": "%s", "subscriptionID": "%s", "location": "westeurope", "vmSize": "Standard_B1ms"}, "operatingSystem": "ubuntu", "operatingSystemSpec": {"distUpgradeOnBoot": false, "disableAutoUpdate": true}}`,
+func (c *AzureCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AzureCloudSpec) []byte {
+	return []byte(fmt.Sprintf(`{"cloudProvider": "azure", "cloudProviderSpec": {"tenantID": "%s", "clientID": "%s", "clientSecret": "%s", "subscriptionID": "%s", "location": "westeurope", "vmSize": "Standard_B1ms", "resourceGroup": "%s", "vnetName": "%s", "subnetName": "%s", "routeTableName": "%s", "securityGroupName": "%s"}, "operatingSystem": "ubuntu", "operatingSystemSpec": {"distUpgradeOnBoot": false, "disableAutoUpdate": true}}`,
 		c.TenantID,
 		c.ClientID,
 		c.ClientSecret,
 		c.SubscriptionID,
+		spec.ResourceGroup,
+		spec.VNetName,
+		spec.SubnetName,
+		spec.RouteTableName,
+		spec.SecurityGroup,
 	))
 }
