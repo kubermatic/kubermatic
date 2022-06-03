@@ -711,7 +711,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	return nil
 }
 
-// skipCRDInstallation returns true if we want to skip installation of a CRD on the seed cluster
+// skipCRDInstallation returns true if we want to skip installation of a CRD on the seed cluster.
 func skipCRDInstallation(name string) bool {
 	switch name {
 	// ApplicationInstallations are only required on the user-cluster
