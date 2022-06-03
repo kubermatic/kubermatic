@@ -24,6 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const ApplicationInstallationsFQDNName = "applicationinstallations." + GroupName
+
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
