@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -28,6 +29,7 @@ import (
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,10 +79,18 @@ func (c *AzureClusterJig) Setup(ctx context.Context) error {
 	if err := c.generateAndCreateSecret(ctx, azureSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
 		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
-	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", osSecretPrefixName, c.name))
+	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", azureSecretPrefixName, c.name))
 
 	if err := c.generateAndCreateCluster(ctx, kubermaticv1.CloudSpec{
 		DatacenterName: c.DatacenterName,
+		Azure: &kubermaticv1.AzureCloudSpec{
+			CredentialsReference: &types.GlobalSecretKeySelector{
+				ObjectReference: corev1.ObjectReference{
+					Name:      fmt.Sprintf("%s-%s", azureSecretPrefixName, c.name),
+					Namespace: resources.KubermaticNamespace,
+				},
+			},
+		},
 	}, projectID); err != nil {
 		return fmt.Errorf("failed to create user cluster: %w", err)
 	}
