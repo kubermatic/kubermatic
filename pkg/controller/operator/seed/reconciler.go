@@ -23,6 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -43,6 +44,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -296,6 +298,11 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
 	}
 
+	// Ensure that ApplicationInstallation CRD doesn't exist on the seed cluster.
+	if err := r.removeApplicationInstallationCRD(ctx, client); err != nil {
+		return err
+	}
+
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -376,6 +383,9 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 		}
 
 		for i := range crds {
+			if skipCRDInstallation(crds[i].Name) {
+				continue
+			}
 			creators = append(creators, common.CRDCreator(&crds[i], log, r.versions))
 		}
 	}
@@ -698,5 +708,27 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		return fmt.Errorf("failed to reconcile mutating Admission Webhooks: %w", err)
 	}
 
+	return nil
+}
+
+// skipCRDInstallation returns true if we want to skip installation of a CRD on the seed cluster.
+func skipCRDInstallation(name string) bool {
+	switch name {
+	// ApplicationInstallations are only required on the user-cluster
+	case appskubermaticv1.ApplicationInstallationsFQDNName:
+		return true
+	default:
+		return false
+	}
+}
+
+// TODO: This should be removed after KKP 2.21 release.
+func (r *Reconciler) removeApplicationInstallationCRD(ctx context.Context, client ctrlruntimeclient.Client) error {
+	crd := apiextensionsv1.CustomResourceDefinition{}
+	crd.Name = appskubermaticv1.ApplicationInstallationsFQDNName
+
+	if err := client.Delete(ctx, &crd); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete CRD %s: %w", crd.Name, err)
+	}
 	return nil
 }

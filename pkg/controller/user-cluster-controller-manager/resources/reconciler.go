@@ -64,6 +64,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -180,6 +181,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileRoleBindings(ctx, data); err != nil {
+		return err
+	}
+
+	if err := r.removeOldApplicationInstallationCRD(ctx); err != nil {
 		return err
 	}
 
@@ -1361,4 +1366,31 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 			}
 		}
 	})
+}
+
+// removeOldApplicationInstallationCRD handles deletion of ApplicationInstallations CRD
+// if the existing CRD has scope set to `Cluster`. This action is super safe since
+// at the time of writing this method this feature has not been rolled out.
+// We can just delete the CRD and install the new one.
+// TODO: This should be removed after KKP 2.21 release.
+func (r *reconciler) removeOldApplicationInstallationCRD(ctx context.Context) error {
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: appskubermaticv1.ApplicationInstallationsFQDNName}, crd)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get CRD %s: %w", appskubermaticv1.ApplicationInstallationsFQDNName, err)
+	}
+
+	// No action is required
+	if err != nil && apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	// CRD exists, now we need to check if it's cluster scoped
+	if crd.Spec.Scope == apiextensionsv1.ClusterScoped {
+		// We need to delete this CRD
+		if err := r.Client.Delete(ctx, crd); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete CRD %s: %w", crd.Name, err)
+		}
+	}
+	return nil
 }
