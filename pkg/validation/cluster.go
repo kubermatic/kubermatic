@@ -592,6 +592,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateVSphereCloudSpec(spec.VSphere)
 	case spec.Nutanix != nil:
 		providerErr = validateNutanixCloudSpec(spec.Nutanix)
+	case spec.VMwareCloudDirector != nil:
+		providerErr = validateVMwareCloudDirectorCloudSpec(spec.VMwareCloudDirector)
 	default:
 		providerErr = errors.New("no cloud provider specified")
 	}
@@ -726,6 +728,31 @@ func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 	}
 	if spec.Password == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VspherePassword); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateVMwareCloudDirectorCloudSpec(spec *kubermaticv1.VMwareCloudDirectorCloudSpec) error {
+	if spec.Username == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorUsername); err != nil {
+			return err
+		}
+	}
+	if spec.Password == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorPassword); err != nil {
+			return err
+		}
+	}
+	if spec.Organization == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorOrganization); err != nil {
+			return err
+		}
+	}
+	if spec.VDC == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorVDC); err != nil {
 			return err
 		}
 	}

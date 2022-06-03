@@ -427,6 +427,34 @@ spec:
                           items:
                             type: string
                           type: array
+                        vmwareCloudDirector:
+                          properties:
+                            allowInsecure:
+                              description: If set to true, disables the TLS certificate
+                                check against the endpoint.
+                              type: boolean
+                            catalog:
+                              description: The default catalog which contains the
+                                VM templates.
+                              type: string
+                            storageProfile:
+                              description: The name of the storage profile to use
+                                for disks attached to the VMs.
+                              type: string
+                            templates:
+                              additionalProperties:
+                                type: string
+                              description: A list of VM templates to use for a given
+                                operating system. You must define at least one template.
+                              type: object
+                            url:
+                              description: Endpoint URL to use, including protocol,
+                                for example "https://vclouddirector.example.com".
+                              type: string
+                          required:
+                          - templates
+                          - url
+                          type: object
                         vsphere:
                           description: DatacenterSpecVSphere describes a vSphere datacenter.
                           properties:

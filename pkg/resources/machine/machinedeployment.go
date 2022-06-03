@@ -241,6 +241,12 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
+	case nd.Spec.Template.Cloud.VMwareCloudDirector != nil && dc.Spec.VMwareCloudDirector != nil:
+		config.CloudProvider = providerconfig.CloudProviderVcloudDirector
+		cloudExt, err = getVMwareCloudDirectorProviderSpec(c, nd.Spec.Template, dc)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unknown cloud provider or cloud provider mismatch between node and datacenter")
 	}
@@ -330,7 +336,8 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) 
 		nd.Spec.Template.Cloud.Kubevirt == nil &&
 		nd.Spec.Template.Cloud.Alibaba == nil &&
 		nd.Spec.Template.Cloud.Anexia == nil &&
-		nd.Spec.Template.Cloud.Nutanix == nil {
+		nd.Spec.Template.Cloud.Nutanix == nil &&
+		nd.Spec.Template.Cloud.VMwareCloudDirector == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 

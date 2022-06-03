@@ -93,7 +93,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -137,7 +137,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -190,7 +190,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -441,7 +441,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -493,7 +493,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -566,7 +566,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -621,7 +621,7 @@ spec:
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -691,7 +691,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -783,7 +783,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -915,7 +915,7 @@ spec:
                         type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -963,13 +963,81 @@ spec:
                       for this cluster. This must match the given provider spec (e.g.
                       if the providerName is "aws", then the `aws` field must be set).
                     type: string
+                  vmwareCloudDirector:
+                    description: VMwareCloudDirectorCloudSpec specifies access data
+                      to VMware Cloud Director cloud.
+                    properties:
+                      credentialsReference:
+                        description: GlobalObjectKeySelector is needed as we can not
+                          use v1.SecretKeySelector because it is not cross namespace.
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: 'If referring to a piece of an object instead
+                              of an entire object, this string should contain a valid
+                              JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container
+                              within a pod, this would take on a value like: "spec.containers{name}"
+                              (where "name" refers to the name of the container that
+                              triggered the event) or if no container name is specified
+                              "spec.containers[2]" (container with index 2 in this
+                              pod). This syntax is chosen only to have some well-defined
+                              way of referencing a part of an object. TODO: this design
+                              is not final and this field is subject to change in
+                              the future.'
+                            type: string
+                          key:
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                          resourceVersion:
+                            description: 'Specific resourceVersion to which this reference
+                              is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                            type: string
+                        type: object
+                      organization:
+                        description: Password is the VMware Cloud Director user password.
+                        type: string
+                      ovdcNetwork:
+                        description: Network is the name of organizational virtual
+                          data center network that will be associated with the VMs
+                          and vApp.
+                        type: string
+                      password:
+                        description: Password is the VMware Cloud Director user password.
+                        type: string
+                      username:
+                        description: Username is the VMware Cloud Director user name.
+                        type: string
+                      vapp:
+                        description: VApp used for isolation of VMs and their associated
+                          network
+                        type: string
+                      vdc:
+                        description: VDC is the organizational virtual data center.
+                        type: string
+                    required:
+                    - ovdcNetwork
+                    type: object
                   vsphere:
                     description: VSphereCloudSpec specifies access data to VSphere
                       cloud.
                     properties:
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
-                          use v1.SecretKeySelector because it is not cross namespace
+                          use v1.SecretKeySelector because it is not cross namespace.
                         properties:
                           apiVersion:
                             description: API version of the referent.

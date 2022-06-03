@@ -27,18 +27,19 @@ import (
 )
 
 type Credentials struct {
-	AWS          AWSCredentials
-	Azure        AzureCredentials
-	Digitalocean DigitaloceanCredentials
-	GCP          GCPCredentials
-	Hetzner      HetznerCredentials
-	Openstack    OpenstackCredentials
-	Packet       PacketCredentials
-	Kubevirt     KubevirtCredentials
-	VSphere      VSphereCredentials
-	Alibaba      AlibabaCredentials
-	Anexia       AnexiaCredentials
-	Nutanix      NutanixCredentials
+	AWS                 AWSCredentials
+	Azure               AzureCredentials
+	Digitalocean        DigitaloceanCredentials
+	GCP                 GCPCredentials
+	Hetzner             HetznerCredentials
+	Openstack           OpenstackCredentials
+	Packet              PacketCredentials
+	Kubevirt            KubevirtCredentials
+	VSphere             VSphereCredentials
+	Alibaba             AlibabaCredentials
+	Anexia              AnexiaCredentials
+	Nutanix             NutanixCredentials
+	VMwareCloudDirector VMwareCloudDirectorCredentials
 }
 
 type AWSCredentials struct {
@@ -105,6 +106,13 @@ type KubevirtCredentials struct {
 	KubeConfig string
 	// CSI driver kubeconfig for user cluster to provision storage on KubeVirt cluster
 	CSIKubeConfig string
+}
+
+type VMwareCloudDirectorCredentials struct {
+	Username     string
+	Password     string
+	Organization string
+	VDC          string
 }
 
 type VSphereCredentials struct {
@@ -216,6 +224,12 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 
 	if data.Cluster().Spec.Cloud.Nutanix != nil {
 		if credentials.Nutanix, err = GetNutanixCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		if credentials.VMwareCloudDirector, err = GetVMwareCloudDirectorCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -701,5 +715,36 @@ func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
 		return NutanixCredentials{}, err
 	}
 
+	return credentials, nil
+}
+
+func GetVMwareCloudDirectorCredentials(data CredentialsData) (VMwareCloudDirectorCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.VMwareCloudDirector
+	credentials := VMwareCloudDirectorCredentials{}
+	var err error
+
+	if spec.Username != "" {
+		credentials.Username = spec.Username
+	} else if credentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorUsername); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
+
+	if spec.Password != "" {
+		credentials.Password = spec.Password
+	} else if credentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorPassword); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
+
+	if spec.Organization != "" {
+		credentials.Organization = spec.Organization
+	} else if credentials.Organization, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorOrganization); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
+
+	if spec.VDC != "" {
+		credentials.VDC = spec.VDC
+	} else if credentials.VDC, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorVDC); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
 	return credentials, nil
 }

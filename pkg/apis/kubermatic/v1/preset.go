@@ -47,21 +47,22 @@ type Preset struct {
 
 // Presets specifies default presets for supported providers.
 type PresetSpec struct {
-	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
-	Hetzner      *Hetzner      `json:"hetzner,omitempty"`
-	Azure        *Azure        `json:"azure,omitempty"`
-	VSphere      *VSphere      `json:"vsphere,omitempty"`
-	AWS          *AWS          `json:"aws,omitempty"`
-	Openstack    *Openstack    `json:"openstack,omitempty"`
-	Packet       *Packet       `json:"packet,omitempty"`
-	GCP          *GCP          `json:"gcp,omitempty"`
-	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
-	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
-	Anexia       *Anexia       `json:"anexia,omitempty"`
-	Nutanix      *Nutanix      `json:"nutanix,omitempty"`
-	GKE          *GKE          `json:"gke,omitempty"`
-	EKS          *EKS          `json:"eks,omitempty"`
-	AKS          *AKS          `json:"aks,omitempty"`
+	Digitalocean        *Digitalocean        `json:"digitalocean,omitempty"`
+	Hetzner             *Hetzner             `json:"hetzner,omitempty"`
+	Azure               *Azure               `json:"azure,omitempty"`
+	VSphere             *VSphere             `json:"vsphere,omitempty"`
+	AWS                 *AWS                 `json:"aws,omitempty"`
+	Openstack           *Openstack           `json:"openstack,omitempty"`
+	Packet              *Packet              `json:"packet,omitempty"`
+	GCP                 *GCP                 `json:"gcp,omitempty"`
+	Kubevirt            *Kubevirt            `json:"kubevirt,omitempty"`
+	Alibaba             *Alibaba             `json:"alibaba,omitempty"`
+	Anexia              *Anexia              `json:"anexia,omitempty"`
+	Nutanix             *Nutanix             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	GKE                 *GKE                 `json:"gke,omitempty"`
+	EKS                 *EKS                 `json:"eks,omitempty"`
+	AKS                 *AKS                 `json:"aks,omitempty"`
 
 	Fake           *Fake    `json:"fake,omitempty"`
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
@@ -160,6 +161,24 @@ type VSphere struct {
 
 func (s VSphere) IsValid() bool {
 	return len(s.Username) > 0 && len(s.Password) > 0
+}
+
+type VMwareCloudDirector struct {
+	ProviderPreset `json:",inline"`
+
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	VDC          string `json:"vdc"`
+	Organization string `json:"organization"`
+	OVDCNetwork  string `json:"ovdcNetwork"`
+}
+
+func (s VMwareCloudDirector) IsValid() bool {
+	return len(s.Username) > 0 &&
+		len(s.Password) > 0 &&
+		len(s.VDC) > 0 &&
+		len(s.Organization) > 0 &&
+		len(s.OVDCNetwork) > 0
 }
 
 type AWS struct {

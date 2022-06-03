@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmware-cloud-director
 
 type ProviderType string
 
@@ -34,23 +34,24 @@ type CIDR string
 
 const (
 	// Constants defining known cloud providers.
-	FakeCloudProvider         ProviderType = "fake"
-	AKSCloudProvider          ProviderType = "aks"
-	AlibabaCloudProvider      ProviderType = "alibaba"
-	AnexiaCloudProvider       ProviderType = "anexia"
-	AWSCloudProvider          ProviderType = "aws"
-	AzureCloudProvider        ProviderType = "azure"
-	BringYourOwnCloudProvider ProviderType = "bringyourown"
-	DigitaloceanCloudProvider ProviderType = "digitalocean"
-	EKSCloudProvider          ProviderType = "eks"
-	GCPCloudProvider          ProviderType = "gcp"
-	GKECloudProvider          ProviderType = "gke"
-	HetznerCloudProvider      ProviderType = "hetzner"
-	KubevirtCloudProvider     ProviderType = "kubevirt"
-	NutanixCloudProvider      ProviderType = "nutanix"
-	OpenstackCloudProvider    ProviderType = "openstack"
-	PacketCloudProvider       ProviderType = "packet"
-	VSphereCloudProvider      ProviderType = "vsphere"
+	FakeCloudProvider                ProviderType = "fake"
+	AKSCloudProvider                 ProviderType = "aks"
+	AlibabaCloudProvider             ProviderType = "alibaba"
+	AnexiaCloudProvider              ProviderType = "anexia"
+	AWSCloudProvider                 ProviderType = "aws"
+	AzureCloudProvider               ProviderType = "azure"
+	BringYourOwnCloudProvider        ProviderType = "bringyourown"
+	DigitaloceanCloudProvider        ProviderType = "digitalocean"
+	EKSCloudProvider                 ProviderType = "eks"
+	GCPCloudProvider                 ProviderType = "gcp"
+	GKECloudProvider                 ProviderType = "gke"
+	HetznerCloudProvider             ProviderType = "hetzner"
+	KubevirtCloudProvider            ProviderType = "kubevirt"
+	NutanixCloudProvider             ProviderType = "nutanix"
+	OpenstackCloudProvider           ProviderType = "openstack"
+	PacketCloudProvider              ProviderType = "packet"
+	VMwareCloudDirectorCloudProvider ProviderType = "vmware-cloud-director"
+	VSphereCloudProvider             ProviderType = "vsphere"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -76,6 +77,7 @@ var (
 		NutanixCloudProvider,
 		OpenstackCloudProvider,
 		PacketCloudProvider,
+		VMwareCloudDirectorCloudProvider,
 		VSphereCloudProvider,
 	}
 )
@@ -369,17 +371,18 @@ type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
-	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
-	AWS          *DatacenterSpecAWS          `json:"aws,omitempty"`
-	Azure        *DatacenterSpecAzure        `json:"azure,omitempty"`
-	Openstack    *DatacenterSpecOpenstack    `json:"openstack,omitempty"`
-	Packet       *DatacenterSpecPacket       `json:"packet,omitempty"`
-	Hetzner      *DatacenterSpecHetzner      `json:"hetzner,omitempty"`
-	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
-	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
-	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
-	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
-	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	BringYourOwn        *DatacenterSpecBringYourOwn        `json:"bringyourown,omitempty"`
+	AWS                 *DatacenterSpecAWS                 `json:"aws,omitempty"`
+	Azure               *DatacenterSpecAzure               `json:"azure,omitempty"`
+	Openstack           *DatacenterSpecOpenstack           `json:"openstack,omitempty"`
+	Packet              *DatacenterSpecPacket              `json:"packet,omitempty"`
+	Hetzner             *DatacenterSpecHetzner             `json:"hetzner,omitempty"`
+	VSphere             *DatacenterSpecVSphere             `json:"vsphere,omitempty"`
+	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	GCP                 *DatacenterSpecGCP                 `json:"gcp,omitempty"`
+	Kubevirt            *DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
+	Alibaba             *DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
+	Anexia              *DatacenterSpecAnexia              `json:"anexia,omitempty"`
 	// Nutanix is experimental and unsupported
 	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
@@ -508,6 +511,20 @@ type DatacenterSpecVSphere struct {
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
+}
+
+type DatacenterSpecVMwareCloudDirector struct {
+	// Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
+	URL string `json:"url"`
+	// If set to true, disables the TLS certificate check against the endpoint.
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
+	// The default catalog which contains the VM templates.
+	DefaultCatalog string `json:"catalog,omitempty"`
+	// The name of the storage profile to use for disks attached to the VMs.
+	DefaultStorageProfile string `json:"storageProfile,omitempty"`
+	// A list of VM templates to use for a given operating system. You must
+	// define at least one template.
+	Templates ImageList `json:"templates"`
 }
 
 // DatacenterSpecAWS describes an AWS datacenter.

@@ -21706,6 +21706,9 @@
           "type": "string",
           "x-go-name": "ProviderName"
         },
+        "vmwareCloudDirector": {
+          "$ref": "#/definitions/VMwareCloudDirectorCloudSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/VSphereCloudSpec"
         }
@@ -22681,6 +22684,9 @@
           "type": "string",
           "x-go-name": "Seed"
         },
+        "vmwareCloudDirector": {
+          "$ref": "#/definitions/DatacenterSpecVMwareCloudDirector"
+        },
         "vsphere": {
           "$ref": "#/definitions/DatacenterSpecVSphere"
         }
@@ -22931,6 +22937,35 @@
             "type": "string"
           },
           "x-go-name": "Facilities"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "DatacenterSpecVMwareCloudDirector": {
+      "type": "object",
+      "properties": {
+        "allowInsecure": {
+          "description": "If set to true, disables the TLS certificate check against the endpoint.",
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "catalog": {
+          "description": "The default catalog which contains the VM templates.",
+          "type": "string",
+          "x-go-name": "DefaultCatalog"
+        },
+        "storageProfile": {
+          "description": "The name of the storage profile to use for disks attached to the VMs.",
+          "type": "string",
+          "x-go-name": "DefaultStorageProfile"
+        },
+        "templates": {
+          "$ref": "#/definitions/ImageList"
+        },
+        "url": {
+          "description": "Endpoint URL to use, including protocol, for example \"https://vclouddirector.example.com\".",
+          "type": "string",
+          "x-go-name": "URL"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -24833,7 +24868,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "GlobalObjectKeySelector": {
-      "description": "GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector\nbecause it is not cross namespace",
+      "description": "GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector\nbecause it is not cross namespace.",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -25414,6 +25449,9 @@
         "openstack": {
           "$ref": "#/definitions/KubeOneOpenStackCloudSpec"
         },
+        "vmwareclouddirector": {
+          "$ref": "#/definitions/KubeOneVMwareCloudDirectorCloudSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/KubeOneVSphereCloudSpec"
         }
@@ -25593,6 +25631,33 @@
         },
         "sshKey": {
           "$ref": "#/definitions/KubeOneSSHKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneVMwareCloudDirectorCloudSpec": {
+      "type": "object",
+      "title": "KubeOneVMwareCloudDirectorCloudSpec represents credentials for accessing VMWare Cloud Director.",
+      "properties": {
+        "organization": {
+          "type": "string",
+          "x-go-name": "Organization"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        },
+        "vdc": {
+          "type": "string",
+          "x-go-name": "VDC"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -25900,7 +25965,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "MachineDeploymentStatus": {
-      "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
+      "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment.",
       "type": "object",
       "properties": {
         "availableReplicas": {
@@ -26477,6 +26542,9 @@
         },
         "packet": {
           "$ref": "#/definitions/PacketNodeSpec"
+        },
+        "vmwareCloudDirector": {
+          "$ref": "#/definitions/VMwareCloudDirectorNodeSpec"
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereNodeSpec"
@@ -28134,6 +28202,9 @@
           },
           "x-go-name": "RequiredEmails"
         },
+        "vmwareCloudDirector": {
+          "$ref": "#/definitions/VMwareCloudDirector"
+        },
         "vsphere": {
           "$ref": "#/definitions/VSphere"
         }
@@ -28346,6 +28417,9 @@
         "packet": {
           "$ref": "#/definitions/PublicPacketCloudSpec"
         },
+        "vmwareCloudDirector": {
+          "$ref": "#/definitions/PublicVMwareCloudDirectorCloudSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/PublicVSphereCloudSpec"
         }
@@ -28472,6 +28546,11 @@
           "x-go-name": "Name"
         }
       },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "PublicVMwareCloudDirectorCloudSpec": {
+      "type": "object",
+      "title": "PublicVMwareCloudDirectorCloudSpec is a public counterpart of apiv1.VMwareCloudDirectorCloudSpec.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PublicVSphereCloudSpec": {
@@ -29408,6 +29487,144 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "VMwareCloudDirector": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "organization": {
+          "type": "string",
+          "x-go-name": "Organization"
+        },
+        "ovdcNetwork": {
+          "type": "string",
+          "x-go-name": "OVDCNetwork"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        },
+        "vdc": {
+          "type": "string",
+          "x-go-name": "VDC"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "VMwareCloudDirectorCloudSpec": {
+      "type": "object",
+      "title": "VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.",
+      "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "organization": {
+          "description": "Password is the VMware Cloud Director user password.\n+optional",
+          "type": "string",
+          "x-go-name": "Organization"
+        },
+        "ovdcNetwork": {
+          "description": "Network is the name of organizational virtual data center network that will be associated with the VMs and vApp.",
+          "type": "string",
+          "x-go-name": "OVDCNetwork"
+        },
+        "password": {
+          "description": "Password is the VMware Cloud Director user password.\n+optional",
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "description": "Username is the VMware Cloud Director user name.\n+optional",
+          "type": "string",
+          "x-go-name": "Username"
+        },
+        "vapp": {
+          "description": "VApp used for isolation of VMs and their associated network\n+optional",
+          "type": "string",
+          "x-go-name": "VApp"
+        },
+        "vdc": {
+          "description": "VDC is the organizational virtual data center.\n+optional",
+          "type": "string",
+          "x-go-name": "VDC"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "VMwareCloudDirectorNodeSpec": {
+      "description": "VMwareCloudDirectorNodeSpec VMware Cloud Director node settings",
+      "type": "object",
+      "properties": {
+        "catalog": {
+          "type": "string",
+          "x-go-name": "Catalog"
+        },
+        "cpuCores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUCores"
+        },
+        "cpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUs"
+        },
+        "diskIOPS": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskIOPS"
+        },
+        "diskSizeGB": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSizeGB"
+        },
+        "ipAllocationMode": {
+          "type": "string",
+          "x-go-name": "IPAllocationMode"
+        },
+        "memoryMB": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryMB"
+        },
+        "metadata": {
+          "description": "Additional metadata to set",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Metadata"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "storageProfile": {
+          "type": "string",
+          "x-go-name": "StorageProfile"
+        },
+        "template": {
+          "type": "string",
+          "x-go-name": "Template"
+        },
+        "vapp": {
+          "type": "string",
+          "x-go-name": "VApp"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "VSphere": {
       "type": "object",

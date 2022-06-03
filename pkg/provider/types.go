@@ -461,6 +461,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.Nutanix != nil {
 		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
 	}
+	if spec.VMwareCloudDirector != nil {
+		clouds = append(clouds, kubermaticv1.VMwareCloudDirectorCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -536,6 +539,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	if spec.Nutanix != nil {
 		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
+	}
+	if spec.VMwareCloudDirector != nil {
+		clouds = append(clouds, kubermaticv1.VMwareCloudDirectorCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

@@ -473,15 +473,16 @@ type KubeOneSSHKey struct {
 }
 
 type KubeOneCloudSpec struct {
-	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
-	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
-	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
-	DigitalOcean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
-	OpenStack    *KubeOneOpenStackCloudSpec    `json:"openstack,omitempty"`
-	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
-	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
-	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
-	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
+	AWS                 *KubeOneAWSCloudSpec                 `json:"aws,omitempty"`
+	GCP                 *KubeOneGCPCloudSpec                 `json:"gcp,omitempty"`
+	Azure               *KubeOneAzureCloudSpec               `json:"azure,omitempty"`
+	DigitalOcean        *KubeOneDigitalOceanCloudSpec        `json:"digitalocean,omitempty"`
+	OpenStack           *KubeOneOpenStackCloudSpec           `json:"openstack,omitempty"`
+	Equinix             *KubeOneEquinixCloudSpec             `json:"equinix,omitempty"`
+	Hetzner             *KubeOneHetznerCloudSpec             `json:"hetzner,omitempty"`
+	VSphere             *KubeOneVSphereCloudSpec             `json:"vsphere,omitempty"`
+	VMwareCloudDirector *KubeOneVMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
+	Nutanix             *KubeOneNutanixCloudSpec             `json:"nutanix,omitempty"`
 }
 
 // KubeOneAWSCloudSpec specifies access data to Amazon Web Services.
@@ -529,6 +530,15 @@ type KubeOneVSphereCloudSpec struct {
 	Server   string `json:"server"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+// KubeOneVMwareCloudDirectorCloudSpec represents credentials for accessing VMWare Cloud Director.
+type KubeOneVMwareCloudDirectorCloudSpec struct {
+	URL          string `json:"url"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	Organization string `json:"organization"`
+	VDC          string `json:"vdc"`
 }
 
 // KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.

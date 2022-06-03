@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -103,6 +104,9 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	}
 	if cluster.Spec.Cloud.Nutanix != nil {
 		return createOrUpdateNutanixSecret(ctx, seedClient, cluster, validate)
+	}
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+		return createOrUpdateVMwareCloudDirectorSecret(ctx, seedClient, cluster, validate)
 	}
 	return false, nil
 }
@@ -636,6 +640,43 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	return true, nil
 }
 
+func createOrUpdateVMwareCloudDirectorSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
+	spec := cluster.Spec.Cloud.VMwareCloudDirector
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" && spec.Organization == "" && spec.VDC == "" {
+		return false, nil
+	}
+
+	if validate != nil {
+		if err := vmwareclouddirector.ValidateCredentials(ctx, validate.Datacenter.Spec.VMwareCloudDirector, spec.Username, spec.Password, spec.Organization, spec.VDC); err != nil {
+			return false, fmt.Errorf("invalid VMware Cloud Director credentials: %w", err)
+		}
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.VMwareCloudDirectorUsername:     []byte(spec.Username),
+		resources.VMwareCloudDirectorPassword:     []byte(spec.Password),
+		resources.VMwareCloudDirectorOrganization: []byte(spec.Organization),
+		resources.VMwareCloudDirectorVDC:          []byte(spec.VDC),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.VMwareCloudDirector.CredentialsReference = credentialRef
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.VMwareCloudDirector.Username = ""
+	cluster.Spec.Cloud.VMwareCloudDirector.Password = ""
+	cluster.Spec.Cloud.VMwareCloudDirector.Organization = ""
+	cluster.Spec.Cloud.VMwareCloudDirector.VDC = ""
+
+	return true, nil
+}
+
 func GetKubeOneNamespaceName(externalClusterName string) string {
 	return fmt.Sprintf("%s%s", resources.KubeOneNamespacePrefix, externalClusterName)
 }
@@ -751,6 +792,10 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx cont
 	if cloud.Nutanix != nil {
 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneNutanix
 		return createOrUpdateKubeOneNutanixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
+	if cloud.VMwareCloudDirector != nil {
+		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneVMwareCloudDirector
+		return createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
 	return nil
 }
@@ -1026,6 +1071,33 @@ func createOrUpdateKubeOneNutanixSecret(ctx context.Context, cloud apiv2.KubeOne
 	return nil
 }
 
+func createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	username := cloud.VMwareCloudDirector.Username
+	password := cloud.VMwareCloudDirector.Password
+	url := cloud.VMwareCloudDirector.URL
+	organization := cloud.VMwareCloudDirector.Organization
+	vdc := cloud.VMwareCloudDirector.VDC
+
+	if username == "" || password == "" || url == "" || organization == "" || vdc == "" {
+		return utilerrors.NewBadRequest("kubeone VMware Cloud Director credentials missing")
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
+		resources.VMwareCloudDirectorUsername:     []byte(username),
+		resources.VMwareCloudDirectorPassword:     []byte(password),
+		resources.VMwareCloudDirectorOrganization: []byte(organization),
+		resources.VMwareCloudDirectorVDC:          []byte(vdc),
+		resources.VMwareCloudDirectorURL:          []byte(url),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to externalCluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	return nil
+}
 func GetKubeOneCredentialsSecretName(cloud apiv2.KubeOneCloudSpec) string {
 	if cloud.AWS != nil {
 		return "credential-aws"
@@ -1047,6 +1119,9 @@ func GetKubeOneCredentialsSecretName(cloud apiv2.KubeOneCloudSpec) string {
 	}
 	if cloud.Equinix != nil {
 		return "credential-equinix"
+	}
+	if cloud.VMwareCloudDirector != nil {
+		return "credential-vmware-cloud-director"
 	}
 	if cloud.VSphere != nil {
 		return "credential-vsphere"

@@ -67,20 +67,21 @@ type DatacenterSpec struct {
 	Location string `json:"location,omitempty"`
 	// Name of the datacenter provider. Extracted based on which provider is defined in the spec.
 	// It is used for informational purposes.
-	Provider     string                                   `json:"provider,omitempty"`
-	Digitalocean *kubermaticv1.DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
-	BringYourOwn *kubermaticv1.DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
-	AWS          *kubermaticv1.DatacenterSpecAWS          `json:"aws,omitempty"`
-	Azure        *kubermaticv1.DatacenterSpecAzure        `json:"azure,omitempty"`
-	Openstack    *kubermaticv1.DatacenterSpecOpenstack    `json:"openstack,omitempty"`
-	Packet       *kubermaticv1.DatacenterSpecPacket       `json:"packet,omitempty"`
-	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
-	Hetzner      *kubermaticv1.DatacenterSpecHetzner      `json:"hetzner,omitempty"`
-	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
-	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
-	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
-	Anexia       *kubermaticv1.DatacenterSpecAnexia       `json:"anexia,omitempty"`
-	Nutanix      *kubermaticv1.DatacenterSpecNutanix      `json:"nutanix,omitempty"`
+	Provider            string                                          `json:"provider,omitempty"`
+	Digitalocean        *kubermaticv1.DatacenterSpecDigitalocean        `json:"digitalocean,omitempty"`
+	BringYourOwn        *kubermaticv1.DatacenterSpecBringYourOwn        `json:"bringyourown,omitempty"`
+	AWS                 *kubermaticv1.DatacenterSpecAWS                 `json:"aws,omitempty"`
+	Azure               *kubermaticv1.DatacenterSpecAzure               `json:"azure,omitempty"`
+	Openstack           *kubermaticv1.DatacenterSpecOpenstack           `json:"openstack,omitempty"`
+	Packet              *kubermaticv1.DatacenterSpecPacket              `json:"packet,omitempty"`
+	GCP                 *kubermaticv1.DatacenterSpecGCP                 `json:"gcp,omitempty"`
+	Hetzner             *kubermaticv1.DatacenterSpecHetzner             `json:"hetzner,omitempty"`
+	VSphere             *kubermaticv1.DatacenterSpecVSphere             `json:"vsphere,omitempty"`
+	Kubevirt            *kubermaticv1.DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
+	Alibaba             *kubermaticv1.DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
+	Anexia              *kubermaticv1.DatacenterSpecAnexia              `json:"anexia,omitempty"`
+	Nutanix             *kubermaticv1.DatacenterSpecNutanix             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *kubermaticv1.DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -941,21 +942,22 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
-			DatacenterName: cs.Cloud.DatacenterName,
-			Fake:           newPublicFakeCloudSpec(cs.Cloud.Fake),
-			Digitalocean:   newPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
-			BringYourOwn:   newPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
-			AWS:            newPublicAWSCloudSpec(cs.Cloud.AWS),
-			Azure:          newPublicAzureCloudSpec(cs.Cloud.Azure),
-			Openstack:      newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
-			Packet:         newPublicPacketCloudSpec(cs.Cloud.Packet),
-			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
-			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
-			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
-			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
-			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
-			Anexia:         newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
-			Nutanix:        newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
+			DatacenterName:      cs.Cloud.DatacenterName,
+			Fake:                newPublicFakeCloudSpec(cs.Cloud.Fake),
+			Digitalocean:        newPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
+			BringYourOwn:        newPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
+			AWS:                 newPublicAWSCloudSpec(cs.Cloud.AWS),
+			Azure:               newPublicAzureCloudSpec(cs.Cloud.Azure),
+			Openstack:           newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
+			Packet:              newPublicPacketCloudSpec(cs.Cloud.Packet),
+			Hetzner:             newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
+			VSphere:             newPublicVSphereCloudSpec(cs.Cloud.VSphere),
+			GCP:                 newPublicGCPCloudSpec(cs.Cloud.GCP),
+			Kubevirt:            newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
+			Alibaba:             newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
+			Anexia:              newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
+			Nutanix:             newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
+			VMwareCloudDirector: newPublicVMwareCloudDirectorCloudSpec(cs.Cloud.VMwareCloudDirector),
 		},
 		Version:                              cs.Version,
 		MachineNetworks:                      cs.MachineNetworks,
@@ -985,21 +987,22 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 // PublicCloudSpec is a public counterpart of apiv1.CloudSpec.
 // swagger:model PublicCloudSpec
 type PublicCloudSpec struct {
-	DatacenterName string                       `json:"dc"`
-	Fake           *PublicFakeCloudSpec         `json:"fake,omitempty"`
-	Digitalocean   *PublicDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	BringYourOwn   *PublicBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	AWS            *PublicAWSCloudSpec          `json:"aws,omitempty"`
-	Azure          *PublicAzureCloudSpec        `json:"azure,omitempty"`
-	Openstack      *PublicOpenstackCloudSpec    `json:"openstack,omitempty"`
-	Packet         *PublicPacketCloudSpec       `json:"packet,omitempty"`
-	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
-	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
-	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
-	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
-	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
-	Anexia         *PublicAnexiaCloudSpec       `json:"anexia,omitempty"`
-	Nutanix        *PublicNutanixCloudSpec      `json:"nutanix,omitempty"`
+	DatacenterName      string                              `json:"dc"`
+	Fake                *PublicFakeCloudSpec                `json:"fake,omitempty"`
+	Digitalocean        *PublicDigitaloceanCloudSpec        `json:"digitalocean,omitempty"`
+	BringYourOwn        *PublicBringYourOwnCloudSpec        `json:"bringyourown,omitempty"`
+	AWS                 *PublicAWSCloudSpec                 `json:"aws,omitempty"`
+	Azure               *PublicAzureCloudSpec               `json:"azure,omitempty"`
+	Openstack           *PublicOpenstackCloudSpec           `json:"openstack,omitempty"`
+	Packet              *PublicPacketCloudSpec              `json:"packet,omitempty"`
+	Hetzner             *PublicHetznerCloudSpec             `json:"hetzner,omitempty"`
+	VSphere             *PublicVSphereCloudSpec             `json:"vsphere,omitempty"`
+	GCP                 *PublicGCPCloudSpec                 `json:"gcp,omitempty"`
+	Kubevirt            *PublicKubevirtCloudSpec            `json:"kubevirt,omitempty"`
+	Alibaba             *PublicAlibabaCloudSpec             `json:"alibaba,omitempty"`
+	Anexia              *PublicAnexiaCloudSpec              `json:"anexia,omitempty"`
+	Nutanix             *PublicNutanixCloudSpec             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *PublicVMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -1178,6 +1181,17 @@ func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public 
 	return &PublicNutanixCloudSpec{}
 }
 
+// PublicVMwareCloudDirectorCloudSpec is a public counterpart of apiv1.VMwareCloudDirectorCloudSpec.
+type PublicVMwareCloudDirectorCloudSpec struct{}
+
+func newPublicVMwareCloudDirectorCloudSpec(internal *kubermaticv1.VMwareCloudDirectorCloudSpec) (public *PublicVMwareCloudDirectorCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicVMwareCloudDirectorCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status.
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -1266,18 +1280,19 @@ type Node struct {
 // NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
 // swagger:model NodeCloudSpec
 type NodeCloudSpec struct {
-	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
-	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
-	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
-	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
-	Packet       *PacketNodeSpec       `json:"packet,omitempty"`
-	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
-	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
-	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
-	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
-	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
-	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
-	Nutanix      *NutanixNodeSpec      `json:"nutanix,omitempty"`
+	Digitalocean        *DigitaloceanNodeSpec        `json:"digitalocean,omitempty"`
+	AWS                 *AWSNodeSpec                 `json:"aws,omitempty"`
+	Azure               *AzureNodeSpec               `json:"azure,omitempty"`
+	Openstack           *OpenstackNodeSpec           `json:"openstack,omitempty"`
+	Packet              *PacketNodeSpec              `json:"packet,omitempty"`
+	Hetzner             *HetznerNodeSpec             `json:"hetzner,omitempty"`
+	VSphere             *VSphereNodeSpec             `json:"vsphere,omitempty"`
+	GCP                 *GCPNodeSpec                 `json:"gcp,omitempty"`
+	Kubevirt            *KubevirtNodeSpec            `json:"kubevirt,omitempty"`
+	Alibaba             *AlibabaNodeSpec             `json:"alibaba,omitempty"`
+	Anexia              *AnexiaNodeSpec              `json:"anexia,omitempty"`
+	Nutanix             *NutanixNodeSpec             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorNodeSpec `json:"vmwareCloudDirector,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -2087,6 +2102,103 @@ func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
 		CPUPassthrough: spec.CPUPassthrough,
 		MemoryMB:       spec.MemoryMB,
 		DiskSize:       spec.DiskSize,
+	}
+
+	return json.Marshal(&res)
+}
+
+// VMwareCloudDirectorNodeSpec VMware Cloud Director node settings
+// swagger:model VMwareCloudDirectorNodeSpec
+type VMwareCloudDirectorNodeSpec struct {
+	CPUs             int    `json:"cpus"`
+	CPUCores         int    `json:"cpuCores"`
+	MemoryMB         int    `json:"memoryMB"`
+	DiskSizeGB       *int64 `json:"diskSizeGB,omitempty"`
+	DiskIOPS         *int64 `json:"diskIOPS,omitempty"`
+	Template         string `json:"template"`
+	Catalog          string `json:"catalog"`
+	StorageProfile   string `json:"storageProfile,omitempty"`
+	IPAllocationMode string `json:"ipAllocationMode,omitempty"`
+	VApp             string `json:"vapp"`
+	Network          string `json:"network"`
+	// Additional metadata to set
+	// required: false
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if spec.CPUs < 1 {
+		missing = append(missing, "cpus")
+	}
+
+	if spec.CPUCores < 1 {
+		missing = append(missing, "cpuCores")
+	}
+
+	if spec.MemoryMB < 1 {
+		missing = append(missing, "memoryMB")
+	}
+
+	if spec.DiskSizeGB != nil && *spec.DiskSizeGB < 4 {
+		missing = append(missing, "diskSizeGB")
+	}
+
+	if spec.DiskIOPS != nil && *spec.DiskIOPS < 0 {
+		missing = append(missing, "diskIOPS")
+	}
+
+	if len(spec.Template) == 0 {
+		missing = append(missing, "template")
+	}
+
+	if len(spec.Catalog) == 0 {
+		missing = append(missing, "catalog")
+	}
+
+	if len(spec.VApp) == 0 {
+		missing = append(missing, "vapp")
+	}
+
+	if len(spec.Network) == 0 {
+		missing = append(missing, "network")
+	}
+
+	if len(spec.IPAllocationMode) == 0 {
+		missing = append(missing, "ipAllocationMode")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
+	}
+
+	res := struct {
+		CPUs             int               `json:"cpus"`
+		CPUCores         int               `json:"cpuCores"`
+		MemoryMB         int               `json:"memoryMB"`
+		DiskSizeGB       *int64            `json:"diskSizeGB,omitempty"`
+		DiskIOPS         *int64            `json:"diskIOPS,omitempty"`
+		Catalog          string            `json:"catalog"`
+		Template         string            `json:"template"`
+		StorageProfile   string            `json:"storageProfile,omitempty"`
+		IPAllocationMode string            `json:"ipAllocationMode,omitempty"`
+		VApp             string            `json:"vapp"`
+		Network          string            `json:"network"`
+		Metadata         map[string]string `json:"metadata,omitempty"`
+	}{
+		CPUs:             spec.CPUs,
+		CPUCores:         spec.CPUCores,
+		MemoryMB:         spec.MemoryMB,
+		DiskSizeGB:       spec.DiskSizeGB,
+		DiskIOPS:         spec.DiskIOPS,
+		Catalog:          spec.Catalog,
+		Template:         spec.Template,
+		StorageProfile:   spec.StorageProfile,
+		IPAllocationMode: spec.IPAllocationMode,
+		VApp:             spec.VApp,
+		Network:          spec.Network,
+		Metadata:         spec.Metadata,
 	}
 
 	return json.Marshal(&res)

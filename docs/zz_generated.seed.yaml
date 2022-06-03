@@ -198,6 +198,25 @@ spec:
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
         requiredEmails: []
+        vmwareCloudDirector:
+          # If set to true, disables the TLS certificate check against the endpoint.
+          allowInsecure: false
+          # The default catalog which contains the VM templates.
+          catalog: ""
+          # The name of the storage profile to use for disks attached to the VMs.
+          storageProfile: ""
+          # A list of VM templates to use for a given operating system. You must
+          # define at least one template.
+          templates:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
+          url: ""
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
