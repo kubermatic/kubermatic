@@ -302,6 +302,12 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 		if err != nil {
 			return err
 		}
+	case nd.Spec.Template.OperatingSystem.RockyLinux != nil:
+		config.OperatingSystem = providerconfig.OperatingSystemRockyLinux
+		osExt, err = getRockyLinuxOperatingSystemSpec(nd.Spec.Template)
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.New("no machine os was provided")
 	}

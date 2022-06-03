@@ -27719,6 +27719,9 @@
         "rhel": {
           "$ref": "#/definitions/RHELSpec"
         },
+        "rockyLinux": {
+          "$ref": "#/definitions/RockyLinuxSpec"
+        },
         "sles": {
           "$ref": "#/definitions/SLESSpec"
         },
@@ -28548,6 +28551,18 @@
     },
     "ResourceType": {
       "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "RockyLinuxSpec": {
+      "description": "RockyLinuxSpec contains rocky-linux specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Role": {

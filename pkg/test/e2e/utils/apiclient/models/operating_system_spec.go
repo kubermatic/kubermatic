@@ -27,6 +27,9 @@ type OperatingSystemSpec struct {
 	// rhel
 	Rhel *RHELSpec `json:"rhel,omitempty"`
 
+	// rocky linux
+	RockyLinux *RockyLinuxSpec `json:"rockyLinux,omitempty"`
+
 	// sles
 	Sles *SLESSpec `json:"sles,omitempty"`
 
@@ -47,6 +50,10 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRhel(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRockyLinux(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -121,6 +128,25 @@ func (m *OperatingSystemSpec) validateRhel(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *OperatingSystemSpec) validateRockyLinux(formats strfmt.Registry) error {
+	if swag.IsZero(m.RockyLinux) { // not required
+		return nil
+	}
+
+	if m.RockyLinux != nil {
+		if err := m.RockyLinux.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("rockyLinux")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("rockyLinux")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *OperatingSystemSpec) validateSles(formats strfmt.Registry) error {
 	if swag.IsZero(m.Sles) { // not required
 		return nil
@@ -172,6 +198,10 @@ func (m *OperatingSystemSpec) ContextValidate(ctx context.Context, formats strfm
 	}
 
 	if err := m.contextValidateRhel(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRockyLinux(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -229,6 +259,22 @@ func (m *OperatingSystemSpec) contextValidateRhel(ctx context.Context, formats s
 				return ve.ValidateName("rhel")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("rhel")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *OperatingSystemSpec) contextValidateRockyLinux(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RockyLinux != nil {
+		if err := m.RockyLinux.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("rockyLinux")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("rockyLinux")
 			}
 			return err
 		}
