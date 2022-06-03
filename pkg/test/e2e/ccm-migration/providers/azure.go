@@ -157,7 +157,7 @@ func (c *AzureCredentialsType) GenerateSecretData() map[string][]byte {
 }
 
 func (c *AzureCredentialsType) GenerateProviderSpec() []byte {
-	return []byte(fmt.Sprintf(`{"cloudProvider": "azure", "cloudProviderSpec": {"tenantID": "%s", "clientID": "%s", "clientSecret": "%s", "subscriptionID": "%s", "location": "westeurope", "vmSize": "Standard_B1ms"}, "operatingSystem": "ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}`,
+	return []byte(fmt.Sprintf(`{"cloudProvider": "azure", "cloudProviderSpec": {"tenantID": "%s", "clientID": "%s", "clientSecret": "%s", "subscriptionID": "%s", "location": "westeurope", "vmSize": "Standard_B1ms"}, "operatingSystem": "ubuntu", "operatingSystemSpec": {"distUpgradeOnBoot": false, "disableAutoUpdate": true}}`,
 		c.TenantID,
 		c.ClientID,
 		c.ClientSecret,
