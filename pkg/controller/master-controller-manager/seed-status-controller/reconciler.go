@@ -148,7 +148,7 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 }
 
 func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
-	seed.Status.Versions.Kubermatic = r.versions.KubermaticCommit
+	seed.SetKubermaticVersion(r.versions)
 
 	kubeconfig, err := r.seedKubeconfigGetter(seed)
 	if err != nil {
