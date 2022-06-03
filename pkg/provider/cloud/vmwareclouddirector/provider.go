@@ -82,14 +82,14 @@ func (p *Provider) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudS
 	// Ensure that VDC exists.
 	vdc, err := org.GetVDCByNameOrId(client.Auth.VDC, false)
 	if err != nil {
-		return fmt.Errorf("failed to get Organization VDC '%s': %w", client.Auth.VDC, err)
+		return fmt.Errorf("failed to get organization VDC '%s': %w", client.Auth.VDC, err)
 	}
 
 	// Ensure that the network exists
 	if spec.VMwareCloudDirector.OVDCNetwork != "" {
 		_, err := vdc.GetOrgVdcNetworkByNameOrId(spec.VMwareCloudDirector.OVDCNetwork, true)
 		if err != nil {
-			return fmt.Errorf("failed to get Organization VDC network '%s': %w", client.Auth.VDC, err)
+			return fmt.Errorf("failed to get organization VDC network '%s': %w", client.Auth.VDC, err)
 		}
 	}
 
@@ -123,7 +123,7 @@ func (p *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 
 	vdc, err := client.GetVDCForOrg(*org)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Organization VDC '%s': %w", client.Auth.VDC, err)
+		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", client.Auth.VDC, err)
 	}
 
 	vAppName := cluster.Spec.Cloud.VMwareCloudDirector.VApp
@@ -233,7 +233,7 @@ func (p *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	// Ensure that VDC exists.
 	vdc, err := client.GetVDCForOrg(*org)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Organization VDC '%s': %w", client.Auth.VDC, err)
+		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", client.Auth.VDC, err)
 	}
 
 	// 1. Create the vApp, if it doesn't exist.
@@ -266,7 +266,7 @@ func ValidateCredentials(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMw
 
 	_, err = client.GetVDCForOrg(*org)
 	if err != nil {
-		return fmt.Errorf("failed to get Organization VDC '%s': %w", vdc, err)
+		return fmt.Errorf("failed to get organization VDC '%s': %w", vdc, err)
 	}
 
 	return err

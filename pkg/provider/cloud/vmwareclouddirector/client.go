@@ -136,7 +136,7 @@ func (c *Client) GetVDCForOrg(org govcd.Org) (*govcd.Vdc, error) {
 	}
 	vcd, err := org.GetVDCByNameOrId(c.Auth.VDC, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Organization VDC '%s': %w", c.Auth.VDC, err)
+		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", c.Auth.VDC, err)
 	}
 	return vcd, err
 }

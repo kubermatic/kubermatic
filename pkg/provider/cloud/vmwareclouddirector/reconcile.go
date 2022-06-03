@@ -75,7 +75,7 @@ func reconcileNetwork(ctx context.Context, cluster *kubermaticv1.Cluster, update
 	// Ensure that ovdc network is attached to the vApp
 	ovdcNetwork, err := vdc.GetOrgVdcNetworkByNameOrId(cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Organization VDC network '%s': %w", cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork, err)
+		return nil, fmt.Errorf("failed to get organization VDC network '%s': %w", cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork, err)
 	}
 
 	// Check if the network is already present in vApp
