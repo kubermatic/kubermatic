@@ -138,22 +138,6 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
-		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
-		if err := deleteRouteTable(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
-			}
-		}
-		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerRouteTable)
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(ctx, clientSet, cluster.Spec.Cloud); err != nil {
@@ -164,6 +148,22 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 		}
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerSubnet)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
+		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
+		if err := deleteRouteTable(ctx, clientSet, cluster.Spec.Cloud); err != nil {
+			var detErr *autorest.DetailedError
+			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
+				return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
+			}
+		}
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerRouteTable)
 		})
 		if err != nil {
 			return nil, err
@@ -263,17 +263,17 @@ func (a *Azure) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Clus
 		}
 	}
 
-	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
-		logger.Infow("reconciling subnet", "subnet", subnetName(cluster))
-		cluster, err = reconcileSubnet(ctx, clientSet, location, cluster, update)
+	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
+		logger.Infow("reconciling route table", "routeTableName", routeTableName(cluster))
+		cluster, err = reconcileRouteTable(ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if force || cluster.Spec.Cloud.Azure.RouteTableName == "" {
-		logger.Infow("reconciling route table", "routeTableName", routeTableName(cluster))
-		cluster, err = reconcileRouteTable(ctx, clientSet, location, cluster, update)
+	if force || cluster.Spec.Cloud.Azure.SubnetName == "" {
+		logger.Infow("reconciling subnet", "subnet", subnetName(cluster))
+		cluster, err = reconcileSubnet(ctx, clientSet, location, cluster, update)
 		if err != nil {
 			return nil, err
 		}
