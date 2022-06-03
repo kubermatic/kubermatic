@@ -14,28 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package seed
+package main
 
 import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func (r *Reconciler) migrateSeedClusterResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("migrating existing resources")
-
-	if err := migrateClusterAddresses(ctx, client); err != nil {
-		return fmt.Errorf("failed to migrate Cluster addresses: %w", err)
-	}
-
-	return nil
-}
 
 // migrateClusterAddresses copies the `address` data from a Cluster into `status.address`.
 // It leaves the old data behind, so that the migration is safe and even if an old controller

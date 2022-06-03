@@ -192,6 +192,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
+	// migrate existing data
+	if err := migrateClusterAddresses(rootCtx, mgr.GetClient()); err != nil {
+		log.Fatalw("Failed to migrate Cluster addresses", zap.Error(err))
+	}
+
 	ctrlCtx := &controllerContext{
 		ctx:                  rootCtx,
 		runOptions:           options,
