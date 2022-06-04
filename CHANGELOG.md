@@ -1,5 +1,19 @@
 # Kubermatic 2.20
 
+## [v2.20.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.3)
+
+### Misc
+
+- Add support for Kubernetes 1.23 ([#9836](https://github.com/kubermatic/kubermatic/issues/9836))
+- Add support for Kubernetes 1.21.12 and 1.22.9 (default Kubernetes version is now 1.21.12) ([#9884](https://github.com/kubermatic/kubermatic/issues/9884))
+- Fix Mutating webhook for None CNI ([#9737](https://github.com/kubermatic/kubermatic/issues/9737))
+- Fix an issue where helm invocations by the kubermatic-installer ignored most environment variables ([#9876](https://github.com/kubermatic/kubermatic/issues/9876))
+- Fix telemetry CronJob not producing data ([#9740](https://github.com/kubermatic/kubermatic/issues/9740))
+- Fix kubermatic-installer: improve error handling when building helm chart dependencies ([#9851](https://github.com/kubermatic/kubermatic/issues/9851))
+- Update cluster-autoscaler (1.20 to 1.20.2, 1.21 to 1.21.2, 1.22 to 1.22.2) ([#9836](https://github.com/kubermatic/kubermatic/issues/9836))
+- `image-loader` loads more images that were missing before (OpenStack CSI, user-ssh-keys-agent, operatingsystem-manager) ([#9871](https://github.com/kubermatic/kubermatic/issues/9871))
+
+
 ## [v2.20.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.2)
 
 With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.

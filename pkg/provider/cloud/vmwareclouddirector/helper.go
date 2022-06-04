@@ -14,26 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package vmwareclouddirector
 
 import (
-	"io"
-	"os"
+	"fmt"
+
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
-func PrintFileUnbuffered(filename string) error {
-	fd, err := os.Open(filename)
+func deleteVApp(vdc *govcd.Vdc, vapp *govcd.VApp) error {
+	task, err := vapp.Undeploy()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to undeploy vApp before deletion: %w", err)
 	}
-	defer fd.Close()
-	return PrintUnbuffered(fd)
-}
+	if err = task.WaitTaskCompletion(); err != nil {
+		return fmt.Errorf("error waiting for vApp undeploy to complete: %w", err)
+	}
 
-// printUnbuffered uses io.Copy to print data to stdout.
-// It should be used for all bigger logs, to avoid buffering
-// them in memory and getting oom killed because of that.
-func PrintUnbuffered(src io.Reader) error {
-	_, err := io.Copy(os.Stdout, src)
-	return err
+	task, err = vapp.Delete()
+	if err != nil {
+		return fmt.Errorf("failed to delete vApp: %w", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting for vApp deletion to complete: %w", err)
+	}
+	return nil
 }

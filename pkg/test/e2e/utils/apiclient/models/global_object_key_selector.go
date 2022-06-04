@@ -14,7 +14,7 @@ import (
 )
 
 // GlobalObjectKeySelector GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
-// because it is not cross namespace
+// because it is not cross namespace.
 //
 // swagger:model GlobalObjectKeySelector
 type GlobalObjectKeySelector struct {

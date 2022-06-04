@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,10 +40,11 @@ import (
 
 // validator for validating Kubermatic Cluster CRD.
 type validator struct {
-	features   features.FeatureGate
-	client     ctrlruntimeclient.Client
-	seedGetter provider.SeedGetter
-	caBundle   *x509.CertPool
+	features     features.FeatureGate
+	client       ctrlruntimeclient.Client
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
+	caBundle     *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
 	// provide would phone home to validate dummy test credentials
@@ -50,12 +52,13 @@ type validator struct {
 }
 
 // NewValidator returns a new cluster validator.
-func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
 	return &validator{
-		client:     client,
-		features:   features,
-		seedGetter: seedGetter,
-		caBundle:   caBundle,
+		client:       client,
+		features:     features,
+		seedGetter:   seedGetter,
+		configGetter: configGetter,
+		caBundle:     caBundle,
 	}
 }
 
@@ -72,7 +75,14 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 
-	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil)
+	config, configErr := v.configGetter(ctx)
+	if configErr != nil {
+		return configErr
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, versionManager, v.features, nil)
 
 	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
 		errs = append(errs, err)
@@ -97,7 +107,14 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return err
 	}
 
-	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features)
+	config, configErr := v.configGetter(ctx)
+	if configErr != nil {
+		return configErr
+	}
+
+	updateManager := version.NewFromConfiguration(config)
+
+	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, updateManager, v.features)
 
 	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
 		errs = append(errs, err)

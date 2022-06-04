@@ -56,6 +56,7 @@ type Options struct {
 	NodeCount                    int
 	PublicKeys                   [][]byte
 	ReportsRoot                  string
+	LogDirectory                 string
 	SeedClusterClient            ctrlruntimeclient.Client
 	SeedGeneratedClient          kubernetes.Interface
 	ClusterClientProvider        *clusterclient.Provider
@@ -71,8 +72,6 @@ type Options struct {
 	excludeDistributionsFlag     string
 	Distributions                sets.String
 	ExistingClusterLabel         string
-	PrintGinkoLogs               bool
-	PrintContainerLogs           bool
 	OnlyTestCreation             bool
 	PspEnabled                   bool
 	CreateOIDCToken              bool
@@ -91,7 +90,7 @@ type Options struct {
 }
 
 func NewDefaultOptions() *Options {
-	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix")
+	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmware-cloud-director")
 
 	return &Options{
 		Client:                       "api",
@@ -131,6 +130,7 @@ func (o *Options) AddFlags() {
 	flag.IntVar(&o.NodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&o.ClusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&o.ReportsRoot, "reports-root", "/opt/reports", "Root for reports")
+	flag.StringVar(&o.LogDirectory, "log-directory", "", "Root directory to place container logs into")
 	flag.DurationVar(&o.ControlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", o.ControlPlaneReadyWaitTimeout, "cluster creation timeout")
 	flag.DurationVar(&o.NodeReadyTimeout, "node-ready-timeout", o.NodeReadyTimeout, "base time to wait for machines to join the cluster")
 	flag.DurationVar(&o.CustomTestTimeout, "custom-test-timeout", o.CustomTestTimeout, "timeout for Kubermatic-specific PVC/LB tests")
@@ -141,8 +141,6 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.versionsFlag, "versions", o.versionsFlag, "a comma-separated list of versions to test")
 	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.StringVar(&o.excludeDistributionsFlag, "exclude-distributions", o.excludeDistributionsFlag, "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
-	flag.BoolVar(&o.PrintGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
-	flag.BoolVar(&o.PrintContainerLogs, "print-container-logs", false, "Whether to print the logs of all controlplane containers after the test (even in case of success)")
 	flag.BoolVar(&o.OnlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
 	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
@@ -183,6 +181,14 @@ func (o *Options) ParseFlags() error {
 		}
 
 		o.PublicKeys = [][]byte{keyData}
+	}
+
+	if o.LogDirectory != "" {
+		if _, err := os.Stat(o.LogDirectory); err != nil {
+			if err := os.MkdirAll(o.LogDirectory, 0755); err != nil {
+				return fmt.Errorf("log-directory %q is not a valid directory and could not be created", o.LogDirectory)
+			}
+		}
 	}
 
 	if err := o.Secrets.ParseFlags(); err != nil {

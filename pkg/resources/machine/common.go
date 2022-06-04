@@ -33,11 +33,13 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
+	"github.com/kubermatic/machine-controller/pkg/userdata/rockylinux"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -65,6 +67,9 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	}
 	if nodeSpec.OperatingSystem.Flatcar != nil {
 		return providerconfig.OperatingSystemFlatcar, nil
+	}
+	if nodeSpec.OperatingSystem.RockyLinux != nil {
+		return providerconfig.OperatingSystemRockyLinux, nil
 	}
 
 	return "", errors.New("unknown operating system")
@@ -218,6 +223,47 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 			vsphereTag.CategoryID = c.Spec.Cloud.VSphere.TagCategoryID
 		}
 		config.Tags = append(config.Tags, vsphereTag)
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	catalogName := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.Catalog, dc.Spec.VMwareCloudDirector.DefaultCatalog)
+	storageProfile := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.StorageProfile, dc.Spec.VMwareCloudDirector.DefaultStorageProfile)
+
+	config := vcd.RawConfig{
+		VApp:             providerconfig.ConfigVarString{Value: c.Spec.Cloud.VMwareCloudDirector.VApp},
+		Template:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VMwareCloudDirector.Template},
+		Catalog:          providerconfig.ConfigVarString{Value: catalogName},
+		Network:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.VMwareCloudDirector.OVDCNetwork},
+		CPUs:             int64(nodeSpec.Cloud.VMwareCloudDirector.CPUs),
+		CPUCores:         int64(nodeSpec.Cloud.VMwareCloudDirector.CPUCores),
+		MemoryMB:         int64(nodeSpec.Cloud.VMwareCloudDirector.MemoryMB),
+		IPAllocationMode: vcd.IPAllocationMode(nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode),
+	}
+
+	if storageProfile != "" {
+		config.StorageProfile = &storageProfile
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS != nil && *nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS >= 0 {
+		config.DiskIOPS = nodeSpec.Cloud.VMwareCloudDirector.DiskIOPS
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB != nil && *nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB > 4 {
+		config.DiskSizeGB = nodeSpec.Cloud.VMwareCloudDirector.DiskSizeGB
+	}
+
+	if nodeSpec.Cloud.VMwareCloudDirector.Metadata != nil {
+		config.Metadata = &nodeSpec.Cloud.VMwareCloudDirector.Metadata
 	}
 
 	ext := &runtime.RawExtension{}
@@ -633,6 +679,21 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 	// This should be temporary until the new operating system manager is added to KKP.
 	if nodeSpec.Cloud.Anexia != nil || nodeSpec.Cloud.AWS != nil {
 		config.ProvisioningUtility = flatcar.CloudInit
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getRockyLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := rockylinux.Config{
+		DistUpgradeOnBoot: nodeSpec.OperatingSystem.RockyLinux.DistUpgradeOnBoot,
 	}
 
 	ext := &runtime.RawExtension{}

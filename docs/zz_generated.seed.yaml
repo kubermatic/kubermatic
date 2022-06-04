@@ -198,6 +198,25 @@ spec:
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
         requiredEmails: []
+        vmwareCloudDirector:
+          # If set to true, disables the TLS certificate check against the endpoint.
+          allowInsecure: false
+          # The default catalog which contains the VM templates.
+          catalog: ""
+          # The name of the storage profile to use for disks attached to the VMs.
+          storageProfile: ""
+          # A list of VM templates to use for a given operating system. You must
+          # define at least one template.
+          templates:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
+          url: ""
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
@@ -241,12 +260,14 @@ spec:
   # DefaultComponentSettings are default values to set for newly created clusters.
   # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
+    # Apiserver configures kube-apiserver settings.
     apiserver:
       endpointReconcilingDisabled: null
       nodePortRange: 30000-32767
       replicas: 2
       resources: null
       tolerations: null
+    # ControllerManager configures kube-controller-manager settings.
     controllerManager:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
@@ -262,12 +283,19 @@ spec:
       replicas: 1
       resources: null
       tolerations: null
+    # Etcd configures the etcd ring used to store Kubernetes data.
     etcd:
       clusterSize: 3
       diskSize: 5Gi
       resources: null
       storageClass: ""
       tolerations: null
+    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+    konnectivityProxy:
+      resources: null
+    # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+    # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+    # strategy is configured.
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: ""
@@ -281,8 +309,10 @@ spec:
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests: null
+    # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
       resources: null
+    # Scheduler configures kube-scheduler settings.
     scheduler:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates

@@ -13,7 +13,7 @@ import (
 )
 
 // MachineDeploymentStatus [MachineDeploymentStatus]
-// MachineDeploymentStatus defines the observed state of MachineDeployment
+// MachineDeploymentStatus defines the observed state of MachineDeployment.
 //
 // swagger:model MachineDeploymentStatus
 type MachineDeploymentStatus struct {

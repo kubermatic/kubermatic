@@ -15,7 +15,6 @@ aliases:
     - rastislavs
     - sankalp-r
     - simontheleg
-    - themue
     - vgramer
     - wurbanski
     - xrstf
@@ -27,7 +26,6 @@ aliases:
     - hdurand0710
     - imharshita
     - kron4eg
-    - mlavacca
     - moadqassem
     - moelsayed
     - xmudrii
@@ -41,6 +39,7 @@ aliases:
   sig-ui:
     - floreks
     - maciaszczykm
+    - waseem826
   sig-virtualization:
     - hdurand0710
     - mfranczy

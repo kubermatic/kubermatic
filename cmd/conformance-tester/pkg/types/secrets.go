@@ -86,6 +86,13 @@ type Secrets struct {
 		ProjectName string
 		SubnetName  string
 	}
+	VMwareCloudDirector struct {
+		Username     string
+		Password     string
+		Organization string
+		VDC          string
+		OVDCNetwork  string
+	}
 }
 
 var (
@@ -131,6 +138,12 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.Nutanix.ClusterName, "nutanix-cluster-name", "", "Nutanix: Cluster Name")
 	flag.StringVar(&s.Nutanix.ProjectName, "nutanix-project-name", "", "Nutanix: Project Name")
 	flag.StringVar(&s.Nutanix.SubnetName, "nutanix-subnet-name", "", "Nutanix: Subnet Name")
+	// Flags for VMware Cloud Director
+	flag.StringVar(&s.VMwareCloudDirector.Username, "vmware-cloud-director-username", "", "VMware Cloud Director: Username")
+	flag.StringVar(&s.VMwareCloudDirector.Password, "vmware-cloud-director-password", "", "VMware Cloud Director: Password")
+	flag.StringVar(&s.VMwareCloudDirector.Organization, "vmware-cloud-director-organization", "", "VMware Cloud Director: Organization")
+	flag.StringVar(&s.VMwareCloudDirector.VDC, "vmware-cloud-director-vdc", "", "VMware Cloud Director: Organizational VDC")
+	flag.StringVar(&s.VMwareCloudDirector.OVDCNetwork, "vmware-cloud-director-ovdc-network", "", "VMware Cloud Director: Organizational VDC network name")
 }
 
 func (s *Secrets) ParseFlags() error {

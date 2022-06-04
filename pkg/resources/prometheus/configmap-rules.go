@@ -274,8 +274,8 @@ groups:
     labels:
       kubermatic: federate
 
-  - record: job:machine_controller_machines:sum
-    expr: sum(machine_controller_machines)
+  - record: job:machine_controller_machines_total:rate5m
+    expr: rate(machine_controller_machines_total[5m])
     labels:
       kubermatic: federate
 

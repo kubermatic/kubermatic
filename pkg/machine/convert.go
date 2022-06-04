@@ -31,11 +31,13 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
+	"github.com/kubermatic/machine-controller/pkg/userdata/rockylinux"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -103,6 +105,15 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 			RHELSubscriptionManagerUser:     config.RHELSubscriptionManagerUser,
 			RHELSubscriptionManagerPassword: config.RHELSubscriptionManagerPassword,
 			RHSMOfflineToken:                config.RHSMOfflineToken,
+		}
+
+	case providerconfig.OperatingSystemRockyLinux:
+		config := &rockylinux.Config{}
+		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse rhel config: %w", err)
+		}
+		operatingSystemSpec.RockyLinux = &apiv1.RockyLinuxSpec{
+			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
 		}
 	}
 
@@ -220,6 +231,32 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				CategoryID:  v.CategoryID,
 			})
 		}
+	case providerconfig.CloudProviderVcloudDirector:
+		config := &vcd.RawConfig{}
+		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse VMWare Cloud Director config: %w", err)
+		}
+		cloudSpec.VMwareCloudDirector = &apiv1.VMwareCloudDirectorNodeSpec{
+			CPUs:             int(config.CPUs),
+			CPUCores:         int(config.CPUCores),
+			MemoryMB:         int(config.MemoryMB),
+			DiskSizeGB:       config.DiskSizeGB,
+			Template:         config.Template.Value,
+			Catalog:          config.Catalog.Value,
+			DiskIOPS:         config.DiskIOPS,
+			VApp:             config.VApp.Value,
+			Network:          config.Network.Value,
+			IPAllocationMode: string(config.IPAllocationMode),
+		}
+
+		if config.StorageProfile != nil {
+			cloudSpec.VMwareCloudDirector.StorageProfile = *config.StorageProfile
+		}
+
+		if config.Metadata != nil {
+			cloudSpec.VMwareCloudDirector.Metadata = *config.Metadata
+		}
+
 	case providerconfig.CloudProviderEquinixMetal:
 		config := &equinixmetal.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {

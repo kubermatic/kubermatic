@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.10
 	github.com/aws/aws-sdk-go-v2/service/eks v1.20.7
 	github.com/cert-manager/cert-manager v1.8.0
-	github.com/cilium/cilium v1.11.4
+	github.com/cilium/cilium v1.11.5
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220421150455-af8435a41c4e
@@ -44,7 +44,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.33.2
 	github.com/imdario/mergo v0.3.12
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.50.0
+	github.com/kubermatic/machine-controller v1.51.0
 	github.com/minio/minio-go/v7 v7.0.26
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
@@ -58,6 +58,7 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.1
+	github.com/vmware/go-vcloud-director/v2 v2.15.0
 	github.com/vmware/govmomi v0.28.0
 	go.anx.io/go-anxcloud v0.4.3
 	go.etcd.io/etcd/api/v3 v3.5.4
@@ -80,25 +81,25 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a
 	k8c.io/operating-system-manager v0.4.2
-	k8s.io/api v0.23.6
-	k8s.io/apiextensions-apiserver v0.23.6
-	k8s.io/apimachinery v0.23.6
+	k8s.io/api v0.24.0
+	k8s.io/apiextensions-apiserver v0.24.0
+	k8s.io/apimachinery v0.24.0
 	k8s.io/apiserver v0.23.6
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.10.0
 	k8s.io/cli-runtime v0.23.6
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.23.6
-	k8s.io/klog/v2 v2.40.1
+	k8s.io/klog/v2 v2.60.1
 	k8s.io/kube-aggregator v0.23.6
-	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf
+	k8s.io/kube-openapi v0.0.0-20220413171646-5e7f5fdc6da6
 	k8s.io/kubectl v0.23.6
 	k8s.io/metrics v0.23.6
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
-	k8s.io/utils v0.0.0-20211116205334-6203023598ed
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	kubevirt.io/api v0.53.0
-	kubevirt.io/containerized-data-importer-api v1.48.1
+	kubevirt.io/containerized-data-importer-api v1.49.0
 	sigs.k8s.io/aws-iam-authenticator v0.5.8
-	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-runtime v0.12.0
 	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -113,9 +114,12 @@ replace (
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.6
 	k8s.io/code-generator => k8s.io/code-generator v0.23.6
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.6
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf
 	k8s.io/kubectl => k8s.io/kubectl v0.23.6
 	k8s.io/kubelet => k8s.io/kubelet v0.23.6
 	k8s.io/metrics => k8s.io/metrics v0.23.6
+	k8s.io/utils => k8s.io/utils v0.0.0-20211116205334-6203023598ed
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.11.2
 )
 
 require (
@@ -138,6 +142,7 @@ require (
 	github.com/ajeddeloh/yaml v0.0.0-20170912190910-6b94386aeefd // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
+	github.com/araddon/dateparse v0.0.0-20190622164848-0fb0a474d195 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/smithy-go v1.11.2 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
@@ -189,6 +194,7 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
+	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -216,7 +222,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 // indirect
+	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
@@ -228,6 +234,7 @@ require (
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/peterhellberg/link v1.1.0 // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/poy/onpar v1.0.1 // indirect
@@ -273,20 +280,20 @@ require (
 	golang.org/x/sys v0.0.0-20220502124256-b6088ccd6cba // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
+	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.66.3 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/component-base v0.23.6 // indirect
+	k8s.io/component-base v0.24.0 // indirect
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kubelet v0.23.6 // indirect
+	k8s.io/kubelet v0.24.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.0.0-20220329064328-f3cc58c6ed90 // indirect
 	sigs.k8s.io/gateway-api v0.4.1 // indirect
-	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
+	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect

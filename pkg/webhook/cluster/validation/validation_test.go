@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -73,6 +74,14 @@ func TestHandle(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	config := kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{},
 	}
 
 	project1 := kubermaticv1.Project{
@@ -1561,6 +1570,83 @@ func TestHandle(t *testing.T) {
 			}.BuildPtr(),
 			wantAllowed: false,
 		},
+		{
+			name: "Reject unsupported Kubernetes version",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.0.0"),
+			}.Build(),
+			wantAllowed: false,
+		},
+		{
+			name: "Reject unsupported Kubernetes version update",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.99.99"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: defaults.DefaultKubernetesVersioning.Default,
+			}.BuildPtr(),
+			wantAllowed: false,
+		},
 	}
 
 	seedClient := ctrlruntimefakeclient.
@@ -1570,6 +1656,7 @@ func TestHandle(t *testing.T) {
 		Build()
 
 	seedGetter := test.NewSeedGetter(&seed)
+	configGetter := test.NewConfigGetter(&config)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1577,6 +1664,7 @@ func TestHandle(t *testing.T) {
 				features:                  tt.features,
 				client:                    seedClient,
 				seedGetter:                seedGetter,
+				configGetter:              configGetter,
 				disableProviderValidation: true,
 			}
 
@@ -1611,6 +1699,7 @@ type rawClusterGen struct {
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
 	CNIPlugin             *kubermaticv1.CNIPluginSettings
+	Version               *semver.Semver
 }
 
 func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {
@@ -1619,6 +1708,11 @@ func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {
 }
 
 func (r rawClusterGen) Build() kubermaticv1.Cluster {
+	version := r.Version
+	if version == nil {
+		version = defaults.DefaultKubernetesVersioning.Default
+	}
+
 	c := kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8c.io/v1",
@@ -1631,7 +1725,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: "a test cluster",
-			Version:           *semver.NewSemverOrDie("1.22.0"),
+			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{

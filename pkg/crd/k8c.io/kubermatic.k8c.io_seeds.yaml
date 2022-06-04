@@ -427,6 +427,34 @@ spec:
                           items:
                             type: string
                           type: array
+                        vmwareCloudDirector:
+                          properties:
+                            allowInsecure:
+                              description: If set to true, disables the TLS certificate
+                                check against the endpoint.
+                              type: boolean
+                            catalog:
+                              description: The default catalog which contains the
+                                VM templates.
+                              type: string
+                            storageProfile:
+                              description: The name of the storage profile to use
+                                for disks attached to the VMs.
+                              type: string
+                            templates:
+                              additionalProperties:
+                                type: string
+                              description: A list of VM templates to use for a given
+                                operating system. You must define at least one template.
+                              type: object
+                            url:
+                              description: Endpoint URL to use, including protocol,
+                                for example "https://vclouddirector.example.com".
+                              type: string
+                          required:
+                          - templates
+                          - url
+                          type: object
                         vsphere:
                           description: DatacenterSpecVSphere describes a vSphere datacenter.
                           properties:
@@ -503,6 +531,7 @@ spec:
                   newly created clusters. Deprecated: Use DefaultClusterTemplate instead.'
                 properties:
                   apiserver:
+                    description: Apiserver configures kube-apiserver settings.
                     properties:
                       endpointReconcilingDisabled:
                         type: boolean
@@ -582,6 +611,8 @@ spec:
                         type: array
                     type: object
                   controllerManager:
+                    description: ControllerManager configures kube-controller-manager
+                      settings.
                     properties:
                       leaderElection:
                         properties:
@@ -679,6 +710,8 @@ spec:
                         type: array
                     type: object
                   etcd:
+                    description: Etcd configures the etcd ring used to store Kubernetes
+                      data.
                     properties:
                       clusterSize:
                         format: int32
@@ -761,7 +794,43 @@ spec:
                           type: object
                         type: array
                     type: object
+                  konnectivityProxy:
+                    description: KonnectivityProxy configures resources limits/requests
+                      for konnectivity-server sidecar.
+                    properties:
+                      resources:
+                        description: ResourceRequirements describes the compute resource
+                          requirements.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                    type: object
                   nodePortProxyEnvoy:
+                    description: NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy
+                      that is deployed if the `LoadBalancer` expose strategy is used.
+                      This is not effective if a different expose strategy is configured.
                     properties:
                       dockerRepository:
                         description: DockerRepository is the repository containing
@@ -797,6 +866,8 @@ spec:
                         type: object
                     type: object
                   prometheus:
+                    description: Prometheus configures the Prometheus instance deployed
+                      into the cluster control plane.
                     properties:
                       resources:
                         description: ResourceRequirements describes the compute resource
@@ -828,6 +899,7 @@ spec:
                         type: object
                     type: object
                   scheduler:
+                    description: Scheduler configures kube-scheduler settings.
                     properties:
                       leaderElection:
                         properties:
@@ -928,6 +1000,7 @@ spec:
                 - apiserver
                 - controllerManager
                 - etcd
+                - konnectivityProxy
                 - nodePortProxyEnvoy
                 - prometheus
                 - scheduler

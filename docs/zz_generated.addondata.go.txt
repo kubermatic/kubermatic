@@ -116,18 +116,19 @@ type MLASettings struct {
 }
 
 type Credentials struct {
-	AWS          AWSCredentials
-	Azure        AzureCredentials
-	Digitalocean DigitaloceanCredentials
-	GCP          GCPCredentials
-	Hetzner      HetznerCredentials
-	Openstack    OpenstackCredentials
-	Packet       PacketCredentials
-	Kubevirt     KubevirtCredentials
-	VSphere      VSphereCredentials
-	Alibaba      AlibabaCredentials
-	Anexia       AnexiaCredentials
-	Nutanix      NutanixCredentials
+	AWS                 AWSCredentials
+	Azure               AzureCredentials
+	Digitalocean        DigitaloceanCredentials
+	GCP                 GCPCredentials
+	Hetzner             HetznerCredentials
+	Openstack           OpenstackCredentials
+	Packet              PacketCredentials
+	Kubevirt            KubevirtCredentials
+	VSphere             VSphereCredentials
+	Alibaba             AlibabaCredentials
+	Anexia              AnexiaCredentials
+	Nutanix             NutanixCredentials
+	VMwareCloudDirector VMwareCloudDirectorCredentials
 }
 
 type AWSCredentials struct {
@@ -199,4 +200,11 @@ type NutanixCredentials struct {
 	CSIUsername string
 	CSIPassword string
 	ProxyURL    string
+}
+
+type VMwareCloudDirectorCredentials struct {
+	Username     string
+	Password     string
+	Organization string
+	VDC          string
 }

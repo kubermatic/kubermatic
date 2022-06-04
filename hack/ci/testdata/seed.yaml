@@ -71,6 +71,17 @@ spec:
         hetzner:
           datacenter: nbg1-dc3
           network: kubermatic-e2e
+    vmware-cloud-director-ger:
+      location: Hamburg
+      country: DE
+      spec:
+        vmwareCloudDirector:
+          url: "__VCD_URL__"
+          allowInsecure: false
+          catalog: "kubermatic"
+          templates:
+            ubuntu: "machine-controller-ubuntu"
+            flatcar: "machine-controller-flatcar"
     vsphere-ger:
       location: Hamburg
       country: DE

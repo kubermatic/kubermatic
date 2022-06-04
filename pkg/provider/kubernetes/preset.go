@@ -207,6 +207,9 @@ func (m *PresetProvider) SetCloudCredentials(ctx context.Context, userInfo *prov
 	if cloud.Nutanix != nil {
 		return m.setNutanixCredentials(ctx, userInfo, presetName, cloud)
 	}
+	if cloud.VMwareCloudDirector != nil {
+		return m.setVMwareCloudDirectorCredentials(ctx, userInfo, presetName, cloud)
+	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
@@ -474,6 +477,25 @@ func (m *PresetProvider) setNutanixCredentials(ctx context.Context, userInfo *pr
 			Port:     preset.Spec.Nutanix.CSIPort,
 		}
 	}
+
+	return &cloud, nil
+}
+
+func (m *PresetProvider) setVMwareCloudDirectorCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
+	if err != nil {
+		return nil, err
+	}
+	if preset.Spec.VMwareCloudDirector == nil {
+		return nil, emptyCredentialError(presetName, "VMware Cloud Director")
+	}
+
+	credentials := preset.Spec.VMwareCloudDirector
+	cloud.VMwareCloudDirector.Username = credentials.Username
+	cloud.VMwareCloudDirector.Password = credentials.Password
+	cloud.VMwareCloudDirector.Organization = credentials.Organization
+	cloud.VMwareCloudDirector.VDC = credentials.VDC
+	cloud.VMwareCloudDirector.OVDCNetwork = credentials.OVDCNetwork
 
 	return &cloud, nil
 }

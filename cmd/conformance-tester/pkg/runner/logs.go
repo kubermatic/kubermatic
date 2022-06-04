@@ -19,102 +19,59 @@ package runner
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
+	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/kubernetes"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// printEvents and logs for all pods. Include ready pods, because they may still contain useful information.
-func printEventsAndLogsForAllPods(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, k8sclient kubernetes.Interface, namespace string) error {
-	log.Infow("Printing logs for all pods", "namespace", namespace)
-
-	pods := &corev1.PodList{}
-	if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to list pods: %w", err)
+func deferredGatherUserClusterLogs(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster) {
+	if err := gatherUserClusterLogs(ctx, log, opts, cluster); err != nil {
+		log.Errorw("Failed to gather usercluster logs", zap.Error(err))
 	}
-
-	var errs []error
-	for _, pod := range pods.Items {
-		log := log.With("pod", pod.Name)
-		if !util.PodIsReady(&pod) {
-			log.Error("Pod is not ready")
-		}
-		log.Info("Logging events for pod")
-		if err := logEventsObject(ctx, log, client, pod.Namespace, pod.UID); err != nil {
-			log.Errorw("Failed to log events for pod", zap.Error(err))
-			errs = append(errs, err)
-		}
-		log.Info("Printing logs for pod")
-		if err := printLogsForPod(ctx, log, k8sclient, &pod); err != nil {
-			log.Errorw("Failed to print logs for pod", zap.Error(kerrors.NewAggregate(err)))
-			errs = append(errs, err...)
-		}
-	}
-
-	return kerrors.NewAggregate(errs)
 }
 
-func printLogsForPod(ctx context.Context, log *zap.SugaredLogger, k8sclient kubernetes.Interface, pod *corev1.Pod) []error {
-	var errs []error
-	for _, container := range pod.Spec.Containers {
-		containerLog := log.With("container", container.Name)
-		containerLog.Info("Printing logs for container")
-		if err := printLogsForContainer(ctx, k8sclient, pod, container.Name); err != nil {
-			containerLog.Errorw("Failed to print logs for container", zap.Error(err))
-			errs = append(errs, err)
-		}
+func gatherUserClusterLogs(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster) error {
+	if opts.LogDirectory == "" {
+		return nil
 	}
-	for _, initContainer := range pod.Spec.InitContainers {
-		containerLog := log.With("initContainer", initContainer.Name)
-		containerLog.Infow("Printing logs for initContainer")
-		if err := printLogsForContainer(ctx, k8sclient, pod, initContainer.Name); err != nil {
-			containerLog.Errorw("Failed to print logs for initContainer", zap.Error(err))
-			errs = append(errs, err)
-		}
-	}
-	return errs
-}
 
-func printLogsForContainer(ctx context.Context, client kubernetes.Interface, pod *corev1.Pod, containerName string) error {
-	readCloser, err := client.
-		CoreV1().
-		Pods(pod.Namespace).
-		GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName}).
-		Stream(ctx)
-	if err != nil {
-		return err
-	}
-	defer readCloser.Close()
+	connProvider := opts.ClusterClientProvider
 
-	return util.PrintUnbuffered(readCloser)
-}
+	log.Debug("Attempting to log usercluster pod events and logs")
+	kubeconfig, err := connProvider.GetAdminKubeconfig(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get admin kubeconfig: %w", err)
+	}
 
-func logUserClusterPodEventsAndLogs(ctx context.Context, log *zap.SugaredLogger, connProvider *clusterclient.Provider, cluster *kubermaticv1.Cluster) {
-	log.Info("Attempting to log usercluster pod events and logs")
-	cfg, err := connProvider.GetClientConfig(ctx, cluster)
+	tmpFile, err := os.CreateTemp("", "kubecfg")
 	if err != nil {
-		log.Errorw("Failed to get usercluster admin kubeconfig", zap.Error(err))
-		return
+		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	k8sClient, err := kubernetes.NewForConfig(cfg)
+
+	_, err = tmpFile.Write(kubeconfig)
+	tmpFile.Close()
 	if err != nil {
-		log.Errorw("Failed to construct k8sClient for usercluster", zap.Error(err))
-		return
+		return fmt.Errorf("failed to write kubeconfig: %w", err)
 	}
-	client, err := connProvider.GetClient(ctx, cluster)
-	if err != nil {
-		log.Errorw("Failed to construct client for usercluster", zap.Error(err))
-		return
+
+	cmd := exec.CommandContext(ctx, "protokol",
+		"--kubeconfig", tmpFile.Name(),
+		"--flat",
+		"--output", filepath.Join(opts.LogDirectory, fmt.Sprintf("usercluster-%s", cluster.Name)),
+		"--namespace", "kube-*",
+	)
+
+	// Start protokol and just let it run in the background. It will just end
+	// once we destroy the cluster and the apiserver goes away, at which
+	// point it simply stops writing logs files.
+	if err := cmd.Start(); err != nil {
+		log.Errorw("Failed to start protokol to download usercluster logs", zap.Error(err))
 	}
-	if err := printEventsAndLogsForAllPods(ctx, log, client, k8sClient, ""); err != nil {
-		log.Errorw("Failed to print events and logs for usercluster pods", zap.Error(err))
-	}
+
+	return nil
 }

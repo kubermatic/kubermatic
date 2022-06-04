@@ -88,6 +88,12 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
+elif [[ $provider == "vmware-cloud-director" ]]; then
+  EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
+    -vmware-cloud-director-password=${VCD_PASSWORD}
+    -vmware-cloud-director-organization=${VCD_ORG}
+    -vmware-cloud-director-vdc=${VCD_VDC}
+    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}"
 fi
 
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
@@ -107,7 +113,8 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -kubermatic-endpoint="$KUBERMATIC_API_ENDPOINT" \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
-  -reports-root=/reports \
+  -reports-root="$ARTIFACTS/conformance" \
+  -log-directory="$ARTIFACTS/logs" \
   -create-oidc-token=true \
   -versions="$VERSIONS_TO_TEST" \
   -providers=$provider \
@@ -117,6 +124,4 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
   -only-test-creation=${ONLY_TEST_CREATION:-false} \
   -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
-  -print-ginkgo-logs=true \
-  -print-container-logs=true \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"

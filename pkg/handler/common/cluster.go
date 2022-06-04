@@ -587,7 +587,7 @@ func PatchEndpoint(
 	}
 
 	// validate the new cluster
-	if errs := validation.ValidateClusterUpdate(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
+	if errs := validation.ValidateClusterUpdate(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, versionManager, features).ToAggregate(); errs != nil {
 		return nil, utilerrors.NewBadRequest("invalid cluster: %v", errs)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {

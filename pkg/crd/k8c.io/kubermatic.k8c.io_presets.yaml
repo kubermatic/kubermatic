@@ -350,6 +350,29 @@ spec:
                 items:
                   type: string
                 type: array
+              vmwareCloudDirector:
+                properties:
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  organization:
+                    type: string
+                  ovdcNetwork:
+                    type: string
+                  password:
+                    type: string
+                  username:
+                    type: string
+                  vdc:
+                    type: string
+                required:
+                - organization
+                - ovdcNetwork
+                - password
+                - username
+                - vdc
+                type: object
               vsphere:
                 properties:
                   datacenter:

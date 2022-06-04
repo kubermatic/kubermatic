@@ -660,12 +660,22 @@ type MLASettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver          APIServerSettings       `json:"apiserver"`
-	ControllerManager  ControllerSettings      `json:"controllerManager"`
-	Scheduler          ControllerSettings      `json:"scheduler"`
-	Etcd               EtcdStatefulSetSettings `json:"etcd"`
-	Prometheus         StatefulSetSettings     `json:"prometheus"`
-	NodePortProxyEnvoy NodeportProxyComponent  `json:"nodePortProxyEnvoy"`
+	// Apiserver configures kube-apiserver settings.
+	Apiserver APIServerSettings `json:"apiserver"`
+	// ControllerManager configures kube-controller-manager settings.
+	ControllerManager ControllerSettings `json:"controllerManager"`
+	// Scheduler configures kube-scheduler settings.
+	Scheduler ControllerSettings `json:"scheduler"`
+	// Etcd configures the etcd ring used to store Kubernetes data.
+	Etcd EtcdStatefulSetSettings `json:"etcd"`
+	// Prometheus configures the Prometheus instance deployed into the cluster control plane.
+	Prometheus StatefulSetSettings `json:"prometheus"`
+	// NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+	// strategy is configured.
+	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
+	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy"`
 }
 
 type APIServerSettings struct {
@@ -673,6 +683,10 @@ type APIServerSettings struct {
 
 	EndpointReconcilingDisabled *bool  `json:"endpointReconcilingDisabled,omitempty"`
 	NodePortRange               string `json:"nodePortRange,omitempty"`
+}
+
+type KonnectvityProxySettings struct {
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControllerSettings struct {
@@ -830,20 +844,21 @@ type CloudSpec struct {
 	// "aws", then the `aws` field must be set).
 	ProviderName string `json:"providerName"`
 
-	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
-	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
-	Azure        *AzureCloudSpec        `json:"azure,omitempty"`
-	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
-	Packet       *PacketCloudSpec       `json:"packet,omitempty"`
-	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
-	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
-	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
-	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
-	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
-	Anexia       *AnexiaCloudSpec       `json:"anexia,omitempty"`
-	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
+	Fake                *FakeCloudSpec                `json:"fake,omitempty"`
+	Digitalocean        *DigitaloceanCloudSpec        `json:"digitalocean,omitempty"`
+	BringYourOwn        *BringYourOwnCloudSpec        `json:"bringyourown,omitempty"`
+	AWS                 *AWSCloudSpec                 `json:"aws,omitempty"`
+	Azure               *AzureCloudSpec               `json:"azure,omitempty"`
+	Openstack           *OpenstackCloudSpec           `json:"openstack,omitempty"`
+	Packet              *PacketCloudSpec              `json:"packet,omitempty"`
+	Hetzner             *HetznerCloudSpec             `json:"hetzner,omitempty"`
+	VSphere             *VSphereCloudSpec             `json:"vsphere,omitempty"`
+	GCP                 *GCPCloudSpec                 `json:"gcp,omitempty"`
+	Kubevirt            *KubevirtCloudSpec            `json:"kubevirt,omitempty"`
+	Alibaba             *AlibabaCloudSpec             `json:"alibaba,omitempty"`
+	Anexia              *AnexiaCloudSpec              `json:"anexia,omitempty"`
+	Nutanix             *NutanixCloudSpec             `json:"nutanix,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
@@ -980,6 +995,33 @@ type VSphereCloudSpec struct {
 
 	// This is category for the machine deployment tags
 	TagCategoryID string `json:"tagCategoryID,omitempty"`
+}
+
+// VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.
+type VMwareCloudDirectorCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// Username is the VMware Cloud Director user name.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Password is the VMware Cloud Director user password.
+	// +optional
+	Password string `json:"password,omitempty"`
+
+	// Password is the VMware Cloud Director user password.
+	// +optional
+	Organization string `json:"organization,omitempty"`
+
+	// VDC is the organizational virtual data center.
+	// +optional
+	VDC string `json:"vdc,omitempty"`
+
+	// Network is the name of organizational virtual data center network that will be associated with the VMs and vApp.
+	OVDCNetwork string `json:"ovdcNetwork"`
+
+	// VApp used for isolation of VMs and their associated network
+	// +optional
+	VApp string `json:"vapp,omitempty"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -1311,6 +1353,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Nutanix != nil {
 		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

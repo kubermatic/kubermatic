@@ -32,6 +32,10 @@ trap cleanup EXIT SIGINT SIGTERM
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_cilium.yaml
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
@@ -43,20 +47,6 @@ export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
 export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
-
-function print_kubermatic_logs {
-  if [[ $? -ne 0 ]]; then
-    echodate "Printing logs for Kubermatic API"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
-    echodate "Printing logs for Master Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
-    echodate "Printing logs for Seed Controller Manager"
-    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
-  fi
-}
-
-appendTrap print_kubermatic_logs EXIT
-
 echodate "Running cilium tests..."
 
 go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...

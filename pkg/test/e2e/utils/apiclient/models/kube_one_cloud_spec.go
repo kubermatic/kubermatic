@@ -42,6 +42,9 @@ type KubeOneCloudSpec struct {
 	// openstack
 	Openstack *KubeOneOpenStackCloudSpec `json:"openstack,omitempty"`
 
+	// vmwareclouddirector
+	Vmwareclouddirector *KubeOneVMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
+
 	// vsphere
 	Vsphere *KubeOneVSphereCloudSpec `json:"vsphere,omitempty"`
 }
@@ -79,6 +82,10 @@ func (m *KubeOneCloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOpenstack(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVmwareclouddirector(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -244,6 +251,25 @@ func (m *KubeOneCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *KubeOneCloudSpec) validateVmwareclouddirector(formats strfmt.Registry) error {
+	if swag.IsZero(m.Vmwareclouddirector) { // not required
+		return nil
+	}
+
+	if m.Vmwareclouddirector != nil {
+		if err := m.Vmwareclouddirector.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("vmwareclouddirector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vmwareclouddirector")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *KubeOneCloudSpec) validateVsphere(formats strfmt.Registry) error {
 	if swag.IsZero(m.Vsphere) { // not required
 		return nil
@@ -296,6 +322,10 @@ func (m *KubeOneCloudSpec) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVmwareclouddirector(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -429,6 +459,22 @@ func (m *KubeOneCloudSpec) contextValidateOpenstack(ctx context.Context, formats
 				return ve.ValidateName("openstack")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("openstack")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *KubeOneCloudSpec) contextValidateVmwareclouddirector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Vmwareclouddirector != nil {
+		if err := m.Vmwareclouddirector.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("vmwareclouddirector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vmwareclouddirector")
 			}
 			return err
 		}
