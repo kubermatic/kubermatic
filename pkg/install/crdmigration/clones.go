@@ -1397,6 +1397,12 @@ func convertComponentSettings(oldSettings kubermaticv1.ComponentSettings) newv1.
 		Prometheus: newv1.StatefulSetSettings{
 			Resources: oldSettings.Prometheus.Resources.DeepCopy(),
 		},
+		KonnectivityProxy: newv1.KonnectvityProxySettings{
+			Resources: &corev1.ResourceRequirements{
+				Limits:   oldSettings.KonnectivityProxy.Resources.Limits,
+				Requests: oldSettings.KonnectivityProxy.Resources.Requests,
+			},
+		},
 	}
 
 	return newSettings
