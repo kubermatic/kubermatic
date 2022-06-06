@@ -178,6 +178,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 	}
 
+	retestBudget := 2
+	ch := make(chan int, retestBudget)
+	for i := 0; i < retestBudget; i++ {
+		ch <- i
+	}
+	close(ch)
+	var retested sync.Map
 	var mu sync.Mutex
 
 	for _, test := range tests {
@@ -185,7 +192,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
-		clusterSpec := defaultClusterRequest()
 		cniSpec := cnis[test.cni]
 		netConfig := defaultClusterNetworkingConfig()
 		switch test.cni {
@@ -197,7 +203,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			clusterSpec := clusterSpec.WithName(name).
+
+		retest:
+			clusterSpec := defaultClusterRequest().WithName(name).
 				WithCloud(cloudSpec).
 				WithCNI(cniSpec).
 				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
@@ -245,6 +253,16 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			t.Logf("waiting for nodes to come up")
 			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
 			if err != nil {
+				_, ok := retested.Load(name)
+				if !ok {
+					retested.Store(name, true)
+					_, ok := <-ch
+					if !ok {
+						t.Log("out of retest budget")
+						t.Fatalf("nodes never became ready: %v", err)
+					}
+					goto retest
+				}
 				t.Fatalf("nodes never became ready: %v", err)
 			}
 
