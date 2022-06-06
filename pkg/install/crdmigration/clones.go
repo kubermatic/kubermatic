@@ -1401,6 +1401,12 @@ func convertComponentSettings(oldSettings kubermaticv1.ComponentSettings) newv1.
 			DockerRepository: oldSettings.NodePortProxyEnvoy.DockerRepository,
 			Resources:        oldSettings.NodePortProxyEnvoy.Resources,
 		},
+		KonnectivityProxy: newv1.KonnectvityProxySettings{
+			Resources: &corev1.ResourceRequirements{
+				Limits:   oldSettings.KonnectivityProxy.Resources.Limits,
+				Requests: oldSettings.KonnectivityProxy.Resources.Requests,
+			},
+		},
 	}
 
 	return newSettings

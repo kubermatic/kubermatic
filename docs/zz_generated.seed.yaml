@@ -277,6 +277,8 @@ spec:
       resources: null
       storageClass: ""
       tolerations: null
+    konnectivityProxy:
+      resources: null
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
       docker_repository: ""
