@@ -480,7 +480,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx contex
 	secretName := resources.KubeOneManifestSecretName
 	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode kubeone manifest: %w", err)
 	}
 
 	// move credentials into dedicated Secret
@@ -501,7 +501,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Con
 	secretName := resources.KubeOneSSHSecretName
 	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode kubeone ssh key: %w", err)
 	}
 	data := map[string][]byte{
 		resources.KubeOneSSHPrivateKey: privateKey,
