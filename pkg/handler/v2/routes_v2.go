@@ -4122,10 +4122,8 @@ func (r Routing) listVMwareCloudDirectorNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.VMwareCloudDirectorNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
-		cluster.DecodeGetClusterReq,
+		)(provider.VMwareCloudDirectorNetworksEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeVMwareCloudDirectorCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4146,10 +4144,8 @@ func (r Routing) listVMwareCloudDirectorCatalogs() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.VMwareCloudDirectorCatalogsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
-		cluster.DecodeGetClusterReq,
+		)(provider.VMwareCloudDirectorCatalogsEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeVMwareCloudDirectorCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4170,9 +4166,7 @@ func (r Routing) listVMwareCloudDirectorTemplates() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.VMwareCloudDirectorTemplatesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
+		)(provider.VMwareCloudDirectorTemplatesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeListTemplatesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

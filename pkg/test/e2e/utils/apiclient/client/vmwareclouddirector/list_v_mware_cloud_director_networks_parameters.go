@@ -58,6 +58,28 @@ func NewListVMwareCloudDirectorNetworksParamsWithHTTPClient(client *http.Client)
    Typically these are written to a http.Request.
 */
 type ListVMwareCloudDirectorNetworksParams struct {
+
+	// Credential.
+	Credential *string
+
+	// Organization.
+	Organization *string
+
+	// Password.
+	Password *string
+
+	// Username.
+	Username *string
+
+	// VDC.
+	VDC *string
+
+	/* Dc.
+
+	   KKP Datacenter to use for endpoint
+	*/
+	DC string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +133,72 @@ func (o *ListVMwareCloudDirectorNetworksParams) SetHTTPClient(client *http.Clien
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithCredential(credential *string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithOrganization adds the organization to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithOrganization(organization *string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetOrganization(organization)
+	return o
+}
+
+// SetOrganization adds the organization to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetOrganization(organization *string) {
+	o.Organization = organization
+}
+
+// WithPassword adds the password to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithPassword(password *string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithUsername adds the username to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithUsername(username *string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetUsername(username *string) {
+	o.Username = username
+}
+
+// WithVDC adds the vDC to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithVDC(vDC *string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetVDC(vDC)
+	return o
+}
+
+// SetVDC adds the vDC to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetVDC(vDC *string) {
+	o.VDC = vDC
+}
+
+// WithDC adds the dc to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) WithDC(dc string) *ListVMwareCloudDirectorNetworksParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the list v mware cloud director networks params
+func (o *ListVMwareCloudDirectorNetworksParams) SetDC(dc string) {
+	o.DC = dc
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListVMwareCloudDirectorNetworksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +206,51 @@ func (o *ListVMwareCloudDirectorNetworksParams) WriteToRequest(r runtime.ClientR
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.Organization != nil {
+
+		// header param Organization
+		if err := r.SetHeaderParam("Organization", *o.Organization); err != nil {
+			return err
+		}
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+	}
+
+	if o.VDC != nil {
+
+		// header param VDC
+		if err := r.SetHeaderParam("VDC", *o.VDC); err != nil {
+			return err
+		}
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

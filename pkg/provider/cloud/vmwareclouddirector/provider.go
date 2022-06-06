@@ -273,20 +273,20 @@ func ValidateCredentials(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMw
 	return err
 }
 
-func ListCatalogs(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMwareCloudDirector, username, password, organization, vdc string) (apiv1.VMwareCloudDirectorCatalogList, error) {
-	client, err := NewClientWithCreds(username, password, organization, vdc, dc.URL, dc.AllowInsecure)
+func ListCatalogs(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorCatalogList, error) {
+	client, err := NewClientWithAuth(auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
 	}
 
 	org, err := client.GetOrganization()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization %s: %w", organization, err)
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
 	}
 
 	catalogs, err := org.QueryCatalogList()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get list catalog for organization %s: %w", organization, err)
+		return nil, fmt.Errorf("failed to get list catalog for organization %s: %w", auth.Organization, err)
 	}
 
 	var catlogArr apiv1.VMwareCloudDirectorCatalogList
@@ -298,15 +298,15 @@ func ListCatalogs(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMwareClou
 	return catlogArr, nil
 }
 
-func ListTemplates(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMwareCloudDirector, username, password, organization, vdc, catalogName string) (apiv1.VMwareCloudDirectorTemplateList, error) {
-	client, err := NewClientWithCreds(username, password, organization, vdc, dc.URL, dc.AllowInsecure)
+func ListTemplates(ctx context.Context, auth Auth, catalogName string) (apiv1.VMwareCloudDirectorTemplateList, error) {
+	client, err := NewClientWithAuth(auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
 	}
 
 	org, err := client.GetOrganization()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization %s: %w", organization, err)
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
 	}
 
 	catalog, err := org.GetCatalogByNameOrId(catalogName, true)
@@ -328,20 +328,20 @@ func ListTemplates(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMwareClo
 	return templateArr, nil
 }
 
-func ListOVDCNetworks(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMwareCloudDirector, username, password, organization, vdc string) (apiv1.VMwareCloudDirectorNetworkList, error) {
-	client, err := NewClientWithCreds(username, password, organization, vdc, dc.URL, dc.AllowInsecure)
+func ListOVDCNetworks(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorNetworkList, error) {
+	client, err := NewClientWithAuth(auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
 	}
 
 	org, err := client.GetOrganization()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization %s: %w", organization, err)
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
 	}
 
 	orgVDC, err := client.GetVDCForOrg(*org)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", vdc, err)
+		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", auth.VDC, err)
 	}
 
 	var orgVDCNetworks apiv1.VMwareCloudDirectorNetworkList

@@ -18931,6 +18931,41 @@
           "vmwareclouddirector"
         ],
         "operationId": "listVMwareCloudDirectorCatalogs",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "VMwareCloudDirectorCatalogList",
@@ -18957,6 +18992,41 @@
           "vmwareclouddirector"
         ],
         "operationId": "listVMwareCloudDirectorNetworks",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "VMwareCloudDirectorNetworkList",
@@ -18983,6 +19053,48 @@
           "vmwareclouddirector"
         ],
         "operationId": "listVMwareCloudDirectorTemplates",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "CatalogName",
+            "name": "catalog_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "VMwareCloudDirectorTemplateList",

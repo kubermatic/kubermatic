@@ -58,6 +58,31 @@ func NewListVMwareCloudDirectorTemplatesParamsWithHTTPClient(client *http.Client
    Typically these are written to a http.Request.
 */
 type ListVMwareCloudDirectorTemplatesParams struct {
+
+	// Credential.
+	Credential *string
+
+	// Organization.
+	Organization *string
+
+	// Password.
+	Password *string
+
+	// Username.
+	Username *string
+
+	// VDC.
+	VDC *string
+
+	// CatalogName.
+	CatalogName string
+
+	/* Dc.
+
+	   KKP Datacenter to use for endpoint
+	*/
+	DC string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +136,83 @@ func (o *ListVMwareCloudDirectorTemplatesParams) SetHTTPClient(client *http.Clie
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithCredential(credential *string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithOrganization adds the organization to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithOrganization(organization *string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetOrganization(organization)
+	return o
+}
+
+// SetOrganization adds the organization to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetOrganization(organization *string) {
+	o.Organization = organization
+}
+
+// WithPassword adds the password to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithPassword(password *string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithUsername adds the username to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithUsername(username *string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetUsername(username *string) {
+	o.Username = username
+}
+
+// WithVDC adds the vDC to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithVDC(vDC *string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetVDC(vDC)
+	return o
+}
+
+// SetVDC adds the vDC to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetVDC(vDC *string) {
+	o.VDC = vDC
+}
+
+// WithCatalogName adds the catalogName to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithCatalogName(catalogName string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetCatalogName(catalogName)
+	return o
+}
+
+// SetCatalogName adds the catalogName to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetCatalogName(catalogName string) {
+	o.CatalogName = catalogName
+}
+
+// WithDC adds the dc to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) WithDC(dc string) *ListVMwareCloudDirectorTemplatesParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the list v mware cloud director templates params
+func (o *ListVMwareCloudDirectorTemplatesParams) SetDC(dc string) {
+	o.DC = dc
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListVMwareCloudDirectorTemplatesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +220,56 @@ func (o *ListVMwareCloudDirectorTemplatesParams) WriteToRequest(r runtime.Client
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.Organization != nil {
+
+		// header param Organization
+		if err := r.SetHeaderParam("Organization", *o.Organization); err != nil {
+			return err
+		}
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+	}
+
+	if o.VDC != nil {
+
+		// header param VDC
+		if err := r.SetHeaderParam("VDC", *o.VDC); err != nil {
+			return err
+		}
+	}
+
+	// path param catalog_name
+	if err := r.SetPathParam("catalog_name", o.CatalogName); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
