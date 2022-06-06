@@ -481,12 +481,22 @@ type MLASettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver          APIServerSettings       `json:"apiserver"`
-	ControllerManager  ControllerSettings      `json:"controllerManager"`
-	Scheduler          ControllerSettings      `json:"scheduler"`
-	Etcd               EtcdStatefulSetSettings `json:"etcd"`
-	Prometheus         StatefulSetSettings     `json:"prometheus"`
-	NodePortProxyEnvoy NodeportProxyComponent  `json:"nodePortProxyEnvoy"`
+	// Apiserver configures kube-apiserver settings.
+	Apiserver APIServerSettings `json:"apiserver"`
+	// ControllerManager configures kube-controller-manager settings.
+	ControllerManager ControllerSettings `json:"controllerManager"`
+	// Scheduler configures kube-scheduler settings.
+	Scheduler ControllerSettings `json:"scheduler"`
+	// Etcd configures the etcd ring used to store Kubernetes data.
+	Etcd EtcdStatefulSetSettings `json:"etcd"`
+	// Prometheus configures the Prometheus instance deployed into the cluster control plane.
+	Prometheus StatefulSetSettings `json:"prometheus"`
+	// NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+	// strategy is configured.
+	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
+	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -494,6 +504,10 @@ type APIServerSettings struct {
 
 	EndpointReconcilingDisabled *bool  `json:"endpointReconcilingDisabled,omitempty"`
 	NodePortRange               string `json:"nodePortRange,omitempty"`
+}
+
+type KonnectvityProxySettings struct {
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControllerSettings struct {
