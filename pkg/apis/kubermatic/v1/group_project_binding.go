@@ -21,22 +21,22 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 const (
 
 	// GroupProjectBindingResourceName represents "Resource" defined in Kubernetes.
-	GroupProjectBindingResourceName = "userprojectbindings"
+	GroupProjectBindingResourceName = "groupprojectbindings"
 
 	// GroupProjectBindingKind represents "Kind" defined in Kubernetes.
-	GroupProjectBindingKind = "UserProjectBinding"
+	GroupProjectBindingKind = "GroupProjectBinding"
 )
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.group",name="Group",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.projectID",name="ProjectID",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.projectGroup",name="ProjectGroup",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.project",name="Project",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.role",name="Role",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // GroupProjectBinding specifies a binding between a group and a project
-// This resource is used by the user management to manipulate members of the given project.
+// This resource is used by the user management to manipulate member groups of the given project.
 type GroupProjectBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -46,12 +46,19 @@ type GroupProjectBinding struct {
 
 // GroupProjectBindingSpec specifies an oidc group binding to a project.
 type GroupProjectBindingSpec struct {
-	// Group is the group name is bound to the given project.
+	// Group is the group name that is bound to the given project.
 	Group string `json:"group"`
 	// ProjectID is the name of the target project.
-	ProjectID string `json:"projectID"`
-	// ProjectGroup is the user's group within project, determining their permissions within the project.
-	ProjectGroup string `json:"projectGroup"`
+	Project string `json:"project"`
+
+	// +kubebuilder:validation:Enum=viewers;editors;owners;
+
+	// Role is the user's role within the project, determining their permissions.
+	// Possible roles are:
+	// - "viewers" - allowed to get/list project resources
+	// - "editors" - allowed to edit all project resources
+	// - "owners" - same as editors, but also can manage users in the project
+	Role string `json:"role"`
 }
 
 // +kubebuilder:object:generate=true

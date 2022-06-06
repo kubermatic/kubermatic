@@ -220,7 +220,7 @@ func (p *ProjectMemberProvider) MapUserToRole(ctx context.Context, user *kuberma
 	var roles []string
 	for _, gpb := range groupProjectBindings.Items {
 		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) {
-			roles = append(roles, gpb.Spec.ProjectGroup)
+			roles = append(roles, gpb.Spec.Role)
 		}
 	}
 
