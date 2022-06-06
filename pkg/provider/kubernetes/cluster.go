@@ -395,8 +395,7 @@ func (p *ClusterProvider) GetClientForCustomerCluster(ctx context.Context, userI
 }
 
 func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
-	parts := strings.Split(userInfo.Group, "-")
-	switch parts[0] {
+	switch userInfo.Role {
 	case "editors":
 		return cluster.Address.AdminToken, nil
 	case "owners":
@@ -411,7 +410,7 @@ func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userIn
 
 		return string(s.Data[resources.ViewerTokenSecretKey]), nil
 	default:
-		return "", fmt.Errorf("user group %s not supported", userInfo.Group)
+		return "", fmt.Errorf("user role %s not supported", userInfo.Role)
 	}
 }
 
@@ -433,7 +432,7 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 	return func(cfg *restclient.Config) *restclient.Config {
 		cfg.Impersonate = restclient.ImpersonationConfig{
 			UserName: userInfo.Email,
-			Groups:   []string{p.extractGroupPrefix(userInfo.Group), "system:authenticated"},
+			Groups:   []string{userInfo.Role, "system:authenticated"},
 		}
 		return cfg
 	}

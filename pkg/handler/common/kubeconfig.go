@@ -83,7 +83,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	if strings.HasPrefix(userInfo.Group, "viewers") {
+	if strings.EqualFold(userInfo.Role, "viewers") {
 		filePrefix = "viewer"
 		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(ctx, cluster)
 	} else {

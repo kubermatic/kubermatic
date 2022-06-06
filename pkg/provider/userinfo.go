@@ -35,15 +35,21 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			return nil, fmt.Errorf("unable to get authenticated user object")
 		}
 
-		var group string
+		groups := user.Spec.Groups
 		if projectID != "" {
 			var err error
-			group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+			group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
 			if err != nil {
 				return nil, err
 			}
+			groups = append(groups, group)
 		}
 
-		return &UserInfo{Email: user.Spec.Email, Group: group, IsAdmin: user.Spec.IsAdmin}, nil
+		role, err := userProjectMapper.MapUserToRole(ctx, user, projectID)
+		if err != nil {
+			return nil, err
+		}
+
+		return &UserInfo{Email: user.Spec.Email, Group: groups, IsAdmin: user.Spec.IsAdmin, Role: role}, nil
 	}, nil
 }

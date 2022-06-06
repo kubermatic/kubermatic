@@ -39,7 +39,6 @@ func TestReconcileBinding(t *testing.T) {
 			expectedError: true,
 			userInfo: &provider.UserInfo{
 				Email:   "test@test.com",
-				Group:   "",
 				IsAdmin: false,
 			},
 			datacenterName: "restricted-fake-dc",
@@ -48,7 +47,6 @@ func TestReconcileBinding(t *testing.T) {
 			name: "scenario 2: admin should get restricted datacenter with any domain",
 			userInfo: &provider.UserInfo{
 				Email:   "test@test.com",
-				Group:   "",
 				IsAdmin: true,
 			},
 			datacenterName: "restricted-fake-dc",
@@ -65,7 +63,6 @@ func TestReconcileBinding(t *testing.T) {
 			name: "scenario 3: user can get datacenter without restriction",
 			userInfo: &provider.UserInfo{
 				Email:   "test@test.com",
-				Group:   "",
 				IsAdmin: false,
 			},
 			datacenterName: "fake-dc",
@@ -81,7 +78,6 @@ func TestReconcileBinding(t *testing.T) {
 			name: "scenario 4: user can get restricted datacenter with the matching domain",
 			userInfo: &provider.UserInfo{
 				Email:   "test@example.com",
-				Group:   "",
 				IsAdmin: false,
 			},
 			datacenterName: "node-dc",
