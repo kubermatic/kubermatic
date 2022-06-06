@@ -363,8 +363,7 @@ type ProjectProvider interface {
 
 // UserInfo represent authenticated user.
 type UserInfo struct {
-	Email string
-	// TODO - make this groupS
+	Email   string
 	Groups  []string
 	Role    string
 	IsAdmin bool
