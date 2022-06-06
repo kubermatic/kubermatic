@@ -430,23 +430,19 @@ func (p *ClusterProvider) GetClientForUserCluster(ctx context.Context, userInfo 
 }
 
 func (p *ClusterProvider) GetTokenForUserCluster(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
-	switch userInfo.Role {
-	case "editors":
-		return cluster.GetAddress().AdminToken, nil
-	case "owners":
-		return cluster.GetAddress().AdminToken, nil
-	case "viewers":
+	if userInfo.Roles.Has("viewers") && userInfo.Roles.Len() == 1 {
 		s := &corev1.Secret{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}
 
 		if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, name, s); err != nil {
 			return "", err
 		}
-
 		return string(s.Data[resources.ViewerTokenSecretKey]), nil
-	default:
-		return "", fmt.Errorf("user role %s not supported", userInfo.Role)
+	} else if userInfo.Roles.HasAny("editors", "owners") {
+		return cluster.GetAddress().AdminToken, nil
 	}
+
+	return "", fmt.Errorf("user role %s not supported", userInfo.Roles.List())
 }
 
 // GetSeedClusterAdminRuntimeClient returns a runtime client to interact with the seed cluster resources.
@@ -467,7 +463,7 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 	return func(cfg *restclient.Config) *restclient.Config {
 		cfg.Impersonate = restclient.ImpersonationConfig{
 			UserName: userInfo.Email,
-			Groups:   []string{userInfo.Role, "system:authenticated"},
+			Groups:   append(userInfo.Roles.List(), "system:authenticated"),
 		}
 		return cfg
 	}

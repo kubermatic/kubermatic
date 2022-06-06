@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -365,7 +366,7 @@ type ProjectProvider interface {
 type UserInfo struct {
 	Email   string
 	Groups  []string
-	Role    string
+	Roles   sets.String
 	IsAdmin bool
 }
 
@@ -427,10 +428,10 @@ type ProjectMemberMapper interface {
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
 	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 
-	// MapUserToRole returns the role of the user in the project. It searches across the user project bindings and the group
-	// project bindings for the user and returns the role with the widest permissions.
+	// MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
+	// project bindings for the user and returns the roles.
 	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
-	MapUserToRole(ctx context.Context, user *kubermaticv1.User, projectID string) (string, error)
+	MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

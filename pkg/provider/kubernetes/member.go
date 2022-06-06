@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kubectl/pkg/util/slice"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -202,70 +203,38 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 	return memberMappings, nil
 }
 
-// MapUserToRole returns the role of the user in the project. It searches across the user project bindings and the group
-// project bindings for the user and returns the role with the widest permissions.
+// MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
+// project bindings for the user and returns the role set.
 // This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
-func (p *ProjectMemberProvider) MapUserToRole(ctx context.Context, user *kubermaticv1.User, projectID string) (string, error) {
+func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
 	projectReq, err := labels.NewRequirement("projectID", selection.Equals, []string{projectID})
 	if err != nil {
-		return "", fmt.Errorf("failed to construct project label selector: %w", err)
+		return sets.String{}, fmt.Errorf("failed to construct project label selector: %w", err)
 	}
 
 	// Get group project bindings
 	groupProjectBindings := &kubermaticv1.GroupProjectBindingList{}
 	if err := p.clientPrivileged.List(ctx, groupProjectBindings, &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectReq)}); err != nil {
-		return "", err
+		return sets.String{}, err
 	}
 
-	var roles []string
+	roles := sets.NewString()
 	for _, gpb := range groupProjectBindings.Items {
 		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) {
-			roles = append(roles, gpb.Spec.ProjectGroup)
+			roles.Insert(gpb.Spec.Role)
 		}
 	}
 
 	// get the userprojectBinding group
 	userBindingRole, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
 	if err != nil {
-		return "", err
+		return sets.String{}, err
 	}
 	// extract just the role
 	userBindingRole = apiv1.ExtractGroupPrefix(userBindingRole)
+	roles.Insert(userBindingRole)
 
-	roles = append(roles, userBindingRole)
-	role := getWidestRole(roles)
-	if role == "" {
-		return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID))
-	}
-	return role, nil
-}
-
-// TODO This is clumsy and needs to be changed. Best to create roles enum and implement some sorting there.
-func getWidestRole(roles []string) string {
-	widestRole := struct {
-		role     string
-		position int
-	}{
-		role:     "",
-		position: 0,
-	}
-
-	for _, role := range roles {
-		position, ok := roleMap[role]
-		if ok && position > widestRole.position {
-			widestRole.role = role
-		}
-	}
-
-	return widestRole.role
-}
-
-var roleMap = map[string]int{
-	// projectmanagers is a special role just for projectmanager serviceaccounts
-	"projectmanagers": 1,
-	"viewers":         2,
-	"editors":         3,
-	"owners":          4,
+	return roles, nil
 }
 
 // CreateUnsecured creates a binding for the given member and the given project
