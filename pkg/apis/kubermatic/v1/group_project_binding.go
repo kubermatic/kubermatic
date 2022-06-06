@@ -55,9 +55,9 @@ type GroupProjectBindingSpec struct {
 
 	// Role is the user's role within the project, determining their permissions.
 	// Possible roles are:
-	// - "viewers" - allowed to get/list project resources
-	// - "editors" - allowed to edit all project resources
-	// - "owners" - same as editors, but also can manage users in the project
+	// "viewers" - allowed to get/list project resources
+	// "editors" - allowed to edit all project resources
+	// "owners" - same as editors, but also can manage users in the project
 	Role string `json:"role"`
 }
 

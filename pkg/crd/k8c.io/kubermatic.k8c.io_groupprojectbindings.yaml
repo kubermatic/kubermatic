@@ -19,11 +19,11 @@ spec:
     - jsonPath: .spec.group
       name: Group
       type: string
-    - jsonPath: .spec.projectID
-      name: ProjectID
+    - jsonPath: .spec.project
+      name: Project
       type: string
-    - jsonPath: .spec.projectGroup
-      name: ProjectGroup
+    - jsonPath: .spec.role
+      name: Role
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -32,8 +32,8 @@ spec:
     schema:
       openAPIV3Schema:
         description: GroupProjectBinding specifies a binding between a group and a
-          project This resource is used by the user management to manipulate members
-          of the given project.
+          project This resource is used by the user management to manipulate member
+          groups of the given project.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -52,19 +52,25 @@ spec:
               a project.
             properties:
               group:
-                description: Group is the group name is bound to the given project.
+                description: Group is the group name that is bound to the given project.
                 type: string
-              projectGroup:
-                description: ProjectGroup is the user's group within project, determining
-                  their permissions within the project.
-                type: string
-              projectID:
+              project:
                 description: ProjectID is the name of the target project.
+                type: string
+              role:
+                description: 'Role is the user''s role within the project, determining
+                  their permissions. Possible roles are: "viewers" - allowed to get/list
+                  project resources "editors" - allowed to edit all project resources
+                  "owners" - same as editors, but also can manage users in the project'
+                enum:
+                - viewers
+                - editors
+                - owners
                 type: string
             required:
             - group
-            - projectGroup
-            - projectID
+            - project
+            - role
             type: object
         type: object
     served: true
