@@ -79,7 +79,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a
+	k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a // kubeone pkg: "k8c.io/kubeone/pkg/fail" is not released yet, hence importing @latestcommit
 	k8c.io/operating-system-manager v0.4.2
 	k8s.io/api v0.24.0
 	k8s.io/apiextensions-apiserver v0.24.0
