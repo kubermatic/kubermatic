@@ -96,6 +96,7 @@ func genSeedFromRequest(req createSeedReq) *kubermaticv1.Seed {
 		Kubeconfig:             corev1.ObjectReference{},
 		SeedDNSOverwrite:       req.Body.Spec.SeedDNSOverwrite,
 		DefaultClusterTemplate: req.Body.Spec.DefaultClusterTemplate,
+		ExposeStrategy:         req.Body.Spec.ExposeStrategy,
 	}
 	if req.Body.Spec.ProxySettings != nil {
 		newSeed.Spec.ProxySettings = &kubermaticv1.ProxySettings{}
@@ -106,22 +107,11 @@ func genSeedFromRequest(req createSeedReq) *kubermaticv1.Seed {
 			newSeed.Spec.ProxySettings.HTTPProxy = kubermaticv1.NewProxyValue(req.Body.Spec.ProxySettings.HTTPProxy)
 		}
 	}
-	if req.Body.Spec.ExposeStrategy != "" {
-		switch req.Body.Spec.ExposeStrategy {
-		case "NodePort":
-			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyNodePort
-		case "LoadBalancer":
-			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyLoadBalancer
-		case "Tunneling":
-			newSeed.Spec.ExposeStrategy = kubermaticv1.ExposeStrategyTunneling
-		}
-	}
 	if req.Body.Spec.MLA != nil {
 		newSeed.Spec.MLA = &kubermaticv1.SeedMLASettings{
 			UserClusterMLAEnabled: req.Body.Spec.MLA.UserClusterMLAEnabled,
 		}
 	}
-
 	return newSeed
 }
 

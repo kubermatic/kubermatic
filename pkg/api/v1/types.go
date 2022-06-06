@@ -2467,7 +2467,7 @@ type CreateSeedSpec struct {
 	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
 	ProxySettings *CreateSeedProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy string `json:"expose_strategy,omitempty"`
+	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *CreateSeedMLASettings `json:"mla,omitempty"`
 	// DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used

@@ -26,9 +26,6 @@ type CreateSeedSpec struct {
 	// to default all new created clusters
 	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
 
-	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy string `json:"expose_strategy,omitempty"`
-
 	// The raw Kubeconfig encoded to base64. This field is used for cluster creation or update.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
@@ -39,6 +36,9 @@ type CreateSeedSpec struct {
 	// Optional: This can be used to override the DNS name used for this seed.
 	// By default the seed name is used.
 	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
+
+	// expose strategy
+	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
 
 	// mla
 	Mla *CreateSeedMLASettings `json:"mla,omitempty"`
@@ -51,6 +51,10 @@ type CreateSeedSpec struct {
 func (m *CreateSeedSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateExposeStrategy(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMla(formats); err != nil {
 		res = append(res, err)
 	}
@@ -62,6 +66,23 @@ func (m *CreateSeedSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CreateSeedSpec) validateExposeStrategy(formats strfmt.Registry) error {
+	if swag.IsZero(m.ExposeStrategy) { // not required
+		return nil
+	}
+
+	if err := m.ExposeStrategy.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("expose_strategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("expose_strategy")
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -107,6 +128,10 @@ func (m *CreateSeedSpec) validateProxySettings(formats strfmt.Registry) error {
 func (m *CreateSeedSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMla(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -118,6 +143,20 @@ func (m *CreateSeedSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CreateSeedSpec) contextValidateExposeStrategy(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ExposeStrategy.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("expose_strategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("expose_strategy")
+		}
+		return err
+	}
+
 	return nil
 }
 

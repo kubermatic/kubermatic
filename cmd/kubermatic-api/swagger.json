@@ -22609,9 +22609,7 @@
           "x-go-name": "DefaultClusterTemplate"
         },
         "expose_strategy": {
-          "description": "Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.",
-          "type": "string",
-          "x-go-name": "ExposeStrategy"
+          "$ref": "#/definitions/ExposeStrategy"
         },
         "kubeconfig": {
           "description": "The raw Kubeconfig encoded to base64. This field is used for cluster creation or update.",
