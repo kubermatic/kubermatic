@@ -387,7 +387,7 @@ func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID stri
 		return nil, err
 	}
 
-	return &provider.UserInfo{Email: user.Spec.Email, Group: groups, Role: role}, nil
+	return &provider.UserInfo{Email: user.Spec.Email, Groups: groups, Role: role}, nil
 }
 
 func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {

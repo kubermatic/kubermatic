@@ -50,6 +50,6 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			return nil, err
 		}
 
-		return &UserInfo{Email: user.Spec.Email, Group: groups, IsAdmin: user.Spec.IsAdmin, Role: role}, nil
+		return &UserInfo{Email: user.Spec.Email, Groups: groups, IsAdmin: user.Spec.IsAdmin, Role: role}, nil
 	}, nil
 }

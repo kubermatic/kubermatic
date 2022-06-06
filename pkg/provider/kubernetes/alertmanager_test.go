@@ -331,5 +331,5 @@ alertmanager_config: |
 }
 
 func genUserInfo() *provider.UserInfo {
-	return &provider.UserInfo{Email: "john@acme.com", Group: []string{"owners-abcd"}}
+	return &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}}
 }
