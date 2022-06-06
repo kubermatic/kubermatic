@@ -261,8 +261,9 @@ func getWidestRole(roles []string) string {
 }
 
 var roleMap = map[string]int{
-	"viewers":         1,
-	"projectmanagers": 2,
+	// projectmanagers is a special role just for projectmanager serviceaccounts
+	"projectmanagers": 1,
+	"viewers":         2,
 	"editors":         3,
 	"owners":          4,
 }
