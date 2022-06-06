@@ -22,7 +22,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -187,7 +186,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 				log.Logger.Debug(err)
 				return
 			}
-			if strings.EqualFold(userInfo.Role, "viewers") {
+			if userInfo.Roles.Has("viewers") && userInfo.Roles.Len() == 1 {
 				return
 			}
 		}

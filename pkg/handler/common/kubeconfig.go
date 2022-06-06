@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/gorilla/securecookie"
 
@@ -83,7 +82,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	if strings.EqualFold(userInfo.Role, "viewers") {
+	if userInfo.Roles.Has("viewers") && userInfo.Roles.Len() == 1 {
 		filePrefix = "viewer"
 		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(ctx, cluster)
 	} else {
