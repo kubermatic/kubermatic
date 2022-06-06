@@ -373,6 +373,7 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 
 func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
 	groups := user.Spec.Groups
+	role := ""
 	if projectID != "" {
 		var err error
 		group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
@@ -380,11 +381,11 @@ func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID stri
 			return nil, err
 		}
 		groups = append(groups, group)
-	}
 
-	role, err := userProjectMapper.MapUserToRole(ctx, user, projectID)
-	if err != nil {
-		return nil, err
+		role, err = userProjectMapper.MapUserToRole(ctx, user, projectID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &provider.UserInfo{Email: user.Spec.Email, Groups: groups, Role: role}, nil

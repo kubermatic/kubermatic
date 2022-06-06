@@ -36,6 +36,7 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 		}
 
 		groups := user.Spec.Groups
+		role := ""
 		if projectID != "" {
 			var err error
 			group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
@@ -43,11 +44,11 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 				return nil, err
 			}
 			groups = append(groups, group)
-		}
 
-		role, err := userProjectMapper.MapUserToRole(ctx, user, projectID)
-		if err != nil {
-			return nil, err
+			role, err = userProjectMapper.MapUserToRole(ctx, user, projectID)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &UserInfo{Email: user.Spec.Email, Groups: groups, IsAdmin: user.Spec.IsAdmin, Role: role}, nil
