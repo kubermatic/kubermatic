@@ -354,7 +354,7 @@ type ProjectProvider interface {
 type UserInfo struct {
 	Email string
 	// TODO - make this groupS
-	Group   []string
+	Groups  []string
 	Role    string
 	IsAdmin bool
 }

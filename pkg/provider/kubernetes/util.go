@@ -52,7 +52,7 @@ func ClusterNameFromNamespace(namespace string) string {
 func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient ImpersonationClient) (ctrlruntimeclient.Client, error) {
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
-		Groups:   userInfo.Group,
+		Groups:   userInfo.Groups,
 	}
 
 	return createImpersonationClient(impersonationCfg)
