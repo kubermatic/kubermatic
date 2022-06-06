@@ -1038,6 +1038,11 @@
                   "type": "string",
                   "x-go-name": "Name"
                 },
+                "raw_kubeconfig": {
+                  "description": "RawKubeconfig raw kubeconfig decoded to base64",
+                  "type": "string",
+                  "x-go-name": "RawKubeconfig"
+                },
                 "spec": {
                   "$ref": "#/definitions/SeedSpec"
                 }

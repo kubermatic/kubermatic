@@ -161,7 +161,7 @@ func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provide
 }
 
 // UpdateSeedEndpoint updates seed element.
-func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
+func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedProvider provider.SeedProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateSeedReq)
 		if !ok {
@@ -174,6 +174,17 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		seed, err := getSeed(ctx, req.seedReq, userInfoGetter, seedsGetter)
 		if err != nil {
 			return nil, err
+		}
+
+		if req.Body.RawKubeconfig != "" {
+			config, err := base64.StdEncoding.DecodeString(req.Body.RawKubeconfig)
+			if err != nil {
+				return nil, utilerrors.NewBadRequest(err.Error())
+			}
+
+			if err := seedProvider.CreateOrUpdateKubeconfigSecretForSeed(ctx, seed, config); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 		}
 
 		originalJSON, err := json.Marshal(seed.Spec)
@@ -197,13 +208,14 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		}
 		seed.Spec = *seedSpec
 
-		if err := masterClient.Update(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to update Seed: %w", err)
+		updatedSeed, err := seedProvider.UpdateUnsecured(ctx, seed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return apiv1.Seed{
 			Name:     req.Name,
-			SeedSpec: convertSeedSpec(seed.Spec, req.Name),
+			SeedSpec: convertSeedSpec(updatedSeed.Spec, req.Name),
 		}, nil
 	}
 }
@@ -262,9 +274,10 @@ type updateSeedReq struct {
 	seedReq
 	// in: body
 	Body struct {
-		Name string `json:"name"`
-
+		Name string                `json:"name"`
 		Spec kubermaticv1.SeedSpec `json:"spec"`
+		// RawKubeconfig raw kubeconfig decoded to base64
+		RawKubeconfig string `json:"raw_kubeconfig,omitempty"`
 	}
 }
 
