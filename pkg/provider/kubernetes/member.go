@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -225,14 +225,14 @@ func (p *ProjectMemberProvider) MapUserToRole(ctx context.Context, user *kuberma
 	}
 
 	// get the userprojectBinding group
-	group, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
+	userBindingRole, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
 	if err != nil {
 		return "", err
 	}
-	// extract just the group/role
-	group = v1.ExtractGroupPrefix(group)
+	// extract just the role
+	userBindingRole = apiv1.ExtractGroupPrefix(userBindingRole)
 
-	roles = append(roles, group)
+	roles = append(roles, userBindingRole)
 	role := getWidestRole(roles)
 	if role == "" {
 		return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID))
