@@ -82,6 +82,7 @@ type Routing struct {
 	userWatcher                           watcher.UserWatcher
 	caBundle                              *x509.CertPool
 	features                              features.FeatureGate
+	seedProvider                          provider.SeedProvider
 }
 
 // NewRouting creates a new Routing.
@@ -127,6 +128,7 @@ func NewRouting(routingParams RoutingParams, masterClient ctrlruntimeclient.Clie
 		versions:                              routingParams.Versions,
 		caBundle:                              routingParams.CABundle,
 		features:                              routingParams.Features,
+		seedProvider:                          routingParams.SeedProvider,
 	}
 }
 

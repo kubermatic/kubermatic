@@ -882,6 +882,54 @@
             }
           }
         }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Creates a new seed object.",
+        "operationId": "createSeed",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "spec": {
+                  "$ref": "#/definitions/CreateSeedSpec"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seed",
+            "schema": {
+              "$ref": "#/definitions/Seed"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/seeds/{seed_name}": {
@@ -22517,6 +22565,75 @@
         },
         "nodeDeployment": {
           "$ref": "#/definitions/NodeDeployment"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "CreateSeedMLASettings": {
+      "type": "object",
+      "properties": {
+        "userClusterMLAEnabled": {
+          "description": "Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed.",
+          "type": "boolean",
+          "x-go-name": "UserClusterMLAEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "CreateSeedProxySettings": {
+      "description": "CreateSeedProxySettings allow configuring a HTTP proxy for the controlplanes\nand nodes.",
+      "type": "object",
+      "properties": {
+        "httpProxy": {
+          "description": "Optional: If set, this proxy will be configured for both HTTP and HTTPS.",
+          "type": "string",
+          "x-go-name": "HTTPProxy"
+        },
+        "noProxy": {
+          "description": "Optional: If set this will be set as NO_PROXY environment variable on the node;\nThe value must be a comma-separated list of domains for which no proxy\nshould be used, e.g. \"*.example.com,internal.dev\".\nNote that the in-cluster apiserver URL will be automatically prepended\nto this value.",
+          "type": "string",
+          "x-go-name": "NoProxy"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "CreateSeedSpec": {
+      "type": "object",
+      "title": "CreateSeedSpec is the structure that is used to create seed.",
+      "properties": {
+        "country": {
+          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "defaultClusterTemplate": {
+          "description": "DefaultClusterTemplate is the name of a cluster template of scope \"seed\" that is used\nto default all new created clusters",
+          "type": "string",
+          "x-go-name": "DefaultClusterTemplate"
+        },
+        "expose_strategy": {
+          "$ref": "#/definitions/ExposeStrategy"
+        },
+        "kubeconfig": {
+          "description": "The raw Kubeconfig encoded to base64. This field is used for cluster creation or update.",
+          "type": "string",
+          "x-go-name": "Kubeconfig"
+        },
+        "location": {
+          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "mla": {
+          "$ref": "#/definitions/CreateSeedMLASettings"
+        },
+        "proxy_settings": {
+          "$ref": "#/definitions/CreateSeedProxySettings"
+        },
+        "seed_dns_overwrite": {
+          "description": "Optional: This can be used to override the DNS name used for this seed.\nBy default the seed name is used.",
+          "type": "string",
+          "x-go-name": "SeedDNSOverwrite"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"

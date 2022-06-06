@@ -70,6 +70,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Handler(r.updateAdmissionPlugin())
 
 	// Defines a set of HTTP endpoints for the seeds
+	mux.Methods(http.MethodPost).
+		Path("/admin/seeds").
+		Handler(r.createSeed())
+
 	mux.Methods(http.MethodGet).
 		Path("/admin/seeds").
 		Handler(r.listSeeds())
@@ -347,6 +351,30 @@ func (r Routing) updateAdmissionPlugin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeUpdateAdmissionPluginReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/admin/seeds admin createSeed
+//
+//     Creates a new seed object.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Seed
+//       401: empty
+//       403: empty
+func (r Routing) createSeed() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedProvider)),
+		admin.DecodeCreateSeedReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
