@@ -687,7 +687,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVMwareCloudDirectorCatalogs())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/vmwareclouddirector/{dc}/templates/{catalog}").
+		Path("/providers/vmwareclouddirector/{dc}/templates/{catalog_name}").
 		Handler(r.listVMwareCloudDirectorTemplates())
 
 	// Define a set of endpoints for preset management

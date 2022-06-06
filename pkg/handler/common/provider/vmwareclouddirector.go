@@ -96,7 +96,6 @@ func getVMwareCloudDirectorCredentials(ctx context.Context, cloudSpec kubermatic
 func getVMwareCloudDirectorDataCenterAndCredentials(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	seedsGetter provider.SeedsGetter, projectID, clusterID string) (*kubermaticv1.DatacenterSpecVMwareCloudDirector, *resources.VMwareCloudDirectorCredentials, error) {
-
 	cluster, err := getClusterForVMwareCloudDirector(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, nil, err
