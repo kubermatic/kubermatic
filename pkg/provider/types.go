@@ -363,8 +363,10 @@ type ProjectProvider interface {
 
 // UserInfo represent authenticated user.
 type UserInfo struct {
-	Email   string
-	Group   string
+	Email string
+	// TODO - make this groupS
+	Group   []string
+	Role    string
 	IsAdmin bool
 }
 
@@ -425,6 +427,11 @@ type ProjectMemberMapper interface {
 	// MappingsFor returns the list of projects (bindings) for the given user
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
 	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
+
+	// MapUserToRole returns the role of the user in the project. It searches across the user project bindings and the group
+	// project bindings for the user and returns the role with the widest permissions.
+	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
+	MapUserToRole(ctx context.Context, user *kubermaticv1.User, projectID string) (string, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

@@ -181,7 +181,9 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name, authenticatedUser.Email, authenticatedUser.Groups)
+
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name,
+					authenticatedUser.Email, authenticatedUser.Groups)
 				if err != nil {
 					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
@@ -370,16 +372,22 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 }
 
 func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
-	var group string
+	groups := user.Spec.Groups
 	if projectID != "" {
 		var err error
-		group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+		group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
 		if err != nil {
 			return nil, err
 		}
+		groups = append(groups, group)
 	}
 
-	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
+	role, err := userProjectMapper.MapUserToRole(ctx, user, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.UserInfo{Email: user.Spec.Email, Group: groups, Role: role}, nil
 }
 
 func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
