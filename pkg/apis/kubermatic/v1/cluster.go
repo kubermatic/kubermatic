@@ -492,7 +492,7 @@ type ComponentSettings struct {
 	// strategy is configured.
 	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
 	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
-	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy"`
+	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy,omitempty"`
 }
 
 type APIServerSettings struct {
