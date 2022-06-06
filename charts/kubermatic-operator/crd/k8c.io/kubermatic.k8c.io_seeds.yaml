@@ -958,7 +958,6 @@ spec:
                 - apiserver
                 - controllerManager
                 - etcd
-                - konnectivityProxy
                 - nodePortProxyEnvoy
                 - prometheus
                 - scheduler
