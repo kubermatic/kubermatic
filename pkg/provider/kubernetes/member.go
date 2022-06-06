@@ -261,9 +261,10 @@ func getWidestRole(roles []string) string {
 }
 
 var roleMap = map[string]int{
-	"viewers": 1,
-	"editors": 2,
-	"owners":  3,
+	"viewers":         1,
+	"projectmanagers": 2,
+	"editors":         3,
+	"owners":          4,
 }
 
 // CreateUnsecured creates a binding for the given member and the given project

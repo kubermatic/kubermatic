@@ -50,7 +50,7 @@ func TestCreateBinding(t *testing.T) {
 	}
 	// act
 	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
-	result, err := target.Create(context.Background(), &provider.UserInfo{Email: authenticatedUser.Spec.Email, Groups: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
+	result, err := target.Create(context.Background(), &provider.UserInfo{Email: authenticatedUser.Spec.Email, Groups: []string{fmt.Sprintf("owners-%s", existingProject.Name)}}, existingProject, memberEmail, groupName)
 
 	// validate
 	if err != nil {
@@ -137,7 +137,7 @@ func TestListBinding(t *testing.T) {
 			}
 			// act
 			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
-			result, err := target.List(context.Background(), &provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Groups: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
+			result, err := target.List(context.Background(), &provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Groups: []string{fmt.Sprintf("owners-%s", tc.projectToSync.Name)}}, tc.projectToSync, nil)
 
 			// validate
 			if err != nil {

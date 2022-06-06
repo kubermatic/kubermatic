@@ -212,13 +212,13 @@ func TestDeleteMLAAdminSetting(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenMLAAdminSetting(testMLAAdminSettingName, testMLAAdminSettingClusterName, 1),
 			},
-			userInfo:            &provider.UserInfo{Email: "john@acme.com", Groups: "owners-abcd"},
+			userInfo:            &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			cluster:             genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
 			mlaAdminSettingName: testMLAAdminSettingName,
 		},
 		{
 			name:                "delete mlaAdminSetting which doesn't exist",
-			userInfo:            &provider.UserInfo{Email: "john@acme.com", Groups: "owners-abcd"},
+			userInfo:            &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			cluster:             genCluster(testMLAAdminSettingClusterName, "kubernetes", "my-first-project-ID", "test-mla-admin-setting", "john@acme.com"),
 			mlaAdminSettingName: testMLAAdminSettingName,
 			expectedError:       "mlaadminsettings.kubermatic.k8c.io \"mla-admin-settings\" not found",
