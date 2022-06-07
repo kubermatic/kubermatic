@@ -51,7 +51,7 @@ type VsphereClusterJig struct {
 func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials VsphereCredentialsType) *VsphereClusterJig {
 	return &VsphereClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           rand.String(10),
+			name:           "c" + rand.String(9),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
