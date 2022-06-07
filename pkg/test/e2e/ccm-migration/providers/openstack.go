@@ -51,7 +51,7 @@ type OpenstackClusterJig struct {
 func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           rand.String(10),
+			name:           "c" + rand.String(9),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
