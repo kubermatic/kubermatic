@@ -37,7 +37,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.23.1
+        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.24.0
         name: cloud-controller-manager
         resources:
           limits:
@@ -46,6 +46,8 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+        securityContext:
+          runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig

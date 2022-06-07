@@ -130,6 +130,9 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 							ReadOnly:  true,
 						},
 					),
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser: pointer.Int64(1001),
+					},
 				},
 			}
 
@@ -178,11 +181,11 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case "1.22":
 		return "1.22.0", nil
 	case "1.23":
-		fallthrough
+		return "1.23.1", nil
 	case "1.24":
 		fallthrough
 	default:
-		return "1.23.1", nil
+		return "1.24.0", nil
 	}
 }
 
