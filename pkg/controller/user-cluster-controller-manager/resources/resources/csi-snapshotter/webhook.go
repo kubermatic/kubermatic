@@ -28,66 +28,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI.
+// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
+// Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/admission-configuration-template
 func ValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			sideEffect := admissionregistrationv1.SideEffectClassNone
-			matchPolicy := admissionregistrationv1.Equivalent
-			failurePolicy := admissionregistrationv1.Fail
-			scope := admissionregistrationv1.AllScopes
-
-			validatingWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
-				{
-					Name:                    name,
-					AdmissionReviewVersions: []string{"v1", "v1beta1"},
-					MatchPolicy:             &matchPolicy,
-					FailurePolicy:           &failurePolicy,
-					SideEffects:             &sideEffect,
-					TimeoutSeconds:          pointer.Int32Ptr(2),
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						Service: &admissionregistrationv1.ServiceReference{
-							Namespace: namespace,
-							Name:      resources.CSISnapshotValidationWebhookName,
-							Path:      pointer.String("/volumesnapshot"),
-							Port:      pointer.Int32Ptr(443),
-						},
-						CABundle: triple.EncodeCertPEM(caCert),
-					},
-					NamespaceSelector: &metav1.LabelSelector{},
-					ObjectSelector:    &metav1.LabelSelector{},
-					Rules: []admissionregistrationv1.RuleWithOperations{
-						{
-							Rule: admissionregistrationv1.Rule{
-								APIGroups: []string{
-									"snapshot.storage.k8s.io",
-								},
-								APIVersions: []string{
-									"v1",
-									"v1beta1",
-								},
-								Resources: []string{
-									"volumesnapshots",
-									"volumesnapshotcontents",
-								},
-								Scope: &scope,
-							},
-							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.Create,
-								admissionregistrationv1.Update,
-							},
-						},
-					},
-				},
-			}
-
-			return validatingWebhookConfiguration, nil
-		}
-	}
-}
-
-// VsphereValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI.
-func VsphereValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
