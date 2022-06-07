@@ -19,7 +19,8 @@ package providers
 import (
 	"context"
 	"errors"
-	"fmt"
+
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/source"
@@ -36,10 +37,10 @@ type SourceProvider interface {
 }
 
 // NewSourceProvider returns the concrete implementation of SourceProvider according to source defined in appSource.
-func NewSourceProvider(ctx context.Context, client ctrlruntimeclient.Client, appSource *appskubermaticv1.ApplicationSource, secretNamespace string) (SourceProvider, error) {
+func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubeconfig string, cacheDir string, appInstallation *appskubermaticv1.ApplicationInstallation, appSource *appskubermaticv1.ApplicationSource, secretNamespace string) (SourceProvider, error) {
 	switch {
 	case appSource.Helm != nil:
-		return nil, fmt.Errorf("helmSource is not implemented yet")
+		return source.HelmSource{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, ApplicationInstallation: appInstallation, Source: appSource.Helm}, nil
 	case appSource.Git != nil:
 		return source.GitSource{Ctx: ctx, Client: client, Source: appSource.Git, SecretNamespace: secretNamespace}, nil
 	default: // This should not happen. The admission webhook prevents that.

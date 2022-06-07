@@ -47,6 +47,9 @@ type ApplicationManager struct {
 	// ApplicationCache is the path to the directory used for caching applications. (i.e. location where application's source will be downloaded, Helm repository cache ...)
 	ApplicationCache string
 
+	// Kubeconfig of the user-cluster
+	Kubeconfig string
+
 	// Namespace where credentials secrets are stored.
 	SecretNamespace string
 }
@@ -54,7 +57,7 @@ type ApplicationManager struct {
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
 func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	// initialize tools
-	sourceProvider, err := providers.NewSourceProvider(ctx, seedClient, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
+	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, applicationInstallation, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to initialize source provider: %w", err)
 	}
