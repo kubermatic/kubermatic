@@ -60,6 +60,7 @@ var cloudProviders = map[string]clusterSpec{
 	"aws":       aws{},
 	"openstack": openstack{},
 	"hetzner":   hetzner{},
+	"do":        do{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -179,6 +180,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			skipHostNetworkPods: true,
 		},
 		{
+<<<<<<< HEAD
 			cloudName: "hetzner",
 			osNames: []string{
 				"ubuntu",
@@ -199,6 +201,34 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           false,
 			skipHostNetworkPods: false,
+=======
+			cloudName: "do",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", //  others are unsupported in kkp
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "do",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", //  others are unsupported in kkp
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+>>>>>>> 5d4386916 (add dualstack e2e tests for digitalocean)
 		},
 	}
 

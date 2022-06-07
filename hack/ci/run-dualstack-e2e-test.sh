@@ -60,6 +60,8 @@ export OS_PROJECT_NAME="${OS_PROJECT_NAME:-$(vault kv get -field=OS_TENANT_NAME 
 export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
 export HETZNER_TOKEN="${HETZNER_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
 
+export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
+
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
