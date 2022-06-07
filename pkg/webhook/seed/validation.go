@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -171,6 +172,22 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 	}
 
+	if err := validateNoClustersRemaining(ctx, seedClient, subject, subjectDatacenters, existingDatacenters); err != nil {
+		return err
+	}
+
+	if err := validateEtcdBackupConfiguration(ctx, seedClient, subject); err != nil {
+		return err
+	}
+
+	if err := validation.ValidateMeteringConfiguration(subject.Spec.Metering); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.String) error {
 	// new seed clusters might not yet have the CRDs installed into them,
 	// which for the purpose of this validation is not a problem and simply
 	// means there can be no Clusters on that seed
@@ -202,6 +219,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 	}
 
+	return nil
+}
+
+func validateEtcdBackupConfiguration(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed) error {
 	if subject.Spec.EtcdBackupRestore != nil {
 		if len(subject.Spec.EtcdBackupRestore.Destinations) == 0 {
 			return errors.New("invalid etcd backup configuration: must define at least one backup destination")
@@ -228,10 +249,6 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 				}
 			}
 		}
-	}
-
-	if err := validation.ValidateMeteringConfiguration(subject.Spec.Metering); err != nil {
-		return err
 	}
 
 	return nil
