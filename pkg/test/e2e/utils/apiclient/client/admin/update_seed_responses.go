@@ -179,6 +179,9 @@ type UpdateSeedBody struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// RawKubeconfig raw kubeconfig decoded to base64
+	RawKubeconfig string `json:"raw_kubeconfig,omitempty"`
+
 	// spec
 	Spec *models.SeedSpec `json:"spec,omitempty"`
 }

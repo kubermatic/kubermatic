@@ -448,7 +448,7 @@ func (r Routing) updateSeed() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
+		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedProvider)),
 		admin.DecodeUpdateSeedReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
