@@ -1597,6 +1597,32 @@ func TestHandle(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
+			name: "Reject invalid rfc1035 name",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "4foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.0.0"),
+			}.Build(),
+			wantAllowed: false,
+		},
+		{
 			name: "Reject unsupported Kubernetes version update",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{

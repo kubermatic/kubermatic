@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -33,6 +34,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -68,6 +70,10 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	cluster, ok := obj.(*kubermaticv1.Cluster)
 	if !ok {
 		return errors.New("object is not a Cluster")
+	}
+
+	if errs := k8svalidation.IsDNS1035Label(cluster.Name); len(errs) != 0 {
+		return fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 	}
 
 	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
