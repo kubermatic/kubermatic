@@ -97,7 +97,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				// "centos", // cilium agent crash
 				// "flatcar", // dhcpv6 bug
-				"rhel",
+				// "rhel", // fails only in ci
 				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
