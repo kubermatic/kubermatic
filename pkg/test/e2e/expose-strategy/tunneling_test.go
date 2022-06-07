@@ -43,7 +43,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 		clusterJig = &ClusterJig{
 			Log:            e2eutils.DefaultLogger,
 			Client:         k8scli,
-			Name:           rand.String(10),
+			Name:           "c" + rand.String(9),
 			DatacenterName: options.datacenter,
 			Version:        options.kubernetesVersion,
 		}
