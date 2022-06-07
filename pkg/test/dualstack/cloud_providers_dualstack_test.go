@@ -267,6 +267,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 						t.Log("out of retest budget")
 						t.Fatalf("nodes never became ready: %v", err)
 					}
+					t.Logf("retesting...")
 					goto retest
 				}
 				t.Fatalf("nodes never became ready: %v", err)
