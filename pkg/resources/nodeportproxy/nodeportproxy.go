@@ -395,15 +395,26 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				}
 			}
 
+			seed := data.Seed()
+
+			// seed.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
+			// To avoid breaking changes we still copy these values over to the service annotations
+			if seed.Spec.NodeportProxy.Annotations != nil {
+				s.Annotations = seed.Spec.NodeportProxy.Annotations
+			}
+
+			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
+			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
+			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
+					s.Annotations[k] = v
+				}
+			}
+
 			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
 				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
 					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
 				}
-			}
-
-			// Copy custom annotations if supplied by seed spec.
-			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
-				s.Annotations = data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations
 			}
 
 			if data.Cluster().Spec.Cloud.AWS != nil {
