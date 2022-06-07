@@ -471,7 +471,7 @@ type ComponentSettings struct {
 	Etcd               EtcdStatefulSetSettings  `json:"etcd"`
 	Prometheus         StatefulSetSettings      `json:"prometheus"`
 	NodePortProxyEnvoy NodeportProxyComponent   `json:"nodePortProxyEnvoy"`
-	KonnectivityProxy  KonnectvityProxySettings `json:"konnectivityProxy"`
+	KonnectivityProxy  KonnectvityProxySettings `json:"konnectivityProxy,omitempty"`
 }
 
 type APIServerSettings struct {
