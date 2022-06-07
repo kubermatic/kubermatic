@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +30,9 @@ import (
 // It leaves the old data behind, so that the migration is safe and even if an old controller
 // tries to reconcile, it still sees valid data.
 // In KKP 2.22 we can remove the `address` field entirely.
-func migrateClusterAddresses(ctx context.Context, client ctrlruntimeclient.Client) error {
+func migrateClusterAddresses(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	log.Info("Migrating Cluster addresses")
+
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusters); err != nil {
 		return fmt.Errorf("failed to list Clusters: %w", err)
