@@ -26,6 +26,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/go-kit/kit/endpoint"
 
@@ -427,7 +428,26 @@ func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySel
 	}
 	_, err = client.EKS.UpdateClusterVersion(&updateInput)
 	if err != nil {
-		return nil, err
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case eks.ErrCodeInvalidParameterException:
+				return nil, errors.New(aerr.Message())
+			case eks.ErrCodeClientException:
+				return nil, errors.New(aerr.Message())
+			case eks.ErrCodeServerException:
+				return nil, errors.New(aerr.Message())
+			case eks.ErrCodeResourceInUseException:
+				return nil, errors.New(aerr.Message())
+			case eks.ErrCodeResourceNotFoundException:
+				return nil, errors.New(aerr.Message())
+			case eks.ErrCodeInvalidRequestException:
+				return nil, errors.New(aerr.Message())
+			default:
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	return newCluster, nil
