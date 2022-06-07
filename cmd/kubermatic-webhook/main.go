@@ -35,6 +35,7 @@ import (
 	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	clustertemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/clustertemplate/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
@@ -150,6 +151,14 @@ func main() {
 
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup ClusterTemplate webhooks
+
+	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, configGetter, options.featureGates, caPool)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ClusterTemplate{}).WithValidator(clusterTemplateValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// setup Addon webhook
