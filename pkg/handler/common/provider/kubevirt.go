@@ -203,7 +203,7 @@ func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.Stora
 		return nil, err
 	}
 
-	return kubevirt.ListStorageClasses(ctx, client)
+	return kubevirt.ListStorageClasses(ctx, client, nil)
 }
 
 func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,

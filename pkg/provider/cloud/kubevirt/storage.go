@@ -43,6 +43,10 @@ var (
 	csiResourceName            = "kubevirt-csi"
 )
 
+const InfraStorageClassAnnotation = "kubevirt-initialization.k8c.io/initialize-sc"
+
+type StorageClassAnnotationFilter func(map[string]string) bool
+
 func csiServiceAccountCreator(name string) reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
@@ -172,7 +176,7 @@ func createPreAllocatedDataVolume(dv kubermaticv1.PreAllocatedDataVolume, namesp
 	}, nil
 }
 
-func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client) (apiv2.StorageClassList, error) {
+func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, annotationFilter StorageClassAnnotationFilter) (apiv2.StorageClassList, error) {
 	storageClassList := storagev1.StorageClassList{}
 	if err := client.List(ctx, &storageClassList); err != nil {
 		return nil, err
@@ -180,9 +184,10 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client) (a
 
 	res := apiv2.StorageClassList{}
 	for _, sc := range storageClassList.Items {
-		res = append(res, apiv2.StorageClass{Name: sc.ObjectMeta.Name})
+		if annotationFilter == nil || annotationFilter(sc.Annotations) {
+			res = append(res, apiv2.StorageClass{Name: sc.ObjectMeta.Name})
+		}
 	}
-
 	return res, nil
 }
 
@@ -195,7 +200,9 @@ func updateInfraStorageClassesInfo(ctx context.Context, spec *kubermaticv1.Cloud
 	if err != nil {
 		return err
 	}
-	storageClassList, err := ListStorageClasses(ctx, client)
+	storageClassList, err := ListStorageClasses(ctx, client, func(m map[string]string) bool {
+		return m[InfraStorageClassAnnotation] == "true"
+	})
 	if err != nil {
 		return err
 	}
