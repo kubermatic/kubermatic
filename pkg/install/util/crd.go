@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -40,6 +41,7 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 		return fmt.Errorf("failed to load CRDs: %w", err)
 	}
 
+	var deployedCRDs []ctrlruntimeclient.Object
 	for _, crd := range crds {
 		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
 
@@ -52,13 +54,18 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 			crd.SetAnnotations(annotations)
 		}
 
+		if skipCRDInstallation(crd.GetName()) {
+			continue
+		}
+
 		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
 			return fmt.Errorf("failed to deploy CRD %s: %w", crd.GetName(), err)
 		}
+		deployedCRDs = append(deployedCRDs, crd)
 	}
 
 	// wait for CRDs to be established
-	for _, crd := range crds {
+	for _, crd := range deployedCRDs {
 		if err := WaitForReadyCRD(ctx, kubeClient, crd.GetName(), 30*time.Second); err != nil {
 			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crd.GetName(), err)
 		}
@@ -155,4 +162,15 @@ func WaitForCRDGone(ctx context.Context, kubeClient ctrlruntimeclient.Client, cr
 
 		return false, nil
 	})
+}
+
+// skipCRDInstallation returns true if we want to skip installation of a CRD on the master cluster.
+func skipCRDInstallation(name string) bool {
+	switch name {
+	// ApplicationInstallations are only required on the user-cluster
+	case appskubermaticv1.ApplicationInstallationsFQDNName:
+		return true
+	default:
+		return false
+	}
 }
