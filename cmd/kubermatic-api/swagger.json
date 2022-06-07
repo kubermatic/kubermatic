@@ -18969,6 +18969,196 @@
         }
       }
     },
+    "/api/v2/providers/vmwareclouddirector/{dc}/catalogs": {
+      "get": {
+        "description": "List VMware Cloud Director Catalogs",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorCatalogs",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorCatalogList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorCatalogList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/vmwareclouddirector/{dc}/networks": {
+      "get": {
+        "description": "List VMware Cloud Director OVDC Networks",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorNetworks",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorNetworkList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorNetworkList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/vmwareclouddirector/{dc}/templates/{catalog_name}": {
+      "get": {
+        "description": "List VMware Cloud Director Templates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorTemplates",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "CatalogName",
+            "name": "catalog_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorTemplateList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorTemplateList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/vsphere/datastores": {
       "get": {
         "description": "Lists datastores from vsphere datacenter",
@@ -29639,6 +29829,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "VMwareCloudDirectorCatalog": {
+      "type": "object",
+      "title": "VMwareCloudDirectorCatalog represents a VMware Cloud Director catalog.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorCatalogList": {
+      "type": "array",
+      "title": "VMwareCloudDirectorCatalogList represents an array of VMware Cloud Director catalogs.",
+      "items": {
+        "$ref": "#/definitions/VMwareCloudDirectorCatalog"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "VMwareCloudDirectorCloudSpec": {
       "type": "object",
       "title": "VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.",
@@ -29678,6 +29887,25 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "VMwareCloudDirectorNetwork": {
+      "type": "object",
+      "title": "VMwareCloudDirectorNetwork represents a VMware Cloud Director network.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorNetworkList": {
+      "type": "array",
+      "title": "VMwareCloudDirectorNetworkList represents an array of VMware Cloud Director networks.",
+      "items": {
+        "$ref": "#/definitions/VMwareCloudDirectorNetwork"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "VMwareCloudDirectorNodeSpec": {
       "description": "VMwareCloudDirectorNodeSpec VMware Cloud Director node settings",
@@ -29740,6 +29968,25 @@
           "type": "string",
           "x-go-name": "VApp"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorTemplate": {
+      "type": "object",
+      "title": "VMwareCloudDirectorTemplate represents a VMware Cloud Director template.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorTemplateList": {
+      "type": "array",
+      "title": "VMwareCloudDirectorTemplateList represents an array of VMware Cloud Director templates.",
+      "items": {
+        "$ref": "#/definitions/VMwareCloudDirectorTemplate"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },

@@ -23,6 +23,7 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -270,4 +271,89 @@ func ValidateCredentials(ctx context.Context, dc *kubermaticv1.DatacenterSpecVMw
 	}
 
 	return err
+}
+
+func ListCatalogs(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorCatalogList, error) {
+	client, err := NewClientWithAuth(auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
+	}
+
+	org, err := client.GetOrganization()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
+	}
+
+	catalogs, err := org.QueryCatalogList()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get list catalog for organization %s: %w", auth.Organization, err)
+	}
+
+	var catlogArr apiv1.VMwareCloudDirectorCatalogList
+	for _, catalog := range catalogs {
+		catlogArr = append(catlogArr, apiv1.VMwareCloudDirectorCatalog{
+			Name: catalog.Name,
+		})
+	}
+	return catlogArr, nil
+}
+
+func ListTemplates(ctx context.Context, auth Auth, catalogName string) (apiv1.VMwareCloudDirectorTemplateList, error) {
+	client, err := NewClientWithAuth(auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
+	}
+
+	org, err := client.GetOrganization()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
+	}
+
+	catalog, err := org.GetCatalogByNameOrId(catalogName, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get catalog '%s': %w", catalogName, err)
+	}
+
+	templates, err := catalog.QueryVappTemplateList()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list templates for catalog '%s': %w", catalogName, err)
+	}
+
+	var templateArr apiv1.VMwareCloudDirectorTemplateList
+	for _, template := range templates {
+		templateArr = append(templateArr, apiv1.VMwareCloudDirectorTemplate{
+			Name: template.Name,
+		})
+	}
+	return templateArr, nil
+}
+
+func ListOVDCNetworks(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorNetworkList, error) {
+	client, err := NewClientWithAuth(auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
+	}
+
+	org, err := client.GetOrganization()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
+	}
+
+	orgVDC, err := client.GetVDCForOrg(*org)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization VDC '%s': %w", auth.VDC, err)
+	}
+
+	var orgVDCNetworks apiv1.VMwareCloudDirectorNetworkList
+	for _, an := range orgVDC.Vdc.AvailableNetworks {
+		for _, reference := range an.Network {
+			if reference.HREF != "" {
+				orgVDCNetworks = append(orgVDCNetworks, apiv1.VMwareCloudDirectorNetwork{
+					Name: reference.Name,
+				})
+			}
+		}
+	}
+
+	return orgVDCNetworks, nil
 }

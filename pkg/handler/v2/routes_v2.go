@@ -677,6 +677,19 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/nutanix/{dc}/categories/{category}/values").
 		Handler(r.listNutanixCategoryValues())
 
+	// Endpoints for VMware Cloud Director
+	mux.Methods(http.MethodGet).
+		Path("/providers/vmwareclouddirector/{dc}/networks").
+		Handler(r.listVMwareCloudDirectorNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/vmwareclouddirector/{dc}/catalogs").
+		Handler(r.listVMwareCloudDirectorCatalogs())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/vmwareclouddirector/{dc}/templates/{catalog_name}").
+		Handler(r.listVMwareCloudDirectorTemplates())
+
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
 		Path("/presets").
@@ -4089,6 +4102,72 @@ func (r Routing) listNutanixCategoryValues() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.NutanixCategoryValuesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixCategoryValueReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/vmwareclouddirector/{dc}/networks vmwareclouddirector listVMwareCloudDirectorNetworks
+//
+// List VMware Cloud Director OVDC Networks
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: VMwareCloudDirectorNetworkList
+func (r Routing) listVMwareCloudDirectorNetworks() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VMwareCloudDirectorNetworksEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeVMwareCloudDirectorCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/vmwareclouddirector/{dc}/catalogs vmwareclouddirector listVMwareCloudDirectorCatalogs
+//
+// List VMware Cloud Director Catalogs
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: VMwareCloudDirectorCatalogList
+func (r Routing) listVMwareCloudDirectorCatalogs() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VMwareCloudDirectorCatalogsEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeVMwareCloudDirectorCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/vmwareclouddirector/{dc}/templates/{catalog_name} vmwareclouddirector listVMwareCloudDirectorTemplates
+//
+// List VMware Cloud Director Templates
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: VMwareCloudDirectorTemplateList
+func (r Routing) listVMwareCloudDirectorTemplates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VMwareCloudDirectorTemplatesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeListTemplatesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

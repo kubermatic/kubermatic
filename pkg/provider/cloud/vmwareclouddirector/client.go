@@ -77,6 +77,20 @@ func NewClientWithCreds(username, password, org, vdc, url string, allowInsecure 
 	return &client, nil
 }
 
+func NewClientWithAuth(auth Auth) (*Client, error) {
+	client := Client{
+		Auth: &auth,
+	}
+
+	vcdClient, err := client.GetAuthenticatedClient()
+	if err != nil {
+		return nil, err
+	}
+
+	client.VCDClient = vcdClient
+	return &client, nil
+}
+
 func (c *Client) GetAuthenticatedClient() (*govcd.VCDClient, error) {
 	// Ensure that all required fields for authentication are provided
 	// Fail early, without any API calls, if some required field is missing.

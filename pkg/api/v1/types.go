@@ -481,6 +481,36 @@ type NutanixCategoryValue struct {
 	Value string `json:"value"`
 }
 
+// VMwareCloudDirectorCatalog represents a VMware Cloud Director catalog.
+// swagger:model VMwareCloudDirectorCatalog
+type VMwareCloudDirectorCatalog struct {
+	Name string `json:"name"`
+}
+
+// VMwareCloudDirectorCatalogList represents an array of VMware Cloud Director catalogs.
+// swagger:model VMwareCloudDirectorCatalogList
+type VMwareCloudDirectorCatalogList []VMwareCloudDirectorCatalog
+
+// VMwareCloudDirectorTemplate represents a VMware Cloud Director template.
+// swagger:model VMwareCloudDirectorTemplate
+type VMwareCloudDirectorTemplate struct {
+	Name string `json:"name"`
+}
+
+// VMwareCloudDirectorTemplateList represents an array of VMware Cloud Director templates.
+// swagger:model VMwareCloudDirectorTemplateList
+type VMwareCloudDirectorTemplateList []VMwareCloudDirectorTemplate
+
+// VMwareCloudDirectorNetwork represents a VMware Cloud Director network.
+// swagger:model VMwareCloudDirectorNetwork
+type VMwareCloudDirectorNetwork struct {
+	Name string `json:"name"`
+}
+
+// VMwareCloudDirectorNetworkList represents an array of VMware Cloud Director networks.
+// swagger:model VMwareCloudDirectorNetworkList
+type VMwareCloudDirectorNetworkList []VMwareCloudDirectorNetwork
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
