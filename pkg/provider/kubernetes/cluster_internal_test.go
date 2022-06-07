@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,9 +73,15 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 				WithObjects(tc.userClusterObjects...).
 				Build()
 
+			versions := kubermatic.NewFakeVersions()
+			seed := &kubermaticv1.Seed{}
+			seed.SetKubermaticVersion(versions)
+
 			p := &ClusterProvider{
 				client:                  seedClient,
 				userClusterConnProvider: &fakeUserClusterConnectionProvider{client: userClusterClient},
+				seed:                    seed,
+				versions:                versions,
 			}
 
 			if err := p.RevokeAdminKubeconfig(context.Background(), tc.cluster); err != nil {

@@ -345,7 +345,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		kubernetesClient,
 		false,
 		kubermaticVersions,
-		GenTestSeed().Name,
+		GenTestSeed(),
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
@@ -704,6 +704,7 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 			},
 		},
 	}
+	seed.SetKubermaticVersion(kubermatic.NewFakeVersions())
 	for _, modifier := range modifiers {
 		modifier(seed)
 	}
