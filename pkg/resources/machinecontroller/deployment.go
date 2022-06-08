@@ -291,8 +291,6 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, enableOperatingSystemManager bool, features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-logtostderr",
-		"-v", "4",
 		"-cluster-dns", clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
