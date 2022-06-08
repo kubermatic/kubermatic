@@ -19,11 +19,13 @@ package providers
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/source"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,5 +47,25 @@ func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 		return source.GitSource{Ctx: ctx, Client: client, Source: appSource.Git, SecretNamespace: secretNamespace}, nil
 	default: // This should not happen. The admission webhook prevents that.
 		return nil, errors.New("no source found")
+	}
+}
+
+// TemplateProvider is an interface to install, upgrade or uninstall application.
+type TemplateProvider interface {
+
+	// InstallOrUpgrade the application from the source.
+	InstallOrUpgrade(source string, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+
+	// Uninstall the application.
+	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+}
+
+// NewTemplateProvider return the concrete implementation of TemplateProvider according to the templateMethod.
+func NewTemplateProvider(ctx context.Context, kubeconfig string, cacheDir string, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation, templateMethod appskubermaticv1.TemplateMethod) (TemplateProvider, error) {
+	switch templateMethod {
+	case appskubermaticv1.HelmTemplateMethod:
+		return template.HelmTemplate{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, ApplicationInstallation: appInstallation}, nil
+	default:
+		return nil, fmt.Errorf("template method '%v' not implemented", templateMethod)
 	}
 }

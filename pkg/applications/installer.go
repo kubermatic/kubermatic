@@ -72,6 +72,11 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 		}
 	}()
 
+	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
+	if err != nil {
+		return fmt.Errorf("failed to initialize template provider: %w", err)
+	}
+
 	// start reconciliation
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
 		return err
@@ -82,13 +87,20 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to download application source: %w", err)
 	}
 
-	log.Debugw("application successfully downloaded", "location", appSourcePath)
-	return nil
+	return templateProvider.InstallOrUpgrade(appSourcePath, applicationInstallation)
 }
 
 // Delete uninstalls the application and deletes the namespace where the application was installed if necessary.
 func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
-	// todo logic to uninstall application
+	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
+	if err != nil {
+		return fmt.Errorf("failed to initialize template provider: %w", err)
+	}
+
+	if err := templateProvider.Uninstall(applicationInstallation); err != nil {
+		return err
+	}
+
 	return a.deleteNamespace(ctx, log, applicationInstallation, userClient)
 }
 
