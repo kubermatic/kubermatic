@@ -24,6 +24,7 @@ import (
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -107,7 +108,7 @@ func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigI
 		gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 		userClient, err = clusterClientProvider.GetClient(ctx, cluster)
 		if err != nil {
-			clusterJig.Log().Debug("user cluster client get failed: %v", err)
+			clusterJig.Log().Debugw("failed to get usercluster client", zap.Error(err))
 			return false, nil
 		}
 		return true, nil
@@ -118,7 +119,7 @@ func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigI
 
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		if err = clusterJig.CreateMachineDeployment(ctx, userClient); err != nil {
-			clusterJig.Log().Debug("machine deployment creation failed: %v", err)
+			clusterJig.Log().Debugw("machine deployment creation failed", zap.Error(err))
 			return false, nil
 		}
 		return true, nil
@@ -128,7 +129,7 @@ func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigI
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		var ready bool
 		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
-			clusterJig.Log().Debug("node not ready yet, %v", err)
+			clusterJig.Log().Debugw("node not ready yet", zap.Error(err))
 			return false, nil
 		}
 		return ready, nil
@@ -200,7 +201,7 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		var ready bool
 		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
-			clusterJig.Log().Debug("node not ready yet, %v", err)
+			clusterJig.Log().Debugw("node not ready yet", zap.Error(err))
 			return false, nil
 		}
 		return ready, nil

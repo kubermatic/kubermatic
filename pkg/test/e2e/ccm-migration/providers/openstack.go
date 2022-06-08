@@ -89,7 +89,7 @@ func (c *OpenstackClusterJig) Setup(ctx context.Context) error {
 	}, projectID); err != nil {
 		return fmt.Errorf("failed to create user cluster: %w", err)
 	}
-	c.log.Debugw("Cluster created", "name", c.Name)
+	c.log.Debugw("Cluster created", "name", c.Name())
 
 	return c.waitForClusterControlPlaneReady(ctx)
 }
