@@ -23,10 +23,10 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	gossh "golang.org/x/crypto/ssh"
+	gogittransport "github.com/go-git/go-git/v5/plumbing/transport"
+	gogithttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	gogitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"golang.org/x/crypto/ssh"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
@@ -64,9 +64,9 @@ func (g GitSource) DownloadSource(destination string) (string, error) {
 }
 
 // authFromCredentials returns a new transport.AuthMethod according to credentials defined in the GitSource.
-// If no crednetials are defined in the GitSource then nil is returned.
-func (g GitSource) authFromCredentials() (transport.AuthMethod, error) {
-	var auth transport.AuthMethod
+// If no credentials are defined in the GitSource then nil is returned.
+func (g GitSource) authFromCredentials() (gogittransport.AuthMethod, error) {
+	var auth gogittransport.AuthMethod
 	credentials := g.Source.Credentials
 	if credentials != nil {
 		switch credentials.Method {
@@ -81,7 +81,7 @@ func (g GitSource) authFromCredentials() (transport.AuthMethod, error) {
 				return nil, err
 			}
 
-			auth = &http.BasicAuth{Username: username, Password: password}
+			auth = &gogithttp.BasicAuth{Username: username, Password: password}
 
 		case appskubermaticv1.GitAuthMethodToken:
 			token, err := g.getCredentialFromSecret(credentials.Token.Name, credentials.Token.Key)
@@ -89,18 +89,18 @@ func (g GitSource) authFromCredentials() (transport.AuthMethod, error) {
 				return nil, err
 			}
 
-			auth = &http.TokenAuth{Token: token}
+			auth = &gogithttp.TokenAuth{Token: token}
 		case appskubermaticv1.GitAuthMethodSSHKey:
 			privateKey, err := g.getCredentialFromSecret(credentials.SSHKey.Name, credentials.SSHKey.Key)
 			if err != nil {
 				return nil, err
 			}
 
-			authssh, err := ssh.NewPublicKeys("git", []byte(privateKey), "")
+			authssh, err := gogitssh.NewPublicKeys("git", []byte(privateKey), "")
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse private ssh key: %w", err)
 			}
-			authssh.HostKeyCallback = gossh.InsecureIgnoreHostKey()
+			authssh.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 
 			auth = authssh
 		default: // this should not happen.
@@ -136,18 +136,18 @@ func (g GitSource) getCheckoutStrategy() checkoutFunc {
 		return checkoutFromTag
 
 	default: // this should not happen.
-		return func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth transport.AuthMethod) error {
+		return func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 			return fmt.Errorf("could not determine which reference to checkout")
 		}
 	}
 }
 
 // checkoutFunc define a function to clone and checkout code from repository defined in gitSource into destination using auth as credentials.
-type checkoutFunc func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth transport.AuthMethod) error
+type checkoutFunc func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error
 
 // checkoutFromCommit clone the repository and checkout the desired commit.
 // If a branch is defined then a shallow clone of the branch is performed. The commit must belongs to this branch.
-func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth transport.AuthMethod) error {
+func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	var repo *git.Repository
 	var err error
 	if len(gitSource.Ref.Branch) > 0 {
@@ -189,7 +189,7 @@ func checkoutFromCommit(ctx context.Context, destination string, gitSource *apps
 }
 
 // checkoutFromBranch clone the repository and checkout the desired branch. A shallow clone is performed.
-func checkoutFromBranch(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth transport.AuthMethod) error {
+func checkoutFromBranch(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	_, err := git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
 		URL:           gitSource.Remote,
 		Auth:          auth,
@@ -203,7 +203,7 @@ func checkoutFromBranch(ctx context.Context, destination string, gitSource *apps
 }
 
 // checkoutFromTag clone the repository and checkout the desired Tag. A shallow clone is performed.
-func checkoutFromTag(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth transport.AuthMethod) error {
+func checkoutFromTag(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	_, err := git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
 		URL:           gitSource.Remote,
 		Auth:          auth,

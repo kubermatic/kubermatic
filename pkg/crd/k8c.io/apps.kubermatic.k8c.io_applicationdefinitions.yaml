@@ -222,7 +222,10 @@ spec:
                                     default is repository root
                                   type: string
                                 ref:
-                                  description: Git reference to checkout
+                                  description: "Git reference to checkout. \n For
+                                    large repositories, we recommend to either use
+                                    Tag, Branch or Branch+Commit. This allows a shallow
+                                    clone, which dramatically speeds up performance\""
                                   properties:
                                     branch:
                                       description: Branch to checkout. Only the last

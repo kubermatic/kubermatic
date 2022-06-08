@@ -58,9 +58,13 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 
 	downloadDest, err := os.MkdirTemp("", applicationInstallation.Namespace+"-"+applicationInstallation.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to create temp directory where application source will be downloaded: %w", err)
+		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
 	}
-	defer os.RemoveAll(downloadDest)
+	defer func() {
+		if err := os.RemoveAll(downloadDest); err != nil {
+			log.Error("failed to remove temporary directory where application source has been downloaded: %s", err)
+		}
+	}()
 
 	// start reconciliation
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
@@ -72,7 +76,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to download application source: %w", err)
 	}
 
-	log.Debugw("application download", "location", appSourcePath)
+	log.Debugw("application successfully downloaded", "location", appSourcePath)
 	return nil
 }
 

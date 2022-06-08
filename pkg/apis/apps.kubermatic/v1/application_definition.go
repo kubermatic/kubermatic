@@ -106,7 +106,9 @@ type GitSource struct {
 	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
-	// Git reference to checkout
+	// Git reference to checkout.
+	//
+	// For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance"
 	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root
