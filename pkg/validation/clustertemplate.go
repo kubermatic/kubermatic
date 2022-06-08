@@ -27,6 +27,10 @@ import (
 func ValidateClusterTemplate(template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versions []*version.Version, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	// TODO(embik): validate preset reference
+
+	// TODO(embik): validate SSH key presence in project
+
 	// validate cluster spec passed in ClusterTemplate
 	if errs := ValidateClusterSpec(&template.Spec, dc, enabledFeatures, versions, parentFieldPath.Child("spec")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
