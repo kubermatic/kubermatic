@@ -210,13 +210,6 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		helmValues.Set(path, config.Spec.ImagePullSecret)
 	}
 
-	if !opt.DisableTelemetry {
-		path = yamled.Path{"telemetry", "uuid"}
-		if value, _ := helmValues.GetString(path); value == "" {
-			failures = append(failures, errors.New("Telemetry is enabled, but no UUID was configured; generate a UUID and set it as telemetry.uuid in your Helm values"))
-		}
-	}
-
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		path := yamled.Path{"dex", "ingress", "host"}
 		if domain, _ := helmValues.GetString(path); domain == "" {
