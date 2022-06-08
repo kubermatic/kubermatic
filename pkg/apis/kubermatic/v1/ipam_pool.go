@@ -45,14 +45,15 @@ type IPAMPool struct {
 // IPAMPoolSpec specifies the  Multi-Cluster IP Address Management (IPAM)
 // configuration for KKP user clusters.
 type IPAMPoolSpec struct {
-	// Type is the allocation type to be used.
-	Type IPAMPoolAllocationType `json:"type"`
 	// Datacenters contains a map of datacenters (DCs) for the allocation.
 	Datacenters map[string]IPAMPoolDatacenterSettings `json:"datacenters"`
 }
 
 // IPAMPoolDatacenterSettings contains IPAM Pool configuration for a datacenter.
 type IPAMPoolDatacenterSettings struct {
+	// Type is the allocation type to be used.
+	Type IPAMPoolAllocationType `json:"type"`
+
 	// PoolCIDR is the pool CIDR to be used for the allocation.
 	PoolCIDR SubnetCIDR `json:"poolCidr"`
 

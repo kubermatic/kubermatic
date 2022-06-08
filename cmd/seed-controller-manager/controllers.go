@@ -36,6 +36,8 @@ import (
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
 	initialapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-application-installation-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
+
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/ipam"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
@@ -73,6 +75,7 @@ var AllControllers = map[string]controllerCreator{
 	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
 	presetcontroller.ControllerName:                         createPresetController,
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
+	ipam.ControllerName:                                     createIPAMController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -405,5 +408,15 @@ func createEncryptionAtRestController(ctrlCtx *controllerContext) error {
 		ctrlCtx.configGetter,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.overwriteRegistry,
+	)
+}
+
+func createIPAMController(ctrlCtx *controllerContext) error {
+	return ipam.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.configGetter,
+		ctrlCtx.versions,
 	)
 }
