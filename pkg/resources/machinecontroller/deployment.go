@@ -148,7 +148,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.EnableOperatingSystemManager, data.Cluster().Spec.Features),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.EnableOperatingSystemManager, data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -288,7 +288,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, enableOperatingSystemManager bool, features map[string]bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager bool, features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -325,6 +325,10 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 
 	if cri != "" {
 		flags = append(flags, "-node-container-runtime", cri)
+	}
+
+	if imagePullSecret != nil {
+		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
 	}
 
 	// Machine Controller will use OSM for managing machine's provisioning and bootstrapping configurations
