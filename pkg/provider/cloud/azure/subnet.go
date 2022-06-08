@@ -54,7 +54,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	}
 
 	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
-	if err != nil && !isNotFound(vnet.Response) {
+	if err != nil && !isNotFound(routeTable.Response) {
 		return nil, err
 	}
 
