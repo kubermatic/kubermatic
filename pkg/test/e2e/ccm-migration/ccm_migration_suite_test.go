@@ -41,9 +41,11 @@ type testOptions struct {
 
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
+	azureSeedDatacenter   string
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
+	azureCredentials   providers.AzureCredentialsType
 }
 
 var (
@@ -60,6 +62,7 @@ func init() {
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
+	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
 
 	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
@@ -75,6 +78,11 @@ func init() {
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
 	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
+
+	flag.StringVar(&options.azureCredentials.TenantID, "azure-tenant-id", "", "azure tenant id")
+	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
+	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
+	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
 }
 
 func TestCCMMigration(t *testing.T) {

@@ -292,7 +292,10 @@ func GenerateCluster(
 		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
 	}
 
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
+	// TODO(embik): remove Azure check once CSI drivers are added.
+	// right now, Azure should not automatically use external CCM.
+	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) &&
+		partialCluster.Spec.Cloud.ProviderName != "azure" {
 		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
 			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true

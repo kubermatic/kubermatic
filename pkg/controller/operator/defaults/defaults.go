@@ -918,4 +918,10 @@ items:
     name: aws-node-termination-handler
     labels:
       addons.kubermatic.io/ensure: true
+- apiVersion: kubermatic.k8c.io/v1
+  kind: Addon
+  metadata:
+    name: azure-cloud-node-manager
+    labels:
+      addons.kubermatic.io/ensure: true
 `

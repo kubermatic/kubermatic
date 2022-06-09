@@ -26,6 +26,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	v121 = "1.21"
+	v122 = "1.22"
+	v123 = "1.23"
+	v124 = "1.24"
+)
+
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports
 // external CCM.
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
@@ -69,6 +76,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	case cluster.Spec.Cloud.Kubevirt != nil:
 		return true
 
+	case cluster.Spec.Cloud.Azure != nil:
+		return AzureCloudControllerSupported(v)
+
 	default:
 		return false
 	}
@@ -107,6 +117,13 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		}
 		return supported
 
+	case cluster.Spec.Cloud.Azure != nil:
+		versionSupported, err := version.IsSupported(v.Semver(), kubermaticv1.AzureCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return versionSupported && AzureCloudControllerSupported(v)
+
 	default:
 		return false
 	}
@@ -117,6 +134,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 func ExternalCloudControllerClusterName(cluster *kubermaticv1.Cluster) bool {
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
+		return true
+	case cluster.Spec.Cloud.Azure != nil:
 		return true
 	default:
 		return false

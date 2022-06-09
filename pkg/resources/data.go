@@ -593,6 +593,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
+		if externalCloudProvider {
+			return cloudProviderExternalFlag
+		}
 		return "azure"
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
@@ -674,6 +677,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		case cluster.Spec.Cloud.AWS != nil:
 			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
 		case cluster.Spec.Cloud.Azure != nil:
+			// TODO(embik): set feature flags to true and move up in code once CSI drivers have been added.
 			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		case cluster.Spec.Cloud.GCP != nil:
 			featureFlags = append(featureFlags, "CSIMigrationGCE=false")

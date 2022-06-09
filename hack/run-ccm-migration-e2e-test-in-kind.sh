@@ -73,6 +73,15 @@ if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
     "
 fi
 
+if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
+  export EXTRA_ARGS="-azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
+    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    -azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
+    -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
+    -azure-seed-datacenter=azure-westeurope
+    "
+fi
+
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633

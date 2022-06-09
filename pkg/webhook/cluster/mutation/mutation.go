@@ -175,9 +175,9 @@ func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error 
 
 func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {
 	// This part of the code handles the CCM/CSI migration. It currently works
-	// only for OpenStack clusters, in the following way:
+	// for OpenStack, vSphere and Azure clusters, in the following way:
 	//   * Add the CCM/CSI migration annotations
-	//   * Enable the UseOctaiva flag
+	//   * Enable the UseOctavia flag (for OpenStack only)
 	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 		switch {
@@ -186,6 +186,9 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
 
 		case newCluster.Spec.Cloud.VSphere != nil:
+			addCCMCSIMigrationAnnotations(newCluster)
+
+		case newCluster.Spec.Cloud.Azure != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
 		}
 	}
