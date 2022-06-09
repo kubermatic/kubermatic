@@ -131,6 +131,11 @@ func main() {
 			log.Fatalw("invalid KubermaticConfiguration", zap.Error(err))
 		}
 	}
+	if config != nil {
+		versions := kubermatic.NewDefaultVersions()
+		config.Status.KubermaticEdition = versions.KubermaticCommit
+		config.Status.KubermaticVersion = versions.KubermaticEdition.String()
+	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
