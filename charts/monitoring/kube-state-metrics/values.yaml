@@ -15,7 +15,7 @@
 kubeStateMetrics:
   image:
     repository: k8s.gcr.io/kube-state-metrics/kube-state-metrics
-    tag: v2.4.2
+    tag: v2.5.0
   resources:
     requests:
       # Rationalized based on real world usage
