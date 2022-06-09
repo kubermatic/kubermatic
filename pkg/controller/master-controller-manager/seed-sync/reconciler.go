@@ -126,12 +126,6 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if seed.Spec.ExposeStrategy != "" {
-		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
-			return fmt.Errorf("failed to validate seed: invalid expose strategy %q, must be one of %v", seed.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies)
-		}
-	}
-
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
 		seedCreator(seed),
 	}
