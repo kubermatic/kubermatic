@@ -125,9 +125,6 @@ spec:
       - configMap:
           name: cloud-config
         name: cloud-config
-      - configMap:
-          name: ca-bundle
-        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}
