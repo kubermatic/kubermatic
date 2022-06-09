@@ -55,7 +55,9 @@ func getGroupRolesList(ctx context.Context, client ctrlruntimeclient.Client, pro
 
 	// add groupProjectBinding ones
 	for _, gbp := range gbpList.Items {
-		groupRoles = append(groupRoles, GroupRole{Group: gbp.Spec.Group, Role: gbp.Spec.Role})
+		if gbp.DeletionTimestamp == nil {
+			groupRoles = append(groupRoles, GroupRole{Group: gbp.Spec.Group, Role: gbp.Spec.Role})
+		}
 	}
 
 	return groupRoles, nil
