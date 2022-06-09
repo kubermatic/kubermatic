@@ -127,6 +127,14 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					VolumeMounts: getVolumeMounts(),
 				},
 			}
+
+			if data.Cluster().IsDualStack() {
+				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+					Name:  "HCLOUD_INSTANCES_ADDRESS_FAMILY",
+					Value: "dualstack",
+				})
+			}
+
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
 			}

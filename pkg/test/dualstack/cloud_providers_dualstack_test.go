@@ -46,11 +46,12 @@ import (
 )
 
 var operatingSystems = map[string]models.OperatingSystemSpec{
-	"centos":  centos(),
-	"flatcar": flatcar(),
-	"rhel":    rhel(),
-	"sles":    sles(),
-	"ubuntu":  ubuntu(),
+	"centos":     centos(),
+	"flatcar":    flatcar(),
+	"rhel":       rhel(),
+	"sles":       sles(),
+	"ubuntu":     ubuntu(),
+	"rockylinux": rockyLinux(),
 }
 
 var cloudProviders = map[string]clusterSpec{
@@ -58,6 +59,7 @@ var cloudProviders = map[string]clusterSpec{
 	"gcp":       gcp{},
 	"aws":       aws{},
 	"openstack": openstack{},
+	"hetzner":   hetzner{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -175,6 +177,30 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "hetzner",
+			osNames: []string{
+				"ubuntu",
+				// "centos", // cilium is not working on centos because of old kernel version
+				"rockylinux",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
+		},
+		{
+			cloudName: "hetzner",
+			osNames: []string{
+				"ubuntu",
+				"centos",
+				"rockylinux",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
 		},
 	}
 

@@ -330,6 +330,27 @@ func (a openstack) CloudSpec() models.CloudSpec {
 	}
 }
 
+type hetzner struct{}
+
+var _ clusterSpec = hetzner{}
+
+func (a hetzner) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Hetzner: &models.HetznerNodeSpec{
+			Type: "cx21",
+		},
+	}
+}
+
+func (a hetzner) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "hetzner-hel1",
+		Hetzner: &models.HetznerCloudSpec{
+			Token: os.Getenv("HETZNER_TOKEN"),
+		},
+	}
+}
+
 // operating systems
 
 func ubuntu() models.OperatingSystemSpec {
@@ -359,6 +380,12 @@ func centos() models.OperatingSystemSpec {
 func flatcar() models.OperatingSystemSpec {
 	return models.OperatingSystemSpec{
 		Flatcar: &models.FlatcarSpec{},
+	}
+}
+
+func rockyLinux() models.OperatingSystemSpec {
+	return models.OperatingSystemSpec{
+		RockyLinux: models.RockyLinuxSpec{},
 	}
 }
 
