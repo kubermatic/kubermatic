@@ -337,7 +337,7 @@ var _ clusterSpec = hetzner{}
 func (a hetzner) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Hetzner: &models.HetznerNodeSpec{
-			Type: "cx21",
+			Type: pointer.String("cx21"),
 		},
 	}
 }
