@@ -197,8 +197,8 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	// Iterate current IPAM allocations to build a map of used IPs (for range allocation type)
 	// or used subnets (for prefix allocation type) per datacenter pool
 	for _, ipamAllocation := range ipamAllocationList.Items {
-		dcIPAMPoolCfg, isDCConfigured := ipamPool.Spec.Datacenters[ipamAllocation.Spec.DC]
-		if !isDCConfigured || ipamAllocation.Name != ipamPool.Name || ipamAllocation.Spec.DC != dc {
+		dcIPAMPoolCfg, isDCConfigured := ipamPool.Spec.Datacenters[dc]
+		if !isDCConfigured || ipamAllocation.Name != ipamPool.Name {
 			// This allocation is not relevant for this IPAM Pool, so skip it
 			continue
 		}

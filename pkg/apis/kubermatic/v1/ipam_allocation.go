@@ -46,8 +46,6 @@ type IPAMAllocation struct {
 type IPAMAllocationSpec struct {
 	// Type is the allocation type that is being used.
 	Type IPAMPoolAllocationType `json:"type"`
-	// DC is the datacenter that this allocation is done
-	DC string `json:"dc"`
 	// CIDR is the CIDR that is being used for the allocation.
 	// Set when "type=prefix".
 	CIDR SubnetCIDR `json:"cidr,omitempty"`
