@@ -44,11 +44,12 @@ func (m datacenterIPAMPoolUsageMap) isUsed(value string) bool {
 func ipToInt(ip net.IP) (*big.Int, int) {
 	val := &big.Int{}
 	val.SetBytes([]byte(ip))
-	if len(ip) == net.IPv4len {
+	switch len(ip) {
+	case net.IPv4len:
 		return val, 32
-	} else if len(ip) == net.IPv6len {
+	case net.IPv6len:
 		return val, 128
-	} else {
+	default:
 		panic(fmt.Errorf("unsupported address length %d", len(ip)))
 	}
 }
@@ -102,10 +103,10 @@ func nextSubnet(network *net.IPNet, prefixLen int) (*net.IPNet, bool) {
 	return next, false
 }
 
-func incIP(IP net.IP) net.IP {
-	IP = checkIPv4(IP)
-	incIP := make([]byte, len(IP))
-	copy(incIP, IP)
+func incIP(ip net.IP) net.IP {
+	ip = checkIPv4(ip)
+	incIP := make([]byte, len(ip))
+	copy(incIP, ip)
 	for j := len(incIP) - 1; j >= 0; j-- {
 		incIP[j]++
 		if incIP[j] > 0 {

@@ -56,7 +56,7 @@ type Reconciler struct {
 	versions     kubermatic.Versions
 }
 
-// Add creates a new IPAM controller
+// Add creates a new IPAM controller.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
