@@ -66,7 +66,7 @@ func checkRangeAllocation(ips []string, poolCIDR string, allocationRange int) er
 	return nil
 }
 
-func calculateRangeFreeIPsFromDatacenterPool(dc, poolCIDR string, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) ([]string, error) {
+func calculateRangeFreeIPsFromDatacenterPool(poolCIDR string, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) ([]string, error) {
 	rangeFreeIPs := []string{}
 
 	ip, ipNet, err := net.ParseCIDR(poolCIDR)
@@ -74,7 +74,7 @@ func calculateRangeFreeIPsFromDatacenterPool(dc, poolCIDR string, dcIPAMPoolUsag
 		return nil, err
 	}
 	for ip := ip.Mask(ipNet.Mask); ipNet.Contains(ip); ip = incIP(ip) {
-		if dcIPAMPoolUsageMap.isUsed(dc, ip.String()) {
+		if dcIPAMPoolUsageMap.isUsed(ip.String()) {
 			continue
 		}
 		rangeFreeIPs = append(rangeFreeIPs, ip.String())
@@ -83,10 +83,10 @@ func calculateRangeFreeIPsFromDatacenterPool(dc, poolCIDR string, dcIPAMPoolUsag
 	return rangeFreeIPs, nil
 }
 
-func findFirstFreeRangesOfPool(dc, poolCIDR string, allocationRange int, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) ([]string, error) {
+func findFirstFreeRangesOfPool(poolCIDR string, allocationRange int, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) ([]string, error) {
 	addressRanges := []string{}
 
-	rangeFreeIPs, err := calculateRangeFreeIPsFromDatacenterPool(dc, poolCIDR, dcIPAMPoolUsageMap)
+	rangeFreeIPs, err := calculateRangeFreeIPsFromDatacenterPool(poolCIDR, dcIPAMPoolUsageMap)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func findFirstFreeRangesOfPool(dc, poolCIDR string, allocationRange int, dcIPAMP
 	firstAddressRangeIP := rangeFreeIPs[rangeFreeIPsIterator]
 	for j := 0; j < allocationRange; j++ {
 		ipToAllocate := rangeFreeIPs[rangeFreeIPsIterator]
-		dcIPAMPoolUsageMap.setUsed(dc, ipToAllocate)
+		dcIPAMPoolUsageMap.setUsed(ipToAllocate)
 		rangeFreeIPsIterator++
 		// if no next ip to allocate or next ip is not the next one, close a new address range
 		if j+1 == allocationRange || !isTheNextIP(rangeFreeIPs[rangeFreeIPsIterator], ipToAllocate) {

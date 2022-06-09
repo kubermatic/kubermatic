@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -31,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -82,52 +84,108 @@ func Add(
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, &handler.EnqueueRequestForObject{})
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return fmt.Errorf("failed to create watch for clusters: %w", err)
+	}
+
+	enqueueClusterForNamespacedObject := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		clusterList := &kubermaticv1.ClusterList{}
+		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+			log.Errorw("Failed to list clusters", zap.Error(err))
+			return []reconcile.Request{}
+		}
+		for _, cluster := range clusterList.Items {
+			if cluster.Status.NamespaceName == a.GetNamespace() {
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
+			}
+		}
+		return []reconcile.Request{}
+	})
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClusterForNamespacedObject); err != nil {
+		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	ipamPool := &kubermaticv1.IPAMPool{}
-	if err := r.Get(ctx, request.NamespacedName, ipamPool); err != nil {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Debug("Skipping because the IPAM pool is already gone")
+			log.Debug("Skipping because the cluster is already gone")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get IPAM pool: %w", err)
-	}
-
-	result, err := r.reconcile(ctx, ipamPool)
-	if err != nil {
-		log.Errorw("Failed to reconcile IPAM pool", zap.Error(err))
-		r.recorder.Event(ipamPool, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-
-	return result, err
-}
-
-func (r *Reconciler) reconcile(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) (reconcile.Result, error) {
-	dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPool(ctx, ipamPool)
-	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	newClustersAllocations, err := r.generateNewAllocationsForPool(ctx, ipamPool, dcIPAMPoolUsageMap)
+	// Add a wrapping here so we can emit an event on error
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		r.versions,
+		kubermaticv1.ClusterConditionIPAMControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, cluster)
+		},
+	)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
-
-	// Apply the new clusters allocations
-	for _, newClusterAllocation := range newClustersAllocations {
-		// TODO
-		fmt.Println(newClusterAllocation)
+	if result == nil {
+		result = &reconcile.Result{}
 	}
-
-	return reconcile.Result{}, nil
+	return *result, err
 }
 
-func (r *Reconciler) compileCurrentAllocationsForPool(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) (datacenterIPAMPoolUsageMap, error) {
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// List IPAM Pools
+	ipamPoolList := &kubermaticv1.IPAMPoolList{}
+	err := r.Client.List(ctx, ipamPoolList)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list IPAM pools: %w", err)
+	}
+
+	// Loop IPAM pools, considering only the relevant ones (i.e. IPAM pools with same cluster datacenter)
+	for _, ipamPool := range ipamPoolList.Items {
+		clusterDC := cluster.Spec.Cloud.DatacenterName
+
+		_, isClusterDCConfigured := ipamPool.Spec.Datacenters[clusterDC]
+		if !isClusterDCConfigured {
+			// This IPAM pool is not relevant to cluster, so skip it
+			continue
+		}
+
+		ipamAllocation := &kubermaticv1.IPAMAllocation{}
+		err = r.Client.Get(ctx, types.NamespacedName{Namespace: fmt.Sprintf("cluster-%s", cluster.Name), Name: ipamPool.Name}, ipamAllocation)
+		if err == nil {
+			// skip because pool is already allocated for cluster
+			continue
+		} else if !apierrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool, clusterDC)
+		if err != nil {
+			return nil, err
+		}
+
+		err = r.generateNewClusterAllocationForPool(ctx, ipamPool, cluster, dcIPAMPoolUsageMap)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPool kubermaticv1.IPAMPool, dc string) (datacenterIPAMPoolUsageMap, error) {
 	dcIPAMPoolUsageMap := newDatacenterIPAMPoolUsageMap()
 
 	// List all IPAM allocations
@@ -141,8 +199,8 @@ func (r *Reconciler) compileCurrentAllocationsForPool(ctx context.Context, ipamP
 	// or used subnets (for prefix allocation type) per datacenter pool
 	for _, ipamAllocation := range ipamAllocationList.Items {
 		dcIPAMPoolCfg, isDCConfigured := ipamPool.Spec.Datacenters[ipamAllocation.Spec.DC]
-		if !isDCConfigured || ipamAllocation.Name != ipamPool.Name {
-			// IPAM Pool + Datacenter is not configured in the IPAM pool spec, so we can skip it
+		if !isDCConfigured || ipamAllocation.Name != ipamPool.Name || ipamAllocation.Spec.DC != dc {
+			// This allocation is not relevant for this IPAM Pool, so skip it
 			continue
 		}
 
@@ -158,7 +216,7 @@ func (r *Reconciler) compileCurrentAllocationsForPool(ctx context.Context, ipamP
 				return nil, err
 			}
 			for _, ip := range currentAllocatedIPs {
-				dcIPAMPoolUsageMap.setUsed(ipamAllocation.Spec.DC, ip)
+				dcIPAMPoolUsageMap.setUsed(ip)
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			// check if the current allocation is compatible with the IPAMPool being applied
@@ -166,69 +224,52 @@ func (r *Reconciler) compileCurrentAllocationsForPool(ctx context.Context, ipamP
 			if err != nil {
 				return nil, err
 			}
-			dcIPAMPoolUsageMap.setUsed(ipamAllocation.Spec.DC, string(ipamAllocation.Spec.CIDR))
+			dcIPAMPoolUsageMap.setUsed(string(ipamAllocation.Spec.CIDR))
 		}
 	}
 
 	return dcIPAMPoolUsageMap, nil
 }
 
-func (r *Reconciler) generateNewAllocationsForPool(ctx context.Context, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) ([]kubermaticv1.IPAMAllocation, error) {
-	newClustersAllocations := []kubermaticv1.IPAMAllocation{}
+func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, ipamPool kubermaticv1.IPAMPool, cluster *kubermaticv1.Cluster, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) error {
+	dc := cluster.Spec.Cloud.DatacenterName
+	dcIPAMPoolCfg, isDCConfigured := ipamPool.Spec.Datacenters[dc]
+	if !isDCConfigured {
+		// this shouldn't happen as this filtering was done before
+		return fmt.Errorf("for some reason, IPAM pool spec is missing cluster datacenter configuration")
+	}
 
-	// List and loop clusters for the new allocations
-	clusterList := &kubermaticv1.ClusterList{}
-	err := r.Client.List(ctx, clusterList)
+	newClustersAllocation := &kubermaticv1.IPAMAllocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: fmt.Sprintf("cluster-%s", cluster.Name),
+			Name:      ipamPool.Name,
+			Labels:    map[string]string{},
+		},
+		Spec: kubermaticv1.IPAMAllocationSpec{
+			Type: dcIPAMPoolCfg.Type,
+			DC:   dc,
+		},
+	}
+
+	switch dcIPAMPoolCfg.Type {
+	case kubermaticv1.IPAMPoolAllocationTypeRange:
+		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange), dcIPAMPoolUsageMap)
+		if err != nil {
+			return err
+		}
+		newClustersAllocation.Spec.Addresses = addresses
+	case kubermaticv1.IPAMPoolAllocationTypePrefix:
+		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix), dcIPAMPoolUsageMap)
+		if err != nil {
+			return err
+		}
+		newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
+	}
+
+	err := r.Create(ctx, newClustersAllocation)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %w", err)
-	}
-	for _, cluster := range clusterList.Items {
-		dc := cluster.Spec.Cloud.DatacenterName
-		dcIPAMPoolCfg, isDCConfigured := ipamPool.Spec.Datacenters[dc]
-		if !isDCConfigured {
-			// Cluster datacenter is not configured in the IPAM pool spec, so nothing to do for it
-			continue
-		}
-
-		allocationNamespace := fmt.Sprintf("cluster-%s", cluster.Name)
-
-		ipamAllocation := &kubermaticv1.IPAMAllocation{}
-		err := r.Client.Get(ctx, types.NamespacedName{Namespace: allocationNamespace, Name: ipamPool.Name}, ipamAllocation)
-		if err == nil {
-			// skip because pool is already allocated for cluster
-			continue
-		} else if !apierrors.IsNotFound(err) {
-			return nil, err
-		}
-
-		newClustersAllocation := kubermaticv1.IPAMAllocation{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: allocationNamespace,
-				Name:      ipamPool.Name,
-			},
-			Spec: kubermaticv1.IPAMAllocationSpec{
-				Type: dcIPAMPoolCfg.Type,
-				DC:   dc,
-			},
-		}
-
-		switch dcIPAMPoolCfg.Type {
-		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			addresses, err := findFirstFreeRangesOfPool(dc, string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange), dcIPAMPoolUsageMap)
-			if err != nil {
-				return nil, err
-			}
-			newClustersAllocation.Spec.Addresses = addresses
-		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			subnetCIDR, err := findFirstFreeSubnetOfPool(dc, string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix), dcIPAMPoolUsageMap)
-			if err != nil {
-				return nil, err
-			}
-			newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
-		}
-
-		newClustersAllocations = append(newClustersAllocations, newClustersAllocation)
+		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
 
-	return newClustersAllocations, nil
+	return nil
 }
