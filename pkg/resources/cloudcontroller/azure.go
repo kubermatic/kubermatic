@@ -93,18 +93,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 							},
 						},
 					},
-				},
-				corev1.Volume{
-					Name: resources.CABundleConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CABundleConfigMapName,
-							},
-						},
-					},
-				},
-			)
+				})
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -118,13 +107,6 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 							MountPath: "/etc/kubernetes/cloud",
 							ReadOnly:  true,
 						},
-						/*
-							corev1.VolumeMount{
-								Name:      resources.CABundleConfigMapName,
-								MountPath: "/etc/ssl",
-								ReadOnly:  true,
-							},
-						*/
 					),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
