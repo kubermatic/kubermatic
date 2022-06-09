@@ -106,8 +106,7 @@ func TestCreateAddon(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
-				Spec:    kubermaticv1.ClusterSpec{},
-				Address: kubermaticv1.ClusterAddress{},
+				Spec: kubermaticv1.ClusterSpec{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 						Apiserver: kubermaticv1.HealthStatusUp,
@@ -251,8 +250,7 @@ func TestUpdateAddon(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
-				Spec:    kubermaticv1.ClusterSpec{},
-				Address: kubermaticv1.ClusterAddress{},
+				Spec: kubermaticv1.ClusterSpec{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 						Apiserver: kubermaticv1.HealthStatusUp,
@@ -330,8 +328,7 @@ func TestUpdateAddon(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
 				},
-				Spec:    kubermaticv1.ClusterSpec{},
-				Address: kubermaticv1.ClusterAddress{},
+				Spec: kubermaticv1.ClusterSpec{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 						Apiserver: kubermaticv1.HealthStatusUp,

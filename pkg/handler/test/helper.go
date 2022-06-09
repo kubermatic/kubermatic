@@ -345,7 +345,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		kubernetesClient,
 		false,
 		kubermaticVersions,
-		GenTestSeed().Name,
+		GenTestSeed(),
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
@@ -704,6 +704,7 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 			},
 		},
 	}
+	seed.SetKubermaticVersion(kubermatic.NewFakeVersions())
 	for _, modifier := range modifiers {
 		modifier(seed)
 	}
@@ -1007,12 +1008,6 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			},
 		},
-		Address: kubermaticv1.ClusterAddress{
-			AdminToken:   "drphc2.g4kq82pnlfqjqt65",
-			ExternalName: "w225mx4z66.asia-east1-a-1.cloud.kubermatic.io",
-			IP:           "35.194.142.199",
-			URL:          "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
-		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusUp,
@@ -1023,6 +1018,12 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				Etcd:                         kubermaticv1.HealthStatusUp,
 				UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+			},
+			Address: kubermaticv1.ClusterAddress{
+				AdminToken:   "drphc2.g4kq82pnlfqjqt65",
+				ExternalName: "w225mx4z66.asia-east1-a-1.cloud.kubermatic.io",
+				IP:           "35.194.142.199",
+				URL:          "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 			},
 			NamespaceName: kubernetes.NamespaceName(id),
 			Versions: kubermaticv1.ClusterVersionsStatus{

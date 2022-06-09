@@ -254,7 +254,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
 				// Maps SNI host with the port name of this service.
 				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
-					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.Address.ExternalName)
+					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.GetAddress().ExternalName)
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
@@ -463,17 +463,19 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 			if err != nil {
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
-			if c.Address.ExternalName == "" {
+
+			address := c.GetAddress()
+			if address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
 			}
-			commonName := resources.MLAGatewaySNIPrefix + c.Address.ExternalName
+			commonName := resources.MLAGatewaySNIPrefix + address.ExternalName
 			altNames := certutil.AltNames{
 				DNSNames: []string{
 					commonName,
-					c.Address.ExternalName, // required for NodePort expose strategy
+					address.ExternalName, // required for NodePort expose strategy
 				},
 			}
-			cIP := net.ParseIP(c.Address.IP)
+			cIP := net.ParseIP(address.IP)
 			if cIP != nil {
 				altNames.IPs = []net.IP{cIP} // required for LoadBalancer expose strategy
 			}

@@ -72,7 +72,7 @@ func NewClusterProvider(
 	k8sClient kubernetes.Interface,
 	oidcKubeConfEndpoint bool,
 	versions kubermatic.Versions,
-	seedName string) *ClusterProvider {
+	seed *kubermaticv1.Seed) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
@@ -83,7 +83,7 @@ func NewClusterProvider(
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
 		seedKubeconfig:               cfg,
 		versions:                     versions,
-		seedName:                     seedName,
+		seed:                         seed,
 	}
 }
 
@@ -104,7 +104,7 @@ type ClusterProvider struct {
 	k8sClient            kubernetes.Interface
 	seedKubeconfig       *restclient.Config
 	versions             kubermatic.Versions
-	seedName             string
+	seed                 *kubermaticv1.Seed
 }
 
 var _ provider.ClusterProvider = &ClusterProvider{}
@@ -122,7 +122,7 @@ func (p *ClusterProvider) New(ctx context.Context, project *kubermaticv1.Project
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
+	newCluster := genAPICluster(project, cluster, p.workerName)
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -159,7 +159,7 @@ func (p *ClusterProvider) NewUnsecured(ctx context.Context, project *kubermaticv
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
+	newCluster := genAPICluster(project, cluster, p.workerName)
 
 	err := p.client.Create(ctx, newCluster)
 	if err != nil {
@@ -189,7 +189,7 @@ func (p *ClusterProvider) waitForCluster(ctx context.Context, client ctrlruntime
 	return nil
 }
 
-func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, workerName string, versions kubermatic.Versions) *kubermaticv1.Cluster {
+func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, workerName string) *kubermaticv1.Cluster {
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	var name string
@@ -206,8 +206,7 @@ func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster,
 			Labels:      getClusterLabels(cluster.Labels, project.Name, workerName),
 			Name:        name,
 		},
-		Spec:    cluster.Spec,
-		Address: kubermaticv1.ClusterAddress{},
+		Spec: cluster.Spec,
 	}
 }
 
@@ -371,11 +370,31 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kuberma
 
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
 func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
+	// during the KKP 2.20->2.21 migration, the cluster address was moved
+	// and we need to handle current seeds (using cluster.Status.Address)
+	// and older seeds (using cluster.Address)
+	newToken := kuberneteshelper.GenerateToken()
+
+	// seed is on KKP 2.21 and so it has the new fields available; update the
+	// status address first, as its the primary source of truth for all other
+	// reconciling (see the GetAddress() function on Clusters)
+	if p.seed.IsUpToDate(p.versions) {
+		oldCluster := c.DeepCopy()
+		c.Status.Address.AdminToken = newToken
+
+		if err := p.GetSeedClusterAdminRuntimeClient().Status().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to patch cluster with new token: %w", err)
+		}
+	}
+
+	// KKP 2.21 also still contains the old field, so we can always reset it
 	oldCluster := c.DeepCopy()
-	c.Address.AdminToken = kuberneteshelper.GenerateToken()
+	c.Address.AdminToken = newToken
+
 	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to patch cluster with new token: %w", err)
 	}
+
 	return nil
 }
 
@@ -398,9 +417,9 @@ func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userIn
 	parts := strings.Split(userInfo.Group, "-")
 	switch parts[0] {
 	case "editors":
-		return cluster.Address.AdminToken, nil
+		return cluster.GetAddress().AdminToken, nil
 	case "owners":
-		return cluster.Address.AdminToken, nil
+		return cluster.GetAddress().AdminToken, nil
 	case "viewers":
 		s := &corev1.Secret{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}
@@ -521,5 +540,5 @@ func (p *ClusterProvider) ListAll(ctx context.Context, labelSelector labels.Sele
 
 // GetSeedName gets the seed name of the cluster.
 func (p *ClusterProvider) GetSeedName() string {
-	return p.seedName
+	return p.seed.Name
 }

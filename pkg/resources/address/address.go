@@ -135,18 +135,18 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
 	}
 
-	if m.cluster.Address.ExternalName != externalName {
+	if m.cluster.Status.Address.ExternalName != externalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-			c.Address.ExternalName = externalName
+			c.Status.Address.ExternalName = externalName
 		})
 		m.log.Debugw("Set external name for cluster", "externalName", externalName)
 	}
 
 	// Internal name
 	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverServiceName, m.cluster.Status.NamespaceName)
-	if m.cluster.Address.InternalName != internalName {
+	if m.cluster.Status.Address.InternalName != internalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-			c.Address.InternalName = internalName
+			c.Status.Address.InternalName = internalName
 		})
 		m.log.Debugw("Set internal name for cluster", "internalName", internalName)
 	}
@@ -178,9 +178,9 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	case kubermaticv1.ExposeStrategyTunneling:
 		ip = m.tunnelingAgentIP
 	}
-	if m.cluster.Address.IP != ip {
+	if m.cluster.Status.Address.IP != ip {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-			c.Address.IP = ip
+			c.Status.Address.IP = ip
 		})
 		m.log.Debugw("Set IP for cluster", "ip", ip)
 	}
@@ -203,18 +203,18 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	// Use the nodeport value for KAS secure port when strategy is NodePort or
 	// LoadBalancer. This is because the same service will be accessed both
 	// locally and passing from nodeport proxy.
-	if m.cluster.Address.Port != port {
+	if m.cluster.Status.Address.Port != port {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-			c.Address.Port = port
+			c.Status.Address.Port = port
 		})
 		m.log.Debugw("Set port for cluster", "port", port)
 	}
 
 	// URL
 	url := fmt.Sprintf("https://%s", net.JoinHostPort(externalName, fmt.Sprintf("%d", port)))
-	if m.cluster.Address.URL != url {
+	if m.cluster.Status.Address.URL != url {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-			c.Address.URL = url
+			c.Status.Address.URL = url
 		})
 		m.log.Debugw("Set URL for cluster", "url", url)
 	}

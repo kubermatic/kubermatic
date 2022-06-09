@@ -409,7 +409,9 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 		reconcileK8sSvcEndpoints = false
 	}
 
-	return &cluster.Address, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
+	addr := cluster.GetAddress()
+
+	return &addr, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.

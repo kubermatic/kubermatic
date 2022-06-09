@@ -895,9 +895,11 @@ func GetAllowedTLSCipherSuites() []string {
 
 // GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
-	ip := net.ParseIP(cluster.Address.IP)
+	address := cluster.GetAddress()
+
+	ip := net.ParseIP(address.IP)
 	if ip == nil {
-		return nil, fmt.Errorf("failed to create a net.IP object from the external cluster IP '%s'", cluster.Address.IP)
+		return nil, fmt.Errorf("failed to create a net.IP object from the external cluster IP '%s'", address.IP)
 	}
 	return &ip, nil
 }

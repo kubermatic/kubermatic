@@ -24,13 +24,6 @@ metadata:
   labels:
     project-id: sqsbz74c2t
   name: nmxjm7ngzw
-address:
-  adminToken: hkj6rb.fgfrf25nmvcmvzn6
-  externalName: nmxjm7ngzw.europe-west3-c.dev.kubermatic.io
-  internalURL: apiserver-external.cluster-nmxjm7ngzw.svc.cluster.local.
-  ip: 35.198.93.90
-  port: 30711
-  url: https://nmxjm7ngzw.europe-west3-c.dev.kubermatic.io:30711
 spec:
   auditLogging: {}
   cloud:
@@ -70,6 +63,13 @@ spec:
   version: 1.22.7
 status:
   cloudMigrationRevision: 2
+  address:
+    adminToken: hkj6rb.fgfrf25nmvcmvzn6
+    externalName: nmxjm7ngzw.europe-west3-c.dev.kubermatic.io
+    internalURL: apiserver-external.cluster-nmxjm7ngzw.svc.cluster.local.
+    ip: 35.198.93.90
+    port: 30711
+    url: https://nmxjm7ngzw.europe-west3-c.dev.kubermatic.io:30711
   conditions:
     AddonControllerReconciledSuccessfully:
       kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1

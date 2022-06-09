@@ -436,7 +436,7 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
 
-	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...)
 	return vars, nil
 }
 

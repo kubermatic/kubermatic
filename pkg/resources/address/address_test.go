@@ -247,24 +247,24 @@ func TestSyncClusterAddress(t *testing.T) {
 				modifier(cluster)
 			}
 
-			if cluster.Address.ExternalName != tc.expectedExternalName {
-				t.Errorf("expected external name to be %q but was %q", tc.expectedExternalName, cluster.Address.ExternalName)
+			if cluster.Status.Address.ExternalName != tc.expectedExternalName {
+				t.Errorf("expected external name to be %q but was %q", tc.expectedExternalName, cluster.Status.Address.ExternalName)
 			}
 
-			if expectedInternalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverServiceName, fakeClusterNamespaceName); cluster.Address.InternalName != expectedInternalName {
-				t.Errorf("Expected internal name to be %q but was %q", expectedInternalName, cluster.Address.InternalName)
+			if expectedInternalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverServiceName, fakeClusterNamespaceName); cluster.Status.Address.InternalName != expectedInternalName {
+				t.Errorf("Expected internal name to be %q but was %q", expectedInternalName, cluster.Status.Address.InternalName)
 			}
 
-			if cluster.Address.IP != tc.expectedIP {
-				t.Errorf("Expected IP to be %q but was %q", tc.expectedIP, cluster.Address.IP)
+			if cluster.Status.Address.IP != tc.expectedIP {
+				t.Errorf("Expected IP to be %q but was %q", tc.expectedIP, cluster.Status.Address.IP)
 			}
 
-			if cluster.Address.Port != tc.expectedPort {
-				t.Errorf("Expected Port to be %d but was %d", tc.expectedPort, cluster.Address.Port)
+			if cluster.Status.Address.Port != tc.expectedPort {
+				t.Errorf("Expected Port to be %d but was %d", tc.expectedPort, cluster.Status.Address.Port)
 			}
 
-			if cluster.Address.URL != tc.expectedURL {
-				t.Errorf("Expected URL to be %q but was %q", tc.expectedURL, cluster.Address.URL)
+			if cluster.Status.Address.URL != tc.expectedURL {
+				t.Errorf("Expected URL to be %q but was %q", tc.expectedURL, cluster.Status.Address.URL)
 			}
 		})
 	}
