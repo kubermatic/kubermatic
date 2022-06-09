@@ -45,7 +45,7 @@ const (
 func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
 	return &AzureClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           rand.String(10),
+			name:           makeClusterName(),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
@@ -178,4 +178,10 @@ func (c *AzureCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AzureClou
 		spec.RouteTableName,
 		spec.SecurityGroup,
 	))
+}
+
+func makeClusterName() string {
+	alpha := "abcdefghijklmnopqrstuvwxyz"
+	r := rand.Intn(len(alpha))
+	return fmt.Sprintf("%c%s", alpha[r], rand.String(9))
 }
