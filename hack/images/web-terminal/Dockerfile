@@ -16,7 +16,7 @@ FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
 ENV KUBECTL_VERSION=v1.22.9 \
-    HELM_VERSION=v3.8.1
+    HELM_VERSION=v3.9.0
 
 
 RUN apk add --no-cache -U \
@@ -24,8 +24,6 @@ RUN apk add --no-cache -U \
     ca-certificates \
     curl \
     git \
-    iproute2 \
-    iptables \
     ipvsadm \
     jq \
     make \
