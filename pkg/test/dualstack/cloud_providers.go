@@ -385,7 +385,7 @@ func flatcar() models.OperatingSystemSpec {
 
 func rockyLinux() models.OperatingSystemSpec {
 	return models.OperatingSystemSpec{
-		RockyLinux: models.RockyLinuxSpec{},
+		RockyLinux: &models.RockyLinuxSpec{},
 	}
 }
 
