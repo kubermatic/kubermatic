@@ -177,7 +177,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 	// This part of the code handles the CCM/CSI migration. It currently works
 	// for OpenStack, vSphere and Azure clusters, in the following way:
 	//   * Add the CCM/CSI migration annotations
-	//   * Enable the UseOctaiva flag (for OpenStack only)
+	//   * Enable the UseOctavia flag (for OpenStack only)
 	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 		switch {
