@@ -138,6 +138,9 @@ type ClusterSpec struct {
 	// ContainerRuntime to use, i.e. `docker` or `containerd`. By default `containerd` will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
+	// Optional: ImagePullSecret references a secret with container registry credentials. This is passed to the machine-controller which sets the registry credentials on node level.
+	ImagePullSecret *corev1.SecretReference `json:"imagePullSecret,omitempty"`
+
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
 
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`

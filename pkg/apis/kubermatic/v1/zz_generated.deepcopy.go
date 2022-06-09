@@ -1075,6 +1075,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 	*out = *in
 	out.Version = in.Version.DeepCopy()
 	in.Cloud.DeepCopyInto(&out.Cloud)
+	if in.ImagePullSecret != nil {
+		in, out := &in.ImagePullSecret, &out.ImagePullSecret
+		*out = new(corev1.SecretReference)
+		**out = **in
+	}
 	if in.CNIPlugin != nil {
 		in, out := &in.CNIPlugin, &out.CNIPlugin
 		*out = new(CNIPluginSettings)

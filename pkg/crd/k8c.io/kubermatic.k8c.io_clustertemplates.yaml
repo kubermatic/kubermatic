@@ -1907,6 +1907,20 @@ spec:
                 description: HumanReadableName is the cluster name provided by the
                   user.
                 type: string
+              imagePullSecret:
+                description: 'Optional: ImagePullSecret references a secret with container
+                  registry credentials. This is passed to the machine-controller which
+                  sets the registry credentials on node level.'
+                properties:
+                  name:
+                    description: Name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: Namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
               kubernetesDashboard:
                 description: KubernetesDashboard holds the configuration for the kubernetes-dashboard
                   component.
