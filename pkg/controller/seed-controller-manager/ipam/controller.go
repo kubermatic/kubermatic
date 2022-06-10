@@ -87,21 +87,28 @@ func Add(
 		return fmt.Errorf("failed to create watch for clusters: %w", err)
 	}
 
-	enqueueClusterForNamespacedObject := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		ipamPool := a.(*kubermaticv1.IPAMPool)
+
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
 		}
+
+		requests := []reconcile.Request{}
 		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
+			_, isClusterDCConfiguredInPool := ipamPool.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+			if !isClusterDCConfiguredInPool {
+				// The IPAM pool is not relevant to this cluster, so skip it
+				continue
 			}
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
 		}
-		return []reconcile.Request{}
+		return requests
 	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClusterForNamespacedObject); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClustersForIPAMPool); err != nil {
 		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
 	}
 
