@@ -34,7 +34,7 @@ type pdbData interface {
 func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
-			minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
+			minAvailable := intstr.FromInt((int(getClusterSize(data.Cluster().Spec.ComponentsOverride.Etcd)) / 2) + 1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: GetBasePodLabels(data.Cluster()),
