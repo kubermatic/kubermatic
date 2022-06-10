@@ -43,7 +43,7 @@ provisioner: kubernetes.io/azure-disk
 parameters:
   kind: Managed
   storageaccounttype: Standard_LRS
-{{ end }}
+{{ end }}
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "aws" }}

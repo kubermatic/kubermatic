@@ -30,5 +30,5 @@ spec:
   attachRequired: true
   podInfoOnMount: false
   fsGroupPolicy: File
-{{ end }}
+{{ end }}
 {{ end }}
