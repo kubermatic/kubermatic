@@ -23499,7 +23499,7 @@
           "x-go-name": "Backups"
         },
         "ipv6": {
-          "description": "enable ipv6 for the droplet",
+          "description": "DEPRECATED\nenable ipv6 for the droplet",
           "type": "boolean",
           "x-go-name": "IPv6"
         },
