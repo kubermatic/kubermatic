@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.13
+FROM alpine:3.16
 LABEL maintainer="support@kubermatic.com"
 
 ENV KUBECTL_VERSION=v1.22.9 \
     HELM_VERSION=v3.9.0
-
 
 RUN apk add --no-cache -U \
     bash \

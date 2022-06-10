@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.13
+FROM alpine:3.16
 LABEL maintainer="support@kubermatic.com"
 
 ENV MC_VERSION=RELEASE.2022-05-09T04-08-26Z \

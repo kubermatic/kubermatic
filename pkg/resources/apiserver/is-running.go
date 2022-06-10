@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	tag                = "v0.3.3"
+	tag                = "v0.4.0"
 	emptyDirVolumeName = "http-prober-bin"
 	initContainerName  = "copy-http-prober"
 )
