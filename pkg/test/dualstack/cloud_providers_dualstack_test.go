@@ -96,10 +96,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "azure",
 			osNames: []string{
-				// "centos", // cilium agent crash
-				// "flatcar", // dhcpv6 bug
-				// "rhel", // fails only in ci
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "cilium",
@@ -111,9 +107,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "azure",
 			osNames: []string{
 				"centos",
-				// "flatcar", // dhcpv6 bug
-				// "rhel", // node local dns cache crashing
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "canal",
@@ -124,10 +117,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos",
-				// "flatcar", //
 				"rhel",
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "cilium",
@@ -138,10 +128,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos", // works when instance is created with ssh keypair
-				// "flatcar",
-				// "rhel", // works when instance is created with ssh keypair
-				// "sles",
 				"ubuntu",
 			},
 			cni:                 "canal",
@@ -152,11 +138,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "gcp",
 			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
+				"ubuntu",
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
@@ -166,11 +148,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "gcp",
 			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
+				"ubuntu",
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
@@ -180,11 +158,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "openstack",
 			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", // others not tested
+				"ubuntu",
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
@@ -195,10 +169,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "openstack",
 			osNames: []string{
 				"centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", // commented out os are not tested
+				"ubuntu",
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
