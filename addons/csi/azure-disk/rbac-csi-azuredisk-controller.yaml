@@ -213,5 +213,5 @@ roleRef:
   kind: ClusterRole
   name: csi-azuredisk-controller-secret-role
   apiGroup: rbac.authorization.k8s.io
-{{ end }}
-{{ end }}
+{{ end }}
+{{ end }}

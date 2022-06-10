@@ -168,5 +168,5 @@ spec:
             secretName: cloud-config
           name: cloud-config
 ---
-{{ end }}
+{{ end }}
 {{ end }}

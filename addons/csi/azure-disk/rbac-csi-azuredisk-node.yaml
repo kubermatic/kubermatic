@@ -50,5 +50,5 @@ roleRef:
   kind: ClusterRole
   name: csi-azuredisk-node-secret-role
   apiGroup: rbac.authorization.k8s.io
-{{ end }}
-{{ end }}
+{{ end }}
+{{ end }}

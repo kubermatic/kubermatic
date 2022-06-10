@@ -59,4 +59,4 @@ spec:
               cpu: 10m
               memory: 20Mi
 {{ end }}
-{{ end }}
+{{ end }}

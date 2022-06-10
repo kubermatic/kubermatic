@@ -32,4 +32,4 @@ spec:
     - Ephemeral
   fsGroupPolicy: ReadWriteOnceWithFSType
 {{ end }}
-{{ end }}
+{{ end }}
