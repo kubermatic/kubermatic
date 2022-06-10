@@ -44,6 +44,7 @@ spec:
         args:
         - query
         - --query.replica-label=replica
+        - --query.auto-downsampling
         - --store=dns+{{ template "name" . }}-thanos-store.{{ .Release.Namespace }}.svc.cluster.local.:10901
         ports:
         - name: http
