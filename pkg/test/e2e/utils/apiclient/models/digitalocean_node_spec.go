@@ -22,6 +22,7 @@ type DigitaloceanNodeSpec struct {
 	// enable backups for the droplet
 	Backups bool `json:"backups,omitempty"`
 
+	// DEPRECATED
 	// enable ipv6 for the droplet
 	IPV6 bool `json:"ipv6,omitempty"`
 
