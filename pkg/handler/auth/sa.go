@@ -59,8 +59,8 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 	if apierrors.IsNotFound(err) {
 		return TokenClaims{}, &TokenExpiredError{msg: tokenExpiredMsg}
 	}
-	if len(tokenList) > 1 {
-		return TokenClaims{}, fmt.Errorf("sa: found more than one token with the given id %s", customClaims.TokenID)
+	if len(tokenList) != 1 {
+		return TokenClaims{}, fmt.Errorf("sa: found zero or more than one token with the given id %s", customClaims.TokenID)
 	}
 	rawToken := tokenList[0]
 	tokenFromDB, ok := rawToken.Data["token"]
