@@ -177,8 +177,9 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-            - mountPath: /etc/config/
+            - mountPath: /etc/config/azure.json
               name: cloud-config
+              subPath: config
           resources:
             limits:
               memory: 200Mi

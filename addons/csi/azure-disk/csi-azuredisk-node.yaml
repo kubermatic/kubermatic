@@ -141,8 +141,9 @@ spec:
             - mountPath: /var/lib/kubelet/
               mountPropagation: Bidirectional
               name: mountpoint-dir
-            - mountPath: /etc/config/
+            - mountPath: /etc/config/azure.json
               name: cloud-config
+              subPath: config
             - mountPath: /dev
               name: device-dir
             - mountPath: /sys/bus/scsi/devices
