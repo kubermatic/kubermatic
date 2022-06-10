@@ -40,7 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -198,29 +197,13 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 	}, nil
 }
 
-func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
-	return &apiv2.StorageClass{
-		Name: sc.ObjectMeta.Name,
-	}
-}
-
 func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.StorageClassList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
-	storageClassList := storagev1.StorageClassList{}
-	if err := client.List(ctx, &storageClassList); err != nil {
-		return nil, err
-	}
-
-	res := apiv2.StorageClassList{}
-	for _, sc := range storageClassList.Items {
-		res = append(res, *newAPIStorageClass(&sc))
-	}
-
-	return res, nil
+	return kubevirt.ListStorageClasses(ctx, client, nil)
 }
 
 func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,

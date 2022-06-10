@@ -58,6 +58,9 @@ type ClusterData struct {
 	MLA MLASettings
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
+	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
+	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
+	KubeVirtInfraStorageClasses []string
 }
 
 // ClusterAddress stores access and address information of a cluster.
