@@ -147,7 +147,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: azurefile
-          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azurefile-csi:{{ $version }}
+          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azurefile-csi:v{{ $version }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
