@@ -83,6 +83,7 @@ type Routing struct {
 	caBundle                              *x509.CertPool
 	features                              features.FeatureGate
 	seedProvider                          provider.SeedProvider
+	resourceQuotaProvider                 provider.ResourceQuotaProvider
 }
 
 // NewRouting creates a new Routing.
@@ -129,6 +130,7 @@ func NewRouting(routingParams RoutingParams, masterClient ctrlruntimeclient.Clie
 		caBundle:                              routingParams.CABundle,
 		features:                              routingParams.Features,
 		seedProvider:                          routingParams.SeedProvider,
+		resourceQuotaProvider:                 routingParams.ResourceQuotaProvider,
 	}
 }
 
@@ -201,6 +203,7 @@ type RoutingParams struct {
 	BackupCredentialsProviderGetter         provider.BackupCredentialsProviderGetter
 	PrivilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
 	SeedProvider                            provider.SeedProvider
+	ResourceQuotaProvider                   provider.ResourceQuotaProvider
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 	Features                                features.FeatureGate

@@ -1282,3 +1282,7 @@ type SeedProvider interface {
 	// CreateOrUpdateKubeconfigSecretForSeed creates or update seed kubeconfig
 	CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context, seed *kubermaticv1.Seed, kubeconfig []byte) error
 }
+
+type ResourceQuotaProvider interface {
+	Get(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error)
+}

@@ -20,6 +20,7 @@ package admin
 
 import (
 	"context"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"net/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -69,6 +70,10 @@ func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter 
 	return metering.DeleteReport(ctx, request, seedsGetter, seedClientGetter)
 }
 
+func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (interface{}, error) {
+	return resourcequotas.GetResourceQuota(ctx, request, provider)
+}
+
 func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeGetMeteringReportConfigurationReq(r)
 }
@@ -103,4 +108,8 @@ func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interf
 
 func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeDeleteMeteringReportReq(r)
+}
+
+func DecodeGetResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return resourcequotas.DecodeGetResourceQuotaReq(r)
 }

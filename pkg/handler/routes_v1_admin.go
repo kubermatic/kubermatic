@@ -134,6 +134,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/admin/metering/reports/{report_name}").
 		Handler(r.deleteMeteringReport())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/quotas/{name}").
+		Handler(r.getResourceQuota())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -744,6 +748,30 @@ func (r Routing) deleteMeteringReport() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeDeleteMeteringReportReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v1/admin/quotas/{name} resource quota admin getResourceQuota
+//
+//    Get a specific Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) getResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeGetResourceQuotasReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

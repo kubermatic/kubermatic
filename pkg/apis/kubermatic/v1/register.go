@@ -91,6 +91,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ClusterTemplateInstanceList{},
 		&RuleGroup{},
 		&RuleGroupList{},
+		&ResourceQuota{},
+		&ResourceQuotaList{},
 		&AllowedRegistry{},
 		&AllowedRegistryList{},
 		&MLAAdminSetting{},
