@@ -97,6 +97,9 @@ spec:
       hostNetwork: true   # required to fetch correct hostname
       nodeSelector:
         kubernetes.io/os: linux
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
       - operator: "Exists"
         effect: NoExecute
