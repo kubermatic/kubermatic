@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azuredisk-node.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.18.0/deploy/v1.18.0/csi-azurefile-node.yaml
 #
 # Changes:
 # - image source includes registry templating
 # - removal of scheduling hints
 # - mount cloud-config instead of using host path
 # - add seccomp profile
-
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "1.18.0" }}
@@ -27,7 +26,7 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-azuredisk-node
+  name: csi-azurefile-node
   namespace: kube-system
 spec:
   updateStrategy:
@@ -36,15 +35,15 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: csi-azuredisk-node
+      app: csi-azurefile-node
   template:
     metadata:
       labels:
-        app: csi-azuredisk-node
+        app: csi-azurefile-node
     spec:
       hostNetwork: true
       dnsPolicy: Default
-      serviceAccountName: csi-azuredisk-node-sa
+      serviceAccountName: csi-azurefile-node-sa
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
@@ -62,7 +61,7 @@ spec:
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
-            - --health-port=29603
+            - --health-port=29613
             - --v=2
           resources:
             limits:
@@ -88,7 +87,7 @@ spec:
             - name: ADDRESS
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/disk.csi.azure.com/csi.sock
+              value: /var/lib/kubelet/plugins/file.csi.azure.com/csi.sock
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -100,19 +99,16 @@ spec:
             requests:
               cpu: 10m
               memory: 20Mi
-        - name: azuredisk
-          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azuredisk-csi:v{{ $version }}
+        - name: azurefile
+          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azurefile-csi:{{ $version }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
-            - "--metrics-address=0.0.0.0:29605"
-            - "--enable-perf-optimization=true"
-            - "--allow-empty-cloud-config=true"
-            - "--get-node-info-from-labels=false"
+            - "--metrics-address=0.0.0.0:29615"
           ports:
-            - containerPort: 29603
+            - containerPort: 29613
               name: healthz
               protocol: TCP
           livenessProbe:
@@ -145,19 +141,15 @@ spec:
               name: cloud-config
             - mountPath: /dev
               name: device-dir
-            - mountPath: /sys/bus/scsi/devices
-              name: sys-devices-dir
-            - mountPath: /sys/class/
-              name: sys-class
           resources:
             limits:
-              memory: 200Mi
+              memory: 300Mi
             requests:
               cpu: 10m
               memory: 20Mi
       volumes:
         - hostPath:
-            path: /var/lib/kubelet/plugins/disk.csi.azure.com
+            path: /var/lib/kubelet/plugins/file.csi.azure.com
             type: DirectoryOrCreate
           name: socket-dir
         - hostPath:
@@ -172,17 +164,9 @@ spec:
             path: /dev
             type: Directory
           name: device-dir
-        - hostPath:
-            path: /sys/bus/scsi/devices
-            type: Directory
-          name: sys-devices-dir
-        - hostPath:
-            path: /sys/class/
-            type: Directory
-          name: sys-class
         - secret:
             secretName: cloud-config
           name: cloud-config
 ---
-{{ end }}
+{{ end }}
 {{ end }}

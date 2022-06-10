@@ -12,36 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azuredisk-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azurefile-controller.yaml
 #
 # Changes:
 # - image source includes registry templating
+# - set replicas=1 (pod has a leader election)
 # - removal of tolerations
-# - set spec.replicas=1 since leader elections are configured
-# - mount cloud-config instead of using host path
-# - add a securityContext
-
+# - add security context
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "1.18.0" }}
+
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: csi-azuredisk-controller
+  name: csi-azurefile-controller
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: csi-azuredisk-controller
+      app: csi-azurefile-controller
   template:
     metadata:
       labels:
-        app: csi-azuredisk-controller
+        app: csi-azurefile-controller
     spec:
-      hostNetwork: true
-      serviceAccountName: csi-azuredisk-controller-sa
+      hostNetwork: true  # only required for MSI enabled cluster
+      serviceAccountName: csi-azurefile-controller-sa
       nodeSelector:
         kubernetes.io/os: linux  # add "kubernetes.io/role: master" to run controller on master node
       priorityClassName: system-cluster-critical
@@ -52,15 +51,12 @@ spec:
         - name: csi-provisioner
           image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-provisioner:v3.1.0
           args:
-            - "--feature-gates=Topology=true"
+            - "-v=2"
             - "--csi-address=$(ADDRESS)"
-            - "--v=2"
-            - "--timeout=15s"
             - "--leader-election"
             - "--leader-election-namespace=kube-system"
-            - "--worker-threads=40"
+            - "--timeout=300s"
             - "--extra-create-metadata=true"
-            - "--strict-topology=true"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -78,10 +74,9 @@ spec:
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
-            - "-timeout=600s"
-            - "-leader-election"
+            - "-timeout=120s"
+            - "--leader-election"
             - "--leader-election-namespace=kube-system"
-            - "-worker-threads=500"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -97,10 +92,10 @@ spec:
         - name: csi-snapshotter
           image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-snapshotter:v5.0.1
           args:
+            - "-v=2"
             - "-csi-address=$(ADDRESS)"
-            - "-leader-election"
+            - "--leader-election"
             - "--leader-election-namespace=kube-system"
-            - "--v=2"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -118,11 +113,11 @@ spec:
           args:
             - "-csi-address=$(ADDRESS)"
             - "-v=2"
-            - "-leader-election"
+            - "--leader-election"
             - "--leader-election-namespace=kube-system"
             - '-handle-volume-inuse-error=false'
             - '-feature-gates=RecoverVolumeExpansionFailure=true'
-            - "-timeout=240s"
+            - '-timeout=120s'
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -140,7 +135,7 @@ spec:
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
-            - --health-port=29602
+            - --health-port=29612
             - --v=2
           volumeMounts:
             - name: socket-dir
@@ -151,21 +146,19 @@ spec:
             requests:
               cpu: 10m
               memory: 20Mi
-        - name: azuredisk
-          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azuredisk-csi:v{{ $version }}
+        - name: azurefile
+          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azurefile-csi:{{ $version }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
-            - "--metrics-address=0.0.0.0:29604"
+            - "--metrics-address=0.0.0.0:29614"
             - "--user-agent-suffix=OSS-kubectl"
-            - "--disable-avset-nodes=false"
-            - "--allow-empty-cloud-config=false"
           ports:
-            - containerPort: 29602
+            - containerPort: 29612
               name: healthz
               protocol: TCP
-            - containerPort: 29604
+            - containerPort: 29614
               name: metrics
               protocol: TCP
           livenessProbe:
@@ -188,7 +181,7 @@ spec:
               name: cloud-config
           resources:
             limits:
-              memory: 500Mi
+              memory: 200Mi
             requests:
               cpu: 10m
               memory: 20Mi
@@ -198,5 +191,5 @@ spec:
         - name: cloud-config
           secret:
             secretName: cloud-config
-{{ end }}
-{{ end }}
+{{ end }}
+{{ end }}

@@ -13,6 +13,12 @@
 # limitations under the License.
 #
 # Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/csi-snapshot-controller.yaml
+#
+# Changes:
+# - template image registry
+# - add security context
+# - set replicas=1 (pod has a leader election)
+# - add CPU limit of 1
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 ---
@@ -22,7 +28,7 @@ metadata:
   name: csi-snapshot-controller
   namespace: kube-system
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: csi-snapshot-controller
@@ -35,15 +41,19 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-snapshot-controller
-          image: mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v5.0.1
+          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/snapshot-controller:v5.0.1
           args:
             - "--v=2"
             - "--leader-election=true"
             - "--leader-election-namespace=kube-system"
           resources:
             limits:
+              cpu: 1
               memory: 100Mi
             requests:
               cpu: 10m
