@@ -15,7 +15,7 @@
 # Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/crd-csi-snapshot.yaml
 #
 # Changes:
-# - typo fix occurrs -> occurs
+# - typo fix for "occurs"
 # 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
