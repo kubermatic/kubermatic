@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_ipam_controller"
+	ControllerName = "kkp-ipam-controller"
 )
 
 // Reconciler stores all components required for the IPAM controller.
