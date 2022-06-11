@@ -5,7 +5,6 @@ aliases:
   sig-api:
     - floreks
     - lsviben
-    - maciaszczykm
     - pkprzekwas
     - zreigz
   sig-app-management:
@@ -39,7 +38,6 @@ aliases:
   sig-ui:
     - floreks
     - khizerrehan
-    - maciaszczykm
     - waseem826
   sig-virtualization:
     - hdurand0710
