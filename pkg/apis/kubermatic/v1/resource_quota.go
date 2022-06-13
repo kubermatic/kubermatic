@@ -74,3 +74,11 @@ type ResourceDetails struct {
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
 }
+
+func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails {
+	return &ResourceDetails{
+		CPU:     &cpu,
+		Memory:  &memory,
+		Storage: &storage,
+	}
+}

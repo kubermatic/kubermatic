@@ -23,3 +23,142 @@
 */
 
 package resource_usage_controller
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"testing"
+
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/client-go/tools/record"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+func TestReconcile(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		cluster               *kubermaticv1.Cluster
+		machines              []*clusterv1alpha1.Machine
+		expectedResourceUsage *kubermaticv1.ResourceDetails
+	}{
+		{
+			name:     "scenario 1: calculate resource usage from one machine",
+			cluster:  test.GenDefaultCluster(),
+			machines: []*clusterv1alpha1.Machine{genFakeMachine("m1", "5", "5G", "10G")},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("5"),
+				Memory:  getQuantity("5G"),
+				Storage: getQuantity("10G"),
+			},
+		},
+		{
+			name: "scenario 2: set proper resource usage",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenDefaultCluster()
+				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
+				return c
+			}(),
+			machines: []*clusterv1alpha1.Machine{genFakeMachine("m1", "5", "5G", "10G")},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("5"),
+				Memory:  getQuantity("5G"),
+				Storage: getQuantity("10G"),
+			},
+		},
+		{
+			name:    "scenario 3: set proper resource usage from 2 machines",
+			cluster: test.GenDefaultCluster(),
+			machines: []*clusterv1alpha1.Machine{
+				genFakeMachine("m1", "5", "5G", "10G"),
+				genFakeMachine("m2", "2", "3G", "5G")},
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("7"),
+				Memory:  getQuantity("8G"),
+				Storage: getQuantity("15G"),
+			},
+		},
+		{
+			name: "scenario 4: set zero usage if no machines",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenDefaultCluster()
+				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
+				return c
+			}(),
+			expectedResourceUsage: &kubermaticv1.ResourceDetails{
+				CPU:     getQuantity("0"),
+				Memory:  getQuantity("0"),
+				Storage: getQuantity("0"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			scheme := runtime.NewScheme()
+			_ = kubermaticv1.AddToScheme(scheme)
+			_ = clusterv1alpha1.AddToScheme(scheme)
+
+			seedClientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
+			seedClientBuilder.WithObjects(tc.cluster)
+
+			userClientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
+			for _, m := range tc.machines {
+				userClientBuilder.WithObjects(m)
+			}
+
+			seedClient := seedClientBuilder.Build()
+			userClient := userClientBuilder.Build()
+
+			r := reconciler{
+				log:         kubermaticlog.Logger,
+				seedClient:  seedClient,
+				userClient:  userClient,
+				clusterName: tc.cluster.Name,
+				caBundle:    nil,
+				recorder:    &record.FakeRecorder{},
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
+			}
+
+			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.cluster.Name}}
+			if _, err := r.Reconcile(ctx, request); err != nil {
+				t.Fatalf("reconciling failed: %v", err)
+			}
+
+			// check Cluster
+			cluster := &kubermaticv1.Cluster{}
+			err := seedClient.Get(ctx, types.NamespacedName{Name: tc.cluster.Name}, cluster)
+			if err != nil {
+				t.Fatalf("failed to get cluster: %v", err)
+			}
+
+			if !reflect.DeepEqual(cluster.Status.ResourceUsage, tc.expectedResourceUsage) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(cluster.Status.ResourceUsage, tc.expectedResourceUsage))
+			}
+		})
+	}
+}
+
+func genFakeMachine(name, cpu, memory, storage string) *clusterv1alpha1.Machine {
+	return test.GenTestMachine(name,
+		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
+		nil, nil)
+}
+
+func getQuantity(q string) *resource.Quantity {
+	res := resource.MustParse(q)
+	return &res
+}

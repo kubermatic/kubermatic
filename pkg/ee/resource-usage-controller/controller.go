@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -124,7 +125,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *v1alpha1.MachineList) error {
-	resourceUsage := &kubermaticv1.ResourceDetails{}
+	resourceUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 	for _, machine := range machines.Items {
 		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, &machine, r.caBundle)
 		if err != nil {
