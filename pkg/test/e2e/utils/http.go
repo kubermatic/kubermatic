@@ -32,7 +32,7 @@ import (
 type Backoff wait.Backoff
 
 const (
-	apiRequestTimeout = 10 * time.Second
+	apiRequestTimeout = 30 * time.Second
 )
 
 type requestParameterHolder interface {
@@ -53,14 +53,6 @@ func SetupParams(t *testing.T, p requestParameterHolder, interval time.Duration,
 func SetupRetryParams(t *testing.T, p requestParameterHolder, backoff Backoff, ignoredStatusCodes ...int) {
 	p.SetHTTPClient(&http.Client{
 		Transport: NewRoundTripperWithRetries(t, apiRequestTimeout, backoff, ignoredStatusCodes...),
-	})
-}
-
-// SetupRetryParamsWithTimeout configure retries for HTTP calls based on backoff
-// parameters. Allows for setting the request timeout.
-func SetupRetryParamsWithTimeout(t *testing.T, p requestParameterHolder, backoff Backoff, timeout time.Duration, ignoredStatusCodes ...int) {
-	p.SetHTTPClient(&http.Client{
-		Transport: NewRoundTripperWithRetries(t, timeout, backoff, ignoredStatusCodes...),
 	})
 }
 
