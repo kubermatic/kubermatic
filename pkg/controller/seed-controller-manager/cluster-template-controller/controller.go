@@ -31,6 +31,7 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -251,7 +251,8 @@ func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string
 }
 
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
-	name := rand.String(10)
+	name := utilcluster.MakeClusterName()
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,

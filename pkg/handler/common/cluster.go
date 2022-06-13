@@ -44,6 +44,7 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -156,12 +157,6 @@ func CreateEndpoint(
 	return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), nil
 }
 
-func makeClusterName() string {
-	alpha := "abcdefghijklmnopqrstuvwxyz"
-	r := rand.Intn(len(alpha))
-	return fmt.Sprintf("%c%s", alpha[r], rand.String(9))
-}
-
 func GenerateCluster(
 	ctx context.Context,
 	projectID string,
@@ -235,7 +230,7 @@ func GenerateCluster(
 	}
 
 	// Generate the name here so that it can be used below.
-	partialCluster.Name = makeClusterName()
+	partialCluster.Name = utilcluster.MakeClusterName()
 
 	// Serialize initial machine deployment request into annotation if it is in the body and provider different than
 	// BringYourOwn was selected. The request will be transformed into machine deployment by the controller once cluster

@@ -25,9 +25,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 const (
@@ -55,7 +55,7 @@ func getTestClientSet(t *testing.T) *ClientSet {
 func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: rand.String(10),
+			Name: utilcluster.MakeClusterName(),
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
