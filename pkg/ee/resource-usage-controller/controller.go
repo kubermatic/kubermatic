@@ -30,7 +30,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
@@ -40,7 +40,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +85,7 @@ func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName s
 
 	// Watch for changes to Machines
 	if err = c.Watch(
-		&source.Kind{Type: &v1alpha1.Machine{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(v1.NamespaceSystem)); err != nil {
+		&source.Kind{Type: &clusterv1alpha1.Machine{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
 		return fmt.Errorf("failed to establish watch for Machines: %w", err)
 	}
 
@@ -104,7 +104,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("resource", request)
 	log.Debug("Reconciling")
 
-	machines := &v1alpha1.MachineList{}
+	machines := &clusterv1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to get machines: %w", err)
 	}
@@ -124,7 +124,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *v1alpha1.MachineList) error {
+func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *clusterv1alpha1.MachineList) error {
 	resourceUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 	for _, machine := range machines.Items {
 		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, &machine, r.caBundle)

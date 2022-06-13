@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -46,7 +46,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *v1alpha1.Machine,
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine,
 	caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
