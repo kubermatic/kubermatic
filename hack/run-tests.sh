@@ -25,7 +25,8 @@ KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 go install github.com/jstemmer/go-junit-report@v1.0.0
 
 # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
-if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+#if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+if [ ! -z "${ARTIFACTS:-}" ]; then
     CGO_ENABLED=1 go test -tags "unit,${KUBERMATIC_EDITION}" -v -race ./pkg/... ./cmd/... ./codegen/... 2>&1 | go-junit-report -set-exit-code > ${ARTIFACTS}/junit.unit_tests.xml
 else
     CGO_ENABLED=1 go test -tags "unit,${KUBERMATIC_EDITION}" -race ./pkg/... ./cmd/... ./codegen/...
