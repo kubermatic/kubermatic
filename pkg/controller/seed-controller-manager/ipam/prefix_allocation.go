@@ -19,6 +19,8 @@ package ipam
 import (
 	"fmt"
 	"net"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func checkPrefixAllocation(subnetCIDR, poolCIDR string, allocationPrefix int) error {
@@ -52,7 +54,7 @@ func checkPrefixAllocation(subnetCIDR, poolCIDR string, allocationPrefix int) er
 	return nil
 }
 
-func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap datacenterIPAMPoolUsageMap) (string, error) {
+func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.String) (string, error) {
 	poolIP, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return "", err
@@ -71,8 +73,8 @@ func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsag
 		return "", err
 	}
 	for ; poolSubnet.Contains(possibleSubnet.IP); possibleSubnet, _ = nextSubnet(possibleSubnet, subnetPrefix) {
-		if !dcIPAMPoolUsageMap.isUsed(possibleSubnet.String()) {
-			dcIPAMPoolUsageMap.setUsed(possibleSubnet.String())
+		if !dcIPAMPoolUsageMap.Has(possibleSubnet.String()) {
+			dcIPAMPoolUsageMap.Insert(possibleSubnet.String())
 			return possibleSubnet.String(), nil
 		}
 	}

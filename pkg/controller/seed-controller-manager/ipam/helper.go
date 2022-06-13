@@ -26,21 +26,6 @@ var (
 	errIncompatiblePool = fmt.Errorf("pool is incompatible with a current cluster allocation")
 )
 
-type datacenterIPAMPoolUsageMap map[string]struct{}
-
-func newDatacenterIPAMPoolUsageMap() datacenterIPAMPoolUsageMap {
-	return make(datacenterIPAMPoolUsageMap)
-}
-
-func (m datacenterIPAMPoolUsageMap) setUsed(value string) {
-	m[value] = struct{}{}
-}
-
-func (m datacenterIPAMPoolUsageMap) isUsed(value string) bool {
-	_, isUsed := m[value]
-	return isUsed
-}
-
 func ipToInt(ip net.IP) (*big.Int, int) {
 	val := &big.Int{}
 	val.SetBytes([]byte(ip))
