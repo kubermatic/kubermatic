@@ -30,7 +30,7 @@ import (
 )
 
 func TestRetagImageForAllVersions(t *testing.T) {
-	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
+	log := kubermaticlog.New(false, kubermaticlog.FormatConsole).Sugar()
 
 	config, err := defaults.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, log)
 	if err != nil {
