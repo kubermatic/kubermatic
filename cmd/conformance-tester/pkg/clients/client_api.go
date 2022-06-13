@@ -33,9 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	projectclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/dex"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -193,7 +191,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 
 	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
 
-	params := &projectclient.CreateClusterParams{
+	params := &project.CreateClusterParams{
 		Context:   ctx,
 		ProjectID: c.opts.KubermaticProject,
 		DC:        c.opts.Seed.Name,
@@ -222,7 +220,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	}
 
 	// fetch all existing SSH keys
-	listKeysBody := &projectclient.ListSSHKeysParams{
+	listKeysBody := &project.ListSSHKeysParams{
 		Context:   ctx,
 		ProjectID: c.opts.KubermaticProject,
 	}
@@ -240,7 +238,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 
 	// assign all keys to the new cluster
 	for _, keyID := range keyIDs {
-		assignKeyBody := &projectclient.AssignSSHKeyToClusterParams{
+		assignKeyBody := &project.AssignSSHKeyToClusterParams{
 			Context:   ctx,
 			ProjectID: c.opts.KubermaticProject,
 			DC:        c.opts.Seed.Name,
@@ -259,7 +257,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 }
 
 func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
+	nodeDeploymentGetParams := &project.ListNodeDeploymentsParams{
 		Context:   ctx,
 		ProjectID: c.opts.KubermaticProject,
 		ClusterID: cluster.Name,
@@ -288,7 +286,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	}
 
 	log.Info("Preparing NodeDeployments")
-	var nodeDeployments []apimodels.NodeDeployment
+	var nodeDeployments []models.NodeDeployment
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
 		var err error
 		nodeDeployments, err = scenario.NodeDeployments(ctx, nodeCount, c.opts.Secrets)
@@ -303,7 +301,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 
 	log.Info("Creating NodeDeployments…")
 	for _, nd := range nodeDeployments {
-		params := &projectclient.CreateNodeDeploymentParams{
+		params := &project.CreateNodeDeploymentParams{
 			Context:   ctx,
 			ProjectID: c.opts.KubermaticProject,
 			ClusterID: cluster.Name,
@@ -360,7 +358,7 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 		// Issue Delete call
 		log.With("cluster", clusterList.Items[0].Name).Info("Deleting user cluster now...")
 
-		deleteParms := &projectclient.DeleteClusterParams{
+		deleteParms := &project.DeleteClusterParams{
 			Context:   ctx,
 			ProjectID: c.opts.KubermaticProject,
 			ClusterID: clusterList.Items[0].Name,

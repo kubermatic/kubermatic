@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
-	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -310,7 +309,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32Ptr(0644),
 						},
 					},
 				}},
@@ -322,7 +321,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32Ptr(0600),
 						},
 					},
 				},
@@ -336,7 +335,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32Ptr(0600),
 						},
 					},
 				}},
@@ -360,7 +359,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32Ptr(0644),
 						},
 					},
 				}},
@@ -372,7 +371,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32Ptr(0600),
 						},
 					},
 				},
@@ -386,7 +385,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32Ptr(0600),
 						},
 					},
 				}},

@@ -42,7 +42,6 @@ import (
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -196,7 +195,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 
 	accessLog := []*envoyaccesslogv3.AccessLog{
 		{
-			Name: wellknown.FileAccessLog,
+			Name: envoywellknown.FileAccessLog,
 			ConfigType: &envoyaccesslogv3.AccessLog_TypedConfig{
 				TypedConfig: stdoutAccessLog,
 			},
@@ -331,7 +330,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 		AccessLog: makeAccessLog(),
 		HttpFilters: []*envoyhttpconnectionmanagerv3.HttpFilter{
 			{
-				Name: wellknown.Router,
+				Name: envoywellknown.Router,
 			},
 		},
 		Http2ProtocolOptions: &envoycorev3.Http2ProtocolOptions{

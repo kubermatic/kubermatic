@@ -39,9 +39,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	clock "k8s.io/utils/clock"
+	clocktesting "k8s.io/utils/clock/testing"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -422,7 +423,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			cluster := genTestCluster()
 			backupConfig := genBackupConfig(cluster, "testbackup")
 
-			clock := clock.NewFakeClock(tc.currentTime.UTC())
+			clock := clocktesting.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Spec.Schedule = tc.schedule
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: tc.creationTime})
@@ -618,7 +619,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			cluster := genTestCluster()
 			backupConfig := genBackupConfig(cluster, "testbackup")
 
-			clock := clock.NewFakeClock(tc.currentTime.UTC())
+			clock := clocktesting.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
@@ -931,7 +932,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			cluster := genTestCluster()
 			backupConfig := genBackupConfig(cluster, "testbackup")
 
-			clock := clock.NewFakeClock(tc.currentTime.UTC())
+			clock := clocktesting.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Spec.Schedule = "xxx" // must be non-empty
 			backupConfig.Spec.Keep = intPtr(tc.keep)
@@ -1201,7 +1202,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			cluster := genTestCluster()
 			backupConfig := genBackupConfig(cluster, "testbackup")
 
-			clock := clock.NewFakeClock(tc.currentTime.UTC())
+			clock := clocktesting.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
@@ -1498,7 +1499,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			cluster := genTestCluster()
 			backupConfig := genBackupConfig(cluster, "testbackup")
 
-			clock := clock.NewFakeClock(tc.currentTime.UTC())
+			clock := clocktesting.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
@@ -1643,7 +1644,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				scheme:   scheme.Scheme,
 				recorder: record.NewFakeRecorder(10),
-				clock:    clock.NewFakeClock(time.Unix(60, 0).UTC()),
+				clock:    clocktesting.NewFakeClock(time.Unix(60, 0).UTC()),
 				caBundle: certificates.NewFakeCABundle(),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return test.GenTestSeed(addSeedDestinations), nil

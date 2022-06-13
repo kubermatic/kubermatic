@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -57,6 +58,9 @@ func main() {
 	ctx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
 		Namespace: metav1.NamespaceSystem,
 		NewCache:  usersshkeys.NewCacheFunc(),
 	})

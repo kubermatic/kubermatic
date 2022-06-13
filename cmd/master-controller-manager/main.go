@@ -148,6 +148,9 @@ func main() {
 		electionName += "-" + runOpts.workerName
 	}
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
 		LeaderElection:          runOpts.enableLeaderElection,
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,

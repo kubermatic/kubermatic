@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/util/podutils"
@@ -151,14 +150,14 @@ func GetClientsOrDie() (ctrlruntimeclient.Client, rest.Interface, *rest.Config) 
 // GetClients returns the clients used for testing or an error if something
 // goes wrong during the clients creation.
 func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error) {
-	scheme := runtime.NewScheme()
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	sc := runtime.NewScheme()
+	if err := scheme.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
-	if err := kubermaticv1.AddToScheme(scheme); err != nil {
+	if err := kubermaticv1.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
-	if err := constrainttemplatev1.AddToScheme(scheme); err != nil {
+	if err := constrainttemplatev1.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -167,17 +166,17 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
 	}
-	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, scheme)
+	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, sc)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get pod GVK: %w", err)
 	}
-	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(scheme))
+	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(sc))
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create pod rest client: %w", err)
 	}
 	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
-		Scheme: scheme,
+		Scheme: sc,
 	})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create client: %w", err)

@@ -29207,12 +29207,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name is unique within a namespace to reference a secret resource.\n+optional",
+          "description": "name is unique within a namespace to reference a secret resource.\n+optional",
           "type": "string",
           "x-go-name": "Name"
         },
         "namespace": {
-          "description": "Namespace defines the space within which the secret name must be unique.\n+optional",
+          "description": "namespace defines the space within which the secret name must be unique.\n+optional",
           "type": "string",
           "x-go-name": "Namespace"
         }

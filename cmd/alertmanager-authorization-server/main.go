@@ -42,6 +42,7 @@ import (
 	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 var (
@@ -233,7 +234,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create cache", zap.Error(err))
 	}
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 	go func() {
 		if err := cache.Start(ctx); err != nil {
 			log.Fatalw("failed to start cache", zap.Error(err))
