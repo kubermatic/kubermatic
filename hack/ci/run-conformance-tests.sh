@@ -108,7 +108,8 @@ numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
 # copy conformance junit into artifacts to process it in Prow
 function copy_junit {
     echodate "Copying conformance results to ${ARTIFACTS}"
-    cp ${ARTIFACTS}/conformance/* ${ARTIFACTS}/
+    cp -r ${ARTIFACTS}/conformance/*.xml ${ARTIFACTS}/
+    cp -r ${ARTIFACTS}/conformance/*/*/*.xml ${ARTIFACTS}/
 }
 appendTrap copy_junit EXIT
 
