@@ -30,7 +30,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	k8cv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -42,13 +42,37 @@ type getResourceQuota struct {
 	Name string `json:"name"`
 }
 
+// swagger:parameters listResourceQuotas
+type listResourceQuotas struct {
+	// in: query
+	// required: false
+	SubjectName string `json:"subject_name"`
+
+	// in: query
+	// required: false
+	SubjectKind string `json:"subject_kind"`
+}
+
 // swagger:parameters getResourceQuota
 type createResourceQuota struct {
 	// in: body
+	// required: true
 	Body struct {
-		subject v1.Subject
-		quota   v1.ResourceDetails
+		Subject k8cv1.Subject
+		Quota   k8cv1.ResourceDetails
 	}
+}
+
+func (m createResourceQuota) Validate() error {
+	if m.Body.Subject.Name == "" {
+		return utilerrors.NewBadRequest("subject's name cannot be empty")
+	}
+
+	if m.Body.Subject.Kind == "" {
+		return utilerrors.NewBadRequest("subject's kind cannot be empty")
+	}
+
+	return nil
 }
 
 func DecodeGetResourceQuotaReq(r *http.Request) (interface{}, error) {
@@ -63,7 +87,7 @@ func DecodeGetResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (interface{}, error) {
+func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*k8cv1.ResourceQuota, error) {
 	req, ok := request.(getResourceQuota)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -74,4 +98,38 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, err
 	}
 	return resourceQuota, nil
+}
+
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*k8cv1.ResourceQuotaList, error) {
+	req, ok := request.(listResourceQuotas)
+	if !ok {
+		return nil, utilerrors.NewBadRequest("invalid request")
+	}
+
+	// TODO: add some tests
+	labelSet := make(map[string]string)
+	if req.SubjectKind != "" {
+		labelSet[k8cv1.ResourceQuotaSubjectKindLabelKey] = req.SubjectKind
+	}
+	if req.SubjectName != "" {
+		labelSet[k8cv1.ResourceQuotaSubjectNameLabelKey] = req.SubjectName
+	}
+
+	return provider.List(ctx, labelSet)
+}
+
+func CreateResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	req, ok := request.(createResourceQuota)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+
+	if err := req.Validate(); err != nil {
+		return utilerrors.NewBadRequest(err.Error())
+	}
+
+	if err := provider.Create(ctx, req.Body.Subject, req.Body.Quota); err != nil {
+		return err
+	}
+	return nil
 }

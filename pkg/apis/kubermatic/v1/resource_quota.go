@@ -21,6 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ResourceQuotaSubjectNameLabelKey = "subject-name"
+	ResourceQuotaSubjectKindLabelKey = "subject-kind"
+)
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

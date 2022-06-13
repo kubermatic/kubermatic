@@ -2,13 +2,13 @@ package kubernetes
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,22 +38,30 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermat
 	return resourceQuota, nil
 }
 
-func (p *ResourceQuotaProvider) List(ctx context.Context) (*kubermaticv1.ResourceQuotaList, error) {
+func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
 	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
-	if err := p.privilegedClient.List(ctx, resourceQuotaList, ctrlruntimeclient.InNamespace(ResourceQuotaNamespace)); err != nil {
+
+	selector := labels.SelectorFromSet(labelSet)
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace:     ResourceQuotaNamespace,
+		LabelSelector: selector,
+	}
+	if err := p.privilegedClient.List(ctx, resourceQuotaList, listOpts); err != nil {
 		return nil, err
 	}
 	return resourceQuotaList, nil
 }
 
 func (p *ResourceQuotaProvider) Create(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error {
-	name := sha256.Sum256([]byte(fmt.Sprintf("%s-%s", subject.Kind, subject.Name)))
 	rq := &kubermaticv1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
-			Labels:      map[string]string{},
-			Namespace:   ResourceQuotaNamespace,
-			Name:        fmt.Sprintf("%x", name),
+			Labels: map[string]string{
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: subject.Name,
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
+			},
+			Namespace: ResourceQuotaNamespace,
+			Name:      fmt.Sprintf("%s-%s", subject.Kind, subject.Name),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: subject,
