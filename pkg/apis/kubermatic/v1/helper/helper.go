@@ -59,6 +59,39 @@ func UpdateClusterStatus(ctx context.Context, client ctrlruntimeclient.Client, c
 	})
 }
 
+// UpdateExternalClusterStatus will attempt to patch the external cluster status
+// of the given external cluster.
+func UpdateExternalClusterStatus(ctx context.Context,
+	client ctrlruntimeclient.Client,
+	externalCluster *kubermaticv1.ExternalCluster,
+	phase kubermaticv1.ExternalClusterPhase,
+	phaseMsg string,
+) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(externalCluster)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the external cluster
+		if err := client.Get(ctx, key, externalCluster); err != nil {
+			return err
+		}
+
+		// modify it
+		original := externalCluster.DeepCopy()
+		externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
+			Phase:   phase,
+			Message: phaseMsg,
+		}
+
+		// save some work
+		if reflect.DeepEqual(original.Status, externalCluster.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
 // ClusterReconcileWrapper is a wrapper that should be used around
 // any cluster reconciliaton. It:
 // * Checks if the cluster is paused
