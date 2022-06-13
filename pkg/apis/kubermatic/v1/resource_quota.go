@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	ResourceQuotaNamespace           = "kubermatic"
 	ResourceQuotaSubjectNameLabelKey = "subject-name"
 	ResourceQuotaSubjectKindLabelKey = "subject-kind"
 )

@@ -138,6 +138,22 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/admin/quotas/{name}").
 		Handler(r.getResourceQuota())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/quotas").
+		Handler(r.listResourceQuota())
+
+	mux.Methods(http.MethodPost).
+		Path("/admin/quotas").
+		Handler(r.createResourceQuota())
+
+	mux.Methods(http.MethodPut).
+		Path("/admin/quotas/{name}").
+		Handler(r.updateResourceQuota())
+
+	mux.Methods(http.MethodDelete).
+		Path("/admin/quotas/{name}").
+		Handler(r.deleteResourceQuota())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -755,7 +771,79 @@ func (r Routing) deleteMeteringReport() http.Handler {
 
 //swagger:route GET /api/v1/admin/quotas/{name} resource quota admin getResourceQuota
 //
-//    Get a specific Resource Quota.
+//    Gets a specific Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: ResourceQuota
+//      401: empty
+//      403: empty
+func (r Routing) getResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeResourceQuotasReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v1/admin/quotas resource quota admin listResourceQuotas
+//
+//    Gets a Resource Quota list.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []ResourceQuota
+//      401: empty
+//      403: empty
+func (r Routing) listResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeListResourceQuotasReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route POST /api/v1/admin/quotas resource quota admin createResourceQuota
+//
+//    Creates a new Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) createResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeCreateResourceQuotasReq,
+		SetStatusCreatedHeader(EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route PUT /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas
+//
+//    Updates an existing Resource Quota.
 //
 //    Produces:
 //    - application/json
@@ -765,19 +853,38 @@ func (r Routing) deleteMeteringReport() http.Handler {
 //      200: empty
 //      401: empty
 //      403: empty
-func (r Routing) getResourceQuota() http.Handler {
+func (r Routing) updateResourceQuota() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeGetResourceQuotasReq,
+		)(admin.UpdateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeUpdateResourceQuotasReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route GET /api/v1/admin/quotas resource quota admin listResourceQuotas
-//swagger:route POST /api/v1/admin/quotas resource quota admin createResourceQuotas
-//swagger:route PUT /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas
-//swagger:route DELETE /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas
+//swagger:route DELETE /api/v1/admin/quotas/{name} resource quota admin deleteResourceQuotas
+//
+//    Removes an existing Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeResourceQuotasReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}

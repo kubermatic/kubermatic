@@ -26,6 +26,9 @@ package resourcequotas
 
 import (
 	"context"
+	"encoding/json"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -46,11 +49,11 @@ type getResourceQuota struct {
 type listResourceQuotas struct {
 	// in: query
 	// required: false
-	SubjectName string `json:"subject_name"`
+	SubjectName string `json:"subject_name,omitempty"`
 
 	// in: query
 	// required: false
-	SubjectKind string `json:"subject_kind"`
+	SubjectKind string `json:"subject_kind,omitempty"`
 }
 
 // swagger:parameters getResourceQuota
@@ -60,6 +63,19 @@ type createResourceQuota struct {
 	Body struct {
 		Subject k8cv1.Subject
 		Quota   k8cv1.ResourceDetails
+	}
+}
+
+type updateResourceQuota struct {
+	// in: path
+	// required: true
+	Name string `json:"name"`
+
+	// in: body
+	Body struct {
+		CPU     *resource.Quantity `json:"cpu,omitempty"`
+		Memory  *resource.Quantity `json:"memory,omitempty"`
+		Storage *resource.Quantity `json:"storage,omitempty"`
 	}
 }
 
@@ -75,7 +91,7 @@ func (m createResourceQuota) Validate() error {
 	return nil
 }
 
-func DecodeGetResourceQuotaReq(r *http.Request) (interface{}, error) {
+func DecodeResourceQuotaReq(r *http.Request) (interface{}, error) {
 	var req getResourceQuota
 
 	req.Name = mux.Vars(r)["name"]
@@ -87,7 +103,42 @@ func DecodeGetResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*k8cv1.ResourceQuota, error) {
+func DecodeListResourceQuotaReq(r *http.Request) (interface{}, error) {
+	var req listResourceQuotas
+
+	req.SubjectName = r.URL.Query().Get("subjectName")
+	req.SubjectKind = r.URL.Query().Get("subjectKind")
+
+	return req, nil
+}
+
+func DecodeCreateResourceQuotaReq(r *http.Request) (interface{}, error) {
+	var req createResourceQuota
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func DecodeUpdateResourceQuotaReq(r *http.Request) (interface{}, error) {
+	var req updateResourceQuota
+
+	req.Name = mux.Vars(r)["name"]
+
+	if req.Name == "" {
+		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
 	req, ok := request.(getResourceQuota)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -97,16 +148,23 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 	if err != nil {
 		return nil, err
 	}
-	return resourceQuota, nil
+
+	resp := &apiv1.ResourceQuota{
+		Name:   resourceQuota.Name,
+		Spec:   resourceQuota.Spec,
+		Status: resourceQuota.Status,
+	}
+
+	return resp, nil
 }
 
-func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*k8cv1.ResourceQuotaList, error) {
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
 	req, ok := request.(listResourceQuotas)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
-	// TODO: add some tests
+	// TODO: remember to test this part
 	labelSet := make(map[string]string)
 	if req.SubjectKind != "" {
 		labelSet[k8cv1.ResourceQuotaSubjectKindLabelKey] = req.SubjectKind
@@ -115,10 +173,24 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		labelSet[k8cv1.ResourceQuotaSubjectNameLabelKey] = req.SubjectName
 	}
 
-	return provider.List(ctx, labelSet)
+	resourceQuotaList, err := provider.List(ctx, labelSet)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]apiv1.ResourceQuota, len(resourceQuotaList.Items))
+	for idx, rq := range resourceQuotaList.Items {
+		resp[idx] = apiv1.ResourceQuota{
+			Name:   rq.Name,
+			Spec:   rq.Spec,
+			Status: rq.Status,
+		}
+	}
+
+	return resp, nil
 }
 
-func CreateResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+func CreateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
 	req, ok := request.(createResourceQuota)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -129,6 +201,36 @@ func CreateResourceQuotas(ctx context.Context, request interface{}, provider pro
 	}
 
 	if err := provider.Create(ctx, req.Body.Subject, req.Body.Quota); err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	req, ok := request.(updateResourceQuota)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+
+	newQuota := k8cv1.ResourceDetails{
+		CPU:     req.Body.CPU,
+		Memory:  req.Body.Memory,
+		Storage: req.Body.Storage,
+	}
+
+	if err := provider.Update(ctx, req.Name, newQuota); err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	req, ok := request.(getResourceQuota)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+
+	if err := provider.Delete(ctx, req.Name); err != nil {
 		return err
 	}
 	return nil

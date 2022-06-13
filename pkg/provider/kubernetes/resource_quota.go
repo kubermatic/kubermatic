@@ -19,8 +19,6 @@ type ResourceQuotaProvider struct {
 
 var _ provider.ResourceQuotaProvider = &ResourceQuotaProvider{}
 
-const ResourceQuotaNamespace = "kubermatic"
-
 func NewResourceQuotaProvider(privilegedClient ctrlruntimeclient.Client) *ResourceQuotaProvider {
 	return &ResourceQuotaProvider{
 		privilegedClient: privilegedClient,
@@ -31,7 +29,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermat
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := p.privilegedClient.Get(ctx, types.NamespacedName{
 		Name:      name,
-		Namespace: ResourceQuotaNamespace,
+		Namespace: kubermaticv1.ResourceQuotaNamespace,
 	}, resourceQuota); err != nil {
 		return nil, err
 	}
@@ -43,7 +41,7 @@ func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]st
 
 	selector := labels.SelectorFromSet(labelSet)
 	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace:     ResourceQuotaNamespace,
+		Namespace:     kubermaticv1.ResourceQuotaNamespace,
 		LabelSelector: selector,
 	}
 	if err := p.privilegedClient.List(ctx, resourceQuotaList, listOpts); err != nil {
@@ -60,7 +58,7 @@ func (p *ResourceQuotaProvider) Create(ctx context.Context, subject kubermaticv1
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: subject.Name,
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
 			},
-			Namespace: ResourceQuotaNamespace,
+			Namespace: kubermaticv1.ResourceQuotaNamespace,
 			Name:      fmt.Sprintf("%s-%s", subject.Kind, subject.Name),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
@@ -75,10 +73,18 @@ func (p *ResourceQuotaProvider) Create(ctx context.Context, subject kubermaticv1
 	return nil
 }
 
-func (p *ResourceQuotaProvider) Update(ctx context.Context, resourceQuota *kubermaticv1.ResourceQuota) error {
-	if err := p.privilegedClient.Update(ctx, resourceQuota); err != nil {
+func (p *ResourceQuotaProvider) Update(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error {
+	rq, err := p.Get(ctx, name)
+	if err != nil {
 		return err
 	}
+
+	rq.Spec.Quota = newQuota
+
+	if err := p.privilegedClient.Update(ctx, rq); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -87,8 +93,10 @@ func (p *ResourceQuotaProvider) Delete(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
+
 	if err := p.privilegedClient.Delete(ctx, rq); err != nil {
 		return err
 	}
+
 	return nil
 }
