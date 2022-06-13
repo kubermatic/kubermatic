@@ -62,6 +62,19 @@ spec:
                 items:
                   type: string
                 type: array
+              applicationSettings:
+                description: 'Optional: ApplicationSettings contains the settings
+                  relative to the application feature.'
+                properties:
+                  cacheSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: CacheSize is the size of the cache used to download
+                      application's sources.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
               auditLogging:
                 description: 'Optional: AuditLogging configures Kubernetes API audit
                   logging (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/)

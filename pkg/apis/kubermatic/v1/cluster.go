@@ -253,6 +253,9 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
+	// Optional: ApplicationSettings contains the settings relative to the application feature.
+	ApplicationSettings *ApplicationSettings `json:"applicationSettings,omitempty"`
+
 	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
 	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
@@ -689,6 +692,11 @@ type MLASettings struct {
 	LoggingResources *corev1.ResourceRequirements `json:"loggingResources,omitempty"`
 	// MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.
 	MonitoringReplicas *int32 `json:"monitoringReplicas,omitempty"`
+}
+
+type ApplicationSettings struct {
+	// CacheSize is the size of the cache used to download application's sources.
+	CacheSize *resource.Quantity `json:"cacheSize,omitempty"`
 }
 
 type ComponentSettings struct {
