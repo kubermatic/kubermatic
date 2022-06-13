@@ -72,7 +72,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
 	default:
 		// TODO skip for now, when all providers are added, throw error
-		return nil, fmt.Errorf("provider %q not supported for resource quotas", config.CloudProvider)
+		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
 	}
 
 	return quotaReq, err
