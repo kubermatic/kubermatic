@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +46,7 @@ const (
 func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
 	return &AzureClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           makeClusterName(),
+			name:           utilcluster.MakeClusterName(),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
@@ -178,10 +179,4 @@ func (c *AzureCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AzureClou
 		spec.RouteTableName,
 		spec.SecurityGroup,
 	))
-}
-
-func makeClusterName() string {
-	alpha := "abcdefghijklmnopqrstuvwxyz"
-	r := rand.Intn(len(alpha))
-	return fmt.Sprintf("%c%s", alpha[r], rand.String(9))
 }
