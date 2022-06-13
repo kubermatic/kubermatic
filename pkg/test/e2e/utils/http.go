@@ -56,6 +56,14 @@ func SetupRetryParams(t *testing.T, p requestParameterHolder, backoff Backoff, i
 	})
 }
 
+// SetupRetryParamsWithTimeout configure retries for HTTP calls based on backoff
+// parameters. Allows for setting the request timeout.
+func SetupRetryParamsWithTimeout(t *testing.T, p requestParameterHolder, backoff Backoff, timeout time.Duration, ignoredStatusCodes ...int) {
+	p.SetHTTPClient(&http.Client{
+		Transport: NewRoundTripperWithRetries(t, timeout, backoff, ignoredStatusCodes...),
+	})
+}
+
 func NewRoundTripperWithRetries(t *testing.T, requestTimeout time.Duration, backoff Backoff, ignoredStatusCodes ...int) http.RoundTripper {
 	return &retryRoundTripper{
 		Backoff:            backoff,

@@ -1832,11 +1832,11 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 		Credential: &credential,
 		Location:   &location,
 	}
-	SetupRetryParams(r.test, params, Backoff{
+	SetupRetryParamsWithTimeout(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
-	})
+	}, 30*time.Second)
 
 	sizesResponse, err := r.client.Azure.ListAzureSizes(params, r.bearerToken)
 	if err != nil {
