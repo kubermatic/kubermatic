@@ -3,8 +3,11 @@ package admin
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-kit/kit/endpoint"
+
 	"k8c.io/kubermatic/v2/pkg/provider"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

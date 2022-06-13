@@ -1285,4 +1285,8 @@ type SeedProvider interface {
 
 type ResourceQuotaProvider interface {
 	Get(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error)
+	List(ctx context.Context) (*kubermaticv1.ResourceQuotaList, error)
+	Create(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error
+	Update(ctx context.Context, resourceQuota *kubermaticv1.ResourceQuota) error
+	Delete(ctx context.Context, name string) error
 }

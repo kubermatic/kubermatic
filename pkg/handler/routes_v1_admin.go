@@ -776,3 +776,8 @@ func (r Routing) getResourceQuota() http.Handler {
 		r.defaultServerOptions()...,
 	)
 }
+
+//swagger:route GET /api/v1/admin/quotas resource quota admin listResourceQuotas
+//swagger:route POST /api/v1/admin/quotas resource quota admin createResourceQuotas
+//swagger:route PUT /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas
+//swagger:route DELETE /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas

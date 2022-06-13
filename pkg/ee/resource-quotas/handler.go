@@ -26,11 +26,13 @@ package resourcequotas
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gorilla/mux"
+
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	"net/http"
 )
 
 // swagger:parameters getResourceQuota
