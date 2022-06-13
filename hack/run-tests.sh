@@ -22,7 +22,7 @@ source hack/lib.sh
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
 # TODO(embik): remove this
-go install github.com/jstemmer/go-junit-report@v1.0.0
+go install github.com/jstemmer/go-junit-report/v2@v2.0.0-beta1
 
 # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
 #if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
