@@ -67,10 +67,10 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationStatus stores status information about a KubermaticConfiguration.
 type KubermaticConfigurationStatus struct {
-	// KubermaticVersion current kubermatic version.
-	KubermaticVersion string `json:"kubermaticVersion"`
-	// KubermaticEdition current kubermatic edition , i.e. Community Edition or Enterprise Edition.
-	KubermaticEdition string `json:"kubermaticEdition"`
+	// KubermaticVersion current Kubermatic Version.
+	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
+	// KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
+	KubermaticEdition string `json:"kubermaticEdition,omitempty"`
 }
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.

@@ -598,7 +598,7 @@ spec:
         cpu: 50m
         memory: 64Mi
 status:
-  # KubermaticEdition current kubermatic edition , i.e. Community Edition or Enterprise Edition.
+  # KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
   kubermaticEdition: ""
-  # KubermaticVersion current kubermatic version.
+  # KubermaticVersion current Kubermatic Version.
   kubermaticVersion: ""
