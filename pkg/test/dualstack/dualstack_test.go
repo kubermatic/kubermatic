@@ -106,7 +106,7 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 
 		for _, node := range nodes.Items {
 			if len(node.Spec.PodCIDRs) > 0 {
-				// in case of Cilium we have 0 pod CIDRs as Cilium uses its own pod IPAM
+				// in case of Cilium we can have 0 pod CIDRs as Cilium uses its own node IPAM
 				validate(t, fmt.Sprintf("node '%s' pod CIDRs", node.Name), ipFamily, node.Spec.PodCIDRs)
 			}
 		}

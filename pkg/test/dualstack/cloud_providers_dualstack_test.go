@@ -182,7 +182,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "hetzner",
 			osNames: []string{
 				"ubuntu",
-				// "centos", // cilium is not working on centos because of old kernel version
 				"rockylinux",
 			},
 			cni:                 "cilium",
@@ -194,7 +193,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "hetzner",
 			osNames: []string{
 				"ubuntu",
-				"centos",
 				"rockylinux",
 			},
 			cni:                 "canal",
@@ -516,7 +514,7 @@ func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params crea
 				}
 				t.Log(string(errData))
 			}
-			t.Logf("failed to create machine deployment: %s", err.Error())
+			t.Logf("failed to create machine deployment: %v", err)
 			return false, nil
 		}
 		return true, nil
