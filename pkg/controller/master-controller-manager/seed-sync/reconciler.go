@@ -126,6 +126,14 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
+	nsCreators := []reconciling.NamedNamespaceCreatorGetter{
+		namespaceCreator(seed.Namespace),
+	}
+
+	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile namespace: %w", err)
+	}
+
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
 		seedCreator(seed),
 	}

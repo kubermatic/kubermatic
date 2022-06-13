@@ -72,7 +72,7 @@ type Reconciler struct {
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request.NamespacedName)
+	log := r.log.With("seed", request.Name)
 
 	err := r.reconcile(ctx, log, request.Name)
 	if err != nil {
