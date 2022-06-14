@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,41 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package edition
 
-type Type int
+/*
+Package kcstatuscontroller contains a controller that is responsible
+for managing the basic parts of the KubermaticConfigurationStatus:
 
-const (
-	CE Type = iota
-	EE
-)
+  * status.kubermaticVersion
+  * status.kubermaticEdition
 
-func (e Type) String() string {
-	switch e {
-	case CE:
-		return "Community Edition"
-	case EE:
-		return "Enterprise Edition"
-	default:
-		return ""
-	}
-}
-
-func (e Type) ShortString() string {
-	switch e {
-	case CE:
-		return "CE"
-	case EE:
-		return "EE"
-	default:
-		return ""
-	}
-}
-
-func (e Type) IsEE() bool {
-	return e == EE
-}
-
-func (e Type) IsCE() bool {
-	return e == CE
-}
+*/
+package kcstatuscontroller
