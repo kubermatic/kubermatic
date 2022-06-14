@@ -688,7 +688,6 @@ func TestHandle(t *testing.T) {
 		Build()
 
 	seedGetter := test.NewSeedGetter(&seed)
-	seedClientGetter := test.NewSeedClientGetter(seedClient)
 	configGetter := test.NewConfigGetter(&config)
 
 	for _, tt := range tests {
@@ -697,7 +696,6 @@ func TestHandle(t *testing.T) {
 				features:                  tt.features,
 				client:                    seedClient,
 				seedGetter:                seedGetter,
-				seedClientGetter:          seedClientGetter,
 				configGetter:              configGetter,
 				disableProviderValidation: true,
 			}

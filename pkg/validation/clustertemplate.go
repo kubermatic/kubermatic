@@ -26,13 +26,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource. For the moment,
 // this only validates ClusterTemplates not used for default cluster templates in Seeds because
 // those are a special case.
-func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, seedClient ctrlruntimeclient.Client, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	// we only validate ClusterTemplates scoped to projects
@@ -54,26 +53,12 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 		return allErrs
 	}
 
-	// validate SSH key presence in project
+	// validate SSH keys having an ID that is not empty
 	if template.UserSSHKeys != nil {
 		for i, key := range template.UserSSHKeys {
 			path := parentFieldPath.Child("userSSHKeys").Index(i)
 			if key.ID == "" {
 				allErrs = append(allErrs, field.Invalid(path.Child("id"), key.ID, "SSH key ID needs to be set"))
-			} else {
-				userKey := &kubermaticv1.UserSSHKey{}
-				if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: key.ID}, userKey); err != nil {
-					allErrs = append(allErrs, field.NotFound(path, key))
-				}
-
-				if userKey.Spec.Project != projectId {
-					allErrs = append(allErrs, field.Forbidden(path,
-						fmt.Sprintf(
-							"cannot use SSH key '%s', project is '%s' (template is in project '%s')",
-							userKey.Name, userKey.Spec.Project, projectId,
-						),
-					))
-				}
 			}
 		}
 	}

@@ -77,12 +77,6 @@ func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
 	}
 }
 
-func NewSeedClientGetter(seedClient ctrlruntimeclient.Client) provider.SeedClientGetter {
-	return func(_ *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-		return seedClient, nil
-	}
-}
-
 func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.KubermaticConfigurationGetter {
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	return func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
