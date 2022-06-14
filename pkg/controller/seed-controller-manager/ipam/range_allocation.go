@@ -21,6 +21,8 @@ import (
 	"net"
 	"strings"
 
+	"errors"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -30,15 +32,15 @@ func getUsedIPsFromAddressRanges(addressRanges []string) ([]string, error) {
 	for _, addressRange := range addressRanges {
 		ipRange := strings.SplitN(addressRange, "-", 2)
 		if len(ipRange) != 2 {
-			return nil, fmt.Errorf("wrong ip range format")
+			return nil, errors.New("wrong ip range format")
 		}
 		firstIP := net.ParseIP(ipRange[0])
 		if firstIP == nil {
-			return nil, fmt.Errorf("wrong ip format")
+			return nil, errors.New("wrong ip format")
 		}
 		lastIP := net.ParseIP(ipRange[1])
 		if lastIP == nil {
-			return nil, fmt.Errorf("wrong ip format")
+			return nil, errors.New("wrong ip format")
 		}
 		for ip := firstIP; !ip.Equal(lastIP); ip = incIP(ip) {
 			usedIPs = append(usedIPs, ip.String())
@@ -94,7 +96,7 @@ func findFirstFreeRangesOfPool(poolCIDR string, allocationRange int, dcIPAMPoolU
 	}
 
 	if allocationRange > len(rangeFreeIPs) {
-		return nil, fmt.Errorf("there is no enough free IPs available for pool")
+		return nil, errors.New("there is no enough free IPs available for pool")
 	}
 
 	rangeFreeIPsIterator := 0

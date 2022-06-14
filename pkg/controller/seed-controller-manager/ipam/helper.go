@@ -17,13 +17,14 @@ limitations under the License.
 package ipam
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
 )
 
 var (
-	errIncompatiblePool = fmt.Errorf("pool is incompatible with a current cluster allocation")
+	errIncompatiblePool = errors.New("pool is incompatible with a current cluster allocation")
 )
 
 func ipToInt(ip net.IP) (*big.Int, int) {

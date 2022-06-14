@@ -17,6 +17,7 @@ limitations under the License.
 package ipam
 
 import (
+	"errors"
 	"fmt"
 	"net"
 
@@ -62,10 +63,10 @@ func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsag
 
 	poolPrefix, bits := poolSubnet.Mask.Size()
 	if subnetPrefix < poolPrefix {
-		return "", fmt.Errorf("invalid prefix for subnet")
+		return "", errors.New("invalid prefix for subnet")
 	}
 	if subnetPrefix > bits {
-		return "", fmt.Errorf("invalid prefix for subnet")
+		return "", errors.New("invalid prefix for subnet")
 	}
 
 	_, possibleSubnet, err := net.ParseCIDR(fmt.Sprintf("%s/%d", poolIP.Mask(poolSubnet.Mask), subnetPrefix))
@@ -79,5 +80,5 @@ func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsag
 		}
 	}
 
-	return "", fmt.Errorf("cannot find free subnet")
+	return "", errors.New("cannot find free subnet")
 }
