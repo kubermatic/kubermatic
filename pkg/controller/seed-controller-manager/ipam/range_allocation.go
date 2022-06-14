@@ -17,11 +17,10 @@ limitations under the License.
 package ipam
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
-
-	"errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )

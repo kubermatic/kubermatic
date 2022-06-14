@@ -23,13 +23,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var testScheme = runtime.NewScheme()
