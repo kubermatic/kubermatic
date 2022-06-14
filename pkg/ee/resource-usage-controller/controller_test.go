@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
-			name:    "scenario 3: set proper resource usage from 2 machines",
+			name:    "scenario 3: calculate proper resource usage from 2 machines",
 			cluster: test.GenDefaultCluster(),
 			machines: []*clusterv1alpha1.Machine{
 				genFakeMachine("m1", "5", "5G", "10G"),

@@ -53,29 +53,29 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
 	}
 
-	var quotaReq *ResourceDetails
+	var quotaUsage *ResourceDetails
 	// TODO add all providers
 	switch config.CloudProvider {
 	case types.CloudProviderFake:
-		quotaReq, err = getFakeQuotaRequest(config)
+		quotaUsage, err = getFakeQuotaRequest(config)
 	case types.CloudProviderAWS:
-		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderGoogle:
-		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = getGCPResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderAzure:
-		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = getAzureResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderKubeVirt:
-		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderVsphere:
-		quotaReq, err = getVsphereResourceRequirements(config)
+		quotaUsage, err = getVsphereResourceRequirements(config)
 	case types.CloudProviderOpenstack:
-		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
 	}
 
-	return quotaReq, err
+	return quotaUsage, err
 }
 
 func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {

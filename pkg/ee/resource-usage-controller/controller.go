@@ -102,7 +102,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	log := r.log.With("resource", request)
-	log.Debug("Reconciling")
+	log.Debug("reconciling")
 
 	machines := &clusterv1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
