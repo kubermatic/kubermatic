@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -73,6 +74,12 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
 	return func() (*kubermaticv1.Seed, error) {
 		return seed, nil
+	}
+}
+
+func NewSeedClientGetter(seedClient ctrlruntimeclient.Client) provider.SeedClientGetter {
+	return func(_ *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+		return seedClient, nil
 	}
 }
 

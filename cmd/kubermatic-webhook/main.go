@@ -155,7 +155,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup ClusterTemplate webhooks
 
-	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, configGetter, options.featureGates, caPool)
+	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, seedClientGetter, configGetter, options.featureGates, caPool)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ClusterTemplate{}).WithValidator(clusterTemplateValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
 	}

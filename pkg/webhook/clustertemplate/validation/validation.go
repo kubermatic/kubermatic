@@ -39,11 +39,12 @@ var _ admission.CustomValidator = &validator{}
 
 // validator for validating Kubermatic ClusterTemplate CRs.
 type validator struct {
-	features     features.FeatureGate
-	client       ctrlruntimeclient.Client
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
-	caBundle     *x509.CertPool
+	features         features.FeatureGate
+	client           ctrlruntimeclient.Client
+	seedGetter       provider.SeedGetter
+	seedClientGetter provider.SeedClientGetter
+	configGetter     provider.KubermaticConfigurationGetter
+	caBundle         *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
 	// provide would phone home to validate dummy test credentials
@@ -51,13 +52,14 @@ type validator struct {
 }
 
 // NewValidator returns a new cluster template validator.
-func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
 	return &validator{
-		client:       client,
-		features:     features,
-		seedGetter:   seedGetter,
-		configGetter: configGetter,
-		caBundle:     caBundle,
+		client:           client,
+		features:         features,
+		seedGetter:       seedGetter,
+		seedClientGetter: seedClientGetter,
+		configGetter:     configGetter,
+		caBundle:         caBundle,
 	}
 }
 
@@ -83,9 +85,9 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 
 	scope, ok := template.Labels["scope"]
 
-	// we only fully validate the given cluster spec if this is not a seed-scoped template
+	// we only validate ClusterTemplates that are not labeled as scope=seed
 	if !ok || scope != kubermaticv1.SeedTemplateScope {
-		datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
+		datacenter, cloudProvider, client, err := v.buildValidationDependencies(ctx, &template.Spec)
 		if err != nil {
 			return err
 		}
@@ -97,35 +99,37 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 
 		versionManager := version.NewFromConfiguration(config)
 
-		errs = validation.ValidateNewClusterSpec(ctx, &template.Spec, datacenter, cloudProvider, versionManager, v.features, nil)
+		errs = validation.ValidateClusterTemplate(ctx, template, datacenter, cloudProvider, v.features, versionManager, client, nil)
 	}
 
 	return errs.ToAggregate()
 }
 
-func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.ClusterSpec) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.ClusterSpec) (*kubermaticv1.Datacenter, provider.CloudProvider, ctrlruntimeclient.Client, *field.Error) {
 	seed, err := v.seedGetter()
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+		return nil, nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
 	}
 
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(c, seed)
 	if fieldErr != nil {
-		return nil, nil, fieldErr
+		return nil, nil, nil, fieldErr
 	}
 
+	seedClient, err := v.seedClientGetter(seed)
+
 	if v.disableProviderValidation {
-		return datacenter, nil, nil
+		return datacenter, nil, seedClient, nil
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 
-	return datacenter, cloudProvider, nil
+	return datacenter, cloudProvider, seedClient, nil
 }

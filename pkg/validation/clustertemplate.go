@@ -17,22 +17,72 @@ limitations under the License.
 package validation
 
 import (
+	"context"
+	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ValidateClusterTemplate(template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versions []*version.Version, parentFieldPath *field.Path) field.ErrorList {
+// ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource. For the moment,
+// this only validates ClusterTemplates not used for default cluster templates in Seeds because
+// those are a special case.
+func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, seedClient ctrlruntimeclient.Client, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// TODO(embik): validate preset reference
+	// TODO(embik): validate project reference
+	scope, ok := template.Labels["scope"]
 
-	// TODO(embik): validate SSH key presence in project
+	// we only validate ClusterTemplates scoped to projects
+	if !ok || scope != kubermaticv1.ProjectClusterTemplateScope {
+		allErrs = append(allErrs, field.Required(
+			parentFieldPath.Child("metadata", "labels", "scope"),
+			fmt.Sprintf("label 'scope=%s' is required", kubermaticv1.ProjectClusterTemplateScope),
+		))
+		return allErrs
+	}
+
+	projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
+	if !ok || projectId == "" {
+		allErrs = append(allErrs, field.Required(
+			parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
+			fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),
+		))
+		return allErrs
+	}
+
+	// validate SSH key presence in project; only makes sense if a project
+	// was referenced
+	if template.UserSSHKeys != nil {
+		for i, key := range template.UserSSHKeys {
+			path := parentFieldPath.Child("userSSHKeys").Index(i)
+			if key.ID == "" {
+				allErrs = append(allErrs, field.Invalid(path.Child("id"), key.ID, "SSH key ID needs to be set"))
+			} else {
+				userKey := &kubermaticv1.UserSSHKey{}
+				if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: key.ID}, userKey); err != nil {
+					allErrs = append(allErrs, field.NotFound(path, key))
+				}
+
+				if userKey.Spec.Project != projectId {
+					allErrs = append(allErrs, field.Forbidden(path,
+						fmt.Sprintf(
+							"cannot use SSH key '%s', project is '%s' (template is in project '%s')",
+							userKey.Name, userKey.Spec.Project, projectId,
+						),
+					))
+				}
+			}
+		}
+	}
 
 	// validate cluster spec passed in ClusterTemplate
-	if errs := ValidateClusterSpec(&template.Spec, dc, enabledFeatures, versions, parentFieldPath.Child("spec")); len(errs) > 0 {
+	if errs := ValidateNewClusterSpec(ctx, &template.Spec, dc, cloudProvider, versionManager, enabledFeatures, parentFieldPath.Child("spec")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 

@@ -118,6 +118,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -144,6 +145,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -170,6 +172,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -196,6 +199,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -221,6 +225,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "NodePort",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -246,6 +251,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: "ciao",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -271,6 +277,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -300,6 +307,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -329,6 +337,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -358,6 +367,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -387,6 +397,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -417,6 +428,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -447,6 +459,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -477,6 +490,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -508,6 +522,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -539,6 +554,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy:        "NodePort",
 				ExternalCloudProvider: false,
@@ -565,6 +581,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy:        "NodePort",
 				ExternalCloudProvider: true,
@@ -591,6 +608,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -616,6 +634,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -641,6 +660,7 @@ func TestHandle(t *testing.T) {
 				Namespace: "kubermatic",
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
+					"scope":                        "project",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -668,6 +688,7 @@ func TestHandle(t *testing.T) {
 		Build()
 
 	seedGetter := test.NewSeedGetter(&seed)
+	seedClientGetter := test.NewSeedClientGetter(seedClient)
 	configGetter := test.NewConfigGetter(&config)
 
 	for _, tt := range tests {
@@ -676,6 +697,7 @@ func TestHandle(t *testing.T) {
 				features:                  tt.features,
 				client:                    seedClient,
 				seedGetter:                seedGetter,
+				seedClientGetter:          seedClientGetter,
 				configGetter:              configGetter,
 				disableProviderValidation: true,
 			}
