@@ -102,8 +102,12 @@ rules:
   # allow the operator to manage the labels on its own namespace
   - apiGroups: [""]
     resources: [namespaces]
+    verbs: [get, list, watch]
+
+  - apiGroups: [""]
+    resources: [namespaces]
     resourceNames: [{{ .Release.Namespace }}]
-    verbs: [get, list, watch, update, patch]
+    verbs: [update, patch]
 
   # manage cluster-global resources related to KKP
   - apiGroups: [rbac.authorization.k8s.io]
