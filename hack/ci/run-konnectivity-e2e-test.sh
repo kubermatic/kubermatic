@@ -46,6 +46,11 @@ echodate "Successfully got secrets for dev from Vault"
 
 echodate "Running konnectivity tests..."
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+  go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG} 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.konnectivity_e2e.xml
+else
+  go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+fi
 
 echodate "Konnectivity tests done."

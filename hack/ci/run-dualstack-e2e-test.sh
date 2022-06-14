@@ -62,6 +62,11 @@ export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOA
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+  go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.dualstack_e2e.xml
+else
+  go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+fi
 
 echodate "Dualstack tests done."

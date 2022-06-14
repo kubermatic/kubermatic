@@ -62,5 +62,12 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running mla tests..."
-go test -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG"
+
+# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+  go test -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.mla_e2e.xml
+else
+  go test -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG"
+fi
+
 echodate "Tests completed successfully!"

@@ -62,5 +62,12 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running etcd-launcher tests..."
-go test -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
+
+# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+  go test -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.etcd_launcher_e2e.xml
+else
+  go test -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
+fi
+
 echodate "Tests completed successfully!"
