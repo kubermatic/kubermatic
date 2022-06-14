@@ -22,9 +22,11 @@ import (
 	"context"
 	"flag"
 
+	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func addFlags(fs *flag.FlagSet) {
@@ -42,4 +44,10 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(_ context.Context, _ manager.Manager, _ map[string]manager.Manager) (string, error) {
+		return "", nil
+	}
 }

@@ -73,6 +73,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
 	applicationSecretSynchronizerFactor := applicationSecretSynchronizerFactoryCreator(ctrlCtx)
 	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
+	resourceQuotaSynchronizerFactory := resourceQuotaSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		ctrlCtx.log,
@@ -91,6 +92,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		applicationdefinitionsynchronizerFactory,
 		applicationSecretSynchronizerFactor,
 		presetSynchronizerFactory,
+		resourceQuotaSynchronizerFactory,
 	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)

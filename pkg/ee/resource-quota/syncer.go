@@ -47,7 +47,7 @@ import (
 
 const (
 	// This controller syncs the ResourceQuotas from the master cluster to the seed clusters.
-	controllerName = "kkp-resource-quota-syncer"
+	ControllerName = "kkp-resource-quota-syncer"
 )
 
 type reconciler struct {
@@ -59,20 +59,18 @@ type reconciler struct {
 }
 
 func Add(masterMgr manager.Manager,
-	namespace string,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 ) error {
-	log = log.Named(controllerName)
+	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		namespace:    namespace,
 		seedClients:  map[string]ctrlruntimeclient.Client{},
-		recorder:     masterMgr.GetEventRecorderFor(controllerName),
+		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
-	c, err := controller.New(controllerName, masterMgr, controller.Options{
+	c, err := controller.New(ControllerName, masterMgr, controller.Options{
 		Reconciler: r,
 	})
 	if err != nil {
@@ -115,7 +113,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota, action func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error) error {
+func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota, action func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error) error {
 	for seedName, seedClient := range r.seedClients {
 		log := log.With("seed", seedName)
 
@@ -152,7 +150,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		resourceQuotaCreatorGetter(resourceQuota),
 	}
 
-	return r.syncAllSeeds(ctx, log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
 		return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, r.namespace, seedClient)
 	})
 }
@@ -163,7 +161,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return nil
 	}
 
-	err := r.syncAllSeeds(ctx, log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+	err := r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
 		err := seedClient.Delete(ctx, &kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceQuota.Name,
