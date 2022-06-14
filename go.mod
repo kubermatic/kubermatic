@@ -20,7 +20,7 @@ require (
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220524234626-482f5683e548
 	github.com/digitalocean/godo v1.80.0
-	github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414
+	github.com/distribution/distribution/v3 v3.0.0-20220612151901-b5e2f3f33dbc
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1
 	github.com/evanphx/json-patch v5.6.0+incompatible
@@ -32,12 +32,12 @@ require (
 	github.com/go-openapi/runtime v0.24.1
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/go-openapi/swag v0.21.1
-	github.com/go-openapi/validate v0.21.0
+	github.com/go-openapi/validate v0.22.0
 	github.com/go-swagger/go-swagger v0.29.0
 	github.com/go-test/deep v1.0.8
 	github.com/gobuffalo/flect v0.2.5
 	github.com/google/go-cmp v0.5.8
-	github.com/gophercloud/gophercloud v0.24.0
+	github.com/gophercloud/gophercloud v0.25.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
