@@ -54,9 +54,9 @@ promtail:
     effect: NoSchedule
 
   config:
-    lokiAddress: http://loki:3100/loki/api/v1/push
     clients:
-      - # Maximum wait period before sending batch
+      - url: http://loki:3100/loki/api/v1/push
+        # Maximum wait period before sending batch
         batchwait: 1s
         # Maximum batch size to accrue before sending, unit is byte
         batchsize: 102400
