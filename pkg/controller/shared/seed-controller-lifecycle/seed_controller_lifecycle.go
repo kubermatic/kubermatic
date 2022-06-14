@@ -72,6 +72,7 @@ type Reconciler struct {
 	controllerFactories  []ControllerFactory
 	enqueue              func()
 	activeManager        *managerInstance
+	namespace            string
 }
 
 // managerInstance represents an instance of controllerManager.
@@ -90,6 +91,7 @@ func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	namespace string,
+	restrictedManager bool,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	controllerFactories ...ControllerFactory,
@@ -130,6 +132,15 @@ func Add(
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %w", err)
+	}
+
+	// Only the KKP operator wants to actually restrict the temporary
+	// managers to the given namespace, normally the namespace is only
+	// used to filter resources; since restricting the manager could
+	// result in chaos for the seed-controller-manager, the restriction
+	// is optional.
+	if restrictedManager {
+		reconciler.namespace = namespace
 	}
 
 	for _, t := range []ctrlruntimeclient.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
@@ -200,6 +211,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 
 	// We let a master controller manager run the controllers for us.
 	mgr, err := manager.New(r.masterKubeCfg, manager.Options{
+		Namespace:          r.namespace, // can be empty if the manager should not be restricted
 		LeaderElection:     false,
 		MetricsBindAddress: "0",
 		// Avoid duplicating caches or client for master cluster, as it's static.
@@ -272,7 +284,10 @@ func (r *Reconciler) createSeedManagers(masterMgr manager.Manager, seeds map[str
 
 		log := r.log.With("seed", seed.Name)
 
-		seedMgr, err := manager.New(&kubeconfig, manager.Options{MetricsBindAddress: "0"})
+		seedMgr, err := manager.New(&kubeconfig, manager.Options{
+			Namespace:          r.namespace, // can be empty if the manager should not be restricted
+			MetricsBindAddress: "0",
+		})
 		if err != nil {
 			log.Errorw("Failed to construct manager for seed", zap.Error(err))
 			continue

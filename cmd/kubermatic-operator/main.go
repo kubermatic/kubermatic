@@ -139,7 +139,7 @@ func main() {
 		)
 	}
 
-	if err := seedcontrollerlifecycle.Add(ctx, log, mgr, opt.namespace, seedsGetter, seedKubeconfigGetter, seedOperatorControllerFactory); err != nil {
+	if err := seedcontrollerlifecycle.Add(ctx, log, mgr, opt.namespace, true, seedsGetter, seedKubeconfigGetter, seedOperatorControllerFactory); err != nil {
 		log.Fatalw("Failed to create seed-lifecycle controller", zap.Error(err))
 	}
 

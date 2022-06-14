@@ -77,6 +77,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.namespace,
+		false,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
