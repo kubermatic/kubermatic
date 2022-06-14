@@ -316,8 +316,12 @@ func getKubeOneAPIMachineDeployments(ctx context.Context, cluster *kubermaticv1.
 	return machineDeployments, nil
 }
 
-func getKubeOneNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, mdName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-	var nodesV1 []apiv2.ExternalClusterNode
+func getKubeOneNodes(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	mdName string,
+	clusterProvider provider.ExternalClusterProvider,
+) ([]corev1.Node, error) {
+	var outputNodes []corev1.Node
 
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
@@ -326,14 +330,10 @@ func getKubeOneNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
 			if n.Labels[NodeWorkerLabel] == mdName {
-				outNode, err := outputNode(n)
-				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
-				}
-				nodesV1 = append(nodesV1, *outNode)
+				outputNodes = append(outputNodes, n)
 			}
 		}
 	}
 
-	return nodesV1, err
+	return outputNodes, err
 }
