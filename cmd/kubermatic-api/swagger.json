@@ -849,6 +849,203 @@
         }
       }
     },
+    "/api/v1/admin/quotas": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Gets a Resource Quota list.",
+        "operationId": "listResourceQuotas",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SubjectName",
+            "name": "subject_name",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "SubjectKind",
+            "name": "subject_kind",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ResourceQuota"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Creates a new Resource Quota.",
+        "operationId": "createResourceQuota",
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/quotas/{name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Gets a specific Resource Quota.",
+        "operationId": "getResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Quota": {
+                  "$ref": "#/definitions/ResourceDetails"
+                },
+                "Subject": {
+                  "$ref": "#/definitions/Subject"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "$ref": "#/definitions/ResourceQuota"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Updates an existing Resource Quota.",
+        "operationId": "updateResourceQuotas",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Removes an existing Resource Quota.",
+        "operationId": "deleteResourceQuotas",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/seeds": {
       "get": {
         "produces": [
@@ -13554,6 +13751,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13565,13 +13769,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -28911,6 +29108,22 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ResourceDetails": {
+      "type": "object",
+      "title": "ResourceDetails holds the CPU, Memory and Storage quantities.",
+      "properties": {
+        "cpu": {
+          "$ref": "#/definitions/Quantity"
+        },
+        "memory": {
+          "$ref": "#/definitions/Quantity"
+        },
+        "storage": {
+          "$ref": "#/definitions/Quantity"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "ResourceLabelMap": {
       "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -28926,6 +29139,48 @@
         "$ref": "#/definitions/Quantity"
       },
       "x-go-package": "k8s.io/api/core/v1"
+    },
+    "ResourceQuota": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ResourceQuotaSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ResourceQuotaStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ResourceQuotaSpec": {
+      "type": "object",
+      "title": "ResourceQuotaSpec describes the desired state of a resource quota.",
+      "properties": {
+        "quota": {
+          "$ref": "#/definitions/ResourceDetails"
+        },
+        "subject": {
+          "$ref": "#/definitions/Subject"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "ResourceQuotaStatus": {
+      "type": "object",
+      "title": "ResourceQuotaStatus describes the current state of a resource quota.",
+      "properties": {
+        "globalUsage": {
+          "$ref": "#/definitions/ResourceDetails"
+        },
+        "localUsage": {
+          "$ref": "#/definitions/ResourceDetails"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ResourceRequirements": {
       "type": "object",
@@ -29557,32 +29812,21 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Subject": {
-      "description": "or a value for non-objects such as user and group names.\n+structType=atomic",
       "type": "object",
-      "title": "Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,",
+      "title": "Subject describes the entity to which the quota applies to.",
       "properties": {
-        "apiGroup": {
-          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"\" for ServiceAccount subjects.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.\n+optional",
-          "type": "string",
-          "x-go-name": "APIGroup"
-        },
         "kind": {
-          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
+          "description": "Kind of the quota subject. For now the only possible kind is project.",
           "type": "string",
           "x-go-name": "Kind"
         },
         "name": {
-          "description": "Name of the object being referenced.",
+          "description": "Name of the quota subject.",
           "type": "string",
           "x-go-name": "Name"
-        },
-        "namespace": {
-          "description": "Namespace of the referenced object.  If the object kind is non-namespace, such as \"User\" or \"Group\", and this value is not empty\nthe Authorizer should report an error.\n+optional",
-          "type": "string",
-          "x-go-name": "Namespace"
         }
       },
-      "x-go-package": "k8s.io/api/rbac/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Sync": {
       "type": "object",
