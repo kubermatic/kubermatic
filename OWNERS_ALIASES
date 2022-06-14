@@ -3,7 +3,6 @@
 
 aliases:
   sig-api:
-    - floreks
     - lsviben
     - pkprzekwas
     - zreigz
@@ -39,7 +38,6 @@ aliases:
     - rastislavs
     - weirdmachine
   sig-ui:
-    - floreks
     - khizerrehan
     - waseem826
   sig-virtualization:
