@@ -236,6 +236,11 @@ func main() {
 				ResourceImportPath: "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1",
 				APIVersionPrefix:   "CDIv1beta1",
 			},
+			{
+				ResourceName:     "ResourceQuota",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
 		},
 	}
 
