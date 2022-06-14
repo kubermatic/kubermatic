@@ -27,7 +27,12 @@ func GetForProjectEndpoint(projectProvider provider.ProjectProvider, privilegedP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		projectResourceQuota, err := quotaProvider.GetForProject(ctx, kubermaticProject.Name)
+		userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		projectResourceQuota, err := quotaProvider.GetForProject(ctx, userInfo, kubermaticProject.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

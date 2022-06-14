@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -15,7 +16,8 @@ import (
 )
 
 type ResourceQuotaProvider struct {
-	privilegedClient ctrlruntimeclient.Client
+	privilegedClient               ctrlruntimeclient.Client
+	createMasterImpersonatedClient ImpersonationClient
 }
 
 var _ provider.ResourceQuotaProvider = &ResourceQuotaProvider{}
@@ -37,9 +39,14 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermat
 	return resourceQuota, nil
 }
 
-func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, projectName string) (*kubermaticv1.ResourceQuota, error) {
+func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, userInfo *provider.UserInfo, projectName string) (*kubermaticv1.ResourceQuota, error) {
+	if userInfo == nil {
+		return nil, errors.New("a user is missing but required")
+	}
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+
 	// first: check for quotas with helper labels
-	resourceQuotaFilteredList, err := p.List(ctx, map[string]string{
+	resourceQuotaFilteredList, err := list(ctx, masterImpersonatedClient, map[string]string{
 		kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
 		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
 	})
@@ -49,8 +56,9 @@ func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, projectName s
 	if len(resourceQuotaFilteredList.Items) == 1 {
 		return &resourceQuotaFilteredList.Items[0], nil
 	}
+
 	// second: check kind and name manually in case helper labels are missing
-	resourceQuotaFullList, err := p.List(ctx, map[string]string{})
+	resourceQuotaFullList, err := list(ctx, masterImpersonatedClient, map[string]string{})
 	for _, resourceQuota := range resourceQuotaFullList.Items {
 		if resourceQuota.Name == projectName && resourceQuota.Kind == "project" {
 			return &resourceQuota, nil
@@ -60,6 +68,10 @@ func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, projectName s
 }
 
 func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
+	return list(ctx, p.privilegedClient, labelSet)
+}
+
+func list(ctx context.Context, client ctrlruntimeclient.Client, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
 	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
 
 	selector := labels.SelectorFromSet(labelSet)
@@ -67,7 +79,7 @@ func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]st
 		Namespace:     kubermaticv1.ResourceQuotaNamespace,
 		LabelSelector: selector,
 	}
-	if err := p.privilegedClient.List(ctx, resourceQuotaList, listOpts); err != nil {
+	if err := client.List(ctx, resourceQuotaList, listOpts); err != nil {
 		return nil, err
 	}
 	return resourceQuotaList, nil
