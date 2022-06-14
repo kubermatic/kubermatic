@@ -13,6 +13,96 @@
 # limitations under the License.
 
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kubermatic-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+rules:
+  # read-only access to KKP resources
+  - apiGroups:
+      - kubermatic.k8c.io
+    resources:
+      - kubermaticconfigurations
+      - secrets
+      - seeds
+    verbs:
+      - get
+      - list
+
+  # allow the operator to manage applications in its own namespace
+  - apiGroups: [""]
+    resources: [configmaps, secrets, serviceaccounts, services]
+    verbs: [get, list, update, delete]
+
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, update, delete]
+
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [roles, rolebindings]
+    verbs: [get, list, update, delete]
+
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, update, delete]
+
+  - apiGroups: [policy]
+    resources: [poddisruptionbudgets]
+    verbs: [get, list, update, delete]
+
+  # allow the operator to manage the status subresource
+  - apiGroups:
+      - kubermatic.k8c.io
+    resources:
+      - kubermaticconfigurations/status
+      - seeds/status
+    verbs:
+      - update
+      - patch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubermatic-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubermatic-operator
+subjects:
+- kind: ServiceAccount
+  name: kubermatic-operator
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubermatic-operator-{{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+rules:
+  # allow the operator to manage the labels on its own namespace
+  - apiGroups: [""]
+    resources: [namespaces]
+    resourceNames: [{{ .Release.Namespace }}]
+    verbs: [get, list, update, patch]
+
+  # manage cluster-global resources related to KKP
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [clusterroles, clusterrolebindings]
+    verbs: [get, list, update, delete]
+
+  - apiGroups: [admissionregistration.k8s.io]
+    resources: [validatingwebhookconfigurations, mutatingwebhookconfigurations]
+    verbs: [get, list, update, delete]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: kubermatic-operator-{{ .Release.Namespace }}
@@ -21,7 +111,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin
+  name: kubermatic-operator-{{ .Release.Namespace }}
 subjects:
 - kind: ServiceAccount
   name: kubermatic-operator

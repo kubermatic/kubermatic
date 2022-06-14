@@ -38,35 +38,46 @@ spec:
     spec:
       serviceAccountName: kubermatic-operator
       imagePullSecrets:
-      - name: dockercfg
+        - name: dockercfg
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: operator
-        image: '{{ .Values.kubermaticOperator.image.repository }}:{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
-        imagePullPolicy: IfNotPresent
-        command:
-        - kubermatic-operator
-        args:
-        - -internal-address=0.0.0.0:8085
-        - -namespace=$(POD_NAMESPACE)
-        {{- with .Values.kubermaticOperator.workerName }}
-        - -worker-name={{ . }}
-        {{- end }}
-        - -log-format=json
-        {{- if .Values.kubermaticOperator.debug }}
-        - -log-debug=true
-        - -v=8
-        {{- end }}
-        {{- if .Values.kubermaticOperator.leaderElection }}
-        - -enable-leader-election
-        {{- end }}
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        ports:
-        - name: metrics
-          containerPort: 8085
-          protocol: TCP
-        resources:
-{{ .Values.kubermaticOperator.resources | toYaml | indent 10 }}
+        - name: operator
+          image: '{{ .Values.kubermaticOperator.image.repository }}:{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubermatic-operator
+          args:
+            - -internal-address=0.0.0.0:8085
+            - -namespace=$(POD_NAMESPACE)
+            {{- with .Values.kubermaticOperator.workerName }}
+            - -worker-name={{ . }}
+            {{- end }}
+            - -log-format=json
+            {{- if .Values.kubermaticOperator.debug }}
+            - -log-debug=true
+            - -v=8
+            {{- end }}
+            {{- if .Values.kubermaticOperator.leaderElection }}
+            - -enable-leader-election
+            {{- end }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: metrics
+              containerPort: 8085
+              protocol: TCP
+          resources:
+{{ .Values.kubermaticOperator.resources | toYaml | indent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000

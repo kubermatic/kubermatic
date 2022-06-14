@@ -133,6 +133,8 @@ func Add(
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
 		&networkingv1.Ingress{},
 		&policyv1beta1.PodDisruptionBudget{},
 	}
@@ -144,8 +146,10 @@ func Add(
 	}
 
 	globalTypesToWatch := []ctrlruntimeclient.Object{
+		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
+		&admissionregistrationv1.MutatingWebhookConfiguration{},
 	}
 
 	for _, t := range globalTypesToWatch {
