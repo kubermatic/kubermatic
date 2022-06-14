@@ -17,12 +17,13 @@ limitations under the License.
 package yamled
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/pmezard/go-difflib/difflib"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func getTestcaseYAML(t *testing.T, filename string) string {
@@ -56,11 +57,20 @@ func loadTestcase(t *testing.T, name string) (*Document, string) {
 }
 
 func assertEqualYAML(t *testing.T, actual *Document, expected string) {
-	out, _ := yaml.Marshal(actual)
+	var buf bytes.Buffer
+
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+
+	if err := encoder.Encode(actual); err != nil {
+		t.Fatalf("Failed to encode YAML: %v", err)
+	}
+
+	out := buf.String()
 
 	diff := difflib.UnifiedDiff{
 		A:        difflib.SplitLines(expected),
-		B:        difflib.SplitLines(strings.TrimSpace(string(out))),
+		B:        difflib.SplitLines(strings.TrimSpace(out)),
 		FromFile: "Expected",
 		ToFile:   "Actual",
 		Context:  3,
@@ -442,4 +452,50 @@ func TestMarshalling(t *testing.T) {
 	doc, expected := loadTestcase(t, "")
 
 	assertEqualYAML(t, doc, expected)
+}
+
+func TestDecodeAtPathWithMap(t *testing.T) {
+	doc, _ := loadTestcase(t, "")
+
+	type subStruct struct {
+		Second string `yaml:"second"`
+		Number int    `yaml:"number"`
+	}
+
+	subObj := subStruct{}
+	err := doc.DecodeAtPath(Path{"rootMapKey", "subKey3", 1}, &subObj)
+	if err != nil {
+		t.Fatalf("should have been able to decode a subtree into a struct, but got: %v", err)
+	}
+
+	if subObj.Number != 123 {
+		t.Fatalf("Expected number to be 123, but got %v", subObj.Number)
+	}
+
+	if subObj.Second != "value" {
+		t.Fatalf("Expected number to be \"value\", but got %q", subObj.Second)
+	}
+}
+
+func TestDecodeAtPathWithSlice(t *testing.T) {
+	doc, _ := loadTestcase(t, "")
+
+	slice := []interface{}{}
+	err := doc.DecodeAtPath(Path{"rootMapKey", "subKey3"}, &slice)
+	if err != nil {
+		t.Fatalf("should have been able to decode a subtree into a slice, but got: %v", err)
+	}
+
+	if len(slice) != 3 {
+		t.Fatalf("Expected 3 slice items, but got %d", len(slice))
+	}
+
+	first := slice[0]
+	s, ok := first.(string)
+	if !ok {
+		t.Fatalf("Expected first item to be a string, but got %v", s)
+	}
+	if s != "first" {
+		t.Fatalf("Expected first value to be \"first\", but got %q", s)
+	}
 }

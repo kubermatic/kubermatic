@@ -68,6 +68,15 @@ func (d *Document) Has(path Path) bool {
 	return exists
 }
 
+func (d *Document) DecodeAtPath(path Path, dst interface{}) error {
+	node, ok := d.GetNode(path)
+	if !ok {
+		return nil
+	}
+
+	return node.Decode(dst)
+}
+
 func (d *Document) GetNode(path Path) (*yaml.Node, bool) {
 	return traversePath(d.root, path)
 }
