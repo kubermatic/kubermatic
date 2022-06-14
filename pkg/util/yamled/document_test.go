@@ -504,6 +504,7 @@ func TestEqual(t *testing.T) {
 	docA, _ := loadTestcase(t, "")
 	docB, _ := loadTestcase(t, "")
 
+	//nolint:gocritic
 	if !docA.Equal(docA) {
 		t.Fatal("A document must be equal to itself.")
 	}

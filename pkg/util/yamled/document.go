@@ -22,6 +22,7 @@ import (
 	"io"
 
 	yaml "gopkg.in/yaml.v3"
+
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 )
 
@@ -221,8 +222,13 @@ func (d *Document) Equal(other *Document) bool {
 		otherData interface{}
 	)
 
-	d.DecodeAtPath(nil, &dData)
-	other.DecodeAtPath(nil, &otherData)
+	if d.DecodeAtPath(nil, &dData) != nil {
+		return false
+	}
+
+	if other.DecodeAtPath(nil, &otherData) != nil {
+		return false
+	}
 
 	return equality.Semantic.DeepEqual(dData, otherData)
 }
