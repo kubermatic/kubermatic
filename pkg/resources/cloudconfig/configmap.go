@@ -33,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	vmwareclouddirectorcloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
 	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -96,6 +97,32 @@ func VsphereCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConf
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
 			cm.Data[resources.CloudConfigKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+			return cm, nil
+		}
+	}
+}
+
+func VMwareCloudDirectorCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			vsphereCloudConfig := vmwareclouddirectorcloudconfig.GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
+			config, err := vsphereCloudConfig.ToString()
+			if err != nil {
+				return nil, err
+			}
+
+			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
+			cm.Data[vmwareclouddirectorcloudconfig.VMwareCloudDirectorCSIKey] = config
 
 			return cm, nil
 		}

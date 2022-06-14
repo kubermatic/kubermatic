@@ -95,6 +95,11 @@ func NewTemplateData(
 		csiOptions.SsSegmentedIscsiNetwork = cluster.Spec.Cloud.Nutanix.CSI.SsSegmentedIscsiNetwork
 	}
 
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil && cluster.Spec.Cloud.VMwareCloudDirector.CSI != nil {
+		csiOptions.Filesystem = cluster.Spec.Cloud.VMwareCloudDirector.CSI.Filesystem
+		csiOptions.StorageProfile = cluster.Spec.Cloud.VMwareCloudDirector.CSI.StorageProfile
+	}
+
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
 	var ipvs kubermaticv1.IPVSConfiguration
@@ -249,6 +254,10 @@ type CSIOptions struct {
 	StorageContainer        string
 	Fstype                  string
 	SsSegmentedIscsiNetwork *bool
+
+	// vmware Cloud Director
+	StorageProfile string
+	Filesystem     string
 }
 
 type Manifest struct {

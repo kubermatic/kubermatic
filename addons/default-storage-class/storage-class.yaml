@@ -148,3 +148,17 @@ parameters:
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 {{ end }}
+
+{{ if eq .Cluster.CloudProviderName "vmware-cloud-director" }}
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  name: vcd-disk-dev
+provisioner: named-disk.csi.cloud-director.vmware.com
+reclaimPolicy: Delete
+parameters:
+  storageProfile: {{ .Cluster.CSI.StorageProfile | quote }}
+  filesystem: {{ default "ext4" .Cluster.CSI.Filesystem | quote }}
+{{ end }}
