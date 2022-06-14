@@ -6,10 +6,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.11.0
+    helm.sh/chart: promtail-5.1.0
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.4.2"
+    app.kubernetes.io/version: "2.5.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: promtail/charts/promtail/templates/secret.yaml
@@ -19,10 +19,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.11.0
+    helm.sh/chart: promtail-5.1.0
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.4.2"
+    app.kubernetes.io/version: "2.5.0"
     app.kubernetes.io/managed-by: Helm
 stringData:
   promtail.yaml: |
@@ -30,22 +30,15 @@ stringData:
       log_level: info
       http_listen_port: 3101
     
-    client:
-      url: http://loki:3100/loki/api/v1/push
-      # Maximum wait period before sending batch
-      batchwait: 1s
-      # Maximum batch size to accrue before sending, unit is byte
-      batchsize: 102400
-      # Maximum time to wait for server to respond to a request
-      timeout: 10s
-      backoff_config:
-        # Initial backoff time between retries
-        min_period: 100ms
-        # Maximum backoff time between retries
-        max_period: 5s
-        # Maximum number of retries when sending batches, 0 means infinite retries
-        max_retries: 20
-      
+    clients:
+      - backoff_config:
+          max_period: 5s
+          max_retries: 20
+          min_period: 100ms
+        batchsize: 102400
+        batchwait: 1s
+        external_labels: {}
+        timeout: 10s
     
     positions:
       filename: /run/promtail/positions.yaml
@@ -321,10 +314,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-3.11.0
+    helm.sh/chart: promtail-5.1.0
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.4.2"
+    app.kubernetes.io/version: "2.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -346,10 +339,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-3.11.0
+    helm.sh/chart: promtail-5.1.0
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.4.2"
+    app.kubernetes.io/version: "2.5.0"
     app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
@@ -367,10 +360,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.11.0
+    helm.sh/chart: promtail-5.1.0
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.4.2"
+    app.kubernetes.io/version: "2.5.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   selector:
@@ -385,7 +378,7 @@ spec:
         app.kubernetes.io/name: promtail
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: 8214fb5e32addb8342b5928a6b8e443237de2116beb204e198193647f9e8ef9c
+        checksum/config: ec7136d83086e81ed551df43ffb81f8a308bd3d4e463995c53daaf2013d59485
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:
@@ -405,7 +398,7 @@ spec:
         runAsUser: 0
       containers:
         - name: promtail
-          image: "docker.io/grafana/promtail:2.4.2"
+          image: "docker.io/grafana/promtail:2.5.0"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/promtail/promtail.yaml"
