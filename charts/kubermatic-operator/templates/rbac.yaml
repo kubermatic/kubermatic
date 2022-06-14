@@ -35,23 +35,23 @@ rules:
   # allow the operator to manage applications in its own namespace
   - apiGroups: [""]
     resources: [configmaps, secrets, serviceaccounts, services]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, watch, create, update, delete]
 
   - apiGroups: [apps]
     resources: [deployments]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, watch, create, update, delete]
 
   - apiGroups: [rbac.authorization.k8s.io]
     resources: [roles, rolebindings]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, watch, create, update, delete]
 
   - apiGroups: [networking.k8s.io]
     resources: [ingresses]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, watch, create, update, delete]
 
   - apiGroups: [policy]
     resources: [poddisruptionbudgets]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, watch, create, update, delete]
 
   # allow the operator to manage the status subresource
   # and also add finalizers
@@ -72,8 +72,8 @@ rules:
     resources:
       - leases
     verbs:
-      - create
       - get
+      - create
       - update
       - patch
       - delete
@@ -85,6 +85,7 @@ rules:
       - events
     verbs:
       - create
+      - patch
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -123,11 +124,11 @@ rules:
   # manage cluster-global resources related to KKP
   - apiGroups: [rbac.authorization.k8s.io]
     resources: [clusterroles, clusterrolebindings]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, create, watch, update, delete]
 
   - apiGroups: [admissionregistration.k8s.io]
     resources: [validatingwebhookconfigurations, mutatingwebhookconfigurations]
-    verbs: [get, list, watch, update, delete]
+    verbs: [get, list, create, watch, update, delete]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
