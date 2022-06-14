@@ -3,7 +3,6 @@
 
 aliases:
   sig-api:
-    - floreks
     - lsviben
     - pkprzekwas
     - zreigz
@@ -39,6 +38,5 @@ aliases:
     - lsviben
     - moadqassem
   sig-ui:
-    - floreks
     - khizerrehan
     - waseem826
