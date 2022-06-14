@@ -68,6 +68,7 @@ rules:
     resources:
       - leases
     verbs:
+      - create
       - get
       - update
       - patch
