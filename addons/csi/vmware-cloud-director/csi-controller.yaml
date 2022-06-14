@@ -14,6 +14,10 @@
 
 # Sourced from:
 # - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/csi-controller.yaml
+#
+# Changes:
+# - image source includes registry templating
+# - add a securityContext
 
 {{ if eq .Cluster.CloudProviderName "vmware-cloud-director" }}
 

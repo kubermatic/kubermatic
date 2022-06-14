@@ -17,28 +17,52 @@ limitations under the License.
 package vmwareclouddirector
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
+
+	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-type VCDConfig struct {
-	Host         string `yaml:"host"`
-	Organization string `yaml:"org"`
-	VDC          string `yaml:"vdc"`
-	VAppName     string `yaml:"vAppName"`
+// Sourced from: https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/vcloud-csi-config.yaml
+const (
+	cloudConfigCSITpl = `vcd:
+  host: {{ .Host }}
+  org: {{ .Organization}}
+  vdc: {{ .VDC }}
+  vAppName: {{ .VApp }}
+clusterid: {{ .ClusterID }}`
+)
+
+type cloudConfig struct {
+	Host         string
+	Organization string
+	VDC          string
+	VApp         string
+	ClusterID    string
 }
 
-type CloudConfig struct {
-	VCD       VCDConfig `yaml:"vcd"`
-	ClusterID string    `yaml:"clusterid"`
+// ToString renders the cloud configuration as string.
+func (cc *cloudConfig) toString() (string, error) {
+	tpl, err := template.New("cloud-config").Funcs(sprig.TxtFuncMap()).Parse(cloudConfigCSITpl)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse the cloud config template: %w", err)
+	}
+
+	buf := &bytes.Buffer{}
+	if err := tpl.Execute(buf, cc); err != nil {
+		return "", fmt.Errorf("failed to execute cloud config template: %w", err)
+	}
+
+	return buf.String(), nil
 }
 
-func GetVMwareCloudDirectorCSIConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) CloudConfig {
+func GetVMwareCloudDirectorCSIConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (string, error) {
 	vAppName := cluster.Spec.Cloud.VMwareCloudDirector.VApp
 	if vAppName == "" {
 		vAppName = fmt.Sprintf(vmwareclouddirector.ResourceNamePattern, cluster.Name)
@@ -47,23 +71,13 @@ func GetVMwareCloudDirectorCSIConfig(cluster *kubermaticv1.Cluster, dc *kubermat
 	// host shouldn't have the `/api` suffix.
 	host := strings.TrimSuffix(dc.Spec.VMwareCloudDirector.URL, "/api")
 
-	return CloudConfig{
-		VCD: VCDConfig{
-			Organization: credentials.VMwareCloudDirector.Organization,
-			VDC:          credentials.VMwareCloudDirector.VDC,
-			VAppName:     vAppName,
-			Host:         host,
-		},
-		ClusterID: cluster.Name,
-	}
-}
-
-// ToString renders the cloud configuration as string.
-func (cc *CloudConfig) ToString() (string, error) {
-	b, err := json.Marshal(cc)
-	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal config: %w", err)
+	cc := cloudConfig{
+		Host:         host,
+		Organization: credentials.VMwareCloudDirector.Organization,
+		VDC:          credentials.VMwareCloudDirector.VDC,
+		VApp:         vAppName,
+		ClusterID:    cluster.Name,
 	}
 
-	return string(b), nil
+	return cc.toString()
 }

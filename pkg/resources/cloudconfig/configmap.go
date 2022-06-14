@@ -115,14 +115,13 @@ func VMwareCloudDirectorCSIConfigMapCreator(data configMapCreatorData) reconcili
 				return nil, err
 			}
 
-			vsphereCloudConfig := vmwareclouddirectorcloudconfig.GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
-			config, err := vsphereCloudConfig.ToString()
+			vsphereCloudConfig, err := vmwareclouddirectorcloudconfig.GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, err
 			}
 
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
-			cm.Data[resources.CloudConfigKey] = config
+			cm.Data[resources.CloudConfigKey] = vsphereCloudConfig
 
 			return cm, nil
 		}
