@@ -93,7 +93,7 @@ func genSeedFromRequest(req createSeedReq) *kubermaticv1.Seed {
 	newSeed.Spec = kubermaticv1.SeedSpec{
 		Country:                req.Body.Spec.Country,
 		Location:               req.Body.Spec.Location,
-		Kubeconfig:             corev1.ObjectReference{},
+		Kubeconfig:             kubermaticv1.SeedKubeconfigReference{},
 		SeedDNSOverwrite:       req.Body.Spec.SeedDNSOverwrite,
 		DefaultClusterTemplate: req.Body.Spec.DefaultClusterTemplate,
 		ExposeStrategy:         req.Body.Spec.ExposeStrategy,
@@ -186,6 +186,9 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
+
+		// ensure it's not possible to randomly override the kubeconfig ref
+		req.Body.Spec.Kubeconfig = seed.Spec.Kubeconfig
 
 		originalJSON, err := json.Marshal(seed.Spec)
 		if err != nil {
@@ -378,13 +381,8 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 		Country:  seedSpec.Country,
 		Location: seedSpec.Location,
 		Kubeconfig: corev1.ObjectReference{
-			Kind:            seedSpec.Kubeconfig.Kind,
-			Namespace:       seedSpec.Kubeconfig.Namespace,
-			Name:            seedSpec.Kubeconfig.Name,
-			UID:             seedSpec.Kubeconfig.UID,
-			APIVersion:      seedSpec.Kubeconfig.APIVersion,
-			ResourceVersion: seedSpec.Kubeconfig.ResourceVersion,
-			FieldPath:       seedSpec.Kubeconfig.FieldPath,
+			Name:      seedSpec.Kubeconfig.Name,
+			FieldPath: seedSpec.Kubeconfig.FieldPath,
 		},
 		SeedDNSOverwrite:  seedSpec.SeedDNSOverwrite,
 		ProxySettings:     seedSpec.ProxySettings,

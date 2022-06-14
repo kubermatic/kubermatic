@@ -255,7 +255,7 @@ type SeedSpec struct {
 	// A reference to the Kubeconfig of this cluster. The Kubeconfig must
 	// have cluster-admin privileges. This field is mandatory for every
 	// seed, even if there are no datacenters defined yet.
-	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
+	Kubeconfig SeedKubeconfigReference `json:"kubeconfig"`
 	// Datacenters contains a map of the possible datacenters (DCs) in this seed.
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
@@ -284,6 +284,18 @@ type SeedSpec struct {
 	// EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
 	// if this is set, the new backup/restore controllers are enabled for this Seed.
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
+}
+
+// SeedKubeconfigReference is a stripped down ObjectReference that is used
+// to connect a Seed to its kubeconfig.
+type SeedKubeconfigReference struct {
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	Name string `json:"name"`
+	// FieldPath is the path inside the Secret to where the kubeconfig is located. If this
+	// is not set, it defaults to "kubeconfig".
+	// +optional
+	FieldPath string `json:"fieldPath,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.

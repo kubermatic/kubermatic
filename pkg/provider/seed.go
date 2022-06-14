@@ -134,7 +134,7 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
 		secret := &corev1.Secret{}
 		name := types.NamespacedName{
-			Namespace: seed.Spec.Kubeconfig.Namespace,
+			Namespace: seed.Namespace,
 			Name:      seed.Spec.Kubeconfig.Name,
 		}
 		if name.Namespace == "" {

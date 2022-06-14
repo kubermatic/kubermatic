@@ -66,31 +66,32 @@ func (p *SeedProvider) CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context
 	if err != nil {
 		return err
 	}
+	kubeconfigRef.FieldPath = resources.KubeconfigSecretKey
 	seed.Spec.Kubeconfig = *kubeconfigRef
 	return nil
 }
 
-func (p *SeedProvider) ensureKubeconfigSecret(ctx context.Context, seed *kubermaticv1.Seed, secretData map[string][]byte) (*corev1.ObjectReference, error) {
+func (p *SeedProvider) ensureKubeconfigSecret(ctx context.Context, seed *kubermaticv1.Seed, secretData map[string][]byte) (*kubermaticv1.SeedKubeconfigReference, error) {
 	name := fmt.Sprintf("kubeconfig-%s", seed.Name)
 
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
+	namespacedName := types.NamespacedName{Namespace: seed.Namespace, Name: name}
 	existingSecret := &corev1.Secret{}
 
 	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 		}
-		return createSeedKubeconfigSecret(ctx, p.clientPrivileged, name, secretData)
+		return createSeedKubeconfigSecret(ctx, p.clientPrivileged, seed, name, secretData)
 	}
 
 	return updateSeedKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, secretData)
 }
 
-func createSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name string, secretData map[string][]byte) (*corev1.ObjectReference, error) {
+func createSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, name string, secretData map[string][]byte) (*kubermaticv1.SeedKubeconfigReference, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: resources.KubermaticNamespace,
+			Namespace: seed.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: secretData,
@@ -99,17 +100,12 @@ func createSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
 	}
 
-	return &corev1.ObjectReference{
-		Kind:            secret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            secret.Name,
-		UID:             secret.UID,
-		APIVersion:      secret.APIVersion,
-		ResourceVersion: secret.ResourceVersion,
+	return &kubermaticv1.SeedKubeconfigReference{
+		Name: name,
 	}, nil
 }
 
-func updateSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*corev1.ObjectReference, error) {
+func updateSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*kubermaticv1.SeedKubeconfigReference, error) {
 	if existingSecret.Data == nil {
 		existingSecret.Data = map[string][]byte{}
 	}
@@ -130,12 +126,7 @@ func updateSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		}
 	}
 
-	return &corev1.ObjectReference{
-		Kind:            existingSecret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            existingSecret.Name,
-		UID:             existingSecret.UID,
-		APIVersion:      existingSecret.APIVersion,
-		ResourceVersion: existingSecret.ResourceVersion,
+	return &kubermaticv1.SeedKubeconfigReference{
+		Name: existingSecret.Name,
 	}, nil
 }
