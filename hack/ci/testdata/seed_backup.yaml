@@ -40,7 +40,6 @@ spec:
   location: Hamburg
   kubeconfig:
     name: "__SEED_NAME__-kubeconfig"
-    namespace: kubermatic
     fieldPath: kubeconfig
   datacenters:
     byo-kubernetes:
