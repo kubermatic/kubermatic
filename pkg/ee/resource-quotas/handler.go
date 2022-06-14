@@ -27,15 +27,16 @@ package resourcequotas
 import (
 	"context"
 	"encoding/json"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	k8cv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // swagger:parameters getResourceQuota
@@ -61,8 +62,8 @@ type createResourceQuota struct {
 	// in: body
 	// required: true
 	Body struct {
-		Subject k8cv1.Subject
-		Quota   k8cv1.ResourceDetails
+		Subject k8cv1.Subject         `json:"subject"`
+		Quota   k8cv1.ResourceDetails `json:"quota"`
 	}
 }
 
@@ -116,7 +117,7 @@ func DecodeCreateResourceQuotaReq(r *http.Request) (interface{}, error) {
 	var req createResourceQuota
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	return req, nil
@@ -132,7 +133,7 @@ func DecodeUpdateResourceQuotaReq(r *http.Request) (interface{}, error) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	return req, nil
@@ -164,7 +165,6 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
-	// TODO: remember to test this part
 	labelSet := make(map[string]string)
 	if req.SubjectKind != "" {
 		labelSet[k8cv1.ResourceQuotaSubjectKindLabelKey] = req.SubjectKind

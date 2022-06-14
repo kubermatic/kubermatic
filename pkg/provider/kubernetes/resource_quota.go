@@ -6,6 +6,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -34,6 +35,28 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermat
 		return nil, err
 	}
 	return resourceQuota, nil
+}
+
+func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, projectName string) (*kubermaticv1.ResourceQuota, error) {
+	// first: check for quotas with helper labels
+	resourceQuotaFilteredList, err := p.List(ctx, map[string]string{
+		kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(resourceQuotaFilteredList.Items) == 1 {
+		return &resourceQuotaFilteredList.Items[0], nil
+	}
+	// second: check kind and name manually in case helper labels are missing
+	resourceQuotaFullList, err := p.List(ctx, map[string]string{})
+	for _, resourceQuota := range resourceQuotaFullList.Items {
+		if resourceQuota.Name == projectName && resourceQuota.Kind == "project" {
+			return &resourceQuota, nil
+		}
+	}
+	return nil, utilerrors.NewNotFound("resourcequota for project %s", projectName)
 }
 
 func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {

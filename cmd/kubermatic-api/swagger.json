@@ -956,10 +956,10 @@
             "schema": {
               "type": "object",
               "properties": {
-                "Quota": {
+                "quota": {
                   "$ref": "#/definitions/ResourceDetails"
                 },
-                "Subject": {
+                "subject": {
                   "$ref": "#/definitions/Subject"
                 }
               }
@@ -6238,6 +6238,38 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/quota": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Returns resource quota for a given project.",
+        "operationId": "resourceQuota",
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "$ref": "#/definitions/ResourceQuota"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -13751,13 +13783,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13769,6 +13794,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {

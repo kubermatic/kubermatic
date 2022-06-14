@@ -274,6 +274,8 @@ type ClientService interface {
 
 	ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetAlertmanagerOK, error)
 
+	ResourceQuota(params *ResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResourceQuotaOK, error)
+
 	RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartMachineDeploymentOK, error)
 
 	RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenOK, error)
@@ -4990,6 +4992,44 @@ func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ResetAlertmanagerDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ResourceQuota returns resource quota for a given project
+*/
+func (a *Client) ResourceQuota(params *ResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResourceQuotaOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewResourceQuotaParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "resourceQuota",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/quota",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ResourceQuotaReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ResourceQuotaOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

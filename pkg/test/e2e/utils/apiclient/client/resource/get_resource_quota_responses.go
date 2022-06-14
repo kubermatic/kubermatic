@@ -177,10 +177,10 @@ swagger:model GetResourceQuotaBody
 type GetResourceQuotaBody struct {
 
 	// quota
-	Quota *models.ResourceDetails `json:"Quota,omitempty"`
+	Quota *models.ResourceDetails `json:"quota,omitempty"`
 
 	// subject
-	Subject *models.Subject `json:"Subject,omitempty"`
+	Subject *models.Subject `json:"subject,omitempty"`
 }
 
 // Validate validates this get resource quota body
@@ -209,9 +209,9 @@ func (o *GetResourceQuotaBody) validateQuota(formats strfmt.Registry) error {
 	if o.Quota != nil {
 		if err := o.Quota.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "Quota")
+				return ve.ValidateName("Body" + "." + "quota")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "Quota")
+				return ce.ValidateName("Body" + "." + "quota")
 			}
 			return err
 		}
@@ -228,9 +228,9 @@ func (o *GetResourceQuotaBody) validateSubject(formats strfmt.Registry) error {
 	if o.Subject != nil {
 		if err := o.Subject.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "Subject")
+				return ve.ValidateName("Body" + "." + "subject")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "Subject")
+				return ce.ValidateName("Body" + "." + "subject")
 			}
 			return err
 		}
@@ -262,9 +262,9 @@ func (o *GetResourceQuotaBody) contextValidateQuota(ctx context.Context, formats
 	if o.Quota != nil {
 		if err := o.Quota.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "Quota")
+				return ve.ValidateName("Body" + "." + "quota")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "Quota")
+				return ce.ValidateName("Body" + "." + "quota")
 			}
 			return err
 		}
@@ -278,9 +278,9 @@ func (o *GetResourceQuotaBody) contextValidateSubject(ctx context.Context, forma
 	if o.Subject != nil {
 		if err := o.Subject.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "Subject")
+				return ve.ValidateName("Body" + "." + "subject")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "Subject")
+				return ce.ValidateName("Body" + "." + "subject")
 			}
 			return err
 		}
