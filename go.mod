@@ -3,29 +3,29 @@ module k8c.io/kubermatic/v2
 go 1.17
 
 require (
-	code.cloudfoundry.org/go-pubsub v0.0.0-20211215163300-870699d61ec9
-	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
+	code.cloudfoundry.org/go-pubsub v0.0.0-20220601212219-de495fa84c8e
+	github.com/Azure/azure-sdk-for-go v65.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/BurntSushi/toml v1.1.0 // indirect; because of machine-controller still using ancient 0.3.1, conflicting with Cilium
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1588
-	github.com/aws/aws-sdk-go v1.44.10
-	github.com/aws/aws-sdk-go-v2/service/eks v1.20.7
-	github.com/cert-manager/cert-manager v1.8.0
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1639
+	github.com/aws/aws-sdk-go v1.44.34
+	github.com/aws/aws-sdk-go-v2/service/eks v1.21.2
+	github.com/cert-manager/cert-manager v1.8.1
 	github.com/cilium/cilium v1.12.0-rc2.0.20220608085800-322b9f96e78b // need 1.12.x because 1.11.x is incompatible with k8s 1.24
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
-	github.com/cristim/ec2-instances-info v0.0.0-20220421150455-af8435a41c4e
-	github.com/digitalocean/godo v1.79.0
+	github.com/cristim/ec2-instances-info v0.0.0-20220524234626-482f5683e548
+	github.com/digitalocean/godo v1.80.0
 	github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-kit/kit v0.12.0
-	github.com/go-kit/log v0.2.0
+	github.com/go-kit/log v0.2.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/go-openapi/errors v0.20.2
@@ -43,25 +43,25 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/hetznercloud/hcloud-go v1.33.2
-	github.com/imdario/mergo v0.3.12
+	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
 	github.com/kubermatic/machine-controller v1.51.0
-	github.com/minio/minio-go/v7 v7.0.26
+	github.com/minio/minio-go/v7 v7.0.28
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20210802220920-c000ec35322e
 	github.com/open-policy-agent/gatekeeper v0.0.0-20201111000257-4450f08fa95e
-	github.com/packethost/packngo v0.24.0
+	github.com/packethost/packngo v0.25.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/vmware/go-vcloud-director/v2 v2.15.0
 	github.com/vmware/govmomi v0.28.0
-	go.anx.io/go-anxcloud v0.4.3
+	go.anx.io/go-anxcloud v0.4.4
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4
 	go.etcd.io/etcd/client/v3 v3.5.4
@@ -96,10 +96,10 @@ require (
 	k8s.io/metrics v0.24.0
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	kubevirt.io/api v0.53.0
-	kubevirt.io/containerized-data-importer-api v1.49.0
+	kubevirt.io/api v0.54.0
+	kubevirt.io/containerized-data-importer-api v1.50.0
 	sigs.k8s.io/controller-runtime v0.12.1
-	sigs.k8s.io/controller-tools v0.8.0
+	sigs.k8s.io/controller-tools v0.9.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -134,10 +134,9 @@ require (
 	github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559 // indirect
 	github.com/ajeddeloh/yaml v0.0.0-20170912190910-6b94386aeefd // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
-	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/araddon/dateparse v0.0.0-20190622164848-0fb0a474d195 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/smithy-go v1.11.2 // indirect
+	github.com/aws/smithy-go v1.11.3 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -232,7 +231,6 @@ require (
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/poy/onpar v1.0.1 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/prometheus/client_model v0.2.1-0.20210607210712-147c58e9608a // indirect
 	github.com/prometheus/common v0.34.0 // indirect
