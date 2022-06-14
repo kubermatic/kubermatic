@@ -71,7 +71,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-9
           command:
             - ./hack/ci/verify.sh
           resources:
@@ -90,7 +90,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-9
           command:
             - make
             - lint
@@ -131,7 +131,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-9
           command:
             - ./hack/ci/test-github-release.sh
           resources:
@@ -151,7 +151,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -176,7 +176,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           env:
             - name: KUBERMATIC_EDITION
               value: ee
