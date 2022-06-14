@@ -87,7 +87,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := r.log.With("kubermatic configuration", request.Name)
+	logger := r.log.With("configuration", request.Name)
 	logger.Debug("Reconciling")
 
 	kc := &kubermaticv1.KubermaticConfiguration{}
@@ -115,6 +115,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kc *
 	versions := r.versions
 	return kubermaticv1helper.UpdateKubermaticConfigurationStatus(ctx, r, kc, func(config *kubermaticv1.KubermaticConfiguration) {
 		config.Status.KubermaticEdition = versions.KubermaticCommit
-		config.Status.KubermaticVersion = versions.KubermaticEdition.String()
+
+		config.Status.KubermaticVersion = versions.KubermaticEdition.ShortString()
 	})
 }
