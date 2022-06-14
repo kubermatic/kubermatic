@@ -499,3 +499,26 @@ func TestDecodeAtPathWithSlice(t *testing.T) {
 		t.Fatalf("Expected first value to be \"first\", but got %q", s)
 	}
 }
+
+func TestEqual(t *testing.T) {
+	docA, _ := loadTestcase(t, "")
+	docB, _ := loadTestcase(t, "")
+
+	if !docA.Equal(docA) {
+		t.Fatal("A document must be equal to itself.")
+	}
+
+	if !docA.Equal(docB) {
+		t.Fatal("Loading the same document twice should mean they are equal, but were not.")
+	}
+
+	docA.Set(Path{"rootIntKey"}, 13)
+	if docA.Equal(docB) {
+		t.Fatal("After editing one of the documents, they should not be equal anymore.")
+	}
+
+	docA.Set(Path{"rootIntKey"}, 12)
+	if !docA.Equal(docB) {
+		t.Fatal("After un-editing one of the documents, they should be equal again.")
+	}
+}

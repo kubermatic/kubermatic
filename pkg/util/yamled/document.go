@@ -22,6 +22,7 @@ import (
 	"io"
 
 	yaml "gopkg.in/yaml.v3"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 )
 
 type Document struct {
@@ -212,4 +213,16 @@ func (d *Document) Remove(path Path) bool {
 // sub values intact.
 func (d *Document) Fill(path Path, newValue interface{}) bool {
 	return mergeIntoPath(d.root, path, newValue)
+}
+
+func (d *Document) Equal(other *Document) bool {
+	var (
+		dData     interface{}
+		otherData interface{}
+	)
+
+	d.DecodeAtPath(nil, &dData)
+	other.DecodeAtPath(nil, &otherData)
+
+	return equality.Semantic.DeepEqual(dData, otherData)
 }
