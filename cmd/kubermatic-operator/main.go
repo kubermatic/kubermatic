@@ -85,6 +85,10 @@ func main() {
 	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
 
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
+		// restricting the manager to a single namespace allows us to define Roles
+		// instead of ClusterRoles for the operator; for more information see
+		// https://github.com/kubernetes-sigs/controller-runtime/issues/124
+		Namespace: opt.namespace,
 		BaseContext: func() context.Context {
 			return ctx
 		},
