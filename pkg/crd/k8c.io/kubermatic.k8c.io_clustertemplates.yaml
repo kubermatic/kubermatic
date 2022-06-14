@@ -1027,7 +1027,7 @@ spec:
                             type: string
                           storageProfile:
                             description: The name of the storage profile to use for
-                              disks created by CSI drivr
+                              disks created by CSI driver
                             type: string
                         required:
                         - storageProfile

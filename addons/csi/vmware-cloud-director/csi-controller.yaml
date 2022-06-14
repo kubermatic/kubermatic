@@ -125,6 +125,9 @@ spec:
     spec:
       serviceAccount: csi-vcd-controller-sa
       dnsPolicy: Default
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: csi-attacher
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.2.1

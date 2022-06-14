@@ -22,13 +22,8 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
-
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vmwareclouddirector"
-)
-
-const (
-	VMwareCloudDirectorCSIKey = "vcloud-csi-config.yaml"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 type VCDConfig struct {

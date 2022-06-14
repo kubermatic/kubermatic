@@ -21,7 +21,7 @@ type VMwareCloudDirectorCSIConfig struct {
 	// +optional
 	Filesystem string `json:"filesystem,omitempty"`
 
-	// The name of the storage profile to use for disks created by CSI drivr
+	// The name of the storage profile to use for disks created by CSI driver
 	StorageProfile string `json:"storageProfile,omitempty"`
 }
 

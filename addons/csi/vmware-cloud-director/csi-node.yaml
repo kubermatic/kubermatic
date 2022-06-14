@@ -64,6 +64,9 @@ spec:
       serviceAccount: csi-vcd-node-sa
       hostNetwork: true
       dnsPolicy: Default
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: node-driver-registrar
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.2.0

@@ -122,7 +122,7 @@ func VMwareCloudDirectorCSIConfigMapCreator(data configMapCreatorData) reconcili
 			}
 
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
-			cm.Data[vmwareclouddirectorcloudconfig.VMwareCloudDirectorCSIKey] = config
+			cm.Data[resources.CloudConfigKey] = config
 
 			return cm, nil
 		}

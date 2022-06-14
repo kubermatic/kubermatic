@@ -1081,7 +1081,7 @@ type VMwareCloudDirectorCloudSpec struct {
 }
 
 type VMwareCloudDirectorCSIConfig struct {
-	// The name of the storage profile to use for disks created by CSI drivr
+	// The name of the storage profile to use for disks created by CSI driver
 	StorageProfile string `json:"storageProfile"`
 
 	// Filesystem to use for named disks, defaults to "ext4"
