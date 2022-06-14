@@ -180,7 +180,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			skipHostNetworkPods: true,
 		},
 		{
-<<<<<<< HEAD
 			cloudName: "hetzner",
 			osNames: []string{
 				"ubuntu",
@@ -201,7 +200,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           false,
 			skipHostNetworkPods: false,
-=======
+		}, {
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
@@ -220,7 +219,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
->>>>>>> 5d4386916 (add dualstack e2e tests for digitalocean)
 		},
 	}
 

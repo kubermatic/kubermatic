@@ -23,6 +23,7 @@ type DigitaloceanNodeSpec struct {
 	Backups bool `json:"backups,omitempty"`
 
 	// DEPRECATED
+	// IPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.
 	// enable ipv6 for the droplet
 	IPV6 bool `json:"ipv6,omitempty"`
 
