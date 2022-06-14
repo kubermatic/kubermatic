@@ -183,7 +183,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return nil, err
 		}
 
-		dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool.Name, dcIPAMPoolCfg)
+		dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool.Name, clusterDC, dcIPAMPoolCfg)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPoolName string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings) (sets.String, error) {
+func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPoolName, dc string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings) (sets.String, error) {
 	dcIPAMPoolUsageMap := sets.NewString()
 
 	// List all IPAM allocations
@@ -210,7 +210,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	// Iterate current IPAM allocations to build a map of used IPs (for range allocation type)
 	// or used subnets (for prefix allocation type) per datacenter pool
 	for _, ipamAllocation := range ipamAllocationList.Items {
-		if ipamAllocation.Name != ipamPoolName {
+		if ipamAllocation.Name != ipamPoolName || ipamAllocation.Spec.DC != dc {
 			// This allocation is not relevant for this IPAM Pool, so skip it
 			continue
 		}
@@ -251,6 +251,7 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 		},
 		Spec: kubermaticv1.IPAMAllocationSpec{
 			Type: dcIPAMPoolCfg.Type,
+			DC:   cluster.Spec.Cloud.DatacenterName,
 		},
 	}
 
