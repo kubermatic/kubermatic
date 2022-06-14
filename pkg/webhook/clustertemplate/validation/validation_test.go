@@ -721,7 +721,6 @@ func TestHandle(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 type rawTemplateGen struct {

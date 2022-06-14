@@ -35,18 +35,16 @@ import (
 func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, seedClient ctrlruntimeclient.Client, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// TODO(embik): validate project reference
-	scope, ok := template.Labels["scope"]
-
 	// we only validate ClusterTemplates scoped to projects
-	if !ok || scope != kubermaticv1.ProjectClusterTemplateScope {
+	if scope, ok := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]; !ok || scope != kubermaticv1.ProjectClusterTemplateScope {
 		allErrs = append(allErrs, field.Required(
 			parentFieldPath.Child("metadata", "labels", "scope"),
-			fmt.Sprintf("label 'scope=%s' is required", kubermaticv1.ProjectClusterTemplateScope),
+			fmt.Sprintf("label '%s=%s' is required", kubermaticv1.ClusterTemplateScopeLabelKey, kubermaticv1.ProjectClusterTemplateScope),
 		))
 		return allErrs
 	}
 
+	// ensure that a ClusterTemplate has a project reference
 	projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
 	if !ok || projectId == "" {
 		allErrs = append(allErrs, field.Required(
@@ -56,8 +54,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 		return allErrs
 	}
 
-	// validate SSH key presence in project; only makes sense if a project
-	// was referenced
+	// validate SSH key presence in project
 	if template.UserSSHKeys != nil {
 		for i, key := range template.UserSSHKeys {
 			path := parentFieldPath.Child("userSSHKeys").Index(i)
