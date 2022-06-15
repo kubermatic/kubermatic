@@ -558,32 +558,25 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 			})
 		})
 	}
-
-	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
-	r.RegisterV1(v1Router, metrics)
-	r.RegisterV1Legacy(v1Router)
-	r.RegisterV1Optional(v1Router,
-		options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
-		common.OIDCConfiguration{
-			URL:                  options.oidcURL,
-			ClientID:             options.oidcIssuerClientID,
-			ClientSecret:         options.oidcIssuerClientSecret,
-			CookieHashKey:        options.oidcIssuerCookieHashKey,
-			CookieSecureMode:     options.oidcIssuerCookieSecureMode,
-			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
-		},
-		mainRouter)
-	r.RegisterV1Admin(v1Router)
-	r.RegisterV1Websocket(v1Router)
-	rv2.RegisterV2(v2Router, metrics, common.OIDCConfiguration{
+	oidcConfiguration := common.OIDCConfiguration{
 		URL:                  options.oidcURL,
 		ClientID:             options.oidcIssuerClientID,
 		ClientSecret:         options.oidcIssuerClientSecret,
 		CookieHashKey:        options.oidcIssuerCookieHashKey,
 		CookieSecureMode:     options.oidcIssuerCookieSecureMode,
 		OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
-	})
+	}
+	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
+	r.RegisterV1(v1Router, metrics)
+	r.RegisterV1Legacy(v1Router)
+	r.RegisterV1Optional(v1Router,
+		options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
+		oidcConfiguration,
+		mainRouter)
+	r.RegisterV1Admin(v1Router)
+	r.RegisterV1Websocket(v1Router)
+	rv2.RegisterV2(v2Router, options.featureGates.Enabled(features.OIDCKubeCfgEndpoint), oidcConfiguration)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

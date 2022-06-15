@@ -55,7 +55,13 @@ import (
 )
 
 // RegisterV2 declares all router paths for v2.
-func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics, oidcCfg common.OIDCConfiguration) {
+func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg common.OIDCConfiguration) {
+	// Defines a set of HTTP endpoint for generating kubeconfig secret for a cluster that will contain OIDC tokens
+	if oidcKubeConfEndpoint {
+		mux.Methods(http.MethodGet).
+			Path("/kubeconfig/secret").
+			Handler(r.createOIDCKubeconfigSecret(oidcCfg))
+	}
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
@@ -631,26 +637,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics, oidcC
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values").
 		Handler(r.listNutanixCategoryValuesNoCredentials())
 
-	kubernetesdashboard.
-		NewLoginHandler(oidcCfg, r.oidcIssuerVerifier, r.settingsProvider).
-		Middlewares(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-		).
-		Options(r.defaultServerOptions()...).
-		Install(mux)
-
-	kubernetesdashboard.
-		NewProxyHandler(r.log, r.settingsProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter).
-		RequestFuncs(
-			middleware.TokenExtractor(r.tokenExtractors),
-			middleware.SetSeedsGetter(r.seedsGetter)).
-		Middlewares(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		).
-		Options(r.defaultServerOptions()...).
-		Install(mux)
+	// Defines a set of kubernetes-dashboard-specific endpoints
+	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
+		Handler(r.kubernetesDashboardProxy())
 
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
@@ -3857,6 +3846,32 @@ func (r Routing) listNutanixCategoryValuesNoCredentials() http.Handler {
 		provider.DecodeNutanixCategoryValuesNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
+//
+//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/clusters/{cluster_id}/dashboard/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) kubernetesDashboardProxy() http.Handler {
+	return kubernetesdashboard.ProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		r.privilegedProjectProvider,
+		r.userInfoGetter,
+		r.settingsProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		),
 	)
 }
 
