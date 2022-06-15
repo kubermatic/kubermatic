@@ -90,6 +90,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
@@ -112,7 +113,7 @@ func main() {
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
 
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 	cli.Hello(log, "API", options.log.Debug, &options.versions)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
@@ -132,7 +133,12 @@ func main() {
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
-	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
+	mgr, err := manager.New(masterCfg, manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
+		MetricsBindAddress: "0",
+	})
 	if err != nil {
 		log.Fatalw("failed to construct manager", zap.Error(err))
 	}
@@ -666,7 +672,7 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 			kubeClient,
 			options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
 			options.versions,
-			seed.Name,
+			seed,
 		), nil
 	}
 }

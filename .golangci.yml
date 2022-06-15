@@ -26,7 +26,10 @@ run:
     - integration
     - dualstack
   skip-files:
-  - zz_generated.*.go
+    - zz_generated.*.go
+    # This package was forked from upstream (in #9826)
+    # and we want to keep it as close to upstream as possible.
+    - pkg/provider/cloud/eks/authenticator
 
 linters:
   enable:

@@ -108,10 +108,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			expectExposeAnnotations: map[string]string{
@@ -190,10 +192,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			requests: []request{
@@ -247,10 +251,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyLoadBalancer,
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			expectExposeAnnotations: map[string]string{
@@ -316,10 +322,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			requests: []request{},
@@ -347,10 +355,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			requests: []request{
@@ -407,10 +417,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						},
 						ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			expectExposeAnnotations: map[string]string{
@@ -481,10 +493,12 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						},
 						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 					},
-					Address: kubermaticv1.ClusterAddress{
-						ExternalName: "abcd.test.kubermatic.io",
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: "cluster-clusterUID",
+						Address: kubermaticv1.ClusterAddress{
+							ExternalName: "abcd.test.kubermatic.io",
+						},
 					},
-					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
 			expectExposeAnnotations: map[string]string{

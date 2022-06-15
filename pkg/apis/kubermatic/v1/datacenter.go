@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -734,4 +735,15 @@ func (s *Seed) GetEtcdBackupDestination(destinationName string) *BackupDestinati
 	}
 
 	return s.Spec.EtcdBackupRestore.Destinations[destinationName]
+}
+
+// IsUpToDate returns true if the seed was successfully reconciled
+// by the KKP operator, meaning it has the same CRDs and controller
+// versions than the master.
+func (s *Seed) IsUpToDate(masterVersions kubermatic.Versions) bool {
+	return s.Status.Versions.Kubermatic == masterVersions.KubermaticCommit
+}
+
+func (s *Seed) SetKubermaticVersion(masterVersions kubermatic.Versions) {
+	s.Status.Versions.Kubermatic = masterVersions.KubermaticCommit
 }

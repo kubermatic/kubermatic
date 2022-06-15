@@ -20,6 +20,7 @@ package dualstack
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -260,6 +261,71 @@ func (a gcp) CloudSpec() models.CloudSpec {
 			Network:        "global/networks/dualstack",
 			ServiceAccount: os.Getenv("GOOGLE_SERVICE_ACCOUNT"),
 			Subnetwork:     "projects/kubermatic-dev/regions/europe-west3/subnetworks/dualstack-europe-west3",
+		},
+	}
+}
+
+type openstack struct{}
+
+var _ clusterSpec = openstack{}
+
+func (a openstack) getImage(osName string) string {
+	switch osName {
+	case "ubuntu":
+		return "Ubuntu Focal 20.04 (2021-07-01)"
+	case "centos":
+		return "CentOS 8 (2021-07-05)"
+	case "flatcar":
+		return "Flatcar Stable (2022-05-10)"
+	default:
+		return fmt.Sprintf("unknown os: %s", osName)
+	}
+}
+
+func (a openstack) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Openstack: &models.OpenstackNodeSpec{
+			AvailabilityZone:          "fes1",
+			Flavor:                    pointer.String("l1c.small"),
+			Image:                     pointer.String("Ubuntu Focal 20.04 (2021-07-01)"),
+			InstanceReadyCheckPeriod:  "5s",
+			InstanceReadyCheckTimeout: "120s",
+			RootDiskSizeGB:            0,
+			Tags:                      nil,
+			UseFloatingIP:             true,
+		},
+	}
+}
+
+func (a openstack) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "syseleven-fes1",
+		Openstack: &models.OpenstackCloudSpec{
+			ApplicationCredentialID:     "",
+			ApplicationCredentialSecret: "",
+			Domain:                      os.Getenv("OS_USER_DOMAIN_NAME"),
+			FloatingIPPool:              os.Getenv("OS_FLOATING_IP_POOL"),
+			IPV6SubnetID:                "",
+			IPV6SubnetPool:              "",
+			Network:                     "",
+			NodePortsAllowedIPRange:     "0.0.0.0/0",
+			Password:                    os.Getenv("OS_PASSWORD"),
+			Project:                     os.Getenv("OS_PROJECT_NAME"),
+			ProjectID:                   "",
+			RouterID:                    "",
+			SecurityGroups:              "default",
+			SubnetID:                    "",
+			Token:                       "",
+			UseOctavia:                  false,
+			UseToken:                    false,
+			Username:                    os.Getenv("OS_USERNAME"),
+			CredentialsReference:        nil,
+			NodePortsAllowedIPRanges: &models.NetworkRanges{
+				CIDRBlocks: []string{
+					"0.0.0.0/0",
+					"::/0",
+				},
+			},
 		},
 	}
 }

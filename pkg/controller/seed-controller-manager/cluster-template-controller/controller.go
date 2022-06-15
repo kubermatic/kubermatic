@@ -27,10 +27,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +38,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -251,7 +250,8 @@ func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string
 }
 
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
-	name := rand.String(10)
+	name := utilcluster.MakeClusterName()
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -268,7 +268,7 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 		newCluster.Labels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 	newCluster.Labels[kubermaticv1.ProjectIDLabelKey] = instance.Spec.ProjectID
-	newCluster.Labels[kubernetes.ClusterTemplateInstanceLabelKey] = instance.Name
+	newCluster.Labels[kubernetesprovider.ClusterTemplateInstanceLabelKey] = instance.Name
 	newCluster.Spec = template.Spec
 
 	newCluster.Spec.HumanReadableName = fmt.Sprintf("%s-%s", newCluster.Spec.HumanReadableName, name)

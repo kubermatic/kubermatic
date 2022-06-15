@@ -14,6 +14,23 @@
 
 {{/* Template must only emit data in case its valid for a given provider. That way we can ensure we don't install it when not needed */}}
 {{ if eq .Cluster.CloudProviderName "azure" }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: azure-disk-csi
+provisioner: disk.csi.azure.com
+parameters:
+  kind: managed
+  storageaccounttype: Standard_LRS
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+{{ else }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -26,6 +43,7 @@ provisioner: kubernetes.io/azure-disk
 parameters:
   kind: Managed
   storageaccounttype: Standard_LRS
+{{ end }}
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "aws" }}

@@ -103,10 +103,6 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to apply defaults: %w", err)
 	}
 
-	if err := r.reconcileNamespaces(ctx, defaulted, logger); err != nil {
-		return err
-	}
-
 	if err := r.reconcileServiceAccounts(ctx, defaulted, logger); err != nil {
 		return err
 	}
@@ -198,20 +194,6 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
-}
-
-func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	logger.Debug("Reconciling Namespaces")
-
-	creators := []reconciling.NamedNamespaceCreatorGetter{
-		common.NamespaceCreator(config),
-	}
-
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Namespaces: %w", err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {

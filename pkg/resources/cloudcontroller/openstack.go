@@ -176,13 +176,13 @@ func getOSVersion(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
 	case "1.20":
 		return "1.20.2", nil
-	case "1.21":
+	case v121:
 		return "1.21.0", nil
-	case "1.22":
+	case v122:
 		return "1.22.0", nil
-	case "1.23":
+	case v123:
 		return "1.23.1", nil
-	case "1.24":
+	case v124:
 		fallthrough
 	default:
 		return "1.24.0", nil

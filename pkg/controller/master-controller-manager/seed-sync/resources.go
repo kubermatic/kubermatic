@@ -19,7 +19,17 @@ package seedsync
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
+
+func namespaceCreator(namespace string) reconciling.NamedNamespaceCreatorGetter {
+	return func() (string, reconciling.NamespaceCreator) {
+		return namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
+			return n, nil
+		}
+	}
+}
 
 func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 	return func() (string, reconciling.SeedCreator) {

@@ -257,6 +257,34 @@ func UpdateSeedStatus(ctx context.Context, client ctrlruntimeclient.Client, seed
 	})
 }
 
+type KubermaticConfigurationPatchFunc func(kc *kubermaticv1.KubermaticConfiguration)
+
+func UpdateKubermaticConfigurationStatus(ctx context.Context,
+	client ctrlruntimeclient.Client,
+	kc *kubermaticv1.KubermaticConfiguration,
+	patch KubermaticConfigurationPatchFunc,
+) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(kc)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the Kubermatic Configuration
+		if err := client.Get(ctx, key, kc); err != nil {
+			return err
+		}
+
+		// modify it
+		original := kc.DeepCopy()
+		patch(kc)
+
+		if reflect.DeepEqual(original.Status, kc.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Patch(ctx, kc, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
 // SetSeedCondition sets a condition on the given seed using the provided type, status,
 // reason and message.
 func SetSeedCondition(seed *kubermaticv1.Seed, conditionType kubermaticv1.SeedConditionType, status corev1.ConditionStatus, reason string, message string) {

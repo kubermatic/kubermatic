@@ -661,9 +661,20 @@ spec:
                         type: object
                       csiKubeconfig:
                         type: string
+                      infraStorageClasses:
+                        description: InfraStorageClasses is a list of storage classes
+                          from KubeVirt infra cluster that are used for initialization
+                          of user cluster storage classes by the CSI driver kubevirt
+                          (hot pluggable disks)
+                        items:
+                          type: string
+                        type: array
                       kubeconfig:
                         type: string
                       preAllocatedDataVolumes:
+                        description: PreAllocatedDataVolumes holds list of preallocated
+                          DataVolumes which can be used as reference for DataVolume
+                          cloning.
                         items:
                           properties:
                             name:
@@ -1913,11 +1924,11 @@ spec:
                   sets the registry credentials on node level.'
                 properties:
                   name:
-                    description: Name is unique within a namespace to reference a
+                    description: name is unique within a namespace to reference a
                       secret resource.
                     type: string
                   namespace:
-                    description: Namespace defines the space within which the secret
+                    description: namespace defines the space within which the secret
                       name must be unique.
                     type: string
                 type: object

@@ -83,20 +83,6 @@ const (
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
-func NamespaceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
-	return func() (string, reconciling.NamespaceCreator) {
-		return cfg.Namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
-			if n.Labels == nil {
-				n.Labels = map[string]string{}
-			}
-
-			n.Labels[NameLabel] = cfg.Namespace
-
-			return n, nil
-		}
-	}
-}
-
 func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {

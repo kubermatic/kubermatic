@@ -72,7 +72,7 @@ type Reconciler struct {
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request.NamespacedName)
+	log := r.log.With("seed", request.Name)
 
 	err := r.reconcile(ctx, log, request.Name)
 	if err != nil {
@@ -306,10 +306,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
-	if err := r.reconcileNamespaces(ctx, cfg, seed, client, log); err != nil {
-		return err
-	}
-
 	if err := r.reconcileServiceAccounts(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -338,6 +334,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	if err := r.reconcileAdmissionWebhooks(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileDeployments(ctx, cfg, seed, client, log, caBundle); err != nil {
 		return err
 	}
@@ -347,10 +347,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := r.reconcileServices(ctx, cfg, seed, client, log); err != nil {
-		return err
-	}
-
-	if err := r.reconcileAdmissionWebhooks(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
 
@@ -388,20 +384,6 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile CRDs: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcileNamespaces(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling Namespaces")
-
-	creators := []reconciling.NamedNamespaceCreatorGetter{
-		common.NamespaceCreator(cfg),
-	}
-
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile Namespaces: %w", err)
 	}
 
 	return nil

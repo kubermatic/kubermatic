@@ -52,6 +52,7 @@ import (
 	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const (
@@ -101,7 +102,12 @@ func main() {
 
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
+	rootCtx := signals.SetupSignalHandler()
+
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		MetricsBindAddress:      "0",
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
@@ -141,7 +147,7 @@ func main() {
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
+	if err := mgr.GetAPIReader().List(rootCtx, &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -166,7 +172,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}
 
-	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
@@ -190,6 +195,22 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 	if err != nil {
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
+	}
+
+	// migrate existing data
+
+	// create a dedicated client because the manager isn't started yet and so the caches
+	// are also not ready yet; for the migration there is no need for caches anyway.
+	migrationClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
+		log.Fatalw("Failed to create migration client", zap.Error(err))
+	}
+
+	if err := migrateClusterAddresses(rootCtx, log, migrationClient); err != nil {
+		log.Fatalw("Failed to migrate Cluster addresses", zap.Error(err))
 	}
 
 	ctrlCtx := &controllerContext{
@@ -223,8 +244,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("failed to add metrics server", zap.Error(err))
 	}
 
-	log.Info("starting the seed-controller-manager...")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	log.Info("Starting the seed-controller-manager")
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
 }

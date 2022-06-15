@@ -29,9 +29,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -169,21 +172,57 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 	}
 
-	// check if there are still clusters using DCs not defined anymore
-	clusters := &kubermaticv1.ClusterList{}
-	if err := seedClient.List(ctx, clusters); err != nil {
-		return fmt.Errorf("failed to list clusters: %w", err)
+	if err := validateNoClustersRemaining(ctx, seedClient, subject, subjectDatacenters, existingDatacenters); err != nil {
+		return err
 	}
 
-	// list of all datacenters after the seed would have been persisted
-	finalDatacenters := subjectDatacenters.Union(existingDatacenters)
+	if err := validateEtcdBackupConfiguration(ctx, seedClient, subject); err != nil {
+		return err
+	}
 
-	for _, cluster := range clusters.Items {
-		if !finalDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
-			return fmt.Errorf("datacenter %q is still in use by cluster %q, cannot delete it", cluster.Spec.Cloud.DatacenterName, cluster.Name)
+	if err := validation.ValidateMeteringConfiguration(subject.Spec.Metering); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.String) error {
+	// new seed clusters might not yet have the CRDs installed into them,
+	// which for the purpose of this validation is not a problem and simply
+	// means there can be no Clusters on that seed
+	crd := apiextensionsv1.CustomResourceDefinition{}
+	key := types.NamespacedName{Name: "clusters.kubermatic.k8c.io"}
+	crdExists := true
+	if err := seedClient.Get(ctx, key, &crd); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to probe for Cluster CRD: %w", err)
+		}
+
+		crdExists = false
+	}
+
+	if crdExists {
+		// check if there are still clusters using DCs not defined anymore
+		clusters := &kubermaticv1.ClusterList{}
+		if err := seedClient.List(ctx, clusters); err != nil {
+			return fmt.Errorf("failed to list clusters: %w", err)
+		}
+
+		// list of all datacenters after the seed would have been persisted
+		finalDatacenters := subjectDatacenters.Union(existingDatacenters)
+
+		for _, cluster := range clusters.Items {
+			if !finalDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
+				return fmt.Errorf("datacenter %q is still in use by cluster %q, cannot delete it", cluster.Spec.Cloud.DatacenterName, cluster.Name)
+			}
 		}
 	}
 
+	return nil
+}
+
+func validateEtcdBackupConfiguration(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed) error {
 	if subject.Spec.EtcdBackupRestore != nil {
 		if len(subject.Spec.EtcdBackupRestore.Destinations) == 0 {
 			return errors.New("invalid etcd backup configuration: must define at least one backup destination")
@@ -210,10 +249,6 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 				}
 			}
 		}
-	}
-
-	if err := validation.ValidateMeteringConfiguration(subject.Spec.Metering); err != nil {
-		return err
 	}
 
 	return nil

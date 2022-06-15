@@ -227,7 +227,6 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 
 	cluster.Labels = labels
 	cluster.Name = name
-	cluster.Address = kubermaticv1.ClusterAddress{}
 	cluster.Finalizers = []string{TestFakeFinalizer}
 	cluster.Spec = *genClusterSpec(name)
 	cluster.Status = kubermaticv1.ClusterStatus{

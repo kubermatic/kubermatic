@@ -38,6 +38,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 			}
 
 			encodedCACert := triple.EncodeCertPEM(ca.Cert)
+			address := data.Cluster().GetAddress()
 
 			oldConfData, exists := se.Data[resources.KonnectivityServerConf]
 
@@ -52,7 +53,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 					return nil, fmt.Errorf("old config has no clusters")
 				}
 
-				if oldConf.Clusters[0].Cluster.Server == data.Cluster().Address.URL &&
+				if oldConf.Clusters[0].Cluster.Server == address.URL &&
 					string(oldConf.Clusters[0].Cluster.CertificateAuthorityData) == string(encodedCACert) {
 					return se, nil
 				}
@@ -71,7 +72,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 						Name: "kubernetes",
 						Cluster: v1.Cluster{
 							CertificateAuthorityData: encodedCACert,
-							Server:                   data.Cluster().Address.URL,
+							Server:                   address.URL,
 						},
 					},
 				},

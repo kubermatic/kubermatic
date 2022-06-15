@@ -54,9 +54,10 @@ var operatingSystems = map[string]models.OperatingSystemSpec{
 }
 
 var cloudProviders = map[string]clusterSpec{
-	"azure": azure{},
-	"gcp":   gcp{},
-	"aws":   aws{},
+	"azure":     azure{},
+	"gcp":       gcp{},
+	"aws":       aws{},
+	"openstack": openstack{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -95,10 +96,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "azure",
 			osNames: []string{
-				// "centos", // cilium agent crash
-				// "flatcar", // dhcpv6 bug
-				"rhel",
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "cilium",
@@ -110,9 +107,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "azure",
 			osNames: []string{
 				"centos",
-				// "flatcar", // dhcpv6 bug
-				// "rhel", // node local dns cache crashing
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "canal",
@@ -123,10 +117,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos",
-				// "flatcar", //
 				"rhel",
-				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "cilium",
@@ -137,10 +128,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos", // works when instance is created with ssh keypair
-				// "flatcar",
-				// "rhel", // works when instance is created with ssh keypair
-				// "sles",
 				"ubuntu",
 			},
 			cni:                 "canal",
@@ -151,11 +138,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "gcp",
 			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
+				"ubuntu",
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
@@ -165,11 +148,28 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "gcp",
 			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
+				"ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "openstack",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "openstack",
+			osNames: []string{
+				"centos",
+				"ubuntu",
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
@@ -178,6 +178,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 	}
 
+	retestBudget := 2
+	ch := make(chan int, retestBudget)
+	for i := 0; i < retestBudget; i++ {
+		ch <- i
+	}
+	close(ch)
+	var retested sync.Map
 	var mu sync.Mutex
 
 	for _, test := range tests {
@@ -185,7 +192,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
-		clusterSpec := defaultClusterRequest()
 		cniSpec := cnis[test.cni]
 		netConfig := defaultClusterNetworkingConfig()
 		switch test.cni {
@@ -197,7 +203,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			clusterSpec := clusterSpec.WithName(name).
+
+		retest:
+			clusterSpec := defaultClusterRequest().WithName(name).
 				WithCloud(cloudSpec).
 				WithCNI(cniSpec).
 				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
@@ -224,13 +232,21 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				mu.Unlock()
 			}()
 
+			nodeSpec := cloud.NodeSpec()
+
 			for _, osName := range test.osNames {
+				// TODO: why don't we need to do this for other clouds?
+				if test.cloudName == "openstack" {
+					img := openstack{}.getImage(osName)
+					nodeSpec.Openstack.Image = &img
+				}
+
 				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
 					WithClusterID(clusterID).
 					WithOS(operatingSystems[osName]).
-					WithNodeSpec(cloud.NodeSpec()),
+					WithNodeSpec(nodeSpec),
 				)
 				if err != nil {
 					t.Fatalf("failed to create machine deployment: %v", err)
@@ -245,6 +261,23 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			t.Logf("waiting for nodes to come up")
 			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
 			if err != nil {
+				go func() {
+					mu.Lock()
+					cleanup()
+					mu.Unlock()
+				}()
+
+				_, ok := retested.Load(name)
+				if !ok {
+					retested.Store(name, true)
+					_, ok := <-ch
+					if !ok {
+						t.Log("out of retest budget")
+						t.Fatalf("nodes never became ready: %v", err)
+					}
+					t.Logf("retesting...")
+					goto retest
+				}
 				t.Fatalf("nodes never became ready: %v", err)
 			}
 
@@ -444,7 +477,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 
 func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params createMachineDeploymentParams) error {
 	mdParams := project.CreateMachineDeploymentParams(params)
-	return wait.Poll(30*time.Second, 2*time.Minute, func() (bool, error) {
+	return wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
 		_, err := apicli.GetKKPAPIClient().Project.CreateMachineDeployment(
 			&mdParams,
 			apicli.GetBearerToken())

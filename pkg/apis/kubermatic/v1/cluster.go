@@ -106,9 +106,49 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec    `json:"spec,omitempty"`
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
+
+	// Address contains the IPs/URLs to access the cluster control plane.
+	// This field is optional and replaced by the identical struct in the
+	// ClusterStatus. No code should rely on these fields anymore.
+	// +optional
 	Address ClusterAddress `json:"address,omitempty"`
-	Status  ClusterStatus  `json:"status,omitempty"`
+}
+
+// GetAddress returns the address and can handle both KKP 2.20 clusters
+// (where the address is a top-level element in the CRD) and 2.21+ clusters
+// (where the address is part of the ClusterStatus). In KKP 2.22+ this function
+// should be removed and all components should just use cluster.Status.Address
+// directly.
+func (c *Cluster) GetAddress() ClusterAddress {
+	address := c.Status.Address.DeepCopy()
+
+	if address.AdminToken == "" {
+		address.AdminToken = c.Address.AdminToken
+	}
+
+	if address.URL == "" {
+		address.URL = c.Address.URL
+	}
+
+	if address.ExternalName == "" {
+		address.ExternalName = c.Address.ExternalName
+	}
+
+	if address.InternalName == "" {
+		address.InternalName = c.Address.InternalName
+	}
+
+	if address.IP == "" {
+		address.IP = c.Address.IP
+	}
+
+	if address.Port == 0 {
+		address.Port = c.Address.Port
+	}
+
+	return *address
 }
 
 // +kubebuilder:object:generate=true
@@ -442,6 +482,10 @@ const (
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
+	// Address contains the IPs/URLs to access the cluster control plane.
+	// +optional
+	Address ClusterAddress `json:"address,omitempty"`
+
 	// +optional
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
@@ -814,16 +858,22 @@ type NetworkRanges struct {
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
 	// URL under which the Apiserver is available
+	// +optional
 	URL string `json:"url"`
 	// Port is the port the API server listens on
+	// +optional
 	Port int32 `json:"port"`
 	// ExternalName is the DNS name for this cluster
+	// +optional
 	ExternalName string `json:"externalName"`
 	// InternalName is the seed cluster internal absolute DNS name to the API server
+	// +optional
 	InternalName string `json:"internalURL"`
 	// AdminToken is the token for the kubeconfig, the user can download
+	// +optional
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
+	// +optional
 	IP string `json:"ip"`
 }
 
@@ -1146,8 +1196,11 @@ type KubevirtCloudSpec struct {
 
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
-
+	// PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.
 	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+	// InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
+	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
+	InfraStorageClasses []string `json:"infraStorageClasses,omitempty"`
 }
 
 type PreAllocatedDataVolume struct {

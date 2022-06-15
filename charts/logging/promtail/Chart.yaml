@@ -15,7 +15,7 @@
 apiVersion: v2
 name: promtail
 version: v9.9.9-dev
-appVersion: v2.4.2
+appVersion: v2.5.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:
   - kubermatic
@@ -31,5 +31,5 @@ maintainers:
     email: support@kubermatic.com
 dependencies:
   - name: promtail
-    version: "3.11.0"
+    version: "5.1.0"
     repository: "https://grafana.github.io/helm-charts"

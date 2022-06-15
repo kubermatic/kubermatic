@@ -775,6 +775,18 @@ spec:
                     type: object
                 type: object
             type: object
+          status:
+            description: KubermaticConfigurationStatus stores status information about
+              a KubermaticConfiguration.
+            properties:
+              kubermaticEdition:
+                description: KubermaticEdition current Kubermatic Edition , i.e. Community
+                  Edition or Enterprise Edition.
+                type: string
+              kubermaticVersion:
+                description: KubermaticVersion current Kubermatic Version.
+                type: string
+            type: object
         type: object
     served: true
     storage: true

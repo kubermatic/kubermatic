@@ -53,6 +53,12 @@ export AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET:-$(vault kv get -field=clientS
 
 export GOOGLE_SERVICE_ACCOUNT="${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}"
 
+export OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
+export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
+export OS_USER_DOMAIN_NAME="${OS_USER_DOMAIN_NAME:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
+export OS_PROJECT_NAME="${OS_PROJECT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
+export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
+
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 

@@ -61,7 +61,16 @@ type KubermaticConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec KubermaticConfigurationSpec `json:"spec,omitempty"`
+	Spec   KubermaticConfigurationSpec   `json:"spec,omitempty"`
+	Status KubermaticConfigurationStatus `json:"status,omitempty"`
+}
+
+// KubermaticConfigurationStatus stores status information about a KubermaticConfiguration.
+type KubermaticConfigurationStatus struct {
+	// KubermaticVersion current Kubermatic Version.
+	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
+	// KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
+	KubermaticEdition string `json:"kubermaticEdition,omitempty"`
 }
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.

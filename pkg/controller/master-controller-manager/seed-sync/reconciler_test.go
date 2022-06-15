@@ -154,29 +154,6 @@ func TestReconcilingSeed(t *testing.T) {
 			},
 		},
 		{
-			name:       "invalid expose strategy",
-			shouldFail: true,
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-seed",
-					Namespace: "kubermatic",
-				},
-				Spec: kubermaticv1.SeedSpec{
-					Country:        "Germany",
-					ExposeStrategy: kubermaticv1.ExposeStrategy("wtf"),
-				},
-			},
-			config: &kubermaticv1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kubermatic",
-					Namespace: "kubermatic",
-				},
-			},
-			existingSeeds: existingSeeds,
-			// actual check is done in the reconciler, nothing to validate here
-			validate: nil,
-		},
-		{
 			name: "sync config into seed",
 			seed: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{

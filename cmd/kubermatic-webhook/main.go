@@ -45,15 +45,17 @@ import (
 	usersshkeyvalidation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/validation"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
-	rootCtx := context.Background()
+	rootCtx := signals.SetupSignalHandler()
 
 	// /////////////////////////////////////////
 	// setup flags
@@ -89,6 +91,9 @@ func main() {
 	// create manager
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		Namespace: options.namespace,
 	})
 	if err != nil {
@@ -195,7 +200,7 @@ func main() {
 	// Here we go!
 
 	log.Info("Starting the webhook...")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("The controller manager has failed", zap.Error(err))
 	}
 }
@@ -212,6 +217,9 @@ func addAPIs(dst *runtime.Scheme, log *zap.SugaredLogger) {
 	}
 	if err := appskubermaticv1.AddToScheme(dst); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", appskubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := apiextensionsv1.AddToScheme(dst); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1.SchemeGroupVersion), zap.Error(err))
 	}
 }
 

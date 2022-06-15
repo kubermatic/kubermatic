@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ type OpenstackClusterJig struct {
 func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           "c" + rand.String(9),
+			name:           utilcluster.MakeClusterName(),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,

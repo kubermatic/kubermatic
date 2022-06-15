@@ -49,7 +49,7 @@ type controllerRunOptions struct {
 }
 
 func main() {
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 
 	klog.InitFlags(nil)
 
@@ -85,6 +85,9 @@ func main() {
 	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
 
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
 		MetricsBindAddress: opt.internalAddr,
 		LeaderElection:     opt.enableLeaderElection,
 		LeaderElectionID:   "operator.kubermatic.k8c.io",
@@ -136,7 +139,7 @@ func main() {
 		log.Fatalw("Failed to create seed-lifecycle controller", zap.Error(err))
 	}
 
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("Cannot start manager", zap.Error(err))
 	}
 }
