@@ -21,10 +21,8 @@ package ccmmigration
 import (
 	"flag"
 	"os"
-	"testing"
 
 	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
@@ -85,10 +83,10 @@ func init() {
 	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
 }
 
-func TestCCMMigration(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "CCM migration suite")
-}
+// func TestCCMMigration(t *testing.T) {
+// 	gomega.RegisterFailHandler(ginkgo.Fail)
+// 	ginkgo.RunSpecs(t, "CCM migration suite")
+// }
 
 var _ = ginkgo.BeforeSuite(func() {
 	e2eutils.DefaultLogger = e2eutils.CreateLogger(options.debugLog)

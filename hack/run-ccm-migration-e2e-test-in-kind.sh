@@ -83,32 +83,8 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
 fi
 
 # run tests
-# use ginkgo binary by preference to have better output:
-# https://github.com/onsi/ginkgo/issues/633
-if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
-    -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --timeout=30m \
-    --cover \
-    --trace \
-    --race \
-    --progress \
-    -v \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --debug-log \
-    --provider "${PROVIDER_TO_TEST}"
-else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
-    --ginkgo.randomizeAllSpecs \
-    --ginkgo.failOnPending \
-    --ginkgo.trace \
-    --ginkgo.progress \
-    --ginkgo.v \
-    --timeout=30m \
-    --kubeconfig "${HOME}/.kube/config" \
-    --debug-log \
-    --provider "${PROVIDER_TO_TEST}"
-fi
+CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
+  --timeout=30m \
+  --kubeconfig "${HOME}/.kube/config" \
+  --debug-log \
+  --provider "${PROVIDER_TO_TEST}"
