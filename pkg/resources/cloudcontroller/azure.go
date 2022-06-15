@@ -164,12 +164,11 @@ func getAzureVersion(version semver.Semver) (string, error) {
 }
 
 func getAzureFlags(data *resources.TemplateData) []string {
-	clusterCIDR := data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()
 	flags := []string{
-		// "false" for Azure CNI and "true" for other network plugins
-		"--allocate-node-cidrs=true",
-		// "false" for Azure CNI and "true" for other network plugins
-		"--configure-cloud-routes=true",
+		// "false" as we use IPAM in kube-controller-manager
+		"--allocate-node-cidrs=false",
+		// "false" as we use VXLAN overlay for pod network for all clusters ATM
+		"--configure-cloud-routes=false",
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--v=4",
 		"--cloud-config=/etc/kubernetes/cloud/config",
@@ -178,7 +177,6 @@ func getAzureFlags(data *resources.TemplateData) []string {
 		"--route-reconciliation-period=10s",
 		"--port=10267",
 		"--controllers=*,-cloud-node",
-		fmt.Sprintf("--cluster-cidr=%s", clusterCIDR),
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
