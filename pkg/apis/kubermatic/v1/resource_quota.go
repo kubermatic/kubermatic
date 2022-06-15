@@ -74,3 +74,14 @@ type ResourceDetails struct {
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
 }
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// ResourceQuotaList is a collection of resource quotas.
+type ResourceQuotaList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ResourceQuota `json:"items"`
+}
