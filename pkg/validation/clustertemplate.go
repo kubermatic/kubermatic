@@ -34,23 +34,26 @@ import (
 func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// we only validate ClusterTemplates scoped to projects
-	if scope, ok := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]; !ok || scope != kubermaticv1.ProjectClusterTemplateScope {
+	scope, ok := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]
+
+	if !ok || (scope != kubermaticv1.ProjectClusterTemplateScope && scope != kubermaticv1.UserClusterTemplateScope && scope != kubermaticv1.GlobalClusterTemplateScope) {
 		allErrs = append(allErrs, field.Required(
 			parentFieldPath.Child("metadata", "labels", "scope"),
-			fmt.Sprintf("label '%s=%s' is required", kubermaticv1.ClusterTemplateScopeLabelKey, kubermaticv1.ProjectClusterTemplateScope),
+			fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateScopeLabelKey),
 		))
 		return allErrs
 	}
 
 	// ensure that a ClusterTemplate has a project reference
-	projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
-	if !ok || projectId == "" {
-		allErrs = append(allErrs, field.Required(
-			parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
-			fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),
-		))
-		return allErrs
+	if scope == kubermaticv1.ProjectClusterTemplateScope {
+		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
+		if !ok || projectId == "" {
+			allErrs = append(allErrs, field.Required(
+				parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
+				fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),
+			))
+			return allErrs
+		}
 	}
 
 	// validate SSH keys having an ID that is not empty
