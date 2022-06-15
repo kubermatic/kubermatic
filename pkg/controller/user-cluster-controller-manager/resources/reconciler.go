@@ -93,7 +93,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
 		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
@@ -781,6 +781,12 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = append(creators, nodelocaldns.ConfigMapCreator(r.dnsClusterIP))
 	}
 
+	if data.csiCloudConfig != nil {
+		if r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider {
+			creators = append(creators, cloudcontroller.VMwareCloudDirectorCSIConfig(data.csiCloudConfig))
+		}
+	}
+
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %w", err)
 	}
@@ -1076,7 +1082,7 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
-	// csiCloudConfig is currently used only by vSphere and Nutanix, whose needs it to properly configure the external CSI driver
+	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig              []byte
 	ccmMigration                bool
 	monitoringRequirements      *corev1.ResourceRequirements

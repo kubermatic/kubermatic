@@ -1075,6 +1075,18 @@ type VMwareCloudDirectorCloudSpec struct {
 	// VApp used for isolation of VMs and their associated network
 	// +optional
 	VApp string `json:"vapp,omitempty"`
+
+	// Config for CSI driver
+	CSI *VMwareCloudDirectorCSIConfig `json:"csi"`
+}
+
+type VMwareCloudDirectorCSIConfig struct {
+	// The name of the storage profile to use for disks created by CSI driver
+	StorageProfile string `json:"storageProfile"`
+
+	// Filesystem to use for named disks, defaults to "ext4"
+	// +optional
+	Filesystem string `json:"filesystem,omitempty"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

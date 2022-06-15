@@ -41,6 +41,7 @@ const (
 	vmwareCloudDirectoMemoryMB          = 4096
 	vmwareCloudDirectoDiskSize          = 20
 	vmwareCloudDirectorCatalog          = "kubermatic"
+	vmwareCloudDirectorStorageProfile   = "Intermediate"
 )
 
 // GetVMwareCloudDirectorScenarios returns a matrix of (version x operating system).
@@ -80,6 +81,9 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 						Organization: secrets.VMwareCloudDirector.Organization,
 						VDC:          secrets.VMwareCloudDirector.VDC,
 						OVDCNetwork:  secrets.VMwareCloudDirector.OVDCNetwork,
+						Csi: &apimodels.VMwareCloudDirectorCSIConfig{
+							StorageProfile: vmwareCloudDirectorStorageProfile,
+						},
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -100,6 +104,9 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 				Organization: secrets.VMwareCloudDirector.Organization,
 				VDC:          secrets.VMwareCloudDirector.VDC,
 				OVDCNetwork:  secrets.VMwareCloudDirector.OVDCNetwork,
+				CSI: &kubermaticv1.VMwareCloudDirectorCSIConfig{
+					StorageProfile: vmwareCloudDirectorStorageProfile,
+				},
 			},
 		},
 		Version: *s.version,

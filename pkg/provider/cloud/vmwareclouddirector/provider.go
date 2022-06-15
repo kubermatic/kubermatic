@@ -129,7 +129,7 @@ func (p *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 
 	vAppName := cluster.Spec.Cloud.VMwareCloudDirector.VApp
 	if vAppName == "" {
-		vAppName = fmt.Sprintf(resourceNamePattern, cluster.Name)
+		vAppName = fmt.Sprintf(ResourceNamePattern, cluster.Name)
 	}
 
 	vapp, err := vdc.GetVAppByNameOrId(vAppName, true)

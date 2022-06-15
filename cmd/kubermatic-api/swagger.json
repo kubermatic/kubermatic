@@ -29907,6 +29907,22 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "VMwareCloudDirectorCSIConfig": {
+      "type": "object",
+      "properties": {
+        "filesystem": {
+          "description": "Filesystem to use for named disks, defaults to \"ext4\"\n+optional",
+          "type": "string",
+          "x-go-name": "Filesystem"
+        },
+        "storageProfile": {
+          "description": "The name of the storage profile to use for disks created by CSI driver",
+          "type": "string",
+          "x-go-name": "StorageProfile"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "VMwareCloudDirectorCatalog": {
       "type": "object",
       "title": "VMwareCloudDirectorCatalog represents a VMware Cloud Director catalog.",
@@ -29932,6 +29948,9 @@
       "properties": {
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "csi": {
+          "$ref": "#/definitions/VMwareCloudDirectorCSIConfig"
         },
         "organization": {
           "description": "Password is the VMware Cloud Director user password.\n+optional",
