@@ -232,8 +232,6 @@ spec:
         - 'oidc:'
         - --oidc-groups-claim
         - groups
-        - --feature-gates
-        - CSIMigrationAzureDisk=false,CSIMigrationAzureFile=false
         command:
         - /usr/local/bin/kube-apiserver
         env:
