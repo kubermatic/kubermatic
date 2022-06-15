@@ -145,7 +145,7 @@ func setupAndGetUserClient(t *testing.T, ctx context.Context, clusterJig provide
 	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		ready, err := clusterJig.WaitForNodeToBeReady(ctx, userClient)
 		if err != nil {
-			t.Logf("Node not ready yet: %v", err)
+			t.Logf("Failed to check node readiness: %v", err)
 		}
 		return ready, nil
 	})

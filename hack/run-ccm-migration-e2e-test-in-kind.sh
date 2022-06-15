@@ -84,7 +84,12 @@ fi
 
 # run tests
 echodate "Running CCM tests..."
-CGO_ENABLED=1 go test --tags=e2e -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
+
+# for unknown reasons, log output from `t.Log()` is not shown
+# live when using "/..." in the package expression (the position
+# of the -v flag doesn't make a difference)
+go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
   -v \
+  -timeout 30m \
   -kubeconfig "${HOME}/.kube/config" \
   -provider "${PROVIDER_TO_TEST}"
