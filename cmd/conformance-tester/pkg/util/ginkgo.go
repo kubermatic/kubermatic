@@ -188,9 +188,32 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 	return resultSuite, nil
 }
 
+// AppendReport appends a reporters.JUnitTestSuite to another.
+// During that process, test cases are deduplicated (identified via their name).
+// Successful or failing test cases always take precedence over skipped test cases.
 func AppendReport(report, toAppend *reporters.JUnitTestSuite) {
-	report.Tests += toAppend.Tests
 	report.Errors += toAppend.Errors
-	report.Failures += toAppend.Failures
-	report.TestCases = append(report.TestCases, toAppend.TestCases...)
+
+	for _, testCase := range toAppend.TestCases {
+		for i, existingCase := range report.TestCases {
+			if testCase.Name == existingCase.Name && testCase.ClassName == existingCase.ClassName {
+				if testCase.Skipped == nil && existingCase.Skipped != nil {
+					// override existing test case
+					report.TestCases[i] = testCase
+					if testCase.FailureMessage != nil {
+						report.Failures += 1
+					}
+				}
+
+				// skip over adding this test case
+				continue
+			}
+
+			report.TestCases = append(report.TestCases, testCase)
+			if testCase.FailureMessage != nil {
+				report.Failures += 1
+			}
+			report.Tests += 1
+		}
+	}
 }
