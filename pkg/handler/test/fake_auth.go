@@ -90,6 +90,10 @@ func (o *IssuerVerifier) Extract(_ *http.Request) (string, error) {
 	return IDToken, nil
 }
 
+func (o *IssuerVerifier) SetRedirectURI(uri string) {
+	o.redirectURI = uri
+}
+
 // AuthCodeURL returns a URL to OpenID provider's consent page.
 func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
 	oauth2Config := o.oauth2Config(scopes...)
