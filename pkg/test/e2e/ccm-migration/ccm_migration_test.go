@@ -112,14 +112,13 @@ func TestCCMMigration(t *testing.T) {
 	}
 
 	// run tests
-	err = testBody(t, ctx, clusterJig, cluster, userClient)
+	if err := testBody(t, ctx, clusterJig, cluster, userClient); err != nil {
+		t.Error(err)
+	}
 
 	// cleanup
-	clusterJig.Cleanup(ctx, userClient)
-
-	// finish
-	if err != nil {
-		t.Fatal(err)
+	if err := clusterJig.Cleanup(ctx, userClient); err != nil {
+		t.Error(err)
 	}
 }
 
@@ -161,11 +160,12 @@ func setupAndGetUserClient(t *testing.T, ctx context.Context, clusterJig provide
 
 	t.Log("Waiting for user cluster to become available...")
 	var userClient ctrlruntimeclient.Client
-	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool bool, err error) {
+	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		if err := clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster); err != nil {
 			return false, err
 		}
 
+		var err error
 		userClient, err = clusterClientProvider.GetClient(ctx, cluster)
 		if err != nil {
 			t.Logf("User cluster not ready yet: %v", err)
