@@ -24,8 +24,7 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
-
-{{ $webhookVersion = "v4.0.0" }}
+{{ $webhookVersion = "v4.0.1" }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
 {{ $webhookVersion = "v5.0.1" }}
 {{ end }}

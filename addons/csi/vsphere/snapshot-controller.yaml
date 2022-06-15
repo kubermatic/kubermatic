@@ -24,10 +24,9 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
-
-{{ $controllerVersion = "v4.0.0" }}
+{{ $controllerVersion = "v4.0.1" }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
-{{ $controllerVersion = "v5.0.0" }}
+{{ $controllerVersion = "v5.0.1" }}
 {{ end }}
 
 
