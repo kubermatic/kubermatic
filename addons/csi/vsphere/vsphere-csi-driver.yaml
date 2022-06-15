@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/release-2.5/manifests/vanilla/vsphere-csi-driver.yaml
+#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v2.5.1/manifests/vanilla/vsphere-csi-driver.yaml
 # Modifications:
 #   - change namespace
 #   - remove windows support daemon sets
@@ -22,7 +22,6 @@
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
 #   - set image versions and features based on selected k8s version
-#   - set "block-volume-snapshot": "true"
 #   - add csi-snapshotter container
 
 
@@ -34,6 +33,8 @@
 {{ $livenessProbeVersion := "v2.4.0" }}
 {{ $provisionerVersion := "v3.0.0" }}
 {{ $registrarVersion := "v2.3.0" }}
+{{ $snapshotterVersion = "v4.1.1" }}
+
 
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
 {{ $attacherVersion = "v3.3.0" }}
@@ -42,6 +43,7 @@
 {{ $livenessProbeVersion = "v2.6.0" }}
 {{ $provisionerVersion = "v3.1.0" }}
 {{ $registrarVersion = "v2.5.0" }}
+{{ $snapshotterVersion = "v5.0.1" }}
 {{ end }}
 
 apiVersion: storage.k8s.io/v1 # For k8s 1.17 use storage.k8s.io/v1beta1
@@ -433,7 +435,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-snapshotter
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v4.1.1
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:{{ $snapshotterVersion }}
           args:
             - "--v=4"
             - "--timeout=300s"
