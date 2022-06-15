@@ -89,6 +89,11 @@ cluster after every commit to master.
 After having set up a local KKP installation, this script is then
 used to run the conformance-tester for a given cloud provider.
 
+## run-dualstack-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to master.
+
 ## run-e2e-tests.sh
 
 This script sets up a local KKP installation in kind and then
@@ -99,6 +104,11 @@ Kubernetes conformance.
 
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the etcd-launcher tests.
+
+## run-ipam-e2e-tests.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the IPAM e2e tests.
 
 ## run-konnectivity-e2e-test.sh
 
@@ -208,14 +218,14 @@ Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
 
+## verify-user-cluster-prometheus-configs.sh
+
+This ensures that the Prometheus rules deployed into userclusters
+are valid Prometheus rules.
+
 ## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
-
-## verify-user-cluster-prometheus-configs.sh
-
-This ensures that the Prometheus rules deployed into userclusters
-are valid Prometheus rules.
 
