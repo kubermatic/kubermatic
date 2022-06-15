@@ -21,7 +21,9 @@ package ccmmigration
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -31,6 +33,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -40,6 +43,58 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// Options holds the e2e test options.
+type testOptions struct {
+	skipCleanup       bool
+	kubernetesVersion semver.Semver
+
+	provider string
+
+	vsphereSeedDatacenter string
+	osSeedDatacenter      string
+	azureSeedDatacenter   string
+
+	osCredentials      providers.OpenstackCredentialsType
+	vSphereCredentials providers.VsphereCredentialsType
+	azureCredentials   providers.AzureCredentialsType
+}
+
+var (
+	options = testOptions{
+		kubernetesVersion: *semver.NewSemverOrDie(os.Getenv("VERSION_TO_TEST")),
+	}
+)
+
+func init() {
+	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
+
+	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
+
+	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
+	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
+	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
+
+	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
+	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
+	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
+	flag.StringVar(&options.osCredentials.Tenant, "openstack-tenant", "", "openstack tenant")
+	flag.StringVar(&options.osCredentials.Domain, "openstack-domain", "", "openstack domain")
+	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
+	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
+	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
+
+	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth-url")
+	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
+	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
+	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
+	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
+
+	flag.StringVar(&options.azureCredentials.TenantID, "azure-tenant-id", "", "azure tenant id")
+	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
+	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
+	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
+}
 
 func TestCCMMigration(t *testing.T) {
 	ctx := context.Background()
