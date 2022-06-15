@@ -49,7 +49,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	}
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
-		Name:      fmt.Sprintf("%s-%s", name, kind),
+		Name:      fmt.Sprintf("%s-%s", kind, name),
 		Namespace: kubermaticv1.ResourceQuotaNamespace,
 	}, resourceQuota); err != nil {
 		return nil, err
