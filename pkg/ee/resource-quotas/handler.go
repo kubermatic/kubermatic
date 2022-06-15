@@ -145,7 +145,7 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
-	resourceQuota, err := provider.Get(ctx, req.Name)
+	resourceQuota, err := provider.GetUnsecured(ctx, req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		labelSet[k8cv1.ResourceQuotaSubjectNameLabelKey] = req.SubjectName
 	}
 
-	resourceQuotaList, err := provider.List(ctx, labelSet)
+	resourceQuotaList, err := provider.ListUnsecured(ctx, labelSet)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	if err := provider.Create(ctx, req.Body.Subject, req.Body.Quota); err != nil {
+	if err := provider.CreateUnsecured(ctx, req.Body.Subject, req.Body.Quota); err != nil {
 		return err
 	}
 	return nil
@@ -218,7 +218,7 @@ func UpdateResourceQuota(ctx context.Context, request interface{}, provider prov
 		Storage: req.Body.Storage,
 	}
 
-	if err := provider.Update(ctx, req.Name, newQuota); err != nil {
+	if err := provider.UpdateUnsecured(ctx, req.Name, newQuota); err != nil {
 		return err
 	}
 	return nil
@@ -230,7 +230,7 @@ func DeleteResourceQuota(ctx context.Context, request interface{}, provider prov
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
-	if err := provider.Delete(ctx, req.Name); err != nil {
+	if err := provider.DeleteUnsecured(ctx, req.Name); err != nil {
 		return err
 	}
 	return nil

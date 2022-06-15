@@ -7,7 +7,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -22,13 +21,14 @@ type ResourceQuotaProvider struct {
 
 var _ provider.ResourceQuotaProvider = &ResourceQuotaProvider{}
 
-func NewResourceQuotaProvider(privilegedClient ctrlruntimeclient.Client) *ResourceQuotaProvider {
+func NewResourceQuotaProvider(createMasterImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ResourceQuotaProvider {
 	return &ResourceQuotaProvider{
-		privilegedClient: privilegedClient,
+		createMasterImpersonatedClient: createMasterImpersonatedClient,
+		privilegedClient:               privilegedClient,
 	}
 }
 
-func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error) {
+func (p *ResourceQuotaProvider) GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error) {
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := p.privilegedClient.Get(ctx, types.NamespacedName{
 		Name:      name,
@@ -39,56 +39,41 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, name string) (*kubermat
 	return resourceQuota, nil
 }
 
-func (p *ResourceQuotaProvider) GetForProject(ctx context.Context, userInfo *provider.UserInfo, projectName string) (*kubermaticv1.ResourceQuota, error) {
+func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name, kind string) (*kubermaticv1.ResourceQuota, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
-
-	// first: check for quotas with helper labels
-	resourceQuotaFilteredList, err := list(ctx, masterImpersonatedClient, map[string]string{
-		kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
-		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
-	})
 	if err != nil {
 		return nil, err
 	}
-	if len(resourceQuotaFilteredList.Items) == 1 {
-		return &resourceQuotaFilteredList.Items[0], nil
+	resourceQuota := &kubermaticv1.ResourceQuota{}
+	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
+		Name:      fmt.Sprintf("%s-%s", name, kind),
+		Namespace: kubermaticv1.ResourceQuotaNamespace,
+	}, resourceQuota); err != nil {
+		return nil, err
 	}
-
-	// second: check kind and name manually in case helper labels are missing
-	resourceQuotaFullList, err := list(ctx, masterImpersonatedClient, map[string]string{})
-	for _, resourceQuota := range resourceQuotaFullList.Items {
-		if resourceQuota.Name == projectName && resourceQuota.Kind == "project" {
-			return &resourceQuota, nil
-		}
-	}
-	return nil, utilerrors.NewNotFound("resourcequota for project %s", projectName)
+	return resourceQuota, nil
 }
 
-func (p *ResourceQuotaProvider) List(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
-	return list(ctx, p.privilegedClient, labelSet)
-}
-
-func list(ctx context.Context, client ctrlruntimeclient.Client, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
-	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
-
-	selector := labels.SelectorFromSet(labelSet)
+func (p *ResourceQuotaProvider) ListUnsecured(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace:     kubermaticv1.ResourceQuotaNamespace,
-		LabelSelector: selector,
+		LabelSelector: labels.SelectorFromSet(labelSet),
 	}
-	if err := client.List(ctx, resourceQuotaList, listOpts); err != nil {
+	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
+	if err := p.privilegedClient.List(ctx, resourceQuotaList, listOpts); err != nil {
 		return nil, err
 	}
 	return resourceQuotaList, nil
 }
 
-func (p *ResourceQuotaProvider) Create(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error {
+func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error {
 	rq := &kubermaticv1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
+			// Add labels for easier filtering
 			Labels: map[string]string{
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: subject.Name,
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
@@ -108,8 +93,8 @@ func (p *ResourceQuotaProvider) Create(ctx context.Context, subject kubermaticv1
 	return nil
 }
 
-func (p *ResourceQuotaProvider) Update(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error {
-	rq, err := p.Get(ctx, name)
+func (p *ResourceQuotaProvider) UpdateUnsecured(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error {
+	rq, err := p.GetUnsecured(ctx, name)
 	if err != nil {
 		return err
 	}
@@ -123,8 +108,8 @@ func (p *ResourceQuotaProvider) Update(ctx context.Context, name string, newQuot
 	return nil
 }
 
-func (p *ResourceQuotaProvider) Delete(ctx context.Context, name string) error {
-	rq, err := p.Get(ctx, name)
+func (p *ResourceQuotaProvider) DeleteUnsecured(ctx context.Context, name string) error {
+	rq, err := p.GetUnsecured(ctx, name)
 	if err != nil {
 		return err
 	}

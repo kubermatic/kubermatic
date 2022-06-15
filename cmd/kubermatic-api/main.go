@@ -264,7 +264,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	settingsProvider := kubernetesprovider.NewSettingsProvider(client)
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
-	resourceQuotaProvider := kubernetesprovider.NewResourceQuotaProvider(client)
+	resourceQuotaProvider := kubernetesprovider.NewResourceQuotaProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {

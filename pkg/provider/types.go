@@ -1284,10 +1284,36 @@ type SeedProvider interface {
 }
 
 type ResourceQuotaProvider interface {
-	Get(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error)
-	GetForProject(ctx context.Context, userInfo *UserInfo, projectName string) (*kubermaticv1.ResourceQuota, error)
-	List(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error)
-	Create(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error
-	Update(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error
-	Delete(ctx context.Context, name string) error
+	// GetUnsecured returns a resource quota based on object's name.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error)
+
+	// Get returns a resource quota object based on name.
+	Get(ctx context.Context, userInfo *UserInfo, name, kind string) (*kubermaticv1.ResourceQuota, error)
+
+	// ListUnsecured returns a resource quota list.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	ListUnsecured(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error)
+
+	// CreateUnsecured creates a new resource quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	CreateUnsecured(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error
+
+	// UpdateUnsecured updates an existing resource quota with new quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error
+
+	// DeleteUnsecured removes an existing resource quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	DeleteUnsecured(ctx context.Context, name string) error
 }
