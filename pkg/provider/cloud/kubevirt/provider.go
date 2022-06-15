@@ -112,7 +112,13 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if err != nil {
 		return cluster, err
 	}
+
 	err = reconcilePreAllocatedDataVolumes(ctx, cluster, client)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcileNetworkPolicy(ctx, cluster, client)
 
 	return cluster, err
 }
