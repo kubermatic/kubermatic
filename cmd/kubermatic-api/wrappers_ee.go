@@ -23,7 +23,9 @@ import (
 	"flag"
 
 	eeapi "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-api"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,4 +40,8 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, op
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return eeapi.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *resourcequotas.ResourceQuotaProvider {
+	return eeapi.ResourceQuotaProviderFactory(createMasterImpersonatedClient, privilegedClient)
 }

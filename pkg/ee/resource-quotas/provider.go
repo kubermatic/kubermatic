@@ -1,4 +1,4 @@
-package kubernetes
+package resourcequotas
 
 import (
 	"context"
@@ -7,21 +7,23 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ResourceQuotaProvider struct {
 	privilegedClient               ctrlruntimeclient.Client
-	createMasterImpersonatedClient ImpersonationClient
+	createMasterImpersonatedClient kubernetes.ImpersonationClient
 }
 
 var _ provider.ResourceQuotaProvider = &ResourceQuotaProvider{}
 
-func NewResourceQuotaProvider(createMasterImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ResourceQuotaProvider {
+func NewResourceQuotaProvider(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ResourceQuotaProvider {
 	return &ResourceQuotaProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		privilegedClient:               privilegedClient,
@@ -43,10 +45,16 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+
+	impersonationCfg := restclient.ImpersonationConfig{
+		UserName: userInfo.Email,
+		Groups:   []string{userInfo.Group},
+	}
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
 	if err != nil {
 		return nil, err
 	}
+
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
 		Name:      fmt.Sprintf("%s-%s", kind, name),

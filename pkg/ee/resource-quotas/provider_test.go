@@ -1,4 +1,4 @@
-package kubernetes_test
+package resourcequotas_test
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ const (
 	projectName = "etestxxxq8"
 )
 
-func createResourceProviderHelper(existingObjects []ctrlruntimeclient.Object) *kubernetes.ResourceQuotaProvider {
+func createResourceProviderHelper(existingObjects []ctrlruntimeclient.Object) *resourcequotas.ResourceQuotaProvider {
 	fakeClient := fakectrlruntimeclient.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -35,7 +35,7 @@ func createResourceProviderHelper(existingObjects []ctrlruntimeclient.Object) *k
 		return fakeClient, nil
 	}
 
-	return kubernetes.NewResourceQuotaProvider(fakeImpersonationClient, fakeClient)
+	return resourcequotas.NewResourceQuotaProvider(fakeImpersonationClient, fakeClient)
 }
 
 func createNewQuotaHelper(base int) kubermaticv1.ResourceDetails {
