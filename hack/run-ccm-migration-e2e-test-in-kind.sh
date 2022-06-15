@@ -83,8 +83,8 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
 fi
 
 # run tests
-CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
-  --timeout=30m \
-  --kubeconfig "${HOME}/.kube/config" \
-  --debug-log \
-  --provider "${PROVIDER_TO_TEST}"
+echodate "Running CCM tests..."
+CGO_ENABLED=1 go test --tags=e2e -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
+  -v \
+  -kubeconfig "${HOME}/.kube/config" \
+  -provider "${PROVIDER_TO_TEST}"

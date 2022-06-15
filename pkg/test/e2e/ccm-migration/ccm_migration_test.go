@@ -173,14 +173,13 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		return fmt.Errorf("failed to patch cluster: %w", err)
 	}
 
-	t.Log("Getting the patched cluster...")
-	annotatedCluster := &kubermaticv1.Cluster{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
-		return fmt.Errorf("failed to get cluster: %w", err)
-	}
-
 	t.Log("Asserting the annotations existence in the cluster...")
 	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+		annotatedCluster := &kubermaticv1.Cluster{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster); err != nil {
+			return false, fmt.Errorf("failed to get cluster: %w", err)
+		}
+
 		_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := annotatedCluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
