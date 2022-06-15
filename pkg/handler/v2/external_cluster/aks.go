@@ -41,6 +41,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -504,8 +506,12 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 	return md
 }
 
-func getAKSNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-	var nodesV1 []apiv2.ExternalClusterNode
+func getAKSNodes(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	nodePoolName string,
+	clusterProvider provider.ExternalClusterProvider,
+) ([]corev1.Node, error) {
+	var outputNodes []corev1.Node
 
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
@@ -514,16 +520,12 @@ func getAKSNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nod
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
 			if n.Labels[AKSNodepoolNameLabel] == nodePoolName {
-				outNode, err := outputNode(n)
-				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
-				}
-				nodesV1 = append(nodesV1, *outNode)
+				outputNodes = append(outputNodes, n)
 			}
 		}
 	}
 
-	return nodesV1, err
+	return outputNodes, err
 }
 
 func patchAKSMachineDeployment(ctx context.Context, oldCluster, newCluster *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterMachineDeployment, error) {

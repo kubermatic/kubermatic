@@ -41,6 +41,8 @@ import (
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -682,26 +684,27 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 	return updateOutput, nil
 }
 
-func getEKSNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeGroupName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
-	var nodesV1 []apiv2.ExternalClusterNode
+func getEKSNodes(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	nodeGroupName string,
+	clusterProvider provider.ExternalClusterProvider,
+) ([]corev1.Node, error) {
+	var outputNodes []corev1.Node
 
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
 			if n.Labels[EKSNodeGroupNameLabel] == nodeGroupName {
-				outNode, err := outputNode(n)
-				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
-				}
-				nodesV1 = append(nodesV1, *outNode)
+				outputNodes = append(outputNodes, n)
 			}
 		}
 	}
 
-	return nodesV1, err
+	return outputNodes, err
 }
 
 func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
