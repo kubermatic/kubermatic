@@ -195,6 +195,8 @@ func AppendReport(report, toAppend *reporters.JUnitTestSuite) {
 	report.Errors += toAppend.Errors
 
 	for _, testCase := range toAppend.TestCases {
+		exists := false
+
 		for i, existingCase := range report.TestCases {
 			if testCase.Name == existingCase.Name && testCase.ClassName == existingCase.ClassName {
 				if testCase.Skipped == nil && existingCase.Skipped != nil {
@@ -206,9 +208,11 @@ func AppendReport(report, toAppend *reporters.JUnitTestSuite) {
 				}
 
 				// skip over adding this test case
-				continue
+				exists = true
 			}
+		}
 
+		if !exists {
 			report.TestCases = append(report.TestCases, testCase)
 			if testCase.FailureMessage != nil {
 				report.Failures += 1
