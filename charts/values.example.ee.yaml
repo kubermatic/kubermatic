@@ -44,6 +44,8 @@ dex:
     RedirectURIs:
       # ensure the URLs below use the dex.ingress.host configured above
       - https://cluster.example.dev/api/v1/kubeconfig
+      - https://cluster.example.dev/api/v2/kubeconfig/secret
+      - https://cluster.example.dev/api/v2/dashboard/login
 
   # Depending on your chosen login method, you need to configure either an OAuth provider like
   # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
