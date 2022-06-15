@@ -32,6 +32,7 @@ import (
 type Backoff wait.Backoff
 
 const (
+	// Request timeout is set to 30s(was 10s) to avoid flakes because the requests for Azure sizes sometimes takes a long time.
 	apiRequestTimeout = 30 * time.Second
 )
 
