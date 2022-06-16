@@ -42,7 +42,6 @@ const (
 type VsphereClusterJig struct {
 	CommonClusterJig
 
-	log         *zap.SugaredLogger
 	Credentials VsphereCredentialsType
 }
 
@@ -53,8 +52,8 @@ func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, log *zap.SugaredL
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
+			log:            log,
 		},
-		log:         log,
 		Credentials: credentials,
 	}
 }

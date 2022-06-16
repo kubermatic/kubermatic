@@ -48,8 +48,8 @@ func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, log *zap.SugaredLog
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
+			log:            log,
 		},
-		log:         log,
 		Credentials: credentials,
 	}
 }
@@ -61,7 +61,6 @@ var (
 type AzureClusterJig struct {
 	CommonClusterJig
 
-	log         *zap.SugaredLogger
 	Credentials AzureCredentialsType
 	cluster     kubermaticv1.Cluster
 }

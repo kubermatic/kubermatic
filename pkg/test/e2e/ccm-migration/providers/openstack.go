@@ -42,7 +42,6 @@ const (
 type OpenstackClusterJig struct {
 	CommonClusterJig
 
-	log         *zap.SugaredLogger
 	Credentials OpenstackCredentialsType
 }
 
@@ -53,8 +52,8 @@ func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, log *zap.Sugare
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
+			log:            log,
 		},
-		log:         log,
 		Credentials: credentials,
 	}
 }
