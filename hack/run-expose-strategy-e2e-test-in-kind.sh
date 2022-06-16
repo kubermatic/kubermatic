@@ -204,6 +204,6 @@ go test -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
   -kubeconfig "$HOME/.kube/config" \
   -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
   -datacenter byo-kubernetes \
-  -debug-log
+  -log-debug
 
 echodate "Done."

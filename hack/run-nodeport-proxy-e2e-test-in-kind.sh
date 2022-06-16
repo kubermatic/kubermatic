@@ -69,7 +69,7 @@ if type ginkgo > /dev/null; then
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
-    --debug-log
+    --log-debug
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
     --ginkgo.randomizeAllSpecs \
@@ -79,5 +79,5 @@ else
     --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
-    --debug-log
+    --log-debug
 fi
