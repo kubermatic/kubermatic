@@ -199,7 +199,8 @@ retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
 echodate "Running tests..."
-go test --tags="$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy -v \
+go test -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
+  -ginkgo.v \
   -kubeconfig "$HOME/.kube/config" \
   -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
   -datacenter byo-kubernetes \
