@@ -101,6 +101,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&IPAMPoolList{},
 		&IPAMAllocation{},
 		&IPAMAllocationList{},
+		&ResourceQuota{},
+		&ResourceQuotaList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

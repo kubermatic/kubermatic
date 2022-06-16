@@ -75,6 +75,17 @@ type ResourceDetails struct {
 	Storage *resource.Quantity `json:"storage,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// ResourceQuotaList is a collection of resource quotas.
+type ResourceQuotaList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ResourceQuota `json:"items"`
+}
+
 func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails {
 	return &ResourceDetails{
 		CPU:     &cpu,
