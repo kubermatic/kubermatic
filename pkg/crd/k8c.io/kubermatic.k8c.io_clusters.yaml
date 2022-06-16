@@ -1050,6 +1050,20 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
+                      csi:
+                        description: Config for CSI driver
+                        properties:
+                          filesystem:
+                            description: Filesystem to use for named disks, defaults
+                              to "ext4"
+                            type: string
+                          storageProfile:
+                            description: The name of the storage profile to use for
+                              disks created by CSI driver
+                            type: string
+                        required:
+                        - storageProfile
+                        type: object
                       organization:
                         description: Password is the VMware Cloud Director user password.
                         type: string
@@ -1072,6 +1086,7 @@ spec:
                         description: VDC is the organizational virtual data center.
                         type: string
                     required:
+                    - csi
                     - ovdcNetwork
                     type: object
                   vsphere:

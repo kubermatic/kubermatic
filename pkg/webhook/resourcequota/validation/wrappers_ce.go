@@ -22,10 +22,14 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateResourceQuota(_ context.Context, _ *kubermaticv1.ResourceQuota, _ ctrlruntimeclient.Client) *field.Error {
+func validateResourceQuota(_ context.Context,
+	_ *kubermaticv1.ResourceQuota,
+	_ ctrlruntimeclient.Client,
+) *field.Error {
 	return nil
 }

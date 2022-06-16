@@ -97,6 +97,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&MLAAdminSettingList{},
 		&KubermaticConfiguration{},
 		&KubermaticConfigurationList{},
+		&IPAMPool{},
+		&IPAMPoolList{},
+		&IPAMAllocation{},
+		&IPAMAllocationList{},
 		&ResourceQuota{},
 		&ResourceQuotaList{},
 	)

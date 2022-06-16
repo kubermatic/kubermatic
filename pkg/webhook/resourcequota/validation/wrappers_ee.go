@@ -22,11 +22,15 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	eeresourcequotavalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
+	eeresourcequotavalidation "k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateResourceQuota(ctx context.Context, quota *kubermaticv1.ResourceQuota, client ctrlruntimeclient.Client) *field.Error {
+func validateResourceQuota(ctx context.Context,
+	quota *kubermaticv1.ResourceQuota,
+	client ctrlruntimeclient.Client,
+) *field.Error {
 	return eeresourcequotavalidation.ValidateResourceQuota(ctx, quota, client)
 }

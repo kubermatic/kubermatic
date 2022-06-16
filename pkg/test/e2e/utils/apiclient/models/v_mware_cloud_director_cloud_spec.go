@@ -43,6 +43,9 @@ type VMwareCloudDirectorCloudSpec struct {
 
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// csi
+	Csi *VMwareCloudDirectorCSIConfig `json:"csi,omitempty"`
 }
 
 // Validate validates this v mware cloud director cloud spec
@@ -50,6 +53,10 @@ func (m *VMwareCloudDirectorCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCsi(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,11 +85,34 @@ func (m *VMwareCloudDirectorCloudSpec) validateCredentialsReference(formats strf
 	return nil
 }
 
+func (m *VMwareCloudDirectorCloudSpec) validateCsi(formats strfmt.Registry) error {
+	if swag.IsZero(m.Csi) { // not required
+		return nil
+	}
+
+	if m.Csi != nil {
+		if err := m.Csi.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("csi")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("csi")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this v mware cloud director cloud spec based on the context it is used
 func (m *VMwareCloudDirectorCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCsi(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -100,6 +130,22 @@ func (m *VMwareCloudDirectorCloudSpec) contextValidateCredentialsReference(ctx c
 				return ve.ValidateName("credentialsReference")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("credentialsReference")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *VMwareCloudDirectorCloudSpec) contextValidateCsi(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Csi != nil {
+		if err := m.Csi.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("csi")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("csi")
 			}
 			return err
 		}

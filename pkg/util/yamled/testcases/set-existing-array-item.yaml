@@ -13,11 +13,11 @@
 # limitations under the License.
 
 items:
-- a
-- b
-- c
+  - a
+  - b
+  - c
 ###
 items:
-- a
-- new b
-- c
+  - a
+  - new b
+  - c
