@@ -21,10 +21,9 @@
 #   - change replica amount to 1
 #   - template controller version
 
-
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
-{{ $controllerVersion = "v4.0.1" }}
+{{ $controllerVersion := "v4.0.1" }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
 {{ $controllerVersion = "v5.0.1" }}
 {{ end }}

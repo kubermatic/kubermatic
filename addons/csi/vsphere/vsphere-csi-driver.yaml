@@ -33,7 +33,7 @@
 {{ $livenessProbeVersion := "v2.4.0" }}
 {{ $provisionerVersion := "v3.0.0" }}
 {{ $registrarVersion := "v2.3.0" }}
-{{ $snapshotterVersion = "v4.1.1" }}
+{{ $snapshotterVersion := "v4.1.1" }}
 
 
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
