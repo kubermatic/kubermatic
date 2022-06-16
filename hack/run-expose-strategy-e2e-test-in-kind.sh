@@ -41,10 +41,11 @@ TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.9}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
 REPOSUFFIX=""
-if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
-  REPOSUFFIX="-${KUBERMATIC_EDITION}"
+if [ "$KUBERMATIC_EDITION" == "ee" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
 type kind > /dev/null || fatal \
@@ -197,34 +198,11 @@ echodate "Patching Kubermatic ingress domain with nodeport-proxy service cluster
 retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
-# run tests
-# use ginkgo binary by preference to have better output:
-# https://github.com/onsi/ginkgo/issues/633
-if type ginkgo > /dev/null; then
-  ginkgo --tags=e2e -v pkg/test/e2e/expose-strategy/ \
-    -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --cover \
-    --trace \
-    --race \
-    --progress \
-    -v \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
-    --debug-log
-else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/expose-strategy/... \
-    --ginkgo.randomizeAllSpecs \
-    --ginkgo.failOnPending \
-    --ginkgo.trace \
-    --ginkgo.progress \
-    --ginkgo.v \
-    --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
-    --debug-log
-fi
+echodate "Running tests..."
+go test --tags="$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy -v \
+  -kubeconfig "$HOME/.kube/config" \
+  -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
+  -datacenter byo-kubernetes \
+  -debug-log
+
+echodate "Done."
