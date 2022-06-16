@@ -130,7 +130,7 @@ func TestCCMMigration(t *testing.T) {
 func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
 	var clusterJig providers.ClusterJigInterface
 
-	logger := log.NewFromOptions(options.logOptions).Sugar()
+	logger := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
 
 	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
