@@ -19,6 +19,7 @@ package utils
 import (
 	"github.com/onsi/ginkgo"
 	"go.uber.org/zap"
+
 	"k8c.io/kubermatic/v2/pkg/log"
 
 	ctrlruntimelogzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
