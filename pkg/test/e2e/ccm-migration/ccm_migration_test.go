@@ -99,7 +99,6 @@ func init() {
 	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
 
 	options.logOptions.AddFlags(flag.CommandLine)
-	flag.Parse()
 }
 
 func TestCCMMigration(t *testing.T) {

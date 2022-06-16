@@ -51,7 +51,6 @@ func init() {
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
 
 	options.logOptions.AddFlags(flag.CommandLine)
-	flag.Parse()
 }
 
 func TestExposeStrategy(t *testing.T) {

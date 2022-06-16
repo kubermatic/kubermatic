@@ -44,7 +44,6 @@ func init() {
 	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
 
 	logOptions.AddFlags(flag.CommandLine)
-	flag.Parse()
 }
 
 func TestNodeportProxy(t *testing.T) {
