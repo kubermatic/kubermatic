@@ -75,10 +75,6 @@ make -C cmd/kubeletdnat-controller docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
-make -C cmd/user-ssh-keys-agent docker \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
 make -C addons docker \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
@@ -95,7 +91,6 @@ time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIN
 time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
 
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
