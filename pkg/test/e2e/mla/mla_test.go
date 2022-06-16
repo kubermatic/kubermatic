@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -242,7 +242,7 @@ rules:
     description: "log stream is a bit high"
 `
 	expectedLogRuleGroup := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict([]byte(lokiRule), &expectedLogRuleGroup); err != nil {
+	if err := yaml.Unmarshal([]byte(lokiRule), &expectedLogRuleGroup); err != nil {
 		t.Fatalf("unable to unmarshal expected rule group: %v", err)
 	}
 
@@ -282,7 +282,7 @@ rules:
 	// Metric RuleGroup
 	testRuleGroup := test.GenerateTestRuleGroupData("test-metric-rule")
 	expectedRuleGroup := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict(testRuleGroup, &expectedRuleGroup); err != nil {
+	if err := yaml.Unmarshal(testRuleGroup, &expectedRuleGroup); err != nil {
 		t.Fatalf("unable to unmarshal expected rule group: %v", err)
 	}
 
@@ -337,7 +337,7 @@ rules:
 
 	alertmanagerURL := "http://localhost:3001" + mla.AlertmanagerConfigEndpoint
 	expectedConfig := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict([]byte(testAlertmanagerConfig), &expectedConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(testAlertmanagerConfig), &expectedConfig); err != nil {
 		t.Fatalf("unable to unmarshal expected config: %v", err)
 	}
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
@@ -398,7 +398,9 @@ rules:
 			t.Fatalf("unable to get configMap: %v", err)
 		}
 		actualOverrides := &mla.Overrides{}
-		if err := yaml.UnmarshalStrict([]byte(configMap.Data[mla.RuntimeConfigFileName]), actualOverrides); err != nil {
+		decoder := yaml.NewDecoder(strings.NewReader(configMap.Data[mla.RuntimeConfigFileName]))
+		decoder.KnownFields(true)
+		if err := decoder.Decode(actualOverrides); err != nil {
 			t.Fatalf("unable to unmarshal rate limit config map")
 		}
 		actualRateLimits, ok := actualOverrides.Overrides[cluster.Name]

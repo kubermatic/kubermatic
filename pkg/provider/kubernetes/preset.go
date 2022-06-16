@@ -496,6 +496,5 @@ func (m *PresetProvider) setVMwareCloudDirectorCredentials(ctx context.Context, 
 	cloud.VMwareCloudDirector.Organization = credentials.Organization
 	cloud.VMwareCloudDirector.VDC = credentials.VDC
 	cloud.VMwareCloudDirector.OVDCNetwork = credentials.OVDCNetwork
-
 	return &cloud, nil
 }

@@ -607,6 +607,10 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		creators = append(creators, cloudconfig.NutanixCSIConfigMapCreator(data))
 	}
 
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		creators = append(creators, cloudconfig.VMwareCloudDirectorCSIConfigMapCreator(data))
+	}
+
 	return creators
 }
 

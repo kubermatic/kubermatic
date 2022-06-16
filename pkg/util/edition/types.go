@@ -33,6 +33,17 @@ func (e Type) String() string {
 	}
 }
 
+func (e Type) ShortString() string {
+	switch e {
+	case CE:
+		return "CE"
+	case EE:
+		return "EE"
+	default:
+		return ""
+	}
+}
+
 func (e Type) IsEE() bool {
 	return e == EE
 }

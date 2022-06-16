@@ -344,7 +344,7 @@ const (
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 )
 
-// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;IPAMControllerReconciledSuccessfully;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -420,6 +420,7 @@ const (
 	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
+	ClusterConditionIPAMControllerReconcilingSuccess                    ClusterConditionType = "IPAMControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
@@ -1075,6 +1076,18 @@ type VMwareCloudDirectorCloudSpec struct {
 	// VApp used for isolation of VMs and their associated network
 	// +optional
 	VApp string `json:"vapp,omitempty"`
+
+	// Config for CSI driver
+	CSI *VMwareCloudDirectorCSIConfig `json:"csi"`
+}
+
+type VMwareCloudDirectorCSIConfig struct {
+	// The name of the storage profile to use for disks created by CSI driver
+	StorageProfile string `json:"storageProfile"`
+
+	// Filesystem to use for named disks, defaults to "ext4"
+	// +optional
+	Filesystem string `json:"filesystem,omitempty"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.

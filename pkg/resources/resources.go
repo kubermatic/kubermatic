@@ -550,6 +550,11 @@ const (
 	NutanixCSIConfigSecretKey = "key"
 	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret.
 	NutanixCSIConfigSecretName = "ntnx-secret"
+
+	// VMwareCloudDirectorCSIConfigConfigMapKey is the key for VMware Cloud Director CSI configmap.
+	VMwareCloudDirectorCSIConfigConfigMapKey = "vcloud-csi-config.yaml"
+	// VMwareCloudDirectorCSIConfigConfigMapName is the name for VMware Cloud Director CSI configmap.
+	VMwareCloudDirectorCSIConfigConfigMapName = "vcloud-csi-configmap"
 )
 
 const (

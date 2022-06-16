@@ -126,10 +126,12 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if seed.Spec.ExposeStrategy != "" {
-		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
-			return fmt.Errorf("failed to validate seed: invalid expose strategy %q, must be one of %v", seed.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies)
-		}
+	nsCreators := []reconciling.NamedNamespaceCreatorGetter{
+		namespaceCreator(seed.Namespace),
+	}
+
+	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
 	seedCreators := []reconciling.NamedSeedCreatorGetter{

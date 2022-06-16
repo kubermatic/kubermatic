@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -348,10 +348,13 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return err
 	}
+
 	expectedConfig := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict(config, &expectedConfig); err != nil {
+	decoder := yaml.NewDecoder(bytes.NewReader(config))
+	if err := decoder.Decode(&expectedConfig); err != nil {
 		return fmt.Errorf("unable to unmarshal expected config: %w", err)
 	}
+
 	if reflect.DeepEqual(currentConfig, expectedConfig) {
 		return nil
 	}

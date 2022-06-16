@@ -200,6 +200,8 @@ type ClientService interface {
 
 	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error)
 
+	ListExternalClusterMachineDeploymentEvents(params *ListExternalClusterMachineDeploymentEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentEventsOK, error)
+
 	ListExternalClusterMachineDeploymentMetrics(params *ListExternalClusterMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentMetricsOK, error)
 
 	ListExternalClusterMachineDeploymentNodes(params *ListExternalClusterMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentNodesOK, error)
@@ -3574,6 +3576,44 @@ func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListExternalClusterEventsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterMachineDeploymentEvents lists an external cluster machine deployment events
+*/
+func (a *Client) ListExternalClusterMachineDeploymentEvents(params *ListExternalClusterMachineDeploymentEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentEventsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterMachineDeploymentEventsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listExternalClusterMachineDeploymentEvents",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterMachineDeploymentEventsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterMachineDeploymentEventsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterMachineDeploymentEventsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

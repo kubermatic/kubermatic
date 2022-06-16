@@ -18,11 +18,12 @@ package mla
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -291,7 +292,9 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				t.Fatalf("unable to get configMap: %v", err)
 			}
 			actualOverrides := &Overrides{}
-			err = yaml.UnmarshalStrict([]byte(configMap.Data[RuntimeConfigFileName]), actualOverrides)
+			decoder := yaml.NewDecoder(strings.NewReader(configMap.Data[RuntimeConfigFileName]))
+			decoder.KnownFields(true)
+			err = decoder.Decode(actualOverrides)
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedOverrides, *actualOverrides)
 			mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
