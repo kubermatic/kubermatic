@@ -26,7 +26,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,13 +36,12 @@ import (
 )
 
 const (
-	azureSecretPrefixName = "credentials-azure"
-
+	azureSecretPrefixName  = "credentials-azure"
 	azureNodeDaemonSetName = "cloud-node-manager"
 	azureCCMDeploymentName = "azure-cloud-controller-manager"
 )
 
-func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
+func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
 	return &AzureClusterJig{
 		CommonClusterJig: CommonClusterJig{
 			name:           utilcluster.MakeClusterName(),
@@ -51,7 +49,7 @@ func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, version semver.Semv
 			Version:        version,
 			SeedClient:     seedClient,
 		},
-		log:         e2eutils.DefaultLogger,
+		log:         log,
 		Credentials: credentials,
 	}
 }
@@ -63,11 +61,9 @@ var (
 type AzureClusterJig struct {
 	CommonClusterJig
 
-	log *zap.SugaredLogger
-
+	log         *zap.SugaredLogger
 	Credentials AzureCredentialsType
-
-	cluster kubermaticv1.Cluster
+	cluster     kubermaticv1.Cluster
 }
 
 func (c *AzureClusterJig) Setup(ctx context.Context) error {

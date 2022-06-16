@@ -26,7 +26,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,20 +35,18 @@ import (
 )
 
 const (
-	vsphereSecretPrefixName = "credentials-vsphere"
-
-	ccmDeploymentName = "vsphere-cloud-controller-manager"
+	vsphereSecretPrefixName  = "credentials-vsphere"
+	vsphereCCMDeploymentName = "vsphere-cloud-controller-manager"
 )
 
 type VsphereClusterJig struct {
 	CommonClusterJig
 
-	log *zap.SugaredLogger
-
+	log         *zap.SugaredLogger
 	Credentials VsphereCredentialsType
 }
 
-func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials VsphereCredentialsType) *VsphereClusterJig {
+func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials VsphereCredentialsType) *VsphereClusterJig {
 	return &VsphereClusterJig{
 		CommonClusterJig: CommonClusterJig{
 			name:           utilcluster.MakeClusterName(),
@@ -57,7 +54,7 @@ func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Se
 			Version:        version,
 			SeedClient:     seedClient,
 		},
-		log:         e2eutils.DefaultLogger,
+		log:         log,
 		Credentials: credentials,
 	}
 }
@@ -107,8 +104,8 @@ func (c *VsphereClusterJig) Cleanup(ctx context.Context, userClient ctrlruntimec
 
 func (c *VsphereClusterJig) CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
-	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: ccmDeploymentName}, ccmDeploy); err != nil {
-		return false, fmt.Errorf("failed to get %s deployment: %w", ccmDeploymentName, err)
+	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: vsphereCCMDeploymentName}, ccmDeploy); err != nil {
+		return false, fmt.Errorf("failed to get %s deployment: %w", vsphereCCMDeploymentName, err)
 	}
 	if ccmDeploy.Status.AvailableReplicas == 1 {
 		return true, nil
