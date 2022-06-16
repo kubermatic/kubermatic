@@ -234,7 +234,7 @@ func WaitForPodsCreated(ctx context.Context, c ctrlruntimeclient.Client, log *za
 func CheckPodsRunningReady(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns string, podNames []string, timeout time.Duration) bool {
 	condition := func(pod *corev1.Pod) (bool, error) {
 		err := PodRunningReady(pod)
-		return err == nil, err
+		return err == nil, nil
 	}
 
 	return checkPodsCondition(ctx, c, log, ns, podNames, timeout, condition, "running and ready")
@@ -246,7 +246,8 @@ type podCondition func(pod *corev1.Pod) (bool, error)
 func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
 	key := ctrlruntimeclient.ObjectKey{Name: podName, Namespace: ns}
 
-	logger := log.With("pod", podName, "namespace", ns, "timeout", timeout)
+	// namespace and timeout are already set in the log's context
+	logger := log.With("pod", podName)
 	logger.Infof("Waiting for Pod to be %q...", desc)
 
 	return wait.PollImmediate(pollPeriod, timeout, func() (bool, error) {
@@ -312,7 +313,7 @@ func PodRunningReady(p *corev1.Pod) error {
 	}
 
 	if !podutils.IsPodReady(p) {
-		return fmt.Errorf("Pod is not ready, but: %v", corev1.PodReady, corev1.ConditionTrue, p.Status.Conditions)
+		return fmt.Errorf("Pod is not ready, but: %v", p.Status.Conditions)
 	}
 
 	return nil
