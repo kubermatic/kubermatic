@@ -391,6 +391,11 @@ func main() {
 	}
 	log.Info("Registered Application Installation controller")
 
+	if err := addResourceUsageController(log, seedMgr, mgr, runOp.clusterName, caBundle, isPausedChecker); err != nil {
+		log.Fatalw("Failed to add user Resource Usage controller to mgr", zap.Error(err))
+	}
+	log.Info("Registered Resource Usage controller")
+
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))
 	}

@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"strconv"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -44,6 +45,38 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine,
+	caBundle *certificates.CABundle) (*ResourceDetails, error) {
+	config, err := types.GetConfig(machine.Spec.ProviderSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
+	}
+
+	var quotaUsage *ResourceDetails
+	// TODO add all providers
+	switch config.CloudProvider {
+	case types.CloudProviderFake:
+		quotaUsage, err = getFakeQuotaRequest(config)
+	case types.CloudProviderAWS:
+		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderGoogle:
+		quotaUsage, err = getGCPResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderAzure:
+		quotaUsage, err = getAzureResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderKubeVirt:
+		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderVsphere:
+		quotaUsage, err = getVsphereResourceRequirements(config)
+	case types.CloudProviderOpenstack:
+		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+	default:
+		// TODO skip for now, when all providers are added, throw error
+		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
+	}
+
+	return quotaUsage, err
+}
 
 func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
