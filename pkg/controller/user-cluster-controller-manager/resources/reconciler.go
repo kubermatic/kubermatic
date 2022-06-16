@@ -31,8 +31,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-snapshotter"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
@@ -615,8 +615,8 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
-		creators = append(creators, csi.ValidatingWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.NutanixCSIValidatingWebhookConfigurationName))
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -758,7 +758,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if data.csiCloudConfig != nil {
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
+			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
+				csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 			if data.ccmMigration {
 				creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
 			}
@@ -766,8 +767,12 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
-				csi.TLSServingCertificateCreator(resources.NutanixCSIWebhookName, data.caCert))
+				csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 		}
+	}
+
+	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+		creators = append(creators, csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 	}
 
 	if r.userSSHKeyAgent {
