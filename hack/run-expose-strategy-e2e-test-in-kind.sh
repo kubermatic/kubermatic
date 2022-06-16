@@ -60,6 +60,10 @@ appendTrap clean_up EXIT
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon_ci
+  make download-gocache
+
+  echodate "Preloading the kindest/node image"
+  docker load --input /kindest.tar
 fi
 
 # build Docker images
@@ -79,6 +83,7 @@ make -C cmd/kubeletdnat-controller docker \
 make -C addons docker \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
+
 # the installer should be built for the target platform.
 rm _build/kubermatic-installer
 make _build/kubermatic-installer
