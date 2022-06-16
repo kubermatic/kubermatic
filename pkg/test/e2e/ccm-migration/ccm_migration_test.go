@@ -106,7 +106,7 @@ func TestCCMMigration(t *testing.T) {
 	}
 
 	// prepare cluster
-	clusterJig, cluster, userClient, err := SetupClusterByProvider(t, ctx, seedClient, clusterClientProvider, options)
+	clusterJig, cluster, userClient, err := setupClusterByProvider(t, ctx, seedClient, clusterClientProvider, options)
 	if err != nil {
 		t.Fatalf("Failed to setup preconditions: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestCCMMigration(t *testing.T) {
 	}
 }
 
-func SetupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
+func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
 	var (
 		clusterJig providers.ClusterJigInterface
 	)
