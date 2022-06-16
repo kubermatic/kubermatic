@@ -33,6 +33,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	k8cv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -157,6 +158,41 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 	}
 
 	return resp, nil
+}
+
+func GetResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter,
+	quotaProvider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	req, ok := request.(common.GetProjectRq)
+	if !ok {
+		return nil, utilerrors.NewBadRequest("invalid request")
+	}
+	if len(req.ProjectID) == 0 {
+		return nil, utilerrors.NewBadRequest("the id of the project cannot be empty")
+	}
+
+	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, kubermaticProject.Kind)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return &apiv1.ResourceQuota{
+		Name: projectResourceQuota.Name,
+		Spec: projectResourceQuota.Spec,
+		Status: k8cv1.ResourceQuotaStatus{
+			LocalUsage: projectResourceQuota.Status.LocalUsage,
+		},
+	}, nil
 }
 
 func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {

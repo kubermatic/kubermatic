@@ -1828,7 +1828,6 @@ func (r Routing) deleteProject() http.Handler {
 //     Produces:
 //     - application/json
 //
-//
 //     Responses:
 //       default: errorResponse
 //       200: ResourceQuota

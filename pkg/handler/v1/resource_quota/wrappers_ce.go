@@ -21,14 +21,10 @@ package resourcequota
 import (
 	"context"
 
-	"github.com/go-kit/kit/endpoint"
-
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func GetForProjectEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter, quotaProvider provider.ResourceQuotaProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return getResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
-	}
+func getResourceQuotaForProject(_ context.Context, _ interface{}, _ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	return nil, nil
 }

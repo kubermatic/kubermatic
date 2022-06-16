@@ -1,4 +1,4 @@
-//go:build !ee
+//go:build ee
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -21,14 +21,13 @@ package resourcequota
 import (
 	"context"
 
-	"github.com/go-kit/kit/endpoint"
-
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func GetForProjectEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter, quotaProvider provider.ResourceQuotaProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return getResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
-	}
+func getResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter,
+	quotaProvider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	return resourcequotas.GetResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
 }

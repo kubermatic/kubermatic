@@ -22,7 +22,9 @@ import (
 	"context"
 	"flag"
 
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,4 +39,8 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, op
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaProviderFactory(_ kubernetes.ImpersonationClient, _ ctrlruntimeclient.Client) *resourcequotas.ResourceQuotaProvider {
+	return nil
 }
