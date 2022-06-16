@@ -19,12 +19,10 @@ package validation
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -50,7 +48,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	}
 
 	if quota != nil {
-		return v.ValidateResourceQuota(ctx, quota)
+		return validateResourceQuota(ctx, quota, v.client)
 	}
 	return nil
 }
@@ -61,24 +59,4 @@ func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) error
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
 	return nil
-}
-
-func (v *validator) ValidateResourceQuota(ctx context.Context, quo *kubermaticv1.ResourceQuota) *field.Error {
-	errs := &field.Error{}
-	fieldPath := field.NewPath("unique", "reqource quotas")
-
-	quotaList := &kubermaticv1.ResourceQuotaList{}
-	if err := v.client.List(ctx, quotaList); err != nil {
-		return field.InternalError(fieldPath, fmt.Errorf("failed to list quotas: %w", err))
-	}
-
-	for _, quota := range quotaList.Items {
-		currentSubject := quota.Spec.Subject
-		incomingSuject := quo.Spec.Subject
-		if currentSubject.Name == incomingSuject.Name && currentSubject.Kind == incomingSuject.Kind {
-			return field.Required(fieldPath, fmt.Sprintf("Subject Name %q and Project %q must be unique", incomingSuject.Name, incomingSuject.Kind))
-		}
-	}
-
-	return errs
 }
