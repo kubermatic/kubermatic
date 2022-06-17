@@ -64,7 +64,7 @@ type createResourceQuota struct {
 	// required: true
 	Body struct {
 		Subject kubermaticv1.Subject         `json:"subject"`
-		Quota   k8kubermaticv1esourceDetails `json:"quota"`
+		Quota   kubermaticv1.ResourceDetails `json:"quota"`
 	}
 }
 
