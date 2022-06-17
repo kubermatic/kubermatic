@@ -40,11 +40,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// swagger:parameters getResourceQuota
+// swagger:parameters getResourceQuota deleteResourceQuota
 type getResourceQuota struct {
 	// in: path
 	// required: true
-	Name string `json:"name"`
+	Name string `json:"quota_name"`
 }
 
 // swagger:parameters listResourceQuotas
@@ -58,7 +58,7 @@ type listResourceQuotas struct {
 	SubjectKind string `json:"subject_kind,omitempty"`
 }
 
-// swagger:parameters getResourceQuota
+// swagger:parameters createResourceQuota
 type createResourceQuota struct {
 	// in: body
 	// required: true
@@ -68,10 +68,11 @@ type createResourceQuota struct {
 	}
 }
 
+// swagger:parameters updateResourceQuota
 type updateResourceQuota struct {
 	// in: path
 	// required: true
-	Name string `json:"name"`
+	Name string `json:"quota_name"`
 
 	// in: body
 	Body struct {

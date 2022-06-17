@@ -910,6 +910,24 @@
         ],
         "summary": "Creates a new Resource Quota.",
         "operationId": "createResourceQuota",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "quota": {
+                  "$ref": "#/definitions/ResourceDetails"
+                },
+                "subject": {
+                  "$ref": "#/definitions/Subject"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "201": {
             "$ref": "#/responses/empty"
@@ -929,7 +947,7 @@
         }
       }
     },
-    "/api/v1/admin/quotas/{name}": {
+    "/api/v1/admin/quotas/{quota_name}": {
       "get": {
         "produces": [
           "application/json"
@@ -945,25 +963,9 @@
           {
             "type": "string",
             "x-go-name": "Name",
-            "name": "name",
+            "name": "quota_name",
             "in": "path",
             "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "quota": {
-                  "$ref": "#/definitions/ResourceDetails"
-                },
-                "subject": {
-                  "$ref": "#/definitions/Subject"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -997,7 +999,34 @@
           "admin"
         ],
         "summary": "Updates an existing Resource Quota.",
-        "operationId": "updateResourceQuotas",
+        "operationId": "updateResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "$ref": "#/definitions/Quantity"
+                },
+                "memory": {
+                  "$ref": "#/definitions/Quantity"
+                },
+                "storage": {
+                  "$ref": "#/definitions/Quantity"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -1026,7 +1055,16 @@
           "admin"
         ],
         "summary": "Removes an existing Resource Quota.",
-        "operationId": "deleteResourceQuotas",
+        "operationId": "deleteResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -6263,7 +6301,16 @@
           "project"
         ],
         "summary": "Returns resource quota for a given project.",
-        "operationId": "resourceQuota",
+        "operationId": "getProjectQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "ResourceQuota",
@@ -13783,6 +13830,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13794,13 +13848,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {

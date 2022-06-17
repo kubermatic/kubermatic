@@ -136,23 +136,23 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Handler(r.deleteMeteringReport())
 
 	mux.Methods(http.MethodGet).
-		Path("/admin/quotas/{name}").
+		Path("/admin/quotas/{quota_name}").
 		Handler(r.getResourceQuota())
 
 	mux.Methods(http.MethodGet).
 		Path("/admin/quotas").
-		Handler(r.listResourceQuota())
+		Handler(r.listResourceQuotas())
 
 	mux.Methods(http.MethodPost).
 		Path("/admin/quotas").
 		Handler(r.createResourceQuota())
 
 	mux.Methods(http.MethodPut).
-		Path("/admin/quotas/{name}").
+		Path("/admin/quotas/{quota_name}").
 		Handler(r.updateResourceQuota())
 
 	mux.Methods(http.MethodDelete).
-		Path("/admin/quotas/{name}").
+		Path("/admin/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
 }
 
@@ -769,7 +769,7 @@ func (r Routing) deleteMeteringReport() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v1/admin/quotas/{name} resource quota admin getResourceQuota
+//swagger:route GET /api/v1/admin/quotas/{quota_name} resource quota admin getResourceQuota
 //
 //    Gets a specific Resource Quota.
 //
@@ -805,7 +805,7 @@ func (r Routing) getResourceQuota() http.Handler {
 //      200: []ResourceQuota
 //      401: empty
 //      403: empty
-func (r Routing) listResourceQuota() http.Handler {
+func (r Routing) listResourceQuotas() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
@@ -841,7 +841,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route PUT /api/v1/admin/quotas/{name} resource quota admin updateResourceQuotas
+//swagger:route PUT /api/v1/admin/quotas/{quota_name} resource quota admin updateResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -865,7 +865,7 @@ func (r Routing) updateResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v1/admin/quotas/{name} resource quota admin deleteResourceQuotas
+//swagger:route DELETE /api/v1/admin/quotas/{quota_name} resource quota admin deleteResourceQuota
 //
 //    Removes an existing Resource Quota.
 //

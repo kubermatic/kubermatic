@@ -1821,12 +1821,13 @@ func (r Routing) deleteProject() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/quota project resourceQuota
+// swagger:route GET /api/v1/projects/{project_id}/quota project getProjectQuota
 //
 //     Returns resource quota for a given project.
 //
 //     Produces:
 //     - application/json
+//
 //
 //     Responses:
 //       default: errorResponse

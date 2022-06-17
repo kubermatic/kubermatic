@@ -1,5 +1,3 @@
-//go:build !ee
-
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
