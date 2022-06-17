@@ -21,8 +21,14 @@ type ResourceQuota struct {
 	// name
 	Name string `json:"name,omitempty"`
 
-	// spec
-	Spec *ResourceQuotaSpec `json:"spec,omitempty"`
+	// subject kind
+	SubjectKind string `json:"subject_kind,omitempty"`
+
+	// subject name
+	SubjectName string `json:"subject_name,omitempty"`
+
+	// quota
+	Quota *ResourceDetails `json:"quota,omitempty"`
 
 	// status
 	Status *ResourceQuotaStatus `json:"status,omitempty"`
@@ -32,7 +38,7 @@ type ResourceQuota struct {
 func (m *ResourceQuota) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateSpec(formats); err != nil {
+	if err := m.validateQuota(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -46,17 +52,17 @@ func (m *ResourceQuota) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ResourceQuota) validateSpec(formats strfmt.Registry) error {
-	if swag.IsZero(m.Spec) { // not required
+func (m *ResourceQuota) validateQuota(formats strfmt.Registry) error {
+	if swag.IsZero(m.Quota) { // not required
 		return nil
 	}
 
-	if m.Spec != nil {
-		if err := m.Spec.Validate(formats); err != nil {
+	if m.Quota != nil {
+		if err := m.Quota.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("spec")
+				return ve.ValidateName("quota")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("spec")
+				return ce.ValidateName("quota")
 			}
 			return err
 		}
@@ -88,7 +94,7 @@ func (m *ResourceQuota) validateStatus(formats strfmt.Registry) error {
 func (m *ResourceQuota) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateSpec(ctx, formats); err != nil {
+	if err := m.contextValidateQuota(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,14 +108,14 @@ func (m *ResourceQuota) ContextValidate(ctx context.Context, formats strfmt.Regi
 	return nil
 }
 
-func (m *ResourceQuota) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+func (m *ResourceQuota) contextValidateQuota(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.Spec != nil {
-		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
+	if m.Quota != nil {
+		if err := m.Quota.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("spec")
+				return ve.ValidateName("quota")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("spec")
+				return ce.ValidateName("quota")
 			}
 			return err
 		}
