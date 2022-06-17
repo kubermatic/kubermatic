@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -396,7 +397,13 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 	return getGKEMachineDeployment(ctx, svc, project, cluster, nodeGroupName, clusterProvider)
 }
 
-func getGKENodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+func getGKENodes(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	nodePoolID string,
+	secretKeySelector provider.SecretKeySelectorValueFunc,
+	credentialsReference *providerconfig.GlobalSecretKeySelector,
+	clusterProvider provider.ExternalClusterProvider,
+) ([]corev1.Node, error) {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -412,8 +419,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nod
 		return nil, err
 	}
 
-	var nodesV1 []apiv2.ExternalClusterNode
-
+	var outputNodes []corev1.Node
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -421,16 +427,11 @@ func getGKENodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nod
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
 			if n.Labels[GKENodepoolNameLabel] == resp.Name {
-				outNode, err := outputNode(n)
-				if err != nil {
-					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
-				}
-				nodesV1 = append(nodesV1, *outNode)
+				outputNodes = append(outputNodes, n)
 			}
 		}
 	}
-
-	return nodesV1, err
+	return outputNodes, err
 }
 
 func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {

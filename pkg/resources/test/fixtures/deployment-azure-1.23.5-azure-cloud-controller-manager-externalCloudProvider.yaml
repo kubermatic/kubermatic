@@ -31,7 +31,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"cloud-controller-manager","args":["--allocate-node-cidrs=true","--configure-cloud-routes=true","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=4","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=azure","--leader-elect=true","--route-reconciliation-period=10s","--port=10267","--controllers=*,-cloud-node","--cluster-cidr=172.25.0.0/16"]}'
+        - '{"command":"cloud-controller-manager","args":["--allocate-node-cidrs=false","--configure-cloud-routes=false","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=4","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=azure","--leader-elect=true","--route-reconciliation-period=10s","--port=10267","--controllers=*,-cloud-node"]}'
         command:
         - /http-prober-bin/http-prober
         image: mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.23.11

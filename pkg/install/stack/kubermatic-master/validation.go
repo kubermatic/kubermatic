@@ -26,7 +26,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -201,6 +200,10 @@ func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value st
 	return failures
 }
 
+type dexClient struct {
+	ID string `yaml:"id"`
+}
+
 func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
 	failures := []error{}
 
@@ -227,22 +230,18 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
+		clients := []dexClient{}
 
-		clients, ok := helmValues.GetArray(yamled.Path{"dex", "clients"})
-		if !ok {
+		if err := helmValues.DecodeAtPath(yamled.Path{"dex", "clients"}, &clients); err != nil {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
 		} else {
 			hasMatchingClient := false
 
 			for _, client := range clients {
-				if mapSlice, ok := client.(yaml.MapSlice); ok {
-					for _, item := range mapSlice {
-						if item.Key == "id" && item.Value == clientID {
-							hasMatchingClient = true
-							break
-						}
-					}
+				if client.ID == clientID {
+					hasMatchingClient = true
+					break
 				}
 			}
 

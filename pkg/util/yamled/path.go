@@ -25,6 +25,11 @@ type Step interface{}
 
 type Path []Step
 
+func (p Path) Append(s Step) Path {
+	return append(p, s)
+}
+
+// Parent returns the path except for the last element.
 func (p Path) Parent() Path {
 	if len(p) < 1 {
 		return nil
@@ -33,7 +38,7 @@ func (p Path) Parent() Path {
 	return p[0 : len(p)-1]
 }
 
-func (p Path) Tail() Step {
+func (p Path) End() Step {
 	if len(p) == 0 {
 		return nil
 	}

@@ -17,13 +17,14 @@ limitations under the License.
 package alertmanager
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -110,9 +111,12 @@ type updateAlertmanagerReq struct {
 
 func (req *updateAlertmanagerReq) validateUpdateAlertmanagerReq() error {
 	bodyMap := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict(req.Body.Spec.Config, &bodyMap); err != nil {
+
+	decoder := yaml.NewDecoder(bytes.NewReader(req.Body.Spec.Config))
+	if err := decoder.Decode(&bodyMap); err != nil {
 		return fmt.Errorf("can not unmarshal yaml configuration: %w", err)
 	}
+
 	return nil
 }
 

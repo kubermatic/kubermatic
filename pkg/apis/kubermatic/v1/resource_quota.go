@@ -91,3 +91,11 @@ type ResourceQuotaList struct {
 
 	Items []ResourceQuota `json:"items"`
 }
+
+func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails {
+	return &ResourceDetails{
+		CPU:     &cpu,
+		Memory:  &memory,
+		Storage: &storage,
+	}
+}

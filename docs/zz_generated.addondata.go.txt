@@ -115,6 +115,10 @@ type CSIOptions struct {
 	StorageContainer        string
 	Fstype                  string
 	SsSegmentedIscsiNetwork *bool
+
+	// vmware Cloud Director
+	StorageProfile string
+	Filesystem     string
 }
 
 type MLASettings struct {
