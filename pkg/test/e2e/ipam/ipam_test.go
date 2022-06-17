@@ -180,7 +180,7 @@ func checkIPAMAllocation(t *testing.T, ctx context.Context, seedClient ctrlrunti
 	return utils.WaitFor(1*time.Second, 5*time.Second, func() bool {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
-			t.Logf("Error getting IPAM allocation for cluster: %v", err)
+			t.Logf("Error getting IPAM allocation for cluster %s (namespace %s): %v", cluster.Name, cluster.Status.NamespaceName, err)
 			return false
 		}
 		if ipamAllocation.Spec.Type != expectedIPAMAllocationSpec.Type ||
