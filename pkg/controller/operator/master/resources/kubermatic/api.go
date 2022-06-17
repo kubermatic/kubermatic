@@ -40,6 +40,14 @@ func apiPodLabels() map[string]string {
 	}
 }
 
+func APIServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return apiServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
+	}
+}
+
 func APIClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-api", cfg.Namespace, cfg.Name)
 }
@@ -51,13 +59,41 @@ func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{"coordination.k8s.io"},
-					Resources: []string{"leases"},
-					Verbs:     []string{"get", "list", "watch"},
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"*"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"events"},
+					Verbs:     []string{"get", "list", "watch", "create", "patch"},
+				},
+				// TODO: Maybe split this out into a dedicated ClusterRole and
+				// dynamically manage the resourceNames, so this isn't too broad
+				{
+					APIGroups: []string{""},
+					Resources: []string{"users", "groups", "serviceaccounts"},
+					Verbs:     []string{"impersonate"},
 				},
 			}
 
 			return cr, nil
+		}
+	}
+}
+
+func APIRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return apiServiceAccountName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs:     []string{"*"},
+				},
+			}
+
+			return r, nil
 		}
 	}
 }
@@ -74,7 +110,7 @@ func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) rec
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
+				Name:     APIClusterRoleName(cfg),
 			}
 
 			crb.Subjects = []rbacv1.Subject{
@@ -82,6 +118,27 @@ func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) rec
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      apiServiceAccountName,
 					Namespace: cfg.Namespace,
+				},
+			}
+
+			return crb, nil
+		}
+	}
+}
+
+func APIRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return apiServiceAccountName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			crb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     apiServiceAccountName,
+			}
+
+			crb.Subjects = []rbacv1.Subject{
+				{
+					Kind: rbacv1.ServiceAccountKind,
+					Name: apiServiceAccountName,
 				},
 			}
 

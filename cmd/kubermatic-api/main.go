@@ -134,6 +134,7 @@ func main() {
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{
+		Namespace: options.namespace,
 		BaseContext: func() context.Context {
 			return ctx
 		},
