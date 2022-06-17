@@ -79,7 +79,7 @@ func TestIPAM(t *testing.T) {
 	t.Log("checking IPAM Pool 1 allocation on first cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
-		DC:        datacenter,
+		DC:        location,
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
 	}) {
 		t.Fatalf("IPAM Allocation 1 wasn't created on cluster 1")
@@ -95,7 +95,7 @@ func TestIPAM(t *testing.T) {
 	t.Log("checking IPAM Pool 1 allocation on second cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
-		DC:        datacenter,
+		DC:        location,
 		Addresses: []string{"192.168.1.8-192.168.1.15"},
 	}) {
 		t.Fatalf("IPAM Allocation 1 wasn't created on cluster 2")
@@ -110,7 +110,7 @@ func TestIPAM(t *testing.T) {
 	t.Log("checking IPAM Pool 2 allocation on first cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   datacenter,
+		DC:   location,
 		CIDR: "192.168.1.0/28",
 	}) {
 		t.Fatalf("IPAM Allocation 2 wasn't created on cluster 1")
@@ -119,7 +119,7 @@ func TestIPAM(t *testing.T) {
 	t.Log("checking IPAM Pool 2 allocation on second cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   datacenter,
+		DC:   location,
 		CIDR: "192.168.1.16/28",
 	}) {
 		t.Fatalf("IPAM Allocation 2 wasn't created on cluster 2")
@@ -156,7 +156,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 		},
 		Spec: kubermaticv1.IPAMPoolSpec{
 			Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-				datacenter: {
+				location: {
 					Type:             allocationType,
 					PoolCIDR:         poolCIDR,
 					AllocationRange:  uint32(allocationValue),
