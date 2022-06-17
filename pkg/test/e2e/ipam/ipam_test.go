@@ -177,7 +177,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 }
 
 func checkIPAMAllocation(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) bool {
-	return utils.WaitFor(1*time.Second, 5*time.Second, func() bool {
+	return utils.WaitFor(10*time.Second, 5*time.Minute, func() bool {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
 			t.Logf("Error getting IPAM allocation for cluster %s (namespace %s): %v", cluster.Name, cluster.Status.NamespaceName, err)
