@@ -12,16 +12,31 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Subject Subject describes the entity to which the quota applies to.
+// Subject Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,
+//
+// or a value for non-objects such as user and group names.
+// +structType=atomic
 //
 // swagger:model Subject
 type Subject struct {
 
-	// Kind of the quota subject. For now the only possible kind is project.
+	// APIGroup holds the API group of the referenced subject.
+	// Defaults to "" for ServiceAccount subjects.
+	// Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+	// +optional
+	APIGroup string `json:"apiGroup,omitempty"`
+
+	// Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount".
+	// If the Authorizer does not recognized the kind value, the Authorizer should report an error.
 	Kind string `json:"kind,omitempty"`
 
-	// Name of the quota subject.
+	// Name of the object being referenced.
 	Name string `json:"name,omitempty"`
+
+	// Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty
+	// the Authorizer should report an error.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // Validate validates this subject
