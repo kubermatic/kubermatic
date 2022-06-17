@@ -63,6 +63,12 @@ type OIDCToken struct {
 type OIDCIssuerVerifier interface {
 	OIDCIssuer
 	TokenVerifier
+	RedirectURISetter
+}
+
+type RedirectURISetter interface {
+	// SetRedirectURI overrides configured URI for a
+	SetRedirectURI(uri string)
 }
 
 // OIDCIssuer exposes methods for getting OIDC tokens.
@@ -216,6 +222,10 @@ func (o *OpenIDClient) Exchange(ctx context.Context, code string) (OIDCToken, er
 	}
 
 	return oidcToken, nil
+}
+
+func (o *OpenIDClient) SetRedirectURI(uri string) {
+	o.redirectURI = uri
 }
 
 func (o *OpenIDClient) oauth2Config(scopes ...string) *oauth2.Config {

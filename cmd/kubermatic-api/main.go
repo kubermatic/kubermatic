@@ -576,7 +576,14 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		mainRouter)
 	r.RegisterV1Admin(v1Router)
 	r.RegisterV1Websocket(v1Router)
-	rv2.RegisterV2(v2Router, metrics)
+	rv2.RegisterV2(v2Router, metrics, common.OIDCConfiguration{
+		URL:                  options.oidcURL,
+		ClientID:             options.oidcIssuerClientID,
+		ClientSecret:         options.oidcIssuerClientSecret,
+		CookieHashKey:        options.oidcIssuerCookieHashKey,
+		CookieSecureMode:     options.oidcIssuerCookieSecureMode,
+		OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
+	})
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

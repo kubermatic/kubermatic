@@ -188,9 +188,9 @@ func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
 	case "1.21":
 		return "v2.4.0", nil
 	case "1.22":
-		return "v2.5.0", nil
+		return "v2.5.1", nil
 	case "1.23":
-		return "v2.5.0", nil
+		return "v2.5.1", nil
 	case "1.24":
 		return "v2.6.0", nil
 	default:
