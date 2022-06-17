@@ -6,11 +6,14 @@ package resource
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -154,5 +157,141 @@ func (o *CreateResourceQuotaDefault) readResponse(response runtime.ClientRespons
 		return err
 	}
 
+	return nil
+}
+
+/*CreateResourceQuotaBody create resource quota body
+swagger:model CreateResourceQuotaBody
+*/
+type CreateResourceQuotaBody struct {
+
+	// quota
+	Quota *models.ResourceDetails `json:"quota,omitempty"`
+
+	// subject
+	Subject *models.Subject `json:"subject,omitempty"`
+}
+
+// Validate validates this create resource quota body
+func (o *CreateResourceQuotaBody) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.validateQuota(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := o.validateSubject(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *CreateResourceQuotaBody) validateQuota(formats strfmt.Registry) error {
+	if swag.IsZero(o.Quota) { // not required
+		return nil
+	}
+
+	if o.Quota != nil {
+		if err := o.Quota.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "quota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "quota")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (o *CreateResourceQuotaBody) validateSubject(formats strfmt.Registry) error {
+	if swag.IsZero(o.Subject) { // not required
+		return nil
+	}
+
+	if o.Subject != nil {
+		if err := o.Subject.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "subject")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "subject")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this create resource quota body based on the context it is used
+func (o *CreateResourceQuotaBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateQuota(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := o.contextValidateSubject(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *CreateResourceQuotaBody) contextValidateQuota(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Quota != nil {
+		if err := o.Quota.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "quota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "quota")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (o *CreateResourceQuotaBody) contextValidateSubject(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Subject != nil {
+		if err := o.Subject.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("Body" + "." + "subject")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "subject")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (o *CreateResourceQuotaBody) MarshalBinary() ([]byte, error) {
+	if o == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(o)
+}
+
+// UnmarshalBinary interface implementation
+func (o *CreateResourceQuotaBody) UnmarshalBinary(b []byte) error {
+	var res CreateResourceQuotaBody
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*o = res
 	return nil
 }

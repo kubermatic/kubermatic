@@ -58,6 +58,10 @@ func NewCreateResourceQuotaParamsWithHTTPClient(client *http.Client) *CreateReso
    Typically these are written to a http.Request.
 */
 type CreateResourceQuotaParams struct {
+
+	// Body.
+	Body CreateResourceQuotaBody
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +115,17 @@ func (o *CreateResourceQuotaParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithBody adds the body to the create resource quota params
+func (o *CreateResourceQuotaParams) WithBody(body CreateResourceQuotaBody) *CreateResourceQuotaParams {
+	o.SetBody(body)
+	return o
+}
+
+// SetBody adds the body to the create resource quota params
+func (o *CreateResourceQuotaParams) SetBody(body CreateResourceQuotaBody) {
+	o.Body = body
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +133,9 @@ func (o *CreateResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
+	if err := r.SetBodyParam(o.Body); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

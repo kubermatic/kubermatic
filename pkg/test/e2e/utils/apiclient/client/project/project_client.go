@@ -166,6 +166,8 @@ type ClientService interface {
 
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
+	GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectQuotaOK, error)
+
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
 
 	ImportClusterTemplate(params *ImportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ImportClusterTemplateCreated, error)
@@ -275,8 +277,6 @@ type ClientService interface {
 	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchRoleOK, error)
 
 	ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetAlertmanagerOK, error)
-
-	ResourceQuota(params *ResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResourceQuotaOK, error)
 
 	RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartMachineDeploymentOK, error)
 
@@ -2936,6 +2936,44 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 }
 
 /*
+  GetProjectQuota returns resource quota for a given project
+*/
+func (a *Client) GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectQuotaOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetProjectQuotaParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getProjectQuota",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/quota",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetProjectQuotaReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetProjectQuotaOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetProjectQuotaDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetRole Gets the role with the given name
 */
 func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error) {
@@ -5032,44 +5070,6 @@ func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ResetAlertmanagerDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  ResourceQuota returns resource quota for a given project
-*/
-func (a *Client) ResourceQuota(params *ResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResourceQuotaOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewResourceQuotaParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "resourceQuota",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/quota",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ResourceQuotaReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ResourceQuotaOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

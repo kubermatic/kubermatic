@@ -30,13 +30,13 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	CreateResourceQuota(params *CreateResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateResourceQuotaCreated, error)
 
-	DeleteResourceQuotas(params *DeleteResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteResourceQuotasOK, error)
+	DeleteResourceQuota(params *DeleteResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteResourceQuotaOK, error)
 
 	GetResourceQuota(params *GetResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetResourceQuotaOK, error)
 
 	ListResourceQuotas(params *ListResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListResourceQuotasOK, error)
 
-	UpdateResourceQuotas(params *UpdateResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateResourceQuotasOK, error)
+	UpdateResourceQuota(params *UpdateResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateResourceQuotaOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -80,22 +80,22 @@ func (a *Client) CreateResourceQuota(params *CreateResourceQuotaParams, authInfo
 }
 
 /*
-  DeleteResourceQuotas removes an existing resource quota
+  DeleteResourceQuota removes an existing resource quota
 */
-func (a *Client) DeleteResourceQuotas(params *DeleteResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteResourceQuotasOK, error) {
+func (a *Client) DeleteResourceQuota(params *DeleteResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteResourceQuotaOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewDeleteResourceQuotasParams()
+		params = NewDeleteResourceQuotaParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "deleteResourceQuotas",
+		ID:                 "deleteResourceQuota",
 		Method:             "DELETE",
-		PathPattern:        "/api/v1/admin/quotas/{name}",
+		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &DeleteResourceQuotasReader{formats: a.formats},
+		Reader:             &DeleteResourceQuotaReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -108,12 +108,12 @@ func (a *Client) DeleteResourceQuotas(params *DeleteResourceQuotasParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*DeleteResourceQuotasOK)
+	success, ok := result.(*DeleteResourceQuotaOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*DeleteResourceQuotasDefault)
+	unexpectedSuccess := result.(*DeleteResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -128,7 +128,7 @@ func (a *Client) GetResourceQuota(params *GetResourceQuotaParams, authInfo runti
 	op := &runtime.ClientOperation{
 		ID:                 "getResourceQuota",
 		Method:             "GET",
-		PathPattern:        "/api/v1/admin/quotas/{name}",
+		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -194,22 +194,22 @@ func (a *Client) ListResourceQuotas(params *ListResourceQuotasParams, authInfo r
 }
 
 /*
-  UpdateResourceQuotas updates an existing resource quota
+  UpdateResourceQuota updates an existing resource quota
 */
-func (a *Client) UpdateResourceQuotas(params *UpdateResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateResourceQuotasOK, error) {
+func (a *Client) UpdateResourceQuota(params *UpdateResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateResourceQuotaOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewUpdateResourceQuotasParams()
+		params = NewUpdateResourceQuotaParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "updateResourceQuotas",
+		ID:                 "updateResourceQuota",
 		Method:             "PUT",
-		PathPattern:        "/api/v1/admin/quotas/{name}",
+		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &UpdateResourceQuotasReader{formats: a.formats},
+		Reader:             &UpdateResourceQuotaReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -222,12 +222,12 @@ func (a *Client) UpdateResourceQuotas(params *UpdateResourceQuotasParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateResourceQuotasOK)
+	success, ok := result.(*UpdateResourceQuotaOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*UpdateResourceQuotasDefault)
+	unexpectedSuccess := result.(*UpdateResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

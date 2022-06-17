@@ -59,10 +59,7 @@ func NewGetResourceQuotaParamsWithHTTPClient(client *http.Client) *GetResourceQu
 */
 type GetResourceQuotaParams struct {
 
-	// Body.
-	Body GetResourceQuotaBody
-
-	// Name.
+	// QuotaName.
 	Name string
 
 	timeout    time.Duration
@@ -118,26 +115,15 @@ func (o *GetResourceQuotaParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithBody adds the body to the get resource quota params
-func (o *GetResourceQuotaParams) WithBody(body GetResourceQuotaBody) *GetResourceQuotaParams {
-	o.SetBody(body)
+// WithName adds the quotaName to the get resource quota params
+func (o *GetResourceQuotaParams) WithName(quotaName string) *GetResourceQuotaParams {
+	o.SetName(quotaName)
 	return o
 }
 
-// SetBody adds the body to the get resource quota params
-func (o *GetResourceQuotaParams) SetBody(body GetResourceQuotaBody) {
-	o.Body = body
-}
-
-// WithName adds the name to the get resource quota params
-func (o *GetResourceQuotaParams) WithName(name string) *GetResourceQuotaParams {
-	o.SetName(name)
-	return o
-}
-
-// SetName adds the name to the get resource quota params
-func (o *GetResourceQuotaParams) SetName(name string) {
-	o.Name = name
+// SetName adds the quotaName to the get resource quota params
+func (o *GetResourceQuotaParams) SetName(quotaName string) {
+	o.Name = quotaName
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -147,12 +133,9 @@ func (o *GetResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
-	if err := r.SetBodyParam(o.Body); err != nil {
-		return err
-	}
 
-	// path param name
-	if err := r.SetPathParam("name", o.Name); err != nil {
+	// path param quota_name
+	if err := r.SetPathParam("quota_name", o.Name); err != nil {
 		return err
 	}
 

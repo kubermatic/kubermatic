@@ -32,7 +32,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	k8cv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -63,8 +63,8 @@ type createResourceQuota struct {
 	// in: body
 	// required: true
 	Body struct {
-		Subject k8cv1.Subject         `json:"subject"`
-		Quota   k8cv1.ResourceDetails `json:"quota"`
+		Subject kubermaticv1.Subject         `json:"subject"`
+		Quota   k8kubermaticv1esourceDetails `json:"quota"`
 	}
 }
 
@@ -190,7 +190,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 	return &apiv1.ResourceQuota{
 		Name: projectResourceQuota.Name,
 		Spec: projectResourceQuota.Spec,
-		Status: k8cv1.ResourceQuotaStatus{
+		Status: kubermaticv1.ResourceQuotaStatus{
 			LocalUsage: projectResourceQuota.Status.LocalUsage,
 		},
 	}, nil
@@ -204,10 +204,10 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 
 	labelSet := make(map[string]string)
 	if req.SubjectKind != "" {
-		labelSet[k8cv1.ResourceQuotaSubjectKindLabelKey] = req.SubjectKind
+		labelSet[kubermaticv1.ResourceQuotaSubjectKindLabelKey] = req.SubjectKind
 	}
 	if req.SubjectName != "" {
-		labelSet[k8cv1.ResourceQuotaSubjectNameLabelKey] = req.SubjectName
+		labelSet[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = req.SubjectName
 	}
 
 	resourceQuotaList, err := provider.ListUnsecured(ctx, labelSet)
@@ -249,7 +249,7 @@ func UpdateResourceQuota(ctx context.Context, request interface{}, provider prov
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
-	newQuota := k8cv1.ResourceDetails{
+	newQuota := kubermaticv1.ResourceDetails{
 		CPU:     req.Body.CPU,
 		Memory:  req.Body.Memory,
 		Storage: req.Body.Storage,

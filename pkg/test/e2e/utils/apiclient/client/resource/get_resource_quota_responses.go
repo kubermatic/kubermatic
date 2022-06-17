@@ -6,14 +6,11 @@ package resource
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -70,7 +67,7 @@ type GetResourceQuotaOK struct {
 }
 
 func (o *GetResourceQuotaOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
 }
 func (o *GetResourceQuotaOK) GetPayload() *models.ResourceQuota {
 	return o.Payload
@@ -101,7 +98,7 @@ type GetResourceQuotaUnauthorized struct {
 }
 
 func (o *GetResourceQuotaUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{name}][%d] getResourceQuotaUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaUnauthorized ", 401)
 }
 
 func (o *GetResourceQuotaUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -122,7 +119,7 @@ type GetResourceQuotaForbidden struct {
 }
 
 func (o *GetResourceQuotaForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{name}][%d] getResourceQuotaForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaForbidden ", 403)
 }
 
 func (o *GetResourceQuotaForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,7 +150,7 @@ func (o *GetResourceQuotaDefault) Code() int {
 }
 
 func (o *GetResourceQuotaDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
@@ -168,141 +165,5 @@ func (o *GetResourceQuotaDefault) readResponse(response runtime.ClientResponse, 
 		return err
 	}
 
-	return nil
-}
-
-/*GetResourceQuotaBody get resource quota body
-swagger:model GetResourceQuotaBody
-*/
-type GetResourceQuotaBody struct {
-
-	// quota
-	Quota *models.ResourceDetails `json:"quota,omitempty"`
-
-	// subject
-	Subject *models.Subject `json:"subject,omitempty"`
-}
-
-// Validate validates this get resource quota body
-func (o *GetResourceQuotaBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateQuota(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := o.validateSubject(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *GetResourceQuotaBody) validateQuota(formats strfmt.Registry) error {
-	if swag.IsZero(o.Quota) { // not required
-		return nil
-	}
-
-	if o.Quota != nil {
-		if err := o.Quota.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "quota")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "quota")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (o *GetResourceQuotaBody) validateSubject(formats strfmt.Registry) error {
-	if swag.IsZero(o.Subject) { // not required
-		return nil
-	}
-
-	if o.Subject != nil {
-		if err := o.Subject.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "subject")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "subject")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this get resource quota body based on the context it is used
-func (o *GetResourceQuotaBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.contextValidateQuota(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := o.contextValidateSubject(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *GetResourceQuotaBody) contextValidateQuota(ctx context.Context, formats strfmt.Registry) error {
-
-	if o.Quota != nil {
-		if err := o.Quota.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "quota")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "quota")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (o *GetResourceQuotaBody) contextValidateSubject(ctx context.Context, formats strfmt.Registry) error {
-
-	if o.Subject != nil {
-		if err := o.Subject.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("Body" + "." + "subject")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("Body" + "." + "subject")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *GetResourceQuotaBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *GetResourceQuotaBody) UnmarshalBinary(b []byte) error {
-	var res GetResourceQuotaBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }
