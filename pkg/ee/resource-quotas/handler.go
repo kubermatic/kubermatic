@@ -153,9 +153,11 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 	}
 
 	resp := &apiv1.ResourceQuota{
-		Name:   resourceQuota.Name,
-		Spec:   resourceQuota.Spec,
-		Status: resourceQuota.Status,
+		Name:        resourceQuota.Name,
+		SubjectKind: resourceQuota.Spec.Subject.Kind,
+		SubjectName: resourceQuota.Spec.Subject.Name,
+		Quota:       resourceQuota.Spec.Quota,
+		Status:      resourceQuota.Status,
 	}
 
 	return resp, nil
@@ -188,8 +190,10 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 	}
 
 	return &apiv1.ResourceQuota{
-		Name: projectResourceQuota.Name,
-		Spec: projectResourceQuota.Spec,
+		Name:        projectResourceQuota.Name,
+		SubjectKind: projectResourceQuota.Spec.Subject.Kind,
+		SubjectName: projectResourceQuota.Spec.Subject.Name,
+		Quota:       projectResourceQuota.Spec.Quota,
 		Status: kubermaticv1.ResourceQuotaStatus{
 			LocalUsage: projectResourceQuota.Status.LocalUsage,
 		},
@@ -218,9 +222,11 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 	resp := make([]apiv1.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
 		resp[idx] = apiv1.ResourceQuota{
-			Name:   rq.Name,
-			Spec:   rq.Spec,
-			Status: rq.Status,
+			Name:        rq.Name,
+			SubjectKind: rq.Spec.Subject.Kind,
+			SubjectName: rq.Spec.Subject.Name,
+			Quota:       rq.Spec.Quota,
+			Status:      rq.Status,
 		}
 	}
 

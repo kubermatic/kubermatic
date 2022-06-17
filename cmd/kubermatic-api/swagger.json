@@ -13830,13 +13830,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13848,6 +13841,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -29299,27 +29299,22 @@
           "type": "string",
           "x-go-name": "Name"
         },
-        "spec": {
-          "$ref": "#/definitions/ResourceQuotaSpec"
-        },
-        "status": {
-          "$ref": "#/definitions/ResourceQuotaStatus"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "ResourceQuotaSpec": {
-      "type": "object",
-      "title": "ResourceQuotaSpec describes the desired state of a resource quota.",
-      "properties": {
         "quota": {
           "$ref": "#/definitions/ResourceDetails"
         },
-        "subject": {
-          "$ref": "#/definitions/Subject"
+        "status": {
+          "$ref": "#/definitions/ResourceQuotaStatus"
+        },
+        "subject_kind": {
+          "type": "string",
+          "x-go-name": "SubjectKind"
+        },
+        "subject_name": {
+          "type": "string",
+          "x-go-name": "SubjectName"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ResourceQuotaStatus": {
       "type": "object",
@@ -29964,21 +29959,32 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Subject": {
+      "description": "or a value for non-objects such as user and group names.\n+structType=atomic",
       "type": "object",
-      "title": "Subject describes the entity to which the quota applies to.",
+      "title": "Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,",
       "properties": {
+        "apiGroup": {
+          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"\" for ServiceAccount subjects.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.\n+optional",
+          "type": "string",
+          "x-go-name": "APIGroup"
+        },
         "kind": {
-          "description": "Kind of the quota subject. For now the only possible kind is project.",
+          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
           "type": "string",
           "x-go-name": "Kind"
         },
         "name": {
-          "description": "Name of the quota subject.",
+          "description": "Name of the object being referenced.",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referenced object.  If the object kind is non-namespace, such as \"User\" or \"Group\", and this value is not empty\nthe Authorizer should report an error.\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+      "x-go-package": "k8s.io/api/rbac/v1"
     },
     "Sync": {
       "type": "object",
