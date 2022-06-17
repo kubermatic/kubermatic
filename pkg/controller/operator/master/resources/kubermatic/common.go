@@ -31,6 +31,7 @@ import (
 
 const (
 	serviceAccountName    = "kubermatic-master"
+	apiServiceAccountName = "kubermatic-api"
 	uiConfigConfigMapName = "ui-config"
 	ingressName           = "kubermatic"
 	APIDeploymentName     = "kubermatic-api"

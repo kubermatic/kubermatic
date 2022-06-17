@@ -277,6 +277,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 	logger.Debug("Reconciling ClusterRoles")
 
 	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		kubermatic.APIClusterRoleCreator(config),
 		common.WebhookClusterRoleCreator(config),
 	}
 
@@ -292,6 +293,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(config),
+		kubermatic.APIClusterRoleBindingCreator(config),
 		common.WebhookClusterRoleBindingCreator(config),
 	}
 
