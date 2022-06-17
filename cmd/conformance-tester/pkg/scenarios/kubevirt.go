@@ -35,12 +35,12 @@ import (
 )
 
 const (
-	kubevirtRegistryAddr  = "http://10.244.1.19"
-	kubevirtCPUs          = "2"
-	kubevirtMemory        = "4Gi"
-	kubevirtDiskSize      = "25Gi"
-	kubevirtDiskClassName = "longhorn"
-	kubevirtDatacenter    = "kubevirt-europe-west3-c"
+	kubevirtImageHttpServerSvc = "http://image-repo.kube-system.svc.cluster.local/images"
+	kubevirtCPUs               = "2"
+	kubevirtMemory             = "4Gi"
+	kubevirtDiskSize           = "25Gi"
+	kubevirtDiskClassName      = "longhorn"
+	kubevirtDatacenter         = "kubevirt-europe-west3-c"
 )
 
 // GetKubevirtScenarios Returns a matrix of (version x operating system).
@@ -173,9 +173,9 @@ func (s *kubevirtScenario) getOSImage() (string, error) {
 
 	switch {
 	case os == providerconfig.OperatingSystemUbuntu:
-		return kubevirtRegistryAddr + "/ubuntu.img", nil
+		return kubevirtImageHttpServerSvc + "/ubuntu.img", nil
 	case os == providerconfig.OperatingSystemCentOS:
-		return kubevirtRegistryAddr + "/centos.img", nil
+		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", os)
 	}
