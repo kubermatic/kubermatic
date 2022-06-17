@@ -218,6 +218,7 @@ type newRoutingFunc func(
 	masterClient ctrlruntimeclient.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
+	resourceQuotaProvider provider.ResourceQuotaProvider,
 	features features.FeatureGate,
 ) http.Handler
 
@@ -294,6 +295,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	resourceQuotaProvider := resourceQuotaProviderFactory(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -598,6 +600,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeClient,
 		featureGatesProvider,
 		seedProvider,
+		resourceQuotaProvider,
 		featureGates,
 	)
 

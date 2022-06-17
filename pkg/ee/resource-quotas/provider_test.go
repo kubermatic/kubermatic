@@ -72,7 +72,7 @@ func createNewQuotaHelper(base int) kubermaticv1.ResourceDetails {
 	}
 }
 
-func TestGetResourceQuota(t *testing.T) {
+func TestProviderGetResourceQuota(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name            string
@@ -138,7 +138,7 @@ func TestGetResourceQuota(t *testing.T) {
 	}
 }
 
-func TestListResourceQuotas(t *testing.T) {
+func TestProviderListResourceQuotas(t *testing.T) {
 	t.Parallel()
 
 	existingResourceQuotas := []ctrlruntimeclient.Object{
@@ -205,18 +205,20 @@ func TestListResourceQuotas(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		rqProvider := createResourceProviderHelper(tc.existingObjects)
-		rqList, err := rqProvider.ListUnsecured(context.Background(), tc.labels)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(rqList.Items) != tc.expectedListLength {
-			t.Fatalf("name does not match")
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			rqProvider := createResourceProviderHelper(tc.existingObjects)
+			rqList, err := rqProvider.ListUnsecured(context.Background(), tc.labels)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rqList.Items) != tc.expectedListLength {
+				t.Fatalf("name does not match")
+			}
+		})
 	}
 }
 
-func TestCreateResourceQuota(t *testing.T) {
+func TestProviderCreateResourceQuota(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
@@ -237,40 +239,42 @@ func TestCreateResourceQuota(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		rqProvider := createResourceProviderHelper([]ctrlruntimeclient.Object{})
-		err := rqProvider.CreateUnsecured(context.Background(), tc.subject, tc.quota)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rq, err := rqProvider.GetUnsecured(context.Background(), fmt.Sprintf("%s-%s", tc.subject.Kind, tc.subject.Name))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if rq.Name != tc.expectedQuotaName {
-			t.Fatalf("expected %s name, got %s", rq.Name, tc.expectedQuotaName)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			rqProvider := createResourceProviderHelper([]ctrlruntimeclient.Object{})
+			err := rqProvider.CreateUnsecured(context.Background(), tc.subject, tc.quota)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rq, err := rqProvider.GetUnsecured(context.Background(), fmt.Sprintf("%s-%s", tc.subject.Kind, tc.subject.Name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if rq.Name != tc.expectedQuotaName {
+				t.Fatalf("expected %s name, got %s", rq.Name, tc.expectedQuotaName)
+			}
 
-		labels := rq.GetLabels()
-		if labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != tc.subject.Kind {
-			t.Fatalf("missing or wrong kind label")
-		}
-		if labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != tc.subject.Name {
-			t.Fatalf("missing or wrong name label")
-		}
+			labels := rq.GetLabels()
+			if labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != tc.subject.Kind {
+				t.Fatalf("missing or wrong kind label")
+			}
+			if labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != tc.subject.Name {
+				t.Fatalf("missing or wrong name label")
+			}
 
-		if rq.Spec.Quota.CPU.Value() != tc.quota.CPU.Value() {
-			t.Fatalf("wrong CPU value")
-		}
-		if rq.Spec.Quota.Memory.Value() != tc.quota.Memory.Value() {
-			t.Fatalf("wrong memory quantity")
-		}
-		if rq.Spec.Quota.Storage.Value() != tc.quota.Storage.Value() {
-			t.Fatalf("wrong storage quantity")
-		}
+			if rq.Spec.Quota.CPU.Value() != tc.quota.CPU.Value() {
+				t.Fatalf("wrong CPU value")
+			}
+			if rq.Spec.Quota.Memory.Value() != tc.quota.Memory.Value() {
+				t.Fatalf("wrong memory quantity")
+			}
+			if rq.Spec.Quota.Storage.Value() != tc.quota.Storage.Value() {
+				t.Fatalf("wrong storage quantity")
+			}
+		})
 	}
 }
 
-func TestUpdateResourceQuota(t *testing.T) {
+func TestProviderUpdateResourceQuota(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name          string
@@ -297,19 +301,21 @@ func TestUpdateResourceQuota(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		rqProvider := createResourceProviderHelper([]ctrlruntimeclient.Object{tc.exisingObject})
+		t.Run(tc.name, func(t *testing.T) {
+			rqProvider := createResourceProviderHelper([]ctrlruntimeclient.Object{tc.exisingObject})
 
-		err := rqProvider.UpdateUnsecured(context.Background(), tc.exisingObject.GetName(), tc.newQuota)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rq, err := rqProvider.GetUnsecured(context.Background(), tc.exisingObject.GetName())
-		if err != nil {
-			t.Fatal(err)
-		}
+			err := rqProvider.UpdateUnsecured(context.Background(), tc.exisingObject.GetName(), tc.newQuota)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rq, err := rqProvider.GetUnsecured(context.Background(), tc.exisingObject.GetName())
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if !cmp.Equal(rq.Spec.Quota, tc.newQuota) {
-			t.Fatalf("%v", cmp.Diff(rq.Spec.Quota, tc.newQuota))
-		}
+			if !cmp.Equal(rq.Spec.Quota, tc.newQuota) {
+				t.Fatalf("%v", cmp.Diff(rq.Spec.Quota, tc.newQuota))
+			}
+		})
 	}
 }

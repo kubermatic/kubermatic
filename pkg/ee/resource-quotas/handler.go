@@ -27,6 +27,7 @@ package resourcequotas
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -37,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -97,10 +99,10 @@ func (m createResourceQuota) Validate() error {
 func DecodeResourceQuotaReq(r *http.Request) (interface{}, error) {
 	var req getResourceQuota
 
-	req.Name = mux.Vars(r)["name"]
+	req.Name = mux.Vars(r)["quota_name"]
 
 	if req.Name == "" {
-		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`quota_name` cannot be empty")
 	}
 
 	return req, nil
@@ -128,10 +130,10 @@ func DecodeCreateResourceQuotaReq(r *http.Request) (interface{}, error) {
 func DecodeUpdateResourceQuotaReq(r *http.Request) (interface{}, error) {
 	var req updateResourceQuota
 
-	req.Name = mux.Vars(r)["name"]
+	req.Name = mux.Vars(r)["quota_name"]
 
 	if req.Name == "" {
-		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`quota_name` cannot be empty")
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -149,6 +151,9 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 
 	resourceQuota, err := provider.GetUnsecured(ctx, req.Name)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, utilerrors.NewNotFound("ResourceQuota", req.Name)
+		}
 		return nil, err
 	}
 
@@ -244,6 +249,10 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 	}
 
 	if err := provider.CreateUnsecured(ctx, req.Body.Subject, req.Body.Quota); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			name := fmt.Sprintf("%s-%s", req.Body.Subject.Kind, req.Body.Subject.Name)
+			return utilerrors.NewAlreadyExists("ResourceQuota", name)
+		}
 		return err
 	}
 	return nil
@@ -262,6 +271,9 @@ func UpdateResourceQuota(ctx context.Context, request interface{}, provider prov
 	}
 
 	if err := provider.UpdateUnsecured(ctx, req.Name, newQuota); err != nil {
+		if apierrors.IsNotFound(err) {
+			return utilerrors.NewNotFound("ResourceQuota", req.Name)
+		}
 		return err
 	}
 	return nil
@@ -274,6 +286,9 @@ func DeleteResourceQuota(ctx context.Context, request interface{}, provider prov
 	}
 
 	if err := provider.DeleteUnsecured(ctx, req.Name); err != nil {
+		if apierrors.IsNotFound(err) {
+			return utilerrors.NewNotFound("ResourceQuota", req.Name)
+		}
 		return err
 	}
 	return nil
