@@ -41,6 +41,9 @@ appendTrap clean_up EXIT
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon_ci
   make download-gocache
+
+  echodate "Preloading the kindest/node image"
+  docker load --input /kindest.tar
 fi
 
 # build Docker images
@@ -50,9 +53,11 @@ make -C cmd/nodeport-proxy docker \
   TAG="${TAG}"
 
 # setup Kind cluster
-time retry 5 kind create cluster --name "${KIND_CLUSTER_NAME}"
+time kind create cluster --name "${KIND_CLUSTER_NAME}"
+
 # load nodeport-proxy image
-time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
+time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
+
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
@@ -69,7 +74,7 @@ if type ginkgo > /dev/null; then
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
-    --debug-log
+    --log-debug
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
     --ginkgo.randomizeAllSpecs \
@@ -79,5 +84,5 @@ else
     --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
-    --debug-log
+    --log-debug
 fi

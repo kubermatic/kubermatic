@@ -83,11 +83,11 @@ func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Serv
 	}
 
 	// Wait for the pod to be ready
-	pods, err := e2eutils.WaitForPodsCreated(ctx, n.Client, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
+	pods, err := e2eutils.WaitForPodsCreated(ctx, n.Client, n.Log, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return svc, fmt.Errorf("error occurred while waiting for pods to be ready: %w", err)
 	}
-	if !e2eutils.CheckPodsRunningReady(ctx, n.Client, n.Namespace, pods, podReadinessTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, n.Client, n.Log, n.Namespace, pods, podReadinessTimeout) {
 		return svc, fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	if n.ServicePods == nil {

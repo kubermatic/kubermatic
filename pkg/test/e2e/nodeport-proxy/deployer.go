@@ -182,11 +182,11 @@ func (d *Deployer) GetLbService(ctx context.Context) *corev1.Service {
 }
 
 func (d *Deployer) waitForPodsCreated(ctx context.Context, dep *appsv1.Deployment) ([]string, error) {
-	return e2eutils.WaitForPodsCreated(ctx, d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
+	return e2eutils.WaitForPodsCreated(ctx, d.Client, d.Log, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
 }
 
 func (d *Deployer) waitForPodsReady(ctx context.Context, pods ...string) error {
-	if !e2eutils.CheckPodsRunningReady(ctx, d.Client, d.Namespace, pods, podReadinessTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, d.Client, d.Log, d.Namespace, pods, podReadinessTimeout) {
 		return fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	return nil

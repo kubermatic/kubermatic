@@ -25,21 +25,25 @@ import (
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/log"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var deployer *Deployer
 var networkingTest *networkingTestConfig
+var logger *zap.SugaredLogger
 var skipCleanup bool
-var debugLog bool
 var versions = kubermatic.NewDefaultVersions()
+var logOptions = e2eutils.DefaultLogOptions
 
 func init() {
-	flag.StringVar(&versions.Kubermatic, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests.")
-	flag.BoolVar(&debugLog, "debug-log", false, "Activate debug logs.")
-	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
+	flag.StringVar(&versions.Kubermatic, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests")
+	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+
+	logOptions.AddFlags(flag.CommandLine)
 }
 
 func TestNodeportProxy(t *testing.T) {
@@ -48,16 +52,16 @@ func TestNodeportProxy(t *testing.T) {
 }
 
 var _ = ginkgo.BeforeSuite(func() {
-	e2eutils.DefaultLogger = e2eutils.CreateLogger(debugLog)
+	logger = log.NewFromOptions(logOptions).Sugar()
 	k8scli, podRestCli, config := e2eutils.GetClientsOrDie()
 	deployer = &Deployer{
-		Log:      e2eutils.DefaultLogger,
+		Log:      logger,
 		Client:   k8scli,
 		Versions: versions,
 	}
 	networkingTest = &networkingTestConfig{
 		TestPodConfig: e2eutils.TestPodConfig{
-			Log:           e2eutils.DefaultLogger,
+			Log:           logger,
 			Client:        k8scli,
 			Config:        config,
 			PodRestClient: podRestCli,
@@ -67,7 +71,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(deployer.SetUp(context.Background())).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
 	// We put the test pod in same namespace as the nodeport proxy
 	networkingTest.Namespace = deployer.Namespace
-	gomega.Expect(networkingTest.DeployTestPod(context.Background())).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
+	gomega.Expect(networkingTest.DeployTestPod(context.Background(), logger)).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
 })
 
 var _ = ginkgo.AfterSuite(func() {
