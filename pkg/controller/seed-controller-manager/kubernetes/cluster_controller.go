@@ -85,18 +85,18 @@ type Reconciler struct {
 
 	recorder record.EventRecorder
 
-	overwriteRegistry                     string
-	nodeAccessNetwork                     string
-	etcdDiskSize                          resource.Quantity
-	userClusterMLAEnabled                 bool
-	dockerPullConfigJSON                  []byte
-	kubermaticImage                       string
-	etcdLauncherImage                     string
-	dnatControllerImage                   string
-	machineControllerImageTag             string
-	machineControllerImageRepository      string
-	concurrentClusterUpdates              int
-	backupSchedule                        time.Duration
+	overwriteRegistry                string
+	nodeAccessNetwork                string
+	etcdDiskSize                     resource.Quantity
+	userClusterMLAEnabled            bool
+	dockerPullConfigJSON             []byte
+	kubermaticImage                  string
+	etcdLauncherImage                string
+	dnatControllerImage              string
+	machineControllerImageTag        string
+	machineControllerImageRepository string
+	concurrentClusterUpdates         int
+	backupSchedule                   time.Duration
 
 	oidcIssuerURL      string
 	oidcIssuerClientID string
@@ -147,18 +147,18 @@ func Add(
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 
-		overwriteRegistry:                     overwriteRegistry,
-		nodeAccessNetwork:                     nodeAccessNetwork,
-		etcdDiskSize:                          etcdDiskSize,
-		userClusterMLAEnabled:                 userClusterMLAEnabled,
-		dockerPullConfigJSON:                  dockerPullConfigJSON,
-		kubermaticImage:                       kubermaticImage,
-		etcdLauncherImage:                     etcdLauncherImage,
-		dnatControllerImage:                   dnatControllerImage,
-		machineControllerImageTag:             machineControllerImageTag,
-		machineControllerImageRepository:      machineControllerImageRepository,
-		concurrentClusterUpdates:              concurrentClusterUpdates,
-		backupSchedule:                        backupSchedule,
+		overwriteRegistry:                overwriteRegistry,
+		nodeAccessNetwork:                nodeAccessNetwork,
+		etcdDiskSize:                     etcdDiskSize,
+		userClusterMLAEnabled:            userClusterMLAEnabled,
+		dockerPullConfigJSON:             dockerPullConfigJSON,
+		kubermaticImage:                  kubermaticImage,
+		etcdLauncherImage:                etcdLauncherImage,
+		dnatControllerImage:              dnatControllerImage,
+		machineControllerImageTag:        machineControllerImageTag,
+		machineControllerImageRepository: machineControllerImageRepository,
+		concurrentClusterUpdates:         concurrentClusterUpdates,
+		backupSchedule:                   backupSchedule,
 
 		externalURL:  externalURL,
 		seedGetter:   seedGetter,
