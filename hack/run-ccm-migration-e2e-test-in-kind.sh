@@ -90,9 +90,20 @@ echodate "Running CCM tests..."
 
 # for unknown reasons, log output is not shown live when using
 # "/..." in the package expression (the position of the -v flag
-# doesn't make a difference)
-go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
-  -v \
-  -timeout 30m \
-  -kubeconfig "${HOME}/.kube/config" \
-  -provider "$PROVIDER_TO_TEST"
+# doesn't make a difference).
+#
+# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+  go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
+    -v \
+    -timeout 30m \
+    -kubeconfig "${HOME}/.kube/config" \
+    -provider "$PROVIDER_TO_TEST" \
+    | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.ccm_migration_${PROVIDER_TO_TEST}.xml
+else
+  go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
+    -v \
+    -timeout 30m \
+    -kubeconfig "${HOME}/.kube/config" \
+    -provider "$PROVIDER_TO_TEST"
+fi
