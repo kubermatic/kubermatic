@@ -64,16 +64,16 @@ time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND
 # if we want to generate a junit report, we do not use ginkgo (ginkgo has a junit report functionality,
 # but only in Ginkgo v2).
 if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-    CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
-      --ginkgo.randomizeAllSpecs \
-      --ginkgo.failOnPending \
-      --ginkgo.trace \
-      --ginkgo.progress \
-      --ginkgo.v \
-      --kubeconfig "${HOME}/.kube/config" \
-      --kubermatic-tag "${TAG}" \
-      --log-debug 2>&1 \
-      | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.nodeport_proxy_e2e.xml
+  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
+    --ginkgo.randomizeAllSpecs \
+    --ginkgo.failOnPending \
+    --ginkgo.trace \
+    --ginkgo.progress \
+    --ginkgo.v \
+    --kubeconfig "${HOME}/.kube/config" \
+    --kubermatic-tag "${TAG}" \
+    --log-debug 2>&1 |
+    go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.nodeport_proxy_e2e.xml
 else
   # use ginkgo binary by preference to have better output:
   # https://github.com/onsi/ginkgo/issues/633

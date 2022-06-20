@@ -98,8 +98,8 @@ if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
     -v \
     -timeout 30m \
     -kubeconfig "${HOME}/.kube/config" \
-    -provider "$PROVIDER_TO_TEST" \
-    | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.ccm_migration_${PROVIDER_TO_TEST}.xml
+    -provider "$PROVIDER_TO_TEST" |
+    go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.ccm_migration_${PROVIDER_TO_TEST}.xml
 else
   go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
     -v \

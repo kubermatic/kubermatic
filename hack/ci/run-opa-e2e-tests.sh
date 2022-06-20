@@ -65,9 +65,9 @@ echodate "Running opa tests..."
 
 # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
 if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-    go test -timeout 30m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.opa_e2e.xml
+  go test -timeout 30m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.opa_e2e.xml
 else
-    go test -timeout 30m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG"
+  go test -timeout 30m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG"
 fi
 
 echodate "Tests completed successfully!"

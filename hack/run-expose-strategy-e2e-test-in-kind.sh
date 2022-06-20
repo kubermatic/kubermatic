@@ -210,8 +210,8 @@ if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
     -kubeconfig "$HOME/.kube/config" \
     -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
     -datacenter byo-kubernetes \
-    -log-debug 2>&1 \
-    | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.expose_strategy_e2e.xml
+    -log-debug 2>&1 |
+    go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.expose_strategy_e2e.xml
 else
   go test -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
     -kubeconfig "$HOME/.kube/config" \
