@@ -36,7 +36,7 @@ import (
 func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
-	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
+	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}

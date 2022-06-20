@@ -172,7 +172,7 @@ func createTemplateData() (*addon.TemplateData, error) {
 		},
 	}
 
-	return addon.NewTemplateData(cluster, resources.Credentials{}, "", dnsClusterIP, "", variables)
+	return addon.NewTemplateData(cluster, resources.Credentials{}, "", dnsClusterIP, "", nil, variables)
 }
 
 func parseManifest(manifest addon.Manifest) (*objectData, error) {
