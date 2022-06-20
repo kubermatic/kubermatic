@@ -336,6 +336,14 @@ func (d *TemplateData) MachineControllerImageRepository() string {
 	return d.machineControllerImageRepository
 }
 
+func (d *TemplateData) OperatingSystemManagerImageTag() string {
+	return d.config.Spec.UserCluster.OperatingSystemManager.ImageTag
+}
+
+func (d *TemplateData) OperatingSystemManagerImageRepository() string {
+	return d.config.Spec.UserCluster.OperatingSystemManager.ImageRepository
+}
+
 // ClusterIPByServiceName returns the ClusterIP as string for the
 // Service specified by `name`. Service lookup happens within
 // `Cluster.Status.NamespaceName`. When ClusterIP fails to parse

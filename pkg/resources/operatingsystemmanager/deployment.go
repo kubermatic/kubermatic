@@ -63,6 +63,8 @@ type operatingSystemManagerData interface {
 	NodeLocalDNSCacheEnabled() bool
 	DC() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
+	OperatingSystemManagerImageTag() string
+	OperatingSystemManagerImageRepository() string
 }
 
 // DeploymentCreator returns the function to create and update the operating system manager deployment.
@@ -131,8 +133,6 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
-
 			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
 				return nil, err
@@ -152,10 +152,18 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
+			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
+			if r := data.OperatingSystemManagerImageRepository(); r != "" {
+				repository = r
+			}
+			tag := Tag
+			if t := data.OperatingSystemManagerImageTag(); t != "" {
+				tag = t
+			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   repository + ":" + Tag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
 					Env:     envVars,
