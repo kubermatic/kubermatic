@@ -68,7 +68,6 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	defer masterClient.CleanupCluster(t, project.ID, datacenter, cluster1.Name)
 
 	t.Log("creating first IPAM Pool...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
@@ -123,6 +122,72 @@ func TestIPAM(t *testing.T) {
 		CIDR: "192.168.1.16/28",
 	}) {
 		t.Fatalf("IPAM Allocation 2 wasn't created on cluster 2")
+	}
+
+	t.Log("deleting first cluster...")
+	masterClient.CleanupCluster(t, project.ID, datacenter, cluster1.Name)
+
+	t.Log("checking that the first cluster allocations were gone...")
+	if checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+		Type:      "range",
+		DC:        location,
+		Addresses: []string{"192.168.1.0-192.168.1.7"},
+	}) != false ||
+		checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+			Type: "prefix",
+			DC:   location,
+			CIDR: "192.168.1.0/28",
+		}) != false {
+		t.Fatalf("IPAM Allocations in first cluster are still persisted")
+	}
+
+	t.Log("creating third IPAM Pool...")
+	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "193.169.1.0/28", "prefix", 29)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	t.Log("checking IPAM Pool 3 allocation on second cluster...")
+	if !checkIPAMAllocation(t, ctx, seedClient, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+		Type: "prefix",
+		DC:   location,
+		CIDR: "193.169.1.0/29",
+	}) {
+		t.Fatalf("IPAM Allocation 3 wasn't created on cluster 2")
+	}
+
+	t.Log("creating third cluster...")
+	cluster3, err := createNewCluster(ctx, masterClient, seedClient, project.ID)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	defer masterClient.CleanupCluster(t, project.ID, datacenter, cluster3.Name)
+
+	t.Log("checking IPAM Pool 3 allocation on third cluster...")
+	if !checkIPAMAllocation(t, ctx, seedClient, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+		Type: "prefix",
+		DC:   location,
+		CIDR: "193.169.1.8/29",
+	}) {
+		t.Fatalf("IPAM Allocation 3 wasn't created on cluster 3")
+	}
+
+	t.Log("checking IPAM Pool 1 allocation on third cluster...")
+	if !checkIPAMAllocation(t, ctx, seedClient, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+		Type:      "range",
+		DC:        location,
+		Addresses: []string{"192.168.1.0-192.168.1.7"},
+	}) {
+		t.Fatalf("IPAM Allocation 1 wasn't created on cluster 3")
+	}
+
+	t.Log("checking IPAM Pool 2 allocation on third cluster...")
+	if !checkIPAMAllocation(t, ctx, seedClient, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+		Type: "prefix",
+		DC:   location,
+		CIDR: "192.168.1.0/28",
+	}) {
+		t.Fatalf("IPAM Allocation 2 wasn't created on cluster 3")
 	}
 }
 
