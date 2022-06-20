@@ -133,7 +133,6 @@ func Add(
 	dnatControllerImage string,
 	machineControllerImageTag string,
 	machineControllerImageRepository string,
-
 	tunnelingAgentIP string,
 	caBundle *certificates.CABundle,
 

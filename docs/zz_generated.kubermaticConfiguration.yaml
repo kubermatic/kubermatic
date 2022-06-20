@@ -442,6 +442,16 @@ spec:
     # NodePortRange is the port range for customer clusters - this must match the NodePort
     # range of the seed cluster.
     nodePortRange: 30000-32767
+    # OperatingSystemManager configures the image repo and the tag version for osm deployment.
+    operatingSystemManager:
+      # ImageRepository is used to override the OperatingSystemManager image repository.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageRepository: ""
+      # ImageTag is used to override the OperatingSystemManager image.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageTag: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
