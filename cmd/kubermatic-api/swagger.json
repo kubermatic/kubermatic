@@ -24475,6 +24475,10 @@
         "oidcKubeCfgEndpoint": {
           "type": "boolean",
           "x-go-name": "OIDCKubeCfgEndpoint"
+        },
+        "operatingSystemManager": {
+          "type": "boolean",
+          "x-go-name": "OperatingSystemManager"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

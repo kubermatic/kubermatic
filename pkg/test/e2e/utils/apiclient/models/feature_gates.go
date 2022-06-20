@@ -22,6 +22,9 @@ type FeatureGates struct {
 
 	// o ID c kube cfg endpoint
 	OIDCKubeCfgEndpoint bool `json:"oidcKubeCfgEndpoint,omitempty"`
+
+	// operating system manager
+	OperatingSystemManager bool `json:"operatingSystemManager,omitempty"`
 }
 
 // Validate validates this feature gates
