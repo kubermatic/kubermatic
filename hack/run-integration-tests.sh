@@ -74,7 +74,11 @@ echodate "Running integration tests..."
 # * Finding all files that contain the build tag via grep
 # * Extracting the dirname as the `go test` command doesn't play well with individual files as args
 # * Prefixing them with `./` as that's needed by `go test` as well
-grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ |
-  xargs dirname |
-  sort -u |
-  xargs -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
+for file in $(grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ | xargs dirname | sort -u); do
+  if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+    junit_name=$(echo $file | sed 's/\//_/g')
+    go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./${file} -v 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
+  else
+    go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./${file} -v
+  fi
+done
