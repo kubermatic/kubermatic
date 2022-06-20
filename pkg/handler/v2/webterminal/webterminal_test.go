@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	testExpectedRedirectURI = "http://example.com/api/v2/kubeconfig/secret"
+	testExpectedRedirectURI = ":///api/v2/kubeconfig/secret"
 	testClusterName         = "AbcCluster"
 
 	csrfCookieName = "csrf_token"

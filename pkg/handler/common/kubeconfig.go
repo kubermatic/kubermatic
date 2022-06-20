@@ -403,7 +403,9 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 	}
 
 	// Override default redirect uri
-	oidcIssuerVerifier.SetRedirectURI(getRedirectURL(req.request))
+	if err := oidcIssuerVerifier.SetRedirectPath(req.request.URL.Path); err != nil {
+		return nil, err
+	}
 
 	// pass nonce
 	nonce := rand.String(rand.IntnRange(10, 15))
@@ -467,15 +469,6 @@ func createSecret(ctx context.Context, client ctrlruntimeclient.Client, name, em
 		Data: secretData,
 	}
 	return client.Create(ctx, secret)
-}
-
-func getRedirectURL(r *http.Request) string {
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
-
-	return fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.Path)
 }
 
 // CreateOIDCKubeconfigReq represent a request for creating kubeconfig for a cluster with OIDC credentials
