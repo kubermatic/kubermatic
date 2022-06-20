@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
-	"k8c.io/kubermatic/v2/pkg/docker"
+	"k8c.io/kubermatic/v2/pkg/install/images/docker"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
@@ -73,11 +73,11 @@ func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, i
 		"temp-directory": tempDir,
 	}).Info("Extracting addon manifests from Docker image")
 
-	if err := docker.DownloadImages(ctx, zap.NewNop().Sugar(), false, []string{imageName}); err != nil {
+	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
 		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
-	if err := docker.Copy(ctx, zap.NewNop().Sugar(), imageName, tempDir, "/addons"); err != nil {
+	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
 		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
@@ -85,17 +85,21 @@ func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, i
 }
 
 func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) error {
-	if err := docker.DownloadImages(ctx, zap.NewNop().Sugar(), dryRun, images); err != nil {
-		return fmt.Errorf("failed to download all images: %w", err)
+	if !dryRun {
+		if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
+			return fmt.Errorf("failed to download all images: %w", err)
+		}
 	}
 
-	retaggedImages, err := docker.RetagImages(ctx, zap.NewNop().Sugar(), dryRun, images, registry)
+	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
 	if err != nil {
 		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
-	if err := docker.PushImages(ctx, zap.NewNop().Sugar(), dryRun, retaggedImages); err != nil {
-		return fmt.Errorf("failed to push images: %w", err)
+	if !dryRun {
+		if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
+			return fmt.Errorf("failed to push images: %w", err)
+		}
 	}
 	return nil
 }

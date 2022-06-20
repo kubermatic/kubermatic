@@ -25,22 +25,21 @@ import (
 	"strings"
 
 	"github.com/distribution/distribution/v3/reference"
-	"go.uber.org/zap"
+	"github.com/sirupsen/logrus"
 )
 
 // execCommand is an internal helper function to execute commands and log them.
-func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
-	log = log.With("command", strings.Join(cmd.Args, " "))
+func execCommand(log logrus.FieldLogger, dryRun bool, cmd *exec.Cmd) error {
+	log = log.WithField("command", strings.Join(cmd.Args, " "))
 	if dryRun {
-		log.Info("Would execute Docker command but this is a dry-run")
+		log.Debug("Would execute Docker command but this is a dry-run")
 		return nil
 	}
 
 	log.Debug("Executing command...")
 	out, err := cmd.CombinedOutput()
-	log = log.With(zap.ByteString("output", out))
 	if err != nil {
-		log.Error("Command failed")
+		log.Error("Command failed: %s", string(out))
 		return err
 	}
 
@@ -50,7 +49,7 @@ func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
 
 // DownloadImages pulls all given images using the Docker CLI
 // Invokes DownloadImage for actual pulling.
-func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
+func DownloadImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
 		case <-ctx.Done():
@@ -66,8 +65,8 @@ func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, im
 }
 
 // DownloadImage invokes the Docker CLI and pulls an image.
-func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
-	log = log.With("image", image)
+func DownloadImage(ctx context.Context, log logrus.FieldLogger, dryRun bool, image string) error {
+	log = log.WithField("image", image)
 	log.Info("Downloading image...")
 
 	cmd := exec.CommandContext(ctx, "docker", "pull", image)
@@ -80,7 +79,7 @@ func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 
 // RetagImages invokes the Docker CLI and tags the given images so they belongs to the given registry.
 // Invokes RetagImage for actual tagging.
-func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) ([]string, error) {
+func RetagImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) ([]string, error) {
 	var retaggedImages []string
 	for _, image := range images {
 		select {
@@ -100,8 +99,8 @@ func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image
 }
 
 // RetagImage invokes the Docker CLI and tags the given image so it belongs to the given registry.
-func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, sourceImage, registry string) (string, error) {
-	log = log.With("source-image", sourceImage)
+func RetagImage(ctx context.Context, log logrus.FieldLogger, dryRun bool, sourceImage, registry string) (string, error) {
+	log = log.WithField("source-image", sourceImage)
 	imageRef, err := reference.ParseNamed(sourceImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse image: %w", err)
@@ -112,7 +111,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 	}
 
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, reference.Path(imageRef), taggedImageRef.Tag())
-	log = log.With("target-image", targetImage)
+	log = log.WithField("target-image", targetImage)
 
 	log.Info("Tagging image...")
 	cmd := exec.CommandContext(ctx, "docker", "tag", sourceImage, targetImage)
@@ -125,7 +124,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 
 // PushImages pushes all given images using the Docker CLI
 // Invokes PushImage for actual pushing.
-func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
+func PushImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
 		case <-ctx.Done():
@@ -141,8 +140,8 @@ func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images
 }
 
 // PushImage invokes the Docker CLI and pushes the given image.
-func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
-	log = log.With("image", image)
+func PushImage(ctx context.Context, log logrus.FieldLogger, dryRun bool, image string) error {
+	log = log.WithField("image", image)
 
 	log.Info("Pushing image...")
 	cmd := exec.CommandContext(ctx, "docker", "push", image)
@@ -155,12 +154,15 @@ func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image s
 
 // Copy copies the content from a directory out of the
 // container onto the host system.
-func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string, src string) error {
+func Copy(ctx context.Context, log logrus.FieldLogger, image string, dst string, src string) error {
 	var err error
 
-	log = log.With("image", image)
+	log = log.WithField("image", image)
 
-	log.Infow("Extracting image...", "src", src, "dst", dst)
+	log.WithFields(logrus.Fields{
+		"source":      src,
+		"destination": dst,
+	}).Info("Extracting image")
 
 	dst, err = filepath.Abs(dst)
 	if err != nil {
