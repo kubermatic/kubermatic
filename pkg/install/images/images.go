@@ -18,12 +18,12 @@ package images
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -62,42 +62,45 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
+func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, imageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "imageloader*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
-	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
+	log.WithFields(logrus.Fields{
+		"image":          imageName,
+		"temp-directory": tempDir,
+	}).Info("Extracting addon manifests from Docker image")
 
-	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
+	if err := docker.DownloadImages(ctx, zap.NewNop().Sugar(), false, []string{imageName}); err != nil {
 		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
-	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
+	if err := docker.Copy(ctx, zap.NewNop().Sugar(), imageName, tempDir, "/addons"); err != nil {
 		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
 	return tempDir, nil
 }
 
-func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
-	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) error {
+	if err := docker.DownloadImages(ctx, zap.NewNop().Sugar(), dryRun, images); err != nil {
 		return fmt.Errorf("failed to download all images: %w", err)
 	}
 
-	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
+	retaggedImages, err := docker.RetagImages(ctx, zap.NewNop().Sugar(), dryRun, images, registry)
 	if err != nil {
 		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
-	if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
+	if err := docker.PushImages(ctx, zap.NewNop().Sugar(), dryRun, retaggedImages); err != nil {
 		return fmt.Errorf("failed to push images: %w", err)
 	}
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
 	templateData, err := getTemplateData(clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -118,8 +121,8 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *version.Version
 	return images, nil
 }
 
-func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
+func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
@@ -397,26 +400,14 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*version.Version, error) {
+func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, versionFilter string) ([]*version.Version, error) {
 	var versions []*version.Version
 
-	log = log.With("versions-filter", versionFilter)
+	log = log.WithField("versions-filter", versionFilter)
 
 	if config != nil {
 		log.Debug("Loading versions")
 		versions = getVersionsFromKubermaticConfiguration(config)
-	} else {
-		if versionsFile == "" {
-			return nil, errors.New("either a KubermaticConfiguration or a versions file must be specified")
-		}
-
-		var err error
-
-		log.Debugw("Loading versions", "file", versionsFile)
-		versions, err = version.LoadVersions(versionsFile)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	if versionFilter == "" {
@@ -440,7 +431,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 }
 
 // list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI.
-func getCloudSpecs() []kubermaticv1.CloudSpec {
+func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
 			ProviderName: string(kubermaticv1.VSphereCloudProvider),
@@ -478,7 +469,7 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 }
 
 // list all the supported CNI plugins along with their supported versions.
-func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
+func GetCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
 	supportedCNIPlugins := cni.GetSupportedCNIPlugins()
 
@@ -497,14 +488,14 @@ func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	return cniPluginSettings
 }
 
-func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
+func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
 	obj, err := runtime.Decode(decoder, b)
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
 			// We must skip custom objects. We try to look up the object info though to give a useful warning
 			metaFactory := &json.SimpleMetaFactory{}
 			if gvk, err := metaFactory.Interpret(b); err == nil {
-				log = log.With(zap.String("gvk", gvk.String()))
+				log = log.WithField("gvk", gvk.String())
 			}
 
 			log.Debug("Skipping object because its not known")

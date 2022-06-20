@@ -27,7 +27,6 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
-	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -37,7 +36,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
+func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
@@ -47,17 +46,15 @@ func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config 
 		return nil, fmt.Errorf("failed to find Helm charts: %w", err)
 	}
 
-	helmClient, err := getHelmClient(helmBinary)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Helm client: %w", err)
-	}
-
 	images := []string{}
 	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
 
 	for _, chartPath := range chartPaths {
 		chartName := filepath.Base(chartPath)
-		chartLog := log.With("path", chartPath, "chart", chartName)
+		chartLog := log.WithFields(logrus.Fields{
+			"path":  chartPath,
+			"chart": chartName,
+		})
 
 		// do not render the Kubermatic chart again, if a Kubermatic configuration
 		// is given; in this case, the operator is used and we determine the images

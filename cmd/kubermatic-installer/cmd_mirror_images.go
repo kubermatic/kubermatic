@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -47,7 +49,10 @@ type MirrorImagesOptions struct {
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
-	opt := MirrorImagesOptions{}
+	opt := MirrorImagesOptions{
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
+	}
 
 	cmd := &cobra.Command{
 		Use:   "mirror-images [registry]",
@@ -86,7 +91,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
-	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", "helm", "Helm 3.x binary to use for rendering charts")
+	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
 
 	// these flags are deprecated but retained to ensure compatibility with `image-loader` flags,
 	// except for `--versions-file`, that flag was already deprecated in `image-loader`.
@@ -132,14 +137,19 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			)
 		}
 
+		caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
+		if err != nil {
+			return fmt.Errorf("failed loading CA bundle: %w", err)
+		}
+
 		kubermaticConfig, _, err := loadKubermaticConfiguration(options.Config)
 		if err != nil {
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
-		helmValues, err := loadHelmValues(options.HelmValuesFile)
+		clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 		if err != nil {
-			return fmt.Errorf("failed to load Helm values: %w", err)
+			return fmt.Errorf("failed to load versions: %w", err)
 		}
 
 		ctx := cmd.Context()
@@ -177,7 +187,16 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					)
 
 					versionLogger.Info("Collecting images...")
-					images, err := images.GetImagesForVersion(versionLogger, clusterVersion, cloudSpec, cniPlugin, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
+					images, err := images.GetImagesForVersion(
+						versionLogger,
+						clusterVersion,
+						cloudSpec,
+						cniPlugin,
+						kubermaticConfig,
+						options.AddonsPath,
+						versions,
+						caBundle,
+					)
 					if err != nil {
 						return fmt.Errorf("failed to get images: %w", err)
 					}
@@ -190,15 +209,15 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
 			chartsLogger.Info("Rendering Helm charts")
 
-			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, o.chartsPath, o.helmValuesPath, o.helmBinary)
+			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile)
 			if err != nil {
 				return fmt.Errorf("failed to get images: %w", err)
 			}
 			imageSet.Insert(images...)
 		}
 
-		if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
-			log.Fatalw("Failed to process images", zap.Error(err))
+		if err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry); err != nil {
+			return fmt.Errorf("failed to process images: %w", err)
 		}
 
 		return nil

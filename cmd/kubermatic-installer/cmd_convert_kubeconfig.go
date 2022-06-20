@@ -54,7 +54,7 @@ func ConvertKubeconfigCommand(logger *logrus.Logger) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "convert-kubeconfig KUBECONFIG",
-		Short:        "convert a kubeconfig to use static credentials for use in Seeds",
+		Short:        "Convert a kubeconfig to use static credentials for use in Seeds",
 		Long:         "Takes a kubeconfig and creates a ServiceAccount with cluster-admin permissions in all clusters, then updates the kubeconfig to use the ServiceAccount's token",
 		RunE:         ConvertKubeconfigFunc(logger, &opt),
 		SilenceUsage: true,
