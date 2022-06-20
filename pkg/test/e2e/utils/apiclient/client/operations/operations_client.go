@@ -30,6 +30,8 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCKubeconfigOK, error)
 
+	CreateOIDCKubeconfigSecret(params *CreateOIDCKubeconfigSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCKubeconfigSecretOK, *CreateOIDCKubeconfigSecretCreated, error)
+
 	GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddonConfigOK, error)
 
 	GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdmissionPluginsOK, error)
@@ -80,6 +82,47 @@ func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authIn
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateOIDCKubeconfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateOIDCKubeconfigSecret Starts OIDC flow and generates kubeconfig, the generated config
+contains OIDC provider authentication info. The kubeconfig is stored in the secret.
+*/
+func (a *Client) CreateOIDCKubeconfigSecret(params *CreateOIDCKubeconfigSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCKubeconfigSecretOK, *CreateOIDCKubeconfigSecretCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateOIDCKubeconfigSecretParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createOIDCKubeconfigSecret",
+		Method:             "GET",
+		PathPattern:        "/api/v2/kubeconfig/secret",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOIDCKubeconfigSecretReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+	switch value := result.(type) {
+	case *CreateOIDCKubeconfigSecretOK:
+		return value, nil, nil
+	case *CreateOIDCKubeconfigSecretCreated:
+		return nil, value, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateOIDCKubeconfigSecretDefault)
+	return nil, nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

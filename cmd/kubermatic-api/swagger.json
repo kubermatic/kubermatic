@@ -9700,6 +9700,35 @@
         }
       }
     },
+    "/api/v2/kubeconfig/secret": {
+      "get": {
+        "description": "Starts OIDC flow and generates kubeconfig, the generated config\ncontains OIDC provider authentication info. The kubeconfig is stored in the secret.",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "createOIDCKubeconfigSecret",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/presets": {
       "get": {
         "description": "Lists presets",

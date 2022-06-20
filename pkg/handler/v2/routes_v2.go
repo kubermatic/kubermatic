@@ -52,10 +52,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/webterminal"
 )
 
 // RegisterV2 declares all router paths for v2.
-func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics, oidcCfg common.OIDCConfiguration) {
+func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg common.OIDCConfiguration) {
+	// Defines a set of HTTP endpoint for generating kubeconfig secret for a cluster that will contain OIDC tokens
+	if oidcKubeConfEndpoint {
+		mux.Methods(http.MethodGet).
+			Path("/kubeconfig/secret").
+			Handler(r.createOIDCKubeconfigSecret(oidcCfg))
+	}
+
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
@@ -6553,6 +6561,33 @@ func (r Routing) getNetworkDefaults() http.Handler {
 		)(networkdefaults.GetNetworkDefaultsEndpoint(r.seedsGetter, r.userInfoGetter)),
 		networkdefaults.DecodeGetNetworkDefaultsReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/kubeconfig/secret createOIDCKubeconfigSecret
+//
+//     Starts OIDC flow and generates kubeconfig, the generated config
+//     contains OIDC provider authentication info. The kubeconfig is stored in the secret.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       201: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOIDCKubeconfigSecret(oidcCfg common.OIDCConfiguration) http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
+		)(webterminal.CreateOIDCKubeconfigSecretEndpoint(r.projectProvider, r.privilegedProjectProvider, r.oidcIssuerVerifier, oidcCfg)),
+		webterminal.DecodeCreateOIDCKubeconfig,
+		webterminal.EncodeOIDCKubeconfig,
 		r.defaultServerOptions()...,
 	)
 }

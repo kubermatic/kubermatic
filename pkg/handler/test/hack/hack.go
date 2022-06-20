@@ -169,7 +169,7 @@ func NewTestRouting(
 	)
 	r.RegisterV1Admin(v1Router)
 	r.RegisterV1Websocket(v1Router)
-	rv2.RegisterV2(v2Router, generateDefaultMetrics(), *generateDefaultOicdCfg())
+	rv2.RegisterV2(v2Router, true, *generateDefaultOicdCfg())
 	return mainRouter
 }
 

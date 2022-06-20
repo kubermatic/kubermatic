@@ -136,24 +136,15 @@ func (this *loginHandler) redirect(ctx context.Context, request interface{}) (re
 	}
 
 	// Override default redirect uri
-	this.oidcIssuerVerifier.SetRedirectURI(this.getRedirectURL(loginRequest.Request))
+	if err := this.oidcIssuerVerifier.SetRedirectPath(loginRequest.Request.URL.Path); err != nil {
+		return nil, err
+	}
 
 	return &LoginResponse{
 		Request: loginRequest.Request,
 		authURL: this.oidcIssuerVerifier.AuthCodeURL(state, this.oidcConfig.OfflineAccessAsScope, scopes...),
 		nonce:   nonce,
 	}, nil
-}
-
-// Builds a full URL that will be used by the OIDC to get back to our API after authentication.
-// 	- scheme: http(s)://<domain>/<endpoint>
-func (this *loginHandler) getRedirectURL(r *http.Request) string {
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
-
-	return fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.Path)
 }
 
 func (this *loginHandler) getEncodedNonceCookie(nonce string, secureMode bool, maxAge int) (*http.Cookie, error) {
