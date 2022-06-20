@@ -95,8 +95,6 @@ type Reconciler struct {
 	dnatControllerImage                   string
 	machineControllerImageTag             string
 	machineControllerImageRepository      string
-	operatingSystemManagerImageTag        string
-	operatingSystemManagerImageRepository string
 	concurrentClusterUpdates              int
 	backupSchedule                        time.Duration
 
@@ -135,9 +133,6 @@ func Add(
 	dnatControllerImage string,
 	machineControllerImageTag string,
 	machineControllerImageRepository string,
-	operatingSystemManagerImageTag string,
-	operatingSystemManagerImageRepository string,
-
 	tunnelingAgentIP string,
 	caBundle *certificates.CABundle,
 
@@ -162,8 +157,6 @@ func Add(
 		dnatControllerImage:                   dnatControllerImage,
 		machineControllerImageTag:             machineControllerImageTag,
 		machineControllerImageRepository:      machineControllerImageRepository,
-		operatingSystemManagerImageTag:        operatingSystemManagerImageTag,
-		operatingSystemManagerImageRepository: operatingSystemManagerImageRepository,
 		concurrentClusterUpdates:              concurrentClusterUpdates,
 		backupSchedule:                        backupSchedule,
 

@@ -97,14 +97,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				args = append(args, fmt.Sprintf("-machine-controller-image-repository=%s", mcCfg.ImageRepository))
 			}
 
-			osmConfigs := cfg.Spec.UserCluster.OperatingSystemManager
-			if osmConfigs.ImageTag != "" {
-				args = append(args, fmt.Sprintf("-operating-system-manager-image-tag=%s", osmConfigs.ImageTag))
-			}
-			if osmConfigs.ImageRepository != "" {
-				args = append(args, fmt.Sprintf("-operating-system-manager-repository=%s", osmConfigs.ImageRepository))
-			}
-
 			sharedAddonVolume := "addons"
 			volumes := []corev1.Volume{
 				{

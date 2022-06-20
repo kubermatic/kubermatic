@@ -145,8 +145,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.dnatControllerImage,
 		ctrlCtx.runOptions.machineControllerImageTag,
 		ctrlCtx.runOptions.machineControllerImageRepository,
-		ctrlCtx.runOptions.operatingSystemManagerImageTag,
-		ctrlCtx.runOptions.operatingSystemManagerImageRepository,
 		ctrlCtx.runOptions.tunnelingAgentIP.String(),
 		ctrlCtx.runOptions.caBundle,
 		kubernetescontroller.Features{

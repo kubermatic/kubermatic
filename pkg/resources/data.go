@@ -212,13 +212,13 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 	return td
 }
 
-func (td *TemplateDataBuilder) WithOperatingSystemManagerImageTag(tag string) *TemplateDataBuilder {
-	td.data.operatingSystemManagerImageTag = tag
+func (td *TemplateDataBuilder) WithOperatingSystemManagerImageTag(config *kubermaticv1.KubermaticConfiguration) *TemplateDataBuilder {
+	td.data.operatingSystemManagerImageTag = config.Spec.UserCluster.OperatingSystemManager.ImageTag
 	return td
 }
 
-func (td *TemplateDataBuilder) WithOperatingSystemManagerImageRepository(tag string) *TemplateDataBuilder {
-	td.data.operatingSystemManagerImageRepository = tag
+func (td *TemplateDataBuilder) WithOperatingSystemManagerImageRepository(config *kubermaticv1.KubermaticConfiguration) *TemplateDataBuilder {
+	td.data.operatingSystemManagerImageRepository = config.Spec.UserCluster.OperatingSystemManager.ImageRepository
 	return td
 }
 

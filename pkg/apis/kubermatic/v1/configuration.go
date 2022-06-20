@@ -275,11 +275,11 @@ type MachineControllerConfiguration struct {
 // OperatingSystemManager configures the image repo and the tag version for osm deployment.
 type OperatingSystemManager struct {
 	// ImageRepository is used to override the OperatingSystemManager image repository.
-	// It is recommended to use this field only for development, tests and PoC purposes.For production environments.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
 	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageRepository string `json:"imageRepository,omitempty"`
 	// ImageTag is used to override the OperatingSystemManager image.
-	// It is recommended to use this field only for development, tests and PoC purposes.For production environments.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
 	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
 }

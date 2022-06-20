@@ -94,10 +94,6 @@ type controllerRunOptions struct {
 	// Machine Controller configuration
 	machineControllerImageTag        string
 	machineControllerImageRepository string
-
-	// Operating System Manager deployment configurations
-	operatingSystemManagerImageTag        string
-	operatingSystemManagerImageRepository string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -149,9 +145,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.lokiRulerURL, "loki-ruler-url", "http://loki-distributed-ruler.mla.svc.cluster.local:3100", "The URL of loki ruler which is running for MLA stack.")
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
-	flag.StringVar(&c.operatingSystemManagerImageTag, "operating-system-manager-image-tag", "", "The Operating System Manager image tag.")
-	flag.StringVar(&c.operatingSystemManagerImageRepository, "operating-system-manager-image-repository", "", "The Operating System Manager image repository.")
-
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)
 	flag.Parse()
