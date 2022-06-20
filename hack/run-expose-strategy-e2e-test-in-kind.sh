@@ -23,11 +23,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-function generate_secret {
-  cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
-  echo ''
-}
-
 # We replace the domain with a dns name relying on nip.io poining to the
 # nodeport-proxy service. This makes the testing of expose strategies relying
 # on nodeport-proxy very easy from within the kind cluster.
@@ -46,10 +41,11 @@ TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.9}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
 REPOSUFFIX=""
-if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
-  REPOSUFFIX="-${KUBERMATIC_EDITION}"
+if [ "$KUBERMATIC_EDITION" == "ee" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
 type kind > /dev/null || fatal \
@@ -80,10 +76,6 @@ make -C cmd/kubeletdnat-controller docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
-make -C cmd/user-ssh-keys-agent docker \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
 make -C addons docker \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
@@ -92,23 +84,18 @@ rm _build/kubermatic-installer
 make _build/kubermatic-installer
 
 # setup Kind cluster
-time retry 5 kind create cluster --name="${KIND_CLUSTER_NAME}"
+time kind create cluster --name="${KIND_CLUSTER_NAME}"
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # load nodeport-proxy image
-time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
-
-# Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Build binaries and load the Docker images into the kind cluster
 echodate "Building binaries for ${TAG}"
@@ -131,27 +118,13 @@ spec:
   ingress:
     domain: 127.0.0.1.nip.io
     disable: true
-  userCluster:
-    apiserverReplicas: 1
-  api:
-    replicas: 0
-    debugLog: true
   featureGates:
     TunnelingExposeStrategy: true
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    #tokenIssuer: "http://dex.oauth:5556/dex"
-    #issuerRedirectURL: "http://localhost:8000"
-    tokenIssuer: "https://127.0.0.1.nip.io/dex"
-    serviceAccountKey: "$(generate_secret)"
+    HeadlessInstallation: true
 EOF
 
 HELM_VALUES_FILE="${TMPDIR}/values.yaml"
 cat << EOF > ${HELM_VALUES_FILE}
-dex:
-  replicas: 0
 kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic${REPOSUFFIX}"
@@ -170,7 +143,7 @@ set_crds_version_annotation
   --helm-values "${HELM_VALUES_FILE}"
 
 # TODO: The installer should wait for everything to finish reconciling.
-#echodate "Waiting for Kubermatic Operator to deploy Master components..."
+echodate "Waiting for Kubermatic Operator to deploy Master components..."
 # sleep a bit to prevent us from checking the Deployments too early, before
 # the operator had time to reconcile
 sleep 5
@@ -203,7 +176,6 @@ spec:
   location: Hamburg
   kubeconfig:
     name: "${SEED_NAME}-kubeconfig"
-    namespace: kubermatic
     fieldPath: kubeconfig
   datacenters:
     byo-kubernetes:
@@ -226,34 +198,12 @@ echodate "Patching Kubermatic ingress domain with nodeport-proxy service cluster
 retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
-# run tests
-# use ginkgo binary by preference to have better output:
-# https://github.com/onsi/ginkgo/issues/633
-if type ginkgo > /dev/null; then
-  ginkgo --tags=e2e -v pkg/test/e2e/expose-strategy/ \
-    -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --cover \
-    --trace \
-    --race \
-    --progress \
-    -v \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
-    --debug-log
-else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/expose-strategy/... \
-    --ginkgo.randomizeAllSpecs \
-    --ginkgo.failOnPending \
-    --ginkgo.trace \
-    --ginkgo.progress \
-    --ginkgo.v \
-    --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
-    --debug-log
-fi
+echodate "Running tests..."
+go test -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
+  -ginkgo.v \
+  -kubeconfig "$HOME/.kube/config" \
+  -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
+  -datacenter byo-kubernetes \
+  -debug-log
+
+echodate "Done."
