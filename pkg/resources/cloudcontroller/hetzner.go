@@ -93,8 +93,8 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=hcloud",
 						"--allow-untagged-cloud",
-						"--allocate-node-cidrs=true",
-						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
+						// "false" as we use IPAM in kube-controller-manager
+						"--allocate-node-cidrs=false",
 					},
 					Env: []corev1.EnvVar{
 						{
