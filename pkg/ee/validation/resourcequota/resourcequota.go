@@ -30,28 +30,24 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ValidateResourceQuota(ctx context.Context,
 	incomingQuota *kubermaticv1.ResourceQuota,
-	client ctrlruntimeclient.Client) *field.Error {
-	errs := &field.Error{}
-	fieldPath := field.NewPath("unique", "reqource quotas")
-
+	client ctrlruntimeclient.Client) error {
 	currentQuotaList := &kubermaticv1.ResourceQuotaList{}
 	if err := client.List(ctx, currentQuotaList); err != nil {
-		return field.InternalError(fieldPath, fmt.Errorf("failed to list quotas: %w", err))
+		return fmt.Errorf("failed to list resource quotas: %w", err)
 	}
 
 	for _, currentQuota := range currentQuotaList.Items {
 		currentSubject := currentQuota.Spec.Subject
 		incomingSuject := incomingQuota.Spec.Subject
 		if currentSubject.Name == incomingSuject.Name && currentSubject.Kind == incomingSuject.Kind {
-			return field.Required(fieldPath, fmt.Sprintf("Subject Name %q and Project %q must be unique", incomingSuject.Name, incomingSuject.Kind))
+			return fmt.Errorf("ResourceQuota: Subject's Name %q and Kind pair %q must be unique", incomingSuject.Name, incomingSuject.Kind)
 		}
 	}
 
-	return errs
+	return nil
 }

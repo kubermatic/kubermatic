@@ -34,7 +34,7 @@ presubmits:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -71,7 +71,7 @@ presubmits:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -108,7 +108,7 @@ presubmits:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -146,7 +146,7 @@ presubmits:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -184,7 +184,7 @@ presubmits:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -246,7 +246,7 @@ presubmits:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -278,6 +278,9 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
           securityContext:
             privileged: true
           resources:

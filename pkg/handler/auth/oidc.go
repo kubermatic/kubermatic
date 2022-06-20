@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -63,6 +64,12 @@ type OIDCToken struct {
 type OIDCIssuerVerifier interface {
 	OIDCIssuer
 	TokenVerifier
+	RedirectURIPathSetter
+}
+
+type RedirectURIPathSetter interface {
+	// SetRedirectPath overrides configured path for a given URI
+	SetRedirectPath(path string) error
 }
 
 // OIDCIssuer exposes methods for getting OIDC tokens.
@@ -216,6 +223,15 @@ func (o *OpenIDClient) Exchange(ctx context.Context, code string) (OIDCToken, er
 	}
 
 	return oidcToken, nil
+}
+
+func (o *OpenIDClient) SetRedirectPath(path string) error {
+	u, err := url.Parse(o.redirectURI)
+	if err != nil {
+		return err
+	}
+	o.redirectURI = fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path)
+	return nil
 }
 
 func (o *OpenIDClient) oauth2Config(scopes ...string) *oauth2.Config {

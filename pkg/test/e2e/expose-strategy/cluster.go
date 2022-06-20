@@ -147,6 +147,8 @@ func (c *ClusterJig) CleanUp(ctx context.Context) error {
 }
 
 func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) error {
+	c.Log.Debugw("Waiting for control plane to be ready...", "timeout", clusterReadinessTimeout)
+
 	return wait.PollImmediate(clusterReadinessCheckPeriod, clusterReadinessTimeout, func() (bool, error) {
 		if err := c.Client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: c.Name, Namespace: cl.Namespace}, cl); err != nil {
 			return false, err

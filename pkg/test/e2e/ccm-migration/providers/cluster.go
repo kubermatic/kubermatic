@@ -55,6 +55,7 @@ type CommonClusterJig struct {
 	name           string
 	DatacenterName string
 	Version        semver.Semver
+	log            *zap.SugaredLogger
 
 	SeedClient ctrlruntimeclient.Client
 }
@@ -66,7 +67,7 @@ func (ccj *CommonClusterJig) generateAndCreateCluster(ctx context.Context, cloud
 		return err
 	}
 
-	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, ccj.SeedClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, ccj.SeedClient, ccj.log, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
 	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
 		return fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
 	}
@@ -108,6 +109,8 @@ func (ccj *CommonClusterJig) generateAndCreateMachineDeployment(ctx context.Cont
 
 // CleanUp deletes the cluster.
 func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntimeclient.Client) error {
+	ccj.log.Info("Cleaning up cluster...")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
 		return fmt.Errorf("failed to get user cluster: %w", err)
@@ -121,6 +124,7 @@ func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntime
 
 	for _, node := range nodes.Items {
 		nodeKey := ctrlruntimeclient.ObjectKey{Name: node.Name}
+		ccj.log.Debugw("Marking node with skip-eviction...", "node", node.Name)
 
 		retErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			n := corev1.Node{}
@@ -139,11 +143,15 @@ func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntime
 		}
 	}
 
+	ccj.log.Info("Deleting cluster...")
+
 	// Delete Cluster
 	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
 		var err error
-		if err = ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); apierrors.IsNotFound(err) {
+
+		// a NotFound error means we're good
+		if err = ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name}, cluster); apierrors.IsNotFound(err) {
 			return true, nil
 		}
 		if err != nil {

@@ -36,7 +36,7 @@ presubmits:
             - name: PROVIDER
               value: openstack
             - name: VERSION_TO_TEST
-              value: "v1.22.9"
+              value: "v1.22.11"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -77,7 +77,7 @@ presubmits:
             - name: PROVIDER
               value: vsphere
             - name: VERSION_TO_TEST
-              value: "v1.22.9"
+              value: "v1.22.11"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -94,7 +94,7 @@ presubmits:
               cpu: 3.5
             limits:
               memory: 4Gi
-  
+
   - name: pre-kubermatic-ccm-migration-azure-e2e
     run_if_changed: "(addons/azure-cloud-node-manager/|pkg/provider/cloud/azure/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/)"
     decorate: true
@@ -111,14 +111,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-6
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: PROVIDER
               value: azure
             - name: VERSION_TO_TEST
-              value: "v1.23.6"
+              value: "v1.23.8"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

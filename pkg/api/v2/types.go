@@ -822,8 +822,9 @@ type AKSNodePoolModes []string
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates
 type FeatureGates struct {
-	KonnectivityService *bool `json:"konnectivityService,omitempty"`
-	OIDCKubeCfgEndpoint *bool `json:"oidcKubeCfgEndpoint,omitempty"`
+	KonnectivityService    *bool `json:"konnectivityService,omitempty"`
+	OIDCKubeCfgEndpoint    *bool `json:"oidcKubeCfgEndpoint,omitempty"`
+	OperatingSystemManager *bool `json:"operatingSystemManager,omitempty"`
 }
 
 // ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.

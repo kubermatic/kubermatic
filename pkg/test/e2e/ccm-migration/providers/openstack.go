@@ -26,7 +26,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,28 +35,25 @@ import (
 )
 
 const (
-	osSecretPrefixName = "credentials-openstack"
-
+	osSecretPrefixName  = "credentials-openstack"
 	osCCMDeploymentName = "openstack-cloud-controller-manager"
 )
 
 type OpenstackClusterJig struct {
 	CommonClusterJig
 
-	log *zap.SugaredLogger
-
 	Credentials OpenstackCredentialsType
 }
 
-func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
+func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
 			name:           utilcluster.MakeClusterName(),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
+			log:            log,
 		},
-		log:         e2eutils.DefaultLogger,
 		Credentials: credentials,
 	}
 }

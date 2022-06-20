@@ -67,12 +67,6 @@ if [[ -z "${CACHE_VERSION}" ]]; then
   GIT_BRANCH="master"
 fi
 
-if [ -z "${PULL_NUMBER:-}" ]; then
-  # Special case: This is called in a Postsubmit. Go one revision back,
-  # as there can't be a cache for the current revision
-  CACHE_VERSION="$(git rev-parse ${CACHE_VERSION}~1)"
-fi
-
 # normalize branch name to prevent accidental directories being created
 GIT_BRANCH="$(echo "$GIT_BRANCH" | sed 's#/#-#g')"
 
@@ -80,21 +74,30 @@ ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
 URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
 
 # Do not go through the retry loop when there is nothing, but do try the
-# first parent if no cache was found. This is helpful for retests happening
+# first few parents if no cache was found. This is helpful for retests happening
 # quickly after something got merged to master and no gocache for the most
 # recent commit exists yet. In this case, taking the previous commit's
-# cache is better than nothing.
-if ! curl --head --silent --fail "${URL}" > /dev/null; then
-  echodate "Remote has no gocache ${ARCHIVE_NAME}, trying previous commit as a fallback..."
+# cache is better than nothing. This also helps for postsubmits, where the current
+# commit (the one that got merged) cannot have a cache yet.
+HAS_CACHE=false
+
+for i in $(seq 1 5); do
+  # check if we have a cache for the given git revision
+  if curl --head --silent --fail "${URL}" > /dev/null; then
+    HAS_CACHE=true
+    break
+  fi
+
+  echodate "No gocache ${ARCHIVE_NAME} available, trying previous commit as a fallback..."
 
   CACHE_VERSION="$(git rev-parse ${CACHE_VERSION}~1)"
   ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}-${GOARCH}.tar"
   URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
+done
 
-  if ! curl --head --silent --fail "${URL}" > /dev/null; then
-    echodate "Remote has no gocache ${ARCHIVE_NAME}, giving up."
-    exit 0
-  fi
+if ! $HAS_CACHE; then
+  echodate "Could not find any suitable gocaches, giving up."
+  exit 0
 fi
 
 echodate "Downloading and extracting gocache"

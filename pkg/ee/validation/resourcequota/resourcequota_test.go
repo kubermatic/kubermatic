@@ -26,18 +26,25 @@ package resourcequota
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubectl/pkg/scheme"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestValidateResourceQuotaInsallation(t *testing.T) {
+var (
+	testScheme = runtime.NewScheme()
+)
 
+func init() {
+	_ = kubermaticv1.AddToScheme(testScheme)
+}
+
+func TestValidateResourceQuotaInsallation(t *testing.T) {
 	testCases := []struct {
 		name                    string
 		existingResourceQuota   []*kubermaticv1.ResourceQuota
@@ -119,14 +126,22 @@ func TestValidateResourceQuotaInsallation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			var (
+				obj []ctrlruntimeclient.Object
+				err error
+			)
+
+			for _, rq := range tc.existingResourceQuota {
+				obj = append(obj, rq)
+			}
 
 			client := fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
+				WithObjects(obj...).
 				Build()
 
-			err := ValidateResourceQuota(context.Background(), tc.resourceQuotaToValidate, client)
-			fmt.Println(err)
+			err = ValidateResourceQuota(context.Background(), tc.resourceQuotaToValidate, client)
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}

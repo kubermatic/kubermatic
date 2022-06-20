@@ -24,6 +24,7 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
+	"k8c.io/kubermatic/v2/pkg/log"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -32,6 +33,7 @@ import (
 
 var _ = ginkgo.Describe("The Tunneling strategy", func() {
 	ctx := context.Background()
+	logger := log.NewFromOptions(options.logOptions).Sugar()
 
 	var (
 		clusterJig  *ClusterJig
@@ -41,7 +43,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 	ginkgo.BeforeEach(func() {
 		k8scli, restCli, restConf := e2eutils.GetClientsOrDie()
 		clusterJig = &ClusterJig{
-			Log:            e2eutils.DefaultLogger,
+			Log:            logger,
 			Client:         k8scli,
 			Name:           "c" + rand.String(9),
 			DatacenterName: options.datacenter,
@@ -49,13 +51,13 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 		}
 		gomega.Expect(clusterJig.SetUp(ctx)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 		agentConfig = &AgentConfig{
-			Log:       e2eutils.DefaultLogger,
+			Log:       logger,
 			Client:    k8scli,
 			Namespace: clusterJig.Cluster.Status.NamespaceName,
 			Versions:  kubermatic.NewDefaultVersions(),
 		}
 		client = &clientJig{e2eutils.TestPodConfig{
-			Log:           e2eutils.DefaultLogger,
+			Log:           logger,
 			Namespace:     clusterJig.Cluster.Status.NamespaceName,
 			Client:        k8scli,
 			PodRestClient: restCli,
@@ -63,7 +65,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			CreatePodFunc: newClientPod,
 		}}
 		gomega.Expect(agentConfig.DeployAgentPod(ctx)).NotTo(gomega.HaveOccurred(), "agent should deploy successfully")
-		gomega.Expect(client.DeployTestPod(ctx)).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
+		gomega.Expect(client.DeployTestPod(ctx, logger)).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
 	})
 	ginkgo.AfterEach(func() {
 		if !options.skipCleanup {
