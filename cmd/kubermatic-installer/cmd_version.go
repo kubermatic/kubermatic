@@ -42,7 +42,7 @@ func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) 
 
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "prints the installer's version",
+		Short: "Print the installer version",
 		RunE:  VersionFunc(logger, versions, &opt),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			options.CopyInto(&opt.Options)

@@ -80,7 +80,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 
 	cmd := &cobra.Command{
 		Use:          "deploy [kubermatic-master | kubermatic-seed]",
-		Short:        "installs or upgrades the current installation to the installer's built-in version",
+		Short:        "Install or upgrade the current installation to the installer's built-in version",
 		Long:         "Installs or upgrades the current installation to the installer's built-in version",
 		RunE:         DeployFunc(logger, versions, &opt),
 		SilenceUsage: true,

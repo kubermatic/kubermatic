@@ -17,37 +17,47 @@ limitations under the License.
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/images"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type MirrorImagesOptions struct {
 	Options
 
-	ConfigFile     string
+	Config         string
 	VersionFilter  string
 	Registry       string
 	DryRun         bool
 	AddonsPath     string
 	AddonsImage    string
 	HelmValuesFile string
+	HelmTimeout    time.Duration
 	HelmBinary     string
 }
 
-func MirrorImagesCommand(logger *logrus.Logger) *cobra.Command {
+func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorImagesOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "mirror-images",
-		Short: "mirror images used by KKP to a private image registry",
-		Long:  "",
+		Use:   "mirror-images [registry]",
+		Short: "Mirror images used by KKP to a private image registry",
+		Long:  "Uses the docker CLI to download all container images used by KKP, re-tags them and pushes them to a user-defined registry",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			options.CopyInto(&opt.Options)
 
-			if opt.ConfigFile == "" {
-				opt.ConfigFile = os.Getenv("CONFIG_YAML")
+			if opt.Config == "" {
+				opt.Config = os.Getenv("CONFIG_YAML")
 			}
 
 			if opt.HelmValuesFile == "" {
@@ -57,26 +67,140 @@ func MirrorImagesCommand(logger *logrus.Logger) *cobra.Command {
 			if opt.HelmBinary == "" {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
 			}
+
+			if len(args) >= 1 {
+				opt.Registry = args[0]
+			}
 		},
 
-		RunE:         MirrorImagesFunc(logger, &opt),
+		RunE:         MirrorImagesFunc(logger, versions, &opt),
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().StringVar(&opt.ConfigFile, "config", "", "Path to the KubermaticConfiguration YAML file")
+	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of found images")
+
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Address of the registry to push to, for example localhost:5000")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
-	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values-file", "", "Use this values.yaml file when rendering Helm charts")
+
+	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
+	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", "helm", "Helm 3.x binary to use for rendering charts")
+
+	// these flags are deprecated but retained to ensure compatibility with `image-loader` flags,
+	// except for `--versions-file`, that flag was already deprecated in `image-loader`.
+	cmd.PersistentFlags().StringVar(&opt.Config, "configuration-file", "", "Path to the KubermaticConfiguration YAML file (deprecated, use --config instead)")
+	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values-file", "", "Use this values.yaml file when rendering Helm charts (deprecated, use --helm-values instead)")
+	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "Address of the registry to push to, for example localhost:5000 (deprecated, pass registry as argument instead)")
+
+	// TODO(embik): enable this for KKP 2.22 so the flags above cannot be used anymore
+	// cmd.PersistentFlags().MarkDeprecated("configuration-file", "use --config instead")
+	// cmd.PersistentFlags().MarkDeprecated("helm-values-file", "use --helm-values instead")
+	// cmd.PersistentFlags().MarkDeprecated("registry", "pass registry as argument instead")
 
 	return cmd
 }
 
-func MirrorImagesFunc(logger *logrus.Logger, options *MirrorImagesOptions) cobraFuncE {
+func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
+		if options.Registry == "" {
+			return errors.New("no target registry was passed")
+		}
+
+		if options.AddonsImage != "" && options.AddonsPath != "" {
+			return errors.New("--addons-image and --addons-path must not be set at the same time")
+		}
+
+		// error out early if there is no useful Helm binary
+		helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
+		if err != nil {
+			return fmt.Errorf("failed to create Helm client: %w", err)
+		}
+
+		helmVersion, err := helmClient.Version()
+		if err != nil {
+			return fmt.Errorf("failed to check Helm version: %w", err)
+		}
+
+		if helmVersion.LessThan(MinHelmVersion) {
+			return fmt.Errorf(
+				"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+				MinHelmVersion,
+				options.HelmBinary,
+				helmVersion,
+			)
+		}
+
+		kubermaticConfig, _, err := loadKubermaticConfiguration(options.Config)
+		if err != nil {
+			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
+		}
+
+		helmValues, err := loadHelmValues(options.HelmValuesFile)
+		if err != nil {
+			return fmt.Errorf("failed to load Helm values: %w", err)
+		}
+
+		ctx := cmd.Context()
+
+		// if no local addons path is given, use the configured addons
+		// Docker image and extract the addons from there
+		if options.AddonsPath == "" {
+			addonsImage := options.AddonsImage
+			if addonsImage == "" {
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + versions.Kubermatic
+			}
+
+			if addonsImage != "" {
+				tempDir, err := images.ExtractAddonsFromDockerImage(ctx, logger, addonsImage)
+				if err != nil {
+					return fmt.Errorf("failed to create local addons path: %w", err)
+				}
+				defer os.RemoveAll(tempDir)
+
+				options.AddonsPath = tempDir
+			}
+		}
+
+		// Using a set here for deduplication
+		imageSet := sets.NewString()
+		for _, clusterVersion := range clusterVersions {
+			for _, cloudSpec := range images.GetCloudSpecs() {
+				for _, cniPlugin := range images.GetCNIPlugins() {
+					versionLogger := logger.WithFields(logrus.Fields{
+						"version":     clusterVersion.Version.String(),
+						"provider":    cloudSpec.ProviderName,
+						"cni-plugin":  string(cniPlugin.Type),
+						"cni-version": cniPlugin.Version,
+					},
+					)
+
+					versionLogger.Info("Collecting images...")
+					images, err := images.GetImagesForVersion(versionLogger, clusterVersion, cloudSpec, cniPlugin, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
+					if err != nil {
+						return fmt.Errorf("failed to get images: %w", err)
+					}
+					imageSet.Insert(images...)
+				}
+			}
+		}
+
+		if options.ChartsDirectory != "" {
+			chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
+			chartsLogger.Info("Rendering Helm charts")
+
+			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, o.chartsPath, o.helmValuesPath, o.helmBinary)
+			if err != nil {
+				return fmt.Errorf("failed to get images: %w", err)
+			}
+			imageSet.Insert(images...)
+		}
+
+		if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
+			log.Fatalw("Failed to process images", zap.Error(err))
+		}
+
 		return nil
 	})
 }
