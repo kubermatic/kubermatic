@@ -18,18 +18,14 @@ LABEL maintainer="support@kubermatic.com"
 ENV KUBECTL_VERSION=v1.22.9 \
     HELM_VERSION=v3.9.0
 
-
 RUN apk add --no-cache -U \
     bash \
     ca-certificates \
     curl \
     git \
-    ipvsadm \
     jq \
     make \
     openssh-client \
-    rsync \
-    socat \
     unzip \
     tar
 
