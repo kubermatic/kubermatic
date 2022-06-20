@@ -235,6 +235,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(config),
+		kubermatic.APIServiceAccountCreator(),
 		common.WebhookServiceAccountCreator(config),
 	}
 
@@ -250,6 +251,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 
 	creators := []reconciling.NamedRoleCreatorGetter{
 		common.WebhookRoleCreator(config),
+		kubermatic.APIRoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, config.Namespace, r.Client); err != nil {
@@ -264,6 +266,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		common.WebhookRoleBindingCreator(config),
+		kubermatic.APIRoleBindingCreator(),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, config.Namespace, r.Client); err != nil {
@@ -277,6 +280,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 	logger.Debug("Reconciling ClusterRoles")
 
 	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		kubermatic.APIClusterRoleCreator(config),
 		common.WebhookClusterRoleCreator(config),
 	}
 
@@ -292,6 +296,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(config),
+		kubermatic.APIClusterRoleBindingCreator(config),
 		common.WebhookClusterRoleBindingCreator(config),
 	}
 
