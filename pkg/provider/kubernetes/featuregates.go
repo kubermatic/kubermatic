@@ -39,6 +39,9 @@ func (fg featureGatesProvider) GetFeatureGates() (apiv2.FeatureGates, error) {
 	if v, ok := fg[features.OIDCKubeCfgEndpoint]; ok {
 		f.OIDCKubeCfgEndpoint = &v
 	}
+	if v, ok := fg[features.OperatingSystemManager]; ok {
+		f.OperatingSystemManager = &v
+	}
 
 	return f, nil
 }
