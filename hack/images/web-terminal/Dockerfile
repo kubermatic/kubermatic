@@ -23,12 +23,9 @@ RUN apk add --no-cache -U \
     ca-certificates \
     curl \
     git \
-    ipvsadm \
     jq \
     make \
     openssh-client \
-    rsync \
-    socat \
     unzip \
     tar
 
