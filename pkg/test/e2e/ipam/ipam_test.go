@@ -27,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -89,7 +90,6 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	defer masterClient.CleanupCluster(t, project.ID, datacenter, cluster2.Name)
 
 	t.Log("checking IPAM Pool 1 allocation on second cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
@@ -128,16 +128,8 @@ func TestIPAM(t *testing.T) {
 	masterClient.CleanupCluster(t, project.ID, datacenter, cluster1.Name)
 
 	t.Log("checking that the first cluster allocations were gone...")
-	if checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
-		Type:      "range",
-		DC:        location,
-		Addresses: []string{"192.168.1.0-192.168.1.7"},
-	}) != false ||
-		checkIPAMAllocation(t, ctx, seedClient, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
-			Type: "prefix",
-			DC:   location,
-			CIDR: "192.168.1.0/28",
-		}) != false {
+	if !checkIPAMAllocationIsGone(t, ctx, seedClient, cluster1, ipamPool1.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster1, ipamPool2.Name) {
 		t.Fatalf("IPAM Allocations in first cluster are still persisted")
 	}
 
@@ -161,7 +153,6 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	defer masterClient.CleanupCluster(t, project.ID, datacenter, cluster3.Name)
 
 	t.Log("checking IPAM Pool 3 allocation on third cluster...")
 	if !checkIPAMAllocation(t, ctx, seedClient, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
@@ -188,6 +179,18 @@ func TestIPAM(t *testing.T) {
 		CIDR: "192.168.1.0/28",
 	}) {
 		t.Fatalf("IPAM Allocation 2 wasn't created on cluster 3")
+	}
+
+	masterClient.CleanupCluster(t, project.ID, datacenter, cluster2.Name)
+	masterClient.CleanupCluster(t, project.ID, datacenter, cluster3.Name)
+
+	if !checkIPAMAllocationIsGone(t, ctx, seedClient, cluster2, ipamPool1.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster2, ipamPool2.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster2, ipamPool3.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster3, ipamPool1.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster3, ipamPool2.Name) ||
+		!checkIPAMAllocationIsGone(t, ctx, seedClient, cluster3, ipamPool3.Name) {
+		t.Fatalf("Some IPAM Allocation is still persisted")
 	}
 }
 
@@ -262,5 +265,20 @@ func checkIPAMAllocation(t *testing.T, ctx context.Context, seedClient ctrlrunti
 			}
 		}
 		return true
+	})
+}
+
+func checkIPAMAllocationIsGone(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
+	return utils.WaitFor(10*time.Second, 5*time.Minute, func() bool {
+		ipamAllocation := &kubermaticv1.IPAMAllocation{}
+		err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return true
+			}
+			t.Logf("Error getting IPAM allocation for cluster %s (namespace %s): %v", cluster.Name, cluster.Status.NamespaceName, err)
+			return false
+		}
+		return false
 	})
 }
