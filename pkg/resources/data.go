@@ -60,26 +60,28 @@ type CABundle interface {
 
 // TemplateData is a group of data required for template generation.
 type TemplateData struct {
-	ctx                              context.Context
-	client                           ctrlruntimeclient.Client
-	cluster                          *kubermaticv1.Cluster
-	dc                               *kubermaticv1.Datacenter
-	seed                             *kubermaticv1.Seed
-	config                           *kubermaticv1.KubermaticConfiguration
-	OverwriteRegistry                string
-	nodePortRange                    string
-	nodeAccessNetwork                string
-	etcdDiskSize                     resource.Quantity
-	oidcIssuerURL                    string
-	oidcIssuerClientID               string
-	kubermaticImage                  string
-	etcdLauncherImage                string
-	dnatControllerImage              string
-	machineControllerImageTag        string
-	machineControllerImageRepository string
-	backupSchedule                   time.Duration
-	versions                         kubermatic.Versions
-	caBundle                         CABundle
+	ctx                                   context.Context
+	client                                ctrlruntimeclient.Client
+	cluster                               *kubermaticv1.Cluster
+	dc                                    *kubermaticv1.Datacenter
+	seed                                  *kubermaticv1.Seed
+	config                                *kubermaticv1.KubermaticConfiguration
+	OverwriteRegistry                     string
+	nodePortRange                         string
+	nodeAccessNetwork                     string
+	etcdDiskSize                          resource.Quantity
+	oidcIssuerURL                         string
+	oidcIssuerClientID                    string
+	kubermaticImage                       string
+	etcdLauncherImage                     string
+	dnatControllerImage                   string
+	machineControllerImageTag             string
+	machineControllerImageRepository      string
+	operatingSystemManagerImageTag        string
+	operatingSystemManagerImageRepository string
+	backupSchedule                        time.Duration
+	versions                              kubermatic.Versions
+	caBundle                              CABundle
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -210,6 +212,16 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 	return td
 }
 
+func (td *TemplateDataBuilder) WithOperatingSystemManagerImageTag(tag string) *TemplateDataBuilder {
+	td.data.operatingSystemManagerImageTag = tag
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOperatingSystemManagerImageRepository(tag string) *TemplateDataBuilder {
+	td.data.operatingSystemManagerImageRepository = tag
+	return td
+}
+
 func (td TemplateDataBuilder) Build() *TemplateData {
 	// TODO: Add validation
 	return &td.data
@@ -330,6 +342,14 @@ func (d *TemplateData) MachineControllerImageTag() string {
 
 func (d *TemplateData) MachineControllerImageRepository() string {
 	return d.machineControllerImageRepository
+}
+
+func (d *TemplateData) OperatingSystemManagerImageTag() string {
+	return d.operatingSystemManagerImageTag
+}
+
+func (d *TemplateData) OperatingSystemManagerImageRepository() string {
+	return d.operatingSystemManagerImageRepository
 }
 
 // ClusterIPByServiceName returns the ClusterIP as string for the

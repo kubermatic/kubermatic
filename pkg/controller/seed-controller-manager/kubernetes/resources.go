@@ -230,6 +230,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithDnatControllerImage(r.dnatControllerImage).
 		WithMachineControllerImageTag(r.machineControllerImageTag).
 		WithMachineControllerImageRepository(r.machineControllerImageRepository).
+		WithOperatingSystemManagerImageTag(r.operatingSystemManagerImageTag).
+		WithOperatingSystemManagerImageRepository(r.operatingSystemManagerImageRepository).
 		WithBackupPeriod(r.backupSchedule).
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithVersions(r.versions).
