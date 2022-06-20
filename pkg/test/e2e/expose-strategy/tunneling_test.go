@@ -95,15 +95,17 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		return
 	}
 
-	logger.Debug("Testing SNI when Kubeconfig is used e.g. Kubelet")
-	if result := client.QueryApiserverVersion("", false, options.kubernetesVersion, 5, 4); result != true {
-		t.Error("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
-	}
+	t.Run("Testing SNI when Kubeconfig is used e.g. Kubelet", func(t *testing.T) {
+		if !client.QueryApiserverVersion("", false, options.kubernetesVersion, 5, 4) {
+			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
+		}
+	})
 
-	logger.Debug("Tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace")
-	if result := client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, options.kubernetesVersion, 5, 4); result != true {
-		t.Error("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
-	}
+	t.Run("Tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace", func(t *testing.T) {
+		if !client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, options.kubernetesVersion, 5, 4) {
+			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
+		}
+	})
 
 	if !options.skipCleanup {
 		defer func() {
