@@ -631,6 +631,8 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 			return []string{"get", "update", "delete"}, nil
 		case resourceKind == secretV1Kind:
 			return nil, nil
+		case resourceKind == kubermaticv1.ResourceQuotaKindName:
+			return []string{"get"}, nil
 		}
 	}
 
