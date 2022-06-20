@@ -115,6 +115,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 # Kubermatic 2.19
 
+## [v2.19.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.6)
+
+- Fix not referencing a custom CA bundle in vSphere CSI driver (regression from 2.18) ([#9989](https://github.com/kubermatic/kubermatic/issues/9989))
+- Fix probes, resources and allow overriding resource requests/limits for Konnectivity proxy via components override in the Cluster resource ([#9911](https://github.com/kubermatic/kubermatic/issues/9911))
+
+
+
+
 ## [v2.19.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.5)
 
 With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.
