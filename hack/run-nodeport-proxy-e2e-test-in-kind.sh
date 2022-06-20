@@ -72,8 +72,8 @@ if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
       --ginkgo.v \
       --kubeconfig "${HOME}/.kube/config" \
       --kubermatic-tag "${TAG}" \
-      --log-debug 2>&1 |
-      go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.nodeport_proxy_e2e.xml
+      --log-debug 2>&1 \
+      | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.nodeport_proxy_e2e.xml
 else
   # use ginkgo binary by preference to have better output:
   # https://github.com/onsi/ginkgo/issues/633
