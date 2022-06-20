@@ -50,7 +50,6 @@ import (
 const rqName = "resourceQuota"
 
 func TestReconcile(t *testing.T) {
-
 	scheme := runtime.NewScheme()
 	_ = kubermaticv1.AddToScheme(scheme)
 
@@ -140,7 +139,6 @@ func TestReconcile(t *testing.T) {
 			if reflect.DeepEqual(rq.Status.LocalUsage, tc.expectedRQ.Status.LocalUsage) {
 				t.Fatal("local usage should not be synced to seeds")
 			}
-
 		})
 	}
 }
