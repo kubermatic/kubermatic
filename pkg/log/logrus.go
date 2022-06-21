@@ -117,12 +117,3 @@ func (f LogrusFormats) String() string {
 	}
 	return strings.TrimPrefix(s, separator)
 }
-
-func (f LogrusFormats) Contains(s LogrusFormat) bool {
-	for _, format := range f {
-		if s == format {
-			return true
-		}
-	}
-	return false
-}
