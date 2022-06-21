@@ -30,6 +30,9 @@ type NodeSettings struct {
 	// on the container runtime.
 	RegistryMirrors []string `json:"registryMirrors"`
 
+	// containerd registry mirrors
+	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+
 	// http proxy
 	HTTPProxy ProxyValue `json:"httpProxy,omitempty"`
 
@@ -40,6 +43,10 @@ type NodeSettings struct {
 // Validate validates this node settings
 func (m *NodeSettings) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateContainerdRegistryMirrors(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateHTTPProxy(formats); err != nil {
 		res = append(res, err)
@@ -52,6 +59,25 @@ func (m *NodeSettings) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *NodeSettings) validateContainerdRegistryMirrors(formats strfmt.Registry) error {
+	if swag.IsZero(m.ContainerdRegistryMirrors) { // not required
+		return nil
+	}
+
+	if m.ContainerdRegistryMirrors != nil {
+		if err := m.ContainerdRegistryMirrors.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("containerdRegistryMirrors")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("containerdRegistryMirrors")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -93,6 +119,10 @@ func (m *NodeSettings) validateNoProxy(formats strfmt.Registry) error {
 func (m *NodeSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateContainerdRegistryMirrors(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateHTTPProxy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -104,6 +134,22 @@ func (m *NodeSettings) ContextValidate(ctx context.Context, formats strfmt.Regis
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *NodeSettings) contextValidateContainerdRegistryMirrors(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ContainerdRegistryMirrors != nil {
+		if err := m.ContainerdRegistryMirrors.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("containerdRegistryMirrors")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("containerdRegistryMirrors")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
