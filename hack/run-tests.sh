@@ -21,5 +21,5 @@ source hack/lib.sh
 
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
-go_test unit_tests \
+CGO_ENABLED=1 go_test unit_tests \
   -tags "unit,${KUBERMATIC_EDITION}" -v -race ./pkg/... ./cmd/... ./codegen/...
