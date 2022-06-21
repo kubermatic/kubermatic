@@ -22,6 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
