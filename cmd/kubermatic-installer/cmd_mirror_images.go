@@ -25,7 +25,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -142,9 +144,14 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return fmt.Errorf("failed to load CA bundle: %w", err)
 		}
 
-		kubermaticConfig, _, err := loadKubermaticConfiguration(options.Config)
+		config, _, err := loadKubermaticConfiguration(options.Config)
 		if err != nil {
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
+		}
+
+		kubermaticConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		if err != nil {
+			return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
 		}
 
 		clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
@@ -186,7 +193,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					},
 					)
 
-					versionLogger.Info("Collecting images...")
+					versionLogger.Debug("Collecting images...")
 					images, err := images.GetImagesForVersion(
 						versionLogger,
 						clusterVersion,

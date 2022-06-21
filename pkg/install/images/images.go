@@ -105,7 +105,7 @@ func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, ima
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
-	templateData, err := getTemplateData(clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
+	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,11 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
-	deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
+
+	if val, ok := templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok && val {
+		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
+	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
@@ -209,7 +212,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -333,11 +336,13 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			VSphere:   &kubermaticv1.DatacenterSpecVSphere{},
-			Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
-			Hetzner:   &kubermaticv1.DatacenterSpecHetzner{},
-			Anexia:    &kubermaticv1.DatacenterSpecAnexia{},
-			Kubevirt:  &kubermaticv1.DatacenterSpecKubevirt{},
+			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
+			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
+			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
+			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
+			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
+			Azure:               &kubermaticv1.DatacenterSpecAzure{},
+			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -354,7 +359,7 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 
-	if fakeCluster.Spec.Cloud.Openstack != nil {
+	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -373,6 +378,7 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
 	return resources.NewTemplateDataBuilder().
+		WithKubermaticConfiguration(config).
 		WithContext(context.Background()).
 		WithClient(fakeDynamicClient).
 		WithCluster(fakeCluster).
@@ -467,6 +473,24 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 				Kubeconfig:    "fakeKubeconfig",
 				CSIKubeconfig: "fakeKubeconfig",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.AzureCloudProvider),
+			Azure: &kubermaticv1.AzureCloudSpec{
+				TenantID:       "fakeTenantID",
+				SubscriptionID: "fakeSubscriptionID",
+				ClientID:       "fakeClientID",
+				ClientSecret:   "fakeClientSecret",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
+			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
+				Username:     "fakeUsername",
+				Password:     "fakePassword",
+				Organization: "fakeOrganization",
+				VDC:          "fakeVDC",
 			},
 		},
 	}

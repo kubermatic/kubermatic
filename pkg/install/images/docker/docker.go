@@ -113,7 +113,12 @@ func RetagImage(ctx context.Context, log logrus.FieldLogger, dryRun bool, source
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, reference.Path(imageRef), taggedImageRef.Tag())
 	log = log.WithField("target-image", targetImage)
 
-	log.Info("Tagging image...")
+	if dryRun {
+		log.Info("Found image...")
+	} else {
+		log.Info("Tagging image...")
+	}
+
 	cmd := exec.CommandContext(ctx, "docker", "tag", sourceImage, targetImage)
 	if err := execCommand(log, dryRun, cmd); err != nil {
 		return "", fmt.Errorf("failed to tag image %s to %s: %w", sourceImage, targetImage, err)
