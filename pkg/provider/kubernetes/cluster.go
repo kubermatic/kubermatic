@@ -54,6 +54,8 @@ import (
 // UserClusterConnectionProvider offers functions to interact with an user cluster.
 type UserClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+	GetK8sClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+	GetClientConfig(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (*restclient.Config, error)
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
@@ -403,6 +405,20 @@ func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermat
 // Note that the client you will get has admin privileges.
 func (p *ClusterProvider) GetAdminClientForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(ctx, c)
+}
+
+// GetAdminK8sClientForCustomerCluster returns a k8s go client to interact with all resources in the given cluster
+//
+// Note that the client you will get has admin privileges.
+func (p *ClusterProvider) GetAdminK8sClientForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
+	return p.userClusterConnProvider.GetK8sClient(ctx, c)
+}
+
+// GetAdminClientConfigForCustomerCluster returns a client config
+//
+// Note that the client you will get has admin privileges.
+func (p *ClusterProvider) GetAdminClientConfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error) {
+	return p.userClusterConnProvider.GetClientConfig(ctx, c)
 }
 
 // GetClientForCustomerCluster returns a client to interact with all resources in the given cluster

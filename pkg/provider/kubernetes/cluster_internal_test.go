@@ -28,6 +28,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -96,6 +98,14 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 
 type fakeUserClusterConnectionProvider struct {
 	client ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnectionProvider) GetK8sClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error) {
+	return nil, nil
+}
+
+func (f *fakeUserClusterConnectionProvider) GetClientConfig(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (*rest.Config, error) {
+	return nil, nil
 }
 
 func (f *fakeUserClusterConnectionProvider) GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
