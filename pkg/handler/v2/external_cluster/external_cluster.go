@@ -220,6 +220,7 @@ func CreateEndpoint(
 				if credentials := preset.Spec.EKS; credentials != nil {
 					cloud.EKS.AccessKeyID = credentials.AccessKeyID
 					cloud.EKS.SecretAccessKey = credentials.SecretAccessKey
+					cloud.EKS.Region = credentials.Region
 				}
 			}
 
