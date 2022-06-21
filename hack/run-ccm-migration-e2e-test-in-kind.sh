@@ -90,8 +90,9 @@ echodate "Running CCM tests..."
 
 # for unknown reasons, log output is not shown live when using
 # "/..." in the package expression (the position of the -v flag
-# doesn't make a difference)
-go test -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
+# doesn't make a difference).
+go_test ccm_migration_${PROVIDER_TO_TEST} \
+  -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
   -v \
   -timeout 30m \
   -kubeconfig "${HOME}/.kube/config" \

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 set -euo pipefail
 
-cd $(dirname $0)
+cd $(dirname $0)/..
+source hack/lib.sh
 
-REPOSITORY=quay.io/kubermatic/integration-tests
-VERSION=6
-BUILD_SUFFIX=1
+KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
-docker build --no-cache --pull -t "$REPOSITORY:$VERSION-$BUILD_SUFFIX" .
-docker push "$REPOSITORY:$VERSION-$BUILD_SUFFIX"
+CGO_ENABLED=1 go_test unit_tests \
+  -tags "unit,${KUBERMATIC_EDITION}" -v -race ./pkg/... ./cmd/... ./codegen/...

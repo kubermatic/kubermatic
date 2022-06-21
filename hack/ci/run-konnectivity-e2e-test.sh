@@ -46,6 +46,6 @@ echodate "Successfully got secrets for dev from Vault"
 
 echodate "Running konnectivity tests..."
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
 
 echodate "Konnectivity tests done."

@@ -59,30 +59,13 @@ time kind create cluster --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
 
 # run tests
-# use ginkgo binary by preference to have better output:
-# https://github.com/onsi/ginkgo/issues/633
-if type ginkgo > /dev/null; then
-  ginkgo --tags=e2e -v pkg/test/e2e/nodeport-proxy/ \
-    -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --cover \
-    --trace \
-    --race \
-    --progress \
-    -v \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --kubermatic-tag "${TAG}" \
-    --log-debug
-else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
-    --ginkgo.randomizeAllSpecs \
-    --ginkgo.failOnPending \
-    --ginkgo.trace \
-    --ginkgo.progress \
-    --ginkgo.v \
-    --kubeconfig "${HOME}/.kube/config" \
-    --kubermatic-tag "${TAG}" \
-    --log-debug
-fi
+CGO_ENABLED=1 go_test nodeport_proxy_e2e \
+  --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
+  --ginkgo.randomizeAllSpecs \
+  --ginkgo.failOnPending \
+  --ginkgo.trace \
+  --ginkgo.progress \
+  --ginkgo.v \
+  --kubeconfig "${HOME}/.kube/config" \
+  --kubermatic-tag "${TAG}" \
+  --log-debug

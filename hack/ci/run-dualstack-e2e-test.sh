@@ -62,6 +62,6 @@ export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOA
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
 
 echodate "Dualstack tests done."

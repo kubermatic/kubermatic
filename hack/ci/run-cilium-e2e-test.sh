@@ -49,6 +49,6 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running cilium tests..."
 
-go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
+go_test cilium_e2e -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
 
 echodate "Cilium tests done."
