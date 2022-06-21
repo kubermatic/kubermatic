@@ -162,12 +162,11 @@ done
 
 # Push all kubermatic images
 cd ..
-make image-loader
-./_build/image-loader \
-  -configuration-file /dev/null \
-  -addons-path addons \
-  -registry 127.0.0.1:5000 \
-  -log-format=Console
+make kubermatic-installer
+./_build/kubermatic-installer mirror-images \
+  --configuration-file /dev/null \
+  --addons-path addons \
+  --registry 127.0.0.1:5000
 
 # Build kubermatic binaries and push the image
 if ! curl -Ss --fail "http://127.0.0.1:5000/v2/kubermatic/api/tags/list" | grep -q ${GIT_HEAD_HASH}; then
