@@ -359,7 +359,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 
-	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil {
+	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -368,6 +368,9 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 
 	fakeCluster.Spec.EnableUserSSHKeyAgent = pointer.Bool(true)
 	fakeCluster.Spec.EnableOperatingSystemManager = true
+	fakeCluster.Spec.KubernetesDashboard = kubermaticv1.KubernetesDashboard{
+		Enabled: true,
+	}
 
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Status.Versions.ControlPlane = *clusterSemver
