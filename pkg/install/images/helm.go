@@ -58,16 +58,16 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 		// is given; in this case, the operator is used and we determine the images
 		// used via the static creators in Go code.
 		if config != nil && chartName == "kubermatic" {
-			chartLog.Info("Skipping chart because KubermaticConfiguration was given")
+			chartLog.Debug("Skipping chart because KubermaticConfiguration was given")
 			continue
 		}
 
-		chartLog.Info("Fetching chart dependencies")
+		chartLog.Debug("Fetching chart dependencies…")
 		if err := helmClient.BuildChartDependencies(chartPath, nil); err != nil {
 			return nil, fmt.Errorf("failed to download chart dependencies: %w", err)
 		}
 
-		chartLog.Info("Rendering chart")
+		chartLog.Debug("Rendering chart…")
 
 		rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
 		if err != nil {

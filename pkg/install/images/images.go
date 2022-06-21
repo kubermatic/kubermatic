@@ -62,7 +62,7 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, imageName string) (string, error) {
+func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, dockerBinary string, imageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "imageloader*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
@@ -71,36 +71,37 @@ func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, i
 	log.WithFields(logrus.Fields{
 		"image":          imageName,
 		"temp-directory": tempDir,
-	}).Info("Extracting addon manifests from Docker image")
+	}).Info("Extracting addon manifests from image…")
 
-	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
+	if err := docker.DownloadImages(ctx, log, dockerBinary, false, []string{imageName}); err != nil {
 		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
-	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
+	if err := docker.Copy(ctx, log, dockerBinary, imageName, tempDir, "/addons"); err != nil {
 		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
 	return tempDir, nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) error {
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary string, dryRun bool, images []string, registry string) error {
 	if !dryRun {
-		if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
+		if err := docker.DownloadImages(ctx, log, dockerBinary, dryRun, images); err != nil {
 			return fmt.Errorf("failed to download all images: %w", err)
 		}
 	}
 
-	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
+	retaggedImages, err := docker.RetagImages(ctx, log, dockerBinary, dryRun, images, registry)
 	if err != nil {
 		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
 	if !dryRun {
-		if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
+		if err := docker.PushImages(ctx, log, dockerBinary, dryRun, retaggedImages); err != nil {
 			return fmt.Errorf("failed to push images: %w", err)
 		}
 	}
+
 	return nil
 }
 
@@ -537,7 +538,6 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 
 	images := getImagesFromObject(obj)
 	if images == nil {
-		log.Debug("Object has no images or is not known to this application. If this object contains images, please manually push the image to the target registry")
 		return nil, nil
 	}
 

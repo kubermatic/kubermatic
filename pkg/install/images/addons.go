@@ -65,7 +65,7 @@ func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kub
 
 func getImagesFromAddon(log logrus.FieldLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
 	log = log.WithField("addon", path.Base(addonPath))
-	log.Debug("Processing manifests...")
+	log.Debug("Processing manifests…")
 
 	allManifests, err := addonutil.ParseFromFolder(zap.NewNop().Sugar(), "", addonPath, data)
 	if err != nil {

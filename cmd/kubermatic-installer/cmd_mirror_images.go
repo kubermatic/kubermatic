@@ -39,21 +39,27 @@ import (
 type MirrorImagesOptions struct {
 	Options
 
-	Config         string
-	VersionFilter  string
-	Registry       string
-	DryRun         bool
-	AddonsPath     string
-	AddonsImage    string
+	Registry string
+
+	Config        string
+	VersionFilter string
+	DryRun        bool
+
+	AddonsPath  string
+	AddonsImage string
+
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
+
+	DockerBinary string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorImagesOptions{
-		HelmTimeout: 5 * time.Minute,
-		HelmBinary:  "helm",
+		HelmTimeout:  5 * time.Minute,
+		HelmBinary:   "helm",
+		DockerBinary: "docker",
 	}
 
 	cmd := &cobra.Command{
@@ -95,6 +101,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
 
+	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "docker CLI compatible binary to use for pulling and pushing images")
+
 	// these flags are deprecated but retained to ensure compatibility with `image-loader` flags,
 	// except for `--versions-file`, that flag was already deprecated in `image-loader`.
 	cmd.PersistentFlags().StringVar(&opt.Config, "configuration-file", "", "Path to the KubermaticConfiguration YAML file (deprecated, use --config instead)")
@@ -117,6 +125,10 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		if options.AddonsImage != "" && options.AddonsPath != "" {
 			return errors.New("--addons-image and --addons-path must not be set at the same time")
+		}
+
+		if options.AddonsImage == "" && options.AddonsPath == "" {
+			return errors.New("either --addons-image or --addons-path must be set")
 		}
 
 		// error out early if there is no useful Helm binary
@@ -170,7 +182,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			}
 
 			if addonsImage != "" {
-				tempDir, err := images.ExtractAddonsFromDockerImage(ctx, logger, addonsImage)
+				tempDir, err := images.ExtractAddonsFromDockerImage(ctx, logger, options.DockerBinary, addonsImage)
 				if err != nil {
 					return fmt.Errorf("failed to create local addons path: %w", err)
 				}
@@ -179,6 +191,8 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				options.AddonsPath = tempDir
 			}
 		}
+
+		logger.Info("🚀 Collecting images…")
 
 		// Using a set here for deduplication
 		imageSet := sets.NewString()
@@ -193,7 +207,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					},
 					)
 
-					versionLogger.Debug("Collecting images...")
+					versionLogger.Debug("Collecting images…")
 					images, err := images.GetImagesForVersion(
 						versionLogger,
 						clusterVersion,
@@ -214,7 +228,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		if options.ChartsDirectory != "" {
 			chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
-			chartsLogger.Info("Rendering Helm charts")
+			chartsLogger.Info("🚀 Rendering Helm charts…")
 
 			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile)
 			if err != nil {
@@ -223,7 +237,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			imageSet.Insert(images...)
 		}
 
-		if err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry); err != nil {
+		if err := images.ProcessImages(ctx, logger, options.DockerBinary, options.DryRun, imageSet.List(), options.Registry); err != nil {
 			return fmt.Errorf("failed to process images: %w", err)
 		}
 
