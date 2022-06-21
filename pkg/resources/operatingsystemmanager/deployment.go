@@ -18,6 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -241,6 +242,13 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 	}
 
 	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
+		}
+		if nodeSettings.ContainerdRegistryMirrors != nil {
+			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
+		}
+
 		if !nodeSettings.HTTPProxy.Empty() {
 			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 		}
@@ -294,4 +302,17 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
 	}
 	return resources.SanitizeEnvVars(vars), nil
+}
+
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+	var flags []string
+	for registry, mirror := range crid.Registries {
+		var flag string
+		for _, endpoint := range mirror.Mirrors {
+			flag = fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint)
+			flags = append(flags, flag)
+		}
+	}
+
+	return flags
 }

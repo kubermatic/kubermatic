@@ -22799,6 +22799,36 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
     },
+    "ContainerRuntimeContainerd": {
+      "type": "object",
+      "title": "ContainerRuntimeContainerd defines containerd container runtime registries configs.",
+      "properties": {
+        "registries": {
+          "description": "A map of registries to use to render configs and mirrors for containerd registries",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ContainerdRegistry"
+          },
+          "x-go-name": "Registries"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "ContainerdRegistry": {
+      "type": "object",
+      "title": "ContainerdRegistry defines endpoints and security for given container registry.",
+      "properties": {
+        "mirrors": {
+          "description": "List of registry mirrors to use",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Mirrors"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "ControlPlaneMetrics": {
       "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
       "type": "object",
@@ -27106,6 +27136,9 @@
       "type": "object",
       "title": "NodeSettings are node specific flags which can be configured on datacenter level.",
       "properties": {
+        "containerdRegistryMirrors": {
+          "$ref": "#/definitions/ContainerRuntimeContainerd"
+        },
         "httpProxy": {
           "$ref": "#/definitions/ProxyValue"
         },
