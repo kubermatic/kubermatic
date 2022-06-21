@@ -63,6 +63,26 @@ spec:
                         proxy, Docker registries and the like. Proxy settings are
                         inherited from the seed if not specified here.
                       properties:
+                        containerdRegistryMirrors:
+                          description: 'Optional: ContainerdRegistryMirrors configure
+                            registry mirrors endpoints. Can be used multiple times
+                            to specify multiple mirrors.'
+                          properties:
+                            registries:
+                              additionalProperties:
+                                description: ContainerdRegistry defines endpoints
+                                  and security for given container registry.
+                                properties:
+                                  mirrors:
+                                    description: List of registry mirrors to use
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              description: A map of registries to use to render configs
+                                and mirrors for containerd registries
+                              type: object
+                          type: object
                         httpProxy:
                           description: 'Optional: If set, this proxy will be configured
                             for both HTTP and HTTPS.'

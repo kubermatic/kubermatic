@@ -22,6 +22,8 @@ spec:
       # registries and the like. Proxy settings are inherited from the seed if
       # not specified here.
       node:
+        # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+        containerdRegistryMirrors: null
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure

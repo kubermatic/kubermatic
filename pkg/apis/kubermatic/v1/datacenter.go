@@ -540,6 +540,20 @@ type NodeSettings struct {
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pauseImage,omitempty"`
+	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+}
+
+// ContainerRuntimeContainerd defines containerd container runtime registries configs.
+type ContainerRuntimeContainerd struct {
+	// A map of registries to use to render configs and mirrors for containerd registries
+	Registries map[string]ContainerdRegistry `json:"registries,omitempty"`
+}
+
+// ContainerdRegistry defines endpoints and security for given container registry.
+type ContainerdRegistry struct {
+	// List of registry mirrors to use
+	Mirrors []string `json:"mirrors,omitempty"`
 }
 
 // SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
