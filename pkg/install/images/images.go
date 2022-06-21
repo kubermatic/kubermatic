@@ -544,3 +544,15 @@ func getImagesFromObject(obj runtime.Object) []string {
 
 	return nil
 }
+
+func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []*version.Version {
+	versions := []*version.Version{}
+
+	for _, v := range config.Spec.Versions.Versions {
+		versions = append(versions, &version.Version{
+			Version: v.Semver(),
+		})
+	}
+
+	return versions
+}

@@ -23,9 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -92,24 +90,6 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 	}
 
 	return images, nil
-}
-
-func getHelmClient(binary string) (helm.Client, error) {
-	helmClient, err := helm.NewCLI(binary, "", "", 10*time.Second, logrus.New())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Helm client: %w", err)
-	}
-
-	helmVersion, err := helmClient.Version()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check Helm version: %w", err)
-	}
-
-	if helmVersion.LessThan(semverlib.MustParse("3.0.0")) {
-		return nil, fmt.Errorf("the image-loader requires Helm 3, detected %s", helmVersion.String())
-	}
-
-	return helmClient, nil
 }
 
 // findHelmCharts walks the root directory and finds Chart.yaml files. It

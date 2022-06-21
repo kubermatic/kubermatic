@@ -139,7 +139,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
 		if err != nil {
-			return fmt.Errorf("failed loading CA bundle: %w", err)
+			return fmt.Errorf("failed to load CA bundle: %w", err)
 		}
 
 		kubermaticConfig, _, err := loadKubermaticConfiguration(options.Config)
