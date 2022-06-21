@@ -140,15 +140,8 @@ retry 2 kubectl apply -f user.yaml
 
 echodate "Running API E2E tests..."
 
-# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
-if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-  go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.kubermatic_api_create.xml
-  go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.kubermatic_api_e2e.xml
-  go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.kubermatic_api_logout.xml
-else
-  go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-  go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-  go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-fi
+go_test kubermatic_api_create -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go_test kubermatic_api_e2e -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go_test kubermatic_api_logout -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 
 echodate "Tests completed successfully!"

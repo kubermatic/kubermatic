@@ -62,5 +62,5 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running IPAM tests..."
-go test -timeout 30m -tags ipam -v ./pkg/test/e2e/ipam -kubeconfig "$KUBECONFIG"
+go_test ipam_e2e -timeout 30m -tags ipam -v ./pkg/test/e2e/ipam -kubeconfig "$KUBECONFIG"
 echodate "Tests completed successfully!"

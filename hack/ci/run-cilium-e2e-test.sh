@@ -49,11 +49,6 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running cilium tests..."
 
-# only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
-if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-  go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/... 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.cilium_e2e.xml
-else
-  go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
-fi
+go_test cilium_e2e -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
 
 echodate "Cilium tests done."
