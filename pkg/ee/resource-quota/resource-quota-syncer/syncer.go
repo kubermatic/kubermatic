@@ -55,7 +55,6 @@ const (
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	namespace    string
 	seedClients  map[string]ctrlruntimeclient.Client
 	recorder     record.EventRecorder
 }
@@ -96,7 +95,6 @@ func resourceQuotaCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.Name
 	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			c.Name = rq.Name
-			c.Namespace = kubermaticresources.KubermaticNamespace
 			c.Spec = rq.Spec
 			c.Status.GlobalUsage = rq.Status.GlobalUsage
 			return c, nil
@@ -155,7 +153,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
-		return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, r.namespace, seedClient)
+		return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, kubermaticresources.KubermaticNamespace, seedClient)
 	})
 }
 

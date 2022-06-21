@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -102,7 +103,7 @@ func TestReconcile(t *testing.T) {
 				seedClients:  map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
 			}
 
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
+			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName, Namespace: kubermaticresources.KubermaticNamespace}}
 			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
@@ -150,6 +151,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
+	rq.Namespace = kubermaticresources.KubermaticNamespace
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
 			Name: "project1",
