@@ -113,12 +113,11 @@ func NewTemplateData(
 		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
 	}
 
-	var ipamAllocationsData []IPAMAllocation
+	var ipamAllocationsData map[string]IPAMAllocation
 	if ipamAllocations != nil {
-		ipamAllocationsData = make([]IPAMAllocation, len(ipamAllocations.Items))
-		for i, ipamAllocation := range ipamAllocations.Items {
-			ipamAllocationsData[i] = IPAMAllocation{
-				IPAMPool:  ipamAllocation.Name,
+		ipamAllocationsData = make(map[string]IPAMAllocation, len(ipamAllocations.Items))
+		for _, ipamAllocation := range ipamAllocations.Items {
+			ipamAllocationsData[ipamAllocation.Name] = IPAMAllocation{
 				Type:      ipamAllocation.Spec.Type,
 				CIDR:      ipamAllocation.Spec.CIDR,
 				Addresses: ipamAllocation.Spec.Addresses,
@@ -245,11 +244,10 @@ type ClusterNetwork struct {
 	PodCIDRIPv6          string
 	NodeCIDRMaskSizeIPv4 int32
 	NodeCIDRMaskSizeIPv6 int32
-	IPAMAllocations      []IPAMAllocation
+	IPAMAllocations      map[string]IPAMAllocation
 }
 
 type IPAMAllocation struct {
-	IPAMPool  string
 	Type      kubermaticv1.IPAMPoolAllocationType
 	CIDR      kubermaticv1.SubnetCIDR
 	Addresses []string
