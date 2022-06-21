@@ -98,6 +98,7 @@ type ClusterNetwork struct {
 	PodCIDRIPv6          string
 	NodeCIDRMaskSizeIPv4 int32
 	NodeCIDRMaskSizeIPv6 int32
+	IPAMAllocations      map[string]IPAMAllocation
 }
 
 type CNIPlugin struct {
