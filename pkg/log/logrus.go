@@ -18,6 +18,8 @@ package log
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -68,4 +70,59 @@ func Prefix(e *logrus.Entry, prefix string) *logrus.Entry {
 	ctx := context.WithValue(parentCtx, prefixKey, prefix)
 
 	return e.WithContext(ctx)
+}
+
+type LogrusFormat string
+
+// Type implements the pflag.Value interfaces.
+func (f *LogrusFormat) Type() string {
+	return "string"
+}
+
+// String implements the cli.Value and flag.Value interfaces.
+func (f *LogrusFormat) String() string {
+	return string(*f)
+}
+
+// Set implements the cli.Value and flag.Value interfaces.
+func (f *LogrusFormat) Set(s string) error {
+	switch strings.ToLower(s) {
+	case "json":
+		*f = LogrusFormatJSON
+		return nil
+	case "console":
+		*f = LogrusFormatConsole
+		return nil
+	default:
+		return fmt.Errorf("invalid format '%s'", s)
+	}
+}
+
+type LogrusFormats []LogrusFormat
+
+const (
+	LogrusFormatJSON    LogrusFormat = "json"
+	LogrusFormatConsole LogrusFormat = "console"
+)
+
+var (
+	AvailableLogrusFormats = LogrusFormats{LogrusFormatJSON, LogrusFormatConsole}
+)
+
+func (f LogrusFormats) String() string {
+	const separator = ", "
+	var s string
+	for _, format := range f {
+		s = s + separator + string(format)
+	}
+	return strings.TrimPrefix(s, separator)
+}
+
+func (f LogrusFormats) Contains(s LogrusFormat) bool {
+	for _, format := range f {
+		if s == format {
+			return true
+		}
+	}
+	return false
 }

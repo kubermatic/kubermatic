@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -30,6 +31,7 @@ import (
 
 type Options struct {
 	Verbose         bool
+	LogFormat       log.LogrusFormat
 	ChartsDirectory string
 }
 
@@ -63,6 +65,13 @@ func main() {
 			if options.Verbose {
 				logger.SetLevel(logrus.DebugLevel)
 			}
+
+			switch options.LogFormat {
+			case log.LogrusFormatJSON:
+				logger.SetFormatter(&logrus.JSONFormatter{})
+			case "", log.LogrusFormatConsole:
+				logger.SetFormatter(&logrus.TextFormatter{})
+			}
 		},
 	}
 
@@ -80,6 +89,7 @@ func main() {
 	})
 
 	rootCmd.PersistentFlags().BoolVarP(&options.Verbose, "verbose", "v", options.Verbose, "enable more verbose output")
+	rootCmd.PersistentFlags().VarP(&options.LogFormat, "output", "o", fmt.Sprintf("write logs in a specific output format. supported formats: %s", log.AvailableLogrusFormats.String()))
 	rootCmd.PersistentFlags().StringVar(&options.ChartsDirectory, "charts-directory", "", "filesystem path to the Kubermatic Helm charts (defaults to charts/)")
 
 	addCommands(rootCmd, logger, versions)
