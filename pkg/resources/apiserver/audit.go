@@ -17,6 +17,9 @@ limitations under the License.
 package apiserver
 
 import (
+	"bytes"
+	"html/template"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -105,6 +108,44 @@ rules:
 `,
 }
 
+const fluentBitConfigTemplate = `
+{{ if .Service }}
+[SERVICE]
+{{ range $key, $value := .Service }}
+    {{ $key }}      {{ $value }}
+{{ end }}
+{{ endif }}
+
+[INPUT]
+    Name    tail
+    Path    /var/log/kubernetes/audit/audit.log
+    DB      /var/log/kubernetes/audit/fluentbit.db
+
+{{ if .Filters }}
+{{ range $filter := .Filters }}
+[FILTER]
+{{ range $key, $value := $filter }}
+    {{ $key }}      {{ $value }}
+{{ end }}
+
+{{ end }}
+{{ endif }}
+
+{{ if .Outputs }}
+{{ range $output := .Outputs }}
+[OUTPUT]
+{{ range $key, $value := $output }}
+    {{ $key }}      {{ $value }}
+{{ end }}
+
+{{ end }}
+{{ else }}
+[OUTPUT]
+    Name    stdout
+    Match   *
+{{ endif }}
+`
+
 func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -145,13 +186,19 @@ func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecre
 				config = data.Cluster().Spec.AuditLogging.SidecarSettings.Config
 			}
 
-			secret.Data["fluent-bit.conf"] = []byte(getFluentBitConfig(config))
+			t, err := template.New("fluent-bit.conf").Parse(fluentBitConfigTemplate)
+			if err != nil {
+				return nil, err
+			}
+
+			configBuf := bytes.Buffer{}
+			if err := t.Execute(&configBuf, config); err != nil {
+				return nil, err
+			}
+
+			secret.Data["fluent-bit.conf"] = configBuf.Bytes()
 
 			return secret, nil
 		}
 	}
-}
-
-func getFluentBitConfig(config *kubermaticv1.AuditSidecarConfiguration) string {
-	return ""
 }
