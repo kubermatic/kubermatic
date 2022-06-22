@@ -34,10 +34,6 @@ func ValidateUser(u *kubermaticv1.User) field.ErrorList {
 		allErrs = append(allErrs, field.Required(specPath.Child("email"), "this field is required"))
 	}
 
-	if u.Spec.ID == "" {
-		allErrs = append(allErrs, field.Required(specPath.Child("id"), "this field is required"))
-	}
-
 	if u.Spec.Name == "" {
 		allErrs = append(allErrs, field.Required(specPath.Child("name"), "this field is required"))
 	}
