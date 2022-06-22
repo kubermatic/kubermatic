@@ -645,7 +645,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.22"),
+							Version: *semver.NewSemverOrDie("1.24"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -674,7 +674,7 @@ func TestHandle(t *testing.T) {
 					OldObject: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.21"),
+							Version: *semver.NewSemverOrDie("1.23"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",

@@ -205,9 +205,9 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
-        - --profiling=false
         - --endpoint-reconciler-type
         - none
+        - --profiling=false
         - --service-account-issuer
         - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
         - --service-account-signing-key-file

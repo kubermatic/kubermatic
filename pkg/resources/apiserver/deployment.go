@@ -330,6 +330,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--endpoint-reconciler-type", "none",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
 	)
@@ -348,12 +349,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	if auditLogEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
-	}
-
-	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
-	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
-	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
-		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when

@@ -150,9 +150,6 @@ func (tc testCase) fixturePath(resType, resName string) string {
 func TestLoadFiles(t *testing.T) {
 	versions := []*version.Version{
 		{
-			Version: semverlib.MustParse("1.21.0"),
-		},
-		{
 			Version: semverlib.MustParse("1.22.1"),
 		},
 		{
