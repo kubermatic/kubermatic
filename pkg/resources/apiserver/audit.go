@@ -136,7 +136,22 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.FluentBitSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
-			return nil, nil
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
+
+			config := &kubermaticv1.AuditSidecarConfiguration{}
+			if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
+				config = data.Cluster().Spec.AuditLogging.SidecarSettings.Config
+			}
+
+			secret.Data["fluent-bit.conf"] = []byte(getFluentBitConfig(config))
+
+			return secret, nil
 		}
 	}
+}
+
+func getFluentBitConfig(config *kubermaticv1.AuditSidecarConfiguration) string {
+	return ""
 }
