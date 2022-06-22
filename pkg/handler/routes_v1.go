@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/presets"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/project"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/provider"
-	resourcequota "k8c.io/kubermatic/v2/pkg/handler/v1/resource_quota"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/seed"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/ssh"
@@ -239,11 +238,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}").
 		Handler(r.deleteProject())
 
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/quota").
-		Handler(r.getProjectQuota())
-
-	//
 	// Defines a set of HTTP endpoints for SSH Keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").
@@ -1816,31 +1810,6 @@ func (r Routing) deleteProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		project.DecodeDelete,
-		EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/quota project getProjectQuota
-//
-//     Returns resource quota for a given project.
-//
-//     Produces:
-//     - application/json
-//
-//
-//     Responses:
-//       default: errorResponse
-//       200: ResourceQuota
-//       401: empty
-//       403: empty
-func (r Routing) getProjectQuota() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(resourcequota.GetForProjectEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.resourceQuotaProvider)),
-		common.DecodeGetProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

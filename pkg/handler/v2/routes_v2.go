@@ -25,6 +25,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
@@ -47,6 +48,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/networkdefaults"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
+	resourcequota "k8c.io/kubermatic/v2/pkg/handler/v2/resource_quota"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	rulegroupadmin "k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup_admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
@@ -957,6 +959,32 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/dc/{dc}/networkdefaults").
 		Handler(r.getNetworkDefaults())
+
+	// Defines endpoints to interact with resource quotas
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/quota").
+		Handler(r.getProjectQuota())
+
+	mux.Methods(http.MethodGet).
+		Path("/quotas/{quota_name}").
+		Handler(r.getResourceQuota())
+
+	mux.Methods(http.MethodGet).
+		Path("/quotas").
+		Handler(r.listResourceQuotas())
+
+	mux.Methods(http.MethodPost).
+		Path("/quotas").
+		Handler(r.createResourceQuota())
+
+	mux.Methods(http.MethodPut).
+		Path("/quotas/{quota_name}").
+		Handler(r.updateResourceQuota())
+
+	mux.Methods(http.MethodDelete).
+		Path("/quotas/{quota_name}").
+		Handler(r.deleteResourceQuota())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -6561,6 +6589,151 @@ func (r Routing) getNetworkDefaults() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(networkdefaults.GetNetworkDefaultsEndpoint(r.seedsGetter, r.userInfoGetter)),
 		networkdefaults.DecodeGetNetworkDefaultsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/quota project getProjectQuota
+//
+//     Returns resource quota for a given project.
+//
+//     Produces:
+//     - application/json
+//
+//
+//     Responses:
+//       default: errorResponse
+//       200: ResourceQuota
+//       401: empty
+//       403: empty
+func (r Routing) getProjectQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(resourcequota.GetForProjectEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.resourceQuotaProvider)),
+		common.DecodeGetProject,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/quotas/{quota_name} resource quota admin getResourceQuota
+//
+//    Gets a specific Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: ResourceQuota
+//      401: empty
+//      403: empty
+func (r Routing) getResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeResourceQuotasReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/quotas resource quota admin listResourceQuotas
+//
+//    Gets a Resource Quota list.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []ResourceQuota
+//      401: empty
+//      403: empty
+func (r Routing) listResourceQuotas() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeListResourceQuotasReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route POST /api/v2/quotas resource quota admin createResourceQuota
+//
+//    Creates a new Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) createResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.CreateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeCreateResourceQuotasReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route PUT /api/v2/quotas/{quota_name} resource quota admin updateResourceQuota
+//
+//    Updates an existing Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) updateResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.UpdateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeUpdateResourceQuotasReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route DELETE /api/v2/quotas/{quota_name} resource quota admin deleteResourceQuota
+//
+//    Removes an existing Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		admin.DecodeResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
