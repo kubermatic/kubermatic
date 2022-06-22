@@ -27,9 +27,16 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validate(ctx context.Context,
+func validateCreate(ctx context.Context,
 	obj runtime.Object,
 	client ctrlruntimeclient.Client,
 ) error {
-	return eeresourcequotavalidation.ValidateResourceQuota(ctx, obj, client)
+	return eeresourcequotavalidation.ValidateCreate(ctx, obj, client)
+}
+
+func validateUpdate(ctx context.Context,
+	oldObj runtime.Object,
+	newObj runtime.Object,
+) error {
+	return eeresourcequotavalidation.ValidateUpdate(ctx, oldObj, newObj)
 }

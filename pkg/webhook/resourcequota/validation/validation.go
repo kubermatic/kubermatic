@@ -39,11 +39,11 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return validate(ctx, obj, v.client)
+	return validateCreate(ctx, obj, v.client)
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return validate(ctx, newObj, v.client)
+	return validateUpdate(ctx, oldObj, newObj)
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {

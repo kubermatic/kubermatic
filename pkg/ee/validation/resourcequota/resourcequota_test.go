@@ -45,14 +45,12 @@ func init() {
 	_ = kubermaticv1.AddToScheme(testScheme)
 }
 
-func TestValidateResourceQuota(t *testing.T) {
+func TestValidateCreate(t *testing.T) {
 	testCases := []struct {
 		name                    string
 		existingResourceQuota   []*kubermaticv1.ResourceQuota
 		resourceQuotaToValidate *kubermaticv1.ResourceQuota
 		errExpected             bool
-		updateSubject           kubermaticv1.Subject
-		isUpdate                bool
 	}{
 		{
 			name: "Create ResourceQuota Success",
@@ -144,7 +142,54 @@ func TestValidateResourceQuota(t *testing.T) {
 				WithObjects(obj...).
 				Build()
 
-			err = resourcequota.ValidateResourceQuota(context.Background(), tc.resourceQuotaToValidate, client)
+			err = resourcequota.ValidateCreate(context.Background(), tc.resourceQuotaToValidate, client)
+			if (err != nil) != tc.errExpected {
+				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+			}
+		})
+	}
+}
+
+func TestValidateUpdate(t *testing.T) {
+	testCases := []struct {
+		name             string
+		oldResourceQuota *kubermaticv1.ResourceQuota
+		newResourceQuota *kubermaticv1.ResourceQuota
+		errExpected      bool
+	}{
+		{
+			name: "Update ResourceQuota Subject Failure",
+			oldResourceQuota: &kubermaticv1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "existing-quota",
+				},
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{
+						Name: "wwqrvcccq6",
+						Kind: "project",
+					},
+					Quota: kubermaticv1.ResourceDetails{},
+				},
+			},
+			newResourceQuota: &kubermaticv1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "existing-quota",
+				},
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{
+						Name: "wwqrvcccq7",
+						Kind: "project",
+					},
+					Quota: kubermaticv1.ResourceDetails{},
+				},
+			},
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := resourcequota.ValidateUpdate(context.Background(), tc.oldResourceQuota, tc.newResourceQuota)
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}

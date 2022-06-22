@@ -35,7 +35,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ValidateResourceQuota(ctx context.Context,
+func ValidateCreate(ctx context.Context,
 	obj runtime.Object,
 	client ctrlruntimeclient.Client) error {
 	incomingQuota, ok := obj.(*kubermaticv1.ResourceQuota)
@@ -58,6 +58,33 @@ func ValidateResourceQuota(ctx context.Context,
 		if currentSubject.Name == incomingSubject.Name && currentSubject.Kind == incomingSubject.Kind {
 			return fmt.Errorf("ResourceQuota: Subject's Name %q and Kind pair %q must be unique", incomingSubject.Name, incomingSubject.Kind)
 		}
+	}
+
+	return nil
+}
+
+func ValidateUpdate(ctx context.Context,
+	oldObj runtime.Object,
+	newObj runtime.Object) error {
+	oldQuota, ok := oldObj.(*kubermaticv1.ResourceQuota)
+	if !ok {
+		return errors.New("existing object is not a Resource Quota")
+	}
+	if oldQuota == nil {
+		return nil
+	}
+	newQuota, ok := newObj.(*kubermaticv1.ResourceQuota)
+	if !ok {
+		return errors.New("updated object is not a Resource Quota")
+	}
+	if newQuota == nil {
+		return nil
+	}
+
+	oldSubject := oldQuota.Spec.Subject
+	newSubject := newQuota.Spec.Subject
+	if oldSubject != newSubject {
+		return fmt.Errorf("Operation not permitted: updating ResourceQuota Subject is not allowed!")
 	}
 
 	return nil

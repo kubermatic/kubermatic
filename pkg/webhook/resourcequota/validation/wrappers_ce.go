@@ -25,9 +25,16 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validate(_ context.Context,
+func validateCreate(_ context.Context,
 	_ runtime.Object,
 	_ ctrlruntimeclient.Client,
+) error {
+	return nil
+}
+
+func validateUpdate(_ context.Context,
+	_ runtime.Object,
+	_ runtime.Object,
 ) error {
 	return nil
 }
