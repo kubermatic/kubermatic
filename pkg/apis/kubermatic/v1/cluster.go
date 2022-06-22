@@ -631,26 +631,6 @@ type OIDCSettings struct {
 	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
-// +kubebuilder:validation:Enum="";metadata;recommended;minimal
-
-// AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
-// are `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.
-type AuditPolicyPreset string
-
-const (
-	AuditPolicyMetadata    AuditPolicyPreset = "metadata"
-	AuditPolicyRecommended AuditPolicyPreset = "recommended"
-	AuditPolicyMinimal     AuditPolicyPreset = "minimal"
-)
-
-// AuditLoggingSettings configures audit logging functionality.
-type AuditLoggingSettings struct {
-	// Enabled will enable or disable audit logging.
-	Enabled bool `json:"enabled,omitempty"`
-	// Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.
-	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
-}
-
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
