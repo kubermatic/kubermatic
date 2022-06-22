@@ -29,6 +29,8 @@ spec:
     apiserverReplicas: 1
   seedController:
     debugLog: true
+  featureGates:
+    HeadlessInstallation: true
   api:
     replicas: 1
   ui:

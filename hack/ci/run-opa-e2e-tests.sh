@@ -31,6 +31,11 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
+if [ "${SETUP_MODE:-kube}" == "api" ]; then
+  export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_api.yaml
+fi
+
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 

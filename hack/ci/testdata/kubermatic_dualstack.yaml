@@ -34,6 +34,7 @@ spec:
     # at least ensure we deploy a working set of Deployments.
     VerticalPodAutoscaler: false
     KonnectivityService: true
+    HeadlessInstallation: true
   ui:
     replicas: 0
   # Dex integration

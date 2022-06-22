@@ -29,6 +29,7 @@ spec:
     debugLog: true
   featureGates:
     UserClusterMLA: true
+    HeadlessInstallation: true
   ui:
     replicas: 0
   # Dex integration

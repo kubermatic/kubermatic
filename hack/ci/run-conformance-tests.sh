@@ -113,7 +113,7 @@ function copy_junit {
 appendTrap copy_junit EXIT
 
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
-  -client="${SETUP_MODE:-api}" \
+  -client="${SETUP_MODE:-kube}" \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
