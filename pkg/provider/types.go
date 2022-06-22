@@ -313,7 +313,7 @@ type PrivilegedSSHKeyProvider interface {
 // UserProvider declares the set of methods for interacting with kubermatic users.
 type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error)
-	CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error)
+	CreateUser(ctx context.Context, name, email string) (*kubermaticv1.User, error)
 	UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(ctx context.Context, id string) (*kubermaticv1.User, error)
 	InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error
