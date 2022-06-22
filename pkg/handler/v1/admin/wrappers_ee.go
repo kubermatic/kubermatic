@@ -24,7 +24,6 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,26 +69,6 @@ func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter 
 	return metering.DeleteReport(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
-	return resourcequotas.GetResourceQuota(ctx, request, provider)
-}
-
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
-	return resourcequotas.ListResourceQuotas(ctx, request, provider)
-}
-
-func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.CreateResourceQuota(ctx, request, provider)
-}
-
-func updateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.UpdateResourceQuota(ctx, request, provider)
-}
-
-func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.DeleteResourceQuota(ctx, request, provider)
-}
-
 func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeGetMeteringReportConfigurationReq(r)
 }
@@ -124,20 +103,4 @@ func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interf
 
 func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeDeleteMeteringReportReq(r)
-}
-
-func DecodeResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeResourceQuotaReq(r)
-}
-
-func DecodeListResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeListResourceQuotaReq(r)
-}
-
-func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeCreateResourceQuotaReq(r)
-}
-
-func DecodeUpdateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeUpdateResourceQuotaReq(r)
 }

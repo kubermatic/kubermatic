@@ -29,3 +29,38 @@ func getResourceQuotaForProject(_ context.Context, _ interface{}, _ provider.Pro
 	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
 	return nil, nil
 }
+func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	return nil, nil
+}
+
+func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
+	return nil, nil
+}
+
+func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	return nil
+}
+
+func updateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	return nil
+}
+
+func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	return nil
+}
+
+func DecodeResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeListResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeUpdateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}

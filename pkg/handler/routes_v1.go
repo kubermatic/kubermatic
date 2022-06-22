@@ -238,6 +238,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}").
 		Handler(r.deleteProject())
 
+	//
 	// Defines a set of HTTP endpoints for SSH Keys that belong to a project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/sshkeys").

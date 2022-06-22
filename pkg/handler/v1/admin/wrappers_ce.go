@@ -69,26 +69,6 @@ func deleteMeteringReport(_ context.Context, _ interface{}, _ provider.SeedsGett
 	return nil
 }
 
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
-	return nil, nil
-}
-
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
-	return nil, nil
-}
-
-func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return nil
-}
-
-func updateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return nil
-}
-
-func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return nil
-}
-
 func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
@@ -122,21 +102,5 @@ func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interf
 }
 
 func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func DecodeResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func DecodeListResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func DecodeUpdateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }

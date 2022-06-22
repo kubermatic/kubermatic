@@ -25,7 +25,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
@@ -6636,8 +6635,8 @@ func (r Routing) getResourceQuota() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeResourceQuotasReq,
+		)(resourcequota.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodeResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6660,8 +6659,8 @@ func (r Routing) listResourceQuotas() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeListResourceQuotasReq,
+		)(resourcequota.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodeListResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6684,8 +6683,8 @@ func (r Routing) createResourceQuota() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeCreateResourceQuotasReq,
+		)(resourcequota.CreateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodeCreateResourceQuotasReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -6708,8 +6707,8 @@ func (r Routing) updateResourceQuota() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.UpdateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeUpdateResourceQuotasReq,
+		)(resourcequota.UpdateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodeUpdateResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6732,8 +6731,8 @@ func (r Routing) deleteResourceQuota() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.DeleteResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		admin.DecodeResourceQuotasReq,
+		)(resourcequota.DeleteResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodeResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
