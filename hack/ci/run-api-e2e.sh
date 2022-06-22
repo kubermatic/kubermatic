@@ -129,12 +129,11 @@ cat << EOF > user.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
-  name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
+  name: roxy
 spec:
-  email: roxy2@kubermatic.com
-  id: 1413636a43ddc27da27e47614faedff24b4ab19c9d9f2b45dd1b89d9_KUBE
-  name: roxy2
   admin: true
+  email: roxy@kubermatic.com
+  name: roxy
 EOF
 retry 2 kubectl apply -f user.yaml
 
