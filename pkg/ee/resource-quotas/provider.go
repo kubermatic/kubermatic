@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,7 +59,7 @@ func (p *ResourceQuotaProvider) GetUnsecured(ctx context.Context, name string) (
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := p.privilegedClient.Get(ctx, types.NamespacedName{
 		Name:      name,
-		Namespace: kubermaticv1.ResourceQuotaNamespace,
+		Namespace: resources.KubermaticNamespace,
 	}, resourceQuota); err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
 		Name:      fmt.Sprintf("%s-%s", kind, name),
-		Namespace: kubermaticv1.ResourceQuotaNamespace,
+		Namespace: resources.KubermaticNamespace,
 	}, resourceQuota); err != nil {
 		return nil, err
 	}
@@ -91,7 +92,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 
 func (p *ResourceQuotaProvider) ListUnsecured(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
 	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace:     kubermaticv1.ResourceQuotaNamespace,
+		Namespace:     resources.KubermaticNamespace,
 		LabelSelector: labels.SelectorFromSet(labelSet),
 	}
 	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
@@ -110,7 +111,7 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: subject.Name,
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
 			},
-			Namespace: kubermaticv1.ResourceQuotaNamespace,
+			Namespace: resources.KubermaticNamespace,
 			Name:      fmt.Sprintf("%s-%s", subject.Kind, subject.Name),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{

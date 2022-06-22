@@ -35,6 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +48,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		&kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("project-%s-1", projectName),
-				Namespace: kubermaticv1.ResourceQuotaNamespace,
+				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
 					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-1", projectName),
@@ -63,7 +64,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		&kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("project-%s-2", projectName),
-				Namespace: kubermaticv1.ResourceQuotaNamespace,
+				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
 					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
