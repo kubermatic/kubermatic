@@ -93,14 +93,14 @@ func (u *StoreUploader) Store(ctx context.Context, file, bucket, prefix string, 
 			return err
 		}
 		if !exists {
-			logger.Infow("Creating bucket")
+			logger.Info("Creating bucket")
 			if err := u.client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{}); err != nil {
 				return err
 			}
 		}
 	}
 
-	objectName := fmt.Sprintf("%s-%s-%s-%s", prefix, prefixSeparator, time.Now().Format("2006-01-02T15:04:05"), path.Base(file))
+	objectName := fmt.Sprintf("%s-%s-%s-%s", prefix, prefixSeparator, time.Now().Format("2006-01-02T150405"), path.Base(file))
 	logger.Infow("Uploading file", "src", file, "dst", objectName)
 
 	_, err := u.client.FPutObject(ctx, bucket, objectName, file, minio.PutObjectOptions{})
