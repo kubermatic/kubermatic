@@ -199,9 +199,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		SubjectKind: projectResourceQuota.Spec.Subject.Kind,
 		SubjectName: projectResourceQuota.Spec.Subject.Name,
 		Quota:       projectResourceQuota.Spec.Quota,
-		Status: kubermaticv1.ResourceQuotaStatus{
-			LocalUsage: projectResourceQuota.Status.LocalUsage,
-		},
+		Status:      projectResourceQuota.Status,
 	}, nil
 }
 
