@@ -254,14 +254,6 @@ func TestProviderCreateResourceQuota(t *testing.T) {
 				t.Fatalf("expected %s name, got %s", rq.Name, tc.expectedQuotaName)
 			}
 
-			labels := rq.GetLabels()
-			if labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != tc.subject.Kind {
-				t.Fatalf("missing or wrong kind label")
-			}
-			if labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != tc.subject.Name {
-				t.Fatalf("missing or wrong name label")
-			}
-
 			if rq.Spec.Quota.CPU.Value() != tc.quota.CPU.Value() {
 				t.Fatalf("wrong CPU value")
 			}

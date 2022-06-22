@@ -106,13 +106,9 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 	rq := &kubermaticv1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
-			// Add labels for easier filtering
-			Labels: map[string]string{
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey: subject.Name,
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
-			},
-			Namespace: resources.KubermaticNamespace,
-			Name:      buildNameFromSubject(subject),
+			Labels:      map[string]string{},
+			Namespace:   resources.KubermaticNamespace,
+			Name:        buildNameFromSubject(subject),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: subject,
