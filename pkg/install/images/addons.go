@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package images
 
 import (
 	"fmt"
 	"os"
 	"path"
 
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
@@ -32,7 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
+func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
 	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
@@ -62,11 +63,11 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 	return images, nil
 }
 
-func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
-	log = log.With(zap.String("addon", path.Base(addonPath)))
-	log.Debug("Processing manifests...")
+func getImagesFromAddon(log logrus.FieldLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+	log = log.WithField("addon", path.Base(addonPath))
+	log.Debug("Processing manifests…")
 
-	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
+	allManifests, err := addonutil.ParseFromFolder(zap.NewNop().Sugar(), "", addonPath, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", addonPath, err)
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,15 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package images
 
 import (
 	"context"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -30,27 +32,27 @@ import (
 )
 
 func TestRetagImageForAllVersions(t *testing.T) {
-	log := kubermaticlog.New(false, kubermaticlog.FormatConsole).Sugar()
+	log := logrus.New()
 
-	config, err := defaults.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, log)
+	config, err := defaults.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
 	if err != nil {
 		t.Errorf("failed to determine versions: %v", err)
 	}
 
 	kubermaticVersions := kubermatic.NewFakeVersions()
 	clusterVersions := getVersionsFromKubermaticConfiguration(config)
-	addonPath := "../../addons"
+	addonPath := "../../../addons"
 
-	caBundle, err := certificates.NewCABundleFromFile("../../charts/kubermatic-operator/static/ca-bundle.pem")
+	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")
 	if err != nil {
 		t.Errorf("failed to load CA bundle: %v", err)
 	}
 
 	imageSet := sets.NewString()
 	for _, clusterVersion := range clusterVersions {
-		for _, cloudSpec := range getCloudSpecs() {
-			for _, cniPlugin := range getCNIPlugins() {
-				images, err := getImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, config, addonPath, kubermaticVersions, caBundle)
+		for _, cloudSpec := range GetCloudSpecs() {
+			for _, cniPlugin := range GetCNIPlugins() {
+				images, err := GetImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, config, addonPath, kubermaticVersions, caBundle)
 				if err != nil {
 					t.Errorf("Error calling getImagesForVersion: %v", err)
 				}
@@ -59,7 +61,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		}
 	}
 
-	if err := processImages(context.Background(), log, true, imageSet.List(), "test-registry:5000"); err != nil {
+	if err := ProcessImages(context.Background(), log, "docker", true, imageSet.List(), "test-registry:5000"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }

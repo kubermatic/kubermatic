@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package images
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -39,10 +37,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
-	"k8c.io/kubermatic/v2/pkg/docker"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/install/images/docker"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
@@ -60,187 +56,57 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const mockNamespaceName = "mock-namespace"
 
-var (
-	staticImages = []string{}
-)
-
-type opts struct {
-	configurationFile string
-	versionsFile      string
-	versionFilter     string
-	registry          string
-	dryRun            bool
-	addonsPath        string
-	addonsImage       string
-	chartsPath        string
-	helmValuesPath    string
-	helmBinary        string
-}
-
-func main() {
-	var err error
-
-	logOpts := kubermaticlog.NewDefaultOptions()
-	logOpts.Format = kubermaticlog.FormatConsole
-	logOpts.AddFlags(flag.CommandLine)
-
-	o := opts{}
-	flag.StringVar(&o.configurationFile, "configuration-file", "", "Path to the KubermaticConfiguration YAML file")
-	flag.StringVar(&o.versionsFile, "versions-file", "", "The versions.yaml file path (deprecated, EE-only, used only if no -configuration-file is given)")
-	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
-	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
-	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to a directory containing the KKP addons, if not given, falls back to -addons-image, then the Docker image configured in the KubermaticConfiguration")
-	flag.StringVar(&o.addonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
-	flag.StringVar(&o.chartsPath, "charts-path", "", "Path to the folder containing all Helm charts")
-	flag.StringVar(&o.helmValuesPath, "helm-values-file", "", "Use this values.yaml file when rendering the Helm charts (-charts-path)")
-	flag.StringVar(&o.helmBinary, "helm-binary", "helm", "Helm 3.x binary to use for rendering the charts")
-	flag.Parse()
-
-	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	log := rawLog.Sugar()
-
-	if (o.configurationFile == "") == (o.versionsFile == "") {
-		log.Fatal("Either -configuration-file or -versions-file must be specified.")
-	}
-
-	if o.addonsPath != "" && o.addonsImage != "" {
-		log.Fatal("-addons-path or -addons-image must not be specified at the same time.")
-	}
-
-	ctx := signals.SetupSignalHandler()
-
-	if o.registry == "" {
-		log.Fatal("-registry parameter must contain a valid registry address!")
-	}
-
-	// If given, load the KubermaticConfiguration. It's not yet a required
-	// parameter in order to support Helm-based Enterprise setups.
-	var kubermaticConfig *kubermaticv1.KubermaticConfiguration
-	if o.configurationFile != "" {
-		kubermaticConfig, err = loadKubermaticConfiguration(log, o.configurationFile)
-		if err != nil {
-			log.Fatalw("Failed to load KubermaticConfiguration", zap.Error(err))
-		}
-	}
-
-	clusterVersions, err := getVersions(log, kubermaticConfig, o.versionsFile, o.versionFilter)
-	if err != nil {
-		log.Fatalw("Error loading versions", zap.Error(err))
-	}
-
-	caBundle, err := certificates.NewCABundleFromFile(filepath.Join(o.chartsPath, "kubermatic-operator/static/ca-bundle.pem"))
-	if err != nil {
-		log.Fatalw("Error loading CA bundle", zap.Error(err))
-	}
-
-	kubermaticVersions := kubermatic.NewDefaultVersions()
-
-	// if no local addons path is given, use the configured addons
-	// Docker image and extract the addons from there
-	if o.addonsPath == "" {
-		addonsImage := o.addonsImage
-		if addonsImage == "" {
-			if kubermaticConfig == nil {
-				log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
-			} else {
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + kubermaticVersions.Kubermatic
-			}
-		}
-
-		if addonsImage != "" {
-			tempDir, err := extractAddonsFromDockerImage(ctx, log, addonsImage)
-			if err != nil {
-				log.Fatalw("Failed to create local addons path", zap.Error(err))
-			}
-			defer os.RemoveAll(tempDir)
-
-			o.addonsPath = tempDir
-		}
-	}
-
-	// Using a set here for deduplication
-	imageSet := sets.NewString(staticImages...)
-	for _, clusterVersion := range clusterVersions {
-		for _, cloudSpec := range getCloudSpecs() {
-			for _, cniPlugin := range getCNIPlugins() {
-				versionLog := log.With(
-					zap.String("version", clusterVersion.Version.String()),
-					zap.String("provider", cloudSpec.ProviderName),
-					zap.String("CNI plugin", string(cniPlugin.Type)),
-					zap.String("CNI version", cniPlugin.Version),
-				)
-
-				versionLog.Info("Collecting images...")
-				images, err := getImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
-				if err != nil {
-					versionLog.Fatalw("failed to get images", zap.Error(err))
-				}
-				imageSet.Insert(images...)
-			}
-		}
-	}
-
-	if o.chartsPath != "" {
-		log.Infow("Rendering Helm charts", "directory", o.chartsPath)
-
-		images, err := getImagesForHelmCharts(ctx, log, kubermaticConfig, o.chartsPath, o.helmValuesPath, o.helmBinary)
-		if err != nil {
-			log.Fatalw("Failed to get images", zap.Error(err))
-		}
-		imageSet.Insert(images...)
-	}
-
-	if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
-		log.Fatalw("Failed to process images", zap.Error(err))
-	}
-}
-
-func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
+func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, dockerBinary string, imageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "imageloader*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
-	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
+	log.WithFields(logrus.Fields{
+		"image":          imageName,
+		"temp-directory": tempDir,
+	}).Info("Extracting addon manifests from image…")
 
-	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
+	if err := docker.DownloadImages(ctx, log, dockerBinary, false, []string{imageName}); err != nil {
 		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
-	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
+	if err := docker.Copy(ctx, log, dockerBinary, imageName, tempDir, "/addons"); err != nil {
 		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
 	return tempDir, nil
 }
 
-func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
-	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
-		return fmt.Errorf("failed to download all images: %w", err)
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary string, dryRun bool, images []string, registry string) error {
+	if !dryRun {
+		if err := docker.DownloadImages(ctx, log, dockerBinary, dryRun, images); err != nil {
+			return fmt.Errorf("failed to download all images: %w", err)
+		}
 	}
 
-	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
+	retaggedImages, err := docker.RetagImages(ctx, log, dockerBinary, dryRun, images, registry)
 	if err != nil {
 		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
-	if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
-		return fmt.Errorf("failed to push images: %w", err)
+	if !dryRun {
+		if err := docker.PushImages(ctx, log, dockerBinary, dryRun, retaggedImages); err != nil {
+			return fmt.Errorf("failed to push images: %w", err)
+		}
 	}
+
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
-	templateData, err := getTemplateData(clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle, config)
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -260,8 +126,8 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *version.Version
 	return images, nil
 }
 
-func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
+func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
@@ -281,8 +147,11 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
-	deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
+
+	if val, ok := templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok && val {
+		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
+	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
@@ -344,7 +213,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, config *kubermaticv1.KubermaticConfiguration) (*resources.TemplateData, error) {
+func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -468,11 +337,13 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			VSphere:   &kubermaticv1.DatacenterSpecVSphere{},
-			Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
-			Hetzner:   &kubermaticv1.DatacenterSpecHetzner{},
-			Anexia:    &kubermaticv1.DatacenterSpecAnexia{},
-			Kubevirt:  &kubermaticv1.DatacenterSpecKubevirt{},
+			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
+			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
+			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
+			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
+			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
+			Azure:               &kubermaticv1.DatacenterSpecAzure{},
+			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -489,7 +360,7 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 
-	if fakeCluster.Spec.Cloud.Openstack != nil {
+	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -498,6 +369,9 @@ func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.Clo
 
 	fakeCluster.Spec.EnableUserSSHKeyAgent = pointer.Bool(true)
 	fakeCluster.Spec.EnableOperatingSystemManager = true
+	fakeCluster.Spec.KubernetesDashboard = kubermaticv1.KubernetesDashboard{
+		Enabled: true,
+	}
 
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Status.Versions.ControlPlane = *clusterSemver
@@ -540,26 +414,14 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*version.Version, error) {
+func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, versionFilter string) ([]*version.Version, error) {
 	var versions []*version.Version
 
-	log = log.With("versions-filter", versionFilter)
+	log = log.WithField("versions-filter", versionFilter)
 
 	if config != nil {
 		log.Debug("Loading versions")
 		versions = getVersionsFromKubermaticConfiguration(config)
-	} else {
-		if versionsFile == "" {
-			return nil, errors.New("either a KubermaticConfiguration or a versions file must be specified")
-		}
-
-		var err error
-
-		log.Debugw("Loading versions", "file", versionsFile)
-		versions, err = version.LoadVersions(versionsFile)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	if versionFilter == "" {
@@ -583,7 +445,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 }
 
 // list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI.
-func getCloudSpecs() []kubermaticv1.CloudSpec {
+func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
 			ProviderName: string(kubermaticv1.VSphereCloudProvider),
@@ -617,11 +479,29 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 				CSIKubeconfig: "fakeKubeconfig",
 			},
 		},
+		{
+			ProviderName: string(kubermaticv1.AzureCloudProvider),
+			Azure: &kubermaticv1.AzureCloudSpec{
+				TenantID:       "fakeTenantID",
+				SubscriptionID: "fakeSubscriptionID",
+				ClientID:       "fakeClientID",
+				ClientSecret:   "fakeClientSecret",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
+			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
+				Username:     "fakeUsername",
+				Password:     "fakePassword",
+				Organization: "fakeOrganization",
+				VDC:          "fakeVDC",
+			},
+		},
 	}
 }
 
 // list all the supported CNI plugins along with their supported versions.
-func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
+func GetCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
 	supportedCNIPlugins := cni.GetSupportedCNIPlugins()
 
@@ -640,14 +520,14 @@ func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	return cniPluginSettings
 }
 
-func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
+func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
 	obj, err := runtime.Decode(decoder, b)
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
 			// We must skip custom objects. We try to look up the object info though to give a useful warning
 			metaFactory := &json.SimpleMetaFactory{}
 			if gvk, err := metaFactory.Interpret(b); err == nil {
-				log = log.With(zap.String("gvk", gvk.String()))
+				log = log.WithField("gvk", gvk.String())
 			}
 
 			log.Debug("Skipping object because its not known")
@@ -658,7 +538,6 @@ func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []
 
 	images := getImagesFromObject(obj)
 	if images == nil {
-		log.Debug("Object has no images or is not known to this application. If this object contains images, please manually push the image to the target registry")
 		return nil, nil
 	}
 
@@ -691,4 +570,16 @@ func getImagesFromObject(obj runtime.Object) []string {
 	}
 
 	return nil
+}
+
+func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []*version.Version {
+	versions := []*version.Version{}
+
+	for _, v := range config.Spec.Versions.Versions {
+		versions = append(versions, &version.Version{
+			Version: v.Semver(),
+		})
+	}
+
+	return versions
 }
