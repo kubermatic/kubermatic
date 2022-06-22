@@ -26,26 +26,37 @@ package resourcequota
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ValidateResourceQuota(ctx context.Context,
-	incomingQuota *kubermaticv1.ResourceQuota,
+	obj runtime.Object,
 	client ctrlruntimeclient.Client) error {
+	incomingQuota, ok := obj.(*kubermaticv1.ResourceQuota)
+	if !ok {
+		return errors.New("object is not a Resource Quota")
+	}
+	if incomingQuota == nil {
+		return nil
+	}
+
 	currentQuotaList := &kubermaticv1.ResourceQuotaList{}
 	if err := client.List(ctx, currentQuotaList); err != nil {
 		return fmt.Errorf("failed to list resource quotas: %w", err)
 	}
 
+	incomingSubject := incomingQuota.Spec.Subject
+
 	for _, currentQuota := range currentQuotaList.Items {
 		currentSubject := currentQuota.Spec.Subject
-		incomingSuject := incomingQuota.Spec.Subject
-		if currentSubject.Name == incomingSuject.Name && currentSubject.Kind == incomingSuject.Kind {
-			return fmt.Errorf("ResourceQuota: Subject's Name %q and Kind pair %q must be unique", incomingSuject.Name, incomingSuject.Kind)
+		if currentSubject.Name == incomingSubject.Name && currentSubject.Kind == incomingSubject.Kind {
+			return fmt.Errorf("ResourceQuota: Subject's Name %q and Kind pair %q must be unique", incomingSubject.Name, incomingSubject.Kind)
 		}
 	}
 

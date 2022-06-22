@@ -22,13 +22,14 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequota
+package resourcequota_test
 
 import (
 	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,15 +45,17 @@ func init() {
 	_ = kubermaticv1.AddToScheme(testScheme)
 }
 
-func TestValidateResourceQuotaInsallation(t *testing.T) {
+func TestValidateResourceQuota(t *testing.T) {
 	testCases := []struct {
 		name                    string
 		existingResourceQuota   []*kubermaticv1.ResourceQuota
 		resourceQuotaToValidate *kubermaticv1.ResourceQuota
 		errExpected             bool
+		updateSubject           kubermaticv1.Subject
+		isUpdate                bool
 	}{
 		{
-			name: "Create ApplicationInstallation Success",
+			name: "Create ResourceQuota Success",
 			existingResourceQuota: []*kubermaticv1.ResourceQuota{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -93,7 +96,7 @@ func TestValidateResourceQuotaInsallation(t *testing.T) {
 			},
 		},
 		{
-			name: "Create ApplicationInstallation Failure",
+			name: "Create ResourceQuota Failure",
 			existingResourceQuota: []*kubermaticv1.ResourceQuota{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -141,7 +144,7 @@ func TestValidateResourceQuotaInsallation(t *testing.T) {
 				WithObjects(obj...).
 				Build()
 
-			err = ValidateResourceQuota(context.Background(), tc.resourceQuotaToValidate, client)
+			err = resourcequota.ValidateResourceQuota(context.Background(), tc.resourceQuotaToValidate, client)
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}

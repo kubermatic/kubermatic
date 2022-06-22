@@ -18,9 +18,6 @@ package validation
 
 import (
 	"context"
-	"errors"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,19 +39,11 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	quota, ok := obj.(*kubermaticv1.ResourceQuota)
-	if !ok {
-		return errors.New("object is not a Resource Quota")
-	}
-
-	if quota != nil {
-		return validateResourceQuota(ctx, quota, v.client)
-	}
-	return nil
+	return validate(ctx, obj, v.client)
 }
 
-func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) error {
-	return nil
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	return validate(ctx, newObj, v.client)
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
