@@ -103,17 +103,6 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "docker CLI compatible binary to use for pulling and pushing images")
 
-	// these flags are deprecated but retained to ensure compatibility with `image-loader` flags,
-	// except for `--versions-file`, that flag was already deprecated in `image-loader`.
-	cmd.PersistentFlags().StringVar(&opt.Config, "configuration-file", "", "Path to the KubermaticConfiguration YAML file (deprecated, use --config instead)")
-	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values-file", "", "Use this values.yaml file when rendering Helm charts (deprecated, use --helm-values instead)")
-	cmd.PersistentFlags().StringVar(&opt.Registry, "registry", "", "Address of the registry to push to, for example localhost:5000 (deprecated, pass registry as argument instead)")
-
-	// TODO(embik): enable this for KKP 2.22 so the flags above cannot be used anymore
-	// cmd.PersistentFlags().MarkDeprecated("configuration-file", "use --config instead")
-	// cmd.PersistentFlags().MarkDeprecated("helm-values-file", "use --helm-values instead")
-	// cmd.PersistentFlags().MarkDeprecated("registry", "pass registry as argument instead")
-
 	return cmd
 }
 
