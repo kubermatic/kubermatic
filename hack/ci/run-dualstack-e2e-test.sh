@@ -58,6 +58,7 @@ export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-
 export OS_USER_DOMAIN_NAME="${OS_USER_DOMAIN_NAME:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
 export OS_PROJECT_NAME="${OS_PROJECT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
 export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
+export HETZNER_TOKEN="${HETZNER_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
 
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
