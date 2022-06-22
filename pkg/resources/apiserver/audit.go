@@ -130,3 +130,13 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 		}
 	}
 }
+
+// FluentBitSecretCreator returns a reconciling.NamedSecretCreatorGetter for a secret that contains
+// fluent-bit configuration for the audit-logs sidecar.
+func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.FluentBitSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
+			return nil, nil
+		}
+	}
+}

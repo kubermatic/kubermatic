@@ -53,7 +53,8 @@ var (
 )
 
 const (
-	name = "apiserver"
+	name                 = "apiserver"
+	auditLogsSidecarName = "audit-logs"
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment.
@@ -75,7 +76,9 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
+			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
+
+			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled)
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
@@ -135,7 +138,6 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				}
 			}
 
-			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, version)
 			if err != nil {
 				return nil, err
@@ -212,15 +214,27 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				}
 			}
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
-			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
-			}
+			overrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
 
 			if auditLogEnabled {
+				defResourceRequirements[auditLogsSidecarName] = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Mi"),
+						corev1.ResourceCPU:    resource.MustParse("5m"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("60Mi"),
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+					},
+				}
+
+				if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Resources != nil {
+					overrides[auditLogsSidecarName] = data.Cluster().Spec.AuditLogging.SidecarSettings.Resources
+				}
+
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
-						Name:    "audit-logs",
+						Name:    auditLogsSidecarName,
 						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.2.2",
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
@@ -230,19 +244,19 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 								MountPath: "/var/log/kubernetes/audit",
 								ReadOnly:  false,
 							},
-						},
-						Resources: corev1.ResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("10Mi"),
-								corev1.ResourceCPU:    resource.MustParse("5m"),
-							},
-							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("60Mi"),
-								corev1.ResourceCPU:    resource.MustParse("50m"),
+							{
+								Name:      resources.FluentBitSecretName,
+								MountPath: "/etc/fluent-bit/",
+								ReadOnly:  true,
 							},
 						},
 					},
 				)
+			}
+
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
@@ -562,7 +576,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -748,6 +762,17 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.EncryptionConfigurationSecretName,
+				},
+			},
+		})
+	}
+
+	if isAuditEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.FluentBitSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.FluentBitSecretName,
 				},
 			},
 		})
