@@ -27,7 +27,6 @@ package resourcequotas
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -248,7 +247,7 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 
 	if err := provider.CreateUnsecured(ctx, req.Body.Subject, req.Body.Quota); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			name := fmt.Sprintf("%s-%s", req.Body.Subject.Kind, req.Body.Subject.Name)
+			name := buildNameFromSubject(req.Body.Subject)
 			return utilerrors.NewAlreadyExists("ResourceQuota", name)
 		}
 		return err

@@ -27,7 +27,6 @@ package resourcequotas
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -80,9 +79,10 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 		return nil, err
 	}
 
+	subject := kubermaticv1.Subject{Name: name, Kind: kind}
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
-		Name:      fmt.Sprintf("%s-%s", kind, name),
+		Name:      buildNameFromSubject(subject),
 		Namespace: resources.KubermaticNamespace,
 	}, resourceQuota); err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: subject.Kind,
 			},
 			Namespace: resources.KubermaticNamespace,
-			Name:      fmt.Sprintf("%s-%s", subject.Kind, subject.Name),
+			Name:      buildNameFromSubject(subject),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: subject,
