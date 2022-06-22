@@ -66,7 +66,7 @@ type DeleteResourceQuotaOK struct {
 }
 
 func (o *DeleteResourceQuotaOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/quotas/{quota_name}][%d] deleteResourceQuotaOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaOK ", 200)
 }
 
 func (o *DeleteResourceQuotaOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type DeleteResourceQuotaUnauthorized struct {
 }
 
 func (o *DeleteResourceQuotaUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/quotas/{quota_name}][%d] deleteResourceQuotaUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaUnauthorized ", 401)
 }
 
 func (o *DeleteResourceQuotaUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteResourceQuotaForbidden struct {
 }
 
 func (o *DeleteResourceQuotaForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/quotas/{quota_name}][%d] deleteResourceQuotaForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaForbidden ", 403)
 }
 
 func (o *DeleteResourceQuotaForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *DeleteResourceQuotaDefault) Code() int {
 }
 
 func (o *DeleteResourceQuotaDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/quotas/{quota_name}][%d] deleteResourceQuota default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuota default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeleteResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

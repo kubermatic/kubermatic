@@ -67,7 +67,7 @@ type GetResourceQuotaOK struct {
 }
 
 func (o *GetResourceQuotaOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
 }
 func (o *GetResourceQuotaOK) GetPayload() *models.ResourceQuota {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetResourceQuotaUnauthorized struct {
 }
 
 func (o *GetResourceQuotaUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaUnauthorized ", 401)
 }
 
 func (o *GetResourceQuotaUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetResourceQuotaForbidden struct {
 }
 
 func (o *GetResourceQuotaForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuotaForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaForbidden ", 403)
 }
 
 func (o *GetResourceQuotaForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetResourceQuotaDefault) Code() int {
 }
 
 func (o *GetResourceQuotaDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/quotas/{quota_name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

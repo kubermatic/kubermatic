@@ -52,7 +52,7 @@ func (a *Client) CreateResourceQuota(params *CreateResourceQuotaParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "createResourceQuota",
 		Method:             "POST",
-		PathPattern:        "/api/v1/admin/quotas",
+		PathPattern:        "/api/v2/quotas",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -90,7 +90,7 @@ func (a *Client) DeleteResourceQuota(params *DeleteResourceQuotaParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "deleteResourceQuota",
 		Method:             "DELETE",
-		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
+		PathPattern:        "/api/v2/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -128,7 +128,7 @@ func (a *Client) GetResourceQuota(params *GetResourceQuotaParams, authInfo runti
 	op := &runtime.ClientOperation{
 		ID:                 "getResourceQuota",
 		Method:             "GET",
-		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
+		PathPattern:        "/api/v2/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -166,7 +166,7 @@ func (a *Client) ListResourceQuotas(params *ListResourceQuotasParams, authInfo r
 	op := &runtime.ClientOperation{
 		ID:                 "listResourceQuotas",
 		Method:             "GET",
-		PathPattern:        "/api/v1/admin/quotas",
+		PathPattern:        "/api/v2/quotas",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -204,7 +204,7 @@ func (a *Client) UpdateResourceQuota(params *UpdateResourceQuotaParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "updateResourceQuota",
 		Method:             "PUT",
-		PathPattern:        "/api/v1/admin/quotas/{quota_name}",
+		PathPattern:        "/api/v2/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

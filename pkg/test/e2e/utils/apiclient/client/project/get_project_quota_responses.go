@@ -67,7 +67,7 @@ type GetProjectQuotaOK struct {
 }
 
 func (o *GetProjectQuotaOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/quota][%d] getProjectQuotaOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaOK  %+v", 200, o.Payload)
 }
 func (o *GetProjectQuotaOK) GetPayload() *models.ResourceQuota {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetProjectQuotaUnauthorized struct {
 }
 
 func (o *GetProjectQuotaUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/quota][%d] getProjectQuotaUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaUnauthorized ", 401)
 }
 
 func (o *GetProjectQuotaUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetProjectQuotaForbidden struct {
 }
 
 func (o *GetProjectQuotaForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/quota][%d] getProjectQuotaForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaForbidden ", 403)
 }
 
 func (o *GetProjectQuotaForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetProjectQuotaDefault) Code() int {
 }
 
 func (o *GetProjectQuotaDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/quota][%d] getProjectQuota default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuota default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetProjectQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

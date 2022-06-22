@@ -69,7 +69,7 @@ type CreateResourceQuotaCreated struct {
 }
 
 func (o *CreateResourceQuotaCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/quotas][%d] createResourceQuotaCreated ", 201)
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaCreated ", 201)
 }
 
 func (o *CreateResourceQuotaCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -90,7 +90,7 @@ type CreateResourceQuotaUnauthorized struct {
 }
 
 func (o *CreateResourceQuotaUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/quotas][%d] createResourceQuotaUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaUnauthorized ", 401)
 }
 
 func (o *CreateResourceQuotaUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,7 +111,7 @@ type CreateResourceQuotaForbidden struct {
 }
 
 func (o *CreateResourceQuotaForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/quotas][%d] createResourceQuotaForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaForbidden ", 403)
 }
 
 func (o *CreateResourceQuotaForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -142,7 +142,7 @@ func (o *CreateResourceQuotaDefault) Code() int {
 }
 
 func (o *CreateResourceQuotaDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/quotas][%d] createResourceQuota default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuota default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

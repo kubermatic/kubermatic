@@ -2946,7 +2946,7 @@ func (a *Client) GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime
 	op := &runtime.ClientOperation{
 		ID:                 "getProjectQuota",
 		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/quota",
+		PathPattern:        "/api/v2/projects/{project_id}/quota",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
