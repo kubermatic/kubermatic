@@ -71,8 +71,6 @@ func (m *NodeSettings) validateContainerdRegistryMirrors(formats strfmt.Registry
 		if err := m.ContainerdRegistryMirrors.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("containerdRegistryMirrors")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("containerdRegistryMirrors")
 			}
 			return err
 		}
@@ -139,8 +137,6 @@ func (m *NodeSettings) contextValidateContainerdRegistryMirrors(ctx context.Cont
 		if err := m.ContainerdRegistryMirrors.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("containerdRegistryMirrors")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("containerdRegistryMirrors")
 			}
 			return err
 		}
