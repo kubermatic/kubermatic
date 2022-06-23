@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotas_test
+package resource_quota_test
 
 import (
 	"encoding/json"

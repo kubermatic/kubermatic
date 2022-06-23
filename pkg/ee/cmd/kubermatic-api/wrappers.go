@@ -28,7 +28,7 @@ import (
 	"context"
 
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 

@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotas_test
+package resource_quota_test
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 

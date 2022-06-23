@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotas
+package resource_quota
 
 import (
 	"context"
@@ -122,8 +122,8 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 	return nil
 }
 
-func (p *ResourceQuotaProvider) UpdateUnsecured(ctx context.Context, rq *kubermaticv1.ResourceQuota) error {
-	return p.privilegedClient.Update(ctx, rq)
+func (p *ResourceQuotaProvider) PatchUnsecured(ctx context.Context, oldResourceQuota, newResourceQuota *kubermaticv1.ResourceQuota) error {
+	return p.privilegedClient.Patch(ctx, newResourceQuota, ctrlruntimeclient.MergeFrom(oldResourceQuota))
 }
 
 func (p *ResourceQuotaProvider) DeleteUnsecured(ctx context.Context, name string) error {

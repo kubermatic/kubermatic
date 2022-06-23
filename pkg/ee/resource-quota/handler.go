@@ -22,17 +22,13 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotas
+package resource_quota
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 
-	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -79,7 +75,7 @@ type patchResourceQuota struct {
 	Name string `json:"quota_name"`
 
 	// in: body
-	Patch json.RawMessage
+	Body kubermaticv1.ResourceDetails
 }
 
 func (m createResourceQuota) Validate() error {
@@ -127,14 +123,13 @@ func DecodeCreateResourceQuotaReq(r *http.Request) (interface{}, error) {
 
 func DecodePatchResourceQuotaReq(r *http.Request) (interface{}, error) {
 	var req patchResourceQuota
-	var err error
 
 	req.Name = mux.Vars(r)["quota_name"]
 	if req.Name == "" {
 		return nil, utilerrors.NewBadRequest("`quota_name` cannot be empty")
 	}
 
-	if req.Patch, err = io.ReadAll(r.Body); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
@@ -240,47 +235,17 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
-	resourceQuota, err := provider.GetUnsecured(ctx, req.Name)
+	originalResourceQuota, err := provider.GetUnsecured(ctx, req.Name)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return utilerrors.NewNotFound("ResourceQuota", req.Name)
 		}
 		return err
 	}
-	originalQuotaAPI := convertToAPIStruct(resourceQuota)
+	newResourceQuota := originalResourceQuota.DeepCopy()
+	newResourceQuota.Spec.Quota = req.Body
 
-	// patch
-	originalJSON, err := json.Marshal(originalQuotaAPI)
-	if err != nil {
-		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current quota: %v", err))
-	}
-	patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
-	if err != nil {
-		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch quota: %v", err))
-	}
-
-	var patched *apiv2.ResourceQuota
-	err = json.Unmarshal(patchedJSON, &patched)
-	if err != nil {
-		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch quota: %v", err))
-	}
-
-	if patched.Name != resourceQuota.Name {
-		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing resource quota name is not allowed: %q to %q", resourceQuota.Name, patched.Name))
-	}
-	if patched.SubjectName != resourceQuota.Spec.Subject.Name {
-		return utilerrors.New(http.StatusBadRequest, "Changing resource quota subject name is not allowed")
-	}
-	if patched.SubjectKind != resourceQuota.Spec.Subject.Kind {
-		return utilerrors.New(http.StatusBadRequest, "Changing resource quota subject kind is not allowed")
-	}
-	if !cmp.Equal(patched.Status, resourceQuota.Status) {
-		return utilerrors.New(http.StatusBadRequest, "Changing resource quota status is not allowed")
-	}
-
-	resourceQuota.Spec.Quota = patched.Quota
-
-	if err := provider.UpdateUnsecured(ctx, resourceQuota); err != nil {
+	if err := provider.PatchUnsecured(ctx, originalResourceQuota, newResourceQuota); err != nil {
 		if apierrors.IsNotFound(err) {
 			return utilerrors.NewNotFound("ResourceQuota", req.Name)
 		}

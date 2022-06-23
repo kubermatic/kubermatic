@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotas
+package resource_quota
 
 import (
 	"fmt"

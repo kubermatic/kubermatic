@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
