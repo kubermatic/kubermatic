@@ -27,6 +27,7 @@ package resourcequotas_test
 import (
 	"encoding/json"
 	"fmt"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -98,7 +99,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
-				resourceQuotaList := &[]apiv1.ResourceQuota{}
+				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
 				if err != nil {
 					return err
@@ -119,7 +120,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
-				resourceQuotaList := &[]apiv1.ResourceQuota{}
+				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
 				if err != nil {
 					return err
@@ -140,7 +141,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
-				resourceQuota := &apiv1.ResourceQuota{}
+				resourceQuota := &apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
 				if err != nil {
 					return err

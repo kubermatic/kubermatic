@@ -35,7 +35,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -141,7 +141,7 @@ func DecodePatchResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	req, ok := request.(getResourceQuota)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -155,20 +155,12 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, err
 	}
 
-	resp := &apiv1.ResourceQuota{
-		Name:        resourceQuota.Name,
-		SubjectKind: resourceQuota.Spec.Subject.Kind,
-		SubjectName: resourceQuota.Spec.Subject.Name,
-		Quota:       resourceQuota.Spec.Quota,
-		Status:      resourceQuota.Status,
-	}
-
-	return resp, nil
+	return convertToAPIStruct(resourceQuota), nil
 }
 
 func GetResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter,
-	quotaProvider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	quotaProvider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	req, ok := request.(common.GetProjectRq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -192,16 +184,10 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return &apiv1.ResourceQuota{
-		Name:        projectResourceQuota.Name,
-		SubjectKind: projectResourceQuota.Spec.Subject.Kind,
-		SubjectName: projectResourceQuota.Spec.Subject.Name,
-		Quota:       projectResourceQuota.Spec.Quota,
-		Status:      projectResourceQuota.Status,
-	}, nil
+	return convertToAPIStruct(projectResourceQuota), nil
 }
 
-func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv1.ResourceQuota, error) {
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
 	req, ok := request.(listResourceQuotas)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -220,7 +206,7 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		return nil, err
 	}
 
-	resp := make([]*apiv1.ResourceQuota, len(resourceQuotaList.Items))
+	resp := make([]*apiv2.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
 		resp[idx] = convertToAPIStruct(&rq)
 	}
@@ -273,7 +259,7 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch quota: %v", err))
 	}
 
-	var patched *apiv1.ResourceQuota
+	var patched *apiv2.ResourceQuota
 	err = json.Unmarshal(patchedJSON, &patched)
 	if err != nil {
 		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch quota: %v", err))
@@ -303,8 +289,8 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 	return nil
 }
 
-func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv1.ResourceQuota {
-	return &apiv1.ResourceQuota{
+func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv2.ResourceQuota {
+	return &apiv2.ResourceQuota{
 		Name:        resourceQuota.Name,
 		SubjectName: resourceQuota.Spec.Subject.Name,
 		SubjectKind: resourceQuota.Spec.Subject.Kind,

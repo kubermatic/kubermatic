@@ -20,24 +20,24 @@ package resourcequota
 
 import (
 	"context"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"net/http"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func getResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter,
-	quotaProvider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	quotaProvider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return resourcequotas.GetResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
 }
 
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return resourcequotas.GetResourceQuota(ctx, request, provider)
 }
 
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv1.ResourceQuota, error) {
+func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
 	return resourcequotas.ListResourceQuotas(ctx, request, provider)
 }
 

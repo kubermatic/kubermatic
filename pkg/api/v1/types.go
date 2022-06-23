@@ -2673,15 +2673,6 @@ type MeteringReportConfiguration struct {
 // swagger:model MeteringReportURL
 type ReportURL string
 
-// swagger:model ResourceQuota
-type ResourceQuota struct {
-	Name        string                           `json:"name"`
-	SubjectName string                           `json:"subject_name"`
-	SubjectKind string                           `json:"subject_kind"`
-	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
-	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
-}
-
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
 	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"

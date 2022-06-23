@@ -21,19 +21,19 @@ package resourcequota
 import (
 	"context"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func getResourceQuotaForProject(_ context.Context, _ interface{}, _ provider.ProjectProvider,
-	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv1.ResourceQuota, error) {
+func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
+func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 
