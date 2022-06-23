@@ -20,9 +20,9 @@ package resourcequota
 
 import (
 	"context"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"net/http"
 
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
