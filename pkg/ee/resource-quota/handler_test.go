@@ -208,13 +208,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "PATCH",
 			url:    fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
 			body: `{
-				"subjectKind": "project",
-				"subjectName": "` + fmt.Sprintf("%s-1", projectName) + `",
-				"quota": {
-					"cpu": 10,
-					"memory": "64Gi",
-					"storage": "256Gi"
-				}
+				"cpu": 10,
+				"memory": "64Gi",
+				"storage": "256Gi"
 			}`,
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
@@ -228,12 +224,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "PATCH",
 			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
-				"name"
-				"quota": {
-					"cpu": 10,
-					"memory": "64Gi",
-					"storage": "256Gi"
-				}
+				"cpu": 10,
+				"memory": "64Gi",
+				"storage": "256Gi"
 			}`,
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
