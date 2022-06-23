@@ -234,6 +234,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
+
+		if cni != test.cni {
+			t.Logf("skipping %s due to different cni setting (%s != %s)...", name, test.cni, cni)
+			continue
+		}
+
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		cniSpec := cnis[test.cni]

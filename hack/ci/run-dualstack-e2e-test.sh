@@ -30,6 +30,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export CNI="${CNI:-}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
@@ -66,6 +67,6 @@ export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI
 
 echodate "Dualstack tests done."
