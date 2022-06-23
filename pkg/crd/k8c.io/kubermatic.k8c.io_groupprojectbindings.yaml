@@ -16,11 +16,11 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.projectID
+      name: ProjectID
+      type: string
     - jsonPath: .spec.group
       name: Group
-      type: string
-    - jsonPath: .spec.project
-      name: Project
       type: string
     - jsonPath: .spec.role
       name: Role

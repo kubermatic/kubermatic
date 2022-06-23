@@ -30,8 +30,8 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.projectID",name="ProjectID",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.group",name="Group",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.project",name="Project",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.role",name="Role",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
