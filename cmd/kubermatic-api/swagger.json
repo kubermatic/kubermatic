@@ -19801,10 +19801,11 @@
             "required": true
           },
           {
-            "name": "Patch",
+            "name": "Body",
             "in": "body",
+            "required": true,
             "schema": {
-              "type": "object"
+              "$ref": "#/definitions/ResourceDetails"
             }
           }
         ],

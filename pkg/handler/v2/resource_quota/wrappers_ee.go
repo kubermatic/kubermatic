@@ -23,48 +23,48 @@ import (
 	"net/http"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
+	resourcequota "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func getResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter,
 	quotaProvider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
-	return resourcequotas.GetResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
+	return resourcequota.GetResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
 }
 
 func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
-	return resourcequotas.GetResourceQuota(ctx, request, provider)
+	return resourcequota.GetResourceQuota(ctx, request, provider)
 }
 
 func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
-	return resourcequotas.ListResourceQuotas(ctx, request, provider)
+	return resourcequota.ListResourceQuotas(ctx, request, provider)
 }
 
 func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.CreateResourceQuota(ctx, request, provider)
+	return resourcequota.CreateResourceQuota(ctx, request, provider)
 }
 
 func patchResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.PatchResourceQuota(ctx, request, provider)
+	return resourcequota.PatchResourceQuota(ctx, request, provider)
 }
 
 func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequotas.DeleteResourceQuota(ctx, request, provider)
+	return resourcequota.DeleteResourceQuota(ctx, request, provider)
 }
 
 func DecodeResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeResourceQuotaReq(r)
+	return resourcequota.DecodeResourceQuotaReq(r)
 }
 
 func DecodeListResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeListResourceQuotaReq(r)
+	return resourcequota.DecodeListResourceQuotaReq(r)
 }
 
 func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodeCreateResourceQuotaReq(r)
+	return resourcequota.DecodeCreateResourceQuotaReq(r)
 }
 
 func DecodePatchResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequotas.DecodePatchResourceQuotaReq(r)
+	return resourcequota.DecodePatchResourceQuotaReq(r)
 }

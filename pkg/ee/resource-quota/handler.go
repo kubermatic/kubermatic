@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resource_quota
+package resourcequota
 
 import (
 	"context"
@@ -75,6 +75,7 @@ type patchResourceQuota struct {
 	Name string `json:"quota_name"`
 
 	// in: body
+	// required: true
 	Body kubermaticv1.ResourceDetails
 }
 

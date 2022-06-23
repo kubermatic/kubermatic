@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resource_quota
+package resourcequota
 
 import (
 	"context"

@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 // NewPatchResourceQuotaParams creates a new PatchResourceQuotaParams object,
@@ -59,8 +61,8 @@ func NewPatchResourceQuotaParamsWithHTTPClient(client *http.Client) *PatchResour
 */
 type PatchResourceQuotaParams struct {
 
-	// Patch.
-	Patch interface{}
+	// Body.
+	Body *models.ResourceDetails
 
 	// QuotaName.
 	Name string
@@ -118,15 +120,15 @@ func (o *PatchResourceQuotaParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithPatch adds the patch to the patch resource quota params
-func (o *PatchResourceQuotaParams) WithPatch(patch interface{}) *PatchResourceQuotaParams {
-	o.SetPatch(patch)
+// WithBody adds the body to the patch resource quota params
+func (o *PatchResourceQuotaParams) WithBody(body *models.ResourceDetails) *PatchResourceQuotaParams {
+	o.SetBody(body)
 	return o
 }
 
-// SetPatch adds the patch to the patch resource quota params
-func (o *PatchResourceQuotaParams) SetPatch(patch interface{}) {
-	o.Patch = patch
+// SetBody adds the body to the patch resource quota params
+func (o *PatchResourceQuotaParams) SetBody(body *models.ResourceDetails) {
+	o.Body = body
 }
 
 // WithName adds the quotaName to the patch resource quota params
@@ -147,8 +149,8 @@ func (o *PatchResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-	if o.Patch != nil {
-		if err := r.SetBodyParam(o.Patch); err != nil {
+	if o.Body != nil {
+		if err := r.SetBodyParam(o.Body); err != nil {
 			return err
 		}
 	}
