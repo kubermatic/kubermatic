@@ -44,6 +44,7 @@ const (
 var (
 	userconfig          string
 	ipFamily            string
+	cni                 string
 	skipNodes           bool
 	skipHostNetworkPods bool
 )
@@ -51,6 +52,7 @@ var (
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
+	flag.StringVar(&cni, "cni", "", "CNI cilium|canal")
 	flag.BoolVar(&skipNodes, "skipNodes", true, "Set false to test nodes")
 	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
 }

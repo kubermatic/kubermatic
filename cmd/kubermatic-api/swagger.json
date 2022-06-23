@@ -13583,6 +13583,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13594,13 +13601,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -23499,7 +23499,7 @@
           "x-go-name": "Backups"
         },
         "ipv6": {
-          "description": "enable ipv6 for the droplet",
+          "description": "DEPRECATED\nIPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.\nenable ipv6 for the droplet",
           "type": "boolean",
           "x-go-name": "IPv6"
         },

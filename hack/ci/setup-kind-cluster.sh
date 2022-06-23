@@ -23,6 +23,8 @@ fi
 
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
+WITH_WORKERS="${WITH_WORKERS:-}"
+WORKERS=''
 
 start_docker_daemon_ci
 
@@ -92,6 +94,20 @@ if [ -n "${DOCKER_REGISTRY_MIRROR_ADDR:-}" ]; then
   }
   appendTrap end_socat_process EXIT
 
+  if [ -n "${WITH_WORKERS}" ]; then
+    WORKERS='  - role: worker
+    # mount the socket
+    extraMounts:
+    - hostPath: /mirror
+      containerPath: /mirror
+  - role: worker
+    # mount the socket
+    extraMounts:
+    - hostPath: /mirror
+      containerPath: /mirror
+    '
+  fi
+
   cat << EOF > kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -102,6 +118,7 @@ nodes:
     extraMounts:
     - hostPath: /mirror
       containerPath: /mirror
+${WORKERS}
 containerdConfigPatches:
   # point to the soon-to-start local socat process
   - |-
@@ -116,7 +133,21 @@ EOF
   # because containerd/Docker doesn't support sockets for mirrors.
   docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
 else
-  kind create cluster --name "$KIND_CLUSTER_NAME"
+
+  if [ -n "${WITH_WORKERS}" ]; then
+    WORKERS='  - role: worker
+  - role: worker'
+  fi
+  cat << EOF > kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: "${KIND_CLUSTER_NAME}"
+nodes:
+  - role: control-plane
+${WORKERS}
+EOF
+
+  kind create cluster --config kind-config.yaml
 fi
 
 # This is required if the kindest version matches the user cluster version.

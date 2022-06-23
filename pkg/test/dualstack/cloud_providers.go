@@ -351,6 +351,30 @@ func (a hetzner) CloudSpec() models.CloudSpec {
 	}
 }
 
+type do struct{}
+
+var _ clusterSpec = do{}
+
+func (a do) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Digitalocean: &models.DigitaloceanNodeSpec{
+			Backups:    false,
+			IPV6:       true, // TODO: Could be set to false once MC is fixed.
+			Monitoring: false,
+			Size:       pointer.String("c-2"),
+		},
+	}
+}
+
+func (a do) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "do-fra1",
+		Digitalocean: &models.DigitaloceanCloudSpec{
+			Token: os.Getenv("DO_TOKEN"),
+		},
+	}
+}
+
 // operating systems
 
 func ubuntu() models.OperatingSystemSpec {

@@ -1424,6 +1424,8 @@ type DigitaloceanNodeSpec struct {
 	Size string `json:"size"`
 	// enable backups for the droplet
 	Backups bool `json:"backups"`
+	// DEPRECATED
+	// IPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.
 	// enable ipv6 for the droplet
 	IPv6 bool `json:"ipv6"`
 	// enable monitoring for the droplet
