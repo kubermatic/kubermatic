@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -89,7 +90,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	for _, cluster := range clusters {
 		for _, addon := range addons {
-			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables)
+			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", nil, variables)
 			if err != nil {
 				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
 			}
@@ -129,10 +130,32 @@ func TestNewTemplateData(t *testing.T) {
 			},
 		},
 	}
+	ipamAllocationList := kubermaticv1.IPAMAllocationList{
+		Items: []kubermaticv1.IPAMAllocation{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ipam-pool-1",
+				},
+				Spec: kubermaticv1.IPAMAllocationSpec{
+					Type: "prefix",
+					CIDR: "192.168.0.1/28",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ipam-pool-2",
+				},
+				Spec: kubermaticv1.IPAMAllocationSpec{
+					Type:      "range",
+					Addresses: []string{"192.168.0.1-192.168.0.8", "192.168.0.10-192.168.0.17"},
+				},
+			},
+		},
+	}
 
 	credentials := resources.Credentials{}
 
-	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", nil)
+	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", &ipamAllocationList, nil)
 	if err != nil {
 		t.Fatalf("Failed to create template data: %v", err)
 	}
@@ -140,4 +163,15 @@ func TestNewTemplateData(t *testing.T) {
 	if !templateData.Cluster.Features.Has(feature) {
 		t.Fatalf("Expected cluster features to contain %q, but does not.", feature)
 	}
+
+	assert.Equal(t, map[string]IPAMAllocation{
+		"ipam-pool-1": {
+			Type: "prefix",
+			CIDR: "192.168.0.1/28",
+		},
+		"ipam-pool-2": {
+			Type:      "range",
+			Addresses: []string{"192.168.0.1-192.168.0.8", "192.168.0.10-192.168.0.17"},
+		},
+	}, templateData.Cluster.Network.IPAMAllocations)
 }

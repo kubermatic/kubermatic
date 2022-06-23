@@ -317,12 +317,21 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		}
 	}
 
+	// listing IPAM allocations for cluster
+	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+	if r.Client != nil {
+		if err := r.Client.List(ctx, ipamAllocationList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+			return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
+		}
+	}
+
 	data, err := addonutils.NewTemplateData(
 		cluster,
 		credentials,
 		string(kubeconfig),
 		clusterIP,
 		dnsResolverIP,
+		ipamAllocationList,
 		variables,
 	)
 	if err != nil {
