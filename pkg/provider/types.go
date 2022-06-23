@@ -1305,11 +1305,11 @@ type ResourceQuotaProvider interface {
 	// is unsafe in a sense that it uses privileged account to update the resource
 	CreateUnsecured(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error
 
-	// UpdateUnsecured updates an existing resource quota with new quota.
+	// UpdateUnsecured updates an existing resource quota.
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error
+	UpdateUnsecured(ctx context.Context, updatedQuota *kubermaticv1.ResourceQuota) error
 
 	// DeleteUnsecured removes an existing resource quota.
 	//

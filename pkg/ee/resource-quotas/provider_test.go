@@ -30,8 +30,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quotas"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -262,52 +260,6 @@ func TestProviderCreateResourceQuota(t *testing.T) {
 			}
 			if rq.Spec.Quota.Storage.Value() != tc.quota.Storage.Value() {
 				t.Fatalf("wrong storage quantity")
-			}
-		})
-	}
-}
-
-func TestProviderUpdateResourceQuota(t *testing.T) {
-	t.Parallel()
-	testcases := []struct {
-		name          string
-		exisingObject ctrlruntimeclient.Object
-		newQuota      kubermaticv1.ResourceDetails
-	}{
-		{
-			name: "scenario 1: update existing resource quota",
-			exisingObject: &kubermaticv1.ResourceQuota{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("project-%s", projectName),
-					Namespace: resources.KubermaticNamespace,
-				},
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
-						Name: projectName,
-						Kind: "project",
-					},
-					Quota: createNewQuotaHelper(10),
-				},
-			},
-			newQuota: createNewQuotaHelper(20),
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			rqProvider := createResourceProviderHelper([]ctrlruntimeclient.Object{tc.exisingObject})
-
-			err := rqProvider.UpdateUnsecured(context.Background(), tc.exisingObject.GetName(), tc.newQuota)
-			if err != nil {
-				t.Fatal(err)
-			}
-			rq, err := rqProvider.GetUnsecured(context.Background(), tc.exisingObject.GetName())
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !cmp.Equal(rq.Spec.Quota, tc.newQuota) {
-				t.Fatalf("%v", cmp.Diff(rq.Spec.Quota, tc.newQuota))
 			}
 		})
 	}

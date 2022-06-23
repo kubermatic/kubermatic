@@ -91,7 +91,7 @@ func CreateResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provide
 	}
 }
 
-func UpdateResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider) endpoint.Endpoint {
+func PatchResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -101,7 +101,7 @@ func UpdateResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provide
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		err = updateResourceQuota(ctx, req, provider)
+		err = patchResourceQuota(ctx, req, provider)
 		if err != nil {
 			return nil, err
 		}

@@ -122,19 +122,8 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 	return nil
 }
 
-func (p *ResourceQuotaProvider) UpdateUnsecured(ctx context.Context, name string, newQuota kubermaticv1.ResourceDetails) error {
-	rq, err := p.GetUnsecured(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	rq.Spec.Quota = newQuota
-
-	if err := p.privilegedClient.Update(ctx, rq); err != nil {
-		return err
-	}
-
-	return nil
+func (p *ResourceQuotaProvider) UpdateUnsecured(ctx context.Context, rq *kubermaticv1.ResourceQuota) error {
+	return p.privilegedClient.Update(ctx, rq)
 }
 
 func (p *ResourceQuotaProvider) DeleteUnsecured(ctx context.Context, name string) error {

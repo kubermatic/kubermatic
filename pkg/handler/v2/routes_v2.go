@@ -976,9 +976,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/quotas").
 		Handler(r.createResourceQuota())
 
-	mux.Methods(http.MethodPut).
+	mux.Methods(http.MethodPatch).
 		Path("/quotas/{quota_name}").
-		Handler(r.updateResourceQuota())
+		Handler(r.patchResourceQuota())
 
 	mux.Methods(http.MethodDelete).
 		Path("/quotas/{quota_name}").
@@ -6690,7 +6690,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route PUT /api/v2/quotas/{quota_name} resource quota admin updateResourceQuota
+//swagger:route PATCH /api/v2/quotas/{quota_name} resource quota admin patchResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -6702,13 +6702,13 @@ func (r Routing) createResourceQuota() http.Handler {
 //      200: empty
 //      401: empty
 //      403: empty
-func (r Routing) updateResourceQuota() http.Handler {
+func (r Routing) patchResourceQuota() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(resourcequota.UpdateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		resourcequota.DecodeUpdateResourceQuotasReq,
+		)(resourcequota.PatchResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodePatchResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

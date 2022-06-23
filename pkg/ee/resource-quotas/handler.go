@@ -27,8 +27,12 @@ package resourcequotas
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -38,7 +42,6 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // swagger:parameters getResourceQuota deleteResourceQuota
@@ -70,17 +73,13 @@ type createResourceQuota struct {
 }
 
 // swagger:parameters updateResourceQuota
-type updateResourceQuota struct {
+type patchResourceQuota struct {
 	// in: path
 	// required: true
 	Name string `json:"quota_name"`
 
 	// in: body
-	Body struct {
-		CPU     *resource.Quantity `json:"cpu,omitempty"`
-		Memory  *resource.Quantity `json:"memory,omitempty"`
-		Storage *resource.Quantity `json:"storage,omitempty"`
-	}
+	Patch json.RawMessage
 }
 
 func (m createResourceQuota) Validate() error {
@@ -126,17 +125,17 @@ func DecodeCreateResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func DecodeUpdateResourceQuotaReq(r *http.Request) (interface{}, error) {
-	var req updateResourceQuota
+func DecodePatchResourceQuotaReq(r *http.Request) (interface{}, error) {
+	var req patchResourceQuota
+	var err error
 
 	req.Name = mux.Vars(r)["quota_name"]
-
 	if req.Name == "" {
 		return nil, utilerrors.NewBadRequest("`quota_name` cannot be empty")
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, utilerrors.NewBadRequest(err.Error())
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -202,7 +201,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 	}, nil
 }
 
-func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv1.ResourceQuota, error) {
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv1.ResourceQuota, error) {
 	req, ok := request.(listResourceQuotas)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -221,15 +220,9 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		return nil, err
 	}
 
-	resp := make([]apiv1.ResourceQuota, len(resourceQuotaList.Items))
+	resp := make([]*apiv1.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
-		resp[idx] = apiv1.ResourceQuota{
-			Name:        rq.Name,
-			SubjectKind: rq.Spec.Subject.Kind,
-			SubjectName: rq.Spec.Subject.Name,
-			Quota:       rq.Spec.Quota,
-			Status:      rq.Status,
-		}
+		resp[idx] = convertToAPIStruct(&rq)
 	}
 
 	return resp, nil
@@ -255,25 +248,69 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 	return nil
 }
 
-func UpdateResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	req, ok := request.(updateResourceQuota)
+func PatchResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	req, ok := request.(patchResourceQuota)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
-	newQuota := kubermaticv1.ResourceDetails{
-		CPU:     req.Body.CPU,
-		Memory:  req.Body.Memory,
-		Storage: req.Body.Storage,
+	resourceQuota, err := provider.GetUnsecured(ctx, req.Name)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return utilerrors.NewNotFound("ResourceQuota", req.Name)
+		}
+		return err
+	}
+	originalQuotaAPI := convertToAPIStruct(resourceQuota)
+
+	// patch
+	originalJSON, err := json.Marshal(originalQuotaAPI)
+	if err != nil {
+		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current quota: %v", err))
+	}
+	patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+	if err != nil {
+		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch quota: %v", err))
 	}
 
-	if err := provider.UpdateUnsecured(ctx, req.Name, newQuota); err != nil {
+	var patched *apiv1.ResourceQuota
+	err = json.Unmarshal(patchedJSON, &patched)
+	if err != nil {
+		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch quota: %v", err))
+	}
+
+	if patched.Name != resourceQuota.Name {
+		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing resource quota name is not allowed: %q to %q", resourceQuota.Name, patched.Name))
+	}
+	if patched.SubjectName != resourceQuota.Spec.Subject.Name {
+		return utilerrors.New(http.StatusBadRequest, "Changing resource quota subject name is not allowed")
+	}
+	if patched.SubjectKind != resourceQuota.Spec.Subject.Kind {
+		return utilerrors.New(http.StatusBadRequest, "Changing resource quota subject kind is not allowed")
+	}
+	if !cmp.Equal(patched.Status, resourceQuota.Status) {
+		return utilerrors.New(http.StatusBadRequest, "Changing resource quota status is not allowed")
+	}
+
+	resourceQuota.Spec.Quota = patched.Quota
+
+	if err := provider.UpdateUnsecured(ctx, resourceQuota); err != nil {
 		if apierrors.IsNotFound(err) {
 			return utilerrors.NewNotFound("ResourceQuota", req.Name)
 		}
 		return err
 	}
 	return nil
+}
+
+func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv1.ResourceQuota {
+	return &apiv1.ResourceQuota{
+		Name:        resourceQuota.Name,
+		SubjectName: resourceQuota.Spec.Subject.Name,
+		SubjectKind: resourceQuota.Spec.Subject.Kind,
+		Quota:       resourceQuota.Spec.Quota,
+		Status:      resourceQuota.Status,
+	}
 }
 
 func DeleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {

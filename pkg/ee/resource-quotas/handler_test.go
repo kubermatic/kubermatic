@@ -93,7 +93,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 1: list all resource quotas",
 			method:          "GET",
-			url:             "/api/v1/admin/quotas",
+			url:             "/api/v2/quotas",
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
@@ -114,7 +114,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 2: list filtered resource quotas",
 			method:          "GET",
-			url:             fmt.Sprintf("/api/v1/admin/quotas?subjectName=%s-1", projectName),
+			url:             fmt.Sprintf("/api/v2/quotas?subjectName=%s-1", projectName),
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
@@ -135,7 +135,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 3: get a single resource quota",
 			method:          "GET",
-			url:             fmt.Sprintf("/api/v1/admin/quotas/project-%s-1", projectName),
+			url:             fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
@@ -155,7 +155,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 4: get a non-existing single resource quota",
 			method:          "GET",
-			url:             "/api/v1/admin/quotas/project-non-existing",
+			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      404,
@@ -166,7 +166,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:   "scenario 5: create an existing resource quota",
 			method: "POST",
-			url:    "/api/v1/admin/quotas",
+			url:    "/api/v2/quotas",
 			body: `{
 				"subject": {
 					"kind": "project",
@@ -183,7 +183,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:   "scenario 6: create a new resource quota",
 			method: "POST",
-			url:    "/api/v1/admin/quotas",
+			url:    "/api/v2/quotas",
 			body: `{
 				"subject": {
 					"kind": "project",
@@ -204,9 +204,11 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 7: update an existing resource quota",
-			method: "PUT",
-			url:    fmt.Sprintf("/api/v1/admin/quotas/project-%s-1", projectName),
+			method: "PATCH",
+			url:    fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
 			body: `{
+				"subjectKind": "project",
+				"subjectName": "` + fmt.Sprintf("%s-1", projectName) + `",
 				"quota": {
 					"cpu": 10,
 					"memory": "64Gi",
@@ -222,9 +224,10 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 8: update a non-existing resource quota",
-			method: "PUT",
-			url:    "/api/v1/admin/quotas/project-non-existing",
+			method: "PATCH",
+			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
+				"name"
 				"quota": {
 					"cpu": 10,
 					"memory": "64Gi",
@@ -241,7 +244,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 9: delete an existing resource quota",
 			method:          "DELETE",
-			url:             fmt.Sprintf("/api/v1/admin/quotas/project-%s-1", projectName),
+			url:             fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      200,
@@ -252,7 +255,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 10: delete a non-existing resource quota",
 			method:          "DELETE",
-			url:             "/api/v1/admin/quotas/project-non-existing",
+			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
 			httpStatus:      404,
