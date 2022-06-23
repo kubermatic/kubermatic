@@ -21,7 +21,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +35,7 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 				Namespace: metav1.NamespaceSystem,
 			},
 		},
-		&policyv1beta1.PodDisruptionBudget{
+		&policyv1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.KonnectivityPodDisruptionBudgetName,
 				Namespace: metav1.NamespaceSystem,
