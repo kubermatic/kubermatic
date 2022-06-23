@@ -72,7 +72,7 @@ type createResourceQuota struct {
 	}
 }
 
-// swagger:parameters updateResourceQuota
+// swagger:parameters patchResourceQuota
 type patchResourceQuota struct {
 	// in: path
 	// required: true
