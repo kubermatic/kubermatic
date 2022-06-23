@@ -83,7 +83,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 					Args: []string{
 						"--logtostderr=true",
 						"-v=3",
-						"sync-forever=true",
+						"--sync-forever=true",
 						"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						fmt.Sprintf("--proxy-server-host=%s", kServerHost),
 						fmt.Sprintf("--proxy-server-port=%d", kServerPort),
