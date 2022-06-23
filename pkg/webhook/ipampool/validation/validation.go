@@ -166,6 +166,17 @@ func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldIPAMPool *kube
 		if dcOldConfig.Type != dcNewConfig.Type {
 			return errors.New("it's not allowed to update the allocation type for a datacenter")
 		}
+
+		switch dcOldConfig.Type {
+		case kubermaticv1.IPAMPoolAllocationTypeRange:
+			if dcOldConfig.AllocationRange != dcNewConfig.AllocationRange {
+				return errors.New("it's not allowed to update the allocation range for a datacenter")
+			}
+		case kubermaticv1.IPAMPoolAllocationTypePrefix:
+			if dcOldConfig.AllocationPrefix != dcNewConfig.AllocationPrefix {
+				return errors.New("it's not allowed to update the allocation prefix for a datacenter")
+			}
+		}
 	}
 
 	return nil
