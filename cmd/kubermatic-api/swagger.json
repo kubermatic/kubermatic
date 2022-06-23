@@ -19714,62 +19714,6 @@
           }
         }
       },
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "resource",
-          "quota",
-          "admin"
-        ],
-        "summary": "Updates an existing Resource Quota.",
-        "operationId": "updateResourceQuota",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "Name",
-            "name": "quota_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "cpu": {
-                  "$ref": "#/definitions/Quantity"
-                },
-                "memory": {
-                  "$ref": "#/definitions/Quantity"
-                },
-                "storage": {
-                  "$ref": "#/definitions/Quantity"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
       "delete": {
         "produces": [
           "application/json"
@@ -19790,6 +19734,35 @@
             "required": true
           }
         ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Updates an existing Resource Quota.",
+        "operationId": "patchResourceQuota",
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
