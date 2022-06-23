@@ -733,6 +733,14 @@ type fakeUserClusterConnection struct {
 	fakeDynamicClient ctrlruntimeclient.Client
 }
 
+func (f *fakeUserClusterConnection) GetK8sClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (kubernetesclientset.Interface, error) {
+	return nil, nil
+}
+
+func (f *fakeUserClusterConnection) GetClientConfig(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (*restclient.Config, error) {
+	return nil, nil
+}
+
 func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
 	return f.fakeDynamicClient, nil
 }

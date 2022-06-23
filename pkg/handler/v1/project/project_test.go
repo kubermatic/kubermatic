@@ -45,6 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -553,6 +554,14 @@ func TestListProjectMethod(t *testing.T) {
 
 type fakeUserClusterConnection struct {
 	fakeDynamicClient ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnection) GetK8sClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (kubernetesclientset.Interface, error) {
+	return nil, nil
+}
+
+func (f *fakeUserClusterConnection) GetClientConfig(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (*restclient.Config, error) {
+	return nil, nil
 }
 
 func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {

@@ -81,8 +81,6 @@ func getErrorResponse(err error) string {
 }
 
 func testCluster(ctx context.Context, token string, project *apiv1.Project, cluster *apiv1.Cluster, testClient *utils.TestClient, tc createCluster, t *testing.T) {
-	testTerminal(token, testClient, project, cluster, t)
-
 	sshKey, err := testClient.CreateUserSSHKey(project.ID, tc.sshKeyName, tc.publicKey)
 	if err != nil {
 		t.Fatalf("failed to get create SSH key: %v", err)
@@ -212,26 +210,4 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 	}
 
 	testClient.CleanupCluster(t, project.ID, tc.dc, cluster.ID)
-}
-
-func testTerminal(token string, testClient *utils.TestClient, project *apiv1.Project, cluster *apiv1.Cluster, t *testing.T) {
-	conn, err := testClient.ConnectClusterTerminal(token, cluster.ID, project.ID)
-	if err != nil {
-		t.Fatalf("failed to connect terminal: %v", err)
-	}
-	terminal := &Terminal{}
-	err = conn.ReadJSON(terminal)
-	if err != nil {
-		t.Fatalf("failed to read from the terminal: %v", err)
-	}
-	terminal.Operation = "stdin"
-	terminal.Data = "kubectl get nodes \n"
-	err = conn.WriteJSON(terminal)
-	if err != nil {
-		t.Fatalf("failed to write to the terminal: %v", err)
-	}
-	err = conn.ReadJSON(terminal)
-	if err != nil {
-		t.Fatalf("failed to read from the terminal: %v", err)
-	}
 }
