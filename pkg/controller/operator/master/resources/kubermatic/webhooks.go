@@ -194,3 +194,60 @@ func UserValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kuberma
 		}
 	}
 }
+
+func ResourceQuotaValidatingWebhookConfigurationCreator(ctx context.Context,
+	cfg *kubermaticv1.KubermaticConfiguration,
+	client ctrlruntimeclient.Client,
+) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return common.ResourceQuotaAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.ClusterScope
+
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "resourcequotas.kubermatic.k8c.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      common.WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-resourcequota"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{""},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
