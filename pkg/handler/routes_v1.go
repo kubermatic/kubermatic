@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
-	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v1/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/node"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/presets"
@@ -566,11 +565,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones").
 		Handler(r.listAlibabaZonesNoCredentials())
-
-	//
-	// Defines a set of kubernetes-dashboard-specific endpoints
-	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/proxy").
-		Handler(r.kubernetesDashboardProxy())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -3711,31 +3705,6 @@ func (r Routing) createClusterRole() http.Handler {
 		cluster.DecodeCreateClusterRoleReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
-	)
-}
-
-//
-//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
-//    using the /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/login
-//    endpoint.
-//
-//     Responses:
-//       default: empty
-func (r Routing) kubernetesDashboardProxy() http.Handler {
-	return kubernetesdashboard.ProxyEndpoint(
-		r.log,
-		middleware.TokenExtractor(r.tokenExtractors),
-		r.projectProvider,
-		r.privilegedProjectProvider,
-		r.userInfoGetter,
-		r.settingsProvider,
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
-			// client that allows access to the cluster namespace only
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		),
 	)
 }
 

@@ -88,7 +88,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.1.0",
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/web-terminal:0.2.0",
 					Command: []string{"/bin/bash", "-c", "--"},
 					Args:    []string{"while true; do sleep 30; done;"},
 					Env: []corev1.EnvVar{

@@ -105,6 +105,13 @@ numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
 # add a bit of setup time to bring up the project, tear it down again etc.
 ((maxDuration = $maxDuration + 30))
 
+# copy conformance junit into artifacts to process it in Prow
+function copy_junit {
+  echodate "Copying conformance results to ${ARTIFACTS}"
+  cp -r ${ARTIFACTS}/conformance/junit.*.xml ${ARTIFACTS}/
+}
+appendTrap copy_junit EXIT
+
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -client="${SETUP_MODE:-api}" \
   -name-prefix=prow-e2e \

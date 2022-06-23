@@ -42,9 +42,10 @@ import (
 
 // providersWithIPv6Enabled configures which providers have IPv6 enabled for all datacenters.
 var providersWithIPv6Enabled = map[kubermaticv1.ProviderType]struct{}{
-	kubermaticv1.AWSCloudProvider:   {},
-	kubermaticv1.AzureCloudProvider: {},
-	kubermaticv1.GCPCloudProvider:   {},
+	kubermaticv1.AWSCloudProvider:     {},
+	kubermaticv1.AzureCloudProvider:   {},
+	kubermaticv1.GCPCloudProvider:     {},
+	kubermaticv1.HetznerCloudProvider: {},
 }
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter.

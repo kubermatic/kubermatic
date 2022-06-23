@@ -38,6 +38,7 @@ func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermaticv
 		DeployCommand(logger, versions),
 		PrintCommand(),
 		VersionCommand(logger, versions),
+		MirrorImagesCommand(logger, versions),
 	)
 }
 

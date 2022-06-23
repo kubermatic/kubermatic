@@ -19,7 +19,9 @@ package test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"golang.org/x/oauth2"
 
@@ -88,6 +90,15 @@ type IssuerVerifier struct {
 // Extractor knows how to extract the ID token from the request.
 func (o *IssuerVerifier) Extract(_ *http.Request) (string, error) {
 	return IDToken, nil
+}
+
+func (o *IssuerVerifier) SetRedirectPath(path string) error {
+	u, err := url.Parse(o.redirectURI)
+	if err != nil {
+		return err
+	}
+	o.redirectURI = fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path)
+	return nil
 }
 
 // AuthCodeURL returns a URL to OpenID provider's consent page.

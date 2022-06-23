@@ -459,3 +459,18 @@ set_crds_version_annotation() {
     yq write --inplace --doc '*' "$filename" metadata.annotations.'"app.kubernetes.io/version"' "$version"
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
 }
+
+# go_test wraps running `go test` commands. The first argument needs to be file name
+# for a junit result file that will be generated if go-junit-report is present and
+# $ARTIFACTS is set. The remaining arguments are passed to `go test`.
+go_test() {
+  local junit_name="${1:-}"
+  shift
+
+  # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+  if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+    go test $@ 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
+  else
+    go test $@
+  fi
+}

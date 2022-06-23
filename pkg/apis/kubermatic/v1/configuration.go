@@ -233,6 +233,8 @@ type KubermaticUserClusterConfiguration struct {
 	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 	// MachineController configures the Machine Controller
 	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
+	// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -267,6 +269,18 @@ type MachineControllerConfiguration struct {
 	ImageRepository string `json:"imageRepository,omitempty"`
 	// ImageTag is used to override the Machine Controller image.
 	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+type OperatingSystemManager struct {
+	// ImageRepository is used to override the OperatingSystemManager image repository.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag is used to override the OperatingSystemManager image.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
 }
 

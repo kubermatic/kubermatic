@@ -2721,6 +2721,8 @@ const (
 	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
 	// PresetSeedCleanupFinalizer indicates that synced preset on seed clusters need cleanup.
 	PresetSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
+	// ResourceQuotaSeedCleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
+	ResourceQuotaSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
 )
 
 const (

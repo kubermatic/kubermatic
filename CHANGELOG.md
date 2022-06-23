@@ -1,5 +1,20 @@
 # Kubermatic 2.20
 
+## [v2.20.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.4)
+
+### Bugfixes
+
+- Fix addon variables not being persisted ([#10010](https://github.com/kubermatic/kubermatic/issues/10010)). During the KKP 2.20.0 upgrade, addon variables were removed by accident (i.e. `spec.variables` is set to `null` for all `Addon` resources) and need to be restored from the pre-migration backup.
+- Fix deprecated nodePortProxy annotations (in `spec.nodePortProxy.annotations` in a Seed object) being ignored ([#10008](https://github.com/kubermatic/kubermatic/issues/10008))
+- Fix probes, resources and allow overriding resource requests/limits for Konnectivity proxy via components override in the cluster resource ([#9911](https://github.com/kubermatic/kubermatic/issues/9911))
+
+### Misc
+
+- Add External Snapshotter for Openstack and vSphere CSI ([#10066](https://github.com/kubermatic/kubermatic/issues/10066))
+- Containerd container runtime mirror registries support for OSM ([#10134](https://github.com/kubermatic/kubermatic/issues/10134))
+- Update ingress-nginx to 1.2.1 ([#10036](https://github.com/kubermatic/kubermatic/issues/10036))
+
+
 ## [v2.20.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.3)
 
 ### Misc
@@ -114,6 +129,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.19
+
+## [v2.19.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.6)
+
+- Fix not referencing a custom CA bundle in vSphere CSI driver (regression from 2.18) ([#9989](https://github.com/kubermatic/kubermatic/issues/9989))
+- Fix probes, resources and allow overriding resource requests/limits for Konnectivity proxy via components override in the Cluster resource ([#9911](https://github.com/kubermatic/kubermatic/issues/9911))
+
+
+
 
 ## [v2.19.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.5)
 

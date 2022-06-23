@@ -134,6 +134,7 @@ func main() {
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{
+		Namespace: options.namespace,
 		BaseContext: func() context.Context {
 			return ctx
 		},
@@ -561,25 +562,25 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 			})
 		})
 	}
-
+	oidcConfiguration := common.OIDCConfiguration{
+		URL:                  options.oidcURL,
+		ClientID:             options.oidcIssuerClientID,
+		ClientSecret:         options.oidcIssuerClientSecret,
+		CookieHashKey:        options.oidcIssuerCookieHashKey,
+		CookieSecureMode:     options.oidcIssuerCookieSecureMode,
+		OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
+	}
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
 	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
-		common.OIDCConfiguration{
-			URL:                  options.oidcURL,
-			ClientID:             options.oidcIssuerClientID,
-			ClientSecret:         options.oidcIssuerClientSecret,
-			CookieHashKey:        options.oidcIssuerCookieHashKey,
-			CookieSecureMode:     options.oidcIssuerCookieSecureMode,
-			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
-		},
+		oidcConfiguration,
 		mainRouter)
 	r.RegisterV1Admin(v1Router)
 	r.RegisterV1Websocket(v1Router)
-	rv2.RegisterV2(v2Router, metrics)
+	rv2.RegisterV2(v2Router, options.featureGates.Enabled(features.OIDCKubeCfgEndpoint), oidcConfiguration)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

@@ -1435,3 +1435,40 @@ func ReconcileCDIv1beta1DataVolumes(ctx context.Context, namedGetters []NamedCDI
 
 	return nil
 }
+
+// KubermaticV1ResourceQuotaCreator defines an interface to create/update ResourceQuotas
+type KubermaticV1ResourceQuotaCreator = func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error)
+
+// NamedKubermaticV1ResourceQuotaCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ResourceQuotaCreatorGetter = func() (name string, create KubermaticV1ResourceQuotaCreator)
+
+// KubermaticV1ResourceQuotaObjectWrapper adds a wrapper so the KubermaticV1ResourceQuotaCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ResourceQuotaObjectWrapper(create KubermaticV1ResourceQuotaCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.ResourceQuota))
+		}
+		return create(&kubermaticv1.ResourceQuota{})
+	}
+}
+
+// ReconcileKubermaticV1ResourceQuotas will create and update the KubermaticV1ResourceQuotas coming from the passed KubermaticV1ResourceQuotaCreator slice
+func ReconcileKubermaticV1ResourceQuotas(ctx context.Context, namedGetters []NamedKubermaticV1ResourceQuotaCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ResourceQuotaObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ResourceQuota{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ResourceQuota %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}

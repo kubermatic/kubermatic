@@ -73,7 +73,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.4.1",
+					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.4.2",
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",

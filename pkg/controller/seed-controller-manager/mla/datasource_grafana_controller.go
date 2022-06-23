@@ -205,7 +205,11 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
-		return nil, err
+		// This fails very often because of racing between the controllers - can't get a grafana organization from a project before it gets assigned
+		// Once the organization controller adds the annotation to the project, we will reconcile again, so we skip reconciliation in this case
+		// This works around potential resources abuse documented in https://github.com/kubermatic/kubermatic/issues/9970
+		r.log.Warnf("failed to get grafana org from a project, waiting until the next reconciliation: %w", err)
+		return nil, nil
 	}
 	// set header from the very beginning so all other calls will be within this organization
 	grafanaClient.SetOrgIDHeader(org.ID)

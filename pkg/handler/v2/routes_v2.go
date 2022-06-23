@@ -53,10 +53,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/user"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/webterminal"
 )
 
 // RegisterV2 declares all router paths for v2.
-func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
+func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg common.OIDCConfiguration) {
+	// Defines a set of HTTP endpoint for generating kubeconfig secret for a cluster that will contain OIDC tokens
+	if oidcKubeConfEndpoint {
+		mux.Methods(http.MethodGet).
+			Path("/kubeconfig/secret").
+			Handler(r.createOIDCKubeconfigSecret(oidcCfg))
+	}
+
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
@@ -632,9 +640,26 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values").
 		Handler(r.listNutanixCategoryValuesNoCredentials())
 
-	// Defines a set of kubernetes-dashboard-specific endpoints
-	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
-		Handler(r.kubernetesDashboardProxy())
+	kubernetesdashboard.
+		NewLoginHandler(oidcCfg, r.oidcIssuerVerifier, r.settingsProvider).
+		Middlewares(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+		).
+		Options(r.defaultServerOptions()...).
+		Install(mux)
+
+	kubernetesdashboard.
+		NewProxyHandler(r.log, r.settingsProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter).
+		RequestFuncs(
+			middleware.TokenExtractor(r.tokenExtractors),
+			middleware.SetSeedsGetter(r.seedsGetter)).
+		Middlewares(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		).
+		Options(r.defaultServerOptions()...).
+		Install(mux)
 
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
@@ -3870,32 +3895,6 @@ func (r Routing) listNutanixCategoryValuesNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
-//
-//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
-//    using the /api/v1/projects/{project_id}/clusters/{cluster_id}/dashboard/login
-//    endpoint.
-//
-//     Responses:
-//       default: empty
-func (r Routing) kubernetesDashboardProxy() http.Handler {
-	return kubernetesdashboard.ProxyEndpoint(
-		r.log,
-		middleware.TokenExtractor(r.tokenExtractors),
-		r.projectProvider,
-		r.privilegedProjectProvider,
-		r.userInfoGetter,
-		r.settingsProvider,
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
-			// client that allows access to the cluster namespace only
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		),
-	)
-}
-
 // swagger:route GET /api/v2/providers/azure/securitygroups azure listAzureSecurityGroups
 //
 // Lists available VM security groups
@@ -6593,13 +6592,39 @@ func (r Routing) getNetworkDefaults() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/kubeconfig/secret createOIDCKubeconfigSecret
+//
+//     Starts OIDC flow and generates kubeconfig, the generated config
+//     contains OIDC provider authentication info. The kubeconfig is stored in the secret.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       201: empty
+//       401: empty
+//       403: empty
+func (r Routing) createOIDCKubeconfigSecret(oidcCfg common.OIDCConfiguration) http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
+		)(webterminal.CreateOIDCKubeconfigSecretEndpoint(r.projectProvider, r.privilegedProjectProvider, r.oidcIssuerVerifier, oidcCfg)),
+		webterminal.DecodeCreateOIDCKubeconfig,
+		webterminal.EncodeOIDCKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/quota project getProjectQuota
 //
 //     Returns resource quota for a given project.
 //
 //     Produces:
 //     - application/json
-//
 //
 //     Responses:
 //       default: errorResponse

@@ -48,6 +48,9 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 			// can react to the changed CRDs (the seed-operator will do the same when
 			// updating CRDs on seed clusters)
 			annotations := crd.GetAnnotations()
+			if annotations == nil {
+				annotations = map[string]string{}
+			}
 			annotations[resources.VersionLabel] = versions.KubermaticCommit
 			crd.SetAnnotations(annotations)
 		}

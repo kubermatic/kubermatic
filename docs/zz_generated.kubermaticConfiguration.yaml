@@ -442,6 +442,16 @@ spec:
     # NodePortRange is the port range for customer clusters - this must match the NodePort
     # range of the seed cluster.
     nodePortRange: 30000-32767
+    # OperatingSystemManager configures the image repo and the tag version for osm deployment.
+    operatingSystemManager:
+      # ImageRepository is used to override the OperatingSystemManager image repository.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageRepository: ""
+      # ImageTag is used to override the OperatingSystemManager image.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageTag: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
@@ -449,7 +459,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.23.6
+    default: v1.23.8
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -517,8 +527,11 @@ spec:
       - v1.21.12
       - v1.22.5
       - v1.22.9
+      - v1.22.11
       - v1.23.6
+      - v1.23.8
       - v1.24.0
+      - v1.24.2
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
