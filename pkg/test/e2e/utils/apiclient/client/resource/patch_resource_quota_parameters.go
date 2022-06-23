@@ -58,6 +58,13 @@ func NewPatchResourceQuotaParamsWithHTTPClient(client *http.Client) *PatchResour
    Typically these are written to a http.Request.
 */
 type PatchResourceQuotaParams struct {
+
+	// Patch.
+	Patch interface{}
+
+	// QuotaName.
+	Name string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +118,28 @@ func (o *PatchResourceQuotaParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithPatch adds the patch to the patch resource quota params
+func (o *PatchResourceQuotaParams) WithPatch(patch interface{}) *PatchResourceQuotaParams {
+	o.SetPatch(patch)
+	return o
+}
+
+// SetPatch adds the patch to the patch resource quota params
+func (o *PatchResourceQuotaParams) SetPatch(patch interface{}) {
+	o.Patch = patch
+}
+
+// WithName adds the quotaName to the patch resource quota params
+func (o *PatchResourceQuotaParams) WithName(quotaName string) *PatchResourceQuotaParams {
+	o.SetName(quotaName)
+	return o
+}
+
+// SetName adds the quotaName to the patch resource quota params
+func (o *PatchResourceQuotaParams) SetName(quotaName string) {
+	o.Name = quotaName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *PatchResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +147,16 @@ func (o *PatchResourceQuotaParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
+	if o.Patch != nil {
+		if err := r.SetBodyParam(o.Patch); err != nil {
+			return err
+		}
+	}
+
+	// path param quota_name
+	if err := r.SetPathParam("quota_name", o.Name); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

@@ -19792,6 +19792,22 @@
         ],
         "summary": "Updates an existing Resource Quota.",
         "operationId": "patchResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
