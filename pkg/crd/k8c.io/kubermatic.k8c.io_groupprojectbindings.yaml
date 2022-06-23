@@ -54,7 +54,7 @@ spec:
               group:
                 description: Group is the group name that is bound to the given project.
                 type: string
-              project:
+              projectID:
                 description: ProjectID is the ID of the target project.
                 type: string
               role:
@@ -69,7 +69,7 @@ spec:
                 type: string
             required:
             - group
-            - project
+            - projectID
             - role
             type: object
         type: object
