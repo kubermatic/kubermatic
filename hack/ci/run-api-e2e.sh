@@ -31,6 +31,7 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export SETUP_MODE=api
 
 source hack/ci/setup-kind-cluster.sh
 
