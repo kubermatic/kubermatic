@@ -29287,7 +29287,7 @@
           "x-go-name": "SubjectName"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ResourceQuotaStatus": {
       "type": "object",
