@@ -55,6 +55,13 @@ spec:
                 description: Email is the email address of this user. Emails must
                   be globally unique across all KKP users.
                 type: string
+              groups:
+                description: Groups holds the information to which groups the user
+                  belongs to. Set automatically when logging in to the KKP API, and
+                  used by the KKP API.
+                items:
+                  type: string
+                type: array
               id:
                 description: 'ID is an unnused legacy field. Deprecated: do not set
                   this field anymore.'
