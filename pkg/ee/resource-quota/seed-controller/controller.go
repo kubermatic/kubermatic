@@ -53,6 +53,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+var ControllerName = "resource-quota-seed-controller"
+
 type reconciler struct {
 	log                     *zap.SugaredLogger
 	workerNameLabelSelector labels.Selector
@@ -60,36 +62,7 @@ type reconciler struct {
 	seedClient              ctrlruntimeclient.Client
 }
 
-func withClusterEventFilter() predicate.Predicate {
-	return predicate.Funcs{
-		// when cluster is created, no point to calculate yet as the machines are not created
-		CreateFunc: func(e event.CreateEvent) bool {
-			return false
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldCluster, ok := e.ObjectOld.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			newCluster, ok := e.ObjectNew.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			return !reflect.DeepEqual(oldCluster.Status.ResourceUsage, newCluster.Status.ResourceUsage)
-		},
-		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
-			return true
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
-		},
-	}
-}
-
-var ControllerName = "resource-quota-seed-controller"
-
-func Add(ctx context.Context,
-	mgr manager.Manager,
+func Add(mgr manager.Manager,
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
@@ -206,6 +179,32 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 	}
 
 	return nil
+}
+
+func withClusterEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		// when cluster is created, no point to calculate yet as the machines are not created
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldCluster, ok := e.ObjectOld.(*kubermaticv1.Cluster)
+			if !ok {
+				return false
+			}
+			newCluster, ok := e.ObjectNew.(*kubermaticv1.Cluster)
+			if !ok {
+				return false
+			}
+			return !reflect.DeepEqual(oldCluster.Status.ResourceUsage, newCluster.Status.ResourceUsage)
+		},
+		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+			return true
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
 }
 
 func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

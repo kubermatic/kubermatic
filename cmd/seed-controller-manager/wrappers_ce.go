@@ -34,3 +34,8 @@ func addFlags(fs *flag.FlagSet) {
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return provider.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
+
+func setupControllers(_ *controllerContext) error {
+	// NOP, no CE-only controllers exist
+	return nil
+}
