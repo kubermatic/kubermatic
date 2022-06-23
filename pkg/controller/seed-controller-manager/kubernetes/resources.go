@@ -407,6 +407,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		)
 	}
 
+	if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+		creators = append(creators, apiserver.FluentBitSecretCreator(data))
+	}
+
 	if data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive() {
 		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
 	}

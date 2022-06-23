@@ -109,41 +109,42 @@ rules:
 }
 
 const fluentBitConfigTemplate = `
-{{ if .Service }}
+{{- if .Service }}
 [SERVICE]
-{{ range $key, $value := .Service }}
+{{- range $key, $value := .Service }}
     {{ $key }}      {{ $value }}
-{{ end }}
-{{ endif }}
+{{- end }}
+{{- end }}
 
 [INPUT]
     Name    tail
     Path    /var/log/kubernetes/audit/audit.log
     DB      /var/log/kubernetes/audit/fluentbit.db
 
-{{ if .Filters }}
-{{ range $filter := .Filters }}
+{{- if .Filters }}
+{{- range $filter := .Filters }}
 [FILTER]
-{{ range $key, $value := $filter }}
+{{- range $key, $value := $filter }}
     {{ $key }}      {{ $value }}
-{{ end }}
+{{- end }}
 
-{{ end }}
-{{ endif }}
+{{- end }}
+{{- end }}
 
-{{ if .Outputs }}
-{{ range $output := .Outputs }}
+{{- if .Outputs }}
+{{- range $output := .Outputs }}
 [OUTPUT]
-{{ range $key, $value := $output }}
+{{- range $key, $value := $output }}
     {{ $key }}      {{ $value }}
-{{ end }}
+{{- end }}
 
-{{ end }}
-{{ else }}
+{{- end }}
+{{- else }}
 [OUTPUT]
     Name    stdout
     Match   *
-{{ endif }}
+{{- end }}
+
 `
 
 func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {

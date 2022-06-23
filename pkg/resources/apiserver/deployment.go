@@ -235,9 +235,9 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    auditLogsSidecarName,
-						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.2.2",
+						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.9.5",
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
-						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+						Args:    []string{"-c", "/etc/fluent-bit/fluent-bit.conf"},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      resources.AuditLogVolumeName,
