@@ -27,9 +27,9 @@ package resourcequotas
 import (
 	"fmt"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func buildNameFromSubject(subject v1.Subject) string {
+func buildNameFromSubject(subject kubermaticv1.Subject) string {
 	return fmt.Sprintf("%s-%s", subject.Kind, subject.Name)
 }
