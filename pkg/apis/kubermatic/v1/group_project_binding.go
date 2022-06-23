@@ -48,8 +48,8 @@ type GroupProjectBinding struct {
 type GroupProjectBindingSpec struct {
 	// Group is the group name that is bound to the given project.
 	Group string `json:"group"`
-	// Project is the name of the target project.
-	Project string `json:"project"`
+	// ProjectID is the ID of the target project.
+	ProjectID string `json:"project"`
 
 	// +kubebuilder:validation:Enum=viewers;editors;owners;
 
