@@ -36,7 +36,7 @@ import (
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 	clustertemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/clustertemplate/validation"
-	ipampoolmutation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/mutation"
+	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
@@ -218,7 +218,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup IPAMPool webhook
 
-	ipampoolmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+	ipampoolvalidation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// Here we go!

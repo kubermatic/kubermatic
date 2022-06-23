@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mutation
+package validation
 
 import (
 	"context"
@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for mutating Kubermatic IPAMPool CRD.
+// AdmissionHandler for validating Kubermatic IPAMPool CRD.
 type AdmissionHandler struct {
 	log              logr.Logger
 	decoder          *admission.Decoder
@@ -54,11 +54,11 @@ func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provid
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-ipampool", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-v1-ipampool", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("ipampool-mutation-handler")
+	h.log = l.WithName("ipampool-validation-handler")
 	return nil
 }
 
@@ -94,8 +94,8 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.validateUpdate(ctx, oldIPAMPool, ipamPool)
 		if err != nil {
-			h.log.Info("IPAMPool mutation failed", "error", err)
-			return webhook.Denied(fmt.Sprintf("IPAMPool mutation request %s cannot happen: %v", req.UID, err))
+			h.log.Info("IPAMPool validation failed", "error", err)
+			return webhook.Denied(fmt.Sprintf("IPAMPool update request %s cannot happen: %v", req.UID, err))
 		}
 
 	case admissionv1.Delete:
