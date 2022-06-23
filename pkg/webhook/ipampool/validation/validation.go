@@ -99,15 +99,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 	case admissionv1.Delete:
-		if err := h.decoder.Decode(req, ipamPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-
-		err := h.validateDelete(ctx, ipamPool, "")
-		if err != nil {
-			h.log.Info("IPAMPool deletion failed", "error", err)
-			return webhook.Denied(fmt.Sprintf("IPAMPool deletion request %s cannot happen: %v", req.UID, err))
-		}
+		// NOP we allow delete operation
 
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on IPAMPool resources", req.Operation))
@@ -204,7 +196,7 @@ func (h *AdmissionHandler) validateDelete(ctx context.Context, ipamPool *kuberma
 	}
 
 	if len(ipamAllocationsNamespaces) > 0 {
-		return fmt.Errorf("cannot delete IPAMPool for some datacenter because there is existing IPAMAllocation in namespaces (%s)", strings.Join(ipamAllocationsNamespaces, ", "))
+		return fmt.Errorf("cannot delete some datacenter IPAMPool because there is existing IPAMAllocation in namespaces (%s)", strings.Join(ipamAllocationsNamespaces, ", "))
 	}
 
 	return nil

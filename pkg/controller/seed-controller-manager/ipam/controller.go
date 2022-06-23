@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -44,6 +45,8 @@ import (
 
 const (
 	ControllerName = "kkp-ipam-controller"
+
+	cleanupFinalizer = "kubermatic.k8c.io/ipampool-cleanup"
 )
 
 // Reconciler stores all components required for the IPAM controller.
@@ -89,10 +92,28 @@ func Add(
 	}
 
 	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		ctx := context.Background()
+
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
+		// Cleanup of pool allocations in case of deletion + removing the finalizer for the final removal of the pool
+		if ipamPool.DeletionTimestamp != nil {
+			if err := reconciler.cleanupIPAMPoolAllocations(ctx, ipamPool); err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed to cleanup IPAMPool allocations: %w", err))
+				log.Errorw("Failed to cleanup IPAMPool allocations", zap.Error(err))
+			}
+			return []reconcile.Request{}
+		}
+
+		// Ensuring IPAMPool cleanup finalizer
+		if err := kuberneteshelper.TryAddFinalizer(ctx, reconciler, ipamPool, cleanupFinalizer); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to ensure that the cleanup finalizer exists on the IPAMPool: %w", err))
+			log.Errorw("Failed to ensure that the cleanup finalizer exists on the IPAMPool", zap.Error(err))
+			return []reconcile.Request{}
+		}
+
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
+		if err := mgr.GetClient().List(ctx, clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
@@ -111,6 +132,32 @@ func Add(
 	})
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClustersForIPAMPool); err != nil {
 		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) cleanupIPAMPoolAllocations(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
+	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+	err := r.Client.List(ctx, ipamAllocationList)
+	if err != nil {
+		return fmt.Errorf("failed to list IPAM allocations: %w", err)
+	}
+
+	for _, ipamAllocation := range ipamAllocationList.Items {
+		if ipamAllocation.Name == ipamPool.Name {
+			if err := r.Delete(ctx, &ipamAllocation); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return err
+			}
+		}
+	}
+
+	// Finally removing the finalizer for the final removal of the IPAMPool
+	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
+		return err
 	}
 
 	return nil
