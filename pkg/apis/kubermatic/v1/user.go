@@ -65,6 +65,9 @@ type UserSpec struct {
 	// Email is the email address of this user. Emails must be globally unique across
 	// all KKP users.
 	Email string `json:"email"`
+	// Groups holds the information to which groups the user belongs to. Set automatically when logging in to the
+	// KKP API, and used by the KKP API.
+	Groups []string `json:"groups,omitempty"`
 	// IsAdmin defines whether this user is an administrator with additional permissions.
 	// Admins can for example see all projects and clusters in the KKP dashboard.
 	// +kubebuilder:default=false
