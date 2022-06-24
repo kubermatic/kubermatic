@@ -227,7 +227,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 				location: {
 					Type:             allocationType,
 					PoolCIDR:         poolCIDR,
-					AllocationRange:  uint32(allocationValue),
+					AllocationRange:  uint64(allocationValue),
 					AllocationPrefix: uint8(allocationValue),
 				},
 			},
