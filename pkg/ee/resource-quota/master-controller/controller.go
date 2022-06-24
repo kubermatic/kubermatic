@@ -57,8 +57,7 @@ type reconciler struct {
 	seedClients  map[string]ctrlruntimeclient.Client
 }
 
-func Add(ctx context.Context,
-	mgr manager.Manager,
+func Add(mgr manager.Manager,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
