@@ -96,19 +96,13 @@ func Add(
 
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
-		// Cleanup of pool allocations in case of deletion + removing the finalizer for the final removal of the pool
-		if ipamPool.DeletionTimestamp != nil {
-			if err := reconciler.cleanupIPAMPoolAllocations(ctx, ipamPool); err != nil {
-				utilruntime.HandleError(fmt.Errorf("failed to cleanup IPAMPool allocations: %w", err))
-				log.Errorw("Failed to cleanup IPAMPool allocations", zap.Error(err))
-			}
+		wasIPAMPoolDeleted, err := reconciler.checkIPAMPoolCleanup(ctx, ipamPool)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to ensure IPAMPool cleanup: %w", err))
+			log.Errorw("Failed to ensure IPAMPool cleanup", zap.Error(err))
 			return []reconcile.Request{}
 		}
-
-		// Ensuring IPAMPool cleanup finalizer
-		if err := kuberneteshelper.TryAddFinalizer(ctx, reconciler, ipamPool, cleanupFinalizer); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to ensure that the cleanup finalizer exists on the IPAMPool: %w", err))
-			log.Errorw("Failed to ensure that the cleanup finalizer exists on the IPAMPool", zap.Error(err))
+		if wasIPAMPoolDeleted {
 			return []reconcile.Request{}
 		}
 
@@ -137,30 +131,40 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) cleanupIPAMPoolAllocations(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
-	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err := r.Client.List(ctx, ipamAllocationList)
-	if err != nil {
-		return fmt.Errorf("failed to list IPAM allocations: %w", err)
-	}
+func (r *Reconciler) checkIPAMPoolCleanup(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) (cleanupHappened bool, err error) {
+	// If IPAMPool was deleted, we need to delete all its allocations
+	if ipamPool.DeletionTimestamp != nil {
+		ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+		err := r.Client.List(ctx, ipamAllocationList)
+		if err != nil {
+			return false, fmt.Errorf("failed to list IPAM allocations: %w", err)
+		}
 
-	for _, ipamAllocation := range ipamAllocationList.Items {
-		if ipamAllocation.Name == ipamPool.Name {
-			if err := r.Delete(ctx, &ipamAllocation); err != nil {
-				if apierrors.IsNotFound(err) {
-					continue
+		for _, ipamAllocation := range ipamAllocationList.Items {
+			if ipamAllocation.Name == ipamPool.Name {
+				if err := r.Delete(ctx, &ipamAllocation); err != nil {
+					if apierrors.IsNotFound(err) {
+						continue
+					}
+					return false, err
 				}
-				return err
 			}
 		}
+
+		// Finally removing the finalizer for the final removal of the IPAMPool
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
+			return false, err
+		}
+
+		return true, nil
 	}
 
-	// Finally removing the finalizer for the final removal of the IPAMPool
-	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
-		return err
+	// Ensuring IPAMPool cleanup finalizer
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
+		return false, err
 	}
 
-	return nil
+	return false, nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
