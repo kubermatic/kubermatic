@@ -32,7 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -134,7 +134,7 @@ func Add(
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&networkingv1.Ingress{},
-		&policyv1beta1.PodDisruptionBudget{},
+		&policyv1.PodDisruptionBudget{},
 	}
 
 	for _, t := range namespacedTypesToWatch {

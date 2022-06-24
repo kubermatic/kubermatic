@@ -20,13 +20,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return resources.GatekeeperPodDisruptionBudgetName, func(podDisruption *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return resources.GatekeeperPodDisruptionBudgetName, func(podDisruption *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			podDisruption.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			podDisruption.Spec.MinAvailable = &intstr.IntOrString{
 				Type:   intstr.Int,

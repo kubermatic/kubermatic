@@ -91,8 +91,8 @@ func main() {
 			},
 			{
 				ResourceName:       "PodDisruptionBudget",
-				ImportAlias:        "policyv1beta1",
-				ResourceImportPath: "k8s.io/api/policy/v1beta1",
+				ImportAlias:        "policyv1",
+				ResourceImportPath: "k8s.io/api/policy/v1",
 				RequiresRecreate:   true,
 			},
 			{

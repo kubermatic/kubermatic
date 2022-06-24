@@ -49,7 +49,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -762,7 +762,7 @@ func TestLoadFiles(t *testing.T) {
 
 					for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetCreators(data) {
 						name, create := creatorGetter()
-						res, err := create(&policyv1beta1.PodDisruptionBudget{})
+						res, err := create(&policyv1.PodDisruptionBudget{})
 						if err != nil {
 							t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 						}
