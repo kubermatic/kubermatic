@@ -46,7 +46,7 @@ Please use the version selector at the top of the site to ensure you are using t
 
 ## Troubleshooting
 
-If you encounter issues [file an issue][1] or talk to us on the [#kubermatic channel][12] on the [Kubermatic Slack][15].
+If you encounter issues [file an issue][1] or talk to us on the [#kubermatic channel][12] on the [Kubermatic Community Slack][15] ([click here to join][16]).
 
 ## Contributing
 
@@ -140,8 +140,9 @@ See [the list of releases][3] to find out about feature changes.
 [3]: https://github.com/kubermatic/kubermatic/releases
 [4]: https://github.com/kubermatic/kubermatic/blob/master/CODE_OF_CONDUCT.md
 
-[12]: https://kubermatic.slack.com/messages/kubermatic
+[12]: https://kubermatic-community.slack.com/messages/kubermatic
 [13]: https://github.com/kubermatic/kubermatic/blob/master/Zenhub.md
-[15]: http://slack.kubermatic.io/
+[15]: http://kubermatic-community.slack.com
+[16]: https://join.slack.com/t/kubermatic-community/shared_invite/zt-vqjjqnza-dDw8BuUm3HvD4VGrVQ_ptw
 
 [21]: https://docs.kubermatic.com/kubermatic/
