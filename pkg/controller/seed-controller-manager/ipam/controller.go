@@ -96,20 +96,20 @@ func Add(
 
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
-		// Cleanup of pool allocations in case of deletion + removing the finalizer for the final removal of the pool
 		if ipamPool.DeletionTimestamp != nil {
-			if err := reconciler.cleanupIPAMPoolAllocations(ctx, ipamPool); err != nil {
-				utilruntime.HandleError(fmt.Errorf("failed to cleanup IPAMPool allocations: %w", err))
-				log.Errorw("Failed to cleanup IPAMPool allocations", zap.Error(err))
+			// removing the finalizer for the final removal of the IPAMPool
+			if err := kuberneteshelper.TryRemoveFinalizer(ctx, reconciler, ipamPool, cleanupFinalizer); err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed to remove the cleanup finalizer for the IPAMPool: %w", err))
+				log.Errorw("Failed to remove the cleanup finalizer for the IPAMPool", zap.Error(err))
+				return []reconcile.Request{}
 			}
-			return []reconcile.Request{}
-		}
-
-		// Ensuring IPAMPool cleanup finalizer
-		if err := kuberneteshelper.TryAddFinalizer(ctx, reconciler, ipamPool, cleanupFinalizer); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to ensure that the cleanup finalizer exists on the IPAMPool: %w", err))
-			log.Errorw("Failed to ensure that the cleanup finalizer exists on the IPAMPool", zap.Error(err))
-			return []reconcile.Request{}
+		} else {
+			// ensuring IPAMPool cleanup finalizer
+			if err := kuberneteshelper.TryAddFinalizer(ctx, reconciler, ipamPool, cleanupFinalizer); err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed to ensure that the cleanup finalizer exists on the IPAMPool: %w", err))
+				log.Errorw("Failed to ensure that the cleanup finalizer exists on the IPAMPool", zap.Error(err))
+				return []reconcile.Request{}
+			}
 		}
 
 		clusterList := &kubermaticv1.ClusterList{}
@@ -132,32 +132,6 @@ func Add(
 	})
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClustersForIPAMPool); err != nil {
 		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) cleanupIPAMPoolAllocations(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
-	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err := r.Client.List(ctx, ipamAllocationList)
-	if err != nil {
-		return fmt.Errorf("failed to list IPAM allocations: %w", err)
-	}
-
-	for _, ipamAllocation := range ipamAllocationList.Items {
-		if ipamAllocation.Name == ipamPool.Name {
-			if err := r.Delete(ctx, &ipamAllocation); err != nil {
-				if apierrors.IsNotFound(err) {
-					continue
-				}
-				return err
-			}
-		}
-	}
-
-	// Finally removing the finalizer for the final removal of the IPAMPool
-	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
-		return err
 	}
 
 	return nil
@@ -204,6 +178,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// Checking persistance of the IPAMPools for the cluster IPAMAllocations and cleaning up allocations if necessary
+	if err := r.ensureIPAMPoolAllocationsCleanup(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure allocations cleanup: %w", err)
+	}
+
 	// List IPAM Pools
 	ipamPoolList := &kubermaticv1.IPAMPoolList{}
 	err := r.Client.List(ctx, ipamPoolList)
@@ -320,6 +299,33 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 	err := r.Create(ctx, newClustersAllocation)
 	if err != nil {
 		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPoolName, cluster.Name, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureIPAMPoolAllocationsCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+	err := r.Client.List(ctx, ipamAllocationList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	if err != nil {
+		return fmt.Errorf("failed to list IPAM allocations for the cluster: %w", err)
+	}
+
+	for _, ipamAllocation := range ipamAllocationList.Items {
+		ipamPool := &kubermaticv1.IPAMPool{}
+		err = r.Client.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name}, ipamPool)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		if apierrors.IsNotFound(err) || ipamPool.DeletionTimestamp != nil {
+			if err := r.Delete(ctx, &ipamAllocation); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("failed to delete IPAM allocation for the cluster: %w", err)
+			}
+		}
 	}
 
 	return nil
