@@ -22,6 +22,9 @@ import (
 )
 
 const (
+	// ResourceQuotaKindName represents "Kind" defined in Kubernetes.
+	ResourceQuotaKindName = "ResourceQuota"
+
 	ResourceQuotaSubjectNameLabelKey = "subject-name"
 	ResourceQuotaSubjectKindLabelKey = "subject-kind"
 )
