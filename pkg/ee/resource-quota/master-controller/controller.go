@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -126,7 +126,7 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 		err := seedClient.Get(ctx, types.NamespacedName{Namespace: resourceQuota.Namespace, Name: resourceQuota.Name},
 			seedResourceQuota)
 		if err != nil {
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				continue
 			}
 			return fmt.Errorf("error getting seed %q resource quota: %w", seed, err)

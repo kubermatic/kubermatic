@@ -104,7 +104,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(rq.Status.LocalUsage, tc.expectedUsage) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Status.LocalUsage, tc.expectedUsage))
 			}
-
 		})
 	}
 }
