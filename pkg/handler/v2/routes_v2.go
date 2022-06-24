@@ -1008,7 +1008,6 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodDelete).
 		Path("/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
-
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
