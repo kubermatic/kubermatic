@@ -113,6 +113,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	spec.Cloud.ProviderName = providerName
 
+	// Kubernetes dashboard is enabled by default.
+	if spec.KubernetesDashboard.Enabled == nil {
+		spec.KubernetesDashboard.Enabled = pointer.Bool(true)
+	}
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
