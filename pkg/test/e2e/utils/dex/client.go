@@ -27,7 +27,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 )
 
 // Client is a Dex client that uses Dex' web UI to acquire an ID token.
@@ -67,24 +67,14 @@ func NewClient(clientID string, redirectURI string, providerURI string, log *zap
 }
 
 func (c *Client) Login(ctx context.Context, login string, password string) (string, error) {
-	var (
-		accessToken string
-		err         error
-	)
+	var accessToken string
 
-	if err := wait.PollImmediate(3*time.Second, 1*time.Minute, func() (bool, error) {
-		accessToken, err = c.tryLogin(ctx, login, password)
-		if err != nil {
-			c.log.Debugw("Failed to login", zap.Error(err))
-			return false, nil
-		}
+	err := wait.PollImmediate(3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
+		accessToken, transient = c.tryLogin(ctx, login, password)
+		return transient, nil
+	})
 
-		return true, nil
-	}); err != nil {
-		return "", err
-	}
-
-	return accessToken, nil
+	return accessToken, err
 }
 
 func (c *Client) tryLogin(ctx context.Context, login string, password string) (string, error) {
