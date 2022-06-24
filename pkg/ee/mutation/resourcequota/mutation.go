@@ -90,10 +90,10 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 
 func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
 	subjectName := resourceQuota.Spec.Subject.Name
-	existingRefs := resourceQuota.OwnerReferences
+	ownRefs := resourceQuota.OwnerReferences
 
 	// check if reference already exists
-	for _, owners := range existingRefs {
+	for _, owners := range ownRefs {
 		if owners.Kind == kubermaticv1.ProjectKindName && owners.Name == subjectName {
 			return nil
 		}
@@ -107,8 +107,8 @@ func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Cli
 	}
 
 	projectRef := resources.GetProjectRef(project)
-	refs := append(existingRefs, projectRef)
-	resourceQuota.SetOwnerReferences(refs)
+	ownRefs = append(ownRefs, projectRef)
+	resourceQuota.SetOwnerReferences(ownRefs)
 
 	return nil
 }
