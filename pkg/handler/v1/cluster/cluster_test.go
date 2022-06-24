@@ -1143,7 +1143,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version",
 			Body:             `{"spec":{"version":"9.9.10"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.9.10","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.9.10","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":true},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1174,7 +1174,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: tried to update cluster with older but compatible nodes",
 			Body:             `{"spec":{"version":"9.11.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":true},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1244,7 +1244,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 6: the admin John can update Bob's cluster version",
 			Body:             `{"spec":{"version":"9.9.10"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.9.10","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.9.10","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":true},"clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1443,7 +1443,7 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}, ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
 							Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
@@ -1481,7 +1481,7 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}, ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
 							Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
@@ -1527,7 +1527,7 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}, ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
 							Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
@@ -1585,7 +1585,7 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
@@ -1624,8 +1624,9 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
-						}, ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
+							Enabled: nil,
+						},
+						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
 							Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
 							Services:             kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
@@ -1670,7 +1671,7 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
@@ -1784,7 +1785,7 @@ func TestListClustersForProject(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}},
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
@@ -1830,7 +1831,7 @@ func TestListClustersForProject(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1886,7 +1887,7 @@ func TestListClustersForProject(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}},
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
@@ -1916,7 +1917,7 @@ func TestListClustersForProject(t *testing.T) {
 						},
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-							Enabled: false,
+							Enabled: nil,
 						}, ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
 							IPFamily:             kubermaticv1.IPFamilyIPv4,
 							Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},

@@ -178,7 +178,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Ensure that kubernetes-dashboard is completely removed, when disabled
-	if !cluster.Spec.KubernetesDashboard.Enabled {
+	if !cluster.Spec.KubernetesDashboard.IsEnabled() {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -312,7 +312,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		userclusterwebhook.DeploymentCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.KubernetesDashboard.IsEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
 	}
 
@@ -383,7 +383,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.ViewerKubeconfigCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.KubernetesDashboard.IsEnabled() {
 		creators = append(creators,
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
 		)

@@ -44,8 +44,8 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 
 	// Enable kubernetes-dashboard by default
 	var kubernetesDashboardEnabled = pointer.BoolPtr(true)
-	if apiCluster.Spec.KubernetesDashboard != nil {
-		kubernetesDashboardEnabled = &apiCluster.Spec.KubernetesDashboard.Enabled
+	if apiCluster.Spec.KubernetesDashboard != nil && apiCluster.Spec.KubernetesDashboard.Enabled != nil {
+		kubernetesDashboardEnabled = apiCluster.Spec.KubernetesDashboard.Enabled
 	}
 
 	spec := &kubermaticv1.ClusterSpec{
@@ -61,7 +61,7 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		EnableUserSSHKeyAgent:               userSSHKeysAgentEnabled,
 		EnableOperatingSystemManager:        apiCluster.Spec.EnableOperatingSystemManager,
 		KubernetesDashboard: kubermaticv1.KubernetesDashboard{
-			Enabled: *kubernetesDashboardEnabled,
+			Enabled: kubernetesDashboardEnabled,
 		},
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
