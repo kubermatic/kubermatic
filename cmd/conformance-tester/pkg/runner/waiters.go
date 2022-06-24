@@ -38,9 +38,10 @@ import (
 )
 
 func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, clusterName string) (*kubermaticv1.Cluster, error) {
-	log.Debug("Waiting for control plane to become ready...")
 	started := time.Now()
 	namespacedClusterName := types.NamespacedName{Name: clusterName}
+
+	log.Infow("Waiting for control plane to become ready...", "timeout", opts.ControlPlaneReadyWaitTimeout)
 
 	err := wait.Poll(3*time.Second, opts.ControlPlaneReadyWaitTimeout, func() (transient error, terminal error) {
 		newCluster := &kubermaticv1.Cluster{}
@@ -90,7 +91,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 		return nil, err
 	}
 
-	log.Debugf("Control plane became ready after %.2f seconds", time.Since(started).Seconds())
+	log.Infow("Control plane is ready", "duration", time.Since(started))
 	return cluster, nil
 }
 
@@ -108,8 +109,9 @@ func podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod, log *zap
 }
 
 func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, userClusterClient ctrlruntimeclient.Client, timeout time.Duration) error {
-	log.Info("Waiting for all pods to be ready...")
 	started := time.Now()
+
+	log.Infow("Waiting for all Pods to be ready...", "timeout", timeout)
 
 	err := wait.Poll(opts.UserClusterPollInterval, timeout, func() (transient error, terminal error) {
 		podList := &corev1.PodList{}
@@ -135,7 +137,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 		return err
 	}
 
-	log.Debugw("All pods became ready", "duration-in-seconds", time.Since(started).Seconds())
+	log.Infow("All pods became ready", "duration", time.Since(started))
 
 	return nil
 }
@@ -145,6 +147,8 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 // All errors are swallowed, only the timeout error is returned.
 func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
+
+	log.Infow("Waiting for machines to join cluster...", "timeout", timeout)
 
 	err := wait.Poll(10*time.Second, timeout, func() (transient error, terminal error) {
 		machineList := &clusterv1alpha1.MachineList{}
@@ -169,7 +173,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All machines joined the cluster", "duration-in-seconds", elapsed.Seconds())
+		log.Infow("All machines joined the cluster", "duration", elapsed)
 	}
 
 	return timeout - elapsed, err
@@ -179,6 +183,8 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 // condition. It swallows all errors except for the timeout.
 func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
+
+	log.Infow("Waiting for nodes to become ready...", "timeout", timeout)
 
 	err := wait.Poll(10*time.Second, timeout, func() (transient error, terminal error) {
 		nodeList := &corev1.NodeList{}
@@ -203,7 +209,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All nodes became ready", "duration-in-seconds", elapsed.Seconds())
+		log.Infow("All nodes became ready", "duration", elapsed)
 	}
 
 	return timeout - elapsed, err
