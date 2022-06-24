@@ -44,6 +44,7 @@ const (
 var (
 	userconfig          string
 	ipFamily            string
+	cni                 string
 	skipNodes           bool
 	skipHostNetworkPods bool
 )
@@ -51,6 +52,7 @@ var (
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
+	flag.StringVar(&cni, "cni", "", "CNI cilium|canal")
 	flag.BoolVar(&skipNodes, "skipNodes", true, "Set false to test nodes")
 	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
 }
@@ -101,11 +103,14 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 				}
 				addrs = append(addrs, addr.Address)
 			}
-			validate(t, node.Name, ipFamily, addrs)
+			validate(t, fmt.Sprintf("node '%s' status addresses", node.Name), ipFamily, addrs)
 		}
 
 		for _, node := range nodes.Items {
-			validate(t, node.Name, ipFamily, node.Spec.PodCIDRs)
+			if len(node.Spec.PodCIDRs) > 0 {
+				// in case of Cilium we can have 0 pod CIDRs as Cilium uses its own node IPAM
+				validate(t, fmt.Sprintf("node '%s' pod CIDRs", node.Name), ipFamily, node.Spec.PodCIDRs)
+			}
 		}
 	}
 
@@ -126,7 +131,7 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 			for _, addr := range pod.Status.PodIPs {
 				podAddrs = append(podAddrs, addr.IP)
 			}
-			validate(t, pod.Name, ipFamily, podAddrs)
+			validate(t, fmt.Sprintf("pod '%s' addresses", pod.Name), ipFamily, podAddrs)
 		}
 	}
 
@@ -153,12 +158,12 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 
 			switch svc.Spec.Type {
 			case corev1.ServiceTypeClusterIP:
-				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
+				validate(t, fmt.Sprintf("service '%s' cluster IPs", svc.Name), ipFamily, svc.Spec.ClusterIPs)
 			case corev1.ServiceTypeNodePort:
 			case corev1.ServiceTypeExternalName:
 			case corev1.ServiceTypeLoadBalancer:
-				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
-				validate(t, svc.Name, ipFamily, svc.Spec.ExternalIPs)
+				validate(t, fmt.Sprintf("service '%s' cluster IPs", svc.Name), ipFamily, svc.Spec.ClusterIPs)
+				validate(t, fmt.Sprintf("service '%s' external IPs", svc.Name), ipFamily, svc.Spec.ExternalIPs)
 			}
 		}
 	}

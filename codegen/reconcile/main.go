@@ -91,8 +91,8 @@ func main() {
 			},
 			{
 				ResourceName:       "PodDisruptionBudget",
-				ImportAlias:        "policyv1beta1",
-				ResourceImportPath: "k8s.io/api/policy/v1beta1",
+				ImportAlias:        "policyv1",
+				ResourceImportPath: "k8s.io/api/policy/v1",
 				RequiresRecreate:   true,
 			},
 			{
@@ -235,6 +235,11 @@ func main() {
 				ImportAlias:        "cdiv1beta1",
 				ResourceImportPath: "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1",
 				APIVersionPrefix:   "CDIv1beta1",
+			},
+			{
+				ResourceName:     "ResourceQuota",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
 			},
 		},
 	}

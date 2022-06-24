@@ -69,6 +69,7 @@ func NewTemplateData(
 	kubeconfig string,
 	dnsClusterIP string,
 	dnsResolverIP string,
+	ipamAllocations *kubermaticv1.IPAMAllocationList,
 	variables map[string]interface{},
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
@@ -112,6 +113,18 @@ func NewTemplateData(
 		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
 	}
 
+	var ipamAllocationsData map[string]IPAMAllocation
+	if ipamAllocations != nil {
+		ipamAllocationsData = make(map[string]IPAMAllocation, len(ipamAllocations.Items))
+		for _, ipamAllocation := range ipamAllocations.Items {
+			ipamAllocationsData[ipamAllocation.Name] = IPAMAllocation{
+				Type:      ipamAllocation.Spec.Type,
+				CIDR:      ipamAllocation.Spec.CIDR,
+				Addresses: ipamAllocation.Spec.Addresses,
+			}
+		}
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -145,6 +158,7 @@ func NewTemplateData(
 				PodCIDRIPv6:          cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR(),
 				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
 				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
+				IPAMAllocations:      ipamAllocationsData,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -230,6 +244,13 @@ type ClusterNetwork struct {
 	PodCIDRIPv6          string
 	NodeCIDRMaskSizeIPv4 int32
 	NodeCIDRMaskSizeIPv6 int32
+	IPAMAllocations      map[string]IPAMAllocation
+}
+
+type IPAMAllocation struct {
+	Type      kubermaticv1.IPAMPoolAllocationType
+	CIDR      kubermaticv1.SubnetCIDR
+	Addresses []string
 }
 
 type CNIPlugin struct {

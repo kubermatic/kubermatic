@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -198,6 +199,16 @@ type ClusterProvider interface {
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminClientForCustomerCluster(context.Context, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+
+	// GetAdminK8sClientForCustomerCluster returns a k8s go client to interact with all resources in the given cluster
+	//
+	// Note that the client you will get has admin privileges
+	GetAdminK8sClientForCustomerCluster(context.Context, *kubermaticv1.Cluster) (kubernetes.Interface, error)
+
+	// GetAdminClientConfigForCustomerCluster returns a client config
+	//
+	// Note that the client you will get has admin privileges.
+	GetAdminClientConfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error)
 
 	// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
@@ -1281,4 +1292,39 @@ type SeedProvider interface {
 
 	// CreateOrUpdateKubeconfigSecretForSeed creates or update seed kubeconfig
 	CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context, seed *kubermaticv1.Seed, kubeconfig []byte) error
+}
+
+type ResourceQuotaProvider interface {
+	// GetUnsecured returns a resource quota based on object's name.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error)
+
+	// Get returns a resource quota object based on name.
+	Get(ctx context.Context, userInfo *UserInfo, name, kind string) (*kubermaticv1.ResourceQuota, error)
+
+	// ListUnsecured returns a resource quota list.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	ListUnsecured(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error)
+
+	// CreateUnsecured creates a new resource quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	CreateUnsecured(ctx context.Context, subject kubermaticv1.Subject, quota kubermaticv1.ResourceDetails) error
+
+	// PatchUnsecured patches given resource quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	PatchUnsecured(ctx context.Context, oldResourceQuota, newResourceQuota *kubermaticv1.ResourceQuota) error
+
+	// DeleteUnsecured removes an existing resource quota.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	DeleteUnsecured(ctx context.Context, name string) error
 }

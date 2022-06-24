@@ -93,8 +93,8 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=hcloud",
 						"--allow-untagged-cloud",
-						"--allocate-node-cidrs=true",
-						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
+						// "false" as we use IPAM in kube-controller-manager
+						"--allocate-node-cidrs=false",
 					},
 					Env: []corev1.EnvVar{
 						{
@@ -127,6 +127,14 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					VolumeMounts: getVolumeMounts(),
 				},
 			}
+
+			if data.Cluster().IsDualStack() {
+				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+					Name:  "HCLOUD_INSTANCES_ADDRESS_FAMILY",
+					Value: "dualstack",
+				})
+			}
+
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
 			}

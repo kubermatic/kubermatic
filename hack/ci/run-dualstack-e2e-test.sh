@@ -30,7 +30,9 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export CNI="${CNI:-}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
+export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the Kubermatic namespace
@@ -58,10 +60,13 @@ export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-
 export OS_USER_DOMAIN_NAME="${OS_USER_DOMAIN_NAME:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
 export OS_PROJECT_NAME="${OS_PROJECT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
 export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
+export HETZNER_TOKEN="${HETZNER_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
+
+export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI
 
 echodate "Dualstack tests done."

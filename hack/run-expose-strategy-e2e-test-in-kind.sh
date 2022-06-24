@@ -39,7 +39,7 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.9}"
+USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.11}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
@@ -60,6 +60,10 @@ appendTrap clean_up EXIT
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon_ci
+  make download-gocache
+
+  echodate "Preloading the kindest/node image"
+  docker load --input /kindest.tar
 fi
 
 # build Docker images
@@ -79,6 +83,7 @@ make -C cmd/kubeletdnat-controller docker \
 make -C addons docker \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
+
 # the installer should be built for the target platform.
 rm _build/kubermatic-installer
 make _build/kubermatic-installer
@@ -199,11 +204,11 @@ retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
 echodate "Running tests..."
-go test -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
-  -ginkgo.v \
+go_test expose_strategy_e2e \
+  -tags "$KUBERMATIC_EDITION,e2e" \
+  -v ./pkg/test/e2e/expose-strategy \
   -kubeconfig "$HOME/.kube/config" \
   -kubernetes-version "$USER_CLUSTER_KUBERNETES_VERSION" \
   -datacenter byo-kubernetes \
-  -debug-log
-
+  -log-debug
 echodate "Done."

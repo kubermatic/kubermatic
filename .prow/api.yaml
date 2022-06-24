@@ -32,12 +32,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - "./hack/ci/run-api-e2e.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY

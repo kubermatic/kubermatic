@@ -49,9 +49,11 @@ beforeKubermaticSetup=$(nowms)
 source hack/ci/setup-kubermatic-in-kind.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-export PROVIDER_TO_TEST="${PROVIDER}"
+PROVIDER_TO_TEST="${PROVIDER}"
+TIMEOUT=30m
+
 if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
-  export EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
+  EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
@@ -64,7 +66,7 @@ if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
 fi
 
 if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
-  export EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
+  EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
     -vsphere-datacenter=dc-1
     -vsphere-cluster=cl-1
     -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
@@ -74,7 +76,8 @@ if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
 fi
 
 if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
-  export EXTRA_ARGS="-azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
+  TIMEOUT=45m
+  EXTRA_ARGS="-azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
     -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
     -azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
@@ -83,32 +86,14 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
 fi
 
 # run tests
-# use ginkgo binary by preference to have better output:
-# https://github.com/onsi/ginkgo/issues/633
-if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
-    -r \
-    --randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --timeout=30m \
-    --cover \
-    --trace \
-    --race \
-    --progress \
-    -v \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --debug-log \
-    --provider "${PROVIDER_TO_TEST}"
-else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
-    --ginkgo.randomizeAllSpecs \
-    --ginkgo.failOnPending \
-    --ginkgo.trace \
-    --ginkgo.progress \
-    --ginkgo.v \
-    --timeout=30m \
-    --kubeconfig "${HOME}/.kube/config" \
-    --debug-log \
-    --provider "${PROVIDER_TO_TEST}"
-fi
+echodate "Running CCM tests..."
+
+# for unknown reasons, log output is not shown live when using
+# "/..." in the package expression (the position of the -v flag
+# doesn't make a difference).
+go_test ccm_migration_${PROVIDER_TO_TEST} \
+  -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
+  -v \
+  -timeout 30m \
+  -kubeconfig "${HOME}/.kube/config" \
+  -provider "$PROVIDER_TO_TEST"

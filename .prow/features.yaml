@@ -29,12 +29,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -65,13 +65,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -102,13 +102,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -125,7 +125,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-dualstack-e2e
+  - name: pre-kubermatic-dualstack-e2e-cilium
     optional: true
     # run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow|go.mod|proxy|network).*"
     decorate: true
@@ -140,13 +140,15 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
+            - name: CNI
+              value: cilium
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -162,6 +164,47 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+
+  - name: pre-kubermatic-dualstack-e2e-canal
+    optional: true
+    # run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow|go.mod|proxy|network).*"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
+          imagePullPolicy: Always
+          command:
+            - "./hack/ci/run-dualstack-e2e-test.sh"
+          env:
+            - name: CNI
+              value: canal
+            - name: VERSION_TO_TEST
+              value: v1.23.8
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
 
   - name: pre-kubermatic-etcd-launcher-e2e
     run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow/)"
@@ -179,12 +222,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -213,7 +256,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
           securityContext:
@@ -241,12 +284,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.6
+              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -275,12 +318,50 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-9
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           env:
             - name: KUBERMATIC_EDITION
               value: ee
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-ipam-e2e
+    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/test/e2e/ipam/)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-digitalocean: "true"
+      preset-hetzner: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+          command:
+            - "./hack/ci/run-ipam-e2e-tests.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.23.6
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           securityContext:
             privileged: true
           resources:

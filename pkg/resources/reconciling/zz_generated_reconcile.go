@@ -17,7 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
@@ -400,7 +400,7 @@ func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreat
 }
 
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
-type PodDisruptionBudgetCreator = func(existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
+type PodDisruptionBudgetCreator = func(existing *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error)
 
 // NamedPodDisruptionBudgetCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedPodDisruptionBudgetCreatorGetter = func() (name string, create PodDisruptionBudgetCreator)
@@ -410,9 +410,9 @@ type NamedPodDisruptionBudgetCreatorGetter = func() (name string, create PodDisr
 func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*policyv1beta1.PodDisruptionBudget))
+			return create(existing.(*policyv1.PodDisruptionBudget))
 		}
-		return create(&policyv1beta1.PodDisruptionBudget{})
+		return create(&policyv1.PodDisruptionBudget{})
 	}
 }
 
@@ -428,7 +428,7 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1beta1.PodDisruptionBudget{}, true); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1.PodDisruptionBudget{}, true); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget %s/%s: %w", namespace, name, err)
 		}
 	}
@@ -1430,6 +1430,43 @@ func ReconcileCDIv1beta1DataVolumes(ctx context.Context, namedGetters []NamedCDI
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &cdiv1beta1.DataVolume{}, false); err != nil {
 			return fmt.Errorf("failed to ensure DataVolume %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1ResourceQuotaCreator defines an interface to create/update ResourceQuotas
+type KubermaticV1ResourceQuotaCreator = func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error)
+
+// NamedKubermaticV1ResourceQuotaCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ResourceQuotaCreatorGetter = func() (name string, create KubermaticV1ResourceQuotaCreator)
+
+// KubermaticV1ResourceQuotaObjectWrapper adds a wrapper so the KubermaticV1ResourceQuotaCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ResourceQuotaObjectWrapper(create KubermaticV1ResourceQuotaCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.ResourceQuota))
+		}
+		return create(&kubermaticv1.ResourceQuota{})
+	}
+}
+
+// ReconcileKubermaticV1ResourceQuotas will create and update the KubermaticV1ResourceQuotas coming from the passed KubermaticV1ResourceQuotaCreator slice
+func ReconcileKubermaticV1ResourceQuotas(ctx context.Context, namedGetters []NamedKubermaticV1ResourceQuotaCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ResourceQuotaObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ResourceQuota{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ResourceQuota %s/%s: %w", namespace, name, err)
 		}
 	}
 

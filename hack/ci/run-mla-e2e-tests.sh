@@ -62,5 +62,7 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running mla tests..."
-go test -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG"
+
+go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG"
+
 echodate "Tests completed successfully!"

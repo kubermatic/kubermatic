@@ -1424,6 +1424,8 @@ type DigitaloceanNodeSpec struct {
 	Size string `json:"size"`
 	// enable backups for the droplet
 	Backups bool `json:"backups"`
+	// DEPRECATED
+	// IPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.
 	// enable ipv6 for the droplet
 	IPv6 bool `json:"ipv6"`
 	// enable monitoring for the droplet
@@ -2721,6 +2723,8 @@ const (
 	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
 	// PresetSeedCleanupFinalizer indicates that synced preset on seed clusters need cleanup.
 	PresetSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
+	// ResourceQuotaSeedCleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
+	ResourceQuotaSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
 )
 
 const (

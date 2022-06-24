@@ -32,7 +32,7 @@ spec:
           value: /etc/kubernetes/kubeconfig/kubeconfig
         - name: PS1
           value: '\$ '
-        image: quay.io/kubermatic/util:2.1.0
+        image: quay.io/kubermatic/web-terminal:0.2.0
         name: web-terminal
         resources:
           limits:

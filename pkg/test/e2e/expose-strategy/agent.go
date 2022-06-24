@@ -66,7 +66,7 @@ func (a *AgentConfig) DeployAgentPod(ctx context.Context) error {
 		return fmt.Errorf("failed to create agent pod: %w", err)
 	}
 
-	if !e2eutils.CheckPodsRunningReady(ctx, a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, a.Client, a.Log, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
 		return errors.New("timeout occurred while waiting for agent pod readiness")
 	}
 

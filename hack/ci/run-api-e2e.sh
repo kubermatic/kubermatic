@@ -140,8 +140,8 @@ retry 2 kubectl apply -f user.yaml
 
 echodate "Running API E2E tests..."
 
-go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
-go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go_test kubermatic_api_create -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go_test kubermatic_api_e2e -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go_test kubermatic_api_logout -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 
 echodate "Tests completed successfully!"

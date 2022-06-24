@@ -1406,3 +1406,12 @@ type OpenstackSubnetPool struct {
 	// Prefixes is the list of subnet prefixes
 	Prefixes []string `json:"prefixes"`
 }
+
+// swagger:model ResourceQuota
+type ResourceQuota struct {
+	Name        string                           `json:"name"`
+	SubjectName string                           `json:"subject_name"`
+	SubjectKind string                           `json:"subject_kind"`
+	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
+	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
+}

@@ -46,11 +46,12 @@ import (
 )
 
 var operatingSystems = map[string]models.OperatingSystemSpec{
-	"centos":  centos(),
-	"flatcar": flatcar(),
-	"rhel":    rhel(),
-	"sles":    sles(),
-	"ubuntu":  ubuntu(),
+	"centos":     centos(),
+	"flatcar":    flatcar(),
+	"rhel":       rhel(),
+	"sles":       sles(),
+	"ubuntu":     ubuntu(),
+	"rockylinux": rockyLinux(),
 }
 
 var cloudProviders = map[string]clusterSpec{
@@ -58,6 +59,8 @@ var cloudProviders = map[string]clusterSpec{
 	"gcp":       gcp{},
 	"aws":       aws{},
 	"openstack": openstack{},
+	"hetzner":   hetzner{},
+	"do":        do{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -176,6 +179,47 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
+		{
+			cloudName: "hetzner",
+			osNames: []string{
+				"ubuntu",
+				"rockylinux",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
+		},
+		{
+			cloudName: "hetzner",
+			osNames: []string{
+				"ubuntu",
+				"rockylinux",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
+		}, {
+			cloudName: "do",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "do",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
 	}
 
 	retestBudget := 2
@@ -190,6 +234,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
+
+		if cni != test.cni {
+			t.Logf("skipping %s due to different cni setting (%s != %s)...", name, test.cni, cni)
+			continue
+		}
+
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		cniSpec := cnis[test.cni]

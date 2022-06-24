@@ -40,7 +40,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -133,7 +133,6 @@ func Add(
 	dnatControllerImage string,
 	machineControllerImageTag string,
 	machineControllerImageRepository string,
-
 	tunnelingAgentIP string,
 	caBundle *certificates.CABundle,
 
@@ -189,7 +188,7 @@ func Add(
 		&appsv1.StatefulSet{},
 		&appsv1.Deployment{},
 		&batchv1beta1.CronJob{},
-		&policyv1beta1.PodDisruptionBudget{},
+		&policyv1.PodDisruptionBudget{},
 		&autoscalingv1.VerticalPodAutoscaler{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},

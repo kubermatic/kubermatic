@@ -67,7 +67,7 @@ test: download-gocache run-tests build-tests
 
 .PHONY:  run-tests
 run-tests:
-	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
+	./hack/run-tests.sh
 
 .PHONY: build-tests
 build-tests:

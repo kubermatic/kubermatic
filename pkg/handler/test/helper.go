@@ -218,6 +218,7 @@ type newRoutingFunc func(
 	masterClient ctrlruntimeclient.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
+	resourceQuotaProvider provider.ResourceQuotaProvider,
 	features features.FeatureGate,
 ) http.Handler
 
@@ -294,6 +295,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	resourceQuotaProvider := resourceQuotaProviderFactory(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -598,6 +600,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeClient,
 		featureGatesProvider,
 		seedProvider,
+		resourceQuotaProvider,
 		featureGates,
 	)
 
@@ -731,6 +734,14 @@ func CreateTestSeedsGetter(ctx context.Context, client ctrlruntimeclient.Client)
 
 type fakeUserClusterConnection struct {
 	fakeDynamicClient ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnection) GetK8sClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (kubernetesclientset.Interface, error) {
+	return nil, nil
+}
+
+func (f *fakeUserClusterConnection) GetClientConfig(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (*restclient.Config, error) {
+	return nil, nil
 }
 
 func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
