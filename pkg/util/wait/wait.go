@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -28,14 +30,22 @@ type ConditionFunc func() (transient error, terminal error)
 type PollFunc func(interval, timeout time.Duration, condition k8swait.ConditionFunc) error
 
 func Poll(interval, timeout time.Duration, condition ConditionFunc) error {
-	return enrich(k8swait.Poll, interval, timeout, condition)
+	return enrich(k8swait.Poll, nil, interval, timeout, condition)
+}
+
+func PollLog(log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
+	return enrich(k8swait.Poll, log, interval, timeout, condition)
 }
 
 func PollImmediate(interval, timeout time.Duration, condition ConditionFunc) error {
-	return enrich(k8swait.PollImmediate, interval, timeout, condition)
+	return enrich(k8swait.PollImmediate, nil, interval, timeout, condition)
 }
 
-func enrich(upstream PollFunc, interval, timeout time.Duration, condition ConditionFunc) error {
+func PollImmediateLog(log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
+	return enrich(k8swait.PollImmediate, log, interval, timeout, condition)
+}
+
+func enrich(upstream PollFunc, log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
 	var lastErr error
 
 	waitErr := upstream(interval, timeout, func() (done bool, err error) {
@@ -45,6 +55,11 @@ func enrich(upstream PollFunc, interval, timeout time.Duration, condition Condit
 		}
 
 		lastErr = transient
+
+		// If a logger is given, we provide continuous feedback about the condition.
+		if transient != nil && log != nil {
+			log.Infow("Waiting", "status", transient.Error())
+		}
 
 		return transient == nil, nil
 	})

@@ -41,13 +41,13 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -218,19 +218,20 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	log = log.With("cluster", clusterName)
 
 	healthCheck := func() error {
-		return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-				log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
-				return false, nil
+				return err, nil
 			}
 
 			versions := kubermatic.NewDefaultVersions()
+
 			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
+			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
 			if len(missingConditions) > 0 {
-				log.Infof("Waiting for the following conditions: %v", missingConditions)
+				return fmt.Errorf("missing conditions: %v", missingConditions), nil
 			}
-			return success, nil
+
+			return nil, nil
 		})
 	}
 
@@ -369,10 +370,9 @@ func (r *TestRunner) executeTests(
 	//         dial tcp <ciclusternodeip>:<port>:
 	//           connect: connection refused
 	// To prevent this from stopping a conformance test, we simply retry a couple of times.
-	if err := wait.PollImmediate(1*time.Second, 15*time.Second, func() (done bool, err error) {
+	if err := wait.PollImmediate(1*time.Second, 15*time.Second, func() (transient error, terminal error) {
 		userClusterClient, err = r.opts.ClusterClientProvider.GetClient(ctx, cluster)
-
-		return err == nil, nil
+		return err, nil
 	}); err != nil {
 		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
