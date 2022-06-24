@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2020 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,27 +22,14 @@
    END OF TERMS AND CONDITIONS
 */
 
-package kubermaticapi
+package resourcequota
 
 import (
-	"context"
+	"fmt"
 
-	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
-	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
-	return eeprovider.SeedsGetterFactory(ctx, client, namespace)
-}
-
-func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
-	return provider.SeedKubeconfigGetterFactory(ctx, client)
-}
-
-func ResourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *resourcequotas.ResourceQuotaProvider {
-	return resourcequotas.NewResourceQuotaProvider(createMasterImpersonatedClient, privilegedClient)
+func buildNameFromSubject(subject kubermaticv1.Subject) string {
+	return fmt.Sprintf("%s-%s", subject.Kind, subject.Name)
 }

@@ -17797,6 +17797,47 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/quota": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Returns resource quota for a given project.",
+        "operationId": "getProjectQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "$ref": "#/definitions/ResourceQuota"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/aks/modes": {
       "get": {
         "produces": [
@@ -19546,6 +19587,231 @@
             "schema": {
               "$ref": "#/definitions/VersionList"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/quotas": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Gets a Resource Quota list.",
+        "operationId": "listResourceQuotas",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SubjectName",
+            "name": "subject_name",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "SubjectKind",
+            "name": "subject_kind",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ResourceQuota"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Creates a new Resource Quota.",
+        "operationId": "createResourceQuota",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "quota": {
+                  "$ref": "#/definitions/ResourceDetails"
+                },
+                "subject": {
+                  "$ref": "#/definitions/Subject"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/quotas/{quota_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Gets a specific Resource Quota.",
+        "operationId": "getResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ResourceQuota",
+            "schema": {
+              "$ref": "#/definitions/ResourceQuota"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Removes an existing Resource Quota.",
+        "operationId": "deleteResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "resource",
+          "quota",
+          "admin"
+        ],
+        "summary": "Updates an existing Resource Quota.",
+        "operationId": "patchResourceQuota",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "quota_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ResourceDetails"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -29050,6 +29316,22 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ResourceDetails": {
+      "type": "object",
+      "title": "ResourceDetails holds the CPU, Memory and Storage quantities.",
+      "properties": {
+        "cpu": {
+          "$ref": "#/definitions/Quantity"
+        },
+        "memory": {
+          "$ref": "#/definitions/Quantity"
+        },
+        "storage": {
+          "$ref": "#/definitions/Quantity"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "ResourceLabelMap": {
       "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -29065,6 +29347,43 @@
         "$ref": "#/definitions/Quantity"
       },
       "x-go-package": "k8s.io/api/core/v1"
+    },
+    "ResourceQuota": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "quota": {
+          "$ref": "#/definitions/ResourceDetails"
+        },
+        "status": {
+          "$ref": "#/definitions/ResourceQuotaStatus"
+        },
+        "subject_kind": {
+          "type": "string",
+          "x-go-name": "SubjectKind"
+        },
+        "subject_name": {
+          "type": "string",
+          "x-go-name": "SubjectName"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ResourceQuotaStatus": {
+      "type": "object",
+      "title": "ResourceQuotaStatus describes the current state of a resource quota.",
+      "properties": {
+        "globalUsage": {
+          "$ref": "#/definitions/ResourceDetails"
+        },
+        "localUsage": {
+          "$ref": "#/definitions/ResourceDetails"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ResourceRequirements": {
       "type": "object",

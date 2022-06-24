@@ -166,6 +166,8 @@ type ClientService interface {
 
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
+	GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectQuotaOK, error)
+
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
 
 	ImportClusterTemplate(params *ImportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ImportClusterTemplateCreated, error)
@@ -2930,6 +2932,44 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetProjectQuota returns resource quota for a given project
+*/
+func (a *Client) GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectQuotaOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetProjectQuotaParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getProjectQuota",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/quota",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetProjectQuotaReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetProjectQuotaOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetProjectQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
