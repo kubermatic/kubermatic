@@ -1080,8 +1080,13 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 					Name:      "project-thunderball",
 					Namespace: "kubermatic",
 					UID:       types.UID("abcdID"),
-					Labels: map[string]string{
-						kubermaticv1.ProjectIDLabelKey: "thunderball",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ProjectKindName,
+							Name:       "thunderball",
+							UID:        "thunderballID",
+						},
 					},
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
