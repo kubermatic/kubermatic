@@ -29,26 +29,44 @@ import (
 type ConditionFunc func() (transient error, terminal error)
 type PollFunc func(interval, timeout time.Duration, condition k8swait.ConditionFunc) error
 
+// Poll works identically to k8swait.Poll, with the exception that a condition
+// must return an error/nil to indicate a successful condition. In case a timeout
+// occurs, the transient error is returned as part of the k8swait.ErrWaitTimeout,
+// but note that the ErrWaitTimeout is being wrapped and the transient error only
+// included as a string.
 func Poll(interval, timeout time.Duration, condition ConditionFunc) error {
 	return enrich(k8swait.Poll, nil, interval, timeout, condition)
 }
 
+// PollLog is an extension of Poll and will, if a transient error occurs,
+// log that error on the INFO level using the given logger. Use this if you
+// want continuous feedback and make sure to set a sensible interval
+// like 5+ seconds.
 func PollLog(log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
 	return enrich(k8swait.Poll, log, interval, timeout, condition)
 }
 
+// PollImmediate works identically to k8swait.PollImmediate, with the exception
+// that a condition must return an error/nil to indicate a successful condition.
+// In case a timeout occurs, the transient error is returned as part of the
+// k8swait.ErrWaitTimeout, but note that the ErrWaitTimeout is being wrapped and
+// the transient error only included as a string.
 func PollImmediate(interval, timeout time.Duration, condition ConditionFunc) error {
 	return enrich(k8swait.PollImmediate, nil, interval, timeout, condition)
 }
 
+// PollImmediateLog is an extension of PollImmediate and will, if a transient
+// error occurs, log that error on the INFO level using the given logger.
+// Use this if you want continuous feedback and make sure to set a sensible interval
+// like 5+ seconds.
 func PollImmediateLog(log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
 	return enrich(k8swait.PollImmediate, log, interval, timeout, condition)
 }
 
-func enrich(upstream PollFunc, log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
+func enrich(poller PollFunc, log *zap.SugaredLogger, interval, timeout time.Duration, condition ConditionFunc) error {
 	var lastErr error
 
-	waitErr := upstream(interval, timeout, func() (done bool, err error) {
+	waitErr := poller(interval, timeout, func() (done bool, err error) {
 		transient, terminal := condition()
 		if terminal != nil {
 			return false, terminal

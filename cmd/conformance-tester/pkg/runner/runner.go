@@ -218,6 +218,8 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	log = log.With("cluster", clusterName)
 
 	healthCheck := func() error {
+		log.Info("Waiting for cluster to be successfully reconciled...")
+
 		return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 				return err, nil
