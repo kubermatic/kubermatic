@@ -79,10 +79,10 @@ func Add(mgr manager.Manager,
 
 		resourceQuotaSource := &source.Kind{Type: &kubermaticv1.ResourceQuota{}}
 		if err := resourceQuotaSource.InjectCache(mgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache into resourceQuotaSource for seed %s: %w", seedName, err)
+			return fmt.Errorf("failed to inject cache into resourceQuotaSource for seed %q: %w", seedName, err)
 		}
 		if err := c.Watch(resourceQuotaSource, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(resources.KubermaticNamespace)); err != nil {
-			return fmt.Errorf("failed to establish watch for clusters in seed %s: %w", seedName, err)
+			return fmt.Errorf("failed to establish watch for resource quotas in seed %q: %w", seedName, err)
 		}
 	}
 
@@ -100,7 +100,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get resourceQuota %s: %w", resourceQuota.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get resource quota %q: %w", resourceQuota.Name, err)
 	}
 
 	err := r.reconcile(ctx, resourceQuota, log)

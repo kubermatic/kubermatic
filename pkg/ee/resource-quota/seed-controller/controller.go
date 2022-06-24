@@ -111,7 +111,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get resourceQuota %s: %w", resourceQuota.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get resource quota %q: %w", resourceQuota.Name, err)
 	}
 
 	err := r.reconcile(ctx, resourceQuota, log)
