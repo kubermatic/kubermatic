@@ -18,6 +18,7 @@ package wait
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,6 +53,10 @@ func TestPollTimeout(t *testing.T) {
 
 	if !errors.Is(err, k8swait.ErrWaitTimeout) {
 		t.Fatalf("err should be a wrapped ErrWaitTimeout, but is %+v", err)
+	}
+
+	if !strings.Contains(err.Error(), "transient") {
+		t.Fatalf("err should have returned the transient error message, but was: %v", err)
 	}
 }
 
