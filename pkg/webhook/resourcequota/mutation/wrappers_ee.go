@@ -26,6 +26,7 @@ import (
 	eeresourcequotamutation "k8c.io/kubermatic/v2/pkg/ee/mutation/resourcequota"
 )
 
-func handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	return eeresourcequotamutation.Handle(ctx, req)
+func handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admission.Decoder,
+	logger logr.Logger, client ctrlruntimeclient.Client) webhook.AdmissionResponse {
+	return eeresourcequotamutation.Handle(ctx, req, decoder, logger, client)
 }

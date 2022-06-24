@@ -36,5 +36,5 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	return handle(ctx, req)
+	return handle(ctx, req, h.decoder, h.log, h.client)
 }
