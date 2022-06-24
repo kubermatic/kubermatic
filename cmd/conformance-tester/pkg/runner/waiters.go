@@ -18,6 +18,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,11 +28,12 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,19 +42,19 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 	started := time.Now()
 	namespacedClusterName := types.NamespacedName{Name: clusterName}
 
-	err := wait.Poll(3*time.Second, opts.ControlPlaneReadyWaitTimeout, func() (done bool, err error) {
+	err := wait.Poll(3*time.Second, opts.ControlPlaneReadyWaitTimeout, func() (transient error, terminal error) {
 		newCluster := &kubermaticv1.Cluster{}
 
 		if err := opts.SeedClusterClient.Get(ctx, namespacedClusterName, newCluster); err != nil {
 			if apierrors.IsNotFound(err) {
-				return false, nil
+				return err, nil
 			}
 		}
 
 		// Check for this first, because otherwise we instantly return as the cluster-controller did not
 		// create any pods yet
 		if !newCluster.Status.ExtendedHealth.AllHealthy() {
-			return false, nil
+			return errors.New("cluster is not all healthy"), nil
 		}
 
 		controlPlanePods := &corev1.PodList{}
@@ -61,16 +63,21 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 			controlPlanePods,
 			&ctrlruntimeclient.ListOptions{Namespace: newCluster.Status.NamespaceName},
 		); err != nil {
-			return false, fmt.Errorf("failed to list controlplane pods: %w", err)
+			return nil, fmt.Errorf("failed to list controlplane pods: %w", err)
 		}
 
+		unready := sets.NewString()
 		for _, pod := range controlPlanePods.Items {
 			if !util.PodIsReady(&pod) {
-				return false, nil
+				unready.Insert(pod.Name)
 			}
 		}
 
-		return true, nil
+		if unready.Len() == 0 {
+			return nil, nil
+		}
+
+		return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
 	})
 	// Timeout or other error
 	if err != nil {
@@ -104,26 +111,32 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 	log.Info("Waiting for all pods to be ready...")
 	started := time.Now()
 
-	err := wait.Poll(opts.UserClusterPollInterval, timeout, func() (done bool, err error) {
+	err := wait.Poll(opts.UserClusterPollInterval, timeout, func() (transient error, terminal error) {
 		podList := &corev1.PodList{}
 		if err := userClusterClient.List(ctx, podList); err != nil {
-			log.Warnw("Failed to load pod list while waiting until all pods are running", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list Pods in user cluster: %w", err), nil
 		}
 
+		unready := sets.NewString()
 		for _, pod := range podList.Items {
 			// Ignore pods failing kubelet admission (KKP #6185)
 			if !util.PodIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod, log) {
-				return false, nil
+				unready.Insert(pod.Name)
 			}
 		}
-		return true, nil
+
+		if unready.Len() == 0 {
+			return nil, nil
+		}
+
+		return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
 	})
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("All pods became ready after %.2f seconds", time.Since(started).Seconds())
+	log.Debugw("All pods became ready", "duration-in-seconds", time.Since(started).Seconds())
+
 	return nil
 }
 
@@ -133,25 +146,33 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
 
-	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	err := wait.Poll(10*time.Second, timeout, func() (transient error, terminal error) {
 		machineList := &clusterv1alpha1.MachineList{}
 		if err := client.List(ctx, machineList); err != nil {
-			log.Warnw("Failed to list machines", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list machines: %w", err), nil
 		}
 
+		missingMachines := sets.NewString()
 		for _, machine := range machineList.Items {
 			if machine.Status.NodeRef == nil || machine.Status.NodeRef.Name == "" {
-				log.Infow("Machine has no nodeRef yet", "machine", machine.Name)
-				return false, nil
+				missingMachines.Insert(machine.Name)
 			}
 		}
 
-		log.Infow("All machines got a Node", "duration-in-seconds", time.Since(startTime).Seconds())
-		return true, nil
+		if missingMachines.Len() == 0 {
+			return nil, nil
+		}
+
+		return fmt.Errorf("not all machines have joined: %v", missingMachines.List()), nil
 	})
 
-	return timeout - time.Since(startTime), err
+	elapsed := time.Since(startTime)
+
+	if err == nil {
+		log.Infow("All machines joined the cluster", "duration-in-seconds", elapsed.Seconds())
+	}
+
+	return timeout - elapsed, err
 }
 
 // WaitForNodesToBeReady waits for all nodes to be ready. It does so by checking the Nodes "Ready"
@@ -159,23 +180,31 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
 
-	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	err := wait.Poll(10*time.Second, timeout, func() (transient error, terminal error) {
 		nodeList := &corev1.NodeList{}
 		if err := client.List(ctx, nodeList); err != nil {
-			log.Warnw("Failed to list nodes", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list nodes: %w", err), nil
 		}
 
+		unready := sets.NewString()
 		for _, node := range nodeList.Items {
 			if !util.NodeIsReady(node) {
-				log.Infow("Node is not ready", "node", node.Name)
-				return false, nil
+				unready.Insert(node.Name)
 			}
 		}
 
-		log.Infow("All nodes got ready", "duration-in-seconds", time.Since(startTime).Seconds())
-		return true, nil
+		if unready.Len() == 0 {
+			return nil, nil
+		}
+
+		return fmt.Errorf("not all nodes are ready: %v", unready.List()), nil
 	})
 
-	return timeout - time.Since(startTime), err
+	elapsed := time.Since(startTime)
+
+	if err == nil {
+		log.Infow("All nodes became ready", "duration-in-seconds", elapsed.Seconds())
+	}
+
+	return timeout - elapsed, err
 }

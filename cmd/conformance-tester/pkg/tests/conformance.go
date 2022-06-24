@@ -30,6 +30,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
@@ -40,7 +41,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -313,15 +313,13 @@ func cleanupBeforeGinkgo(
 ) error {
 	log.Info("Removing non-default webhooks...")
 
-	if err := wait.PollImmediate(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
+	if err := wait.PollImmediate(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
 		if err := client.List(ctx, webhookList); err != nil {
-			log.Errorw("Failed to list webhooks", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list webhooks: %w", err), nil
 		}
 
-		remaining := 0
-
+		remaining := sets.NewString()
 		for _, webhook := range webhookList.Items {
 			if webhooksToKeep.Has(webhook.Name) {
 				continue
@@ -337,10 +335,14 @@ func cleanupBeforeGinkgo(
 				}
 			}
 
-			remaining++
+			remaining.Insert(webhook.Name)
 		}
 
-		return remaining == 0, nil
+		if remaining.Len() == 0 {
+			return nil, nil
+		}
+
+		return fmt.Errorf("could not delete all webhooks: %v", remaining.List()), nil
 	}); err != nil {
 		return err
 	}
