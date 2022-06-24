@@ -21,9 +21,9 @@ package mutation
 import (
 	"context"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
 	eeresourcequotamutation "k8c.io/kubermatic/v2/pkg/ee/mutation/resourcequota"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admission.Decoder,
