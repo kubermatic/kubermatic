@@ -259,7 +259,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(10, 0).UTC()},
-					BackupName:    "testbackup",
+					BackupName:    "testbackup.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -276,7 +276,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(100, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-40",
+					BackupName:    "testbackup-1970-01-01t00-01-40.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -284,7 +284,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(100, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-40",
+					BackupName:    "testbackup-1970-01-01t00-01-40.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -326,7 +326,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
+					BackupName:    "testbackup-1970-01-01t00-10-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -334,7 +334,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
+					BackupName:    "testbackup-1970-01-01t00-10-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -352,7 +352,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
+					BackupName:    "testbackup-1970-01-01t00-10-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -360,13 +360,13 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
+					BackupName:    "testbackup-1970-01-01t00-10-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(1200, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-20-00",
+					BackupName:    "testbackup-1970-01-01t00-20-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -385,7 +385,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(3600*24*15, 0).UTC()},
-					BackupName:    "testbackup-1970-01-16t00-00-00",
+					BackupName:    "testbackup-1970-01-16t00-00-00.db",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -404,7 +404,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(10, 0).UTC()},
-					BackupName:    "long-backup-config-name-abcdefghijk",
+					BackupName:    "long-backup-config-name-abcdefghijk.db",
 					JobName:       "testcluster-backup-long-backup-config-name-abcdefghijk-creaxxxx",
 					DeleteJobName: "testcluster-backup-long-backup-config-name-abcdefghijk-delexxxx",
 				},
@@ -484,13 +484,13 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-00",
+					BackupName:    "testbackup-1970-01-01t00-01-00.db",
 					JobName:       "testcluster-backup-testbackup-create-aaaa",
 					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-02-00",
+					BackupName:    "testbackup-1970-01-01t00-02-00.db",
 					JobName:       "testcluster-backup-testbackup-create-bbbb",
 					DeleteJobName: "testcluster-backup-testbackup-delete-bbbb",
 				},
@@ -499,14 +499,14 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-00",
+					BackupName:    "testbackup-1970-01-01t00-01-00.db",
 					JobName:       "testcluster-backup-testbackup-create-aaaa",
 					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
 					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-02-00",
+					BackupName:    "testbackup-1970-01-01t00-02-00.db",
 					JobName:       "testcluster-backup-testbackup-create-bbbb",
 					DeleteJobName: "testcluster-backup-testbackup-delete-bbbb",
 				},
@@ -522,21 +522,21 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-00",
+					BackupName:    "testbackup-1970-01-01t00-01-00.db",
 					JobName:       "testcluster-backup-testbackup-create-aaaa",
 					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
 					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(70, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-10",
+					BackupName:    "testbackup-1970-01-01t00-01-10.db",
 					JobName:       "testcluster-backup-testbackup-create-bbbb",
 					DeleteJobName: "testcluster-backup-testbackup-delete-bbbb",
 					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-02-00",
+					BackupName:    "testbackup-1970-01-01t00-02-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -550,7 +550,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -559,7 +559,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(70, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-10",
+					BackupName:         "testbackup-1970-01-01t00-01-10.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(80, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -568,7 +568,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-02-00",
+					BackupName:    "testbackup-1970-01-01t00-02-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -587,7 +587,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-00",
+					BackupName:    "testbackup-1970-01-01t00-01-00.db",
 					JobName:       "testcluster-backup-testbackup-create-aaaa",
 					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
 					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
@@ -599,7 +599,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-01-00",
+					BackupName:    "testbackup-1970-01-01t00-01-00.db",
 					JobName:       "testcluster-backup-testbackup-create-aaaa",
 					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
 					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
@@ -688,7 +688,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -697,7 +697,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -706,7 +706,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-03-00",
+					BackupName:    "testbackup-1970-01-01t00-03-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -715,7 +715,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -725,7 +725,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -734,7 +734,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-03-00",
+					BackupName:    "testbackup-1970-01-01t00-03-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -751,7 +751,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -763,7 +763,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -784,7 +784,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -794,7 +794,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -803,7 +803,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-cccc",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -815,7 +815,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -825,7 +825,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -835,7 +835,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-cccc",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -855,7 +855,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -871,7 +871,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				// unchanged
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -892,7 +892,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			existingBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
 				return kubermaticv1.BackupStatus{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
-					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					BackupName:         fmt.Sprintf("testbackup-%v.db", i),
 					JobName:            fmt.Sprintf("testcluster-backup-testbackup-%v-create", i),
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90+int64(i)*60, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -904,7 +904,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			expectedBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
 				result := kubermaticv1.BackupStatus{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
-					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					BackupName:         fmt.Sprintf("testbackup-%v.db", i),
 					JobName:            fmt.Sprintf("testcluster-backup-testbackup-%v-create", i),
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90+int64(i)*60, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -999,7 +999,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				// 3 backups with deletions marked as running, a 4th backup is only scheduled
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1009,7 +1009,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1019,7 +1019,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-cccc",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1029,7 +1029,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(240, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-04-00",
+					BackupName:    "testbackup-1970-01-01t00-04-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -1046,7 +1046,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				// result: 1st backup's deletion marked as completed, 2nd one's restarted, 3rd and 4th unchanged
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1058,7 +1058,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1069,7 +1069,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-cccc",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1079,7 +1079,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(240, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-04-00",
+					BackupName:    "testbackup-1970-01-01t00-04-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -1093,7 +1093,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				// 2 backups with deletions marked as running
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1103,7 +1103,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1123,7 +1123,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				// result: both backups' deletions marked as completed, and we reconcile after the retention period
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1135,7 +1135,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1154,7 +1154,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			existingBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
 				return kubermaticv1.BackupStatus{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
-					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					BackupName:         fmt.Sprintf("testbackup-%v.db", i),
 					JobName:            fmt.Sprintf("testcluster-backup-%v-create", i),
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150+int64(i)*60, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1172,7 +1172,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			expectedBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
 				result := kubermaticv1.BackupStatus{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
-					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					BackupName:         fmt.Sprintf("testbackup-%v.db", i),
 					JobName:            fmt.Sprintf("testcluster-backup-%v-create", i),
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150+int64(i)*60, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1261,7 +1261,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// 2 backups with backup jobs marked as completed
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1270,7 +1270,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1282,7 +1282,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// (just so we can test them with the same current time)
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-cccc",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(80, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1294,7 +1294,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-dddd",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(140, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1322,7 +1322,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1331,7 +1331,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1340,7 +1340,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-dddd",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(140, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1366,7 +1366,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// 2 backups with backup jobs marked as failed
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -1375,7 +1375,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -1395,7 +1395,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// backups unchanged
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -1404,7 +1404,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(120, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-02-00",
+					BackupName:         "testbackup-1970-01-01t00-02-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(150, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseFailed,
@@ -1425,7 +1425,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// one backup with deletion marked as completed, one with deletion marked as running, a 3rd backup is only scheduled
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(60, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-01-00",
+					BackupName:         "testbackup-1970-01-01t00-01-00.db",
 					JobName:            "testcluster-backup-testbackup-create-aaaa",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(90, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1437,7 +1437,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1447,7 +1447,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(240, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-04-00",
+					BackupName:    "testbackup-1970-01-01t00-04-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
@@ -1464,7 +1464,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				// result: 1st backup's job and status entry are deleted, other two unchanged
 				{
 					ScheduledTime:      &metav1.Time{Time: time.Unix(180, 0).UTC()},
-					BackupName:         "testbackup-1970-01-01t00-03-00",
+					BackupName:         "testbackup-1970-01-01t00-03-00.db",
 					JobName:            "testcluster-backup-testbackup-create-bbbb",
 					BackupFinishedTime: &metav1.Time{Time: time.Unix(210, 0).UTC()},
 					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
@@ -1474,7 +1474,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				},
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(240, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-04-00",
+					BackupName:    "testbackup-1970-01-01t00-04-00.db",
 					JobName:       "testcluster-backup-testbackup-create-cccc",
 					DeleteJobName: "testcluster-backup-testbackup-delete-cccc",
 				},
