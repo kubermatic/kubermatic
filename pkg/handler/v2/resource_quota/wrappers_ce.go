@@ -20,6 +20,7 @@ package resourcequota
 
 import (
 	"context"
+	"net/http"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -29,38 +30,38 @@ func getResourceQuotaForProject(_ context.Context, _ interface{}, _ provider.Pro
 	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
+func getResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]apiv2.ResourceQuota, error) {
+func listResourceQuotas(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) ([]apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 
-func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+func createResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) error {
 	return nil
 }
 
-func patchResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+func patchResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) error {
 	return nil
 }
 
-func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+func deleteResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) error {
 	return nil
 }
 
-func DecodeResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func DecodeListResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeListResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeCreateResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func DecodePatchResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodePatchResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
