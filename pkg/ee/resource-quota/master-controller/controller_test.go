@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package seedcontroller
+package mastercontroller
 
 import (
 	"context"
@@ -30,9 +30,9 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,37 +45,39 @@ import (
 )
 
 const rqName = "resourceQuota"
-const projectId = "project1"
 
 func TestReconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = kubermaticv1.AddToScheme(scheme)
 
-	workerSelector, err := workerlabel.LabelSelector("")
-	if err != nil {
-		t.Fatalf("failed to build worker-name selector: %v", err)
-	}
-
 	testCases := []struct {
 		name          string
 		requestName   string
-		resourceQuota *kubermaticv1.ResourceQuota
-		seedClient    ctrlruntimeclient.Client
 		expectedUsage kubermaticv1.ResourceDetails
+		masterClient  ctrlruntimeclient.Client
+		seedClients   map[string]ctrlruntimeclient.Client
 	}{
 		{
-			name:          "scenario 1: calculate rq local usage",
+			name:          "scenario 1: calculate rq global usage",
 			requestName:   rqName,
-			resourceQuota: genResourceQuota(rqName),
-			seedClient: fakectrlruntimeclient.
+			expectedUsage: *genResourceDetails("7", "7G", "18G"),
+			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName),
-					genCluster("c1", projectId, "2", "5G", "10G"),
-					genCluster("c2", projectId, "5", "2G", "8G"),
-					genCluster("notSameProjectCluster", "impostor", "3", "3G", "3G")).
+				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), test.GenTestSeed()).
 				Build(),
-			expectedUsage: *genResourceDetails("7", "7G", "18G"),
+			seedClients: map[string]ctrlruntimeclient.Client{
+				"first": fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(genResourceQuota(rqName, *genResourceDetails("2", "5G", "10G"))).
+					Build(),
+				"second": fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(genResourceQuota(rqName, *genResourceDetails("5", "2G", "8G"))).
+					Build(),
+			},
 		},
 	}
 
@@ -83,10 +85,10 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
-				log:                     kubermaticlog.Logger,
-				recorder:                &record.FakeRecorder{},
-				workerNameLabelSelector: workerSelector,
-				seedClient:              tc.seedClient,
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: tc.masterClient,
+				seedClients:  tc.seedClients,
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName, Namespace: kubermaticresources.KubermaticNamespace}}
@@ -95,21 +97,20 @@ func TestReconcile(t *testing.T) {
 			}
 
 			rq := &kubermaticv1.ResourceQuota{}
-			err := tc.seedClient.Get(ctx, request.NamespacedName, rq)
+			err := tc.masterClient.Get(ctx, request.NamespacedName, rq)
 
 			if err != nil {
 				t.Fatalf("failed to get resource quota: %v", err)
 			}
 
-			if !reflect.DeepEqual(rq.Status.LocalUsage, tc.expectedUsage) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Status.LocalUsage, tc.expectedUsage))
+			if !reflect.DeepEqual(rq.Status.GlobalUsage, tc.expectedUsage) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Status.GlobalUsage, tc.expectedUsage))
 			}
-
 		})
 	}
 }
 
-func genResourceQuota(name string) *kubermaticv1.ResourceQuota {
+func genResourceQuota(name string, localUsage kubermaticv1.ResourceDetails) *kubermaticv1.ResourceQuota {
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
 	rq.Namespace = kubermaticresources.KubermaticNamespace
@@ -120,18 +121,10 @@ func genResourceQuota(name string) *kubermaticv1.ResourceQuota {
 		},
 	}
 
+	rq.Status.LocalUsage = localUsage
 	return rq
 }
 
 func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails {
 	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
-}
-
-func genCluster(name, projectId, cpu, mem, storage string) *kubermaticv1.Cluster {
-	cluster := &kubermaticv1.Cluster{}
-	cluster.Name = name
-	cluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectId}
-	cluster.Status.ResourceUsage = genResourceDetails(cpu, mem, storage)
-
-	return cluster
 }

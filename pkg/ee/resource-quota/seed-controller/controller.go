@@ -53,7 +53,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var ControllerName = "resource-quota-seed-controller"
+var ControllerName = "kkp-resource-quota-seed-controller"
 
 type reconciler struct {
 	log                     *zap.SugaredLogger
@@ -111,7 +111,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get resourceQuota %s: %w", resourceQuota.Name, ctrlruntimeclient.IgnoreNotFound(err))
+		return reconcile.Result{}, fmt.Errorf("failed to get resourceQuota %s: %w", resourceQuota.Name, err)
 	}
 
 	err := r.reconcile(ctx, resourceQuota, log)
@@ -218,7 +218,6 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		}
 		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectId})
 		if err != nil {
-			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
 		}
 
@@ -227,7 +226,6 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		if err := client.List(context.Background(), resourceQuotaList,
 			&ctrlruntimeclient.ListOptions{Namespace: kubermaticresources.KubermaticNamespace,
 				LabelSelector: labels.NewSelector().Add(*subjectNameReq)}); err != nil {
-			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list resourceQuotas: %w", err))
 		}
 
