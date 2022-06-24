@@ -647,15 +647,15 @@ func createUserCluster(
 		return nil, cleanup, log, fmt.Errorf("cluster did not become healthy: %w", err)
 	}
 
+	// update our local cluster variable with the newly reconciled address values
+	if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
+		return nil, cleanup, log, fmt.Errorf("failed to retrieve cluster: %w", err)
+	}
+
 	// create hubble addon
 	log.Info("Installing hubble addon...")
 	if _, err = addonProvider.NewUnsecured(ctx, cluster, "hubble", nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
 		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
-	}
-
-	// update our local cluster variable with the newly reconciled address values
-	if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
 	// retrieve usercluster kubeconfig, this can fail a couple of times until

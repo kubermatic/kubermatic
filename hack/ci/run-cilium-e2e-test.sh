@@ -30,8 +30,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-# This custom config file makes sure to enable the hubble addon.
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_cilium.yaml
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the Kubermatic namespace
