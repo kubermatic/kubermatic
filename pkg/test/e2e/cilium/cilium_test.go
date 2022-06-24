@@ -55,6 +55,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -632,12 +633,6 @@ func createUserCluster(
 		}
 	})
 
-	// create hubble addon
-	log.Info("Installing hubble addon...")
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, "hubble", nil, nil); err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
-	}
-
 	// wait for cluster to be up and running
 	log.Info("Waiting for cluster to become healthy...")
 	err = wait.Poll(2*time.Second, 10*time.Minute, func() (bool, error) {
@@ -650,6 +645,12 @@ func createUserCluster(
 	})
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("cluster did not become healthy: %w", err)
+	}
+
+	// create hubble addon
+	log.Info("Installing hubble addon...")
+	if _, err = addonProvider.NewUnsecured(ctx, cluster, "hubble", nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
+		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
 	}
 
 	// update our local cluster variable with the newly reconciled address values

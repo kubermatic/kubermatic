@@ -23,90 +23,13 @@ spec:
     disable: true
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
-    apiserverReplicas: 2
-    addons:
-      defaultManifests: |-
-        apiVersion: v1
-        kind: List
-        items:
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: canal
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: cilium
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: csi
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: kube-proxy
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: openvpn
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: rbac
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: kubeadm-configmap
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: kubelet-configmap
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: default-storage-class
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: pod-security-policy
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: aws-node-termination-handler
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
-            name: hubble
-  api:
-    replicas: 1
-    debugLog: true
-    accessibleAddons:
-      - hubble
+    apiserverReplicas: 1
   featureGates:
     # VPA won't do anything useful due to missing Prometheus, but we can
     # at least ensure we deploy a working set of Deployments.
     VerticalPodAutoscaler: false
     KonnectivityService: true
-  ui:
-    replicas: 0
+    HeadlessInstallation: true
   # Dex integration
   auth:
     tokenIssuer: "http://dex.oauth:5556/dex"
