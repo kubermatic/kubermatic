@@ -28,14 +28,14 @@ import (
 )
 
 type AdmissionHandler struct {
-	log     logr.Logger
-	decoder *admission.Decoder
-	client  ctrlruntimeclient.Client
+	Log     logr.Logger
+	Decoder *admission.Decoder
+	Client  ctrlruntimeclient.Client
 }
 
 func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
 	return &AdmissionHandler{
-		client: client,
+		Client: client,
 	}
 }
 
@@ -44,15 +44,15 @@ func (h *AdmissionHandler) SetupWithManager(mgr ctrlruntime.Manager) {
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("resource-quota-mutation-handler")
+	h.Log = l.WithName("resource-quota-mutation-handler")
 	return nil
 }
 
 func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
+	h.Decoder = d
 	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	return handle(ctx, req, h.decoder, h.log, h.client)
+	return handle(ctx, req, h.Decoder, h.Log, h.Client)
 }

@@ -20,6 +20,7 @@ package resourcequota
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -79,7 +80,12 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on addon resources", req.Operation))
 	}
 
-	return admission.PatchResponseFromRaw(req.Object.Raw, nil)
+	mutatedResourceQuota, err := json.Marshal(resourceQuota)
+	if err != nil {
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling ResourceQuota object failed: %w", err))
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedResourceQuota)
 }
 
 func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {

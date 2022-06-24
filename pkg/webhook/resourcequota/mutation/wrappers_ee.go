@@ -21,9 +21,13 @@ package mutation
 import (
 	"context"
 
+	"github.com/go-logr/logr"
+
 	eeresourcequotamutation "k8c.io/kubermatic/v2/pkg/ee/mutation/resourcequota"
 
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admission.Decoder,
