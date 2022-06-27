@@ -218,7 +218,10 @@ func main() {
 	// /////////////////////////////////////////
 	// setup IPAMPool webhook
 
-	ipampoolvalidation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+	ipamPoolValidator := ipampoolvalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// Here we go!

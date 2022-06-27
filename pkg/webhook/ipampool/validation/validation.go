@@ -22,129 +22,46 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"net/http"
 	"strings"
 
-	"github.com/go-logr/logr"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
-	admissionv1 "k8s.io/api/admission/v1"
-	ctrlruntime "sigs.k8s.io/controller-runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for validating Kubermatic IPAMPool CRD.
-type AdmissionHandler struct {
-	log              logr.Logger
-	decoder          *admission.Decoder
-	seedGetter       provider.SeedGetter
-	seedClientGetter provider.SeedClientGetter
+// validator for validating Resource Quota CRD.
+type validator struct {
+	client ctrlruntimeclient.Client
 }
 
-// NewAdmissionHandler returns a new IPAMPool AdmissionHandler.
-func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
-	return &AdmissionHandler{
-		seedGetter:       seedGetter,
-		seedClientGetter: seedClientGetter,
+// NewValidator returns a new Resource Quota validator.
+func NewValidator(client ctrlruntimeclient.Client) *validator {
+	return &validator{
+		client: client,
 	}
 }
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8c-io-v1-ipampool", &webhook.Admission{Handler: h})
+var _ admission.CustomValidator = &validator{}
+
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return v.validate(ctx, obj)
 }
 
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("ipampool-validation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
-
-func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	ipamPool := &kubermaticv1.IPAMPool{}
-
-	switch req.Operation {
-	case admissionv1.Create:
-		if err := h.decoder.Decode(req, ipamPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		if err := validateIPAMPool(ipamPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("IPAMPool is not valid: %w", err))
-		}
-
-	case admissionv1.Update:
-		if err := h.decoder.Decode(req, ipamPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		if err := validateIPAMPool(ipamPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("IPAMPool is not valid: %w", err))
-		}
-
-		oldIPAMPool := &kubermaticv1.IPAMPool{}
-		if err := h.decoder.DecodeRaw(req.OldObject, oldIPAMPool); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-
-		err := h.validateUpdate(ctx, oldIPAMPool, ipamPool)
-		if err != nil {
-			h.log.Info("IPAMPool validation failed", "error", err)
-			return webhook.Denied(fmt.Sprintf("IPAMPool update request %s cannot happen: %v", req.UID, err))
-		}
-
-	case admissionv1.Delete:
-		// NOP we allow delete operation
-
-	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on IPAMPool resources", req.Operation))
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	if err := v.validate(ctx, newObj); err != nil {
+		return err
 	}
 
-	return webhook.Allowed(fmt.Sprintf("IPAMPool validation request %s allowed", req.UID))
-}
+	newIPAMPool := newObj.(*kubermaticv1.IPAMPool)
+	oldIPAMPool := oldObj.(*kubermaticv1.IPAMPool)
 
-func validateIPAMPool(ipamPool *kubermaticv1.IPAMPool) error {
-	for _, dcConfig := range ipamPool.Spec.Datacenters {
-		_, poolSubnet, err := net.ParseCIDR(string(dcConfig.PoolCIDR))
-		if err != nil {
-			return err
-		}
-		poolPrefix, bits := poolSubnet.Mask.Size()
-
-		if (bits - poolPrefix) >= 64 {
-			return errors.New("the pool is too big to be processed")
-		}
-
-		switch dcConfig.Type {
-		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			numberOfPoolSubnetIPs := uint64(math.Pow(2, float64(bits-poolPrefix)))
-			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
-				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
-			}
-		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			if int(dcConfig.AllocationPrefix) < poolPrefix {
-				return errors.New("allocation prefix cannot be smaller than the pool subnet mask size")
-			}
-			if int(dcConfig.AllocationPrefix) > bits {
-				return errors.New("invalid allocation prefix for IP version")
-			}
-		}
-	}
-
-	return nil
-}
-
-func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
 	// loop old IPAMPool datacenters
 	for dc, dcOldConfig := range oldIPAMPool.Spec.Datacenters {
 		dcNewConfig, dcExistsInNewPool := newIPAMPool.Spec.Datacenters[dc]
 		if !dcExistsInNewPool {
-			err := h.validateDelete(ctx, oldIPAMPool, dc)
+			err := v.validateDCRemoval(ctx, oldIPAMPool, dc)
 			if err != nil {
 				return err
 			}
@@ -174,15 +91,51 @@ func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldIPAMPool *kube
 	return nil
 }
 
-func (h *AdmissionHandler) validateDelete(ctx context.Context, ipamPool *kubermaticv1.IPAMPool, dc string) error {
-	client, err := h.getSeedClient(ctx)
-	if err != nil {
-		return err
+func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
+	// NOP we allow delete operation
+	return nil
+}
+
+func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
+	ipamPool, ok := obj.(*kubermaticv1.IPAMPool)
+	if !ok {
+		return errors.New("object is not a IPAMPool")
 	}
 
+	for _, dcConfig := range ipamPool.Spec.Datacenters {
+		_, poolSubnet, err := net.ParseCIDR(string(dcConfig.PoolCIDR))
+		if err != nil {
+			return err
+		}
+		poolPrefix, bits := poolSubnet.Mask.Size()
+
+		switch dcConfig.Type {
+		case kubermaticv1.IPAMPoolAllocationTypeRange:
+			if (bits - poolPrefix) >= 64 {
+				return errors.New("the pool is too big to be processed")
+			}
+
+			numberOfPoolSubnetIPs := uint64(math.Pow(2, float64(bits-poolPrefix)))
+			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
+				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
+			}
+		case kubermaticv1.IPAMPoolAllocationTypePrefix:
+			if int(dcConfig.AllocationPrefix) < poolPrefix {
+				return errors.New("allocation prefix cannot be smaller than the pool subnet mask size")
+			}
+			if int(dcConfig.AllocationPrefix) > bits {
+				return errors.New("invalid allocation prefix for IP version")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (v *validator) validateDCRemoval(ctx context.Context, ipamPool *kubermaticv1.IPAMPool, dc string) error {
 	// List all IPAM allocations
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err = client.List(ctx, ipamAllocationList)
+	err := v.client.List(ctx, ipamAllocationList)
 	if err != nil {
 		return fmt.Errorf("failed to list IPAM allocations: %w", err)
 	}
@@ -190,7 +143,7 @@ func (h *AdmissionHandler) validateDelete(ctx context.Context, ipamPool *kuberma
 	// Iterate current IPAM allocations to check if there is an allocation for the pool to be deleted
 	var ipamAllocationsNamespaces []string
 	for _, ipamAllocation := range ipamAllocationList.Items {
-		if ipamAllocation.Name == ipamPool.Name && (dc == "" || ipamAllocation.Spec.DC == dc) {
+		if ipamAllocation.Name == ipamPool.Name && ipamAllocation.Spec.DC == dc {
 			ipamAllocationsNamespaces = append(ipamAllocationsNamespaces, ipamAllocation.Namespace)
 		}
 	}
@@ -200,21 +153,4 @@ func (h *AdmissionHandler) validateDelete(ctx context.Context, ipamPool *kuberma
 	}
 
 	return nil
-}
-
-func (h *AdmissionHandler) getSeedClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
-	seed, err := h.seedGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current seed: %w", err)
-	}
-	if seed == nil {
-		return nil, errors.New("webhook not configured for a seed cluster")
-	}
-
-	client, err := h.seedClientGetter(seed)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get seed client: %w", err)
-	}
-
-	return client, nil
 }
