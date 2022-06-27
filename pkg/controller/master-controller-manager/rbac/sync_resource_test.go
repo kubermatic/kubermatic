@@ -2384,6 +2384,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2411,6 +2414,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2438,6 +2444,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2465,6 +2474,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2493,6 +2505,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2520,6 +2535,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2546,6 +2564,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "2",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",
@@ -2572,6 +2593,9 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "ClusterRole",

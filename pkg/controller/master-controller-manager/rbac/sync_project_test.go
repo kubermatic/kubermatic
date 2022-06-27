@@ -1413,6 +1413,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
 						Namespace: "kubermatic",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
