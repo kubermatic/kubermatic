@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -48,6 +49,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
@@ -60,7 +62,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
@@ -171,13 +173,12 @@ func TestCiliumClusters(t *testing.T) {
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Waiting for nodes to come up...")
-	_, err := checkNodeReadiness(ctx, t, log, client)
-	if err != nil {
+	if err := checkNodeReadiness(ctx, t, log, client); err != nil {
 		t.Fatalf("nodes never became ready: %v", err)
 	}
 
 	log.Info("Waiting for pods to get ready...")
-	err = waitForPods(ctx, t, log, client, "kube-system", "k8s-app", []string{
+	err := waitForPods(ctx, t, log, client, "kube-system", "k8s-app", []string{
 		"cilium-operator",
 		"cilium",
 	})
@@ -240,18 +241,16 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("pods never became ready: %v", err)
 	}
 
-	log.Info("Testing Hubble relay observe...")
-	err = wait.Poll(2*time.Second, 5*time.Minute, func() (bool, error) {
-		nodeIP, err := checkNodeReadiness(ctx, t, log, client)
-		if err != nil {
-			log.Errorw("Nodes never became ready", zap.Error(err))
-			return false, nil
-		}
+	nodeIP, err := getAnyNodeIP(ctx, client)
+	if err != nil {
+		t.Fatalf("Nodes are ready, but could not get an IP: %v", err)
+	}
 
+	log.Info("Testing Hubble relay observe...")
+	err = wait.PollLog(log, 2*time.Second, 5*time.Minute, func() (error, error) {
 		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			log.Errorw("Failed to dial to Hubble relay", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to dial to Hubble relay: %w", err), nil
 		}
 		defer conn.Close()
 
@@ -259,62 +258,51 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		flowsClient, err := observer.NewObserverClient(conn).
 			GetFlows(ctx, &observer.GetFlowsRequest{Number: uint64(nFlows)})
 		if err != nil {
-			log.Errorw("Failed to get flow client", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get flow client: %w", err), nil
 		}
 
 		for c := 0; c < nFlows; c++ {
 			_, err := flowsClient.Recv()
 			if err != nil {
-				log.Errorw("Failed to get flow", zap.Error(err))
-				return false, nil
+				return fmt.Errorf("failed to get flow: %w", err), nil
 			}
 			// fmt.Println(flow)
 		}
-		return true, nil
+
+		return nil, nil
 	})
 	if err != nil {
 		t.Fatalf("Hubble relay observe test failed: %v", err)
 	}
 
 	log.Info("Testing Hubble UI observe...")
-	err = wait.Poll(2*time.Second, 5*time.Minute, func() (bool, error) {
-		nodeIP, err := checkNodeReadiness(ctx, t, log, client)
+	err = wait.PollLog(log, 2*time.Second, 5*time.Minute, func() (error, error) {
+		uiURL := fmt.Sprintf("http://%s", net.JoinHostPort(nodeIP, "30007"))
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uiURL, nil)
 		if err != nil {
-			log.Debugw("Nodes never became ready", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to construct request to Hubble UI: %w", err), nil
 		}
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-			fmt.Sprintf("http://%s", net.JoinHostPort(nodeIP, "30007")), nil)
-		if err != nil {
-			log.Errorw("Failed to construct request to Hubble UI", zap.Error(err))
-			return false, nil
-		}
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			log.Debugw("Failed to get response from Hubble UI", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get response from Hubble UI: %w", err), nil
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			log.Debugf("Expected: HTTP 200 OK, got: HTTP %d", resp.StatusCode)
-			return false, nil
+			return fmt.Errorf("expected HTTP 200 OK, got HTTP %d", resp.StatusCode), nil
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Errorw("Failed to read response body", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to read response body: %w", err), nil
 		}
 
 		if !strings.Contains(string(body), "Hubble") {
-			log.Debug("Failed to find Hubble in the body")
-			return false, nil
+			return errors.New("failed to find Hubble in the body"), nil
 		}
 
-		return true, nil
+		return nil, nil
 	})
 	if err != nil {
 		t.Fatalf("Hubble UI observe test failed: %v", err)
@@ -330,55 +318,37 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 	}
 	l := labels.NewSelector().Add(*r)
 
-	return wait.Poll(2*time.Second, 5*time.Minute, func() (bool, error) {
+	return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		err = client.List(ctx, &pods, ctrlruntimeclient.InNamespace(namespace), ctrlruntimeclient.MatchingLabelsSelector{Selector: l})
 		if err != nil {
-			log.Errorw("Failed to list Pods", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list Pods: %w", err), nil
 		}
 
 		if len(pods.Items) == 0 {
-			log.Debug("No Pods found")
-			return false, nil
+			return errors.New("no Pods found"), nil
 		}
 
-		if !allPodsHealthy(t, log, &pods) {
-			log.Debug("Not all Pods healthy yet...")
-			return false, nil
-		}
-
-		log.Debug("All Pods healthy")
-
-		return true, nil
-	})
-}
-
-func allPodsHealthy(t *testing.T, log *zap.SugaredLogger, pods *corev1.PodList) bool {
-	allHealthy := true
-
-	for _, pod := range pods.Items {
-		podLog := log.With("pod", pod.Name)
-
-		if pod.Status.Phase != corev1.PodRunning {
-			allHealthy = false
-			podLog.Debugw("Pod is not running", "phase", pod.Status.Phase)
-		} else {
+		unready := sets.NewString()
+		for _, pod := range pods.Items {
+			ready := false
 			for _, c := range pod.Status.Conditions {
-				switch c.Type {
-				case corev1.PodReady:
-					fallthrough
-				case corev1.ContainersReady:
-					if c.Status != corev1.ConditionTrue {
-						allHealthy = false
-						podLog.Debugw("Pod not ready")
-					}
+				if c.Type == corev1.ContainersReady {
+					ready = c.Status == corev1.ConditionTrue
 				}
 			}
-		}
-	}
 
-	return allHealthy
+			if !ready {
+				unready.Insert(pod.Name)
+			}
+		}
+
+		if unready.Len() > 0 {
+			return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
+		}
+
+		return nil, nil
+	})
 }
 
 func deployHubbleServices(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) func() {
@@ -439,25 +409,42 @@ func installCiliumConnectivityTests(ctx context.Context, t *testing.T, log *zap.
 	}
 }
 
-func checkNodeReadiness(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) (string, error) {
-	expectedNodes := 2
-	var nodeIP string
+func getAnyNodeIP(ctx context.Context, client ctrlruntimeclient.Client) (string, error) {
+	nodeList := corev1.NodeList{}
+	if err := client.List(ctx, &nodeList); err != nil {
+		return "", fmt.Errorf("failed to get nodes list: %w", err)
+	}
 
-	err := wait.Poll(5*time.Second, 15*time.Minute, func() (bool, error) {
+	if len(nodeList.Items) == 0 {
+		return "", errors.New("cluster has no nodes")
+	}
+
+	for _, node := range nodeList.Items {
+		for _, addr := range node.Status.Addresses {
+			if addr.Type == corev1.NodeExternalIP {
+				return addr.Address, nil
+			}
+		}
+	}
+
+	return "", errors.New("no node has an ExternalIP")
+}
+
+func checkNodeReadiness(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	expectedNodes := 2
+
+	return wait.PollLog(log, 10*time.Second, 15*time.Minute, func() (error, error) {
 		nodeList := corev1.NodeList{}
 		err := client.List(ctx, &nodeList)
 		if err != nil {
-			log.Errorw("Failed to get nodes list", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to list nodes: %w", err), nil
 		}
 
 		if len(nodeList.Items) != expectedNodes {
-			log.Debugw("Cluster does not have expected number of nodes", "expected", expectedNodes, "current", len(nodeList.Items))
-			return false, nil
+			return fmt.Errorf("cluster has %d of %d nodes", len(nodeList.Items), expectedNodes), nil
 		}
 
 		readyNodeCount := 0
-
 		for _, node := range nodeList.Items {
 			for _, c := range node.Status.Conditions {
 				if c.Type == corev1.NodeReady {
@@ -467,21 +454,11 @@ func checkNodeReadiness(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 		}
 
 		if readyNodeCount != expectedNodes {
-			log.Debugf("Not all nodes are ready yet", "expected", expectedNodes, "ready", readyNodeCount)
-			return false, nil
+			return fmt.Errorf("%d of %d nodes are ready", readyNodeCount, expectedNodes), nil
 		}
 
-		for _, addr := range nodeList.Items[0].Status.Addresses {
-			if addr.Type == corev1.NodeExternalIP {
-				nodeIP = addr.Address
-				break
-			}
-		}
-
-		return true, nil
+		return nil, nil
 	})
-
-	return nodeIP, err
 }
 
 func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
@@ -618,13 +595,17 @@ func createUserCluster(
 
 	// wait for cluster to be up and running
 	log.Info("Waiting for cluster to become healthy...")
-	err = wait.Poll(2*time.Second, 10*time.Minute, func() (bool, error) {
+	err = wait.Poll(2*time.Second, 10*time.Minute, func() (error, error) {
 		curCluster := kubermaticv1.Cluster{}
 		if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), &curCluster); err != nil {
-			return false, fmt.Errorf("failed to retrieve cluster: %w", err)
+			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
 		}
 
-		return curCluster.Status.ExtendedHealth.AllHealthy(), nil
+		if !curCluster.Status.ExtendedHealth.AllHealthy() {
+			return errors.New("cluster is not all healthy"), nil
+		}
+
+		return nil, nil
 	})
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("cluster did not become healthy: %w", err)
@@ -645,10 +626,9 @@ func createUserCluster(
 	// the exposing mechanism is ready
 	log.Info("Retrieving cluster client...")
 	var clusterClient ctrlruntimeclient.Client
-	err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
-		var err error
-		clusterClient, err = clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
-		return err == nil, nil
+	err = wait.Poll(1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+		clusterClient, transient = clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+		return transient, nil
 	})
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("cluster did not become available: %w", err)
@@ -732,8 +712,8 @@ func createUserCluster(
 
 	// create MachineDeployment
 	log.Info("Creating MachineDeployment...")
-	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
-		return clusterClient.Create(ctx, &md) == nil, nil
+	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (error, error) {
+		return clusterClient.Create(ctx, &md), nil
 	})
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to create MachineDeployment: %w", err)
