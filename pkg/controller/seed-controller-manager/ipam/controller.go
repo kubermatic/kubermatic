@@ -273,7 +273,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 				return nil, err
 			}
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err = checkRangeAllocation(currentAllocatedIPs, string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange))
+			err = checkRangeAllocation(currentAllocatedIPs, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange)
 			if err != nil {
 				return nil, err
 			}
@@ -282,7 +282,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix))
+			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix)
 			if err != nil {
 				return nil, err
 			}
@@ -308,13 +308,13 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
-		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange), dcIPAMPoolUsageMap)
+		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
 		newClustersAllocation.Spec.Addresses = addresses
 	case kubermaticv1.IPAMPoolAllocationTypePrefix:
-		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix), dcIPAMPoolUsageMap)
+		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
