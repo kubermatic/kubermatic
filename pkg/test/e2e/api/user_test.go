@@ -87,10 +87,10 @@ func TestAddUserToProject(t *testing.T) {
 	}{
 		{
 			name:          "test, add user to project",
-			newUserEmail:  "roxy2@kubermatic.com",
-			newUserName:   "roxy2",
+			newUserEmail:  "roxy-admin@kubermatic.com",
+			newUserName:   "roxy-admin",
 			newUserGroup:  "viewers",
-			expectedUsers: []string{"roxy@kubermatic.com", "roxy2@kubermatic.com"},
+			expectedUsers: []string{"roxy@kubermatic.com", "roxy-admin@kubermatic.com"},
 		},
 	}
 

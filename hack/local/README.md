@@ -42,7 +42,7 @@ systemctl restart systemd-resolved
 ```
 
 #### Only dnsmasq
-Install dnsmasq and disable all DNS resolvers you have installed on the machine. 
+Install dnsmasq and disable all DNS resolvers you have installed on the machine.
 Edit configuration `/etc/dnsmasq.conf` file with:
 ```
 port=53
@@ -70,7 +70,7 @@ Address: 172.18.255.200
 ```
 
 The kind cluster uses [metallb](https://metallb.universe.tf/) to have LoadBalancer service type.
-After running `hack/local/run-kubermatic-kind.sh` check assigned external IP address to `nodeport-proxy` service and use it in 
+After running `hack/local/run-kubermatic-kind.sh` check assigned external IP address to `nodeport-proxy` service and use it in
 dnsmasq configuration file in `address` section.
 ```
 $ kubectl get service nodeport-proxy -n kubermatic
@@ -91,7 +91,7 @@ First step spin up KKP cluster in kind.
 
 Execute the following command:
 ```
-$ /hack/local/run-kubermatic-kind.sh 
+$ /hack/local/run-kubermatic-kind.sh
 ```
 
 After this you should have all pod running:
@@ -129,7 +129,15 @@ $ npm run start:local
 
 For the login use static user:
 ```
-login: roxy@loodse.com
+login: roxy@kubermatic.com
+password: password
+```
+
+Roxy is a regular user; if you need an user with admin permissions,
+use roxy-admin:
+
+```
+login: roxy-admin@kubermatic.com
 password: password
 ```
 
@@ -137,7 +145,7 @@ password: password
 
 Execute the following command:
 ```
-$ /hack/local/run-api-e2e.sh 
+$ /hack/local/run-api-e2e.sh
 ```
 
 

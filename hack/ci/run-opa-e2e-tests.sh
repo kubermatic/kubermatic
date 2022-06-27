@@ -47,16 +47,16 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-hetzner.yaml
 
-echodate "Creating roxy2 user..."
+echodate "Creating roxy-admin user..."
 cat << EOF > user.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
-  name: roxy
+  name: roxy-admin
 spec:
   admin: true
-  email: roxy@kubermatic.com
-  name: roxy
+  email: roxy-admin@kubermatic.com
+  name: roxy-admin
 EOF
 retry 2 kubectl apply -f user.yaml
 
