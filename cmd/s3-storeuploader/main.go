@@ -19,6 +19,7 @@ package main
 import (
 	"crypto/x509"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -135,9 +136,15 @@ func getUploaderFromCtx(log *zap.SugaredLogger, opt options) (*storeuploader.Sto
 		rootCAs = bundle.CertPool()
 	}
 
+	// prepend the desired scheme to the endpoint so that the storeuploader
+	// can detect HTTP/HTTPS
+	endpoint, err := prependScheme(opt.Endpoint, opt.Secure)
+	if err != nil {
+		return nil, fmt.Errorf("invalid endpoint: %w", err)
+	}
+
 	uploader, err := storeuploader.New(
-		opt.Endpoint,
-		opt.Secure,
+		endpoint,
 		opt.AccessKeyID,
 		opt.SecretAccessKey,
 		log,
@@ -148,4 +155,26 @@ func getUploaderFromCtx(log *zap.SugaredLogger, opt options) (*storeuploader.Sto
 	}
 
 	return uploader, nil
+}
+
+func prependScheme(u string, secure bool) (string, error) {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return "", err
+	}
+
+	if parsed.Scheme != "" && parsed.Host == "" {
+		parsed, err = url.Parse("https://" + u) // assume endpoints with no protocol are HTTPS by default
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if secure {
+		parsed.Scheme = "https"
+	} else {
+		parsed.Scheme = "http"
+	}
+
+	return parsed.String(), nil
 }

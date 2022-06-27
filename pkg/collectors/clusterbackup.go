@@ -18,14 +18,11 @@ package collectors
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -33,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -198,23 +196,7 @@ func (c *clusterBackupCollector) getS3Client(ctx context.Context, destination *k
 		return nil, fmt.Errorf("backup credentials do not contain %q or %q keys", etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey)
 	}
 
-	secure := !strings.HasPrefix(destination.Endpoint, "http://")
-	endpoint := strings.TrimPrefix(destination.Endpoint, "http://")
-	endpoint = strings.TrimPrefix(endpoint, "https://")
-
-	options := &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: secure,
-	}
-
-	if c.caBundle != nil {
-		options.Transport = &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: c.caBundle.CertPool()},
-			DisableCompression: true,
-		}
-	}
-
-	return minio.New(endpoint, options)
+	return s3.NewClient(destination.Endpoint, accessKey, secretKey, c.caBundle.CertPool())
 }
 
 func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp time.Time) {

@@ -17,20 +17,18 @@ limitations under the License.
 package main
 
 import (
-	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"net/http"
 	"os"
-	"strings"
 
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +38,7 @@ func main() {
 	logOpts := log.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
-	endpointWithProto := flag.String("endpoint", "", "The s3 endpoint, e.G. https://my-s3.com:9000")
+	endpoint := flag.String("endpoint", "", "The s3 endpoint, e.G. https://my-s3.com:9000")
 	accessKeyID := flag.String("access-key-id", "", "S3 Access key, defaults to the ACCESS_KEY_ID environment variable")
 	secretAccessKey := flag.String("secret-access-key", "", "S3 Secret Access Key, defaults to the SECRET_ACCESS_KEY evnironment variable")
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
@@ -60,7 +58,7 @@ func main() {
 		*secretAccessKey = os.Getenv("SECRET_ACCESS_KEY")
 	}
 
-	if *endpointWithProto == "" || *accessKeyID == "" || *secretAccessKey == "" {
+	if *endpoint == "" || *accessKeyID == "" || *secretAccessKey == "" {
 		logger.Fatal("All of 'endpoint', 'access-key-id' and 'secret-access-key' must be set!")
 	}
 
@@ -74,37 +72,21 @@ func main() {
 		logger.Fatalw("Failed to create kube client", zap.Error(err))
 	}
 
-	secure := true
-	if strings.HasPrefix(*endpointWithProto, "http://") {
-		logger.Info("Disabling TLS due to http:// prefix in endpoint")
-		secure = false
-	}
-	endpoint := strings.TrimPrefix(*endpointWithProto, "http://")
-	endpoint = strings.TrimPrefix(endpoint, "https://")
-
-	options := &minio.Options{
-		Creds:  credentials.NewStaticV4(*accessKeyID, *secretAccessKey, ""),
-		Secure: secure,
-	}
-
+	var certPool *x509.CertPool
 	if *caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
 		if err != nil {
 			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
 		}
 
-		options.Transport = &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: bundle.CertPool()},
-			DisableCompression: true,
-		}
+		certPool = bundle.CertPool()
 	}
 
 	stopChannel := make(chan struct{})
-	minioClient, err := minio.New(endpoint, options)
+	minioClient, err := s3.NewClient(*endpoint, *accessKeyID, *secretAccessKey, certPool)
 	if err != nil {
 		logger.Fatalw("Failed to get S3 client", zap.Error(err))
 	}
-
 	minioClient.SetAppInfo("kubermatic-exporter", "v0.2")
 
 	collectors.MustRegisterS3Collector(minioClient, client, *bucket, logger)
