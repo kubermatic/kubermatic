@@ -131,9 +131,16 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 			}
 			return fmt.Errorf("error getting seed %q resource quota: %w", seed, err)
 		}
-		globalUsage.CPU.Add(*seedResourceQuota.Status.LocalUsage.CPU)
-		globalUsage.Memory.Add(*seedResourceQuota.Status.LocalUsage.Memory)
-		globalUsage.Storage.Add(*seedResourceQuota.Status.LocalUsage.Storage)
+		localUsage := seedResourceQuota.Status.LocalUsage
+		if localUsage.CPU != nil {
+			globalUsage.CPU.Add(*localUsage.CPU)
+		}
+		if localUsage.Memory != nil {
+			globalUsage.Memory.Add(*localUsage.Memory)
+		}
+		if localUsage.Storage != nil {
+			globalUsage.Storage.Add(*localUsage.Storage)
+		}
 	}
 
 	if err := r.ensureGlobalUsage(ctx, log, resourceQuota, globalUsage); err != nil {
