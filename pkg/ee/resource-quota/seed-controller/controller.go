@@ -144,9 +144,16 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 	localUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
 	for _, cluster := range clusterList.Items {
 		if cluster.Status.ResourceUsage != nil {
-			localUsage.CPU.Add(*cluster.Status.ResourceUsage.CPU)
-			localUsage.Memory.Add(*cluster.Status.ResourceUsage.Memory)
-			localUsage.Storage.Add(*cluster.Status.ResourceUsage.Storage)
+			clusterUsage := cluster.Status.ResourceUsage
+			if clusterUsage.CPU != nil {
+				localUsage.CPU.Add(*clusterUsage.CPU)
+			}
+			if clusterUsage.Memory != nil {
+				localUsage.Memory.Add(*clusterUsage.Memory)
+			}
+			if clusterUsage.Storage != nil {
+				localUsage.Storage.Add(*clusterUsage.Storage)
+			}
 		}
 	}
 
