@@ -248,10 +248,6 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 		Email: claims.Email,
 	}
 
-	if user.ID == "" {
-		return nil, utilerrors.NewNotAuthorized()
-	}
-
 	return user, nil
 }
 

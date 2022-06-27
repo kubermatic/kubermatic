@@ -284,10 +284,6 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				Email: claims.Email,
 			}
 
-			if user.ID == "" {
-				return nil, utilerrors.NewNotAuthorized()
-			}
-
 			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
 				return nil, err
 			}
