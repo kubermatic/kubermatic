@@ -52,6 +52,9 @@ type UserProjectBindingSpec struct {
 	UserEmail string `json:"userEmail"`
 	// ProjectID is the name of the target project.
 	ProjectID string `json:"projectID"`
+
+	// TODO: add "Role" field and deprecate "Group" in favour of it to be in line with GroupProjectBinding resource.
+
 	// Group is the user's group, determining their permissions within the project.
 	Group string `json:"group"`
 }
