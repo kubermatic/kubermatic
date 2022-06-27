@@ -595,7 +595,7 @@ func createUserCluster(
 			HumanReadableName: fmt.Sprintf("Cilium %s e2e test cluster", proxyMode),
 			Version:           *semver.NewSemverOrDie(version),
 			KubernetesDashboard: kubermaticv1.KubernetesDashboard{
-				Enabled: false,
+				Enabled: pointer.Bool(false),
 			},
 			EnableUserSSHKeyAgent: pointer.Bool(false),
 			Cloud: kubermaticv1.CloudSpec{
