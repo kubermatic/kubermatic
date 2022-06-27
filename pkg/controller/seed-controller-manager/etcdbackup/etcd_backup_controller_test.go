@@ -1719,25 +1719,26 @@ func containsEnvVar(envVars []corev1.EnvVar, envVar corev1.EnvVar) bool {
 	return false
 }
 
-func TestIsSecure(t *testing.T) {
+func TestIsInsecure(t *testing.T) {
 	testcases := []struct {
-		url    string
-		secure bool
+		url      string
+		insecure bool
 	}{
-		{url: "foo.com", secure: false},
-		{url: "foo.com:443", secure: false},
-		{url: "https", secure: false},
-		{url: "https:433", secure: false},
-		{url: "http://foo.com", secure: false},
-		{url: "https://foo.com", secure: true},
-		{url: "HtTpS://foo.com", secure: true},
-		{url: "HtTpS://foo.com:80", secure: true},
+		{url: "foo.com", insecure: false},
+		{url: "foo.com:443", insecure: false},
+		{url: "https", insecure: false},
+		{url: "https:433", insecure: false},
+		{url: "http://foo.com", insecure: true},
+		{url: "hTtP://foo.com", insecure: true},
+		{url: "https://foo.com", insecure: false},
+		{url: "HtTpS://foo.com", insecure: false},
+		{url: "HtTpS://foo.com:80", insecure: false},
 	}
 
 	for _, testcase := range testcases {
 		t.Run(testcase.url, func(t *testing.T) {
-			if isSecureURL(testcase.url) != testcase.secure {
-				t.Fatalf("Expected secure=%v, but got the opposite.", testcase.secure)
+			if isInsecureURL(testcase.url) != testcase.insecure {
+				t.Fatalf("Expected insecure=%v, but got the opposite.", testcase.insecure)
 			}
 		})
 	}

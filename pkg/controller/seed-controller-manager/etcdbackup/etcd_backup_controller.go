@@ -838,17 +838,17 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 	return nil, err
 }
 
-func isSecureURL(u string) bool {
+func isInsecureURL(u string) bool {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		return false
 	}
 
-	// a hostname like "foo.com:9000" is parsed as {scheme: foo.com, host: ""},
-	// so we must make sure to not mis-interpret "https:9000" ({scheme: "https"}) as
-	// an HTTPS url
+	// a hostname like "foo.com:9000" is parsed as {scheme: "foo.com", host: ""},
+	// so we must make sure to not mis-interpret "http:9000" ({scheme: "http", host: ""}) as
+	// an HTTP url
 
-	return strings.ToLower(parsed.Scheme) == "https" && parsed.Host != ""
+	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""
 }
 
 func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
@@ -869,7 +869,7 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 		})
 
 		insecure := "false"
-		if !isSecureURL(destination.Endpoint) {
+		if isInsecureURL(destination.Endpoint) {
 			insecure = "true"
 		}
 
@@ -1033,7 +1033,7 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 		})
 
 		insecure := "false"
-		if !isSecureURL(destination.Endpoint) {
+		if isInsecureURL(destination.Endpoint) {
 			insecure = "true"
 		}
 
