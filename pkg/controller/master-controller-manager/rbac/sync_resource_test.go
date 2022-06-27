@@ -81,6 +81,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -104,6 +107,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -126,6 +132,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -149,6 +158,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -332,6 +344,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -355,6 +370,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -378,6 +396,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -400,6 +421,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -561,6 +585,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -583,6 +610,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -701,6 +731,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -724,6 +757,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -746,6 +782,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -977,6 +1016,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1000,6 +1042,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1111,6 +1156,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1135,6 +1183,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1159,6 +1210,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1183,6 +1237,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{

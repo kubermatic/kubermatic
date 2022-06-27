@@ -115,21 +115,16 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 			return err
 		}
 
-		projectName, err := getProjectName(projectResource.object)
-		if err != nil {
-			return err
-		}
-
 		for _, groupPrefix := range AllGroupsPrefixes {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, projectName, rmapping.Resource.Resource, gvk.Kind)
+					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, projectName, rmapping.Resource.Resource, gvk.Kind)
+				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 				if err != nil {
 					return err
 				}
@@ -186,8 +181,8 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName, projectName, resource, kind string) error {
-	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind, projectName)
+func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName, resource, kind string) error {
+	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
 	}
@@ -258,11 +253,6 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 			continue
 		}
 
-		projectName, err := getProjectName(projectResource.object)
-		if err != nil {
-			return err
-		}
-
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
@@ -277,7 +267,6 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 						c.log,
 						seedClusterRESTClient,
 						groupPrefix,
-						projectName,
 						rmapping.Resource,
 						gvk.Kind,
 						projectResource.namespace)
@@ -291,7 +280,6 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 					c.log,
 					c.client,
 					groupPrefix,
-					projectName,
 					rmapping.Resource,
 					gvk.Kind,
 					projectResource.namespace)
@@ -304,8 +292,8 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 	return nil
 }
 
-func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName, projectName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
-	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace, projectName)
+func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
+	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
 	if err != nil {
 		return err
 	}
@@ -560,7 +548,7 @@ func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, 
 //
 // note: this method will add status to the log file
 func shouldSkipClusterRBACRoleBindingFor(log *zap.SugaredLogger, groupName, policyResource, policyAPIGroups, projectName, kind string) (bool, error) {
-	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind, projectName)
+	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind)
 	if err != nil {
 		return false, err
 	}
@@ -576,7 +564,7 @@ func shouldSkipClusterRBACRoleBindingFor(log *zap.SugaredLogger, groupName, poli
 //
 // note: this method will add status to the log file
 func shouldSkipRBACRoleBindingFor(log *zap.SugaredLogger, groupName, policyResource, policyAPIGroups, projectName, kind, namespace string) (bool, error) {
-	generatedRole, err := generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind, namespace, projectName)
+	generatedRole, err := generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind, namespace)
 	if err != nil {
 		return false, err
 	}

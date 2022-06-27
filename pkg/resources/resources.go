@@ -465,11 +465,6 @@ const (
 
 	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
-
-	// AuthZProjectIDLabel is the label used by rbac-controller and group-rbac-controller to identify the KKP role a ClusterRole or Role were created for.
-	AuthZRoleLabel = "authz.kubermatic.io/role"
-	// AuthZProjectIDLabel is the label used by rbac-controller and group-rbac-controller to identify the KKP project a ClusterRole or Role were created for.
-	AuthZProjectIDLabel = "authz.kubermatic.io/project-id"
 )
 
 const (
