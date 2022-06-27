@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/cilium/cilium/api/v1/observer"
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -53,17 +52,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	kjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -384,14 +382,12 @@ func allPodsHealthy(t *testing.T, log *zap.SugaredLogger, pods *corev1.PodList) 
 }
 
 func deployHubbleServices(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) func() {
-	s := makeScheme()
-
-	hubbleRelaySvc, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
+	hubbleRelaySvc, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml")
 	if err != nil {
 		t.Fatalf("failed to read objects from yaml: %v", err)
 	}
 
-	hubbleUISvc, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
+	hubbleUISvc, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml")
 	if err != nil {
 		t.Fatalf("failed to read objects from yaml: %v", err)
 	}
@@ -428,9 +424,7 @@ func deployHubbleServices(ctx context.Context, t *testing.T, log *zap.SugaredLog
 }
 
 func installCiliumConnectivityTests(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	s := makeScheme()
-
-	objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml", s)
+	objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml")
 	if err != nil {
 		t.Fatalf("failed to read objects from yaml: %v", err)
 	}
@@ -490,17 +484,7 @@ func checkNodeReadiness(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 	return nodeIP, err
 }
 
-func makeScheme() *runtime.Scheme {
-	var s = runtime.NewScheme()
-	_ = serializer.NewCodecFactory(s)
-	_ = runtime.NewParameterCodec(s)
-	utilruntime.Must(appsv1.AddToScheme(s))
-	utilruntime.Must(corev1.AddToScheme(s))
-	utilruntime.Must(ciliumv2.AddToScheme(s))
-	return s
-}
-
-func resourcesFromYaml(filename string, s *runtime.Scheme) ([]ctrlruntimeclient.Object, error) {
+func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -511,15 +495,14 @@ func resourcesFromYaml(filename string, s *runtime.Scheme) ([]ctrlruntimeclient.
 		return nil, err
 	}
 
-	sr := kjson.NewSerializerWithOptions(&kjson.SimpleMetaFactory{}, s, s, kjson.SerializerOptions{})
-
 	var objs []ctrlruntimeclient.Object
 	for _, m := range manifests {
-		obj, err := runtime.Decode(sr, m.Raw)
-		if err != nil {
+		obj := &unstructured.Unstructured{}
+		if err := kyaml.NewYAMLOrJSONDecoder(bytes.NewReader(m.Raw), 1024).Decode(obj); err != nil {
 			return nil, err
 		}
-		objs = append(objs, obj.(ctrlruntimeclient.Object))
+
+		objs = append(objs, obj)
 	}
 
 	return objs, nil
@@ -672,7 +655,6 @@ func createUserCluster(
 	}
 
 	utilruntime.Must(clusterv1alpha1.AddToScheme(clusterClient.Scheme()))
-	utilruntime.Must(ciliumv2.AddToScheme(clusterClient.Scheme()))
 
 	// prepare MachineDeployment
 	encodedOSSpec, err := json.Marshal(ubuntu.Config{})
