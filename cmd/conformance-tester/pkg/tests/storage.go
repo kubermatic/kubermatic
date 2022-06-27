@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,13 +26,13 @@ import (
 
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -132,18 +133,18 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 	}
 
 	log.Info("Waiting until the StatefulSet is ready...")
-	err := wait.Poll(10*time.Second, opts.CustomTestTimeout, func() (done bool, err error) {
+	err := wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		currentSet := &appsv1.StatefulSet{}
 		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
 		if err := userClusterClient.Get(ctx, name, currentSet); err != nil {
-			log.Warnf("Failed to fetch StatefulSet %s/%s: %v", ns.Name, set.Name, err)
-			return false, nil
+			return fmt.Errorf("failed to fetch StatefulSet %s/%s: %w", ns.Name, set.Name, err), nil
 		}
 
 		if currentSet.Status.ReadyReplicas == 1 {
-			return true, nil
+			return nil, nil
 		}
-		return false, nil
+
+		return errors.New("0 replicas are ready"), nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if StatefulSet is running: %w", err)

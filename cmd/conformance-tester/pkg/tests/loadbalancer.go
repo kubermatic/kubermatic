@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -29,12 +30,12 @@ import (
 
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -115,12 +116,12 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 
 	var host string
 	log.Debug("Waiting until the Service has a public IP/Name...")
-	err := wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (done bool, err error) {
+	err := wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		currentService := &corev1.Service{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
-			log.Warnf("Failed to fetch Service %s/%s: %v", ns.Name, service.Name, err)
-			return false, nil
+			return fmt.Errorf("failed to fetch Service %s/%s: %w", ns.Name, service.Name, err), nil
 		}
+
 		if len(currentService.Status.LoadBalancer.Ingress) > 0 {
 			host = currentService.Status.LoadBalancer.Ingress[0].IP
 			if host == "" {
@@ -129,12 +130,14 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 				// We wait until we can actually resolve the name
 				ips, err := net.LookupHost(host)
 				if err != nil || len(ips) == 0 {
-					return false, nil
+					return fmt.Errorf("failed to resolve %q: %w", host, err), nil
 				}
 			}
-			return true, nil
+
+			return nil, nil
 		}
-		return false, nil
+
+		return errors.New("LoadBalancer has no Ingress status"), nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if Service is ready: %w", err)
@@ -143,31 +146,33 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 
 	hostURL := fmt.Sprintf("http://%s", net.JoinHostPort(host, "80"))
 	log.Debug("Waiting until the pod is available via the LoadBalancer...")
-	err = wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (done bool, err error) {
+	err = wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		request, err := http.NewRequestWithContext(ctx, "GET", hostURL, nil)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
+
 		resp, err := http.DefaultClient.Do(request)
 		if err != nil {
-			log.Warnf("Failed to call Pod via LoadBalancer (%s): %v", hostURL, err)
-			return false, nil
+			return fmt.Errorf("failed to call Pod via LoadBalancer (%s): %w", hostURL, err), nil
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				log.Warnf("Failed to close response body from Hello-Kubernetes Pod (%s): %v", hostURL, err)
 			}
 		}()
+
 		contents, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Warnf("Failed to read response body from Hello-Kubernetes Pod (%s): %v", hostURL, err)
-			return false, nil
+			return fmt.Errorf("failed to read response body from Hello-Kubernetes Pod (%s): %w", hostURL, err), nil
 		}
 
-		if strings.Contains(string(contents), "Hello Kubernetes!") {
-			return true, nil
+		needle := "Hello Kubernetes!"
+		if strings.Contains(string(contents), needle) {
+			return nil, nil
 		}
-		return false, nil
+
+		return fmt.Errorf("response did not contain %q: %q", needle, string(contents)), nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if Pod is available via LoadBalancer: %w", err)

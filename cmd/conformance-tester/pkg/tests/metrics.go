@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,12 +29,12 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -157,37 +158,36 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
-	err := wait.Poll(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
+	err := wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		metricPod := &corev1.Pod{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, metricPod); err != nil {
-			log.Warnw("Failed to get test metric pod", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get test metric pod: %w", err), nil
 		}
 
 		if !util.PodIsReady(metricPod) {
-			return false, nil
+			return errors.New("Pod is not ready"), nil
 		}
 
-		return true, nil
+		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if test metrics pod is ready: %w", err)
 	}
 
 	// check pod metrics
-	err = wait.Poll(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
+	err = wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		podMetrics := &v1beta1.PodMetrics{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, podMetrics); err != nil {
-			log.Warnw("Failed to get test metric pod metrics", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get test metric pod metrics: %w", err), nil
 		}
+
 		for _, cont := range podMetrics.Containers {
 			if cont.Usage.Memory().IsZero() {
-				log.Warnw("Metrics test pod memory usage is 0", zap.Error(err))
-				return false, nil
+				return errors.New("metrics test pod memory usage is 0"), nil
 			}
 		}
-		return true, nil
+
+		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get metric test pod metrics: %w", err)
