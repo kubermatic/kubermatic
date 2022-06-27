@@ -500,18 +500,11 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.20.*
+        from: 1.21.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.21.10
-      - from: 1.21.*
-        to: 1.21.*
-      - automatic: true
-        from: '>= 1.21.0, < 1.21.8'
-        to: 1.21.8
-      - from: 1.21.*
-        to: 1.22.*
+        to: 1.22.11
       - from: 1.22.*
         to: 1.22.*
       - automatic: true
@@ -527,8 +520,6 @@ spec:
         to: 1.24.*
     # Versions lists the available versions.
     versions:
-      - v1.21.8
-      - v1.21.12
       - v1.22.5
       - v1.22.9
       - v1.22.11
