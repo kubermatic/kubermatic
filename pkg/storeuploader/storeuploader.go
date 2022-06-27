@@ -18,20 +18,19 @@ package storeuploader
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path"
 	"sort"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 )
 
 // prefix separator separates the prefix
@@ -49,20 +48,8 @@ type StoreUploader struct {
 }
 
 // New returns a new instance of the StoreUploader.
-func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger, rootCAs *x509.CertPool) (*StoreUploader, error) {
-	options := &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: secure,
-	}
-
-	if rootCAs != nil {
-		options.Transport = &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: rootCAs},
-			DisableCompression: true,
-		}
-	}
-
-	client, err := minio.New(endpoint, options)
+func New(endpoint string, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger, rootCAs *x509.CertPool) (*StoreUploader, error) {
+	client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, rootCAs)
 	if err != nil {
 		return nil, err
 	}

@@ -29,16 +29,15 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/minio/minio-go/v7"
-	minioCredentials "github.com/minio/minio-go/v7/pkg/credentials"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -213,35 +212,22 @@ func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, se
 }
 
 func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
-	var s3 corev1.Secret
-	err := seedClient.Get(ctx, secretNamespacedName, &s3)
+	var s3secret corev1.Secret
+	err := seedClient.Get(ctx, secretNamespacedName, &s3secret)
 	if err != nil {
 		return nil, "", err
 	}
 
-	s3endpoint := string(s3.Data[Endpoint])
-	s3accessKeyID := string(s3.Data[AccessKey])
-	s3secretAccessKey := string(s3.Data[SecretKey])
+	s3endpoint := string(s3secret.Data[Endpoint])
+	s3accessKeyID := string(s3secret.Data[AccessKey])
+	s3secretAccessKey := string(s3secret.Data[SecretKey])
 
-	secure := true
-
-	if strings.Contains(s3endpoint, "https://") {
-		s3endpoint = strings.Replace(s3endpoint, "https://", "", 1)
-	} else if strings.Contains(s3endpoint, "http://") {
-		s3endpoint = strings.Replace(s3endpoint, "http://", "", 1)
-		secure = false
-	}
-
-	mc, err := minio.New(s3endpoint, &minio.Options{
-		Creds:  minioCredentials.NewStaticV4(s3accessKeyID, s3secretAccessKey, ""),
-		Secure: secure,
-	})
-
+	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, nil)
 	if err != nil {
 		return nil, "", err
 	}
 
-	s3bucket := string(s3.Data[Bucket])
+	s3bucket := string(s3secret.Data[Bucket])
 
 	return mc, s3bucket, nil
 }
