@@ -111,11 +111,15 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 
 		switch dcConfig.Type {
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			if (bits - poolPrefix) >= 64 {
-				return errors.New("the pool is too big to be processed")
+			if dcConfig.AllocationRange <= 0 {
+				return errors.New("allocation range should be greater than zero")
 			}
 
-			numberOfPoolSubnetIPs := uint64(math.Pow(2, float64(bits-poolPrefix)))
+			numberOfPoolSubnetIPsFloat64 := math.Pow(2, float64(bits-poolPrefix))
+			numberOfPoolSubnetIPs := int(numberOfPoolSubnetIPsFloat64)
+			if float64(numberOfPoolSubnetIPs) != numberOfPoolSubnetIPsFloat64 {
+				return errors.New("the pool is too big to be processed")
+			}
 			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
 				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
 			}
