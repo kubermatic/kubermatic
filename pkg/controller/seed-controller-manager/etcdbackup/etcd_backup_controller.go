@@ -19,6 +19,7 @@ package etcdbackup
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -94,6 +95,9 @@ const (
 	bucketNameEnvVarKey = "BUCKET_NAME"
 	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint.
 	backupEndpointEnvVarKey = "ENDPOINT"
+	// backupInsecureEnvVarKey defines the environment variable key for a boolean that tells whether the
+	// configured endpoint uses HTTPS ("false") or HTTP ("true").
+	backupInsecureEnvVarKey = "INSECURE"
 
 	// requeueAfter time after starting a job
 	// should be the time after which a started job will usually have completed.
@@ -834,6 +838,19 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 	return nil, err
 }
 
+func isInsecureURL(u string) bool {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	// a hostname like "foo.com:9000" is parsed as {scheme: "foo.com", host: ""},
+	// so we must make sure to not mis-interpret "http:9000" ({scheme: "http", host: ""}) as
+	// an HTTP url
+
+	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""
+}
+
 func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
 	destination *kubermaticv1.BackupDestination, storeContainer *corev1.Container) *batchv1.Job {
 	storeContainer = storeContainer.DeepCopy()
@@ -849,6 +866,16 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
 			Name:  backupEndpointEnvVarKey,
 			Value: destination.Endpoint,
+		})
+
+		insecure := "false"
+		if isInsecureURL(destination.Endpoint) {
+			insecure = "true"
+		}
+
+		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
+			Name:  backupInsecureEnvVarKey,
+			Value: insecure,
 		})
 	}
 
@@ -1003,6 +1030,16 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
 			Name:  backupEndpointEnvVarKey,
 			Value: destination.Endpoint,
+		})
+
+		insecure := "false"
+		if isInsecureURL(destination.Endpoint) {
+			insecure = "true"
+		}
+
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
+			Name:  backupInsecureEnvVarKey,
+			Value: insecure,
 		})
 	}
 

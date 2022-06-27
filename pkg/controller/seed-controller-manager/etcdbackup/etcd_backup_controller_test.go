@@ -1718,3 +1718,28 @@ func containsEnvVar(envVars []corev1.EnvVar, envVar corev1.EnvVar) bool {
 	}
 	return false
 }
+
+func TestIsInsecure(t *testing.T) {
+	testcases := []struct {
+		url      string
+		insecure bool
+	}{
+		{url: "foo.com", insecure: false},
+		{url: "foo.com:443", insecure: false},
+		{url: "https", insecure: false},
+		{url: "https:433", insecure: false},
+		{url: "http://foo.com", insecure: true},
+		{url: "hTtP://foo.com", insecure: true},
+		{url: "https://foo.com", insecure: false},
+		{url: "HtTpS://foo.com", insecure: false},
+		{url: "HtTpS://foo.com:80", insecure: false},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.url, func(t *testing.T) {
+			if isInsecureURL(testcase.url) != testcase.insecure {
+				t.Fatalf("Expected insecure=%v, but got the opposite.", testcase.insecure)
+			}
+		})
+	}
+}

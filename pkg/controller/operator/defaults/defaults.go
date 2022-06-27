@@ -768,8 +768,13 @@ command:
 - -c
 - |
   set -e
-  s3cmd \
-    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+
+  SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+  if [ "${INSECURE:-false}" == "true" ]; then
+    SSL_FLAGS="--no-ssl"
+  fi
+
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
@@ -787,8 +792,12 @@ command:
 - /bin/sh
 - -c
 - |
-  s3cmd \
-    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+  SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+  if [ "${INSECURE:-false}" == "true" ]; then
+    SSL_FLAGS="--no-ssl"
+  fi
+
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
