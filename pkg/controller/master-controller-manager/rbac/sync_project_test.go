@@ -939,6 +939,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:clusters:owners",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -953,6 +956,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:clusters:editors",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -969,6 +975,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:usersshkeies:owners",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -983,6 +992,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:usersshkeies:editors",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1018,6 +1030,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:userprojectbindings:owners",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1031,6 +1046,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:userprojectbindings:projectmanagers",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1066,6 +1084,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:externalclusters:owners",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1080,6 +1101,9 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:externalclusters:editors",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1215,6 +1239,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1229,6 +1256,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1246,6 +1276,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1260,6 +1293,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1306,6 +1342,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1320,6 +1359,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1336,6 +1378,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1350,6 +1395,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
