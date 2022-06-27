@@ -342,6 +342,7 @@ func shouldSkipClusterRBACRoleBindingForNamedResource(projectName string, object
 		objectResource,
 		kubermaticv1.SchemeGroupVersion.Group,
 		object.GetName(),
+		projectName,
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       objectKind,
@@ -455,6 +456,7 @@ func shouldSkipRBACRoleBindingForNamedResource(projectName string, resourceName 
 		gvk.Group,
 		object.GetName(),
 		namespace,
+		projectName,
 		metav1.OwnerReference{
 			APIVersion: gvk.GroupVersion().String(),
 			Kind:       gvk.Kind,
@@ -1098,6 +1100,7 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 		"configmaps",
 		"",
 		fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name),
+		projectName,
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       kubermaticv1.ClusterKindName,
