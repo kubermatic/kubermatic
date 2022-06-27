@@ -665,7 +665,15 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers 
 		if member.Name == e.podName {
 			continue
 		}
+
 		if err = wait.Poll(1*time.Second, 15*time.Second, func() (bool, error) {
+			// attempt to update member in case a client URL has recently been added
+			if m, err := e.getMemberByName(member.Name, log); err != nil {
+				return false, err
+			} else if m != nil {
+				member = m
+			}
+
 			if len(member.ClientURLs) == 0 {
 				return false, nil
 			}
