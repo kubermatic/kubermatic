@@ -37,7 +37,7 @@ func TestPollSuccess(t *testing.T) {
 		t.Fatalf("Poll should have returned nil, but returned %v", err)
 	}
 
-	if executions > 1 {
+	if executions != 1 {
 		t.Fatalf("Poll should have only executed the condition once, but ran it %d times", executions)
 	}
 }
@@ -71,6 +71,10 @@ func TestPollTerminalError(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("Poll should have returned an error, but got nil")
+	}
+
+	if executions != 1 {
+		t.Fatalf("Poll should have only executed the condition once, but ran it %d times", executions)
 	}
 
 	// This specifically ensures that we get exactly the error that is returned
