@@ -79,10 +79,6 @@ func ValidateUserUpdate(oldUser, newUser *kubermaticv1.User) field.ErrorList {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("email"), newUser.Spec.Email, "this field is immutable"))
 	}
 
-	if oldUser.Spec.ID != newUser.Spec.ID {
-		allErrs = append(allErrs, field.Invalid(specPath.Child("id"), newUser.Spec.ID, "this field is immutable"))
-	}
-
 	if oldUser.Spec.Project != newUser.Spec.Project {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("project"), newUser.Spec.Project, "this field is immutable"))
 	}
