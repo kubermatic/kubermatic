@@ -15,7 +15,7 @@
 apiVersion: v1
 name: prometheus
 version: v9.9.9-dev
-appVersion: v2.35.0
+appVersion: v2.36.2
 description: Prometheus Monitoring for Kubernetes
 keywords:
   - kubermatic
