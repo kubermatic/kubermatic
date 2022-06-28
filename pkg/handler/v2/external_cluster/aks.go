@@ -22,9 +22,11 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	"github.com/Azure/go-autorest/autorest/to"
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-kit/kit/endpoint"
@@ -43,6 +45,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -207,39 +210,57 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
 	basicSettings := agentPoolProfiles.BasicSettings
 	optionalSettings := agentPoolProfiles.OptionalSettings
-	clusterToCreate := containerservice.ManagedCluster{
-		Name:     to.StringPtr(aksCloudSpec.Name),
-		Location: to.StringPtr(clusterSpec.Location),
-		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
-			DNSPrefix:         to.StringPtr(aksCloudSpec.Name),
-			KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
-			ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
-				ClientID: to.StringPtr(aksCloudSpec.ClientID),
-				Secret:   to.StringPtr(aksCloudSpec.ClientSecret),
+	clusterToCreate := armcontainerservice.ManagedCluster{
+		Name:     pointer.String(aksCloudSpec.Name),
+		Location: pointer.String(clusterSpec.Location),
+		Properties: &armcontainerservice.ManagedClusterProperties{
+			DNSPrefix:         pointer.String(aksCloudSpec.Name),
+			KubernetesVersion: pointer.String(clusterSpec.KubernetesVersion),
+			ServicePrincipalProfile: &armcontainerservice.ManagedClusterServicePrincipalProfile{
+				ClientID: pointer.String(aksCloudSpec.ClientID),
+				Secret:   pointer.String(aksCloudSpec.ClientSecret),
 			},
 		},
 	}
-	agentPoolProfilesToBeCreated := containerservice.ManagedClusterAgentPoolProfile{
-		Name:              to.StringPtr(agentPoolProfiles.Name),
-		VMSize:            to.StringPtr(basicSettings.VMSize),
-		Count:             to.Int32Ptr(basicSettings.Count),
-		Mode:              (containerservice.AgentPoolMode)(basicSettings.Mode),
-		OsDiskSizeGB:      to.Int32Ptr(basicSettings.OsDiskSizeGB),
-		AvailabilityZones: &basicSettings.AvailabilityZones,
+
+	mode := (armcontainerservice.AgentPoolMode)(basicSettings.Mode)
+
+	azs := []*string{}
+	for _, az := range basicSettings.AvailabilityZones {
+		azs = append(azs, pointer.String(az))
+	}
+
+	agentPoolProfilesToBeCreated := &armcontainerservice.ManagedClusterAgentPoolProfile{
+		Name:              pointer.String(agentPoolProfiles.Name),
+		VMSize:            pointer.String(basicSettings.VMSize),
+		Count:             pointer.Int32(basicSettings.Count),
+		Mode:              &mode,
+		OSDiskSizeGB:      pointer.Int32(basicSettings.OsDiskSizeGB),
+		AvailabilityZones: azs,
 		EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
-		MaxCount:          to.Int32Ptr(basicSettings.ScalingConfig.MaxCount),
-		MinCount:          to.Int32Ptr(basicSettings.ScalingConfig.MinCount),
+		MaxCount:          pointer.Int32(basicSettings.ScalingConfig.MaxCount),
+		MinCount:          pointer.Int32(basicSettings.ScalingConfig.MinCount),
 		NodeLabels:        optionalSettings.NodeLabels,
 	}
 
-	clusterToCreate.AgentPoolProfiles = &[]containerservice.ManagedClusterAgentPoolProfile{agentPoolProfilesToBeCreated}
+	clusterToCreate.Properties.AgentPoolProfiles = []*armcontainerservice.ManagedClusterAgentPoolProfile{
+		agentPoolProfilesToBeCreated,
+	}
 
-	_, err = aksClient.CreateOrUpdate(
+	future, err := aksClient.BeginCreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
 		aksCloudSpec.Name,
 		clusterToCreate,
+		nil,
 	)
+	if err != nil {
+		return err
+	}
+
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
 	return err
 }
@@ -338,16 +359,21 @@ func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 
 	location := aksCluster.Location
 
-	updateCluster := containerservice.ManagedCluster{
+	updateCluster := armcontainerservice.ManagedCluster{
 		Location: location,
-		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
+		Properties: &armcontainerservice.ManagedClusterProperties{
 			KubernetesVersion: &newVersion,
 		},
 	}
-	_, err = aksClient.CreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster)
+
+	future, err := aksClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
 	return newCluster, nil
 }
@@ -369,12 +395,12 @@ func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 		return nil, err
 	}
 
-	poolProfiles := *aksCluster.ManagedClusterProperties.AgentPoolProfiles
+	poolProfiles := aksCluster.Properties.AgentPoolProfiles
 
 	return getAKSMachineDeployments(ctx, poolProfiles, cluster, clusterProvider)
 }
 
-func getAKSMachineDeployments(ctx context.Context, poolProfiles []containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+func getAKSMachineDeployments(ctx context.Context, poolProfiles []*armcontainerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
 	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(poolProfiles))
 
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
@@ -414,23 +440,22 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 		return nil, err
 	}
 
-	var poolProfile containerservice.ManagedClusterAgentPoolProfile
-	var flag bool = false
-	for _, agentPoolProperty := range *aksCluster.ManagedClusterProperties.AgentPoolProfiles {
+	var poolProfile *armcontainerservice.ManagedClusterAgentPoolProfile
+	for _, agentPoolProperty := range aksCluster.Properties.AgentPoolProfiles {
 		if *agentPoolProperty.Name == nodePoolName {
 			poolProfile = agentPoolProperty
-			flag = true
 			break
 		}
 	}
-	if !flag {
+
+	if poolProfile == nil {
 		return nil, fmt.Errorf("no nodePool found with the name: %v", nodePoolName)
 	}
 
 	return getAKSMachineDeployment(ctx, poolProfile, cluster, clusterProvider)
 }
 
-func getAKSMachineDeployment(ctx context.Context, poolProfile containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+func getAKSMachineDeployment(ctx context.Context, poolProfile *armcontainerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -448,7 +473,7 @@ func getAKSMachineDeployment(ctx context.Context, poolProfile containerservice.M
 	return &md, nil
 }
 
-func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClusterAgentPoolProfile, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
+func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.ManagedClusterAgentPoolProfile, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
 	name := to.String(nodePool.Name)
 	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
@@ -474,31 +499,42 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 		},
 	}
 
+	azs := []string{}
+	for _, az := range nodePool.AvailabilityZones {
+		azs = append(azs, *az)
+	}
+
 	md.Cloud.AKS.Name = name
 	md.Cloud.AKS.BasicSettings = apiv2.AgentPoolBasics{
-		Mode:                string(nodePool.Mode),
-		AvailabilityZones:   to.StringSlice(nodePool.AvailabilityZones),
+		Mode:                string(*nodePool.Mode),
+		AvailabilityZones:   azs,
 		OrchestratorVersion: to.String(nodePool.OrchestratorVersion),
 		VMSize:              to.String(nodePool.VMSize),
 		EnableAutoScaling:   to.Bool(nodePool.EnableAutoScaling),
 		Count:               to.Int32(nodePool.Count),
-		OsDiskSizeGB:        to.Int32(nodePool.OsDiskSizeGB),
+		OsDiskSizeGB:        to.Int32(nodePool.OSDiskSizeGB),
 	}
 	if md.Cloud.AKS.BasicSettings.EnableAutoScaling {
 		md.Cloud.AKS.BasicSettings.ScalingConfig.MaxCount = to.Int32(nodePool.MaxCount)
 		md.Cloud.AKS.BasicSettings.ScalingConfig.MinCount = to.Int32(nodePool.MinCount)
 	}
 	md.Cloud.AKS.Configuration = apiv2.AgentPoolConfig{
-		OsType:             string(nodePool.OsType),
-		OsDiskType:         string(nodePool.OsDiskType),
+		OsType:             string(*nodePool.OSType),
+		OsDiskType:         string(*nodePool.OSDiskType),
 		VnetSubnetID:       to.String(nodePool.VnetSubnetID),
 		PodSubnetID:        to.String(nodePool.VnetSubnetID),
 		MaxPods:            to.Int32(nodePool.MaxPods),
 		EnableNodePublicIP: to.Bool(nodePool.EnableNodePublicIP),
 	}
+
+	taints := []string{}
+	for _, t := range nodePool.NodeTaints {
+		taints = append(taints, *t)
+	}
+
 	md.Cloud.AKS.OptionalSettings = apiv2.AgentPoolOptionalSettings{
 		NodeLabels: nodePool.NodeLabels,
-		NodeTaints: to.StringSlice(nodePool.NodeTaints),
+		NodeTaints: taints,
 	}
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
@@ -564,68 +600,55 @@ func patchAKSMachineDeployment(ctx context.Context, oldCluster, newCluster *apiv
 	return newCluster, nil
 }
 
-func resizeAKSNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, desiredSize int32) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
-	pool, err := agentPoolClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName)
+func resizeAKSNodePool(ctx context.Context, agentPoolClient armcontainerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, desiredSize int32) (*runtime.Poller[armcontainerservice.AgentPoolsClientCreateOrUpdateResponse], error) {
+	pool, err := agentPoolClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName, nil)
 	if err != nil {
 		return nil, err
 	}
-	nodePool := containerservice.AgentPool{
+	nodePool := armcontainerservice.AgentPool{
 		Name: &nodePoolName,
-		ManagedClusterAgentPoolProfileProperties: &containerservice.ManagedClusterAgentPoolProfileProperties{
+		Properties: &armcontainerservice.ManagedClusterAgentPoolProfileProperties{
 			Count: &desiredSize,
 		},
 	}
-	if pool.ManagedClusterAgentPoolProfileProperties.Mode == containerservice.AgentPoolModeSystem {
-		nodePool.ManagedClusterAgentPoolProfileProperties.Mode = containerservice.AgentPoolModeSystem
-	}
-	update, err := updateAKSNodePool(ctx, agentPoolClient, cloud, nodePoolName, nodePool)
-	if err != nil {
-		return nil, err
+
+	if pool.Properties.Mode != nil && *pool.Properties.Mode == armcontainerservice.AgentPoolModeSystem {
+		nodePool.Properties.Mode = pool.Properties.Mode
 	}
 
-	return update, nil
+	return updateAKSNodePool(ctx, agentPoolClient, cloud, nodePoolName, nodePool)
 }
 
-func upgradeNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, desiredVersion string) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
-	pool, err := agentPoolClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName)
+func upgradeNodePool(ctx context.Context, agentPoolClient armcontainerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, desiredVersion string) (*runtime.Poller[armcontainerservice.AgentPoolsClientCreateOrUpdateResponse], error) {
+	pool, err := agentPoolClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName, nil)
 	if err != nil {
 		return nil, err
 	}
-	nodePool := containerservice.AgentPool{
+	nodePool := armcontainerservice.AgentPool{
 		Name: &nodePoolName,
-		ManagedClusterAgentPoolProfileProperties: &containerservice.ManagedClusterAgentPoolProfileProperties{
+		Properties: &armcontainerservice.ManagedClusterAgentPoolProfileProperties{
 			OrchestratorVersion: &desiredVersion,
 		},
 	}
-	if pool.ManagedClusterAgentPoolProfileProperties.Mode == containerservice.AgentPoolModeSystem {
-		nodePool.ManagedClusterAgentPoolProfileProperties.Mode = containerservice.AgentPoolModeSystem
+
+	if pool.Properties.Mode != nil && *pool.Properties.Mode == armcontainerservice.AgentPoolModeSystem {
+		nodePool.Properties.Mode = pool.Properties.Mode
 	}
-	update, err := updateAKSNodePool(ctx, agentPoolClient, cloud, nodePoolName, nodePool)
+
+	return updateAKSNodePool(ctx, agentPoolClient, cloud, nodePoolName, nodePool)
+}
+
+func getAKSNodePoolClient(cred resources.AKSCredentials) (*armcontainerservice.AgentPoolsClient, error) {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return update, nil
+	return armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
 }
 
-func getAKSNodePoolClient(cred resources.AKSCredentials) (*containerservice.AgentPoolsClient, error) {
-	var err error
-
-	agentPoolClient := containerservice.NewAgentPoolsClient(cred.SubscriptionID)
-	agentPoolClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
-	}
-	return &agentPoolClient, nil
-}
-
-func updateAKSNodePool(ctx context.Context, agentPoolClient containerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, nodePool containerservice.AgentPool) (*containerservice.AgentPoolsCreateOrUpdateFuture, error) {
-	result, err := agentPoolClient.CreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName, nodePool)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+func updateAKSNodePool(ctx context.Context, agentPoolClient armcontainerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, nodePool armcontainerservice.AgentPool) (*runtime.Poller[armcontainerservice.AgentPoolsClientCreateOrUpdateResponse], error) {
+	return agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName, nodePool, nil)
 }
 
 func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
@@ -639,7 +662,14 @@ func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticv1.ExternalCluster
 		return err
 	}
 
-	_, err = agentPoolClient.Delete(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName)
+	future, err := agentPoolClient.BeginDelete(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
 	return err
 }
@@ -655,7 +685,7 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, err
 	}
 
-	nodePool := &containerservice.AgentPool{
+	nodePool := &armcontainerservice.AgentPool{
 		Name: &machineDeployment.Name,
 	}
 
@@ -665,24 +695,44 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 	basicSettings := aksMD.BasicSettings
 	optionalSettings := aksMD.OptionalSettings
-	property := containerservice.ManagedClusterAgentPoolProfileProperties{
+
+	taints := []*string{}
+	for i := range optionalSettings.NodeTaints {
+		taints = append(taints, &optionalSettings.NodeTaints[i])
+	}
+
+	azs := []*string{}
+	for i := range basicSettings.AvailabilityZones {
+		azs = append(azs, &basicSettings.AvailabilityZones[i])
+	}
+
+	mode := (armcontainerservice.AgentPoolMode)(basicSettings.Mode)
+
+	property := armcontainerservice.ManagedClusterAgentPoolProfileProperties{
 		VMSize:              to.StringPtr(basicSettings.VMSize),
 		Count:               to.Int32Ptr(basicSettings.Count),
 		OrchestratorVersion: to.StringPtr(basicSettings.OrchestratorVersion),
-		Mode:                (containerservice.AgentPoolMode)(basicSettings.Mode),
-		OsDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
-		AvailabilityZones:   &basicSettings.AvailabilityZones,
+		Mode:                &mode,
+		OSDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
+		AvailabilityZones:   azs,
 		EnableAutoScaling:   to.BoolPtr(basicSettings.EnableAutoScaling),
 		NodeLabels:          optionalSettings.NodeLabels,
-		NodeTaints:          &optionalSettings.NodeTaints,
+		NodeTaints:          taints,
 	}
 	if basicSettings.EnableAutoScaling {
 		property.MaxCount = to.Int32Ptr(basicSettings.ScalingConfig.MaxCount)
 		property.MinCount = to.Int32Ptr(basicSettings.ScalingConfig.MinCount)
 	}
-	nodePool.ManagedClusterAgentPoolProfileProperties = &property
+	nodePool.Properties = &property
 
-	_, err = agentPoolClient.CreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool)
+	future, err := agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -730,17 +780,17 @@ func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserI
 			return nil, err
 		}
 
-		agentPoolAvailableVersions, err := agentPoolClient.GetAvailableAgentPoolVersions(ctx, resourceGroup, resourceName)
+		agentPoolAvailableVersions, err := agentPoolClient.GetAvailableAgentPoolVersions(ctx, resourceGroup, resourceName, nil)
 		if err != nil {
 			return nil, err
 		}
 
-		agentPoolAvailableVersionsProperties := agentPoolAvailableVersions.AgentPoolAvailableVersionsProperties
-		if agentPoolAvailableVersionsProperties == nil || agentPoolAvailableVersionsProperties.AgentPoolVersions == nil {
+		properties := agentPoolAvailableVersions.Properties
+		if properties == nil || properties.AgentPoolVersions == nil {
 			return availableVersions, nil
 		}
 
-		for _, version := range *agentPoolAvailableVersionsProperties.AgentPoolVersions {
+		for _, version := range properties.AgentPoolVersions {
 			if version.KubernetesVersion != nil {
 				kubernetesVersion, err := semverlib.NewVersion(to.String(version.KubernetesVersion))
 				if err != nil {
@@ -791,13 +841,13 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	aksClusterProperties := aksCluster.ManagedClusterProperties
+	aksClusterProperties := aksCluster.Properties
 	if aksClusterProperties == nil {
 		return apiCluster, nil
 	}
 	clusterSpec := &apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
-		DNSPrefix:         to.String(aksCluster.DNSPrefix),
+		DNSPrefix:         to.String(aksClusterProperties.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
 		EnableRBAC:        to.Bool(aksClusterProperties.EnableRBAC),
 		NodeResourceGroup: to.String(aksClusterProperties.NodeResourceGroup),
@@ -808,17 +858,17 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	networkProfile := aksClusterProperties.NetworkProfile
 	if networkProfile != nil {
 		clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
-			NetworkPlugin:    string(networkProfile.NetworkPlugin),
-			NetworkPolicy:    string(networkProfile.NetworkPolicy),
-			NetworkMode:      string(networkProfile.NetworkMode),
+			NetworkPlugin:    string(*networkProfile.NetworkPlugin),
+			NetworkPolicy:    string(*networkProfile.NetworkPolicy),
+			NetworkMode:      string(*networkProfile.NetworkMode),
 			PodCidr:          to.String(networkProfile.PodCidr),
 			ServiceCidr:      to.String(networkProfile.ServiceCidr),
 			DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
 			DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
 		}
 	}
-	if aksCluster.AadProfile != nil {
-		clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
+	if aksCluster.Properties.AADProfile != nil {
+		clusterSpec.ManagedAAD = to.Bool(aksCluster.Properties.AADProfile.Managed)
 	}
 
 	apiCluster.Spec.AKSClusterSpec = clusterSpec

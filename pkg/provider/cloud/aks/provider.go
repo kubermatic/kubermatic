@@ -21,8 +21,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -34,23 +34,21 @@ import (
 )
 
 func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
-	var err error
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	aksClient, err := GetAKSClusterClient(cred)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, "")
+	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+		return nil, fmt.Errorf("cannot get azure cluster config: %w", err)
 	}
 
-	data := (*credResult.Kubeconfigs)[0].Value
-	config, err := clientcmd.Load(*data)
+	config, err := clientcmd.Load(credResult.Kubeconfigs[0].Value)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+		return nil, fmt.Errorf("cannot get azure cluster config: %w", err)
 	}
+
 	return config, nil
 }
 
@@ -111,27 +109,25 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 	return cred, nil
 }
 
-func GetAKSClusterClient(cred resources.AKSCredentials) (*containerservice.ManagedClustersClient, error) {
-	var err error
-
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+func GetAKSClusterClient(cred resources.AKSCredentials) (*armcontainerservice.ManagedClustersClient, error) {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
-	return &aksClient, nil
+
+	return armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 }
 
-func GetAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*containerservice.ManagedCluster, error) {
+func GetAKSCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*armcontainerservice.ManagedCluster, error) {
 	resourceGroup := cloud.AKS.ResourceGroup
 	clusterName := cloud.AKS.Name
 
-	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name)
+	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %w", clusterName, resourceGroup, err)
 	}
 
-	return &aksCluster, nil
+	return &aksCluster.ManagedCluster, nil
 }
 
 func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
@@ -149,14 +145,14 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		return nil, err
 	}
 	state := apiv2.UNKNOWN
-	if aksCluster.ManagedClusterProperties != nil {
-		var powerState containerservice.Code
+	if aksCluster.Properties != nil {
+		var powerState armcontainerservice.Code
 		var provisioningState string
-		if aksCluster.ManagedClusterProperties.PowerState != nil {
-			powerState = aksCluster.ManagedClusterProperties.PowerState.Code
+		if aksCluster.Properties.PowerState != nil {
+			powerState = *aksCluster.Properties.PowerState.Code
 		}
-		if aksCluster.ManagedClusterProperties.ProvisioningState != nil {
-			provisioningState = *aksCluster.ManagedClusterProperties.ProvisioningState
+		if aksCluster.Properties.ProvisioningState != nil {
+			provisioningState = *aksCluster.Properties.ProvisioningState
 		}
 		state = convertAKSStatus(provisioningState, powerState)
 	}
@@ -166,7 +162,7 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	}, nil
 }
 
-func convertAKSStatus(provisioningState string, powerState containerservice.Code) apiv2.ExternalClusterState {
+func convertAKSStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
 	switch {
 	case provisioningState == "Creating":
 		return apiv2.PROVISIONING
