@@ -124,10 +124,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			if int(dcConfig.AllocationPrefix) < poolPrefix {
+			if dcConfig.AllocationPrefix < poolPrefix {
 				return errors.New("allocation prefix cannot be smaller than the pool subnet mask size")
 			}
-			if int(dcConfig.AllocationPrefix) > bits {
+			if dcConfig.AllocationPrefix > bits {
 				return errors.New("invalid allocation prefix for IP version")
 			}
 		}
