@@ -183,8 +183,6 @@ func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// https://github.com/kubernetes/dashboard/releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.20":
-		return "v2.4.0", nil
 	case "1.21":
 		return "v2.4.0", nil
 	case "1.22":

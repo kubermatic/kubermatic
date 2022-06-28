@@ -1272,8 +1272,8 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
-		*semver.NewSemverOrDie("1.21.8"),
 		*semver.NewSemverOrDie("1.22.5"),
+		*semver.NewSemverOrDie("1.23.8"),
 	}
 }
 

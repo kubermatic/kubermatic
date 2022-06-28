@@ -84,38 +84,6 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
 		},
 		{
-			name: "CSI migration completed with k8s < 1.21",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
-				},
-				Spec: kubermaticv1.ClusterSpec{
-					Features: map[string]bool{
-						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
-					},
-					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
-					},
-					Version: *semver.NewSemverOrDie("1.20.0"),
-				},
-				Status: kubermaticv1.ClusterStatus{
-					NamespaceName: "test",
-					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("1.20.0"),
-					},
-					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
-						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
-							Status: corev1.ConditionTrue,
-						},
-					},
-				},
-			},
-			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "CSIMigrationOpenStackComplete=true"),
-		},
-		{
 			name: "CSI migration completed with k8s >= 1.23",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
