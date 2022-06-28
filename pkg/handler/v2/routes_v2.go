@@ -1065,6 +1065,32 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.getGroupProjectBinding())
+
+	// Defines endpoints to manage IPAM pools
+
+	mux.Methods(http.MethodGet).
+		Path("/ipampools").
+		Handler(r.listIPAMPools())
+
+	mux.Methods(http.MethodGet).
+		Path("/ipampools/{ipampool_name}").
+		Handler(r.getIPAMPool())
+
+	mux.Methods(http.MethodPut).
+		Path("/ipampools").
+		Handler(r.applyIPAMPool())
+
+	mux.Methods(http.MethodDelete).
+		Path("/ipampools/{ipampool_name}").
+		Handler(r.deleteIPAMPool())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/ipamallocations").
+		Handler(r.listClusterIPAMAllocations())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/ipamallocations/{ipampool_name}").
+		Handler(r.getClusterIPAMAllocation())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -7149,4 +7175,105 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
+
+//swagger:route GET /api/v2/ipampools ipampool listIPAMPools
+//
+//    Lists IPAM pools.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) listIPAMPools() http.Handler {
+	// TODO
+	return nil
+}
+
+//swagger:route GET /api/v2/ipampools/{ipampool_name} ipampool getIPAMPool
+//
+//    Gets a specific IPAM pool.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) getIPAMPool() http.Handler {
+	// TODO
+	return nil
+}
+
+//swagger:route PUT /api/v2/ipampools ipampool applyIPAMPool
+//
+//    Creates or updates a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) applyIPAMPool() http.Handler {
+	// TODO
+	return nil
+}
+
+//swagger:route DELETE /api/v2/ipampools/{ipampool_name} ipampool deleteIPAMPool
+//
+//    Removes an existing IPAM pool.
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteIPAMPool() http.Handler {
+	// TODO
+	return nil
+}
+
+//swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations ipamallocation listClusterIPAMAllocations
+//
+//    Lists IPAM allocations for a cluster.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []IPAMAllocation
+//      401: empty
+//      403: empty
+func (r Routing) listClusterIPAMAllocations() http.Handler {
+	// TODO
+	return nil
+}
+
+//swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations/{ipampool_name} ipamallocation getClusterIPAMAllocation
+//
+//    Gets a specific IPAM allocation for a cluster.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: IPAMAllocation
+//      401: empty
+//      403: empty
+func (r Routing) getClusterIPAMAllocation() http.Handler {
+	// TODO
+	return nil
 }
