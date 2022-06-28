@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// validate that GroupProjectBinding references an existing project and set an owner reference
 
 	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.Group}, project); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.ProjectID}, project); err != nil {
 		if apierrors.IsNotFound(err) {
 			r.recorder.Event(binding, corev1.EventTypeWarning, "ProjectNotFound", err.Error())
 		}
@@ -74,6 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       kubermaticv1.ProjectKindName,
 			Name:       project.Name,
+			UID:        project.UID,
 		})
 	}); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)

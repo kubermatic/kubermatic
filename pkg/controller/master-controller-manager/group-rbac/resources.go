@@ -71,7 +71,7 @@ func updateGroupProjectBinding(ctx context.Context, client ctrlruntimeclient.Cli
 		patch(binding)
 
 		// save some work
-		if reflect.DeepEqual(binding.Spec, binding.Spec) {
+		if reflect.DeepEqual(original, binding) {
 			return nil
 		}
 
