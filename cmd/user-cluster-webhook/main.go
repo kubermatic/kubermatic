@@ -123,7 +123,10 @@ func main() {
 	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
 
 	// Setup Machine Webhook
-	machineValidator := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle)
+	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID)
+	if err != nil {
+		log.Fatalw("Failed to setup Machine validator", zap.Error(err))
+	}
 	if err := builder.WebhookManagedBy(seedMgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
 	}
