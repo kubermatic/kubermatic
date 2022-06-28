@@ -95,7 +95,7 @@ func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }
 
 func deleteRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
@@ -108,5 +108,5 @@ func deleteRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }

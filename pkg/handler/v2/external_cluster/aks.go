@@ -375,7 +375,7 @@ func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 		Frequency: 5 * time.Second,
 	})
 
-	return newCluster, nil
+	return newCluster, err
 }
 
 func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {

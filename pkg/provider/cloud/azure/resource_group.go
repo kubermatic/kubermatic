@@ -98,5 +98,5 @@ func deleteResourceGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }

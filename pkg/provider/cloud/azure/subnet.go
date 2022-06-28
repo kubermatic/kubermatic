@@ -145,7 +145,7 @@ func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Cl
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }
 
 func deleteSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {

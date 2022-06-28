@@ -190,7 +190,7 @@ func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }
 
 func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
@@ -203,7 +203,7 @@ func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 		Frequency: 5 * time.Second,
 	})
 
-	return nil
+	return err
 }
 
 // nodePortsAllowedIPRangesRule returns a security rule to allow access to node ports from provided IP ranges.

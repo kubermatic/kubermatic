@@ -17,6 +17,7 @@ limitations under the License.
 package azure
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -33,8 +34,9 @@ func ignoreNotFound(err error) error {
 }
 
 func isNotFound(err error) bool {
-	if e, ok := err.(*azcore.ResponseError); err != nil && ok {
-		return e.StatusCode == http.StatusNotFound
+	var aerr *azcore.ResponseError
+	if err != nil && errors.As(err, &aerr) {
+		return aerr.StatusCode == http.StatusNotFound
 	}
 
 	return false
