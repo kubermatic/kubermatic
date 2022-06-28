@@ -46,7 +46,6 @@ type validator struct {
 // NewValidator returns a new Machine validator.
 func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *certificates.CABundle,
 	projectID string) (*validator, error) {
-
 	subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectID})
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
