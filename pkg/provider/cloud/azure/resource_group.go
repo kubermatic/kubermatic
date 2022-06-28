@@ -19,10 +19,11 @@ package azure
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources/resourcesapi"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -40,15 +41,15 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceGroupName(cluster)
 	}
 
-	resourceGroup, err := clients.Groups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup)
-	if err != nil && !isNotFound(resourceGroup.Response) {
+	_, err := clients.Groups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
 	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
 	// of the resource. Since there is nothing in the resource group we could compare to eventually reconcile, we
 	// skip all of that and return early if we found a resource group during our API call earlier.
-	if !isNotFound(resourceGroup.Response) {
+	if !isNotFound(err) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
 			// this is a special case; because we cannot determine if a resource group was created by
@@ -71,15 +72,15 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(ctx context.Context, groupsClient resourcesapi.GroupsClientAPI, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
-	parameters := resources.Group{
-		Name:     to.StringPtr(cloud.Azure.ResourceGroup),
-		Location: to.StringPtr(location),
+func ensureResourceGroup(ctx context.Context, groupsClient ResourceGroupClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+	parameters := armresources.ResourceGroup{
+		Name:     pointer.String(cloud.Azure.ResourceGroup),
+		Location: pointer.String(location),
 		Tags: map[string]*string{
-			clusterTagKey: to.StringPtr(clusterName),
+			clusterTagKey: pointer.String(clusterName),
 		},
 	}
-	if _, err := groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters); err != nil {
+	if _, err := groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters, nil); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %w", cloud.Azure.ResourceGroup, err)
 	}
 
@@ -87,24 +88,14 @@ func ensureResourceGroup(ctx context.Context, groupsClient resourcesapi.GroupsCl
 }
 
 func deleteResourceGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	// We first check existence of the resource group to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	resp, err := clients.Groups.CheckExistence(ctx, cloud.Azure.ResourceGroup)
+	future, err := clients.Groups.BeginDelete(ctx, cloud.Azure.ResourceGroup, nil)
 	if err != nil {
-		return err
-	}
-	if isNotFound(resp) {
-		return nil
+		return ignoreNotFound(err)
 	}
 
-	future, err := clients.Groups.Delete(ctx, cloud.Azure.ResourceGroup)
-	if err != nil {
-		return err
-	}
-
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return err
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
 	return nil
 }

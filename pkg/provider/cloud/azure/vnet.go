@@ -20,9 +20,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -43,19 +45,14 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 		cluster.Spec.Cloud.Azure.VNetName = vnetName(cluster)
 	}
 
-	var resourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
-	if cluster.Spec.Cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cluster.Spec.Cloud.Azure.VNetResourceGroup
-	}
-
-	vnet, err := clients.Networks.Get(ctx, resourceGroup, cluster.Spec.Cloud.Azure.VNetName, "")
-	if err != nil && !isNotFound(vnet.Response) {
+	vnet, err := clients.Networks.Get(ctx, getResourceGroup(cluster.Spec.Cloud), cluster.Spec.Cloud.Azure.VNetName, nil)
+	if err != nil && !isNotFound(err) {
 		return cluster, err
 	}
 
 	// if we found a VNET, we can check for the ownership tag to determine
 	// if the referenced VNET is owned by this cluster and should be reconciled
-	if !isNotFound(vnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
+	if !isNotFound(err) && !hasOwnershipTag(vnet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
 		})
@@ -76,8 +73,8 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	//
 	// Attributes we check:
 	// - Address space CIDR
-	if !(vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil &&
-		reflect.DeepEqual(vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes, target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)) {
+	if !(vnet.Properties != nil && vnet.Properties.AddressSpace != nil &&
+		reflect.DeepEqual(vnet.Properties.AddressSpace.AddressPrefixes, target.Properties.AddressSpace.AddressPrefixes)) {
 		if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}
@@ -89,65 +86,51 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	})
 }
 
-func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string, cidrs []string) *network.VirtualNetwork {
-	return &network.VirtualNetwork{
-		Name:     to.StringPtr(cloud.Azure.VNetName),
-		Location: to.StringPtr(location),
+func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string, cidrs []string) *armnetwork.VirtualNetwork {
+	cidrPointers := []*string{}
+	for _, cidr := range cidrs {
+		cidrPointers = append(cidrPointers, pointer.String(cidr))
+	}
+
+	return &armnetwork.VirtualNetwork{
+		Name:     pointer.String(cloud.Azure.VNetName),
+		Location: pointer.String(location),
 		Tags: map[string]*string{
-			clusterTagKey: to.StringPtr(clusterName),
+			clusterTagKey: pointer.String(clusterName),
 		},
-		VirtualNetworkPropertiesFormat: &network.VirtualNetworkPropertiesFormat{
-			AddressSpace: &network.AddressSpace{AddressPrefixes: &cidrs},
+		Properties: &armnetwork.VirtualNetworkPropertiesFormat{
+			AddressSpace: &armnetwork.AddressSpace{AddressPrefixes: cidrPointers},
 		},
 	}
 }
 
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, vnet *network.VirtualNetwork) error {
+func ensureVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, vnet *armnetwork.VirtualNetwork) error {
 	if vnet == nil {
 		return fmt.Errorf("invalid vnet reference passed")
 	}
 
-	var resourceGroup = cloud.Azure.ResourceGroup
-	if cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cloud.Azure.VNetResourceGroup
-	}
-	future, err := clients.Networks.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, *vnet)
+	future, err := clients.Networks.BeginCreateOrUpdate(ctx, getResourceGroup(cloud), cloud.Azure.VNetName, *vnet, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %w", cloud.Azure.VNetName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update virtual network %q: %w", cloud.Azure.VNetName, err)
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	return nil
+	return err
 }
 
 func deleteVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	var resourceGroup = cloud.Azure.ResourceGroup
-	if cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cloud.Azure.VNetResourceGroup
-	}
-
-	// We first do Get to check existence of the VNet to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	res, err := clients.Networks.Get(ctx, resourceGroup, cloud.Azure.VNetName, "")
+	future, err := clients.Networks.BeginDelete(ctx, getResourceGroup(cloud), cloud.Azure.VNetName, nil)
 	if err != nil {
-		if isNotFound(res.Response) {
-			return nil
-		}
-		return err
+		return ignoreNotFound(err)
 	}
 
-	deleteVNetFuture, err := clients.Networks.Delete(ctx, resourceGroup, cloud.Azure.VNetName)
-	if err != nil {
-		return err
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	if err = deleteVNetFuture.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

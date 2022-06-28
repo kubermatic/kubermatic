@@ -19,34 +19,75 @@ package azure
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute/computeapi"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network/networkapi"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources/resourcesapi"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2021-01-01/subscriptions"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
 
+// ResourceGroupClient is the subset of functions we need from armresources.VirtualResourceGroupsClient;
+// this interface is purely here for allowing unit tests.
+type ResourceGroupClient interface {
+	CreateOrUpdate(ctx context.Context, resourceGroupName string, parameters armresources.ResourceGroup, options *armresources.ResourceGroupsClientCreateOrUpdateOptions) (armresources.ResourceGroupsClientCreateOrUpdateResponse, error)
+	Get(ctx context.Context, resourceGroupName string, options *armresources.ResourceGroupsClientGetOptions) (armresources.ResourceGroupsClientGetResponse, error)
+	BeginDelete(ctx context.Context, resourceGroupName string, options *armresources.ResourceGroupsClientBeginDeleteOptions) (*runtime.Poller[armresources.ResourceGroupsClientDeleteResponse], error)
+}
+
+// NetworkClient is the subset of functions we need from armnetwork.VirtualNetworksClient;
+// this interface is purely here for allowing unit tests.
+type NetworkClient interface {
+	BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, virtualNetworkName string, parameters armnetwork.VirtualNetwork, options *armnetwork.VirtualNetworksClientBeginCreateOrUpdateOptions) (*runtime.Poller[armnetwork.VirtualNetworksClientCreateOrUpdateResponse], error)
+	Get(ctx context.Context, resourceGroupName string, virtualNetworkName string, options *armnetwork.VirtualNetworksClientGetOptions) (armnetwork.VirtualNetworksClientGetResponse, error)
+	BeginDelete(ctx context.Context, resourceGroupName string, virtualNetworkName string, options *armnetwork.VirtualNetworksClientBeginDeleteOptions) (*runtime.Poller[armnetwork.VirtualNetworksClientDeleteResponse], error)
+}
+
+// SubnetClient is the subset of functions we need from armnetwork.SubnetsClient;
+// this interface is purely here for allowing unit tests.
+type SubnetClient interface {
+	BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, virtualNetworkName string, subnetName string, subnetParameters armnetwork.Subnet, options *armnetwork.SubnetsClientBeginCreateOrUpdateOptions) (*runtime.Poller[armnetwork.SubnetsClientCreateOrUpdateResponse], error)
+	Get(ctx context.Context, resourceGroupName string, virtualNetworkName string, subnetName string, options *armnetwork.SubnetsClientGetOptions) (armnetwork.SubnetsClientGetResponse, error)
+	BeginDelete(ctx context.Context, resourceGroupName string, virtualNetworkName string, subnetName string, options *armnetwork.SubnetsClientBeginDeleteOptions) (*runtime.Poller[armnetwork.SubnetsClientDeleteResponse], error)
+}
+
+// RouteTableClient is the subset of functions we need from armnetwork.RouteTablesClient;
+// this interface is purely here for allowing unit tests.
+type RouteTableClient interface {
+	BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, routeTableName string, parameters armnetwork.RouteTable, options *armnetwork.RouteTablesClientBeginCreateOrUpdateOptions) (*runtime.Poller[armnetwork.RouteTablesClientCreateOrUpdateResponse], error)
+	Get(ctx context.Context, resourceGroupName string, routeTableName string, options *armnetwork.RouteTablesClientGetOptions) (armnetwork.RouteTablesClientGetResponse, error)
+	BeginDelete(ctx context.Context, resourceGroupName string, routeTableName string, options *armnetwork.RouteTablesClientBeginDeleteOptions) (*runtime.Poller[armnetwork.RouteTablesClientDeleteResponse], error)
+}
+
+// SecurityGroupClient is the subset of functions we need from armnetwork.SecurityGroupsClient;
+// this interface is purely here for allowing unit tests.
+type SecurityGroupClient interface {
+	BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, parameters armnetwork.SecurityGroup, options *armnetwork.SecurityGroupsClientBeginCreateOrUpdateOptions) (*runtime.Poller[armnetwork.SecurityGroupsClientCreateOrUpdateResponse], error)
+	Get(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, options *armnetwork.SecurityGroupsClientGetOptions) (armnetwork.SecurityGroupsClientGetResponse, error)
+	BeginDelete(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, options *armnetwork.SecurityGroupsClientBeginDeleteOptions) (*runtime.Poller[armnetwork.SecurityGroupsClientDeleteResponse], error)
+}
+
+// AvailabilitySetClient is the subset of functions we need from armcompute.AvailabilitySetsClient;
+// this interface is purely here for allowing unit tests.
+type AvailabilitySetClient interface {
+	CreateOrUpdate(ctx context.Context, resourceGroupName string, availabilitySetName string, parameters armcompute.AvailabilitySet, options *armcompute.AvailabilitySetsClientCreateOrUpdateOptions) (armcompute.AvailabilitySetsClientCreateOrUpdateResponse, error)
+	Get(ctx context.Context, resourceGroupName string, availabilitySetName string, options *armcompute.AvailabilitySetsClientGetOptions) (armcompute.AvailabilitySetsClientGetResponse, error)
+	Delete(ctx context.Context, resourceGroupName string, availabilitySetName string, options *armcompute.AvailabilitySetsClientDeleteOptions) (armcompute.AvailabilitySetsClientDeleteResponse, error)
+}
+
 // ClientSet provides a set of Azure service clients that are necessary to reconcile resources needed by KKP.
 type ClientSet struct {
-	// Autorest client is used to wait for completion of futures
-	Autorest *autorest.Client
-
-	Groups           resourcesapi.GroupsClientAPI
-	Networks         networkapi.VirtualNetworksClientAPI
-	Subnets          networkapi.SubnetsClientAPI
-	RouteTables      networkapi.RouteTablesClientAPI
-	SecurityGroups   networkapi.SecurityGroupsClientAPI
-	AvailabilitySets computeapi.AvailabilitySetsClientAPI
+	Groups           ResourceGroupClient
+	Networks         NetworkClient
+	Subnets          SubnetClient
+	RouteTables      RouteTableClient
+	SecurityGroups   SecurityGroupClient
+	AvailabilitySets AvailabilitySetClient
 }
 
 // GetClientSet returns a ClientSet using the passed credentials as authorization.
@@ -55,46 +96,42 @@ func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*Clien
 }
 
 func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
-	var err error
-
-	autorest := &autorest.Client{}
-	autorest.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+	credential, err := credentials.ToAzureCredential()
 	if err != nil {
 		return nil, err
 	}
 
-	groupsClient, err := getGroupsClient(cloud, credentials)
+	groupsClient, err := getGroupsClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	networksClient, err := getNetworksClient(cloud, credentials)
+	networksClient, err := getNetworksClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetsClient, err := getSubnetsClient(cloud, credentials)
+	subnetsClient, err := getSubnetsClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	routeTablesClient, err := getRouteTablesClient(cloud, credentials)
+	routeTablesClient, err := getRouteTablesClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroupsClient, err := getSecurityGroupsClient(cloud, credentials)
+	securityGroupsClient, err := getSecurityGroupsClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	availabilitySetsClient, err := getAvailabilitySetClient(cloud, credentials)
+	availabilitySetsClient, err := getAvailabilitySetClient(cloud, credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ClientSet{
-		Autorest:         autorest,
 		Groups:           groupsClient,
 		Networks:         networksClient,
 		Subnets:          subnetsClient,
@@ -160,80 +197,67 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}, nil
 }
 
-func ValidateCredentials(ctx context.Context, credentials Credentials) error {
-	var err error
-	groupsClient := subscriptions.NewClient()
-	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func ValidateCredentials(ctx context.Context, credentials *azidentity.ClientSecretCredential, subscriptionID string) error {
+	subscriptionClient, err := armsubscription.NewSubscriptionsClient(credentials, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create authorizer: %w", err)
+		return err
 	}
-	_, err = groupsClient.ListLocations(ctx, credentials.SubscriptionID, nil)
+
+	_, err = subscriptionClient.Get(ctx, subscriptionID, nil)
 
 	return err
 }
 
-func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*resources.GroupsClient, error) {
-	var err error
-	groupsClient := resources.NewGroupsClient(credentials.SubscriptionID)
-	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+	groupsClient, err := armresources.NewResourceGroupsClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &groupsClient, nil
+	return groupsClient, nil
 }
 
-func getNetworksClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*network.VirtualNetworksClient, error) {
-	var err error
-	networksClient := network.NewVirtualNetworksClient(credentials.SubscriptionID)
-	networksClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getNetworksClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.VirtualNetworksClient, error) {
+	networksClient, err := armnetwork.NewVirtualNetworksClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &networksClient, nil
+	return networksClient, nil
 }
 
-func getSubnetsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*network.SubnetsClient, error) {
-	var err error
-	subnetsClient := network.NewSubnetsClient(credentials.SubscriptionID)
-	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getSubnetsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SubnetsClient, error) {
+	subnetsClient, err := armnetwork.NewSubnetsClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &subnetsClient, nil
+	return subnetsClient, nil
 }
 
-func getRouteTablesClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*network.RouteTablesClient, error) {
-	var err error
-	routeTablesClient := network.NewRouteTablesClient(credentials.SubscriptionID)
-	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getRouteTablesClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.RouteTablesClient, error) {
+	routeTablesClient, err := armnetwork.NewRouteTablesClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &routeTablesClient, nil
+	return routeTablesClient, nil
 }
 
-func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*network.SecurityGroupsClient, error) {
-	var err error
-	securityGroupsClient := network.NewSecurityGroupsClient(credentials.SubscriptionID)
-	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SecurityGroupsClient, error) {
+	securityGroupsClient, err := armnetwork.NewSecurityGroupsClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &securityGroupsClient, nil
+	return securityGroupsClient, nil
 }
 
-func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*compute.AvailabilitySetsClient, error) {
-	var err error
-	asClient := compute.NewAvailabilitySetsClient(credentials.SubscriptionID)
-	asClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armcompute.AvailabilitySetsClient, error) {
+	asClient, err := armcompute.NewAvailabilitySetsClient(subscriptionID, credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	return &asClient, nil
+	return asClient, nil
 }
