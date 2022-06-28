@@ -147,7 +147,7 @@ spec:
     spec:
       containers:
       - name: minio
-        image: 'docker.io/minio/minio:RELEASE.2022-02-16T00-35-27Z'
+        image: 'docker.io/minio/minio:RELEASE.2022-06-25T15-50-16Z'
         args:
         - server
         - /storage
