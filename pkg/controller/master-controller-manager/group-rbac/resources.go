@@ -18,6 +18,7 @@ package grouprbac
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -31,12 +32,13 @@ import (
 
 func clusterRoleBindingCreator(binding *kubermaticv1.GroupProjectBinding, clusterRole *rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return "test", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return fmt.Sprintf("%s:%s", clusterRole.Name, binding.Spec.Group), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.GroupProjectBindingKind,
 					Name:       binding.Name,
+					UID:        binding.UID,
 				},
 			}
 			crb.RoleRef = rbacv1.RoleRef{
@@ -50,7 +52,7 @@ func clusterRoleBindingCreator(binding *kubermaticv1.GroupProjectBinding, cluste
 				},
 			}
 
-			return &rbacv1.ClusterRoleBinding{}, nil
+			return crb, nil
 		}
 	}
 }

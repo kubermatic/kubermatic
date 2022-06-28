@@ -98,6 +98,8 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return reconcile.Result{}, err
 	}
 
+	r.log.Debugw("found ClusterRoles matching role label", "clusterRoles", clusterRoles)
+
 	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
 
 	for _, clusterRole := range clusterRoles {
@@ -122,5 +124,5 @@ func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client,
 		return nil, err
 	}
 
-	return nil, nil
+	return clusterRoles.Items, nil
 }
