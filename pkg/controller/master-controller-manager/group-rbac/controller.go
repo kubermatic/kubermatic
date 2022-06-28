@@ -36,7 +36,7 @@ const (
 	ControllerName = "group-rbac-controller"
 )
 
-// Add creates a new Seed-Sync controller and sets up Watches.
+// Add creates a new group-rbac controller and sets up Watches.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,

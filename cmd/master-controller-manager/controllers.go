@@ -27,6 +27,7 @@ import (
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	grouprbac "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/group-rbac"
 	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
@@ -128,6 +129,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
+	}
+	if err := grouprbac.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
+		return fmt.Errorf("failed to create group rbac controller: %w", err)
 	}
 
 	// init CE/EE-only controllers
