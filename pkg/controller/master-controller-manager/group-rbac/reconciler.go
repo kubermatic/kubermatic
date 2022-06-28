@@ -18,10 +18,19 @@ package grouprbac
 
 import (
 	"context"
+	"fmt"
+
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,10 +40,86 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	seedClientGetter provider.SeedClientGetter
+	seedsGetter      provider.SeedsGetter
 	log              *zap.SugaredLogger
 	recorder         record.EventRecorder
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	binding := &kubermaticv1.GroupProjectBinding{}
+	if err := r.Get(ctx, request.NamespacedName, binding); err != nil {
+		if apierrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
+		return reconcile.Result{}, fmt.Errorf("failed to get GroupProjectBinding: %w", err)
+	}
+
+	if binding.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
+	}
+
+	// validate that GroupProjectBinding references an existing project and set an owner reference
+
+	project := &kubermaticv1.Project{}
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.Group}, project); err != nil {
+		if apierrors.IsNotFound(err) {
+			r.recorder.Event(binding, corev1.EventTypeWarning, "ProjectNotFound", err.Error())
+		}
+		return reconcile.Result{}, err
+	}
+
+	if err := updateGroupProjectBinding(ctx, r.Client, binding, func(binding *kubermaticv1.GroupProjectBinding) {
+		kuberneteshelper.EnsureOwnerReference(binding, metav1.OwnerReference{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ProjectKindName,
+			Name:       project.Name,
+		})
+	}); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
+	}
+
+	// TODO: loop over master client and seeds
+
+	result, err := r.reconcile(ctx, r.Client, binding)
+
+	if err != nil {
+		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.log.Errorw("Reconciling failed", zap.Error(err))
+	}
+
+	return result, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) (reconcile.Result, error) {
+	clusterRoles, err := getTargetClusterRoles(ctx, client, binding)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
+
+	for _, clusterRole := range clusterRoles {
+		clusterRoleBindingCreators = append(clusterRoleBindingCreators, clusterRoleBindingCreator(binding, &clusterRole))
+	}
+
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
+}
+
+// getTargetClusterRoles returns a list of ClusterRoles that match the authz.kubermatic.io/role label for the specific role and project
+// that the GroupProjectBinding was created for.
+func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) ([]rbacv1.ClusterRole, error) {
+	var clusterRoles rbacv1.ClusterRoleList
+
+	if err := client.List(ctx, &clusterRoles, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.AuthZRoleLabel: fmt.Sprintf("%s-%s", binding.Spec.Role, binding.Spec.ProjectID),
+	}); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

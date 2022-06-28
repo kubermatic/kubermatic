@@ -23,15 +23,11 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -46,7 +42,6 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
-	namespace string,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	seedsGetter provider.SeedsGetter,
 ) error {
@@ -55,6 +50,7 @@ func Add(
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		log:              log.Named(ControllerName),
 		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		seedsGetter:      seedsGetter,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -63,35 +59,8 @@ func Add(
 		return err
 	}
 
-	nsPredicate := predicate.ByNamespace(namespace)
-
-	// watch all seeds in the given namespace
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher: %w", err)
-	}
-
-	// watch all KubermaticConfigurations in the given namespace
-	configHandler := func(o ctrlruntimeclient.Object) []reconcile.Request {
-		seeds, err := seedsGetter()
-		if err != nil {
-			log.Errorw("Failed to retrieve seeds", zap.Error(err))
-			return nil
-		}
-
-		requests := []reconcile.Request{}
-		for _, seed := range seeds {
-			requests = append(requests, reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Namespace: seed.GetNamespace(),
-					Name:      seed.GetName(),
-				},
-			})
-		}
-
-		return requests
-	}
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticConfiguration{}}, handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
+	// watch all GroupProjectBindings
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 
