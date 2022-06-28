@@ -171,11 +171,11 @@ func getVsphereCPIVersion(version semver.Semver) string {
 	case v122:
 		return "1.22.6"
 	case v123:
-		fallthrough
+		return "1.23.1"
 	case v124:
 		fallthrough
 	//	By default return latest version
 	default:
-		return "1.23.0"
+		return "1.24.0"
 	}
 }
