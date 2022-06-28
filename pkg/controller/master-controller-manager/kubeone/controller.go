@@ -25,7 +25,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Azure/go-autorest/autorest/to"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -48,6 +47,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -941,7 +941,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 					Name:       externalCluster.Name,
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.ExternalClusterKind,
-					Controller: to.BoolPtr(true),
+					Controller: pointer.Bool(true),
 					UID:        externalCluster.GetUID(),
 				},
 			},
@@ -993,7 +993,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 					Name: "ssh-volume",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: to.Int32Ptr(256),
+							DefaultMode: pointer.Int32(256),
 							SecretName:  sshSecret.Name,
 						},
 					},
@@ -1005,7 +1005,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: kubeoneCMName,
 							},
-							DefaultMode: to.Int32Ptr(448),
+							DefaultMode: pointer.Int32(448),
 						},
 					},
 				},
