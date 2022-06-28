@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	"k8c.io/kubermatic/v2/pkg/util/hash"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -179,7 +178,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(ctx, authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
 					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
@@ -278,21 +277,11 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				return nil, utilerrors.NewNotAuthorized()
 			}
 
-			id, err := hash.GetUserID(claims.Subject)
-			if err != nil {
-				return nil, utilerrors.NewNotAuthorized()
-			}
-
 			user := apiv1.User{
 				ObjectMeta: apiv1.ObjectMeta{
-					ID:   id,
 					Name: claims.Name,
 				},
 				Email: claims.Email,
-			}
-
-			if user.ID == "" {
-				return nil, utilerrors.NewNotAuthorized()
 			}
 
 			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {

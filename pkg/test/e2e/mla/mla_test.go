@@ -209,7 +209,7 @@ func TestMLAIntegration(t *testing.T) {
 
 	user := grafanasdk.User{}
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		user, err = grafanaClient.LookupUser(ctx, "roxy2@kubermatic.com")
+		user, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return err == nil
 	}) {
 		t.Fatalf("waiting for grafana user: %v", err)
@@ -448,7 +448,7 @@ rules:
 	}
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		_, err = grafanaClient.LookupUser(ctx, "roxy2@kubermatic.com")
+		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
 

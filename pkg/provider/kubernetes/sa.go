@@ -111,7 +111,6 @@ func genProjectServiceAccount(project *kubermaticv1.Project, name, group, domain
 	sa.Name = uniqueName
 	sa.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, domain)
 	sa.Spec.Name = name
-	sa.Spec.ID = uniqueID
 	sa.Spec.Project = project.Name
 	sa.Labels = map[string]string{ServiceAccountLabelGroup: group}
 	return sa

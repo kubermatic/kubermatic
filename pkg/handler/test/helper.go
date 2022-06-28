@@ -795,7 +795,6 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 		Spec: kubermaticv1.UserSpec{
 			Name:    user.Name,
 			Email:   user.Email,
-			ID:      user.ID,
 			IsAdmin: user.IsAdmin,
 		},
 	}
@@ -830,7 +829,6 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 		// not nice, better to use t.Error
 		panic("unable to generate a test user: " + err.Error())
 	}
-	specID := fmt.Sprintf("%x_KUBE", h.Sum(nil))
 
 	return &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{
@@ -838,7 +836,6 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:    specID,
 			Name:  name,
 			Email: email,
 		},
@@ -856,7 +853,6 @@ func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kube
 	user.Name = userName
 	user.UID = ""
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
-	user.Spec.ID = id
 	user.Spec.Project = projectName
 
 	return user

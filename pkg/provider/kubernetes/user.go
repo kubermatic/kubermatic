@@ -91,8 +91,8 @@ func (p *UserProvider) UserByEmail(ctx context.Context, email string) (*kubermat
 // In the beginning I was considering to hex-encode the email address as it will produce a unique output because the email address in unique.
 // The only issue I have found with this approach is that the length can get quite long quite fast.
 // Thus decided to use sha256 as it produces fixed output and the hash collisions are very, very, very, very rare.
-func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error) {
-	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
+func (p *UserProvider) CreateUser(ctx context.Context, name, email string) (*kubermaticv1.User, error) {
+	if len(name) == 0 || len(email) == 0 {
 		return nil, apierrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
 
@@ -105,7 +105,6 @@ func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (
 			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:    id,
 			Name:  name,
 			Email: email,
 		},
