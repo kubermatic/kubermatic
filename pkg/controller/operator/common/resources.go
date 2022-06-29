@@ -60,7 +60,7 @@ const (
 	// UserAdmissionWebhookName is the name of the validating webhook for Users.
 	UserAdmissionWebhookName = "kubermatic-users"
 
-	// ResourceQuotaAdmissionWebhookName is the name of the validating webhook for ResourceQuotas.
+	// ResourceQuotaAdmissionWebhookName is the name of the validating and mutating webhook for ResourceQuotas.
 	ResourceQuotaAdmissionWebhookName = "kubermatic-resourcequotas"
 
 	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
