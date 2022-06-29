@@ -91,6 +91,19 @@ func ByLabel(key, value string) predicate.Funcs {
 	})
 }
 
+// ByLabel returns a predicate func that only includes objects that have a specific label key (value is ignored).
+func ByLabelExists(key string) predicate.Funcs {
+	return Factory(func(o ctrlruntimeclient.Object) bool {
+		labels := o.GetLabels()
+		if labels != nil {
+			if _, ok := labels[key]; ok {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // ByAnnotation returns a predicate func that only includes objects with the given annotation.
 func ByAnnotation(key, value string, checkValue bool) predicate.Funcs {
 	return Factory(func(o ctrlruntimeclient.Object) bool {

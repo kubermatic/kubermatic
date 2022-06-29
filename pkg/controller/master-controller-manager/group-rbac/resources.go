@@ -30,9 +30,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterRoleBindingCreator(binding *kubermaticv1.GroupProjectBinding, clusterRole *rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingCreatorGetter {
+func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingCreatorGetter {
+	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Spec.Group)
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return fmt.Sprintf("%s:%s", clusterRole.Name, binding.Spec.Group), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -40,15 +41,23 @@ func clusterRoleBindingCreator(binding *kubermaticv1.GroupProjectBinding, cluste
 					Name:       binding.Name,
 					UID:        binding.UID,
 				},
+				{
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+					Kind:       "ClusterRole",
+					Name:       clusterRole.Name,
+					UID:        clusterRole.UID,
+				},
 			}
 			crb.RoleRef = rbacv1.RoleRef{
-				Kind: "ClusterRole",
-				Name: clusterRole.Name,
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     clusterRole.Name,
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
-					Kind: "Group",
-					Name: binding.Spec.Group,
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "Group",
+					Name:     binding.Spec.Group,
 				},
 			}
 

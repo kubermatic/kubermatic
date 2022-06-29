@@ -117,12 +117,12 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return err
 	}
 
-	r.log.Debugw("found ClusterRoles matching role label", "count", len(clusterRoles))
+	r.log.Debugw("Found ClusterRoles matching role label", "count", len(clusterRoles))
 
 	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
 
 	for _, clusterRole := range clusterRoles {
-		clusterRoleBindingCreators = append(clusterRoleBindingCreators, clusterRoleBindingCreator(binding, &clusterRole))
+		clusterRoleBindingCreators = append(clusterRoleBindingCreators, clusterRoleBindingCreator(*binding, clusterRole))
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
@@ -135,13 +135,29 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 // getTargetClusterRoles returns a list of ClusterRoles that match the authz.kubermatic.io/role label for the specific role and project
 // that the GroupProjectBinding was created for.
 func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) ([]rbacv1.ClusterRole, error) {
-	var clusterRoles rbacv1.ClusterRoleList
+	var (
+		clusterRoles []rbacv1.ClusterRole
+	)
 
-	if err := client.List(ctx, &clusterRoles, ctrlruntimeclient.MatchingLabels{
+	clusterRoleList := &rbacv1.ClusterRoleList{}
+
+	// find those ClusterRoles created for a specific role in a specific project
+	if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{
 		kubermaticv1.AuthZRoleLabel: fmt.Sprintf("%s-%s", binding.Spec.Role, binding.Spec.ProjectID),
 	}); err != nil {
 		return nil, err
 	}
 
-	return clusterRoles.Items, nil
+	clusterRoles = append(clusterRoles, clusterRoleList.Items...)
+
+	// find those ClusterRoles created for a specific role globally
+	if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.AuthZRoleLabel: binding.Spec.Role,
+	}); err != nil {
+		return nil, err
+	}
+
+	clusterRoles = append(clusterRoles, clusterRoleList.Items...)
+
+	return clusterRoles, nil
 }
