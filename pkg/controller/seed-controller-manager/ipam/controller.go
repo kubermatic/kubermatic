@@ -45,8 +45,6 @@ import (
 
 const (
 	ControllerName = "kkp-ipam-controller"
-
-	cleanupFinalizer = "kubermatic.k8c.io/ipampool-cleanup"
 )
 
 // Reconciler stores all components required for the IPAM controller.
@@ -92,22 +90,10 @@ func Add(
 	}
 
 	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		ctx := context.Background()
-
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
-		wasIPAMPoolDeleted, err := reconciler.checkIPAMPoolCleanup(ctx, ipamPool)
-		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to ensure IPAMPool cleanup: %w", err))
-			log.Errorw("Failed to ensure IPAMPool cleanup", zap.Error(err))
-			return []reconcile.Request{}
-		}
-		if wasIPAMPoolDeleted {
-			return []reconcile.Request{}
-		}
-
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(ctx, clusterList); err != nil {
+		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
@@ -129,42 +115,6 @@ func Add(
 	}
 
 	return nil
-}
-
-func (r *Reconciler) checkIPAMPoolCleanup(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) (cleanupHappened bool, err error) {
-	// If IPAMPool was deleted, we need to delete all its allocations
-	if ipamPool.DeletionTimestamp != nil {
-		ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-		err := r.Client.List(ctx, ipamAllocationList)
-		if err != nil {
-			return false, fmt.Errorf("failed to list IPAM allocations: %w", err)
-		}
-
-		for _, ipamAllocation := range ipamAllocationList.Items {
-			if ipamAllocation.Name == ipamPool.Name {
-				if err := r.Delete(ctx, &ipamAllocation); err != nil {
-					if apierrors.IsNotFound(err) {
-						continue
-					}
-					return false, err
-				}
-			}
-		}
-
-		// Finally removing the finalizer for the final removal of the IPAMPool
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
-			return false, err
-		}
-
-		return true, nil
-	}
-
-	// Ensuring IPAMPool cleanup finalizer
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r, ipamPool, cleanupFinalizer); err != nil {
-		return false, err
-	}
-
-	return false, nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -239,7 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return nil, err
 		}
 
-		err = r.generateNewClusterAllocationForPool(ctx, cluster, ipamPool.Name, dcIPAMPoolCfg, dcIPAMPoolUsageMap)
+		err = r.generateNewClusterAllocationForPool(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap)
 		if err != nil {
 			return nil, err
 		}
@@ -293,11 +243,11 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	return dcIPAMPoolUsageMap, nil
 }
 
-func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPoolName string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.String) error {
+func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.String) error {
 	newClustersAllocation := &kubermaticv1.IPAMAllocation{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
-			Name:      ipamPoolName,
+			Name:      ipamPool.Name,
 			Labels:    map[string]string{},
 		},
 		Spec: kubermaticv1.IPAMAllocationSpec{
@@ -305,6 +255,12 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 			DC:   cluster.Spec.Cloud.DatacenterName,
 		},
 	}
+	kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
+		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		Kind:       kubermaticv1.IPAMPoolKindName,
+		UID:        ipamPool.GetUID(),
+		Name:       ipamPool.Name,
+	})
 
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
@@ -323,7 +279,7 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 
 	err := r.Create(ctx, newClustersAllocation)
 	if err != nil {
-		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPoolName, cluster.Name, err)
+		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
 
 	return nil
