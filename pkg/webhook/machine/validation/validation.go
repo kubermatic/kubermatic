@@ -50,8 +50,7 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
 	}
-	// TODO change "project" to const after changes with subject kind constant are merged
-	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{"project"})
+	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{kubermaticv1.ProjectSubjectKind})
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject kind requirement: %w", err)
 	}

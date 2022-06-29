@@ -27,6 +27,8 @@ const (
 
 	ResourceQuotaSubjectNameLabelKey = "subject-name"
 	ResourceQuotaSubjectKindLabelKey = "subject-kind"
+
+	ProjectSubjectKind = "project"
 )
 
 // +kubebuilder:object:generate=true
