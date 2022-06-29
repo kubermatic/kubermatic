@@ -80,8 +80,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
 	}
 
+	log := r.log.With("GroupProjectBinding", binding.Name)
+
 	// reconcile master cluster first
-	if err := r.reconcile(ctx, r.Client, r.log, binding); err != nil {
+	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.log.Errorw("Reconciling master failed", zap.Error(err))
 	}
@@ -100,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 				continue
 			}
 
-			log := r.log.With("seed", seed.Name)
+			log := log.With("seed", seed.Name)
 
 			if err := r.reconcile(ctx, seedClient, log, binding); err != nil {
 				r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -117,12 +119,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, binding *kubermaticv1.GroupProjectBinding) error {
 	clusterRoles, err := getTargetClusterRoles(ctx, client, binding)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get target ClusterRoles: %w", err)
 	}
 
 	log.Debugw("Found ClusterRoles matching role label", "count", len(clusterRoles))
 
-	if err := r.pruneClusterRoleBindings(ctx, client, log, binding, clusterRoles); err != nil {
+	if err := pruneClusterRoleBindings(ctx, client, log, binding, clusterRoles); err != nil {
 		return fmt.Errorf("failed to prune ClusterRoleBindings: %w", err)
 	}
 
@@ -134,6 +136,30 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
+	}
+
+	// reconcile RoleBindings next. Roles are spread out across several namespaces, so we need to reconcile by namespace.
+
+	rolesMap, err := getTargetRoles(ctx, client, binding)
+	if err != nil {
+		return fmt.Errorf("failed to get target Roles: %w", err)
+	}
+
+	log.Debugw("Found namespaces with Roles matching conditions", "GroupProjectBinding", binding.Name, "count", len(rolesMap))
+
+	if err := pruneRoleBindings(ctx, client, log, binding); err != nil {
+		return fmt.Errorf("failed to prune Roles: %w", err)
+	}
+
+	for ns, roles := range rolesMap {
+		roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{}
+		for _, role := range roles {
+			roleBindingCreators = append(roleBindingCreators, roleBindingCreator(*binding, role))
+		}
+
+		if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, ns, client); err != nil {
+			return fmt.Errorf("failed to reconcile RoleBindings for namespace '%s': %w", ns, err)
+		}
 	}
 
 	return nil
@@ -169,46 +195,37 @@ func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client,
 	return clusterRoles, nil
 }
 
-func (r *Reconciler) pruneClusterRoleBindings(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, binding *kubermaticv1.GroupProjectBinding, clusterRoles []rbacv1.ClusterRole) error {
-	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+func getTargetRoles(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) (map[string][]rbacv1.Role, error) {
+	roleMap := make(map[string][]rbacv1.Role)
+	roleList := &rbacv1.RoleList{}
 
-	if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{
-		kubermaticv1.AuthZGroupProjectBindingLabel: binding.Name,
+	// find those Roles created for a specific role in a specific project.
+	if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.AuthZRoleLabel: fmt.Sprintf("%s-%s", binding.Spec.Role, binding.Spec.ProjectID),
 	}); err != nil {
-		return err
+		return nil, err
 	}
 
-	pruneList := []rbacv1.ClusterRoleBinding{}
-
-	for _, clusterRoleBinding := range clusterRoleBindingList.Items {
-		// looks like GroupProjectBinding.Spec.Role has been changed, so we need to prune this ClusterRoleBinding.
-		if label, ok := clusterRoleBinding.Labels[kubermaticv1.AuthZRoleLabel]; !ok || label != binding.Spec.Role {
-			pruneList = append(pruneList, clusterRoleBinding)
-			continue
+	for _, role := range roleList.Items {
+		if roleMap[role.Namespace] == nil {
+			roleMap[role.Namespace] = []rbacv1.Role{}
 		}
-
-		// make sure a ClusterRole with that name still exists; if not, the resource referenced by the ClusterRole
-		// was likely deleted and we should clean up this ClusterRoleBinding to prevent namesquatting in the future
-		// (create a `Cluster` resource named "xyz", delete the cluster, wait for someone else to create a cluster
-		// under the same name, gain access to it via the still existing ClusterRoleBinding).
-		roleInScope := false
-		for _, role := range clusterRoles {
-			if clusterRoleBinding.RoleRef.Kind == "ClusterRole" && clusterRoleBinding.RoleRef.Name == role.Name {
-				roleInScope = true
-			}
-		}
-
-		if !roleInScope {
-			pruneList = append(pruneList, clusterRoleBinding)
-		}
+		roleMap[role.Namespace] = append(roleMap[role.Namespace], role)
 	}
 
-	for _, prunedBinding := range pruneList {
-		log.Debugw("found ClusterRoleBinding to prune", "GroupProjectBinding", binding.Name, "ClusterRoleBinding", prunedBinding.Name)
-		if err := client.Delete(ctx, &prunedBinding); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
+	// find those Roles created for a specific role globally.
+	if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.AuthZRoleLabel: binding.Spec.Role,
+	}); err != nil {
+		return nil, err
 	}
 
-	return nil
+	for _, role := range roleList.Items {
+		if roleMap[role.Namespace] == nil {
+			roleMap[role.Namespace] = []rbacv1.Role{}
+		}
+		roleMap[role.Namespace] = append(roleMap[role.Namespace], role)
+	}
+
+	return roleMap, nil
 }

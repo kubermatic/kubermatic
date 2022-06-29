@@ -369,6 +369,9 @@ func generateRBACRoleForClusterNamespaceResource(cluster *kubermaticv1.Cluster, 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -418,6 +421,9 @@ func generateRBACRoleForClusterNamespaceNamedResource(cluster *kubermaticv1.Clus
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, groupName),
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
