@@ -36,11 +36,11 @@ import (
 
 // validator for validating Kubermatic Machine CRD.
 type validator struct {
-	log                 *zap.SugaredLogger
-	seedClient          ctrlruntimeclient.Client
-	userClient          ctrlruntimeclient.Client
-	caBundle            *certificates.CABundle
-	subjectNameSelector labels.Selector
+	log             *zap.SugaredLogger
+	seedClient      ctrlruntimeclient.Client
+	userClient      ctrlruntimeclient.Client
+	caBundle        *certificates.CABundle
+	subjectSelector labels.Selector
 }
 
 // NewValidator returns a new Machine validator.
@@ -50,14 +50,19 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
 	}
-	subjectNameSelector := labels.NewSelector().Add(*subjectNameReq)
+	// TODO change "project" to const after changes with subject kind constant are merged
+	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{"project"})
+	if err != nil {
+		return nil, fmt.Errorf("error creating resource quota subject kind requirement: %w", err)
+	}
+	subjectSelector := labels.NewSelector().Add(*subjectNameReq, *subjectKindReq)
 
 	return &validator{
-		log:                 log,
-		seedClient:          seedClient,
-		userClient:          userClient,
-		caBundle:            caBundle,
-		subjectNameSelector: subjectNameSelector,
+		log:             log,
+		seedClient:      seedClient,
+		userClient:      userClient,
+		caBundle:        caBundle,
+		subjectSelector: subjectSelector,
 	}, nil
 }
 
@@ -72,7 +77,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
-	quota, err := getResourceQuota(ctx, v.seedClient, v.subjectNameSelector)
+	quota, err := getResourceQuota(ctx, v.seedClient, v.subjectSelector)
 	if err != nil {
 		return err
 	}
