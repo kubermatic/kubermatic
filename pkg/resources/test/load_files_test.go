@@ -295,7 +295,7 @@ func TestLoadFiles(t *testing.T) {
 							UID:  types.UID("1234567890"),
 							Labels: map[string]string{
 								"my-label":                     "my-value",
-								kubermaticv1.ProjectIDLabelKey: "project",
+								kubermaticv1.ProjectIDLabelKey: "my-project",
 							},
 						},
 						Spec: kubermaticv1.ClusterSpec{
