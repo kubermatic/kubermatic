@@ -142,11 +142,11 @@ func validateUpdate(oldResourceQuota *kubermaticv1.ResourceQuota, newResourceQuo
 	newLabels := newResourceQuota.GetLabels()
 
 	if oldLabels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != newLabels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] {
-		return errors.New(fmt.Sprintf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectKindLabelKey))
+		return fmt.Errorf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectKindLabelKey)
 	}
 
 	if oldLabels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != newLabels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] {
-		return errors.New(fmt.Sprintf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectNameLabelKey))
+		return fmt.Errorf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectNameLabelKey)
 	}
 
 	return nil
