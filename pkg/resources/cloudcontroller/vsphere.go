@@ -176,7 +176,6 @@ func getVsphereCPIVersion(version semver.Semver) string {
 		fallthrough
 	//	By default return latest version
 	default:
-		// nolint:goconst
-		return "1.24.0"
+		return v1240
 	}
 }

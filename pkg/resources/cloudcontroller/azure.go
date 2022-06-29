@@ -159,7 +159,7 @@ func getAzureVersion(version semver.Semver) (string, error) {
 	case v124:
 		fallthrough
 	default:
-		return "1.24.0", nil
+		return v1240, nil
 	}
 }
 
