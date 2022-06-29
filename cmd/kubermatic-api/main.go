@@ -374,6 +374,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	featureGatesProvider := kubernetesprovider.NewFeatureGatesProvider(options.featureGates)
 
+	ipamPoolProvider := kubernetesprovider.NewIPAMPoolProvider(client)
+
 	return providers{
 		sshKey:                                  sshKeyProvider,
 		privilegedSSHKeyProvider:                privilegedSSHKeyProvider,
@@ -421,6 +423,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		seedProvider:                            seedProvider,
 		resourceQuotaProvider:                   resourceQuotaProvider,
 		groupProjectBindingProvider:             groupProjectBindingProvider,
+		ipamPoolProvider:                        ipamPoolProvider,
 	}, nil
 }
 
@@ -542,6 +545,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		SeedProvider:                            prov.seedProvider,
 		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
 		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
+		IPAMPoolProvider:                        prov.ipamPoolProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,

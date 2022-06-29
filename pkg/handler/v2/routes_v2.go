@@ -43,6 +43,7 @@ import (
 	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
+	ipampool "k8c.io/kubermatic/v2/pkg/handler/v2/ipampool"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
@@ -7189,8 +7190,15 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 //      401: empty
 //      403: empty
 func (r Routing) listIPAMPools() http.Handler {
-	// TODO
-	return nil
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
 }
 
 //swagger:route GET /api/v2/ipampools/{ipampool_name} ipampool getIPAMPool

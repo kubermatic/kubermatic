@@ -1345,3 +1345,8 @@ type GroupProjectBindingProvider interface {
 	// Delete removes an existing GroupProjectBinding.
 	Delete(ctx context.Context, userInfo *UserInfo, name string) error
 }
+
+type IPAMPoolProvider interface {
+	// List gets the IPAM pool list
+	List(ctx context.Context) (*kubermaticv1.IPAMPoolList, error)
+}
