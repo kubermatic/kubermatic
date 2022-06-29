@@ -66,7 +66,7 @@ func TestHandle(t *testing.T) {
 		wantPatches  []jsonpatch.JsonPatchOperation
 	}{
 		{
-			name: "Add missing OwnershipReference to a new ResourceQuota",
+			name: "Add missing OwnershipReference and Labels to a new ResourceQuota",
 			req: admission.Request{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
@@ -109,7 +109,143 @@ func TestHandle(t *testing.T) {
 						"blockOwnerDeletion": true,
 					}},
 				),
+				jsonpatch.NewOperation(
+					"add",
+					"/metadata/labels",
+					map[string]interface{}{
+						"subject-kind": "project",
+						"subject-name": "xxtestxx",
+					},
+				),
 			},
+		},
+		{
+			name: "Overwrite inappropriate labels to a new ResourceQuota",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "ResourceQuota",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawResourceQuotaGen{
+							Name:        "project-xxtestxx",
+							ProjectName: "xxtestxx",
+							Labels: map[string]string{
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "NOT-project",
+								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "WRONG-name",
+							},
+						}.Do(),
+					},
+				},
+			},
+			existingObjs: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "xxtestxx",
+						UID:  "bar",
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "boo",
+					},
+				},
+			},
+			wantError: false,
+			wantPatches: []jsonpatch.Operation{
+				jsonpatch.NewOperation(
+					"add",
+					"/metadata/ownerReferences",
+					[]interface{}{map[string]interface{}{
+						"apiVersion":         "kubermatic.k8c.io/v1",
+						"kind":               "Project",
+						"name":               "xxtestxx",
+						"uid":                "bar",
+						"controller":         true,
+						"blockOwnerDeletion": true,
+					}},
+				),
+				jsonpatch.NewOperation(
+					"replace",
+					"/metadata/labels/subject-name",
+					"xxtestxx",
+				),
+				jsonpatch.NewOperation(
+					"replace",
+					"/metadata/labels/subject-kind",
+					"project",
+				),
+			},
+		},
+		{
+			name: "Update immutable subject-name label of a ResourceQuota",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "ResourceQuota",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawResourceQuotaGen{
+							Name:        "project-xxtestxx",
+							ProjectName: "xxtestxx",
+							Labels: map[string]string{
+								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "should-not-be-changed",
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawResourceQuotaGen{
+							Name:        "project-xxtestxx",
+							ProjectName: "xxtestxx",
+							Labels: map[string]string{
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantError: true,
+		},
+		{
+			name: "Update immutable subject-kind label of a ResourceQuota",
+			req: admission.Request{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "ResourceQuota",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawResourceQuotaGen{
+							Name:        "project-xxtestxx",
+							ProjectName: "xxtestxx",
+							Labels: map[string]string{
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "should-not-be-changed",
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawResourceQuotaGen{
+							Name:        "project-xxtestxx",
+							ProjectName: "xxtestxx",
+							Labels: map[string]string{
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantError: true,
 		},
 	}
 
@@ -157,6 +293,7 @@ func TestHandle(t *testing.T) {
 type rawResourceQuotaGen struct {
 	Name        string
 	ProjectName string
+	Labels      map[string]string
 }
 
 func (r rawResourceQuotaGen) Do() []byte {
@@ -168,6 +305,7 @@ func (r rawResourceQuotaGen) Do() []byte {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.Name,
 			Namespace: resources.KubermaticNamespace,
+			Labels:    r.Labels,
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{
