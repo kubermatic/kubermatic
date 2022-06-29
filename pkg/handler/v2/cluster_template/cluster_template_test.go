@@ -219,7 +219,7 @@ func TestListClusterTemplates(t *testing.T) {
 								Fake:           &kubermaticv1.FakeCloudSpec{},
 							},
 							KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-								Enabled: false,
+								Enabled: nil,
 							}},
 					},
 					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},
@@ -237,7 +237,7 @@ func TestListClusterTemplates(t *testing.T) {
 								Fake:           &kubermaticv1.FakeCloudSpec{},
 							},
 							KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-								Enabled: false,
+								Enabled: nil,
 							}},
 					},
 					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},
@@ -255,7 +255,7 @@ func TestListClusterTemplates(t *testing.T) {
 								Fake:           &kubermaticv1.FakeCloudSpec{},
 							},
 							KubernetesDashboard: &kubermaticv1.KubernetesDashboard{
-								Enabled: false,
+								Enabled: nil,
 							}},
 					},
 					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},

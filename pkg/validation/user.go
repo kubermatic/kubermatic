@@ -34,10 +34,6 @@ func ValidateUser(u *kubermaticv1.User) field.ErrorList {
 		allErrs = append(allErrs, field.Required(specPath.Child("email"), "this field is required"))
 	}
 
-	if u.Spec.ID == "" {
-		allErrs = append(allErrs, field.Required(specPath.Child("id"), "this field is required"))
-	}
-
 	if u.Spec.Name == "" {
 		allErrs = append(allErrs, field.Required(specPath.Child("name"), "this field is required"))
 	}
@@ -81,10 +77,6 @@ func ValidateUserUpdate(oldUser, newUser *kubermaticv1.User) field.ErrorList {
 
 	if oldUser.Spec.Email != newUser.Spec.Email {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("email"), newUser.Spec.Email, "this field is immutable"))
-	}
-
-	if oldUser.Spec.ID != newUser.Spec.ID {
-		allErrs = append(allErrs, field.Invalid(specPath.Child("id"), newUser.Spec.ID, "this field is immutable"))
 	}
 
 	if oldUser.Spec.Project != newUser.Spec.Project {

@@ -1,7 +1,7 @@
 //go:build ee
 
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 
 	eeapi "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-api"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,4 +39,8 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, op
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return eeapi.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.ResourceQuotaProvider {
+	return eeapi.ResourceQuotaProviderFactory(createMasterImpersonatedClient, privilegedClient)
 }

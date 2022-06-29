@@ -128,8 +128,10 @@ func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *g
 			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
 		}
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
-			log.Errorf("unable to set dashboard: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			log.Errorw("unable to set dashboard",
+				zap.Error(err),
+				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
+				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
 			return err
 		}
 	}
@@ -143,12 +145,14 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient
 			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
 		}
 		if board.UID == "" {
-			log.Debugf("dashboard %s doesn't have UID set, skipping", board.Title)
+			log.Debugw("dashboard doesn't have UID set, skipping", "title", board.Title)
 			continue
 		}
 		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
-			log.Errorf("unable to delete dashboard: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			log.Errorw("unable to delete dashboard",
+				zap.Error(err),
+				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
+				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
 			return err
 		}
 	}

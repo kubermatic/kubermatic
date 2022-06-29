@@ -29,7 +29,7 @@ trap cleanup EXIT SIGINT SIGTERM
 export VM_IMAGE_PATH="${VM_IMAGE_PATH:-$HOME}"
 export VM_NAME="${VM_NAME:-CentOS-7-x86_64-GenericCloud.qcow2}"
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-export KUBERMATIC_OIDC_LOGIN=roxy@loodse.com
+export KUBERMATIC_OIDC_LOGIN=roxy-admin@kubermatic.com
 export KUBERMATIC_OIDC_PASSWORD=password
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 export KUBERMATIC_API_ENDPOINT=http://localhost:8080
@@ -58,17 +58,16 @@ export KUBECONFIG=${KUBECONFIG:-~/.kube/config}
 
 TMP=$(mktemp -d)
 
-echodate "Creating roxy2 user..."
+echodate "Creating roxy-admin user..."
 cat << EOF > "$TMP"/user.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
-  name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
+  name: roxy-admin
 spec:
   admin: true
-  email: roxy2@loodse.com
-  id: 1413636a43ddc27da27e47614faedff24b4ab19c9d9f2b45dd1b89d9_KUBE
-  name: roxy2
+  email: roxy-admin@kubermatic.com
+  name: roxy-admin
 EOF
 retry 2 kubectl apply -f "$TMP"/user.yaml
 

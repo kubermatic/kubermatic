@@ -21,6 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ResourceQuotaKindName represents "Kind" defined in Kubernetes.
+	ResourceQuotaKindName = "ResourceQuota"
+
+	ResourceQuotaSubjectNameLabelKey = "subject-name"
+	ResourceQuotaSubjectKindLabelKey = "subject-kind"
+)
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

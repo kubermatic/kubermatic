@@ -51,3 +51,9 @@ func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcon
 		return "", nil
 	}
 }
+
+func resourceQuotaControllerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(_ context.Context, _ manager.Manager, _ map[string]manager.Manager) (string, error) {
+		return "", nil
+	}
+}

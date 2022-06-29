@@ -23,7 +23,7 @@ containerize ./hack/update-prometheus-rules.sh
 
 promtool=promtool
 if ! [ -x "$(command -v $promtool)" ]; then
-  version=2.35.0
+  version=2.36.2
   url="https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz"
   promtool=/tmp/promtool
 

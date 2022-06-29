@@ -85,6 +85,11 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 			return fmt.Errorf("failed to create %q controller: %w", name, err)
 		}
 	}
+
+	// init CE/EE-only controllers
+	if err := setupControllers(ctrlCtx); err != nil {
+		return err
+	}
 	return nil
 }
 

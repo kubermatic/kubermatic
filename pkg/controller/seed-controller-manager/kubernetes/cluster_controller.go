@@ -32,7 +32,6 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -40,7 +39,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -188,7 +187,7 @@ func Add(
 		&appsv1.StatefulSet{},
 		&appsv1.Deployment{},
 		&batchv1beta1.CronJob{},
-		&policyv1beta1.PodDisruptionBudget{},
+		&policyv1.PodDisruptionBudget{},
 		&autoscalingv1.VerticalPodAutoscaler{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
@@ -217,16 +216,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 	log = log.With("cluster", cluster.Name)
-
-	// ensure new Cluster objects have basic status information set;
-	// this should be done regardless of ClusterAvailableForReconciling()
-	// and hence outside the ClusterReconcileWrapper
-	if err := r.reconcileClusterStatus(ctx, cluster); err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-
-		return reconcile.Result{}, err
-	}
 
 	// the update controller needs to determine the target version based on the spec
 	// before we can reconcile anything
@@ -268,15 +257,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcileClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-		if c.Status.NamespaceName == "" {
-			c.Status.NamespaceName = kubernetesprovider.NamespaceName(cluster.Name)
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	namespace, err := r.ensureNamespaceExists(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
+	}
+
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.NamespaceName != namespace.Name {
+			c.Status.NamespaceName = namespace.Name
 		}
 	})
-}
+	if err != nil {
+		return nil, fmt.Errorf("failed to update cluster namespace status: %w", err)
+	}
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// synchronize cluster.status.health for Kubernetes clusters
 	if err := r.syncHealth(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync health: %w", err)
@@ -298,7 +293,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
 	}
 
-	res, err := r.reconcileCluster(ctx, cluster)
+	res, err := r.reconcileCluster(ctx, cluster, namespace)
 	if err != nil {
 		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {

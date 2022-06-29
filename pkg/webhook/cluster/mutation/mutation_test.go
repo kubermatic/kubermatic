@@ -87,6 +87,7 @@ var (
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaults.DefaultNodePortRange),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaults.DefaultControllerManagerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard/enabled", true),
 	}
 
 	defaultNetworkingPatchesWithoutProxyMode = []jsonpatch.JsonPatchOperation{
@@ -273,6 +274,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard/enabled", true),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			},
@@ -643,7 +645,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.22"),
+							Version: *semver.NewSemverOrDie("1.24"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -672,7 +674,7 @@ func TestHandle(t *testing.T) {
 					OldObject: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.21"),
+							Version: *semver.NewSemverOrDie("1.23"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",

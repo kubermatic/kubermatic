@@ -26,6 +26,7 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -51,6 +52,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -178,7 +180,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Ensure that kubernetes-dashboard is completely removed, when disabled
-	if !cluster.Spec.KubernetesDashboard.Enabled {
+	if !cluster.Spec.KubernetesDashboard.IsEnabled() {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -237,8 +239,13 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 
 // ensureNamespaceExists will create the cluster namespace.
 func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+	namespace := cluster.Status.NamespaceName
+	if namespace == "" {
+		namespace = kubernetesprovider.NamespaceName(cluster.Name)
+	}
+
 	ns := &corev1.Namespace{}
-	err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns)
+	err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns)
 	if err == nil {
 		return ns, nil // found it
 	}
@@ -248,12 +255,31 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 
 	ns = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cluster.Status.NamespaceName,
+			Name:            namespace,
 			OwnerReferences: []metav1.OwnerReference{r.getOwnerRefForCluster(cluster)},
 		},
 	}
-	if err := r.Create(ctx, ns); err != nil {
-		return nil, fmt.Errorf("failed to create Namespace %s: %w", cluster.Status.NamespaceName, err)
+	if err := r.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
+		return nil, fmt.Errorf("failed to create Namespace %s: %w", namespace, err)
+	}
+
+	// before returning the namespace and putting its name into the cluster status,
+	// ensure that the namespace is in our cache, or else other controllers that
+	// want to reconcile might get confused
+	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
+		ns := &corev1.Namespace{}
+		err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns)
+		if err == nil {
+			return true, nil
+		}
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for cluster namespace to appear in cache: %w", err)
 	}
 
 	// Creating() an object does not set the type meta, in fact it _resets_ it.
@@ -312,7 +338,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		userclusterwebhook.DeploymentCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.KubernetesDashboard.IsEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
 	}
 
@@ -383,7 +409,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.ViewerKubeconfigCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.KubernetesDashboard.IsEnabled() {
 		creators = append(creators,
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
 		)

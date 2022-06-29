@@ -20,24 +20,22 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1534,14 +1532,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", errors.New("CA bundle does not contain any valid certificates")
 	}
 
-	s3Client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: true,
-		Transport: &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: pool},
-			DisableCompression: true,
-		},
-	})
+	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
 	}

@@ -28,7 +28,9 @@ import (
 	"context"
 
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
+	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,4 +41,8 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func ResourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *resourcequotas.ResourceQuotaProvider {
+	return resourcequotas.NewResourceQuotaProvider(createMasterImpersonatedClient, privilegedClient)
 }

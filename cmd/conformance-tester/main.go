@@ -126,7 +126,7 @@ func main() {
 		log.Fatalw("Test failed", zap.Error(err))
 	}
 
-	log.Infof("Whole suite took %.2f seconds", time.Since(start).Seconds())
+	log.Infow("Test suite has completed successfully", "runtime", time.Since(start))
 }
 
 func setupKubeClients(ctx context.Context, opts *types.Options) error {

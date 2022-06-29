@@ -218,6 +218,7 @@ type newRoutingFunc func(
 	masterClient ctrlruntimeclient.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
+	resourceQuotaProvider provider.ResourceQuotaProvider,
 	features features.FeatureGate,
 ) http.Handler
 
@@ -294,6 +295,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	resourceQuotaProvider := resourceQuotaProviderFactory(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -598,6 +600,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeClient,
 		featureGatesProvider,
 		seedProvider,
+		resourceQuotaProvider,
 		featureGates,
 	)
 
@@ -792,7 +795,6 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 		Spec: kubermaticv1.UserSpec{
 			Name:    user.Name,
 			Email:   user.Email,
-			ID:      user.ID,
 			IsAdmin: user.IsAdmin,
 		},
 	}
@@ -827,7 +829,6 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 		// not nice, better to use t.Error
 		panic("unable to generate a test user: " + err.Error())
 	}
-	specID := fmt.Sprintf("%x_KUBE", h.Sum(nil))
 
 	return &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{
@@ -835,7 +836,6 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:    specID,
 			Name:  name,
 			Email: email,
 		},
@@ -853,7 +853,6 @@ func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kube
 	user.Name = userName
 	user.UID = ""
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
-	user.Spec.ID = id
 	user.Spec.Project = projectName
 
 	return user
@@ -1269,8 +1268,8 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
-		*semver.NewSemverOrDie("1.21.8"),
 		*semver.NewSemverOrDie("1.22.5"),
+		*semver.NewSemverOrDie("1.23.8"),
 	}
 }
 

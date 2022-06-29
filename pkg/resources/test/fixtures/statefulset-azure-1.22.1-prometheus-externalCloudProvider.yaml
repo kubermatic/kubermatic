@@ -33,7 +33,7 @@ spec:
         - --web.enable-lifecycle
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
-        image: quay.io/prometheus/prometheus:v2.34.0
+        image: quay.io/prometheus/prometheus:v2.36.2
         livenessProbe:
           failureThreshold: 10
           httpGet:

@@ -26,6 +26,7 @@ import (
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
+	resourcequotamastercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/master-controller"
 	resourcequotasyncer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-syncer"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -59,6 +60,17 @@ func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcon
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
+		)
+	}
+}
+
+func resourceQuotaControllerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return resourcequotamastercontroller.ControllerName, resourcequotamastercontroller.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
 		)
 	}
 }

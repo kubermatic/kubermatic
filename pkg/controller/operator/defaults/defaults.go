@@ -213,9 +213,6 @@ var (
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
 		Default: semver.NewSemverOrDie("v1.23.8"),
 		Versions: []semver.Semver{
-			// Kubernetes 1.21
-			newSemver("v1.21.8"),
-			newSemver("v1.21.12"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			newSemver("v1.22.9"),
@@ -228,36 +225,11 @@ var (
 			newSemver("v1.24.2"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.20 =======
 			{
 				// Auto-upgrade unsupported clusters.
-				From:      "1.20.*",
-				To:        "1.21.10",
+				From:      "1.21.*",
+				To:        "1.22.11",
 				Automatic: pointer.BoolPtr(true),
-			},
-
-			// ======= 1.21 =======
-			{
-				// Allow to change to any patch version
-				From: "1.21.*",
-				To:   "1.21.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2021-25741 (fixed >= 1.21.5)
-				// - CVE-2021-3711 (fixed >= 1.21.7)
-				// - CVE-2021-3712 (fixed >= 1.21.7)
-				// - CVE-2021-33910 (fixed >= 1.21.7)
-				// - CVE-2021-44716 (fixed >= 1.21.8)
-				// - CVE-2021-44717 (fixed >= 1.21.8)
-				From:      ">= 1.21.0, < 1.21.8",
-				To:        "1.21.8",
-				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.21.*",
-				To:   "1.22.*",
 			},
 
 			// ======= 1.22 =======
@@ -768,8 +740,13 @@ command:
 - -c
 - |
   set -e
-  s3cmd \
-    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+
+  SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+  if [ "${INSECURE:-false}" == "true" ]; then
+    SSL_FLAGS="--no-ssl"
+  fi
+
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
@@ -787,8 +764,12 @@ command:
 - /bin/sh
 - -c
 - |
-  s3cmd \
-    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+  SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+  if [ "${INSECURE:-false}" == "true" ]; then
+    SSL_FLAGS="--no-ssl"
+  fi
+
+  s3cmd $SSL_FLAGS \
     --access_key=$ACCESS_KEY_ID \
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \

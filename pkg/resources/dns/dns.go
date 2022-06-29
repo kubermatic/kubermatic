@@ -28,7 +28,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -50,8 +50,6 @@ var (
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
 func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
 	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
-	case "1.20":
-		return "coredns/coredns:v1.7.0"
 	case "1.21":
 		return "coredns/coredns:v1.8.0"
 	case "1.22":
@@ -256,9 +254,9 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 // PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
-			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
+			pdb.Spec = policyv1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil),
 				},

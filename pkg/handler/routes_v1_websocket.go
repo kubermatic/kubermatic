@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
@@ -242,21 +241,11 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 		return nil, utilerrors.NewNotAuthorized()
 	}
 
-	id, err := hash.GetUserID(claims.Subject)
-	if err != nil {
-		return nil, utilerrors.NewNotAuthorized()
-	}
-
 	user := &apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
-			ID:   id,
 			Name: claims.Name,
 		},
 		Email: claims.Email,
-	}
-
-	if user.ID == "" {
-		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	return user, nil

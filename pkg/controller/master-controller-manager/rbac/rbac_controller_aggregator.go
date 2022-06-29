@@ -146,6 +146,15 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			},
 			destination: destinationSeed,
 		},
+
+		{
+			object: &kubermaticv1.ResourceQuota{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ResourceQuotaKindName,
+				},
+			},
+		},
 	}
 
 	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, log, projectResources, workerPredicate); err != nil {

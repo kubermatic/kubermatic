@@ -30,7 +30,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_cilium.yaml
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the Kubermatic namespace
@@ -49,6 +49,6 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running cilium tests..."
 
-go_test cilium_e2e -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
+go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium
 
 echodate "Cilium tests done."
