@@ -144,7 +144,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(rq.Labels, tc.expectedRQ.Labels) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Labels, tc.expectedRQ.Labels))
 			}
-
 		})
 	}
 }
