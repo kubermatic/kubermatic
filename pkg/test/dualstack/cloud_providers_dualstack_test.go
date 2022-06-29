@@ -61,6 +61,7 @@ var cloudProviders = map[string]clusterSpec{
 	"openstack": openstack{},
 	"hetzner":   hetzner{},
 	"do":        do{},
+	"equinix":   equinix{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -216,6 +217,26 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				"ubuntu",
 			},
 			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
