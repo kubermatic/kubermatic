@@ -81,7 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// reconcile master cluster first
-	if err := r.reconcile(ctx, r.Client, binding); err != nil {
+	if err := r.reconcile(ctx, r.Client, r.log, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.log.Errorw("Reconciling master failed", zap.Error(err))
 	}
@@ -99,7 +99,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 				r.log.Warnw("Getting seed client failed", "seed", seed.Name, zap.Error(err))
 				continue
 			}
-			if err := r.reconcile(ctx, seedClient, binding); err != nil {
+
+			log := r.log.With("seed", seed.Name)
+
+			if err := r.reconcile(ctx, seedClient, log, binding); err != nil {
 				r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 				r.log.Warnw("Reconciling seed failed", "seed", seed.Name, zap.Error(err))
 			}
@@ -111,13 +114,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) error {
+func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, binding *kubermaticv1.GroupProjectBinding) error {
 	clusterRoles, err := getTargetClusterRoles(ctx, client, binding)
 	if err != nil {
 		return err
 	}
 
-	r.log.Debugw("Found ClusterRoles matching role label", "count", len(clusterRoles))
+	log.Debugw("Found ClusterRoles matching role label", "count", len(clusterRoles))
+
+	if err := r.pruneClusterRoleBindings(ctx, client, log, binding, clusterRoles); err != nil {
+		return fmt.Errorf("failed to prune ClusterRoleBindings: %w", err)
+	}
 
 	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
 
@@ -126,7 +133,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
-		return err
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
 	return nil
@@ -141,7 +148,7 @@ func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client,
 
 	clusterRoleList := &rbacv1.ClusterRoleList{}
 
-	// find those ClusterRoles created for a specific role in a specific project
+	// find those ClusterRoles created for a specific role in a specific project.
 	if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{
 		kubermaticv1.AuthZRoleLabel: fmt.Sprintf("%s-%s", binding.Spec.Role, binding.Spec.ProjectID),
 	}); err != nil {
@@ -150,7 +157,7 @@ func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client,
 
 	clusterRoles = append(clusterRoles, clusterRoleList.Items...)
 
-	// find those ClusterRoles created for a specific role globally
+	// find those ClusterRoles created for a specific role globally.
 	if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{
 		kubermaticv1.AuthZRoleLabel: binding.Spec.Role,
 	}); err != nil {
@@ -160,4 +167,48 @@ func getTargetClusterRoles(ctx context.Context, client ctrlruntimeclient.Client,
 	clusterRoles = append(clusterRoles, clusterRoleList.Items...)
 
 	return clusterRoles, nil
+}
+
+func (r *Reconciler) pruneClusterRoleBindings(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, binding *kubermaticv1.GroupProjectBinding, clusterRoles []rbacv1.ClusterRole) error {
+	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+
+	if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{
+		kubermaticv1.AuthZGroupProjectBindingLabel: binding.Name,
+	}); err != nil {
+		return err
+	}
+
+	pruneList := []rbacv1.ClusterRoleBinding{}
+
+	for _, clusterRoleBinding := range clusterRoleBindingList.Items {
+		// looks like GroupProjectBinding.Spec.Role has been changed, so we need to prune this ClusterRoleBinding.
+		if label, ok := clusterRoleBinding.Labels[kubermaticv1.AuthZRoleLabel]; !ok || label != binding.Spec.Role {
+			pruneList = append(pruneList, clusterRoleBinding)
+			continue
+		}
+
+		// make sure a ClusterRole with that name still exists; if not, the resource referenced by the ClusterRole
+		// was likely deleted and we should clean up this ClusterRoleBinding to prevent namesquatting in the future
+		// (create a `Cluster` resource named "xyz", delete the cluster, wait for someone else to create a cluster
+		// under the same name, gain access to it via the still existing ClusterRoleBinding).
+		roleInScope := false
+		for _, role := range clusterRoles {
+			if clusterRoleBinding.RoleRef.Kind == "ClusterRole" && clusterRoleBinding.RoleRef.Name == role.Name {
+				roleInScope = true
+			}
+		}
+
+		if !roleInScope {
+			pruneList = append(pruneList, clusterRoleBinding)
+		}
+	}
+
+	for _, prunedBinding := range pruneList {
+		log.Debugw("found ClusterRoleBinding to prune", "GroupProjectBinding", binding.Name, "ClusterRoleBinding", prunedBinding.Name)
+		if err := client.Delete(ctx, &prunedBinding); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
 }

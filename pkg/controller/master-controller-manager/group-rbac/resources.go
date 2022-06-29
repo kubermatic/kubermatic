@@ -34,18 +34,19 @@ func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, cluster
 	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Spec.Group)
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			if crb.Labels == nil {
+				crb.Labels = map[string]string{}
+			}
+
+			crb.Labels[kubermaticv1.AuthZGroupProjectBindingLabel] = binding.Name
+			crb.Labels[kubermaticv1.AuthZRoleLabel] = binding.Spec.Role
+
 			crb.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.GroupProjectBindingKind,
 					Name:       binding.Name,
 					UID:        binding.UID,
-				},
-				{
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-					Kind:       "ClusterRole",
-					Name:       clusterRole.Name,
-					UID:        clusterRole.UID,
 				},
 			}
 			crb.RoleRef = rbacv1.RoleRef{
