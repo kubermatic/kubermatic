@@ -31,7 +31,7 @@ import (
 )
 
 func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Spec.Group)
+	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Name)
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			if crb.Labels == nil {
@@ -67,6 +67,43 @@ func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, cluster
 	}
 }
 
+func roleBindingCreator(binding kubermaticv1.GroupProjectBinding, role rbacv1.Role) reconciling.NamedRoleBindingCreatorGetter {
+	name := fmt.Sprintf("%s:%s", role.Name, binding.Name)
+	return func() (string, reconciling.RoleBindingCreator) {
+		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			if rb.Labels == nil {
+				rb.Labels = map[string]string{}
+			}
+
+			rb.Labels[kubermaticv1.AuthZGroupProjectBindingLabel] = binding.Name
+			rb.Labels[kubermaticv1.AuthZRoleLabel] = binding.Spec.Role
+
+			rb.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.GroupProjectBindingKind,
+					Name:       binding.Name,
+					UID:        binding.UID,
+				},
+			}
+			rb.RoleRef = rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "Role",
+				Name:     role.Name,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "Group",
+					Name:     binding.Spec.Group,
+				},
+			}
+
+			return rb, nil
+		}
+	}
+}
+
 type GroupProjectBindingPatchFunc func(binding *kubermaticv1.GroupProjectBinding)
 
 func updateGroupProjectBinding(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding, patch GroupProjectBindingPatchFunc) error {
@@ -87,7 +124,7 @@ func updateGroupProjectBinding(ctx context.Context, client ctrlruntimeclient.Cli
 			return nil
 		}
 
-		// update the status
+		// generate patch and update the GroupProjectBinding
 		return client.Patch(ctx, binding, ctrlruntimeclient.MergeFrom(original))
 	})
 }

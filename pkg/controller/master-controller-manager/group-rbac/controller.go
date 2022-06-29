@@ -83,6 +83,10 @@ func Add(
 	return nil
 }
 
+// enqueueGroupProjectBindingsForClusterRole returns a handler.EventHandler that enqueues all GroupProjectBindings
+// related to an observed ClusterRole. The relationship is built via the authz.k8c.io/role label, which has to
+// match the GroupProjectBinding.Spec.Role. Only GroupProjectBindings with a matching KKP role need to be reconciled
+// when a new ClusterRole object for that KKP role is created by rbac-controller.
 func enqueueGroupProjectBindingsForClusterRole(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var (
