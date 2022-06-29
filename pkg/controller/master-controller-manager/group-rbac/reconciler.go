@@ -80,22 +80,41 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
 	}
 
-	// TODO: loop over master client and seeds
-
-	result, err := r.reconcile(ctx, r.Client, binding)
-
-	if err != nil {
+	// reconcile master cluster first
+	if err := r.reconcile(ctx, r.Client, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.log.Errorw("Reconciling failed", zap.Error(err))
+		r.log.Errorw("Reconciling master failed", zap.Error(err))
 	}
 
-	return result, err
-}
-
-func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) (reconcile.Result, error) {
-	clusterRoles, err := getTargetClusterRoles(ctx, client, binding)
+	seeds, err := r.seedsGetter()
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	for _, seed := range seeds {
+		// don't try to reconcile Seed that has an invalid kubeconfig
+		if seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionTrue) {
+			seedClient, err := r.seedClientGetter(seed)
+			if err != nil {
+				r.log.Warnw("Getting seed client failed", "seed", seed.Name, zap.Error(err))
+				continue
+			}
+			if err := r.reconcile(ctx, seedClient, binding); err != nil {
+				r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				r.log.Warnw("Reconciling seed failed", "seed", seed.Name, zap.Error(err))
+			}
+		} else {
+			r.log.Debugw("Skipped reconciling non-ready seed", "seed", seed.Name)
+		}
+	}
+
+	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, binding *kubermaticv1.GroupProjectBinding) error {
+	clusterRoles, err := getTargetClusterRoles(ctx, client, binding)
+	if err != nil {
+		return err
 	}
 
 	r.log.Debugw("found ClusterRoles matching role label", "clusterRoles", clusterRoles)
@@ -107,10 +126,10 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
-	return reconcile.Result{}, nil
+	return nil
 }
 
 // getTargetClusterRoles returns a list of ClusterRoles that match the authz.kubermatic.io/role label for the specific role and project
