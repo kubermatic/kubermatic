@@ -235,7 +235,7 @@ func ResourceQuotaValidatingWebhookConfigurationCreator(ctx context.Context,
 							Rule: admissionregistrationv1.Rule{
 								APIGroups:   []string{kubermaticv1.GroupName},
 								APIVersions: []string{"*"},
-								Resources:   []string{""},
+								Resources:   []string{"resourcequotas"},
 								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1.OperationType{

@@ -414,6 +414,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.UserValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, config, r.Client),
+		kubermatic.ResourceQuotaValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
