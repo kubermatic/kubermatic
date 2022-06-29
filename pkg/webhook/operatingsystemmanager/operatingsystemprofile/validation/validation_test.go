@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -154,13 +153,15 @@ func getOperatingSystemProfile() osmv1alpha1.OperatingSystemProfile {
 		Spec: osmv1alpha1.OperatingSystemProfileSpec{
 			OSName:    "ubuntu",
 			OSVersion: "20.04",
-			Files: []osmv1alpha1.File{
-				{
-					Path:        "/opt/bin/test.service",
-					Permissions: pointer.Int32Ptr(0700),
-					Content: osmv1alpha1.FileContent{
-						Inline: &osmv1alpha1.FileContentInline{
-							Data: "    #!/bin/bash\n    set -xeuo pipefail\n    cloud-init clean\n    cloud-init init\n    systemctl start provision.service",
+			ProvisioningConfig: osmv1alpha1.OSPConfig{
+				Files: []osmv1alpha1.File{
+					{
+						Path:        "/opt/bin/test.service",
+						Permissions: 700,
+						Content: osmv1alpha1.FileContent{
+							Inline: &osmv1alpha1.FileContentInline{
+								Data: "    #!/bin/bash\n    set -xeuo pipefail\n    cloud-init clean\n    cloud-init init\n    systemctl start provision.service",
+							},
 						},
 					},
 				},

@@ -64,6 +64,54 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
+// KubePublicRoleCreator returns the func to create/update the Role for the OSM
+// to facilitate leaderelection.
+func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Name = resources.OperatingSystemManagerRoleName
+			r.Namespace = metav1.NamespacePublic
+			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"configmaps"},
+					ResourceNames: []string{"cluster-info"},
+					Verbs: []string{
+						"get",
+					},
+				},
+			}
+			return r, nil
+		}
+	}
+}
+
+// DefaultRoleCreator returns the func to create/update the Role for the OSM
+// to facilitate leaderelection.
+func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Name = resources.OperatingSystemManagerRoleName
+			r.Namespace = metav1.NamespaceDefault
+			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"endpoints"},
+					ResourceNames: []string{"kubernetes"},
+					Verbs: []string{
+						"get",
+					},
+				},
+			}
+			return r, nil
+		}
+	}
+}
+
 func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName,

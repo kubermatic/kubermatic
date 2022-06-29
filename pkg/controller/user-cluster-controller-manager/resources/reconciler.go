@@ -377,7 +377,9 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator(),
+			operatingsystemmanager.KubePublicRoleCreator(),
+			operatingsystemmanager.DefaultRoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -455,7 +457,9 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator(),
+			operatingsystemmanager.KubePublicRoleBindingCreator(),
+			operatingsystemmanager.DefaultRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
