@@ -93,7 +93,7 @@ func TestProviderGetResourceQuota(t *testing.T) {
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
 							Name: projectName,
-							Kind: "project",
+							Kind: kubermaticv1.ProjectSubjectKind,
 						},
 					},
 				},
@@ -116,7 +116,7 @@ func TestProviderGetResourceQuota(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rqProvider := createResourceProviderHelper(tc.existingObjects)
 
-			rq, err := rqProvider.Get(context.Background(), tc.userInfo, tc.projectName, "project")
+			rq, err := rqProvider.Get(context.Background(), tc.userInfo, tc.projectName, kubermaticv1.ProjectSubjectKind)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
@@ -146,14 +146,14 @@ func TestProviderListResourceQuotas(t *testing.T) {
 				Name:      fmt.Sprintf("project-%s-1", projectName),
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-1", projectName),
 				},
 			},
 			Spec: kubermaticv1.ResourceQuotaSpec{
 				Subject: kubermaticv1.Subject{
 					Name: fmt.Sprintf("%s-1", projectName),
-					Kind: "project",
+					Kind: kubermaticv1.ProjectSubjectKind,
 				},
 			},
 		},
@@ -162,14 +162,14 @@ func TestProviderListResourceQuotas(t *testing.T) {
 				Name:      fmt.Sprintf("project-%s-2", projectName),
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
 				},
 			},
 			Spec: kubermaticv1.ResourceQuotaSpec{
 				Subject: kubermaticv1.Subject{
 					Name: fmt.Sprintf("%s-2", projectName),
-					Kind: "project",
+					Kind: kubermaticv1.ProjectSubjectKind,
 				},
 			},
 		},
@@ -197,7 +197,7 @@ func TestProviderListResourceQuotas(t *testing.T) {
 		{
 			name: "scenario 3: listing existing resource quotas matching kind label",
 			labels: map[string]string{
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 			},
 			existingObjects:    existingResourceQuotas,
 			expectedListLength: 2,
@@ -230,7 +230,7 @@ func TestProviderCreateResourceQuota(t *testing.T) {
 			name: "scenario 1: create a new resource quota",
 			subject: kubermaticv1.Subject{
 				Name: projectName,
-				Kind: "project",
+				Kind: kubermaticv1.ProjectSubjectKind,
 			},
 			quota:             createNewQuotaHelper(10),
 			expectedQuotaName: fmt.Sprintf("project-%s", projectName),

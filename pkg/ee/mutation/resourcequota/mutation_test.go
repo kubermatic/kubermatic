@@ -113,7 +113,7 @@ func TestHandle(t *testing.T) {
 					"add",
 					"/metadata/labels",
 					map[string]interface{}{
-						"subject-kind": "project",
+						"subject-kind": kubermaticv1.ProjectSubjectKind,
 						"subject-name": "xxtestxx",
 					},
 				),
@@ -204,7 +204,7 @@ func TestHandle(t *testing.T) {
 							Name:        "project-xxtestxx",
 							ProjectName: "xxtestxx",
 							Labels: map[string]string{
-								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
 							},
 						}.Do(),
@@ -238,7 +238,7 @@ func TestHandle(t *testing.T) {
 							Name:        "project-xxtestxx",
 							ProjectName: "xxtestxx",
 							Labels: map[string]string{
-								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
 							},
 						}.Do(),
@@ -310,7 +310,7 @@ func (r rawResourceQuotaGen) Do() []byte {
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{
 				Name: r.ProjectName,
-				Kind: "project",
+				Kind: kubermaticv1.ProjectSubjectKind,
 			},
 		},
 	}

@@ -54,7 +54,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		if resourceQuota.Spec.Subject.Kind != "project" {
+		if resourceQuota.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind {
 			return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
 		}
 
