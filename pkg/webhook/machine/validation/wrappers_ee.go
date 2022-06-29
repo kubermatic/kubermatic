@@ -39,10 +39,10 @@ func validateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlr
 	return eemachinevalidation.ValidateQuota(ctx, log, userClient, machine, caBundle, resourceQuota)
 }
 
-func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, subjectNameSelector labels.Selector) (*kubermaticv1.ResourceQuota, error) {
+func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, subjectSelector labels.Selector) (*kubermaticv1.ResourceQuota, error) {
 	quotaList := &kubermaticv1.ResourceQuotaList{}
 	if err := seedClient.List(ctx, quotaList, &ctrlruntimeclient.ListOptions{
-		LabelSelector: subjectNameSelector,
+		LabelSelector: subjectSelector,
 		Namespace:     resources.KubermaticNamespace,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to list resource quotas: %w", err)
