@@ -269,11 +269,13 @@ func ensureClusterRBACRoleForNamedResource(ctx context.Context, log *zap.Sugared
 			return err
 		}
 
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 
 		if err := cli.Update(ctx, existingRole); err != nil {
 			return err

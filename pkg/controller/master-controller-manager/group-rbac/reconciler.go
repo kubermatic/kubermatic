@@ -117,7 +117,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return err
 	}
 
-	r.log.Debugw("found ClusterRoles matching role label", "clusterRoles", clusterRoles)
+	r.log.Debugw("found ClusterRoles matching role label", "count", len(clusterRoles))
 
 	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
 
