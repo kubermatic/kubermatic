@@ -288,7 +288,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return r.deleteCronJob(ctx, cluster)
 	}
 
-	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster, backupStoreContainer)}, metav1.NamespaceSystem, r.Client)
+	return reconciling.EnsureNamedObjects(ctx, r.Client, metav1.NamespaceSystem, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster, backupStoreContainer)})
 }
 
 func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
@@ -368,7 +368,7 @@ func (r *Reconciler) ensureCronJobSecrets(ctx context.Context, cluster *kubermat
 		),
 	}
 
-	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.EnsureNamedObjects(ctx, r.Client, metav1.NamespaceSystem, creators, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -378,7 +378,7 @@ func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kuber
 		certificates.CABundleConfigMapCreator(name, r.caBundle),
 	}
 
-	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.EnsureNamedObjects(ctx, r.Client, metav1.NamespaceSystem, creators, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster, cleanupContainer *corev1.Container) *batchv1.Job {

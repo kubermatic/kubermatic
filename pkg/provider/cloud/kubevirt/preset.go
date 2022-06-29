@@ -52,7 +52,7 @@ func reconcilePresets(ctx context.Context, namespace string, client ctrlruntimec
 		presetCreators := []reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter{
 			presetCreator(&preset),
 		}
-		if err := reconciling.ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx, presetCreators, namespace, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, namespace, presetCreators); err != nil {
 			return err
 		}
 	}

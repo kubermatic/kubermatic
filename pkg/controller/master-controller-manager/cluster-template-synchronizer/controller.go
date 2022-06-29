@@ -118,7 +118,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	err := r.syncAllSeeds(log, clusterTemplate, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
-		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClient, "", clusterTemplateCreatorGetters)
 	})
 	if err != nil {
 		r.recorder.Eventf(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())

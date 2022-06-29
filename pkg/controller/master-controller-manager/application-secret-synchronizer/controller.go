@@ -117,7 +117,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		secretCreator(seedsecret),
 	}
 	err = r.reconcileAllSeeds(ctx, log, seedsecret, func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
-		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, r.namespace, c)
+		return reconciling.EnsureNamedObjects(ctx, c, r.namespace, namedSecretCreatorGetter)
 	})
 	if err != nil {
 		r.recorder.Eventf(secret, corev1.EventTypeWarning, "ReconcilingError", err.Error())

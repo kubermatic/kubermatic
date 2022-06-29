@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,39 +28,30 @@ import (
 // UnstructuredCreator defines an interface to create/update Unstructureds.
 type UnstructuredCreator = func(existing *unstructured.Unstructured) (*unstructured.Unstructured, error)
 
-// NamedUnstructuredCreatorGetter returns the name of the resource and the corresponding creator function.
+// NamedUnstructuredCreatorGetter returns the name, kind and API version of the resource and the
+// corresponding creator function.
 type NamedUnstructuredCreatorGetter = func() (name, kind, apiVersion string, create UnstructuredCreator)
 
-// UnstructuredObjectWrapper adds a wrapper so the UnstructuredCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func UnstructuredObjectWrapper(create UnstructuredCreator, emptyObject *unstructured.Unstructured) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*unstructured.Unstructured))
-		}
-		return create(emptyObject)
-	}
-}
+// EnsureNamedUnstructuredObjects will call EnsureNamedObject for each of the given creator functions.
+// This is a dedicated function (the sister of EnsureNamedObjects) because unstructured objects require
+// us to manually inject the API version and kind, which is not possible with the regular ObjectCreators,
+// as they cannot provide this information.
+func EnsureNamedUnstructuredObjects(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespace string,
+	creatorGetters []NamedUnstructuredCreatorGetter,
+	objectModifiers ...ObjectModifier,
+) error {
+	for _, creatorGetter := range creatorGetters {
+		name, kind, apiVersion, creator := creatorGetter()
 
-// ReconcileUnstructureds will create and update the Unstructureds coming from the passed UnstructuredCreator slice.
-func ReconcileUnstructureds(ctx context.Context, namedGetters []NamedUnstructuredCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, kind, apiVersion, create := get()
-		if kind == "" || apiVersion == "" {
-			return fmt.Errorf("both Kind(%q) and apiVersion(%q) must be set", kind, apiVersion)
-		}
+		emptyObj := &unstructured.Unstructured{}
+		emptyObj.SetAPIVersion(apiVersion)
+		emptyObj.SetKind(kind)
 
-		emptyObject := &unstructured.Unstructured{}
-		emptyObject.SetKind(kind)
-		emptyObject.SetAPIVersion(apiVersion)
-
-		createObject := UnstructuredObjectWrapper(create, emptyObject)
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, emptyObject, false); err != nil {
-			return fmt.Errorf("failed to ensure Unstructured %s.%s %s/%s: %w", kind, apiVersion, namespace, name, err)
+		if err := EnsureNamedObject(ctx, client, types.NamespacedName{Namespace: namespace, Name: name}, emptyObj, creator, objectModifiers...); err != nil {
+			return fmt.Errorf("failed to ensure %s %q: %w", objectKind(emptyObj), objectName(name, namespace), err)
 		}
 	}
 

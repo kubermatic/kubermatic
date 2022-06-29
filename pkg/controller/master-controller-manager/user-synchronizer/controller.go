@@ -134,7 +134,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		userCreatorGetter(user),
 	}
 	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
-		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		err := reconciling.EnsureNamedObjects(ctx, seedClusterClient, "", userCreatorGetters)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile user: %w", err)
 		}

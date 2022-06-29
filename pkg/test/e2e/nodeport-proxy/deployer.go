@@ -103,47 +103,47 @@ func (d *Deployer) SetUp(ctx context.Context) error {
 		return fmt.Errorf("failed to default seed: %w", err)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, d.Namespace,
 		[]reconciling.NamedServiceAccountCreatorGetter{
 			nodeportproxy.ServiceAccountCreator(cfg),
-		}, d.Namespace, d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAcconts: %w", err)
 	}
-	if err := reconciling.ReconcileRoles(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, d.Namespace,
 		[]reconciling.NamedRoleCreatorGetter{
 			nodeportproxy.RoleCreator(),
-		}, d.Namespace, d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile Role: %w", err)
 	}
-	if err := reconciling.ReconcileRoleBindings(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, d.Namespace,
 		[]reconciling.NamedRoleBindingCreatorGetter{
 			nodeportproxy.RoleBindingCreator(cfg),
-		}, d.Namespace, d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBinding: %w", err)
 	}
-	if err := reconciling.ReconcileClusterRoles(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, "",
 		[]reconciling.NamedClusterRoleCreatorGetter{
 			nodeportproxy.ClusterRoleCreator(cfg),
-		}, "", d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRole: %w", err)
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, "",
 		[]reconciling.NamedClusterRoleBindingCreatorGetter{
 			nodeportproxy.ClusterRoleBindingCreator(cfg),
-		}, "", d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBinding: %w", err)
 	}
-	if err := reconciling.ReconcileServices(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, d.Namespace,
 		[]reconciling.NamedServiceCreatorGetter{
 			nodeportproxy.ServiceCreator(seed)},
-		d.Namespace, d.Client, recorderFunc); err != nil {
+		recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
-	if err := reconciling.ReconcileDeployments(ctx,
+	if err := reconciling.EnsureNamedObjects(ctx, d.Client, d.Namespace,
 		[]reconciling.NamedDeploymentCreatorGetter{
 			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, d.Versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, d.Versions),
-		}, d.Namespace, d.Client, recorderFunc); err != nil {
+		}, recorderFunc); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Deployments: %w", err)
 	}
 

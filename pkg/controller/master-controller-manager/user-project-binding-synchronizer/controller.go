@@ -123,7 +123,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClusterClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClusterClient, "", userProjectBindingCreatorGetters)
 	})
 
 	if err != nil {

@@ -147,7 +147,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	return r.syncAllSeeds(ctx, log, constraint, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint) error {
-		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, seedClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClient, r.namespace, constraintCreatorGetters)
 	})
 }
 

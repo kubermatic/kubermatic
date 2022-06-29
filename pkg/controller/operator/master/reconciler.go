@@ -204,7 +204,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermatic
 		creators = append(creators, kubermatic.UIConfigConfigMapCreator(config))
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
@@ -223,7 +223,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.
 		creators = append(creators, common.DockercfgSecretCreator(config))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %w", err)
 	}
 
@@ -239,7 +239,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 		common.WebhookServiceAccountCreator(config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
 	}
 
@@ -254,7 +254,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 		kubermatic.APIRoleCreator(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, config.Namespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
@@ -269,7 +269,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 		kubermatic.APIRoleBindingCreator(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, config.Namespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
 	}
 
@@ -284,7 +284,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 		common.WebhookClusterRoleCreator(config),
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
@@ -300,7 +300,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 		common.WebhookClusterRoleBindingCreator(config),
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
@@ -332,7 +332,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 
@@ -353,7 +353,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 		)
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
@@ -374,7 +374,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 		)
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
@@ -398,7 +398,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 		kubermatic.IngressCreator(config),
 	}
 
-	if err := reconciling.ReconcileIngresses(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, config.Namespace, creators, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
 	}
 
@@ -417,7 +417,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
 	}
 
@@ -432,7 +432,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 		kubermatic.ResourceQuotaMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
-	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile Mutating Webhooks: %w", err)
 	}
 

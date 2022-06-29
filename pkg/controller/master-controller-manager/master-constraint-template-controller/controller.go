@@ -155,7 +155,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 	}
 
 	return r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClusterClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClusterClient, "", ctCreatorGetters)
 	})
 }
 

@@ -108,7 +108,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 			allowedRegistryConstraintCreatorGetter(regSet),
 		}
 
-		err := reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
+		err := reconciling.EnsureNamedObjects(ctx, r.masterClient, r.namespace, constraintCreatorGetters)
 		if err != nil {
 			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 		}
@@ -124,7 +124,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	ctCreatorGetters := []reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter{
 		allowedRegistryCTCreatorGetter(),
 	}
-	err = reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", r.masterClient)
+	err = reconciling.EnsureNamedObjects(ctx, r.masterClient, "", ctCreatorGetters)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
@@ -134,7 +134,7 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 		allowedRegistryConstraintCreatorGetter(regSet),
 	}
 
-	err = reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, r.masterClient)
+	err = reconciling.EnsureNamedObjects(ctx, r.masterClient, r.namespace, constraintCreatorGetters)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}

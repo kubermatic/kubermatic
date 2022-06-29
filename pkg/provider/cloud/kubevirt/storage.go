@@ -108,14 +108,14 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	roleCreators := []reconciling.NamedRoleCreatorGetter{
 		csiRoleCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileRoles(ctx, roleCreators, namespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, namespace, roleCreators); err != nil {
 		return err
 	}
 
 	roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{
 		csiRoleBindingCreator(csiResourceName, csiServiceAccountNamespace),
 	}
-	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, namespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, namespace, roleBindingCreators); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func reconcilePreAllocatedDataVolumes(ctx context.Context, cluster *kubermaticv1
 		dvCreator := []reconciling.NamedCDIv1beta1DataVolumeCreatorGetter{
 			dataVolumeCreator(dv),
 		}
-		if err := reconciling.ReconcileCDIv1beta1DataVolumes(ctx, dvCreator, cluster.Status.NamespaceName, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, cluster.Status.NamespaceName, dvCreator); err != nil {
 			return fmt.Errorf("failed to reconcile Allocated DataVolume: %w", err)
 		}
 	}

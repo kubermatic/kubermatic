@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,10 +37,9 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		creator        ObjectCreator
-		existingObject ctrlruntimeclient.Object
-		expectedObject ctrlruntimeclient.Object
-		recreate       bool
+		creator        func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
+		existingObject *corev1.ConfigMap
+		expectedObject *corev1.ConfigMap
 	}{
 		{
 			name: "Object gets created",
@@ -58,19 +57,13 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-				var sa *corev1.ConfigMap
-				if existing == nil {
-					sa = &corev1.ConfigMap{}
-				} else {
-					sa = existing.(*corev1.ConfigMap)
-				}
-				sa.Name = testResourceName
-				sa.Namespace = testNamespace
-				sa.Data = map[string]string{
+			creator: func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+				existing.Name = testResourceName
+				existing.Namespace = testNamespace
+				existing.Data = map[string]string{
 					"foo": "bar",
 				}
-				return sa, nil
+				return existing, nil
 			},
 		},
 		{
@@ -84,19 +77,13 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "hopefully-gets-overwritten",
 				},
 			},
-			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-				var sa *corev1.ConfigMap
-				if existing == nil {
-					sa = &corev1.ConfigMap{}
-				} else {
-					sa = existing.(*corev1.ConfigMap)
-				}
-				sa.Name = testResourceName
-				sa.Namespace = testNamespace
-				sa.Data = map[string]string{
+			creator: func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+				existing.Name = testResourceName
+				existing.Namespace = testNamespace
+				existing.Data = map[string]string{
 					"foo": "bar",
 				}
-				return sa, nil
+				return existing, nil
 			},
 			expectedObject: &corev1.ConfigMap{
 				TypeMeta: metav1.TypeMeta{
@@ -124,19 +111,13 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-				var sa *corev1.ConfigMap
-				if existing == nil {
-					sa = &corev1.ConfigMap{}
-				} else {
-					sa = existing.(*corev1.ConfigMap)
-				}
-				sa.Name = testResourceName
-				sa.Namespace = testNamespace
-				sa.Data = map[string]string{
+			creator: func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+				existing.Name = testResourceName
+				existing.Namespace = testNamespace
+				existing.Data = map[string]string{
 					"foo": "bar",
 				}
-				return sa, nil
+				return existing, nil
 			},
 			expectedObject: &corev1.ConfigMap{
 				TypeMeta: metav1.TypeMeta{
@@ -149,48 +130,6 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				},
 				Data: map[string]string{
 					"foo": "bar",
-				},
-			},
-		},
-		{
-			name:     "Recreating objects works",
-			recreate: true,
-			existingObject: &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            testResourceName,
-					Namespace:       testNamespace,
-					ResourceVersion: "123",
-					UID:             "abcd-1234",
-				},
-				Data: map[string]string{
-					"foo": "bar",
-				},
-			},
-			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-				var sa *corev1.ConfigMap
-				if existing == nil {
-					sa = &corev1.ConfigMap{}
-				} else {
-					sa = existing.(*corev1.ConfigMap)
-				}
-				sa.Name = testResourceName
-				sa.Namespace = testNamespace
-				sa.Data = map[string]string{
-					"foo": "bar-new",
-				}
-				return sa, nil
-			},
-			expectedObject: &corev1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "ConfigMap",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testResourceName,
-					Namespace: testNamespace,
-				},
-				Data: map[string]string{
-					"foo": "bar-new",
 				},
 			},
 		},
@@ -206,7 +145,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			client := clientBuilder.Build()
 			ctx := context.Background()
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
-			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, test.recreate); err != nil {
+			if err := EnsureNamedObject(ctx, client, name, &corev1.ConfigMap{}, test.creator); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 

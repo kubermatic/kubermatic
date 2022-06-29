@@ -120,7 +120,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorServiceAccountCreator(),
 		resources.AgentServiceAccountCreator(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, metav1.NamespaceSystem, saCreators); err != nil {
 		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
@@ -128,7 +128,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorClusterRoleCreator(),
 		resources.AgentClusterRoleCreator(),
 	}
-	if err := reconciling.ReconcileClusterRoles(ctx, crCreators, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, metav1.NamespaceNone, crCreators); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
@@ -136,17 +136,17 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorClusterRoleBindingCreator(),
 		resources.AgentClusterRoleBindingCreator(),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbCreators, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, metav1.NamespaceNone, crbCreators); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
 	depCreators := getDeploymentCreators(r.overwriteRegistry, r.updateWindow)
-	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, metav1.NamespaceSystem, depCreators); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsCreators := getDaemonSetCreators(r.overwriteRegistry)
-	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, metav1.NamespaceSystem, dsCreators); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 

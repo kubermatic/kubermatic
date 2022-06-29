@@ -1164,7 +1164,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		),
 	}
 
-	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.EnsureNamedObjects(ctx, r.Client, metav1.NamespaceSystem, creators, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
@@ -1178,7 +1178,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 		certificates.CABundleConfigMapCreator(name, r.caBundle),
 	}
 
-	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.EnsureNamedObjects(ctx, r.Client, metav1.NamespaceSystem, creators, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {

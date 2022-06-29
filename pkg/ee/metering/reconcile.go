@@ -71,15 +71,15 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		return fmt.Errorf("failed to reconcile metering PVC: %w", err)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
+	if err := reconciling.EnsureNamedObjects(ctx, client, resources.KubermaticNamespace, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreator(),
-	}, resources.KubermaticNamespace, client); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to reconcile metering ServiceAccounts: %w", err)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleBindingCreator(resources.KubermaticNamespace),
-	}, "", client); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %w", err)
 	}
 
@@ -88,9 +88,9 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.OwnershipModifierFactory(seed, scheme),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
+	if err := reconciling.EnsureNamedObjects(ctx, client, resources.KubermaticNamespace, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed, overwriter),
-	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
+	}, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %w", err)
 	}
 
@@ -109,11 +109,11 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	config := lifecycle.NewConfiguration()
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		if err := reconciling.ReconcileCronJobs(
+		if err := reconciling.EnsureNamedObjects(
 			ctx,
-			[]reconciling.NamedCronJobCreatorGetter{cronJobCreator(seed.Name, reportName, reportConf, overwriter)},
-			resources.KubermaticNamespace,
 			client,
+			resources.KubermaticNamespace,
+			[]reconciling.NamedCronJobCreatorGetter{cronJobCreator(seed.Name, reportName, reportConf, overwriter)},
 			modifiers...,
 		); err != nil {
 			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)

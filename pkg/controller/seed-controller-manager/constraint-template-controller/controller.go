@@ -163,7 +163,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 	}
 
 	return r.syncAllClusters(ctx, log, constraintTemplate, func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-		return reconciling.ReconcileConstraintTemplates(ctx, ctCreatorGetters, "", userClusterClient)
+		return reconciling.EnsureNamedObjects(ctx, userClusterClient, "", ctCreatorGetters)
 	})
 }
 

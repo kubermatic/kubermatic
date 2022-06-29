@@ -44,7 +44,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 		NamespaceCreator(name),
 	}
 
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", creators); err != nil {
 		return cluster, fmt.Errorf("failed to reconcile Namespace: %w", err)
 	}
 

@@ -242,16 +242,16 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	client := mgr.GetClient()
 
 	log.Info("Reconciling ServiceAccount...")
-	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
+	if err := reconciling.EnsureNamedObjects(ctx, client, namespace, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreatorGetter,
-	}, namespace, client); err != nil {
+	}); err != nil {
 		return "", fmt.Errorf("failed to create ServiceAccount: %w", err)
 	}
 
 	log.Info("Reconciling ClusterRoleBinding...")
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleCreatorGetterFactory(namespace),
-	}, "", client); err != nil {
+	}); err != nil {
 		return "", fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 	}
 

@@ -115,7 +115,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, appDef *appskubermaticv1.ApplicationDefinition) error {
-		return reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClient, "", applicationDefCreatorGetters)
 	})
 	if err != nil {
 		r.recorder.Eventf(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())

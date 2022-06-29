@@ -162,97 +162,69 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 
 // DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API.
 // In addition, the Deployment's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
-func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
-	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-		old := d.DeepCopy()
+func DefaultDeployment(oldObj, newObj *appsv1.Deployment) (ctrlruntimeclient.Object, error) {
+	var err error
 
-		d, err := creator(d)
-		if err != nil {
-			return nil, err
-		}
+	if newObj.Spec.Strategy.Type == "" {
+		newObj.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
 
-		if d.Spec.Strategy.Type == "" {
-			d.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
-
-			if d.Spec.Strategy.RollingUpdate == nil {
-				d.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-					MaxSurge: &intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 1,
-					},
-					MaxUnavailable: &intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 0,
-					},
-				}
+		if newObj.Spec.Strategy.RollingUpdate == nil {
+			newObj.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+				MaxSurge: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 0,
+				},
 			}
 		}
-
-		d.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, d.Spec.Template.Spec)
-		if err != nil {
-			return nil, err
-		}
-
-		return d, nil
 	}
+
+	newObj.Spec.Template.Spec, err = DefaultPodSpec(oldObj.Spec.Template.Spec, newObj.Spec.Template.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	return newObj, nil
 }
 
 // DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API.
 // In addition, the StatefulSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
-func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
-	return func(ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-		old := ss.DeepCopy()
+func DefaultStatefulSet(oldObj, newObj *appsv1.StatefulSet) (ctrlruntimeclient.Object, error) {
+	var err error
 
-		ss, err := creator(ss)
-		if err != nil {
-			return nil, err
-		}
-
-		ss.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, ss.Spec.Template.Spec)
-		if err != nil {
-			return nil, err
-		}
-
-		return ss, nil
+	newObj.Spec.Template.Spec, err = DefaultPodSpec(oldObj.Spec.Template.Spec, newObj.Spec.Template.Spec)
+	if err != nil {
+		return nil, err
 	}
+
+	return newObj, nil
 }
 
 // DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API.
 // In addition, the DaemonSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
-func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
-	return func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-		old := ds.DeepCopy()
+func DefaultDaemonSet(oldObj, newObj *appsv1.DaemonSet) (ctrlruntimeclient.Object, error) {
+	var err error
 
-		ds, err := creator(ds)
-		if err != nil {
-			return nil, err
-		}
-
-		ds.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, ds.Spec.Template.Spec)
-		if err != nil {
-			return nil, err
-		}
-
-		return ds, nil
+	newObj.Spec.Template.Spec, err = DefaultPodSpec(oldObj.Spec.Template.Spec, newObj.Spec.Template.Spec)
+	if err != nil {
+		return nil, err
 	}
+
+	return newObj, nil
 }
 
 // DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API.
 // In addition, the CronJob's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
-func DefaultCronJob(creator CronJobCreator) CronJobCreator {
-	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-		old := cj.DeepCopy()
+func DefaultCronJob(oldObj, newObj *batchv1beta1.CronJob) (ctrlruntimeclient.Object, error) {
+	var err error
 
-		cj, err := creator(cj)
-		if err != nil {
-			return nil, err
-		}
-
-		cj.Spec.JobTemplate.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.JobTemplate.Spec.Template.Spec, cj.Spec.JobTemplate.Spec.Template.Spec)
-		if err != nil {
-			return nil, err
-		}
-
-		return cj, nil
+	newObj.Spec.JobTemplate.Spec.Template.Spec, err = DefaultPodSpec(oldObj.Spec.JobTemplate.Spec.Template.Spec, newObj.Spec.JobTemplate.Spec.Template.Spec)
+	if err != nil {
+		return nil, err
 	}
+
+	return newObj, nil
 }

@@ -268,7 +268,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, r.namespace, client, modifiers...); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, r.namespace, creators, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile webhook Deployment: %w", err)
 	}
 
@@ -382,7 +382,7 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 		}
 	}
 
-	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile CRDs: %w", err)
 	}
 
@@ -401,7 +401,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 		creators = append(creators, nodeportproxy.ServiceAccountCreator(cfg))
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, r.namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic ServiceAccounts: %w", err)
 	}
 
@@ -413,7 +413,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 		}
 
 		// no ownership because these resources are most likely in a different namespace than Kubermatic
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, metav1.NamespaceSystem, creators); err != nil {
 			return fmt.Errorf("failed to reconcile VPA ServiceAccounts: %w", err)
 		}
 	}
@@ -432,7 +432,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.Kuber
 		creators = append(creators, nodeportproxy.RoleCreator())
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, r.namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
@@ -450,7 +450,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv
 		creators = append(creators, nodeportproxy.RoleBindingCreator(cfg))
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, r.namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
 	}
 
@@ -472,7 +472,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv
 		creators = append(creators, vpa.ClusterRoleCreators()...)
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
@@ -495,7 +495,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kube
 		creators = append(creators, vpa.ClusterRoleBindingCreators()...)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", creators); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
@@ -509,7 +509,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, cfg.Namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
@@ -528,7 +528,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 		creators = append(creators, common.DockercfgSecretCreator(cfg))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, cfg.Namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %w", err)
 	}
 
@@ -538,7 +538,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 		}
 
 		// no ownership because these resources are most likely in a different namespace than Kubermatic
-		if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, metav1.NamespaceSystem, creators); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Secrets: %w", err)
 		}
 	}
@@ -578,7 +578,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, r.namespace, client, modifiers...); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, r.namespace, creators, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Deployments: %w", err)
 	}
 
@@ -590,7 +590,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		}
 
 		// no ownership because these resources are most likely in a different namespace than Kubermatic
-		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, metav1.NamespaceSystem, creators, volumeLabelModifier); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %w", err)
 		}
 	}
@@ -609,7 +609,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kub
 		creators = append(creators, nodeportproxy.EnvoyPDBCreator())
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, cfg.Namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
@@ -623,7 +623,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 		common.WebhookServiceCreator(cfg, client),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, cfg.Namespace, creators, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Services: %w", err)
 	}
 
@@ -635,7 +635,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 			nodeportproxy.ServiceCreator(seed),
 		}
 
-		if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, cfg.Namespace, creators); err != nil {
 			return fmt.Errorf("failed to reconcile nodeport-proxy Services: %w", err)
 		}
 	}
@@ -646,7 +646,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 		}
 
 		// no ownership because these resources are most likely in a different namespace than Kubermatic
-		if err := reconciling.ReconcileServices(ctx, creators, metav1.NamespaceSystem, client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, client, metav1.NamespaceSystem, creators); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Services: %w", err)
 		}
 	}
@@ -672,7 +672,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		)
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", validatingWebhookCreators); err != nil {
 		return fmt.Errorf("failed to reconcile validating Admission Webhooks: %w", err)
 	}
 
@@ -682,7 +682,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
-	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", mutatingWebhookCreators); err != nil {
 		return fmt.Errorf("failed to reconcile mutating Admission Webhooks: %w", err)
 	}
 

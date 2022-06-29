@@ -313,7 +313,7 @@ func main() {
 		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 			machinecontrolerresources.MachineCRDCreator(),
 		}
-		if err := reconciling.ReconcileCustomResourceDefinitions(rootCtx, creators, "", mgr.GetClient()); err != nil {
+		if err := reconciling.EnsureNamedObjects(rootCtx, mgr.GetClient(), "", creators); err != nil {
 			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
 			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
 				log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))

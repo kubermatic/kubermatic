@@ -209,13 +209,13 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	// creation, we must set some status fields and this requires us to wait for the Cluster object
 	// to appear in our caches.
 	name := types.NamespacedName{Name: newCluster.Name}
-	dummyCreator := func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+	dummyCreator := func(existing *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 		return newCluster, nil
 	}
 
 	log.Infof("creating cluster %s", newCluster.Name)
 
-	if err := reconciling.EnsureNamedObject(ctx, name, dummyCreator, r.seedClient, &kubermaticv1.Cluster{}, false); err != nil {
+	if err := reconciling.EnsureNamedObject(ctx, r.seedClient, name, &kubermaticv1.Cluster{}, dummyCreator); err != nil {
 		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 

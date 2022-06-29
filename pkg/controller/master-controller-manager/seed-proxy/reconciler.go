@@ -176,7 +176,7 @@ func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kub
 		seedServiceAccountCreator(seed),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, seed.Namespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, seed.Namespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -192,7 +192,7 @@ func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.
 		seedMonitoringRoleCreator(seed),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, SeedMonitoringNamespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, SeedMonitoringNamespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
@@ -208,7 +208,7 @@ func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kuberm
 		seedMonitoringRoleBindingCreator(seed),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedMonitoringNamespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, SeedMonitoringNamespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
@@ -296,7 +296,7 @@ func (r *Reconciler) reconcileMasterSecrets(ctx context.Context, seed *kubermati
 		masterSecretCreator(seed, kubeconfig, credentials),
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, seed.Namespace, creators); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -323,7 +323,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 		masterDeploymentCreator(seed, secret, registry.GetOverwriteFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, seed.Namespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -335,7 +335,7 @@ func (r *Reconciler) reconcileMasterServices(ctx context.Context, seed *kubermat
 		masterServiceCreator(seed, secret),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, seed.Namespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, seed.Namespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile Services in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -357,7 +357,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 		r.masterGrafanaConfigmapCreator(seeds),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r.Client, MasterGrafanaNamespace, creators); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %w", MasterGrafanaNamespace, err)
 	}
 

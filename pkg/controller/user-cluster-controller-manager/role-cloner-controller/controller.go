@@ -177,19 +177,19 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
+	creatorGetters := []reconciling.NamedRoleCreatorGetter{
+		func() (string, reconciling.RoleCreator) {
+			return oldRole.Name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+				r.Rules = oldRole.Rules
+				r.Labels = oldRole.Labels
+
+				return r, nil
+			}
+		},
+	}
+
 	for _, namespace := range namespaces {
-		creatorGetters := []reconciling.NamedRoleCreatorGetter{
-			func() (name string, create func(*rbacv1.Role) (*rbacv1.Role, error)) {
-				return oldRole.Name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-					r.Rules = oldRole.Rules
-					r.Labels = oldRole.Labels
-
-					return r, nil
-				}
-			},
-		}
-
-		if err := reconciling.ReconcileRoles(ctx, creatorGetters, namespace, r.client); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, r.client, namespace, creatorGetters); err != nil {
 			return fmt.Errorf("failed to reconcile Role in namespace %q: %w", namespace, err)
 		}
 	}

@@ -187,11 +187,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
 
-	if err := reconciling.ReconcileSecrets(
+	if err := reconciling.EnsureNamedObjects(
 		ctx,
-		[]reconciling.NamedSecretCreatorGetter{updateUserSSHKeysSecrets(keys)},
-		cluster.Status.NamespaceName,
 		seedClient,
+		cluster.Status.NamespaceName,
+		[]reconciling.NamedSecretCreatorGetter{updateUserSSHKeysSecrets(keys)},
 	); err != nil {
 		return fmt.Errorf("failed to reconcile SSH key secret: %w", err)
 	}

@@ -121,7 +121,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+		err := reconciling.EnsureNamedObjects(ctx, seedClusterClient, "", projectCreatorGetters)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile project: %w", err)
 		}

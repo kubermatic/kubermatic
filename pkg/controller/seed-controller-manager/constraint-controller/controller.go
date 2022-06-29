@@ -272,7 +272,7 @@ func (r *reconciler) ensureConstraint(ctx context.Context, log *zap.SugaredLogge
 	}
 
 	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
-		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, namespace, seedClient)
+		return reconciling.EnsureNamedObjects(ctx, seedClient, namespace, constraintCreatorGetters)
 	}); err != nil {
 		return err
 	}

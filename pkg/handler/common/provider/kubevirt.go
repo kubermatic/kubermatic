@@ -125,7 +125,7 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 			presetCreators := []reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter{
 				presetCreator(&vmiPreset),
 			}
-			if err := reconciling.ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx, presetCreators, cluster.Status.NamespaceName, client); err != nil {
+			if err := reconciling.EnsureNamedObjects(ctx, client, cluster.Status.NamespaceName, presetCreators); err != nil {
 				return nil, err
 			}
 		}

@@ -166,12 +166,8 @@ creators := []NamedSecretCreatorGetter{
 
 // controller-runtime controller:
 client := mgr.GetClient()
-informerFactory := mgr.GetCache()
-// cluster/monitoring controller
-client := cc.dynaimcClient
-informerFactory := cc.dynamicCache
 
-if err := ReconcileSecrets(creators, "some-namespace", client, informerFactory); err != nil {
+if err := reconciling.EnsureNamedObjects(ctx, client, "some-namespace", creators); err != nil {
 	return fmt.Errorf("failed to reconcile Secrets: %w", err)
 }
 ```

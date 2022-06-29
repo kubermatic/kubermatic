@@ -51,7 +51,7 @@ func (r *reconciler) ReconcileCSIServiceAccount(ctx context.Context) ([]byte, er
 	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
 		csiServiceAccountCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, csiServiceAccountNamespace, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, csiServiceAccountNamespace, saCreators); err != nil {
 		return nil, err
 	}
 

@@ -130,7 +130,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		namespaceCreator(seed.Namespace),
 	}
 
-	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, "", nsCreators); err != nil {
 		return fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
@@ -138,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		seedCreator(seed),
 	}
 
-	if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, seed.Namespace, seedCreators); err != nil {
 		return fmt.Errorf("failed to reconcile seed: %w", err)
 	}
 
@@ -146,7 +146,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		configCreator(config),
 	}
 
-	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, client, seed.Namespace, configCreators); err != nil {
 		return fmt.Errorf("failed to reconcile seed: %w", err)
 	}
 

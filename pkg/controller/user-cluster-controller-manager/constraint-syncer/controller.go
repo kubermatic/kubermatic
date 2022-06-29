@@ -121,7 +121,7 @@ func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermati
 		constraintCreatorGetter(constraint),
 	}
 
-	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
+	if err := reconciling.EnsureNamedUnstructuredObjects(ctx, r.userClient, "", constraintCreatorGetters); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %w", err)
 	}
 	log.Debugw("constraint created")

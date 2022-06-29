@@ -320,7 +320,7 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		GatewayDeploymentCreator(data, settings),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, c.Status.NamespaceName, creators); err != nil {
 		return err
 	}
 	return nil
@@ -330,7 +330,7 @@ func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *k
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, c.Status.NamespaceName, creators); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 	return nil
@@ -341,7 +341,7 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 		GatewayCACreator(),
 		GatewayCertificateCreator(c, data.GetMLAGatewayCA),
 	}
-	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, r, c.Status.NamespaceName, creators); err != nil {
 		return fmt.Errorf("failed to ensure that the Secrets exist: %w", err)
 	}
 	return nil
@@ -352,7 +352,7 @@ func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kub
 		GatewayInternalServiceCreator(),
 		GatewayExternalServiceCreator(c),
 	}
-	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client)
+	return reconciling.EnsureNamedObjects(ctx, r, c.Status.NamespaceName, creators)
 }
 
 func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {

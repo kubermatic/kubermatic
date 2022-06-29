@@ -24,7 +24,6 @@ import (
 	"go/format"
 	"log"
 	"os"
-	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -93,7 +92,6 @@ func main() {
 				ResourceName:       "PodDisruptionBudget",
 				ImportAlias:        "policyv1",
 				ResourceImportPath: "k8s.io/api/policy/v1",
-				RequiresRecreate:   true,
 			},
 			{
 				ResourceName:       "VerticalPodAutoscaler",
@@ -259,10 +257,6 @@ func main() {
 	}
 }
 
-func lowercaseFirst(str string) string {
-	return strings.ToLower(string(str[0])) + str[1:]
-}
-
 var (
 	reconcileAllTplFuncs = map[string]interface{}{
 		"namedReconcileFunc": namedReconcileFunc,
@@ -271,11 +265,6 @@ var (
 package reconciling
 
 import (
-	"fmt"
-	"context"
-
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 {{ range .Resources }}
 {{- if .ResourceImportPath }}
 	{{ .ImportAlias }} "{{ .ResourceImportPath }}"
@@ -284,7 +273,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc .RequiresRecreate .ResourceNamePlural .APIVersionPrefix}}
+{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc .ResourceNamePlural .APIVersionPrefix}}
 {{- end }}
 
 `))
@@ -298,15 +287,12 @@ type reconcileFunctionData struct {
 	// Optional: A defaulting func for the given object type
 	// Must be defined inside the resources package
 	DefaultingFunc string
-	// Whether the resource must be recreated instead of updated. Required
-	// e.G. for PDBs
-	RequiresRecreate bool
 	// Optional: adds an api version prefix to the generated functions to avoid duplication when different resources
 	// have the same ResourceName
 	APIVersionPrefix string
 }
 
-func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requiresRecreate bool, plural, apiVersionPrefix string) (string, error) {
+func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, plural, apiVersionPrefix string) (string, error) {
 	if len(plural) == 0 {
 		plural = fmt.Sprintf("%ss", resourceName)
 	}
@@ -317,14 +303,12 @@ func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requir
 		ResourceNamePlural string
 		ImportAlias        string
 		DefaultingFunc     string
-		RequiresRecreate   bool
 		APIVersionPrefix   string
 	}{
 		ResourceName:       resourceName,
 		ResourceNamePlural: plural,
 		ImportAlias:        importAlias,
 		DefaultingFunc:     defaultingFunc,
-		RequiresRecreate:   requiresRecreate,
 		APIVersionPrefix:   apiVersionPrefix,
 	})
 
@@ -335,50 +319,10 @@ func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requir
 	return b.String(), nil
 }
 
-var (
-	reconcileFunctionTplFuncs = map[string]interface{}{
-		"lowercaseFirst": lowercaseFirst,
-	}
-)
-
-var namedReconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .APIVersionPrefix }}{{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceName }}s
-type {{ .APIVersionPrefix }}{{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .ResourceName }}) (*{{ .ImportAlias }}.{{ .ResourceName }}, error)
+var namedReconcileFunctionTemplate = template.Must(template.New("").Parse(`// {{ .APIVersionPrefix }}{{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceNamePlural }}
+type {{ .APIVersionPrefix }}{{ .ResourceName }}Creator = GenericObjectCreator[*{{ .ImportAlias }}.{{ .ResourceName }}]
 
 // Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
-type Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .APIVersionPrefix }}{{ .ResourceName }}Creator)
-
-// {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .APIVersionPrefix }}{{ .ResourceName }}Creator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create {{ .APIVersionPrefix }}{{ .ResourceName }}Creator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*{{ .ImportAlias }}.{{ .ResourceName }}))
-		}
-		return create(&{{ .ImportAlias }}.{{ .ResourceName }}{})
-	}
-}
-
-// Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }} will create and update the {{ .APIVersionPrefix }}{{ .ResourceNamePlural }} coming from the passed {{ .APIVersionPrefix }}{{ .ResourceName }}Creator slice
-func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-{{- if .DefaultingFunc }}
-		create = {{ .DefaultingFunc }}(create)
-{{- end }}
-		createObject := {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
+type Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter = GenericNamedObjectCreator[*{{ .ImportAlias }}.{{ .ResourceName }}]
 
 `))

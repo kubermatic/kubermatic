@@ -1476,25 +1476,23 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		secretData[EtcdRestoreS3BucketNameKey] = destination.BucketName
 		secretData[EtcdRestoreS3EndpointKey] = destination.Endpoint
 
-		creator := func(se *corev1.Secret) (*corev1.Secret, error) {
-			if se.Data == nil {
-				se.Data = map[string][]byte{}
-			}
-			for k, v := range secretData {
-				se.Data[k] = []byte(v)
-			}
-			return se, nil
+		secretName := fmt.Sprintf("%s-backupdownload-%s", restore.Name, rand.String(10))
+		creators := []reconciling.NamedSecretCreatorGetter{
+			func() (name string, create reconciling.SecretCreator) {
+				return secretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+					if se.Data == nil {
+						se.Data = map[string][]byte{}
+					}
+					for k, v := range secretData {
+						se.Data[k] = []byte(v)
+					}
+					return se, nil
+				}
+			},
 		}
 
-		wrappedCreator := reconciling.SecretObjectWrapper(creator)
-		wrappedCreator = reconciling.OwnerRefWrapper(GetEtcdRestoreRef(restore))(wrappedCreator)
-
-		secretName := fmt.Sprintf("%s-backupdownload-%s", restore.Name, rand.String(10))
-
-		if err := reconciling.EnsureNamedObject(
-			ctx,
-			types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: secretName},
-			wrappedCreator, client, &corev1.Secret{}, false); err != nil {
+		ownerModifier := reconciling.OwnerRefWrapper(GetEtcdRestoreRef(restore))
+		if err := reconciling.EnsureNamedObjects(ctx, client, cluster.Status.NamespaceName, creators, ownerModifier); err != nil {
 			return nil, "", fmt.Errorf("failed to ensure Secret %s: %w", secretName, err)
 		}
 

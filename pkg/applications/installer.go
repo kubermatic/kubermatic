@@ -66,7 +66,7 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 		log.Infof("reconciling namespace '%s'", desiredNs.Name)
 
 		creators := []reconciling.NamedNamespaceCreatorGetter{
-			func() (name string, create reconciling.NamespaceCreator) {
+			func() (string, reconciling.NamespaceCreator) {
 				return desiredNs.Name, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 					if desiredNs.Labels != nil {
 						if ns.Labels == nil {
@@ -90,7 +90,7 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 			},
 		}
 
-		if err := reconciling.ReconcileNamespaces(ctx, creators, "", userClient); err != nil {
+		if err := reconciling.EnsureNamedObjects(ctx, userClient, "", creators); err != nil {
 			return fmt.Errorf("failed to reconcile namespace: %w", err)
 		}
 	}

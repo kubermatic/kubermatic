@@ -99,7 +99,7 @@ func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient ctrl
 	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		creationPreventingWebhook("", []string{"persistentvolumes", "persistentvolumeclaims"}),
 	}
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creatorGetters, "", userClusterClient); err != nil {
+	if err := reconciling.EnsureNamedObjects(ctx, userClusterClient, "", creatorGetters); err != nil {
 		return fmt.Errorf("failed to create ValidatingWebhookConfiguration to prevent creation of PVs/PVCs: %w", err)
 	}
 
