@@ -915,6 +915,12 @@ func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 }
 
+// GetProjectRef returns a metav1.OwnerReference for the given Project.
+func GetProjectRef(project *kubermaticv1.Project) metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(project, gv.WithKind(kubermaticv1.ProjectKindName))
+}
+
 // GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
 func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion

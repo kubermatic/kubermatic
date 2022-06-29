@@ -51,14 +51,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				Name:      fmt.Sprintf("project-%s-1", projectName),
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-1", projectName),
 				},
 			},
 			Spec: kubermaticv1.ResourceQuotaSpec{
 				Subject: kubermaticv1.Subject{
 					Name: fmt.Sprintf("%s-1", projectName),
-					Kind: "project",
+					Kind: kubermaticv1.ProjectSubjectKind,
 				},
 			},
 		},
@@ -67,14 +67,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				Name:      fmt.Sprintf("project-%s-2", projectName),
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
 				},
 			},
 			Spec: kubermaticv1.ResourceQuotaSpec{
 				Subject: kubermaticv1.Subject{
 					Name: fmt.Sprintf("%s-2", projectName),
-					Kind: "project",
+					Kind: kubermaticv1.ProjectSubjectKind,
 				},
 			},
 		},
