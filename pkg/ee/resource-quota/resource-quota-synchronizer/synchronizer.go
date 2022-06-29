@@ -95,6 +95,7 @@ func resourceQuotaCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.Name
 	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			c.Name = rq.Name
+			c.Labels = rq.Labels
 			c.Spec = rq.Spec
 			c.Status.GlobalUsage = rq.Status.GlobalUsage
 			return c, nil
