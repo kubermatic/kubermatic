@@ -158,6 +158,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 	rq.Namespace = kubermaticresources.KubermaticNamespace
 	rq.Labels = map[string]string{
 		kubermaticv1.ResourceQuotaSubjectNameLabelKey: "project1",
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
 	}
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
