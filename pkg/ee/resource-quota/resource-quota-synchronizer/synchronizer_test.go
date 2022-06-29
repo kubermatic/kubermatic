@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotasyncer
+package resourcequotasynchronizer
 
 import (
 	"context"
@@ -140,6 +140,10 @@ func TestReconcile(t *testing.T) {
 			if reflect.DeepEqual(rq.Status.LocalUsage, tc.expectedRQ.Status.LocalUsage) {
 				t.Fatal("local usage should not be synced to seeds")
 			}
+
+			if !reflect.DeepEqual(rq.Labels, tc.expectedRQ.Labels) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Labels, tc.expectedRQ.Labels))
+			}
 		})
 	}
 }
@@ -152,6 +156,10 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
 	rq.Namespace = kubermaticresources.KubermaticNamespace
+	rq.Labels = map[string]string{
+		kubermaticv1.ResourceQuotaSubjectNameLabelKey: "project1",
+		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+	}
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
 			Name: "project1",

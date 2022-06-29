@@ -27,7 +27,7 @@ import (
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	resourcequotamastercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/master-controller"
-	resourcequotasyncer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-syncer"
+	resourcequotasynchronizer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,7 +56,7 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 
 func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		return resourcequotasyncer.ControllerName, resourcequotasyncer.Add(
+		return resourcequotasynchronizer.ControllerName, resourcequotasynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,

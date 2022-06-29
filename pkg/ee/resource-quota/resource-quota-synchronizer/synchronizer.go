@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotasyncer
+package resourcequotasynchronizer
 
 import (
 	"context"
@@ -49,7 +49,7 @@ import (
 
 const (
 	// This controller syncs the ResourceQuotas from the master cluster to the seed clusters.
-	ControllerName = "kkp-resource-quota-syncer"
+	ControllerName = "kkp-resource-quota-synchronizer"
 )
 
 type reconciler struct {
@@ -95,6 +95,7 @@ func resourceQuotaCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.Name
 	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			c.Name = rq.Name
+			c.Labels = rq.Labels
 			c.Spec = rq.Spec
 			c.Status.GlobalUsage = rq.Status.GlobalUsage
 			return c, nil
