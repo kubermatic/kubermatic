@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resourcequotasyncer
+package resourcequotasynchronizer
 
 import (
 	"context"
@@ -49,7 +49,7 @@ import (
 
 const (
 	// This controller syncs the ResourceQuotas from the master cluster to the seed clusters.
-	ControllerName = "kkp-resource-quota-syncer"
+	ControllerName = "kkp-resource-quota-synchronizer"
 )
 
 type reconciler struct {
