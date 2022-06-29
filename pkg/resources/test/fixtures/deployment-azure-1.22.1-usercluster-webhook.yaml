@@ -27,6 +27,7 @@ spec:
         - -webhook-cert-name=serving.crt
         - -webhook-key-name=serving.key
         - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
+        - -project-id=my-project
         - -v=2
         command:
         - user-cluster-webhook

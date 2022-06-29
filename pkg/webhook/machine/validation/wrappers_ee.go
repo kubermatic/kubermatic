@@ -20,17 +20,37 @@ package validation
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eemachinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
+	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
-	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
-	return eemachinevalidation.ValidateQuota(ctx, log, seedClient, userClient, machine, caBundle)
+func validateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle, resourceQuota *kubermaticv1.ResourceQuota) error {
+	return eemachinevalidation.ValidateQuota(ctx, log, userClient, machine, caBundle, resourceQuota)
+}
+
+func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, subjectSelector labels.Selector) (*kubermaticv1.ResourceQuota, error) {
+	quotaList := &kubermaticv1.ResourceQuotaList{}
+	if err := seedClient.List(ctx, quotaList, &ctrlruntimeclient.ListOptions{
+		LabelSelector: subjectSelector,
+		Namespace:     resources.KubermaticNamespace,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to list resource quotas: %w", err)
+	}
+
+	if len(quotaList.Items) == 0 {
+		return nil, nil
+	}
+
+	return &quotaList.Items[0], nil
 }
