@@ -431,7 +431,7 @@ func createGroupRBACController(ctrlCtx *controllerContext) error {
 	return grouprbaccontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.mgr,
-		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.log,
 	)
 }
