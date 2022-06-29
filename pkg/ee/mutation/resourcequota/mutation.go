@@ -83,7 +83,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 		return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
 
 	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on addon resources", req.Operation))
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on resource quota resources", req.Operation))
 	}
 
 	mutatedResourceQuota, err := json.Marshal(resourceQuota)
