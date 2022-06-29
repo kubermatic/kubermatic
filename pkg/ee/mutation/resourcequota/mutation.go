@@ -54,6 +54,8 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
+		ensureResourceQuotaLabels(resourceQuota)
+
 		if resourceQuota.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind {
 			return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
 		}
@@ -63,7 +65,6 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			logger.Info("ResourceQuota mutation failed", "error", err)
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		ensureResourceQuotaLabels(resourceQuota)
 
 	case admissionv1.Update:
 		if err := decoder.Decode(req, resourceQuota); err != nil {
