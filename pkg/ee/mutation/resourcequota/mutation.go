@@ -63,6 +63,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			logger.Info("ResourceQuota mutation failed", "error", err)
 			return admission.Errored(http.StatusBadRequest, err)
 		}
+		ensureResourceQuotaLabels(resourceQuota)
 
 	case admissionv1.Update:
 		if err := decoder.Decode(req, resourceQuota); err != nil {
@@ -119,9 +120,33 @@ func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Cli
 	return nil
 }
 
-func validateUpdate(oldResourceQuota *kubermaticv1.ResourceQuota, newResourceQuora *kubermaticv1.ResourceQuota) error {
-	if !equality.Semantic.DeepEqual(oldResourceQuota.OwnerReferences, newResourceQuora.OwnerReferences) {
+func ensureResourceQuotaLabels(resourceQuota *kubermaticv1.ResourceQuota) {
+	labels := resourceQuota.GetLabels()
+
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] = resourceQuota.Spec.Subject.Kind
+	labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = resourceQuota.Spec.Subject.Name
+
+	resourceQuota.SetLabels(labels)
+}
+
+func validateUpdate(oldResourceQuota *kubermaticv1.ResourceQuota, newResourceQuota *kubermaticv1.ResourceQuota) error {
+	if !equality.Semantic.DeepEqual(oldResourceQuota.OwnerReferences, newResourceQuota.OwnerReferences) {
 		return errors.New("ResourceQuota reference cannot be changed")
+	}
+
+	oldLabels := oldResourceQuota.GetLabels()
+	newLabels := newResourceQuota.GetLabels()
+
+	if oldLabels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] != newLabels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] {
+		return errors.New(fmt.Sprintf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectKindLabelKey))
+	}
+
+	if oldLabels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] != newLabels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] {
+		return errors.New(fmt.Sprintf("ResourceQuota %s label cannot be changed", kubermaticv1.ResourceQuotaSubjectNameLabelKey))
 	}
 
 	return nil
