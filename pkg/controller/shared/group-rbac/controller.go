@@ -25,7 +25,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,15 +48,11 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	seedsGetter provider.SeedsGetter,
 ) error {
 	reconciler := &Reconciler{
-		Client:           mgr.GetClient(),
-		recorder:         mgr.GetEventRecorderFor(ControllerName),
-		log:              log.Named(ControllerName),
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
-		seedsGetter:      seedsGetter,
+		Client:   mgr.GetClient(),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
+		log:      log.Named(ControllerName),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

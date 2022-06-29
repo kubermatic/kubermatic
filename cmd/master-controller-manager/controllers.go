@@ -27,7 +27,6 @@ import (
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
-	grouprbac "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/group-rbac"
 	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
@@ -45,6 +44,7 @@ import (
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
+	grouprbac "k8c.io/kubermatic/v2/pkg/controller/shared/group-rbac"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -130,7 +130,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
 	}
-	if err := grouprbac.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
+	if err := grouprbac.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create group rbac controller: %w", err)
 	}
 

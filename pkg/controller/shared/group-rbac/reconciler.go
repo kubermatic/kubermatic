@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,10 +38,8 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	seedClientGetter provider.SeedClientGetter
-	seedsGetter      provider.SeedsGetter
-	log              *zap.SugaredLogger
-	recorder         record.EventRecorder
+	log      *zap.SugaredLogger
+	recorder record.EventRecorder
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -82,38 +79,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	log := r.log.With("GroupProjectBinding", binding.Name)
 
-	// reconcile master cluster first
 	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.log.Errorw("Reconciling master failed", zap.Error(err))
-	}
-
-	seeds, err := r.seedsGetter()
-	if err != nil {
+		r.log.Errorw("Reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 
-	for _, seed := range seeds {
-		// don't try to reconcile Seed that has an invalid kubeconfig
-		if seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionTrue) {
-			seedClient, err := r.seedClientGetter(seed)
-			if err != nil {
-				r.log.Warnw("Getting seed client failed", "seed", seed.Name, zap.Error(err))
-				continue
-			}
-
-			log := log.With("seed", seed.Name)
-
-			if err := r.reconcile(ctx, seedClient, log, binding); err != nil {
-				r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-				r.log.Warnw("Reconciling seed failed", "seed", seed.Name, zap.Error(err))
-			}
-		} else {
-			r.log.Debugw("Skipped reconciling non-ready seed", "seed", seed.Name)
-		}
-	}
-
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, binding *kubermaticv1.GroupProjectBinding) error {
