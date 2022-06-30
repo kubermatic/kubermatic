@@ -188,6 +188,11 @@ func main() {
 				APIVersionPrefix: "KubermaticV1",
 			},
 			{
+				ResourceName:     "GroupProjectBinding",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
 				ResourceName:     "Constraint",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
