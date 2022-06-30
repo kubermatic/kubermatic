@@ -133,7 +133,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
 	}
-	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log); err != nil {
+	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log, true); err != nil {
 		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 

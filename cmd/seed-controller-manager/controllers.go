@@ -433,5 +433,6 @@ func createGroupRBACController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.log,
+		false,
 	)
 }

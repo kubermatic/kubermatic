@@ -48,11 +48,13 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
+	setOwnerRef bool,
 ) error {
 	reconciler := &Reconciler{
-		Client:   mgr.GetClient(),
-		recorder: mgr.GetEventRecorderFor(ControllerName),
-		log:      log.Named(ControllerName),
+		Client:      mgr.GetClient(),
+		recorder:    mgr.GetEventRecorderFor(ControllerName),
+		log:         log.Named(ControllerName),
+		setOwnerRef: setOwnerRef,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

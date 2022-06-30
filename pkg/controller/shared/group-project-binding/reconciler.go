@@ -40,6 +40,8 @@ type Reconciler struct {
 
 	log      *zap.SugaredLogger
 	recorder record.EventRecorder
+
+	setOwnerRef bool
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -58,25 +60,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	// validate that GroupProjectBinding references an existing project and set an owner reference
+	if r.setOwnerRef {
+		// validate that GroupProjectBinding references an existing project and set an owner reference
 
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.ProjectID}, project); err != nil {
-		if apierrors.IsNotFound(err) {
-			r.recorder.Event(binding, corev1.EventTypeWarning, "ProjectNotFound", err.Error())
+		project := &kubermaticv1.Project{}
+		if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.ProjectID}, project); err != nil {
+			if apierrors.IsNotFound(err) {
+				r.recorder.Event(binding, corev1.EventTypeWarning, "ProjectNotFound", err.Error())
+			}
+			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, err
-	}
 
-	if err := updateGroupProjectBinding(ctx, r.Client, binding, func(binding *kubermaticv1.GroupProjectBinding) {
-		kuberneteshelper.EnsureOwnerReference(binding, metav1.OwnerReference{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ProjectKindName,
-			Name:       project.Name,
-			UID:        project.UID,
-		})
-	}); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
+		if err := updateGroupProjectBinding(ctx, r.Client, binding, func(binding *kubermaticv1.GroupProjectBinding) {
+			kuberneteshelper.EnsureOwnerReference(binding, metav1.OwnerReference{
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Kind:       kubermaticv1.ProjectKindName,
+				Name:       project.Name,
+				UID:        project.UID,
+			})
+		}); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
+		}
 	}
 
 	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
