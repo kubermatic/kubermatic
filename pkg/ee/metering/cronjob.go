@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
@@ -40,7 +40,7 @@ import (
 // cronJobCreator returns the func to create/update the metering report cronjob.
 func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return reportName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			labels := job.GetLabels()
 			if labels == nil {
 				labels = make(map[string]string)

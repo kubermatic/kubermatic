@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,14 +41,14 @@ type cronJobCreatorData interface {
 // CronJobCreator returns the func to create/update the etcd defragger cronjob.
 func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return resources.EtcdDefragCronJobName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			command, err := defraggerCommand(data)
 			if err != nil {
 				return nil, err
 			}
 
 			job.Name = resources.EtcdDefragCronJobName
-			job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
+			job.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
 			var historyLimit int32
 			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit
 			job.Spec.Schedule = "@every 3h"

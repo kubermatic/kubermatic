@@ -127,8 +127,8 @@ func main() {
 			},
 			{
 				ResourceName:       "CronJob",
-				ImportAlias:        "batchv1beta1",
-				ResourceImportPath: "k8s.io/api/batch/v1beta1",
+				ImportAlias:        "batchv1",
+				ResourceImportPath: "k8s.io/api/batch/v1",
 				DefaultingFunc:     "DefaultCronJob",
 			},
 			{

@@ -26,7 +26,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -677,19 +676,19 @@ func TestDefaultCronJob(t *testing.T) {
 
 	creators := []NamedCronJobCreatorGetter{
 		func() (string, CronJobCreator) {
-			return testResourceName, func(d *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			return testResourceName, func(d *batchv1.CronJob) (*batchv1.CronJob, error) {
 				return d, nil
 			}
 		},
 	}
 
-	existingObject := &batchv1beta1.CronJob{
+	existingObject := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testResourceName,
 			Namespace: testNamespace,
 		},
-		Spec: batchv1beta1.CronJobSpec{
-			JobTemplate: batchv1beta1.JobTemplateSpec{
+		Spec: batchv1.CronJobSpec{
+			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
@@ -703,10 +702,10 @@ func TestDefaultCronJob(t *testing.T) {
 		},
 	}
 
-	expectedObject := &batchv1beta1.CronJob{
+	expectedObject := &batchv1.CronJob{
 		ObjectMeta: existingObject.ObjectMeta,
-		Spec: batchv1beta1.CronJobSpec{
-			JobTemplate: batchv1beta1.JobTemplateSpec{
+		Spec: batchv1.CronJobSpec{
+			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
@@ -736,7 +735,7 @@ func TestDefaultCronJob(t *testing.T) {
 
 	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
-	actualCronJob := &batchv1beta1.CronJob{}
+	actualCronJob := &batchv1.CronJob{}
 	if err := client.Get(context.Background(), key, actualCronJob); err != nil {
 		t.Fatalf("Failed to get the CronJob from the client: %v", err)
 	}

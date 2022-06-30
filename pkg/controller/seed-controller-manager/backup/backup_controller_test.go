@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -137,7 +137,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Fatalf("Error syncing cluster: %v", err)
 	}
 
-	cronJobs := &batchv1beta1.CronJobList{}
+	cronJobs := &batchv1.CronJobList{}
 	if err := reconciler.List(ctx, cronJobs); err != nil {
 		t.Fatalf("Error listing cronjobs: %v", err)
 	}

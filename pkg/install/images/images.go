@@ -182,7 +182,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 
 	for _, createFunc := range cronjobCreators {
 		_, creator := createFunc()
-		cronJob, err := creator(&batchv1beta1.CronJob{})
+		cronJob, err := creator(&batchv1.CronJob{})
 		if err != nil {
 			return nil, err
 		}
