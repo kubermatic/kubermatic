@@ -9775,6 +9775,15 @@
         ],
         "summary": "Gets a specific IPAM pool.",
         "operationId": "getIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "IPAMPool",
@@ -9802,6 +9811,15 @@
         ],
         "summary": "Removes an existing IPAM pool.",
         "operationId": "deleteIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"

@@ -58,6 +58,10 @@ func NewGetIPAMPoolParamsWithHTTPClient(client *http.Client) *GetIPAMPoolParams 
    Typically these are written to a http.Request.
 */
 type GetIPAMPoolParams struct {
+
+	// IpampoolName.
+	IPAMPoolName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +115,17 @@ func (o *GetIPAMPoolParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIPAMPoolName adds the ipampoolName to the get IP a m pool params
+func (o *GetIPAMPoolParams) WithIPAMPoolName(ipampoolName string) *GetIPAMPoolParams {
+	o.SetIPAMPoolName(ipampoolName)
+	return o
+}
+
+// SetIPAMPoolName adds the ipampoolName to the get IP a m pool params
+func (o *GetIPAMPoolParams) SetIPAMPoolName(ipampoolName string) {
+	o.IPAMPoolName = ipampoolName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +133,11 @@ func (o *GetIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
+
+	// path param ipampool_name
+	if err := r.SetPathParam("ipampool_name", o.IPAMPoolName); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

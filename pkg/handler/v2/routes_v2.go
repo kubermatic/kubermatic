@@ -7214,8 +7214,15 @@ func (r Routing) listIPAMPools() http.Handler {
 //      401: empty
 //      403: empty
 func (r Routing) getIPAMPool() http.Handler {
-	// TODO
-	return nil
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		ipampool.DecodeIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
 }
 
 //swagger:route PUT /api/v2/ipampools ipampool applyIPAMPool

@@ -1347,6 +1347,8 @@ type GroupProjectBindingProvider interface {
 }
 
 type IPAMPoolProvider interface {
-	// List gets the IPAM pool list
+	// List gets the IPAM pool list.
 	List(ctx context.Context) (*kubermaticv1.IPAMPoolList, error)
+	// Get returns a IPAM pool based on name.
+	Get(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error)
 }
