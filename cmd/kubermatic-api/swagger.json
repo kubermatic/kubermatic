@@ -17805,7 +17805,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Returns resource quota for a given project.",
+        "summary": "Returns Resource Quota for a given project.",
         "operationId": "getProjectQuota",
         "parameters": [
           {
@@ -19609,8 +19609,7 @@
           "application/json"
         ],
         "tags": [
-          "resource",
-          "quota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Gets a Resource Quota list.",
@@ -19658,8 +19657,7 @@
           "application/json"
         ],
         "tags": [
-          "resource",
-          "quota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Creates a new Resource Quota.",
@@ -19675,8 +19673,13 @@
                 "quota": {
                   "$ref": "#/definitions/ResourceDetails"
                 },
-                "subject": {
-                  "$ref": "#/definitions/Subject"
+                "subjectKind": {
+                  "type": "string",
+                  "x-go-name": "SubjectKind"
+                },
+                "subjectName": {
+                  "type": "string",
+                  "x-go-name": "SubjectName"
                 }
               }
             }
@@ -19707,8 +19710,7 @@
           "application/json"
         ],
         "tags": [
-          "resource",
-          "quota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Gets a specific Resource Quota.",
@@ -19748,8 +19750,7 @@
           "application/json"
         ],
         "tags": [
-          "resource",
-          "quota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Removes an existing Resource Quota.",
@@ -19786,8 +19787,7 @@
           "application/json"
         ],
         "tags": [
-          "resource",
-          "quota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Updates an existing Resource Quota.",
