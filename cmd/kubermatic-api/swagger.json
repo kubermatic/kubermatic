@@ -19609,7 +19609,7 @@
           "application/json"
         ],
         "tags": [
-          "resourcequota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Gets a Resource Quota list.",
@@ -19657,7 +19657,7 @@
           "application/json"
         ],
         "tags": [
-          "resourcequota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Creates a new Resource Quota.",
@@ -19710,7 +19710,7 @@
           "application/json"
         ],
         "tags": [
-          "resourcequota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Gets a specific Resource Quota.",
@@ -19750,7 +19750,7 @@
           "application/json"
         ],
         "tags": [
-          "resourcequota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Removes an existing Resource Quota.",
@@ -19787,7 +19787,7 @@
           "application/json"
         ],
         "tags": [
-          "resourcequota",
+          "resourceQuota",
           "admin"
         ],
         "summary": "Updates an existing Resource Quota.",

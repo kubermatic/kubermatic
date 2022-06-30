@@ -6642,7 +6642,7 @@ func (r Routing) getProjectQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas/{quota_name} resourcequota admin getResourceQuota
+//swagger:route GET /api/v2/quotas/{quota_name} resourceQuota admin getResourceQuota
 //
 //    Gets a specific Resource Quota.
 //
@@ -6666,7 +6666,7 @@ func (r Routing) getResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas resourcequota admin listResourceQuotas
+//swagger:route GET /api/v2/quotas resourceQuota admin listResourceQuotas
 //
 //    Gets a Resource Quota list.
 //
@@ -6690,7 +6690,7 @@ func (r Routing) listResourceQuotas() http.Handler {
 	)
 }
 
-//swagger:route POST /api/v2/quotas resourcequota admin createResourceQuota
+//swagger:route POST /api/v2/quotas resourceQuota admin createResourceQuota
 //
 //    Creates a new Resource Quota.
 //
@@ -6714,7 +6714,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route PATCH /api/v2/quotas/{quota_name} resourcequota admin patchResourceQuota
+//swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -6738,7 +6738,7 @@ func (r Routing) patchResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v2/quotas/{quota_name} resourcequota admin deleteResourceQuota
+//swagger:route DELETE /api/v2/quotas/{quota_name} resourceQuota admin deleteResourceQuota
 //
 //    Removes an existing Resource Quota.
 //
