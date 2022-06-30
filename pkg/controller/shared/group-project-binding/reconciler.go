@@ -43,6 +43,8 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("request", request)
+
 	binding := &kubermaticv1.GroupProjectBinding{}
 	if err := r.Get(ctx, request.NamespacedName, binding); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -77,11 +79,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
 	}
 
-	log := r.log.With("GroupProjectBinding", binding.Name)
-
 	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.log.Errorw("Reconciling failed", zap.Error(err))
+		r.log.Errorw("reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 
@@ -94,7 +94,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return fmt.Errorf("failed to get target ClusterRoles: %w", err)
 	}
 
-	log.Debugw("Found ClusterRoles matching role label", "count", len(clusterRoles))
+	log.Debugw("found ClusterRoles matching role label", "count", len(clusterRoles))
 
 	if err := pruneClusterRoleBindings(ctx, client, log, binding, clusterRoles); err != nil {
 		return fmt.Errorf("failed to prune ClusterRoleBindings: %w", err)
@@ -117,7 +117,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return fmt.Errorf("failed to get target Roles: %w", err)
 	}
 
-	log.Debugw("Found namespaces with Roles matching conditions", "GroupProjectBinding", binding.Name, "count", len(rolesMap))
+	log.Debugw("found namespaces with Roles matching conditions", "GroupProjectBinding", binding.Name, "count", len(rolesMap))
 
 	if err := pruneRoleBindings(ctx, client, log, binding); err != nil {
 		return fmt.Errorf("failed to prune Roles: %w", err)
