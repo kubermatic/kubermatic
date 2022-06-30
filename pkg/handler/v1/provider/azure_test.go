@@ -24,9 +24,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -39,7 +39,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
+var (
 	testID      = "test"
 	locationUS  = "US"
 	locationEU  = "EU"
@@ -48,7 +48,6 @@ const (
 )
 
 type mockSizeClientImpl struct {
-	machineSizeList compute.VirtualMachineSizeListResult
 }
 
 func TestAzureSizeEndpoint(t *testing.T) {
@@ -151,27 +150,27 @@ func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) 
 	return &mockSizeClientImpl{}, nil
 }
 
-func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
+func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]armcompute.ResourceSKU, error) {
 	standardGS3 := standardGS3
 	standardA5 := standardA5
 	resourceType := "virtualMachines"
 	tier := "Standard"
 
-	resultList := []compute.ResourceSku{
+	resultList := []armcompute.ResourceSKU{
 		{
-			Locations:    &[]string{locationEU},
+			Locations:    []*string{&locationEU},
 			Name:         &standardGS3,
 			ResourceType: &resourceType,
 			Tier:         &tier,
 		},
 		{
-			Locations:    &[]string{locationUS},
+			Locations:    []*string{&locationUS},
 			Name:         &standardGS3,
 			ResourceType: &resourceType,
 			Tier:         &tier,
 		},
 		{
-			Locations:    &[]string{locationUS},
+			Locations:    []*string{&locationUS},
 			Name:         &standardA5,
 			ResourceType: &resourceType,
 			Tier:         &tier,
@@ -181,7 +180,7 @@ func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]co
 	return resultList, nil
 }
 
-func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
+func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([]armcompute.VirtualMachineSize, error) {
 	standardFake := "Fake"
 	standardGS3 := "Standard_GS3"
 	standardA5 := "Standard_A5"
@@ -190,51 +189,77 @@ func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([
 	numberOfCores := int32(8)
 	diskSizeInMB := int32(1024)
 
-	s.machineSizeList = compute.VirtualMachineSizeListResult{Value: &[]compute.VirtualMachineSize{}}
-
 	if location == locationEU {
 		// one valid VM size type, two in total
-		s.machineSizeList.Value = &[]compute.VirtualMachineSize{{Name: &standardGS3,
-			MaxDataDiskCount: &maxDataDiskCount, MemoryInMB: &memoryInMB, NumberOfCores: &numberOfCores,
-			OsDiskSizeInMB: &diskSizeInMB, ResourceDiskSizeInMB: &diskSizeInMB},
-			{Name: &standardFake,
-				MaxDataDiskCount: &maxDataDiskCount, MemoryInMB: &memoryInMB, NumberOfCores: &numberOfCores,
-				OsDiskSizeInMB: &diskSizeInMB, ResourceDiskSizeInMB: &diskSizeInMB},
-		}
+		return []armcompute.VirtualMachineSize{
+			{
+				Name:                 &standardGS3,
+				MaxDataDiskCount:     &maxDataDiskCount,
+				MemoryInMB:           &memoryInMB,
+				NumberOfCores:        &numberOfCores,
+				OSDiskSizeInMB:       &diskSizeInMB,
+				ResourceDiskSizeInMB: &diskSizeInMB,
+			},
+			{
+				Name:                 &standardFake,
+				MaxDataDiskCount:     &maxDataDiskCount,
+				MemoryInMB:           &memoryInMB,
+				NumberOfCores:        &numberOfCores,
+				OSDiskSizeInMB:       &diskSizeInMB,
+				ResourceDiskSizeInMB: &diskSizeInMB,
+			},
+		}, nil
 	}
+
 	if location == locationUS {
 		// two valid VM size types, three in total
-		s.machineSizeList.Value = &[]compute.VirtualMachineSize{
-			{Name: &standardGS3, MaxDataDiskCount: &maxDataDiskCount, MemoryInMB: &memoryInMB, NumberOfCores: &numberOfCores,
-				OsDiskSizeInMB: &diskSizeInMB, ResourceDiskSizeInMB: &diskSizeInMB},
-			{Name: &standardFake,
-				MaxDataDiskCount: &maxDataDiskCount, MemoryInMB: &memoryInMB, NumberOfCores: &numberOfCores,
-				OsDiskSizeInMB: &diskSizeInMB, ResourceDiskSizeInMB: &diskSizeInMB},
-			{Name: &standardA5,
-				MaxDataDiskCount: &maxDataDiskCount, MemoryInMB: &memoryInMB, NumberOfCores: &numberOfCores,
-				OsDiskSizeInMB: &diskSizeInMB, ResourceDiskSizeInMB: &diskSizeInMB},
-		}
+		return []armcompute.VirtualMachineSize{
+			{
+				Name:                 &standardGS3,
+				MaxDataDiskCount:     &maxDataDiskCount,
+				MemoryInMB:           &memoryInMB,
+				NumberOfCores:        &numberOfCores,
+				OSDiskSizeInMB:       &diskSizeInMB,
+				ResourceDiskSizeInMB: &diskSizeInMB,
+			},
+			{
+				Name:                 &standardFake,
+				MaxDataDiskCount:     &maxDataDiskCount,
+				MemoryInMB:           &memoryInMB,
+				NumberOfCores:        &numberOfCores,
+				OSDiskSizeInMB:       &diskSizeInMB,
+				ResourceDiskSizeInMB: &diskSizeInMB,
+			},
+			{
+				Name:                 &standardA5,
+				MaxDataDiskCount:     &maxDataDiskCount,
+				MemoryInMB:           &memoryInMB,
+				NumberOfCores:        &numberOfCores,
+				OSDiskSizeInMB:       &diskSizeInMB,
+				ResourceDiskSizeInMB: &diskSizeInMB,
+			},
+		}, nil
 	}
 
-	return *s.machineSizeList.Value, nil
+	return nil, fmt.Errorf("unknown location %q", location)
 }
 
-func (s *mockSizeClientImpl) ListSecurityGroups(_ context.Context, _ string) ([]network.SecurityGroup, error) {
+func (s *mockSizeClientImpl) ListSecurityGroups(_ context.Context, _ string) ([]armnetwork.SecurityGroup, error) {
 	return nil, nil
 }
 
-func (s *mockSizeClientImpl) ListResourceGroups(_ context.Context) ([]resources.Group, error) {
+func (s *mockSizeClientImpl) ListResourceGroups(_ context.Context) ([]armresources.ResourceGroup, error) {
 	return nil, nil
 }
 
-func (s *mockSizeClientImpl) ListRouteTables(_ context.Context, _ string) ([]network.RouteTable, error) {
+func (s *mockSizeClientImpl) ListRouteTables(_ context.Context, _ string) ([]armnetwork.RouteTable, error) {
 	return nil, nil
 }
 
-func (s *mockSizeClientImpl) ListVnets(_ context.Context, _ string) ([]network.VirtualNetwork, error) {
+func (s *mockSizeClientImpl) ListVnets(_ context.Context, _ string) ([]armnetwork.VirtualNetwork, error) {
 	return nil, nil
 }
 
-func (s *mockSizeClientImpl) ListSubnets(_ context.Context, _, _ string) ([]network.Subnet, error) {
+func (s *mockSizeClientImpl) ListSubnets(_ context.Context, _, _ string) ([]armnetwork.Subnet, error) {
 	return nil, nil
 }

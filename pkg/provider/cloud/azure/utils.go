@@ -17,21 +17,37 @@ limitations under the License.
 package azure
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func isNotFound(resp autorest.Response) bool {
-	if nested := resp.Response; nested != nil {
-		if nested.StatusCode == http.StatusNotFound {
-			return true
-		}
+func ignoreNotFound(err error) error {
+	if isNotFound(err) {
+		return nil
+	}
+
+	return err
+}
+
+func isNotFound(err error) bool {
+	var aerr *azcore.ResponseError
+	if err != nil && errors.As(err, &aerr) {
+		return aerr.StatusCode == http.StatusNotFound
 	}
 
 	return false
+}
+
+func getResourceGroup(cloud kubermaticv1.CloudSpec) string {
+	if cloud.Azure.VNetResourceGroup != "" {
+		return cloud.Azure.VNetResourceGroup
+	}
+
+	return cloud.Azure.ResourceGroup
 }
 
 func hasOwnershipTag(tags map[string]*string, cluster *kubermaticv1.Cluster) bool {

@@ -38,7 +38,7 @@ type baseHandler struct {
 	middlewares []endpoint.Middleware
 	// Let's ignore the "structcheck" false positive since it is only an "abstract" handler and options are used by the
 	// loginHandler and proxyHandler structure that embed the baseHandler.
-	//nolint:structcheck
+	// disabled due to Go 1.18 compat issues: nolint:structcheck
 	options []httptransport.ServerOption
 }
 

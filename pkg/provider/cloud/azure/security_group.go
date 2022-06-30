@@ -19,14 +19,17 @@ package azure
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/utils/pointer"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -38,14 +41,14 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		cluster.Spec.Cloud.Azure.SecurityGroup = securityGroupName(cluster)
 	}
 
-	securityGroup, err := clients.SecurityGroups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.SecurityGroup, "")
-	if err != nil && !isNotFound(securityGroup.Response) {
+	securityGroup, err := clients.SecurityGroups.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.SecurityGroup, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
 	// if we found a security group, we can check for the ownership tag to determine
 	// if the referenced security group is owned by this cluster and should be reconciled
-	if !isNotFound(securityGroup.Response) && !hasOwnershipTag(securityGroup.Tags, cluster) {
+	if !isNotFound(err) && !hasOwnershipTag(securityGroup.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
 		})
@@ -66,8 +69,8 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	//
 	// Attributes we check:
 	// - defined security rules
-	if !(securityGroup.SecurityGroupPropertiesFormat != nil && securityGroup.SecurityGroupPropertiesFormat.SecurityRules != nil &&
-		compareSecurityRules(*securityGroup.SecurityGroupPropertiesFormat.SecurityRules, *target.SecurityGroupPropertiesFormat.SecurityRules)) {
+	if !(securityGroup.Properties != nil && securityGroup.Properties.SecurityRules != nil &&
+		compareSecurityRules(securityGroup.Properties.SecurityRules, target.Properties.SecurityRules)) {
 		if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return cluster, err
 		}
@@ -80,73 +83,79 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 }
 
 func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int,
-	nodePortsIPv4CIDRs []string, nodePortsIPv6CIDRs []string) *network.SecurityGroup {
-	securityGroup := &network.SecurityGroup{
-		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
-		Location: to.StringPtr(location),
+	nodePortsIPv4CIDRs []string, nodePortsIPv6CIDRs []string) *armnetwork.SecurityGroup {
+	inbound := armnetwork.SecurityRuleDirectionInbound
+	outbound := armnetwork.SecurityRuleDirectionOutbound
+	all := armnetwork.SecurityRuleProtocolAsterisk
+	allow := armnetwork.SecurityRuleAccessAllow
+	tcp := armnetwork.SecurityRuleProtocolTCP
+
+	securityGroup := &armnetwork.SecurityGroup{
+		Name:     pointer.String(cloud.Azure.SecurityGroup),
+		Location: pointer.String(location),
 		Tags: map[string]*string{
-			clusterTagKey: to.StringPtr(clusterName),
+			clusterTagKey: pointer.String(clusterName),
 		},
-		SecurityGroupPropertiesFormat: &network.SecurityGroupPropertiesFormat{
-			Subnets: &[]network.Subnet{
+		Properties: &armnetwork.SecurityGroupPropertiesFormat{
+			Subnets: []*armnetwork.Subnet{
 				{
-					Name: to.StringPtr(cloud.Azure.SubnetName),
-					ID:   to.StringPtr(assembleSubnetID(cloud)),
+					Name: pointer.String(cloud.Azure.SubnetName),
+					ID:   pointer.String(assembleSubnetID(cloud)),
 				},
 			},
 			// inbound
-			SecurityRules: &[]network.SecurityRule{
+			SecurityRules: []*armnetwork.SecurityRule{
 				{
-					Name: to.StringPtr("ssh_ingress"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 network.SecurityRuleProtocolTCP,
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("22"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(100),
+					Name: pointer.String("ssh_ingress"),
+					Properties: &armnetwork.SecurityRulePropertiesFormat{
+						Direction:                &inbound,
+						Protocol:                 &tcp,
+						SourceAddressPrefix:      pointer.String("*"),
+						SourcePortRange:          pointer.String("*"),
+						DestinationAddressPrefix: pointer.String("*"),
+						DestinationPortRange:     pointer.String("22"),
+						Access:                   &allow,
+						Priority:                 pointer.Int32(100),
 					},
 				},
 				{
-					Name: to.StringPtr("inter_node_comm"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "*",
-						SourceAddressPrefix:      to.StringPtr("VirtualNetwork"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("VirtualNetwork"),
-						DestinationPortRange:     to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(200),
+					Name: pointer.String("inter_node_comm"),
+					Properties: &armnetwork.SecurityRulePropertiesFormat{
+						Direction:                &inbound,
+						Protocol:                 &all,
+						SourceAddressPrefix:      pointer.String("VirtualNetwork"),
+						SourcePortRange:          pointer.String("*"),
+						DestinationAddressPrefix: pointer.String("VirtualNetwork"),
+						DestinationPortRange:     pointer.String("*"),
+						Access:                   &allow,
+						Priority:                 pointer.Int32(200),
 					},
 				},
 				{
-					Name: to.StringPtr("azure_load_balancer"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "*",
-						SourceAddressPrefix:      to.StringPtr("AzureLoadBalancer"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(300),
+					Name: pointer.String("azure_load_balancer"),
+					Properties: &armnetwork.SecurityRulePropertiesFormat{
+						Direction:                &inbound,
+						Protocol:                 &all,
+						SourceAddressPrefix:      pointer.String("AzureLoadBalancer"),
+						SourcePortRange:          pointer.String("*"),
+						DestinationAddressPrefix: pointer.String("*"),
+						DestinationPortRange:     pointer.String("*"),
+						Access:                   &allow,
+						Priority:                 pointer.Int32(300),
 					},
 				},
 				// outbound
 				{
-					Name: to.StringPtr("outbound_allow_all"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionOutbound,
-						Protocol:                 "*",
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(100),
+					Name: pointer.String("outbound_allow_all"),
+					Properties: &armnetwork.SecurityRulePropertiesFormat{
+						Direction:                &outbound,
+						Protocol:                 &all,
+						SourceAddressPrefix:      pointer.String("*"),
+						SourcePortRange:          pointer.String("*"),
+						DestinationAddressPrefix: pointer.String("*"),
+						DestinationPortRange:     pointer.String("*"),
+						Access:                   &allow,
+						Priority:                 pointer.Int32(100),
 					},
 				},
 			},
@@ -154,111 +163,118 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 	}
 
 	if len(nodePortsIPv4CIDRs) > 0 {
-		updatedRules := append(*securityGroup.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress", 400, portRangeLow, portRangeHigh, nodePortsIPv4CIDRs))
-		securityGroup.SecurityRules = &updatedRules
-	}
-	if len(nodePortsIPv6CIDRs) > 0 {
-		updatedRules := append(*securityGroup.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress_ipv6", 401, portRangeLow, portRangeHigh, nodePortsIPv6CIDRs))
-		securityGroup.SecurityRules = &updatedRules
+		securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress", 400, portRangeLow, portRangeHigh, nodePortsIPv4CIDRs))
 	}
 
-	updatedRules := append(*securityGroup.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
-	securityGroup.SecurityRules = &updatedRules
+	if len(nodePortsIPv6CIDRs) > 0 {
+		securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress_ipv6", 401, portRangeLow, portRangeHigh, nodePortsIPv6CIDRs))
+	}
+
+	securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
 
 	return securityGroup
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sg *network.SecurityGroup) error {
+func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sg *armnetwork.SecurityGroup) error {
 	if sg == nil {
 		return fmt.Errorf("invalid security group reference passed")
 	}
 
-	future, err := clients.SecurityGroups.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, *sg)
+	future, err := clients.SecurityGroups.BeginCreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, *sg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create or update security group %q: %w", cloud.Azure.SecurityGroup, err)
 	}
 
-	if err := future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update security group %q: %w", cloud.Azure.SecurityGroup, err)
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	return nil
+	return err
 }
 
 func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	// We first do Get to check existence of the security group to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	res, err := clients.SecurityGroups.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, "")
+	future, err := clients.SecurityGroups.BeginDelete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, nil)
 	if err != nil {
-		if isNotFound(res.Response) {
-			return nil
-		}
-		return err
+		return ignoreNotFound(err)
 	}
 
-	future, err := clients.SecurityGroups.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
-	if err != nil {
-		return err
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // nodePortsAllowedIPRangesRule returns a security rule to allow access to node ports from provided IP ranges.
-func nodePortsAllowedIPRangesRule(name string, priority int32, portRangeLow int, portRangeHigh int, nodePortsAllowedIPRanges []string) network.SecurityRule {
-	rule := network.SecurityRule{
-		Name: to.StringPtr(name),
-		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-			Direction:                network.SecurityRuleDirectionInbound,
-			Protocol:                 network.SecurityRuleProtocolAsterisk,
-			SourcePortRange:          to.StringPtr("*"),
-			DestinationAddressPrefix: to.StringPtr("*"),
-			DestinationPortRange:     to.StringPtr(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
-			Access:                   network.SecurityRuleAccessAllow,
-			Priority:                 to.Int32Ptr(priority),
+func nodePortsAllowedIPRangesRule(name string, priority int32, portRangeLow int, portRangeHigh int, nodePortsAllowedIPRanges []string) *armnetwork.SecurityRule {
+	inbound := armnetwork.SecurityRuleDirectionInbound
+	all := armnetwork.SecurityRuleProtocolAsterisk
+	allow := armnetwork.SecurityRuleAccessAllow
+
+	prefixes := []*string{}
+	for _, prefix := range nodePortsAllowedIPRanges {
+		prefixes = append(prefixes, pointer.String(prefix))
+	}
+
+	rule := &armnetwork.SecurityRule{
+		Name: pointer.String(name),
+		Properties: &armnetwork.SecurityRulePropertiesFormat{
+			Direction:                &inbound,
+			Protocol:                 &all,
+			SourcePortRange:          pointer.String("*"),
+			DestinationAddressPrefix: pointer.String("*"),
+			DestinationPortRange:     pointer.String(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
+			Access:                   &allow,
+			Priority:                 pointer.Int32(priority),
 		},
 	}
+
 	if len(nodePortsAllowedIPRanges) == 1 {
-		rule.SecurityRulePropertiesFormat.SourceAddressPrefix = to.StringPtr(nodePortsAllowedIPRanges[0])
+		rule.Properties.SourceAddressPrefix = pointer.String(nodePortsAllowedIPRanges[0])
 	} else {
-		rule.SecurityRulePropertiesFormat.SourceAddressPrefixes = &nodePortsAllowedIPRanges
+		rule.Properties.SourceAddressPrefixes = prefixes
 	}
+
 	return rule
 }
 
-func tcpDenyAllRule() network.SecurityRule {
-	return network.SecurityRule{
-		Name: to.StringPtr(denyAllTCPSecGroupRuleName),
-		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-			Direction:                network.SecurityRuleDirectionInbound,
-			Protocol:                 "TCP",
-			SourceAddressPrefix:      to.StringPtr("*"),
-			SourcePortRange:          to.StringPtr("*"),
-			DestinationPortRange:     to.StringPtr("*"),
-			DestinationAddressPrefix: to.StringPtr("*"),
-			Access:                   network.SecurityRuleAccessDeny,
-			Priority:                 to.Int32Ptr(800),
+func tcpDenyAllRule() *armnetwork.SecurityRule {
+	inbound := armnetwork.SecurityRuleDirectionInbound
+	tcp := armnetwork.SecurityRuleProtocolTCP
+	deny := armnetwork.SecurityRuleAccessDeny
+
+	return &armnetwork.SecurityRule{
+		Name: pointer.String(denyAllTCPSecGroupRuleName),
+		Properties: &armnetwork.SecurityRulePropertiesFormat{
+			Direction:                &inbound,
+			Protocol:                 &tcp,
+			SourceAddressPrefix:      pointer.String("*"),
+			SourcePortRange:          pointer.String("*"),
+			DestinationPortRange:     pointer.String("*"),
+			DestinationAddressPrefix: pointer.String("*"),
+			Access:                   &deny,
+			Priority:                 pointer.Int32(800),
 		},
 	}
 }
 
-func udpDenyAllRule() network.SecurityRule {
-	return network.SecurityRule{
-		Name: to.StringPtr(denyAllUDPSecGroupRuleName),
-		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-			Direction:                network.SecurityRuleDirectionInbound,
-			Protocol:                 "UDP",
-			SourceAddressPrefix:      to.StringPtr("*"),
-			SourcePortRange:          to.StringPtr("*"),
-			DestinationPortRange:     to.StringPtr("*"),
-			DestinationAddressPrefix: to.StringPtr("*"),
-			Access:                   network.SecurityRuleAccessDeny,
-			Priority:                 to.Int32Ptr(801),
+func udpDenyAllRule() *armnetwork.SecurityRule {
+	inbound := armnetwork.SecurityRuleDirectionInbound
+	udp := armnetwork.SecurityRuleProtocolUDP
+	deny := armnetwork.SecurityRuleAccessDeny
+
+	return &armnetwork.SecurityRule{
+		Name: pointer.String(denyAllUDPSecGroupRuleName),
+		Properties: &armnetwork.SecurityRulePropertiesFormat{
+			Direction:                &inbound,
+			Protocol:                 &udp,
+			SourceAddressPrefix:      pointer.String("*"),
+			SourcePortRange:          pointer.String("*"),
+			DestinationPortRange:     pointer.String("*"),
+			DestinationAddressPrefix: pointer.String("*"),
+			Access:                   &deny,
+			Priority:                 pointer.Int32(801),
 		},
 	}
 }
@@ -268,37 +284,41 @@ func udpDenyAllRule() network.SecurityRule {
 // Therefore we're hacking around it by first blocking all incoming TCP and UDP
 // and if these don't match, we have an "allow all" rule. Dirty, but the only way.
 // See also: https://tinyurl.com/azure-allow-icmp
-func icmpAllowAllRule() network.SecurityRule {
-	return network.SecurityRule{
-		Name: to.StringPtr(allowAllICMPSecGroupRuleName),
-		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-			Direction:                network.SecurityRuleDirectionInbound,
-			Protocol:                 "*",
-			SourceAddressPrefix:      to.StringPtr("*"),
-			SourcePortRange:          to.StringPtr("*"),
-			DestinationAddressPrefix: to.StringPtr("*"),
-			DestinationPortRange:     to.StringPtr("*"),
-			Access:                   network.SecurityRuleAccessAllow,
-			Priority:                 to.Int32Ptr(900),
+func icmpAllowAllRule() *armnetwork.SecurityRule {
+	inbound := armnetwork.SecurityRuleDirectionInbound
+	all := armnetwork.SecurityRuleProtocolAsterisk
+	allow := armnetwork.SecurityRuleAccessAllow
+
+	return &armnetwork.SecurityRule{
+		Name: pointer.String(allowAllICMPSecGroupRuleName),
+		Properties: &armnetwork.SecurityRulePropertiesFormat{
+			Direction:                &inbound,
+			Protocol:                 &all,
+			SourceAddressPrefix:      pointer.String("*"),
+			SourcePortRange:          pointer.String("*"),
+			DestinationAddressPrefix: pointer.String("*"),
+			DestinationPortRange:     pointer.String("*"),
+			Access:                   &allow,
+			Priority:                 pointer.Int32(900),
 		},
 	}
 }
 
-func compareSecurityRules(a []network.SecurityRule, b []network.SecurityRule) bool {
+func compareSecurityRules(a []*armnetwork.SecurityRule, b []*armnetwork.SecurityRule) bool {
 	if len(a) != len(b) {
 		return false
 	}
 
 	for i, rule := range a {
 		ruleB := b[i]
-		if *rule.Name != *ruleB.Name || rule.SecurityRulePropertiesFormat.Direction != ruleB.SecurityRulePropertiesFormat.Direction ||
-			rule.SecurityRulePropertiesFormat.Protocol != ruleB.SecurityRulePropertiesFormat.Protocol ||
-			rule.SecurityRulePropertiesFormat.Access != ruleB.SecurityRulePropertiesFormat.Access ||
-			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.SourceAddressPrefix, ruleB.SecurityRulePropertiesFormat.SourceAddressPrefix) ||
-			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.SourcePortRange, ruleB.SecurityRulePropertiesFormat.SourcePortRange) ||
-			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.DestinationPortRange, ruleB.SecurityRulePropertiesFormat.DestinationPortRange) ||
-			!isEqualStringPtr(rule.SecurityRulePropertiesFormat.DestinationAddressPrefix, ruleB.SecurityRulePropertiesFormat.DestinationAddressPrefix) ||
-			!isEqualInt32Ptr(rule.SecurityRulePropertiesFormat.Priority, ruleB.SecurityRulePropertiesFormat.Priority) {
+		if *rule.Name != *ruleB.Name || rule.Properties.Direction != ruleB.Properties.Direction ||
+			rule.Properties.Protocol != ruleB.Properties.Protocol ||
+			rule.Properties.Access != ruleB.Properties.Access ||
+			!isEqualStringPtr(rule.Properties.SourceAddressPrefix, ruleB.Properties.SourceAddressPrefix) ||
+			!isEqualStringPtr(rule.Properties.SourcePortRange, ruleB.Properties.SourcePortRange) ||
+			!isEqualStringPtr(rule.Properties.DestinationPortRange, ruleB.Properties.DestinationPortRange) ||
+			!isEqualStringPtr(rule.Properties.DestinationAddressPrefix, ruleB.Properties.DestinationAddressPrefix) ||
+			!isEqualInt32Ptr(rule.Properties.Priority, ruleB.Properties.Priority) {
 			return false
 		}
 	}

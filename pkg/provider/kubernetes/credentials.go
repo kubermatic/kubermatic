@@ -213,12 +213,17 @@ func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient
 	}
 
 	if validate != nil {
-		if err := azure.ValidateCredentials(ctx, azure.Credentials{
+		cred, err := azure.Credentials{
 			TenantID:       spec.TenantID,
 			SubscriptionID: spec.SubscriptionID,
 			ClientID:       spec.ClientID,
 			ClientSecret:   spec.ClientSecret,
-		}); err != nil {
+		}.ToAzureCredential()
+		if err != nil {
+			return false, fmt.Errorf("invalid Azure credentials: %w", err)
+		}
+
+		if err := azure.ValidateCredentials(ctx, cred, spec.SubscriptionID); err != nil {
 			return false, fmt.Errorf("invalid Azure credentials: %w", err)
 		}
 	}
@@ -859,15 +864,20 @@ func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCl
 	clientSecret := cloud.Azure.ClientSecret
 
 	if tenantID == "" || subscriptionID == "" || clientID == "" || clientSecret == "" {
-		return utilerrors.NewBadRequest("kubeone azure credentials missing")
+		return utilerrors.NewBadRequest("kubeone Azure credentials missing")
 	}
 
-	if err := azure.ValidateCredentials(ctx, azure.Credentials{
+	cred, err := azure.Credentials{
 		TenantID:       tenantID,
 		SubscriptionID: subscriptionID,
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
-	}); err != nil {
+	}.ToAzureCredential()
+	if err != nil {
+		return fmt.Errorf("invalid Azure credentials: %w", err)
+	}
+
+	if err := azure.ValidateCredentials(ctx, cred, subscriptionID); err != nil {
 		return fmt.Errorf("invalid Azure credentials: %w", err)
 	}
 

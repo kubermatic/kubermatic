@@ -20,13 +20,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute/computeapi"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 func availabilitySetName(cluster *kubermaticv1.Cluster) string {
@@ -38,14 +38,14 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 		cluster.Spec.Cloud.Azure.AvailabilitySet = availabilitySetName(cluster)
 	}
 
-	availabilitySet, err := clients.AvailabilitySets.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.AvailabilitySet)
-	if err != nil && !isNotFound(availabilitySet.Response) {
+	availabilitySet, err := clients.AvailabilitySets.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.AvailabilitySet, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
 	// if we found an availability set, we can check for the ownership tag to determine
 	// if the referenced availability set is owned by this cluster and should be reconciled
-	if !isNotFound(availabilitySet.Response) && !hasOwnershipTag(availabilitySet.Tags, cluster) {
+	if !isNotFound(err) && !hasOwnershipTag(availabilitySet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
 		})
@@ -64,9 +64,9 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	// - SKU name
 	// - fault domain count
 	// - update domain count
-	if !((availabilitySet.Sku != nil && availabilitySet.Sku.Name != nil && *availabilitySet.Sku.Name == *target.Sku.Name) && availabilitySet.AvailabilitySetProperties != nil &&
-		(availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformFaultDomainCount == *target.AvailabilitySetProperties.PlatformFaultDomainCount) &&
-		(availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != nil && *availabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount == *target.AvailabilitySetProperties.PlatformUpdateDomainCount)) {
+	if !((availabilitySet.SKU != nil && availabilitySet.SKU.Name != nil && *availabilitySet.SKU.Name == *target.SKU.Name) && availabilitySet.Properties != nil &&
+		(availabilitySet.Properties.PlatformFaultDomainCount != nil && *availabilitySet.Properties.PlatformFaultDomainCount == *target.Properties.PlatformFaultDomainCount) &&
+		(availabilitySet.Properties.PlatformUpdateDomainCount != nil && *availabilitySet.Properties.PlatformUpdateDomainCount == *target.Properties.PlatformUpdateDomainCount)) {
 		if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
 			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %w", err)
 		}
@@ -78,34 +78,34 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	})
 }
 
-func targetAvailabilitySet(cloud kubermaticv1.CloudSpec, location string, clusterName string) (*compute.AvailabilitySet, error) {
+func targetAvailabilitySet(cloud kubermaticv1.CloudSpec, location string, clusterName string) (*armcompute.AvailabilitySet, error) {
 	faultDomainCount, ok := faultDomainsPerRegion[location]
 	if !ok {
-		return nil, fmt.Errorf("could not determine the number of fault domains, unknown region %q", location)
+		return nil, fmt.Errorf("could not determine the number of fault domains: unknown region %q", location)
 	}
 
-	return &compute.AvailabilitySet{
-		Name:     to.StringPtr(cloud.Azure.AvailabilitySet),
-		Location: to.StringPtr(location),
-		Sku: &compute.Sku{
-			Name: to.StringPtr("Aligned"),
+	return &armcompute.AvailabilitySet{
+		Name:     pointer.String(cloud.Azure.AvailabilitySet),
+		Location: pointer.String(location),
+		SKU: &armcompute.SKU{
+			Name: pointer.String("Aligned"),
 		},
 		Tags: map[string]*string{
-			clusterTagKey: to.StringPtr(clusterName),
+			clusterTagKey: pointer.String(clusterName),
 		},
-		AvailabilitySetProperties: &compute.AvailabilitySetProperties{
-			PlatformFaultDomainCount:  to.Int32Ptr(faultDomainCount),
-			PlatformUpdateDomainCount: to.Int32Ptr(20),
+		Properties: &armcompute.AvailabilitySetProperties{
+			PlatformFaultDomainCount:  pointer.Int32(faultDomainCount),
+			PlatformUpdateDomainCount: pointer.Int32(20),
 		},
 	}, nil
 }
 
-func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySetsClientAPI, cloud kubermaticv1.CloudSpec, as *compute.AvailabilitySet) error {
+func ensureAvailabilitySet(ctx context.Context, client AvailabilitySetClient, cloud kubermaticv1.CloudSpec, as *armcompute.AvailabilitySet) error {
 	if as == nil {
 		return fmt.Errorf("invalid AvailabilitySet reference passed, cannot be nil")
 	}
 
-	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, *as)
+	_, err := client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, *as, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create or update availability set %q: %w", cloud.Azure.AvailabilitySet, err)
 	}
@@ -114,16 +114,6 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 }
 
 func deleteAvailabilitySet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	// We first do Get to check existence of the availability set to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	res, err := clients.AvailabilitySets.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
-	if err != nil {
-		if isNotFound(res.Response) {
-			return nil
-		}
-		return err
-	}
-
-	_, err = clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
-	return err
+	_, err := clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet, nil)
+	return ignoreNotFound(err)
 }

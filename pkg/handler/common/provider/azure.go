@@ -22,10 +22,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -48,39 +48,42 @@ var gpuInstanceFamilies = map[string]int32{"Standard_NC6": 1, "Standard_NC12": 2
 	"Standard_NV32as_v4": 1}
 
 var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID string) (AzureClientSet, error) {
-	var err error
-	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
-	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	cred, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
 	if err != nil {
 		return nil, err
 	}
-	skusClient := compute.NewResourceSkusClient(subscriptionID)
-	skusClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	sizesClient, err := armcompute.NewVirtualMachineSizesClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
-	securityGroupsClient := network.NewSecurityGroupsClient(subscriptionID)
-	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	skusClient, err := armcompute.NewResourceSKUsClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
-	resourceGroupsClient := resources.NewGroupsClient(subscriptionID)
-	resourceGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	securityGroupsClient, err := armnetwork.NewSecurityGroupsClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
-	routeTablesClient := network.NewRouteTablesClient(subscriptionID)
-	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	resourceGroupsClient, err := armresources.NewResourceGroupsClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
-	subnetsClient := network.NewSubnetsClient(subscriptionID)
-	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	routeTablesClient, err := armnetwork.NewRouteTablesClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
-	vnetClient := network.NewVirtualNetworksClient(subscriptionID)
-	vnetClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+
+	subnetsClient, err := armnetwork.NewSubnetsClient(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	vnetClient, err := armnetwork.NewVirtualNetworksClient(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,79 +100,151 @@ var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID st
 }
 
 type azureClientSetImpl struct {
-	vmSizeClient         compute.VirtualMachineSizesClient
-	skusClient           compute.ResourceSkusClient
-	securityGroupsClient network.SecurityGroupsClient
-	routeTablesClient    network.RouteTablesClient
-	resourceGroupsClient resources.GroupsClient
-	subnetsClient        network.SubnetsClient
-	vnetClient           network.VirtualNetworksClient
+	vmSizeClient         *armcompute.VirtualMachineSizesClient
+	skusClient           *armcompute.ResourceSKUsClient
+	securityGroupsClient *armnetwork.SecurityGroupsClient
+	routeTablesClient    *armnetwork.RouteTablesClient
+	resourceGroupsClient *armresources.ResourceGroupsClient
+	subnetsClient        *armnetwork.SubnetsClient
+	vnetClient           *armnetwork.VirtualNetworksClient
 }
 
 type AzureClientSet interface {
-	ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error)
-	ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error)
-	ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error)
-	ListResourceGroups(ctx context.Context) ([]resources.Group, error)
-	ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error)
-	ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error)
-	ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error)
+	ListVMSize(ctx context.Context, location string) ([]armcompute.VirtualMachineSize, error)
+	ListSKU(ctx context.Context, location string) ([]armcompute.ResourceSKU, error)
+	ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]armnetwork.SecurityGroup, error)
+	ListResourceGroups(ctx context.Context) ([]armresources.ResourceGroup, error)
+	ListRouteTables(ctx context.Context, resourceGroupName string) ([]armnetwork.RouteTable, error)
+	ListVnets(ctx context.Context, resourceGroupName string) ([]armnetwork.VirtualNetwork, error)
+	ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]armnetwork.Subnet, error)
 }
 
-func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
-	skuList, err := s.skusClient.List(ctx, location, "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to list SKU resource: %w", err)
+func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]armcompute.ResourceSKU, error) {
+	pager := s.skusClient.NewListPager(&armcompute.ResourceSKUsClientListOptions{
+		Filter: &location,
+	})
+
+	result := []armcompute.ResourceSKU{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list SKU resource: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return skuList.Values(), nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
-	sizesResult, err := s.vmSizeClient.List(ctx, location)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list sizes: %w", err)
+func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([]armcompute.VirtualMachineSize, error) {
+	pager := s.vmSizeClient.NewListPager(location, nil)
+
+	result := []armcompute.VirtualMachineSize{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list sizes: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return *sizesResult.Value, nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error) {
-	securityGroups, err := s.securityGroupsClient.List(ctx, resourceGroupName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list security groups: %w", err)
+func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]armnetwork.SecurityGroup, error) {
+	pager := s.securityGroupsClient.NewListPager(resourceGroupName, nil)
+
+	result := []armnetwork.SecurityGroup{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list security groups: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return securityGroups.Values(), nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error) {
-	routeTables, err := s.routeTablesClient.List(ctx, resourceGroupName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list resource groups: %w", err)
+func (s *azureClientSetImpl) ListRouteTables(ctx context.Context, resourceGroupName string) ([]armnetwork.RouteTable, error) {
+	pager := s.routeTablesClient.NewListPager(resourceGroupName, nil)
+
+	result := []armnetwork.RouteTable{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list route tables: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return routeTables.Values(), nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
-	resourceGroups, err := s.resourceGroupsClient.List(ctx, "", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list resource groups: %w", err)
+func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]armresources.ResourceGroup, error) {
+	pager := s.resourceGroupsClient.NewListPager(nil)
+
+	result := []armresources.ResourceGroup{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list resource groups: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return resourceGroups.Values(), nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error) {
-	subnets, err := s.subnetsClient.List(ctx, resourceGroupName, virtualNetworkName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list subnets: %w", err)
+func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]armnetwork.Subnet, error) {
+	pager := s.subnetsClient.NewListPager(resourceGroupName, virtualNetworkName, nil)
+
+	result := []armnetwork.Subnet{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list subnets: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return subnets.Values(), nil
+
+	return result, nil
 }
 
-func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error) {
-	vnets, err := s.vnetClient.List(ctx, resourceGroupName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list vnets: %w", err)
+func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName string) ([]armnetwork.VirtualNetwork, error) {
+	pager := s.vnetClient.NewListPager(resourceGroupName, nil)
+
+	result := []armnetwork.VirtualNetwork{}
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list vnets: %w", err)
+		}
+
+		for i := range nextResult.Value {
+			result = append(result, *nextResult.Value[i])
+		}
 	}
-	return vnets.Values(), nil
+
+	return result, nil
 }
 
 func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
@@ -252,20 +327,16 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, u
 	return AzureSKUAvailabilityZones(ctx, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation, skuName)
 }
 
-func isVirtualMachinesType(sku compute.ResourceSku) bool {
+func isVirtualMachinesType(sku armcompute.ResourceSKU) bool {
 	resourceType := sku.ResourceType
-	if resourceType != nil {
-		if *resourceType == "virtualMachines" {
-			return true
-		}
-	}
-	return false
+
+	return resourceType != nil && *resourceType == "virtualMachines"
 }
 
-func isLocation(sku compute.ResourceSku, location string) bool {
+func isLocation(sku armcompute.ResourceSKU, location string) bool {
 	if sku.Locations != nil {
-		for _, l := range *sku.Locations {
-			if l == location {
+		for _, l := range sku.Locations {
+			if *l == location {
 				return true
 			}
 		}
@@ -274,7 +345,7 @@ func isLocation(sku compute.ResourceSku, location string) bool {
 }
 
 // isValidVM checks all constrains for VM.
-func isValidVM(sku compute.ResourceSku, location string) bool {
+func isValidVM(sku armcompute.ResourceSKU, location string) bool {
 	if !isLocation(sku, location) {
 		return false
 	}
@@ -284,16 +355,12 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	}
 
 	// check restricted locations
-	restrictions := sku.Restrictions
-	if restrictions != nil {
-		for _, r := range *restrictions {
-			restrictionInfo := r.RestrictionInfo
-			if restrictionInfo != nil {
-				if restrictionInfo.Locations != nil {
-					for _, l := range *restrictionInfo.Locations {
-						if l == location {
-							return false
-						}
+	if restrictions := sku.Restrictions; restrictions != nil {
+		for _, r := range restrictions {
+			if info := r.RestrictionInfo; info != nil && info.Locations != nil {
+				for _, l := range info.Locations {
+					if *l == location {
+						return false
 					}
 				}
 			}
@@ -357,21 +424,22 @@ func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResour
 	for _, v := range listVMSize {
 		if v.Name != nil {
 			vmName := *v.Name
-			_, okSKU := validSKUSet[vmName]
-			gpus, okGPU := gpuInstanceFamilies[vmName]
-			if okSKU {
+
+			if _, okSKU := validSKUSet[vmName]; okSKU {
 				s := apiv1.AzureSize{
 					Name:          vmName,
 					NumberOfCores: *v.NumberOfCores,
 					// TODO: Use this to validate user-defined disk size.
-					OsDiskSizeInMB:       *v.OsDiskSizeInMB,
+					OsDiskSizeInMB:       *v.OSDiskSizeInMB,
 					ResourceDiskSizeInMB: *v.ResourceDiskSizeInMB,
 					MemoryInMB:           *v.MemoryInMB,
 					MaxDataDiskCount:     *v.MaxDataDiskCount,
 				}
-				if okGPU {
+
+				if gpus, okGPU := gpuInstanceFamilies[vmName]; okGPU {
 					s.NumberOfGPUs = gpus
 				}
+
 				sizeList = append(sizeList, s)
 			}
 		}
@@ -421,12 +489,14 @@ func AzureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, cl
 	var azZones = &apiv1.AzureAvailabilityZonesList{}
 	for _, sku := range skuList {
 		if skuName == *sku.Name {
-			for _, l := range *sku.LocationInfo {
-				if location == *l.Location {
-					if *l.Zones != nil && len(*l.Zones) > 0 {
-						azZones.Zones = *l.Zones
-						return azZones, nil
+			for _, l := range sku.LocationInfo {
+				if location == *l.Location && l.Zones != nil && len(l.Zones) > 0 {
+					azZones.Zones = []string{}
+					for _, z := range l.Zones {
+						azZones.Zones = append(azZones.Zones, *z)
 					}
+
+					return azZones, nil
 				}
 			}
 		}

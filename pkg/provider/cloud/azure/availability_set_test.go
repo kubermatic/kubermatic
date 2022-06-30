@@ -24,11 +24,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	"k8s.io/utils/pointer"
 )
 
 func TestReconcileAvailabilitySet(t *testing.T) {
@@ -41,7 +42,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 		name                        string
 		clusterName                 string
 		azureCloudSpec              *kubermaticv1.AzureCloudSpec
-		existingAvailabilitySet     *compute.AvailabilitySet
+		existingAvailabilitySet     *armcompute.AvailabilitySet
 		clientMode                  fakeClientMode
 		overrideTags                bool
 		overrideUpdateDomainCount   bool
@@ -125,11 +126,11 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 				ResourceGroup:   customExistingResourceGroup,
 				AvailabilitySet: customExistingAvailabilitySet,
 			},
-			existingAvailabilitySet: &compute.AvailabilitySet{
-				ID:       to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/%s", credentials.SubscriptionID, customExistingResourceGroup, customExistingAvailabilitySet)),
-				Name:     to.StringPtr(customExistingAvailabilitySet),
-				Location: to.StringPtr(testLocation),
-				Type:     to.StringPtr("Microsoft.Compute/availabilitySets"),
+			existingAvailabilitySet: &armcompute.AvailabilitySet{
+				ID:       pointer.String(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/%s", credentials.SubscriptionID, customExistingResourceGroup, customExistingAvailabilitySet)),
+				Name:     pointer.String(customExistingAvailabilitySet),
+				Location: pointer.String(testLocation),
+				Type:     pointer.String("Microsoft.Compute/availabilitySets"),
 			},
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                false,
@@ -160,7 +161,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 
 			// prepare cluster resource and client set
 			cluster := makeCluster(tc.clusterName, tc.azureCloudSpec, credentials)
-			clientSet := getFakeClientSetWithAvailabilitySetsClient(*credentials, testLocation, cluster, tc.existingAvailabilitySet, tc.clientMode)
+			clientSet := getFakeClientSetWithAvailabilitySetsClient(tc.existingAvailabilitySet, tc.clientMode)
 
 			fakeClient, ok := clientSet.AvailabilitySets.(*fakeAvailabilitySetsClient)
 			if !ok {
@@ -194,7 +195,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 
 				// mess with the platform update domain count to force a reconcile
 				if tc.overrideUpdateDomainCount {
-					fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount = to.Int32Ptr(15)
+					fakeClient.AvailabilitySet.Properties.PlatformUpdateDomainCount = pointer.Int32(15)
 				}
 
 				// reconcile AvailabilitySet the second time
@@ -214,8 +215,8 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 
 				// make sure the reconcile fixed the update domain count if we didn't override ownership tags
 				if tc.overrideUpdateDomainCount && !tc.overrideTags {
-					if *fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount != 20 {
-						t.Fatalf("expected platform update domain count to be 20, got %d", *fakeClient.AvailabilitySet.AvailabilitySetProperties.PlatformUpdateDomainCount)
+					if *fakeClient.AvailabilitySet.Properties.PlatformUpdateDomainCount != 20 {
+						t.Fatalf("expected platform update domain count to be 20, got %d", *fakeClient.AvailabilitySet.Properties.PlatformUpdateDomainCount)
 					}
 				}
 			}
@@ -226,63 +227,49 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 const customExistingAvailabilitySet = "custom-existing-availability-set"
 
 type fakeAvailabilitySetsClient struct {
-	compute.AvailabilitySetsClient
-	location    string
-	credentials Credentials
-	mode        fakeClientMode
-	cluster     *kubermaticv1.Cluster
+	armcompute.AvailabilitySetsClient
 
-	AvailabilitySet *compute.AvailabilitySet
-
+	mode                      fakeClientMode
+	AvailabilitySet           *armcompute.AvailabilitySet
 	CreateOrUpdateCalledCount int
 }
 
-func getFakeClientSetWithAvailabilitySetsClient(credentials Credentials, location string, cluster *kubermaticv1.Cluster, existingAvailabilitySet *compute.AvailabilitySet, mode fakeClientMode) *ClientSet {
+func getFakeClientSetWithAvailabilitySetsClient(existingAvailabilitySet *armcompute.AvailabilitySet, mode fakeClientMode) *ClientSet {
 	return &ClientSet{
 		AvailabilitySets: &fakeAvailabilitySetsClient{
-			location:        location,
-			credentials:     credentials,
 			mode:            mode,
-			cluster:         cluster,
 			AvailabilitySet: existingAvailabilitySet,
 		},
 	}
 }
 
-func (c *fakeAvailabilitySetsClient) Get(ctx context.Context, resourceGroupName string, availabilitySetName string) (compute.AvailabilitySet, error) {
+func (c *fakeAvailabilitySetsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, availabilitySetName string, parameters armcompute.AvailabilitySet, options *armcompute.AvailabilitySetsClientCreateOrUpdateOptions) (armcompute.AvailabilitySetsClientCreateOrUpdateResponse, error) {
+	c.CreateOrUpdateCalledCount++
+	c.AvailabilitySet = &parameters
+
+	return armcompute.AvailabilitySetsClientCreateOrUpdateResponse{
+		AvailabilitySet: *c.AvailabilitySet,
+	}, nil
+}
+
+func (c *fakeAvailabilitySetsClient) Get(ctx context.Context, resourceGroupName string, availabilitySetName string, options *armcompute.AvailabilitySetsClientGetOptions) (armcompute.AvailabilitySetsClientGetResponse, error) {
 	switch c.mode {
 	case fakeClientModeOkay:
 		if c.AvailabilitySet != nil && c.AvailabilitySet.Name != nil && availabilitySetName == *c.AvailabilitySet.Name {
-			return *c.AvailabilitySet, nil
-		} else {
-			resp := autorest.Response{
-				Response: &http.Response{
-					StatusCode: 404,
-				},
-			}
+			return armcompute.AvailabilitySetsClientGetResponse{
+				AvailabilitySet: *c.AvailabilitySet,
+			}, nil
+		}
 
-			return compute.AvailabilitySet{
-				Response: resp,
-			}, autorest.NewErrorWithError(fmt.Errorf("not found"), "resources.GroupsClient", "Get", resp.Response, "Failure responding to request")
+		return armcompute.AvailabilitySetsClientGetResponse{}, &azcore.ResponseError{
+			StatusCode: http.StatusNotFound,
 		}
 
 	case fakeClientModeAuthFail:
-		resp := autorest.Response{
-			Response: &http.Response{
-				StatusCode: 403,
-			},
+		return armcompute.AvailabilitySetsClientGetResponse{}, &azcore.ResponseError{
+			StatusCode: http.StatusForbidden,
 		}
-
-		return compute.AvailabilitySet{
-			Response: resp,
-		}, autorest.NewErrorWithError(fmt.Errorf("unauthorized"), "resources.GroupsClient", "Get", resp.Response, "Failure responding to request")
 	}
 
-	return compute.AvailabilitySet{}, fmt.Errorf("unknown fake client mode: %s", c.mode)
-}
-
-func (c *fakeAvailabilitySetsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, availabilitySetName string, parameters compute.AvailabilitySet) (compute.AvailabilitySet, error) {
-	c.CreateOrUpdateCalledCount++
-	c.AvailabilitySet = &parameters
-	return *c.AvailabilitySet, nil
+	return armcompute.AvailabilitySetsClientGetResponse{}, fmt.Errorf("unknown fake client mode: %s", c.mode)
 }
