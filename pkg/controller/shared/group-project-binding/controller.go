@@ -42,7 +42,7 @@ const (
 	ControllerName = "group-project-binding-controller"
 )
 
-// Add creates a new group-rbac controller and sets up Watches.
+// Add creates a new group-project-binding controller and sets up Watches.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,

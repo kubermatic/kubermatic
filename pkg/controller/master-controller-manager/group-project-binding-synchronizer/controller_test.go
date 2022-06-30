@@ -44,7 +44,7 @@ func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
 
-const groupProjectBindingName = "user-project-binding-test"
+const groupProjectBindingName = "group-project-binding-test"
 
 func TestReconcile(t *testing.T) {
 	testCases := []struct {
