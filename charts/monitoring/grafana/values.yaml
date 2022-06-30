@@ -22,7 +22,7 @@ grafana:
   replicas: 1
   image:
     repository: docker.io/grafana/grafana
-    tag: 8.1.2
+    tag: 9.0.1
   utilImage:
     repository: quay.io/kubermatic/util
     tag: 2.1.0
