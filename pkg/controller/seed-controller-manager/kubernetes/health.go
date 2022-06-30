@@ -100,6 +100,28 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.ApplicationController = applicationControllerHealthStatus
 
+	if cluster.Spec.EnableOperatingSystemManager {
+		osmHealthStatus := kubermaticv1.HealthStatusDown
+		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+			mcHealthStatus, err = r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get operatingSystemManager health: %w", err)
+			}
+		}
+		extendedHealth.OperatingSystemManager = osmHealthStatus
+	}
+
+	if cluster.Spec.KubernetesDashboard.IsEnabled() {
+		kubernetesDashboardHealthStatus := kubermaticv1.HealthStatusDown
+		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+			mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+			}
+		}
+		extendedHealth.KubernetesDashboard = kubernetesDashboardHealthStatus
+	}
+
 	return extendedHealth, nil
 }
 
@@ -174,6 +196,42 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	case mcStatus == kubermaticv1.HealthStatusUp && mcWebhookStatus == kubermaticv1.HealthStatusUp:
 		return kubermaticv1.HealthStatusUp, nil
 	case mcStatus == kubermaticv1.HealthStatusProvisioning || mcWebhookStatus == kubermaticv1.HealthStatusProvisioning:
+		return kubermaticv1.HealthStatusProvisioning, nil
+	default:
+		return kubermaticv1.HealthStatusDown, nil
+	}
+}
+
+func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// check for the health of operating-system-manager deployment.
+	key := types.NamespacedName{Namespace: namespace, Name: resources.OperatingSystemManagerDeploymentName}
+	status, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
+	}
+
+	switch {
+	case status == kubermaticv1.HealthStatusUp:
+		return kubermaticv1.HealthStatusUp, nil
+	case status == kubermaticv1.HealthStatusProvisioning:
+		return kubermaticv1.HealthStatusProvisioning, nil
+	default:
+		return kubermaticv1.HealthStatusDown, nil
+	}
+}
+
+func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// check for the health of kubernetes-dashboard deployment.
+	key := types.NamespacedName{Namespace: namespace, Name: resources.KubernetesDashboardDeploymentName}
+	status, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.KubernetesDashboardDeploymentName, err)
+	}
+
+	switch {
+	case status == kubermaticv1.HealthStatusUp:
+		return kubermaticv1.HealthStatusUp, nil
+	case status == kubermaticv1.HealthStatusProvisioning:
 		return kubermaticv1.HealthStatusProvisioning, nil
 	default:
 		return kubermaticv1.HealthStatusDown, nil

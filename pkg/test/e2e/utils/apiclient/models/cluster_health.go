@@ -42,6 +42,9 @@ type ClusterHealth struct {
 	// gatekeeper controller
 	GatekeeperController HealthStatus `json:"gatekeeperController,omitempty"`
 
+	// kubernetes dashboard
+	KubernetesDashboard HealthStatus `json:"kubernetesDashboard,omitempty"`
+
 	// logging
 	Logging HealthStatus `json:"logging,omitempty"`
 
@@ -53,6 +56,9 @@ type ClusterHealth struct {
 
 	// monitoring
 	Monitoring HealthStatus `json:"monitoring,omitempty"`
+
+	// operating system manager
+	OperatingSystemManager HealthStatus `json:"operatingSystemManager,omitempty"`
 
 	// scheduler
 	Scheduler HealthStatus `json:"scheduler,omitempty"`
@@ -97,6 +103,10 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateKubernetesDashboard(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateLogging(formats); err != nil {
 		res = append(res, err)
 	}
@@ -110,6 +120,10 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateMonitoring(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOperatingSystemManager(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -263,6 +277,23 @@ func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ClusterHealth) validateKubernetesDashboard(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesDashboard) { // not required
+		return nil
+	}
+
+	if err := m.KubernetesDashboard.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("kubernetesDashboard")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("kubernetesDashboard")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateLogging(formats strfmt.Registry) error {
 	if swag.IsZero(m.Logging) { // not required
 		return nil
@@ -324,6 +355,23 @@ func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
 			return ve.ValidateName("monitoring")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("monitoring")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateOperatingSystemManager(formats strfmt.Registry) error {
+	if swag.IsZero(m.OperatingSystemManager) { // not required
+		return nil
+	}
+
+	if err := m.OperatingSystemManager.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("operatingSystemManager")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("operatingSystemManager")
 		}
 		return err
 	}
@@ -401,6 +449,10 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateKubernetesDashboard(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateLogging(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -414,6 +466,10 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	}
 
 	if err := m.contextValidateMonitoring(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOperatingSystemManager(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -543,6 +599,20 @@ func (m *ClusterHealth) contextValidateGatekeeperController(ctx context.Context,
 	return nil
 }
 
+func (m *ClusterHealth) contextValidateKubernetesDashboard(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.KubernetesDashboard.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("kubernetesDashboard")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("kubernetesDashboard")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) contextValidateLogging(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.Logging.ContextValidate(ctx, formats); err != nil {
@@ -592,6 +662,20 @@ func (m *ClusterHealth) contextValidateMonitoring(ctx context.Context, formats s
 			return ve.ValidateName("monitoring")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("monitoring")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateOperatingSystemManager(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.OperatingSystemManager.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("operatingSystemManager")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("operatingSystemManager")
 		}
 		return err
 	}

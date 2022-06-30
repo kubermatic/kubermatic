@@ -2428,6 +2428,12 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
+                  kubernetesDashboard:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   logging:
                     enum:
                     - HealthStatusDown
@@ -2453,6 +2459,12 @@ spec:
                     - HealthStatusProvisioning
                     type: string
                   openvpn:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
+                  operatingSystemManager:
                     enum:
                     - HealthStatusDown
                     - HealthStatusUp
