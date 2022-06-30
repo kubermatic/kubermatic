@@ -144,8 +144,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, groupProjectBinding, apiv1.SeedGroupProjectBindingCleanupFinalizer)
 }
 
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, groupProjectBinding *kubermaticv1.GroupProjectBinding,
-	action func(seedClusterClient ctrlruntimeclient.Client, groupProjectBinding *kubermaticv1.GroupProjectBinding) error) error {
+func (r *reconciler) syncAllSeeds(
+	log *zap.SugaredLogger,
+	groupProjectBinding *kubermaticv1.GroupProjectBinding,
+	action func(seedClusterClient ctrlruntimeclient.Client, groupProjectBinding *kubermaticv1.GroupProjectBinding) error,
+) error {
 
 	seedErrs := []error{}
 
