@@ -511,6 +511,16 @@ type VMwareCloudDirectorNetwork struct {
 // swagger:model VMwareCloudDirectorNetworkList
 type VMwareCloudDirectorNetworkList []VMwareCloudDirectorNetwork
 
+// VMwareCloudDirectorStorageProfile represents a VMware Cloud Director storage profile.
+// swagger:model VMwareCloudDirectorStorageProfile
+type VMwareCloudDirectorStorageProfile struct {
+	Name string `json:"name"`
+}
+
+// VMwareCloudDirectorStorageProfileList represents an array of VMware Cloud Director storage profiles.
+// swagger:model VMwareCloudDirectorStorageProfileList
+type VMwareCloudDirectorStorageProfileList []VMwareCloudDirectorStorageProfile
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {

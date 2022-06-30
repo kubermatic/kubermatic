@@ -13583,6 +13583,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13594,13 +13601,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -19219,6 +19219,67 @@
             "description": "VMwareCloudDirectorNetworkList",
             "schema": {
               "$ref": "#/definitions/VMwareCloudDirectorNetworkList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/vmwareclouddirector/{dc}/storageprofiles": {
+      "get": {
+        "description": "List VMware Cloud Director Storage Profiles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorStorageProfiles",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Organization",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VDC",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorStorageProfileList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorStorageProfileList"
             }
           },
           "default": {
@@ -30456,6 +30517,25 @@
           "type": "string",
           "x-go-name": "VApp"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorStorageProfile": {
+      "type": "object",
+      "title": "VMwareCloudDirectorStorageProfile represents a VMware Cloud Director storage profile.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VMwareCloudDirectorStorageProfileList": {
+      "type": "array",
+      "title": "VMwareCloudDirectorStorageProfileList represents an array of VMware Cloud Director storage profiles.",
+      "items": {
+        "$ref": "#/definitions/VMwareCloudDirectorStorageProfile"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },

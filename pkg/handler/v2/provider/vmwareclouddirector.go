@@ -87,6 +87,12 @@ type VMwareCloudDirectorNetworkReq struct {
 	VMwareCloudDirectorCommonReq
 }
 
+// VMwareCloudDirectorStorageProfileReq represents a request for listing storage profiles.
+// swagger:parameters listVMwareCloudDirectorStorageProfiles
+type VMwareCloudDirectorStorageProfileReq struct {
+	VMwareCloudDirectorCommonReq
+}
+
 // VMwareCloudDirectoTemplateReq defines HTTP request for listing templates.
 // swagger:parameters listVMwareCloudDirectorTemplates
 type VMwareCloudDirectorTemplateReq struct {
@@ -180,6 +186,22 @@ func VMwareCloudDirectorNetworksEndpoint(presetProvider provider.PresetProvider,
 		}
 
 		return vcd.ListOVDCNetworks(ctx, *creds)
+	}
+}
+
+func VMwareCloudDirectorStorageProfilesEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(VMwareCloudDirectorStorageProfileReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+
+		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req.VMwareCloudDirectorCommonReq, userInfoGetter, presetProvider, seedsGetter)
+		if err != nil {
+			return nil, err
+		}
+
+		return vcd.ListStorageProfiles(ctx, *creds)
 	}
 }
 
