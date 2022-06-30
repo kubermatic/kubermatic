@@ -32,6 +32,8 @@ type ClientService interface {
 
 	ListVMwareCloudDirectorNetworks(params *ListVMwareCloudDirectorNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorNetworksOK, error)
 
+	ListVMwareCloudDirectorStorageProfiles(params *ListVMwareCloudDirectorStorageProfilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorStorageProfilesOK, error)
+
 	ListVMwareCloudDirectorTemplates(params *ListVMwareCloudDirectorTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorTemplatesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -110,6 +112,44 @@ func (a *Client) ListVMwareCloudDirectorNetworks(params *ListVMwareCloudDirector
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListVMwareCloudDirectorNetworksDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListVMwareCloudDirectorStorageProfiles List VMware Cloud Director Storage Profiles
+*/
+func (a *Client) ListVMwareCloudDirectorStorageProfiles(params *ListVMwareCloudDirectorStorageProfilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorStorageProfilesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListVMwareCloudDirectorStorageProfilesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listVMwareCloudDirectorStorageProfiles",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/vmwareclouddirector/{dc}/storageprofiles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListVMwareCloudDirectorStorageProfilesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListVMwareCloudDirectorStorageProfilesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVMwareCloudDirectorStorageProfilesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

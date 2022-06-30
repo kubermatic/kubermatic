@@ -713,6 +713,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listVMwareCloudDirectorNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/vmwareclouddirector/{dc}/storageprofiles").
+		Handler(r.listVMwareCloudDirectorStorageProfiles())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/vmwareclouddirector/{dc}/catalogs").
 		Handler(r.listVMwareCloudDirectorCatalogs())
 
@@ -4152,6 +4156,28 @@ func (r Routing) listVMwareCloudDirectorNetworks() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.VMwareCloudDirectorNetworksEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeVMwareCloudDirectorCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/vmwareclouddirector/{dc}/storageprofiles vmwareclouddirector listVMwareCloudDirectorStorageProfiles
+//
+// List VMware Cloud Director Storage Profiles
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: VMwareCloudDirectorStorageProfileList
+func (r Routing) listVMwareCloudDirectorStorageProfiles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VMwareCloudDirectorStorageProfilesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVMwareCloudDirectorCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
