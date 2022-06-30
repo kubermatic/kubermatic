@@ -7255,8 +7255,15 @@ func (r Routing) applyIPAMPool() http.Handler {
 //      401: empty
 //      403: empty
 func (r Routing) deleteIPAMPool() http.Handler {
-	// TODO
-	return nil
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		ipampool.DecodeIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
 }
 
 //swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations ipamallocation listClusterIPAMAllocations

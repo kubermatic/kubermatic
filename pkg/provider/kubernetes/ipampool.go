@@ -57,3 +57,17 @@ func (p *IPAMPoolProvider) Get(ctx context.Context, ipamPoolName string) (*kuber
 	}
 	return ipamPool, nil
 }
+
+// Delete IPAM pool by name.
+func (p *IPAMPoolProvider) Delete(ctx context.Context, ipamPoolName string) error {
+	ipamPool, err := p.Get(ctx, ipamPoolName)
+	if err != nil {
+		return err
+	}
+
+	if err := p.client.Delete(ctx, ipamPool); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -108,6 +108,35 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 	}
 }
 
+func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+		}
+
+		ipamPoolReq, ok := req.(ipamPoolReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := ipamPoolReq.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		if err := provider.Delete(ctx, ipamPoolReq.IPAMPoolName); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
+			}
+			return nil, err
+		}
+
+		return nil, nil
+	}
+}
+
 func toIPAMPoolAPIModel(ipamPool *kubermaticv1.IPAMPool) *apiv2.IPAMPool {
 	apiIPAMPool := &apiv2.IPAMPool{
 		Name:        ipamPool.Name,

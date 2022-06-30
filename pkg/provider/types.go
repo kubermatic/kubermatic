@@ -1351,4 +1351,6 @@ type IPAMPoolProvider interface {
 	List(ctx context.Context) (*kubermaticv1.IPAMPoolList, error)
 	// Get returns a IPAM pool based on name.
 	Get(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error)
+	// Delete deletes a IPAM pool based on name.
+	Delete(ctx context.Context, ipamPoolName string) error
 }
