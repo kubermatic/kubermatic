@@ -334,7 +334,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-ipam-e2e
-    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/test/e2e/ipam/)"
+    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/webhook/ipampool/|pkg/test/e2e/ipam/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
