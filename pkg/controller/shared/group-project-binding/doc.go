@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package grouprbac contains a controller that is responsible for synchronizing `GroupProjectBindings`
-to Kubernetes RBAC ClusterRoleBindings and RoleBindings. It is the group counterpart to the rbac-controller.
+Package groupprojectbinding contains a controller that is responsible for synchronizing `GroupProjectBindings`
+to Kubernetes RBAC ClusterRoleBindings and RoleBindings. It picks up tasks not done by rbac-controller for groups.
 */
-package grouprbac
+package groupprojectbinding

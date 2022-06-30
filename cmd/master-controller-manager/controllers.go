@@ -44,7 +44,7 @@ import (
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
-	grouprbac "k8c.io/kubermatic/v2/pkg/controller/shared/group-rbac"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/controller/shared/group-project-binding"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -130,8 +130,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
 	}
-	if err := grouprbac.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create group rbac controller: %w", err)
+	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 
 	// init CE/EE-only controllers

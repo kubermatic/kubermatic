@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package grouprbac
+package groupprojectbinding
 
 import (
 	"context"
@@ -39,7 +39,7 @@ import (
 
 const (
 	// This controller is responsible for synchronizing `GroupProjectBindings` to Kubernetes RBAC.
-	ControllerName = "group-rbac-controller"
+	ControllerName = "group-project-binding-controller"
 )
 
 // Add creates a new group-rbac controller and sets up Watches.
