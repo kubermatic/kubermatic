@@ -27,7 +27,6 @@ import (
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
-	groupprojectbindingsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/group-project-binding-synchronizer"
 	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
@@ -45,7 +44,6 @@ import (
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
-	groupprojectbinding "k8c.io/kubermatic/v2/pkg/controller/shared/group-project-binding"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -71,7 +69,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
 	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
-	groupProjectBindingSynchronizerFactory := groupProjectBindingSynchronizerFactoryCreator(ctrlCtx)
 	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
 	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
 	applicationSecretSynchronizerFactor := applicationSecretSynchronizerFactoryCreator(ctrlCtx)
@@ -92,7 +89,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		userSynchronizerFactory,
 		clusterTemplateSynchronizerFactory,
 		userProjectBindingSynchronizerFactory,
-		groupProjectBindingSynchronizerFactory,
 		projectSynchronizerFactory,
 		applicationdefinitionsynchronizerFactory,
 		applicationSecretSynchronizerFactor,
@@ -132,9 +128,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
-	}
-	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log, true); err != nil {
-		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 
 	// init CE/EE-only controllers
@@ -228,17 +221,6 @@ func clusterTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedc
 func userProjectBindingSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return userprojectbindingsynchronizer.ControllerName, userprojectbindingsynchronizer.Add(
-			masterMgr,
-			seedManagerMap,
-			ctrlCtx.log,
-			ctrlCtx.workerCount,
-		)
-	}
-}
-
-func groupProjectBindingSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		return groupprojectbindingsynchronizer.ControllerName, groupprojectbindingsynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,

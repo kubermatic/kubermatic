@@ -45,7 +45,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
-	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/controller/shared/group-project-binding"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -76,7 +75,6 @@ var AllControllers = map[string]controllerCreator{
 	presetcontroller.ControllerName:                         createPresetController,
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 	ipam.ControllerName:                                     createIPAMController,
-	groupprojectbindingcontroller.ControllerName:            createGroupRBACController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -424,15 +422,5 @@ func createIPAMController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
 		ctrlCtx.versions,
-	)
-}
-
-func createGroupRBACController(ctrlCtx *controllerContext) error {
-	return groupprojectbindingcontroller.Add(
-		ctrlCtx.ctx,
-		ctrlCtx.mgr,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.log,
-		false,
 	)
 }

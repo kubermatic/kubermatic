@@ -1,20 +1,28 @@
+//go:build ee
+
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+                  Kubermatic Enterprise Read-Only License
+                         Version 1.0 ("KERO-1.0”)
+                     Copyright © 2020 Kubermatic GmbH
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+   1.	You may only view, read and display for studying purposes the source
+      code of the software licensed under this license, and, to the extent
+      explicitly provided under this license, the binary code.
+   2.	Any use of the software which exceeds the foregoing right, including,
+      without limitation, its execution, compilation, copying, modification
+      and distribution, is expressly prohibited.
+   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+   END OF TERMS AND CONDITIONS
 */
 
-package groupprojectbindingsynchronizer
+package synccontroller
 
 import (
 	"context"
@@ -50,49 +58,61 @@ func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name                        string
 		requestName                 string
+		existingMasterResources     []ctrlruntimeclient.Object
+		existingSeedResources       []ctrlruntimeclient.Object
 		expectedGroupProjectBinding *kubermaticv1.GroupProjectBinding
-		masterClient                ctrlruntimeclient.Client
-		seedClient                  ctrlruntimeclient.Client
 	}{
 		{
-			name:                        "scenario 1: sync groupProjectBinding from master cluster to seed cluster",
-			requestName:                 groupProjectBindingName,
+			name:        "scenario 1: sync groupProjectBinding from master cluster to seed cluster",
+			requestName: groupProjectBindingName,
+			existingMasterResources: []ctrlruntimeclient.Object{
+				generateGroupProjectBinding(groupProjectBindingName, false),
+			},
 			expectedGroupProjectBinding: generateGroupProjectBinding(groupProjectBindingName, false),
-			masterClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateGroupProjectBinding(groupProjectBindingName, false), test.GenTestSeed()).
-				Build(),
-			seedClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				Build(),
 		},
 		{
-			name:                        "scenario 2: cleanup groupProjectBinding on the seed cluster when master groupProjectBinding is being terminated",
-			requestName:                 groupProjectBindingName,
+			name:        "scenario 2: cleanup groupProjectBinding on the seed cluster when master groupProjectBinding is being terminated",
+			requestName: groupProjectBindingName,
+			existingMasterResources: []ctrlruntimeclient.Object{
+				generateGroupProjectBinding(groupProjectBindingName, true),
+			},
+			existingSeedResources: []ctrlruntimeclient.Object{
+				generateGroupProjectBinding(groupProjectBindingName, false),
+			},
 			expectedGroupProjectBinding: nil,
-			masterClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateGroupProjectBinding(groupProjectBindingName, true), test.GenTestSeed()).
-				Build(),
-			seedClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateGroupProjectBinding(groupProjectBindingName, false), test.GenTestSeed()).
-				Build(),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
+
+			seed := test.GenTestSeed()
+
+			masterClient := fakectrlruntimeclient.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(seed).
+				WithObjects(tc.existingMasterResources...).
+				Build()
+
+			seedClient := fakectrlruntimeclient.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(seed).
+				WithObjects(tc.existingSeedResources...).
+				Build()
+
 			r := &reconciler{
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
-				masterClient: tc.masterClient,
-				seedClients:  map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
+				masterClient: masterClient,
+				seedsGetter: func() (map[string]*kubermaticv1.Seed, error) {
+					return map[string]*kubermaticv1.Seed{
+						seed.Name: seed,
+					}, nil
+				},
+				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+					return seedClient, nil
+				},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
@@ -101,7 +121,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			seedGroupProjectBinding := &kubermaticv1.GroupProjectBinding{}
-			err := tc.seedClient.Get(ctx, request.NamespacedName, seedGroupProjectBinding)
+			err := seedClient.Get(ctx, request.NamespacedName, seedGroupProjectBinding)
 			if tc.expectedGroupProjectBinding == nil {
 				if err == nil {
 					t.Fatal("failed clean up groupProjectBinding on the seed cluster")
