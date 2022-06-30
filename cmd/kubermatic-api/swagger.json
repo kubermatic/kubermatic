@@ -9734,7 +9734,7 @@
           }
         }
       },
-      "put": {
+      "post": {
         "consumes": [
           "application/json"
         ],
@@ -9744,8 +9744,18 @@
         "tags": [
           "ipampool"
         ],
-        "summary": "Creates or updates a IPAM pool.",
-        "operationId": "applyIPAMPool",
+        "summary": "Creates a IPAM pool.",
+        "operationId": "createIPAMPool",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IPAMPool"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "$ref": "#/responses/empty"

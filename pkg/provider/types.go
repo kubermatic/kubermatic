@@ -1353,4 +1353,6 @@ type IPAMPoolProvider interface {
 	Get(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error)
 	// Delete deletes a IPAM pool based on name.
 	Delete(ctx context.Context, ipamPoolName string) error
+	// Create creates a IPAM pool.
+	Create(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error
 }

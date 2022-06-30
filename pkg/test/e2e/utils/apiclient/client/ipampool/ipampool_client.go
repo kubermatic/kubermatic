@@ -28,7 +28,7 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ApplyIPAMPool(params *ApplyIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApplyIPAMPoolCreated, error)
+	CreateIPAMPool(params *CreateIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateIPAMPoolCreated, error)
 
 	DeleteIPAMPool(params *DeleteIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteIPAMPoolOK, error)
 
@@ -40,22 +40,22 @@ type ClientService interface {
 }
 
 /*
-  ApplyIPAMPool creates or updates a IP a m pool
+  CreateIPAMPool creates a IP a m pool
 */
-func (a *Client) ApplyIPAMPool(params *ApplyIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApplyIPAMPoolCreated, error) {
+func (a *Client) CreateIPAMPool(params *CreateIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateIPAMPoolCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewApplyIPAMPoolParams()
+		params = NewCreateIPAMPoolParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "applyIPAMPool",
-		Method:             "PUT",
+		ID:                 "createIPAMPool",
+		Method:             "POST",
 		PathPattern:        "/api/v2/ipampools",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ApplyIPAMPoolReader{formats: a.formats},
+		Reader:             &CreateIPAMPoolReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -68,12 +68,12 @@ func (a *Client) ApplyIPAMPool(params *ApplyIPAMPoolParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ApplyIPAMPoolCreated)
+	success, ok := result.(*CreateIPAMPoolCreated)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ApplyIPAMPoolDefault)
+	unexpectedSuccess := result.(*CreateIPAMPoolDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

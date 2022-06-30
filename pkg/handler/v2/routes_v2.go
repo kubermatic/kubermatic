@@ -1077,9 +1077,9 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/ipampools/{ipampool_name}").
 		Handler(r.getIPAMPool())
 
-	mux.Methods(http.MethodPut).
+	mux.Methods(http.MethodPost).
 		Path("/ipampools").
-		Handler(r.applyIPAMPool())
+		Handler(r.createIPAMPool())
 
 	mux.Methods(http.MethodDelete).
 		Path("/ipampools/{ipampool_name}").
@@ -7225,9 +7225,9 @@ func (r Routing) getIPAMPool() http.Handler {
 	)
 }
 
-//swagger:route PUT /api/v2/ipampools ipampool applyIPAMPool
+//swagger:route POST /api/v2/ipampools ipampool createIPAMPool
 //
-//    Creates or updates a IPAM pool.
+//    Creates a IPAM pool.
 //
 //    Consumes:
 //    - application/json
@@ -7240,9 +7240,16 @@ func (r Routing) getIPAMPool() http.Handler {
 //      201: empty
 //      401: empty
 //      403: empty
-func (r Routing) applyIPAMPool() http.Handler {
-	// TODO
-	return nil
+func (r Routing) createIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		ipampool.DecodeCreateUpdateIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
 }
 
 //swagger:route DELETE /api/v2/ipampools/{ipampool_name} ipampool deleteIPAMPool
