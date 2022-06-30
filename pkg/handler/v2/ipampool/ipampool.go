@@ -57,23 +57,30 @@ func DecodeIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, error
 	}, nil
 }
 
-// createUpdateIPAMPoolReq represents a request to create or update a IPAM pool
-// swagger:parameters createIPAMPool updateIPAMPool
-type createUpdateIPAMPoolReq struct {
+// createIPAMPoolReq represents a request to create a IPAM pool
+// swagger:parameters createIPAMPool
+type createIPAMPoolReq struct {
 	// in: body
 	// required: true
 	Body apiv2.IPAMPool
 }
 
-// Validate validates createUpdateIPAMPoolReq request.
-func (r createUpdateIPAMPoolReq) Validate() error {
+// Validate validates createIPAMPoolReq request.
+func (r createIPAMPoolReq) Validate() error {
 	if r.Body.Name == "" {
 		return errors.New("missing attribute \"name\"")
 	}
-	if len(r.Body.Datacenters) == 0 {
+	if err := validateDatacenters(r.Body.Datacenters); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateDatacenters(datacenters map[string]apiv2.IPAMPoolDatacenterSettings) error {
+	if len(datacenters) == 0 {
 		return errors.New("missing or empty attribute \"datacenters\"")
 	}
-	for dc, dcConfig := range r.Body.Datacenters {
+	for dc, dcConfig := range datacenters {
 		if dcConfig.PoolCIDR == "" {
 			return fmt.Errorf("missing attribute \"poolCidr\" for datacenter %s", dc)
 		}
@@ -91,12 +98,48 @@ func (r createUpdateIPAMPoolReq) Validate() error {
 			}
 		}
 	}
-	// TODO: same webhook validations here
 	return nil
 }
 
-func DecodeCreateUpdateIPAMPoolReq(_ context.Context, r *http.Request) (interface{}, error) {
-	var req createUpdateIPAMPoolReq
+func DecodeCreateIPAMPoolReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req createIPAMPoolReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// patchIPAMPoolReq represents a request to patch a IPAM pool
+// swagger:parameters patchIPAMPool
+type patchIPAMPoolReq struct {
+	ipamPoolReq
+
+	// in: body
+	// required: true
+	Body apiv2.IPAMPool
+}
+
+// Validate validates createIPAMPoolReq request.
+func (r patchIPAMPoolReq) Validate() error {
+	if err := r.ipamPoolReq.Validate(); err != nil {
+		return err
+	}
+	if err := validateDatacenters(r.Body.Datacenters); err != nil {
+		return err
+	}
+	return nil
+}
+
+func DecodePatchIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req patchIPAMPoolReq
+
+	ipamPoolRequest, err := DecodeIPAMPoolReq(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ipamPoolReq = ipamPoolRequest.(ipamPoolReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -115,7 +158,7 @@ func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		ipamPoolList, err := provider.List(ctx)
+		ipamPoolList, err := provider.ListUnsecured(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +190,7 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		ipamPool, err := provider.Get(ctx, ipamPoolReq.IPAMPoolName)
+		ipamPool, err := provider.GetUnsecured(ctx, ipamPoolReq.IPAMPoolName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
@@ -169,7 +212,7 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		createIPAMPoolReq, ok := req.(createUpdateIPAMPoolReq)
+		createIPAMPoolReq, ok := req.(createIPAMPoolReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
@@ -177,9 +220,52 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		if err := provider.Create(ctx, toIPAMPoolKubermaticModel(&createIPAMPoolReq.Body)); err != nil {
+		ipamPool := toIPAMPoolKubermaticModel(&createIPAMPoolReq.Body)
+		// TODO: same webhook validations here with "ipamPool"
+
+		if err := provider.CreateUnsecured(ctx, ipamPool); err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				return nil, utilerrors.NewAlreadyExists("IPAMPool", createIPAMPoolReq.Body.Name)
+			}
+			return nil, err
+		}
+
+		return nil, nil
+	}
+}
+
+func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+		}
+
+		patchIPAMPoolReq, ok := req.(patchIPAMPoolReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := patchIPAMPoolReq.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		originalIPAMPool, err := provider.GetUnsecured(ctx, patchIPAMPoolReq.IPAMPoolName)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, utilerrors.NewNotFound("IPAMPool", patchIPAMPoolReq.IPAMPoolName)
+			}
+			return nil, err
+		}
+		newIPAMPool := originalIPAMPool.DeepCopy()
+		newIPAMPool.Spec = toIPAMPoolKubermaticModel(&patchIPAMPoolReq.Body).Spec
+		// TODO: same webhook validations here with "newIPAMPool"
+
+		if err := provider.PatchUnsecured(ctx, originalIPAMPool, newIPAMPool); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, utilerrors.NewNotFound("IPAMPool", patchIPAMPoolReq.IPAMPoolName)
 			}
 			return nil, err
 		}
@@ -206,7 +292,7 @@ func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		if err := provider.Delete(ctx, ipamPoolReq.IPAMPoolName); err != nil {
+		if err := provider.DeleteUnsecured(ctx, ipamPoolReq.IPAMPoolName); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
 			}

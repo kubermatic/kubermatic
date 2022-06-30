@@ -1347,12 +1347,33 @@ type GroupProjectBindingProvider interface {
 }
 
 type IPAMPoolProvider interface {
-	// List gets the IPAM pool list.
-	List(ctx context.Context) (*kubermaticv1.IPAMPoolList, error)
+	// ListUnsecured gets the IPAM pool list.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(ctx context.Context) (*kubermaticv1.IPAMPoolList, error)
+
 	// Get returns a IPAM pool based on name.
-	Get(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error)
-	// Delete deletes a IPAM pool based on name.
-	Delete(ctx context.Context, ipamPoolName string) error
-	// Create creates a IPAM pool.
-	Create(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error)
+
+	// DeleteUnsecured deletes a IPAM pool based on name.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(ctx context.Context, ipamPoolName string) error
+
+	// CreateUnsecured creates a IPAM pool.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error
+
+	// PatchUnsecured patches a IPAM pool.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error
 }

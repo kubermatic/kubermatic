@@ -28,51 +28,56 @@ import (
 
 // IPAMPoolProvider struct that holds required components of the IPAMPoolProvider.
 type IPAMPoolProvider struct {
-	client ctrlruntimeclient.Client
+	privilegedClient ctrlruntimeclient.Client
 }
 
 var _ provider.IPAMPoolProvider = &IPAMPoolProvider{}
 
 // NewIPAMPoolProvider returns a new IPAMPoolProvider.
-func NewIPAMPoolProvider(client ctrlruntimeclient.Client) *IPAMPoolProvider {
+func NewIPAMPoolProvider(privilegedClient ctrlruntimeclient.Client) *IPAMPoolProvider {
 	return &IPAMPoolProvider{
-		client: client,
+		privilegedClient: privilegedClient,
 	}
 }
 
-// List available IPAM pools.
-func (p *IPAMPoolProvider) List(ctx context.Context) (*kubermaticv1.IPAMPoolList, error) {
+// ListUnsecured lists available IPAM pools.
+func (p *IPAMPoolProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.IPAMPoolList, error) {
 	ipamPoolList := &kubermaticv1.IPAMPoolList{}
-	if err := p.client.List(ctx, ipamPoolList); err != nil {
+	if err := p.privilegedClient.List(ctx, ipamPoolList); err != nil {
 		return nil, err
 	}
 	return ipamPoolList, nil
 }
 
-// Get IPAM pool by name.
-func (p *IPAMPoolProvider) Get(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
+// GetUnsecured gets IPAM pool by name.
+func (p *IPAMPoolProvider) GetUnsecured(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
 	ipamPool := &kubermaticv1.IPAMPool{}
-	if err := p.client.Get(ctx, types.NamespacedName{Name: ipamPoolName}, ipamPool); err != nil {
+	if err := p.privilegedClient.Get(ctx, types.NamespacedName{Name: ipamPoolName}, ipamPool); err != nil {
 		return nil, err
 	}
 	return ipamPool, nil
 }
 
-// Delete deletes IPAM pool by name.
-func (p *IPAMPoolProvider) Delete(ctx context.Context, ipamPoolName string) error {
-	ipamPool, err := p.Get(ctx, ipamPoolName)
+// DeleteUnsecured deletes IPAM pool by name.
+func (p *IPAMPoolProvider) DeleteUnsecured(ctx context.Context, ipamPoolName string) error {
+	ipamPool, err := p.GetUnsecured(ctx, ipamPoolName)
 	if err != nil {
 		return err
 	}
 
-	if err := p.client.Delete(ctx, ipamPool); err != nil {
+	if err := p.privilegedClient.Delete(ctx, ipamPool); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Create creates a IPAM pool.
-func (p *IPAMPoolProvider) Create(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
-	return p.client.Create(ctx, ipamPool)
+// CreateUnsecured creates a IPAM pool.
+func (p *IPAMPoolProvider) CreateUnsecured(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
+	return p.privilegedClient.Create(ctx, ipamPool)
+}
+
+// PatchUnsecured patches a IPAM pool.
+func (p *IPAMPoolProvider) PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
+	return p.privilegedClient.Patch(ctx, newIPAMPool, ctrlruntimeclient.MergeFrom(oldIPAMPool))
 }

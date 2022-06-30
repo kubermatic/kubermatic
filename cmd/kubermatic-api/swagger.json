@@ -9738,9 +9738,6 @@
         "consumes": [
           "application/json"
         ],
-        "produces": [
-          "application/json"
-        ],
         "tags": [
           "ipampool"
         ],
@@ -9828,6 +9825,50 @@
             "name": "ipampool_name",
             "in": "path",
             "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Patches a IPAM pool.",
+        "operationId": "patchIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IPAMPool"
+            }
           }
         ],
         "responses": {

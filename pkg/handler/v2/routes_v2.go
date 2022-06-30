@@ -1081,6 +1081,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/ipampools").
 		Handler(r.createIPAMPool())
 
+	mux.Methods(http.MethodPatch).
+		Path("/ipampools/{ipampool_name}").
+		Handler(r.patchIPAMPool())
+
 	mux.Methods(http.MethodDelete).
 		Path("/ipampools/{ipampool_name}").
 		Handler(r.deleteIPAMPool())
@@ -7232,9 +7236,6 @@ func (r Routing) getIPAMPool() http.Handler {
 //    Consumes:
 //    - application/json
 //
-//    Produces:
-//    - application/json
-//
 //    Responses:
 //      default: errorResponse
 //      201: empty
@@ -7246,7 +7247,31 @@ func (r Routing) createIPAMPool() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
-		ipampool.DecodeCreateUpdateIPAMPoolReq,
+		ipampool.DecodeCreateIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route PATCH /api/v2/ipampools/{ipampool_name} ipampool patchIPAMPool
+//
+//    Patches a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) patchIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		ipampool.DecodePatchIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

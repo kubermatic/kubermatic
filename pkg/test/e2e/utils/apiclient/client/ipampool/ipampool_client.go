@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListIPAMPools(params *ListIPAMPoolsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIPAMPoolsOK, error)
 
+	PatchIPAMPool(params *PatchIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchIPAMPoolOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -188,6 +190,44 @@ func (a *Client) ListIPAMPools(params *ListIPAMPoolsParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListIPAMPoolsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchIPAMPool patches a IP a m pool
+*/
+func (a *Client) PatchIPAMPool(params *PatchIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchIPAMPoolOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchIPAMPoolParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "patchIPAMPool",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/ipampools/{ipampool_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchIPAMPoolReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchIPAMPoolOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchIPAMPoolDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
