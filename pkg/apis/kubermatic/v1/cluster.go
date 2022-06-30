@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -279,7 +278,7 @@ type KubernetesDashboard struct {
 }
 
 func (k KubernetesDashboard) IsEnabled() bool {
-	return k.Enabled == nil || k.Enabled == pointer.Bool(true)
+	return k.Enabled == nil || *k.Enabled
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
@@ -1315,13 +1314,15 @@ type ExtendedClusterHealth struct {
 	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
 	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager,omitempty"`
+	ApplicationController        HealthStatus  `json:"applicationController,omitempty"`
 	GatekeeperController         *HealthStatus `json:"gatekeeperController,omitempty"`
 	GatekeeperAudit              *HealthStatus `json:"gatekeeperAudit,omitempty"`
 	Monitoring                   *HealthStatus `json:"monitoring,omitempty"`
 	Logging                      *HealthStatus `json:"logging,omitempty"`
 	AlertmanagerConfig           *HealthStatus `json:"alertmanagerConfig,omitempty"`
 	MLAGateway                   *HealthStatus `json:"mlaGateway,omitempty"`
-	ApplicationController        HealthStatus  `json:"applicationController,omitempty"`
+	OperatingSystemManager       *HealthStatus `json:"operatingSystemManager,omitempty"`
+	KubernetesDashboard          *HealthStatus `json:"kubernetesDashboard,omitempty"`
 }
 
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.

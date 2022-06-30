@@ -22417,6 +22417,9 @@
         "gatekeeperController": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "kubernetesDashboard": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "logging": {
           "$ref": "#/definitions/HealthStatus"
         },
@@ -22427,6 +22430,9 @@
           "$ref": "#/definitions/HealthStatus"
         },
         "monitoring": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "operatingSystemManager": {
           "$ref": "#/definitions/HealthStatus"
         },
         "scheduler": {
