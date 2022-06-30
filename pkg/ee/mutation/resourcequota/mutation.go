@@ -30,6 +30,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-logr/logr"
 
@@ -56,14 +57,12 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 
 		ensureResourceQuotaLabels(resourceQuota)
 
-		if resourceQuota.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind {
-			return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
-		}
-
-		err := ensureProjectOwnershipRef(ctx, client, resourceQuota)
-		if err != nil {
-			logger.Info("ResourceQuota mutation failed", "error", err)
-			return admission.Errored(http.StatusBadRequest, err)
+		if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
+			err := ensureProjectOwnershipRef(ctx, client, resourceQuota)
+			if err != nil {
+				logger.Info("ResourceQuota mutation failed", "error", err)
+				return admission.Errored(http.StatusBadRequest, err)
+			}
 		}
 
 	case admissionv1.Update:
