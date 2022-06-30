@@ -6620,7 +6620,7 @@ func (r Routing) createOIDCKubeconfigSecret(oidcCfg common.OIDCConfiguration) ht
 
 // swagger:route GET /api/v2/projects/{project_id}/quota project getProjectQuota
 //
-//     Returns resource quota for a given project.
+//     Returns Resource Quota for a given project.
 //
 //     Produces:
 //     - application/json
@@ -6642,7 +6642,7 @@ func (r Routing) getProjectQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas/{quota_name} resource quota admin getResourceQuota
+//swagger:route GET /api/v2/quotas/{quota_name} resourcequota admin getResourceQuota
 //
 //    Gets a specific Resource Quota.
 //
@@ -6666,7 +6666,7 @@ func (r Routing) getResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas resource quota admin listResourceQuotas
+//swagger:route GET /api/v2/quotas resourcequota admin listResourceQuotas
 //
 //    Gets a Resource Quota list.
 //
@@ -6690,7 +6690,7 @@ func (r Routing) listResourceQuotas() http.Handler {
 	)
 }
 
-//swagger:route POST /api/v2/quotas resource quota admin createResourceQuota
+//swagger:route POST /api/v2/quotas resourcequota admin createResourceQuota
 //
 //    Creates a new Resource Quota.
 //
@@ -6714,7 +6714,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route PATCH /api/v2/quotas/{quota_name} resource quota admin patchResourceQuota
+//swagger:route PATCH /api/v2/quotas/{quota_name} resourcequota admin patchResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -6738,7 +6738,7 @@ func (r Routing) patchResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v2/quotas/{quota_name} resource quota admin deleteResourceQuota
+//swagger:route DELETE /api/v2/quotas/{quota_name} resourcequota admin deleteResourceQuota
 //
 //    Removes an existing Resource Quota.
 //

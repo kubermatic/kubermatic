@@ -63,8 +63,9 @@ type createResourceQuota struct {
 	// in: body
 	// required: true
 	Body struct {
-		Subject kubermaticv1.Subject         `json:"subject"`
-		Quota   kubermaticv1.ResourceDetails `json:"quota"`
+		SubjectName string                       `json:"subjectName"`
+		SubjectKind string                       `json:"subjectKind"`
+		Quota       kubermaticv1.ResourceDetails `json:"quota"`
 	}
 }
 
@@ -80,11 +81,11 @@ type patchResourceQuota struct {
 }
 
 func (m createResourceQuota) Validate() error {
-	if m.Body.Subject.Name == "" {
+	if m.Body.SubjectName == "" {
 		return utilerrors.NewBadRequest("subject's name cannot be empty")
 	}
 
-	if m.Body.Subject.Kind == "" {
+	if m.Body.SubjectKind == "" {
 		return utilerrors.NewBadRequest("subject's kind cannot be empty")
 	}
 
@@ -220,9 +221,9 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	if err := provider.CreateUnsecured(ctx, req.Body.Subject, req.Body.Quota); err != nil {
+	if err := provider.CreateUnsecured(ctx, kubermaticv1.Subject{Name: req.Body.SubjectName, Kind: req.Body.SubjectKind}, req.Body.Quota); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			name := buildNameFromSubject(req.Body.Subject)
+			name := buildNameFromSubject(kubermaticv1.Subject{Name: req.Body.SubjectName, Kind: req.Body.SubjectKind})
 			return utilerrors.NewAlreadyExists("ResourceQuota", name)
 		}
 		return err
