@@ -47,7 +47,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -775,7 +775,7 @@ func TestLoadFiles(t *testing.T) {
 
 					for _, creatorGetter := range kubernetescontroller.GetCronJobCreators(data) {
 						_, create := creatorGetter()
-						res, err := create(&batchv1beta1.CronJob{})
+						res, err := create(&batchv1.CronJob{})
 						if err != nil {
 							t.Fatalf("failed to create CronJob: %v", err)
 						}

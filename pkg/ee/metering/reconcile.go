@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -156,7 +156,7 @@ func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimecli
 		return err
 	}
 
-	existingReportingCronJobNamedMap := make(map[string]batchv1beta1.CronJob, len(existingReportingCronJobs.Items))
+	existingReportingCronJobNamedMap := make(map[string]batchv1.CronJob, len(existingReportingCronJobs.Items))
 	for _, existingCronJob := range existingReportingCronJobs.Items {
 		existingReportingCronJobNamedMap[existingCronJob.Name] = existingCronJob
 	}
@@ -194,7 +194,7 @@ func cleanupAllMeteringResources(ctx context.Context, client ctrlruntimeclient.C
 
 	for _, cronJob := range existingReportingCronJobs.Items {
 		key = types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
-		if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
+		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
 			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
 		}
 	}
@@ -203,8 +203,8 @@ func cleanupAllMeteringResources(ctx context.Context, client ctrlruntimeclient.C
 }
 
 // fetchExistingReportingCronJobs returns a list of all existing reporting cronjobs.
-func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client) (*batchv1beta1.CronJobList, error) {
-	existingReportingCronJobs := &batchv1beta1.CronJobList{}
+func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client) (*batchv1.CronJobList, error) {
+	existingReportingCronJobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
 		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
 		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{LabelKey}),

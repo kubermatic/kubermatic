@@ -13,7 +13,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -659,7 +659,7 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 }
 
 // CronJobCreator defines an interface to create/update CronJobs
-type CronJobCreator = func(existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
+type CronJobCreator = func(existing *batchv1.CronJob) (*batchv1.CronJob, error)
 
 // NamedCronJobCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedCronJobCreatorGetter = func() (name string, create CronJobCreator)
@@ -669,9 +669,9 @@ type NamedCronJobCreatorGetter = func() (name string, create CronJobCreator)
 func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*batchv1beta1.CronJob))
+			return create(existing.(*batchv1.CronJob))
 		}
-		return create(&batchv1beta1.CronJob{})
+		return create(&batchv1.CronJob{})
 	}
 }
 
@@ -688,7 +688,7 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1beta1.CronJob{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1.CronJob{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %s/%s: %w", namespace, name, err)
 		}
 	}

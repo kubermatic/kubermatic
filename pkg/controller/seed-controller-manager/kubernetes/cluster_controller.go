@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -186,7 +186,7 @@ func Add(
 		&corev1.Namespace{},
 		&appsv1.StatefulSet{},
 		&appsv1.Deployment{},
-		&batchv1beta1.CronJob{},
+		&batchv1.CronJob{},
 		&policyv1.PodDisruptionBudget{},
 		&autoscalingv1.VerticalPodAutoscaler{},
 		&rbacv1.Role{},

@@ -40,7 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,7 +153,7 @@ func Add(
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &batchv1.CronJob{}}, cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
 		return fmt.Errorf("failed to watch CronJobs: %w", err)
 	}
 
@@ -439,7 +438,7 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster, cleanupContainer 
 
 func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *corev1.Container) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1.CronJob) (*batchv1.CronJob, error) {
 			gv := kubermaticv1.SchemeGroupVersion
 			cronJob.OwnerReferences = []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, gv.WithKind(kubermaticv1.ClusterKindName)),
@@ -447,7 +446,7 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *core
 
 			// Spec
 			cronJob.Spec.Schedule = r.backupScheduleString
-			cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
+			cronJob.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
 			cronJob.Spec.Suspend = utilpointer.BoolPtr(false)
 			cronJob.Spec.SuccessfulJobsHistoryLimit = utilpointer.Int32Ptr(0)
 
@@ -549,7 +548,7 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *core
 
 func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	name := fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name)
-	cj := &batchv1beta1.CronJob{}
+	cj := &batchv1.CronJob{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, cj)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
