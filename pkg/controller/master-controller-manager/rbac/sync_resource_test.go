@@ -2688,6 +2688,9 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -2701,6 +2704,9 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:editors",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "editors-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -2714,6 +2720,9 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:viewers",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "viewers-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -2810,6 +2819,9 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -2938,7 +2950,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					t.Errorf("expected role %s not in resulting roles", expectedRole.Name)
 				}
 				if diff := deep.Equal(resultRole, *expectedRole); diff != nil {
-					t.Errorf("Got unexpected role. Diff to expected: %v", diff)
+					t.Errorf("Got unexpected role %s. Diff to expected: %v", expectedRole.Name, diff)
 				}
 			}
 
@@ -2958,7 +2970,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
 				}
 				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
-					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
+					t.Errorf("Got unexpected rolebinding %s. Diff to expected: %v", expectedRoleBinding.Name, diff)
 				}
 			}
 		})
@@ -2997,6 +3009,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:alertmanager-alertmanager:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3011,6 +3026,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:alertmanager-alertmanager:editors",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "editors-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3025,6 +3043,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:alertmanager-alertmanager:viewers",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "viewers-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3039,6 +3060,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-alertmanager:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3053,6 +3077,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-alertmanager:editors",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "editors-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3067,6 +3094,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-alertmanager:viewers",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "viewers-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3212,6 +3242,9 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:alertmanager-alertmanager:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Role",
@@ -3406,6 +3439,9 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3419,6 +3455,9 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:editors",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "editors-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3432,6 +3471,9 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:viewers",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "viewers-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3527,6 +3569,9 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:owners",
 						Namespace: "cluster-clusterid",
+						Labels: map[string]string{
+							"authz.k8c.io/role": "owners-my-first-project",
+						},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
