@@ -23,13 +23,13 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ipamPoolReq represents a request for managing a IPAM pool.
@@ -98,6 +98,9 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 
 		ipamPool, err := provider.Get(ctx, ipamPoolReq.IPAMPoolName)
 		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
+			}
 			return nil, err
 		}
 
