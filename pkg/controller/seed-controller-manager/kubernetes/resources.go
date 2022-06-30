@@ -472,6 +472,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
 			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log,
 		))
+
+		if data.Cluster().Spec.Cloud.Kubevirt != nil {
+			creators = append(creators, cloudcontroller.GetKubeVirtInfraKubeConfigCreator(data))
+		}
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {

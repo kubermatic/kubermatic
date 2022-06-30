@@ -32,8 +32,10 @@ import (
 )
 
 const (
-	KubeVirtCCMDeploymentName = "kubevirt-cloud-controller-manager"
-	KubeVirtCCMTag            = "v0.1.0"
+	KubeVirtCCMDeploymentName                       = "kubevirt-cloud-controller-manager"
+	KubeVirtCCMTag                                  = "v0.2.0"
+	CloudControllerManagerInfraKubeconfigSecretName = "cloud-controller-manager-infra-kubeconfig"
+	InfraKubeConfigSecretKey                        = "infra-kubeconfig"
 )
 
 var (
@@ -78,16 +80,27 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), []corev1.Volume{
+				{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							Sources: []corev1.VolumeProjection{
+								{
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: CloudControllerManagerInfraKubeconfigSecretName},
+									},
+								},
+								{
+									ConfigMap: &corev1.ConfigMapProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigConfigMapName},
+									},
+								},
+							},
 						},
 					},
 				},
-			})
+			}...)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -135,4 +148,20 @@ func getKVFlags(data *resources.TemplateData) []string {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
 	}
 	return flags
+}
+
+func GetKubeVirtInfraKubeConfigCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+	return func() (name string, create reconciling.SecretCreator) {
+		return CloudControllerManagerInfraKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+			se.Data[InfraKubeConfigSecretKey] = []byte(credentials.Kubevirt.KubeConfig)
+			return se, nil
+		}
+	}
 }
