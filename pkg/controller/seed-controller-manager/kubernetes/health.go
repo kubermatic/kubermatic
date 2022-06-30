@@ -58,7 +58,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		key := types.NamespacedName{Namespace: ns, Name: name}
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get dep health %q: %w", name, err)
+			return nil, fmt.Errorf("failed to determine deployment's health %q: %w", name, err)
 		}
 		if healthMapping[name].healthStatus == nil {
 			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
@@ -101,25 +101,19 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	extendedHealth.ApplicationController = applicationControllerHealthStatus
 
 	if cluster.Spec.EnableOperatingSystemManager {
-		osmHealthStatus := kubermaticv1.HealthStatusDown
-		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
-			mcHealthStatus, err = r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get operatingSystemManager health: %w", err)
-			}
+		status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get operating-system-manager health: %w", err)
 		}
-		extendedHealth.OperatingSystemManager = osmHealthStatus
+		extendedHealth.OperatingSystemManager = &status
 	}
 
 	if cluster.Spec.KubernetesDashboard.IsEnabled() {
-		kubernetesDashboardHealthStatus := kubermaticv1.HealthStatusDown
-		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
-			mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get machine controller health: %w", err)
-			}
+		status, err := r.kubernetesDashboardHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubernetes-dashboard health: %w", err)
 		}
-		extendedHealth.KubernetesDashboard = kubernetesDashboardHealthStatus
+		extendedHealth.KubernetesDashboard = &status
 	}
 
 	return extendedHealth, nil
@@ -182,14 +176,14 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	key = types.NamespacedName{Namespace: namespace, Name: resources.MachineControllerDeploymentName}
 	mcStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.MachineControllerDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.MachineControllerDeploymentName, err)
 	}
 
 	// check the machine controller webhook deployment is healthy
 	key = types.NamespacedName{Namespace: namespace, Name: resources.MachineControllerWebhookDeploymentName}
 	mcWebhookStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.MachineControllerWebhookDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.MachineControllerWebhookDeploymentName, err)
 	}
 
 	switch {
@@ -207,7 +201,7 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	key := types.NamespacedName{Namespace: namespace, Name: resources.OperatingSystemManagerDeploymentName}
 	status, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
 	}
 
 	switch {
@@ -225,7 +219,7 @@ func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster
 	key := types.NamespacedName{Namespace: namespace, Name: resources.KubernetesDashboardDeploymentName}
 	status, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.KubernetesDashboardDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
 
 	switch {
@@ -265,14 +259,14 @@ func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, clust
 	key = types.NamespacedName{Namespace: namespace, Name: resources.UserClusterControllerDeploymentName}
 	userClusterControllerStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.UserClusterControllerDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.UserClusterControllerDeploymentName, err)
 	}
 
 	// Ensure that the deployment for user-cluster-webhook is healthy
 	key = types.NamespacedName{Namespace: namespace, Name: resources.UserClusterWebhookDeploymentName}
 	userClusterWebhookStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.UserClusterWebhookDeploymentName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.UserClusterWebhookDeploymentName, err)
 	}
 
 	switch {
