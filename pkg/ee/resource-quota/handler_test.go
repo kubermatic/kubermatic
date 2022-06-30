@@ -169,10 +169,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "POST",
 			url:    "/api/v2/quotas",
 			body: `{
-				"subject": {
-					"kind": "project",
-					"name": "` + fmt.Sprintf("%s-1", projectName) + `"
-				}
+                "subjectKind": "project",
+                "subjectName": "` + fmt.Sprintf("%s-1", projectName) + `"
 			}`,
 			existingAPIUser: test.GenDefaultAdminAPIUser(),
 			existingObjects: existingResourceQuotas,
@@ -186,10 +184,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "POST",
 			url:    "/api/v2/quotas",
 			body: `{
-				"subject": {
-					"kind": "project",
-					"name": "testproject"
-				},
+                "subjectKind": "project",
+                "subjectName": "testproject",
 				"quota": {
 					"cpu": 10,
 					"memory": "64Gi",
