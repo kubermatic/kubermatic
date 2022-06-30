@@ -203,15 +203,7 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
 	}
-
-	switch {
-	case status == kubermaticv1.HealthStatusUp:
-		return kubermaticv1.HealthStatusUp, nil
-	case status == kubermaticv1.HealthStatusProvisioning:
-		return kubermaticv1.HealthStatusProvisioning, nil
-	default:
-		return kubermaticv1.HealthStatusDown, nil
-	}
+	return status, nil
 }
 
 func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
@@ -221,15 +213,7 @@ func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
-
-	switch {
-	case status == kubermaticv1.HealthStatusUp:
-		return kubermaticv1.HealthStatusUp, nil
-	case status == kubermaticv1.HealthStatusProvisioning:
-		return kubermaticv1.HealthStatusProvisioning, nil
-	default:
-		return kubermaticv1.HealthStatusDown, nil
-	}
+	return status, nil
 }
 
 // applicationControllerHealthCheck will check the health of all components that are required for Application controller to work
