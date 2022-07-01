@@ -12712,73 +12712,6 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ipamallocation"
-        ],
-        "summary": "Lists IPAM allocations for a cluster.",
-        "operationId": "listClusterIPAMAllocations",
-        "responses": {
-          "200": {
-            "description": "IPAMAllocation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/IPAMAllocation"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations/{ipampool_name}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ipamallocation"
-        ],
-        "summary": "Gets a specific IPAM allocation for a cluster.",
-        "operationId": "getClusterIPAMAllocation",
-        "responses": {
-          "200": {
-            "description": "IPAMAllocation",
-            "schema": {
-              "$ref": "#/definitions/IPAMAllocation"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubeconfig": {
       "get": {
         "produces": [
@@ -14138,6 +14071,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -14149,13 +14089,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {

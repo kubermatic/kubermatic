@@ -1088,14 +1088,6 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodDelete).
 		Path("/ipampools/{ipampool_name}").
 		Handler(r.deleteIPAMPool())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/ipamallocations").
-		Handler(r.listClusterIPAMAllocations())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/ipamallocations/{ipampool_name}").
-		Handler(r.getClusterIPAMAllocation())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -7296,38 +7288,4 @@ func (r Routing) deleteIPAMPool() http.Handler {
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
-}
-
-//swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations ipamallocation listClusterIPAMAllocations
-//
-//    Lists IPAM allocations for a cluster.
-//
-//    Produces:
-//    - application/json
-//
-//    Responses:
-//      default: errorResponse
-//      200: []IPAMAllocation
-//      401: empty
-//      403: empty
-func (r Routing) listClusterIPAMAllocations() http.Handler {
-	// TODO
-	return nil
-}
-
-//swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/ipamallocations/{ipampool_name} ipamallocation getClusterIPAMAllocation
-//
-//    Gets a specific IPAM allocation for a cluster.
-//
-//    Produces:
-//    - application/json
-//
-//    Responses:
-//      default: errorResponse
-//      200: IPAMAllocation
-//      401: empty
-//      403: empty
-func (r Routing) getClusterIPAMAllocation() http.Handler {
-	// TODO
-	return nil
 }
