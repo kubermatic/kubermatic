@@ -249,6 +249,10 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.IPAMPoolAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up IPAMPool ValidatingWebhookConfiguration: %w", err)
+	}
+
 	// On shared master+seed clusters, the kubermatic-webhook currently has the -seed-name
 	// flag set; now that the seed (maybe the shared seed, maybe another) is gone, we must
 	// trigger a reconciliation once to get rid of the flag. If the deleted Seed is just
