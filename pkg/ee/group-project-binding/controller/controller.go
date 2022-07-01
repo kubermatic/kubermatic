@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2020 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -98,9 +98,9 @@ func Add(
 }
 
 // enqueueGroupProjectBindingsForRole returns a handler.EventHandler that enqueues all GroupProjectBindings
-// related to an observed ClusterRole. The relationship is built via the authz.k8c.io/role label, which has to
+// related to an observed ClusterRole/Role. The relationship is built via the authz.k8c.io/role label, which has to
 // match the GroupProjectBinding.Spec.Role. Only GroupProjectBindings with a matching KKP role need to be reconciled
-// when a new ClusterRole object for that KKP role is created by rbac-controller.
+// when a new ClusterRole/Role object for that KKP role is created by rbac-controller.
 func enqueueGroupProjectBindingsForRole(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var (
