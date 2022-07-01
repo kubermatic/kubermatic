@@ -192,7 +192,7 @@ func main() {
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ResourceQuota{}).WithValidator(quotaValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup resource quota validation webhook", zap.Error(err))
 	}
-	resourcequotamutation.NewAdmissionHandler(mgr.GetClient())
+	resourcequotamutation.NewAdmissionHandler(mgr.GetClient()).SetupWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
