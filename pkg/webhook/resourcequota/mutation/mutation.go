@@ -40,7 +40,7 @@ func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
 }
 
 func (h *AdmissionHandler) SetupWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-resource-quota", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-resourcequota", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
