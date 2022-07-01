@@ -14071,13 +14071,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -14089,6 +14082,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -26729,29 +26729,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "IPAMAllocation": {
-      "type": "object",
-      "properties": {
-        "addresses": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Addresses"
-        },
-        "cidr": {
-          "$ref": "#/definitions/SubnetCIDR"
-        },
-        "ipampool_name": {
-          "type": "string",
-          "x-go-name": "IPAMPoolName"
-        },
-        "type": {
-          "$ref": "#/definitions/IPAMPoolAllocationType"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "IPAMPool": {
       "type": "object",
