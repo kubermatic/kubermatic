@@ -29,6 +29,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -192,7 +193,10 @@ func (r *reconcileSyncProjectBinding) getUserForBinding(ctx context.Context, pro
 		}
 	}
 
-	return nil, fmt.Errorf("cannot find user with e-mail %q for project binding %s", projectBinding.Spec.UserEmail, projectBinding.Name)
+	return nil, apierrors.NewNotFound(schema.GroupResource{
+		Group:    kubermaticv1.GroupName,
+		Resource: kubermaticv1.UserResourceName,
+	}, projectBinding.Spec.UserEmail)
 }
 
 func (r *reconcileSyncProjectBinding) getProjectForBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) (*kubermaticv1.Project, error) {
