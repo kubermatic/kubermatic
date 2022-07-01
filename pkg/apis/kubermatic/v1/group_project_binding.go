@@ -26,7 +26,7 @@ const (
 	// GroupProjectBindingKind represents "Kind" defined in Kubernetes.
 	GroupProjectBindingKind = "GroupProjectBinding"
 
-	// AuthZProjectIDLabel is the label used by rbac-controller and group-rbac-controller to identify the KKP role a ClusterRole or Role were created for.
+	// AuthZRoleLabel is the label used by rbac-controller and group-rbac-controller to identify the KKP role a ClusterRole or Role were created for.
 	AuthZRoleLabel = "authz.k8c.io/role"
 
 	// AuthZGroupProjectBindingLabel references the GroupProjectBinding resource that a ClusterRole/Role was created for.
