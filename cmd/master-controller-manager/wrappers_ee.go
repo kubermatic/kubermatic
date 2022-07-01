@@ -26,6 +26,8 @@ import (
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
+	groupprojectbindingsyncer "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/sync-controller"
 	resourcequotamastercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/master-controller"
 	resourcequotasynchronizer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -41,6 +43,14 @@ func addFlags(fs *flag.FlagSet) {
 func setupControllers(ctrlCtx *controllerContext) error {
 	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
 		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
+	}
+
+	if err := groupprojectbindingsyncer.Add(ctrlCtx.mgr, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.log, ctrlCtx.workerCount); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding sync controller: %w", err)
+	}
+
+	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount, true); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 
 	return nil

@@ -127,6 +127,9 @@ func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, polic
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            generateRBACRoleNameForNamedResource(kind, policyResourceName, groupName),
 			OwnerReferences: []metav1.OwnerReference{oRef},
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -177,6 +180,9 @@ func generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGrou
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: generateRBACRoleNameForResources(policyResource, groupName),
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -258,7 +264,7 @@ func generateRBACRoleBindingForResource(resourceName, groupName, namespace strin
 
 // generateRBACRoleForResource generates Role for the given resource in the given namespace
 // Note that for some groups we don't want to generate Role in that case a nil will be returned.
-func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind string, namespace string) (*rbacv1.Role, error) {
+func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind, namespace string) (*rbacv1.Role, error) {
 	verbs, err := generateVerbsForNamespacedResource(groupName, kind, namespace)
 	if err != nil {
 		return nil, err
@@ -270,6 +276,9 @@ func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForResources(policyResource, groupName),
 			Namespace: namespace,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -292,7 +301,7 @@ func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kin
 //   verbs: ["get"]
 //
 // Note that for some kinds we don't want to generate Role in that case a nil cluster resource will be returned without an error.
-func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, namespace string, oRef metav1.OwnerReference) (*rbacv1.Role, error) {
+func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName, namespace string, oRef metav1.OwnerReference) (*rbacv1.Role, error) {
 	verbs, err := generateVerbsForNamedResourceInNamespace(groupName, kind, namespace)
 	if err != nil {
 		return nil, err
@@ -305,6 +314,9 @@ func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGro
 			Name:            generateRBACRoleNameForNamedResource(kind, policyResourceName, groupName),
 			OwnerReferences: []metav1.OwnerReference{oRef},
 			Namespace:       namespace,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -357,6 +369,9 @@ func generateRBACRoleForClusterNamespaceResource(cluster *kubermaticv1.Cluster, 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -406,6 +421,9 @@ func generateRBACRoleForClusterNamespaceNamedResource(cluster *kubermaticv1.Clus
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, groupName),
 			Namespace: cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				kubermaticv1.AuthZRoleLabel: groupName,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{

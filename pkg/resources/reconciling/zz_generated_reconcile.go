@@ -1103,6 +1103,43 @@ func ReconcileKubermaticV1UserProjectBindings(ctx context.Context, namedGetters 
 	return nil
 }
 
+// KubermaticV1GroupProjectBindingCreator defines an interface to create/update GroupProjectBindings
+type KubermaticV1GroupProjectBindingCreator = func(existing *kubermaticv1.GroupProjectBinding) (*kubermaticv1.GroupProjectBinding, error)
+
+// NamedKubermaticV1GroupProjectBindingCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1GroupProjectBindingCreatorGetter = func() (name string, create KubermaticV1GroupProjectBindingCreator)
+
+// KubermaticV1GroupProjectBindingObjectWrapper adds a wrapper so the KubermaticV1GroupProjectBindingCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1GroupProjectBindingObjectWrapper(create KubermaticV1GroupProjectBindingCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.GroupProjectBinding))
+		}
+		return create(&kubermaticv1.GroupProjectBinding{})
+	}
+}
+
+// ReconcileKubermaticV1GroupProjectBindings will create and update the KubermaticV1GroupProjectBindings coming from the passed KubermaticV1GroupProjectBindingCreator slice
+func ReconcileKubermaticV1GroupProjectBindings(ctx context.Context, namedGetters []NamedKubermaticV1GroupProjectBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1GroupProjectBindingObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.GroupProjectBinding{}, false); err != nil {
+			return fmt.Errorf("failed to ensure GroupProjectBinding %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KubermaticV1ConstraintCreator defines an interface to create/update Constraints
 type KubermaticV1ConstraintCreator = func(existing *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 

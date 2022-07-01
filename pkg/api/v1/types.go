@@ -2724,6 +2724,8 @@ const (
 	SeedProjectCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
 	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
 	SeedUserProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-user-project-bindings"
+	// SeedGroupProjectBindingCleanupFinalizer indicates that Kubermatic GroupProjectBindings on the seed clusters need cleanup.
+	SeedGroupProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-group-project-bindings"
 	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
 	SeedUserCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
 	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.

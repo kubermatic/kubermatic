@@ -201,12 +201,14 @@ func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogge
 		return err
 	}
 
-	if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) {
+	if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) &&
+		equality.Semantic.DeepEqual(sharedExistingClusterRole.Labels, generatedClusterRole.Labels) {
 		return nil
 	}
 
 	existingClusterRole := sharedExistingClusterRole.DeepCopy()
 	existingClusterRole.Rules = generatedClusterRole.Rules
+	existingClusterRole.Labels = generatedClusterRole.Labels
 	return c.Update(ctx, existingClusterRole)
 }
 
@@ -310,11 +312,13 @@ func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ct
 		return err
 	}
 
-	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+		equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 		return nil
 	}
 	existingRole := sharedExistingRole.DeepCopy()
 	existingRole.Rules = generatedRole.Rules
+	existingRole.Labels = generatedRole.Labels
 	return c.Update(ctx, existingRole)
 }
 
