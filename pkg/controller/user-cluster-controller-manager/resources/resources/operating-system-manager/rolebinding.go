@@ -65,9 +65,9 @@ func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 			}
 			rb.Subjects = []rbacv1.Subject{
 				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      resources.OperatingSystemManagerRoleBindingName,
-					Namespace: metav1.NamespaceSystem,
+					Kind:     rbacv1.UserKind,
+					Name:     resources.OperatingSystemManagerCertUsername,
+					APIGroup: rbacv1.GroupName,
 				},
 			}
 			return rb, nil
@@ -88,9 +88,9 @@ func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 			}
 			rb.Subjects = []rbacv1.Subject{
 				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      resources.OperatingSystemManagerRoleBindingName,
-					Namespace: metav1.NamespaceSystem,
+					Kind:     rbacv1.UserKind,
+					Name:     resources.OperatingSystemManagerCertUsername,
+					APIGroup: rbacv1.GroupName,
 				},
 			}
 			return rb, nil

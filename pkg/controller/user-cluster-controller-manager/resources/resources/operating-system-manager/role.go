@@ -26,7 +26,7 @@ import (
 )
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the OSM
-// to facilitate leaderelection.
+// to retrieve kube-apiserver address from the cluster-info configmap.
 func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -89,7 +89,7 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 }
 
 // DefaultRoleCreator returns the func to create/update the Role for the OSM
-// to facilitate leaderelection.
+// to retrieve kube-apiserver address from the Kubernetes endpoint.
 func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {

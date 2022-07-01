@@ -904,6 +904,17 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
+	// Operating System Manager
+	if r.enableOperatingSystemManager {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			cloudinitsettings.SecretCreator(),
+		}
+
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
+		}
+	}
+
 	return nil
 }
 
