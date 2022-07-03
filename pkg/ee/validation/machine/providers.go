@@ -29,7 +29,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -70,6 +73,8 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		quotaUsage, err = getVsphereResourceRequirements(config)
 	case types.CloudProviderOpenstack:
 		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+	case types.CloudProviderAlibaba:
+		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
@@ -418,4 +423,86 @@ func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimecli
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+}
+
+func getAlibabaResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := alibabatypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba raw config: %w", err)
+	}
+
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba instanceType from machine config: %w", err)
+	}
+	accessKeyID, err := configVarResolver.GetConfigVarStringValue(rawConfig.AccessKeyID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba accessKeyID from machine config: %w", err)
+	}
+	accessKeySecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.AccessKeySecret)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba accessKeySecret from machine config: %w", err)
+	}
+	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.RegionID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba region from machine config: %w", err)
+	}
+	disk, err := configVarResolver.GetConfigVarStringValue(rawConfig.DiskSize)
+	if err != nil {
+		return nil, fmt.Errorf("error getting alibaba disk from machine config: %w", err)
+	}
+
+	if err := ValidateCredentials(region, accessKeyID, accessKeySecret); err != nil {
+		return nil, nil
+	}
+
+	alibabaClient, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client: %v", err)
+	}
+
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	instanceTypes := []string{instanceType}
+	requestInstanceTypes.InstanceTypes = &instanceTypes
+
+	instTypes, err := alibabaClient.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instance types: %v", err)
+	}
+
+	for _, instType := range instTypes.InstanceTypes.InstanceType {
+		if instType.InstanceTypeId == instanceType {
+			// parse the Alibaba resource requests
+			// memory is in GB and storage is in GB
+			cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+			}
+			memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", instType.MemorySize))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+			}
+			storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
+			if err != nil {
+				return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+			}
+			return NewResourceDetails(cpuReq, memReq, storageReq), nil
+		}
+	}
+
+	return nil, nil
+}
+
+func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return err
+	}
+
+	requestZones := ecs.CreateDescribeZonesRequest()
+	requestZones.Scheme = "https"
+
+	_, err = client.DescribeZones(requestZones)
+	return err
 }
