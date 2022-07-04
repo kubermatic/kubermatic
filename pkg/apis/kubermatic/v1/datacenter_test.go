@@ -20,7 +20,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func TestEnsureThatProvidersAreSorted(t *testing.T) {
@@ -164,8 +164,8 @@ func TestSetSeedDefaults(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			tc.seed.SetDefaults()
-			if diff := deep.Equal(tc.seed.Spec.Datacenters, tc.expected); diff != nil {
-				t.Errorf("seed.Spec.Datacenter differs from expected, diff: %v", diff)
+			if diff := diff.ObjectDiff(tc.expected, tc.seed.Spec.Datacenters); diff != "" {
+				t.Errorf("seed.Spec.Datacenter differs from expected:\n%v", diff)
 			}
 		})
 	}

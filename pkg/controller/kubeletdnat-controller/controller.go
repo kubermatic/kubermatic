@@ -26,7 +26,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -111,7 +110,7 @@ func Add(
 
 			// Only sync if nodes changed their addresses. Since Nodes get updated every 5 sec due to the HeartBeat
 			// it would otherwise cause a lot of useless syncs
-			if diff := deep.Equal(newNode.Status.Addresses, oldNode.Status.Addresses); diff != nil {
+			if !equality.Semantic.DeepEqual(newNode.Status.Addresses, oldNode.Status.Addresses) {
 				queue.Add(reconcile.Request{})
 			}
 		},

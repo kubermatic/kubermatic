@@ -26,9 +26,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
-	"k8s.io/apimachinery/pkg/api/equality"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -141,8 +140,8 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			updatedProject.ObjectMeta.ResourceVersion = ""
 			test.expectedProject.ObjectMeta.ResourceVersion = ""
 
-			if !equality.Semantic.DeepEqual(updatedProject, test.expectedProject) {
-				t.Fatalf("%v", diff.ObjectDiff(updatedProject, test.expectedProject))
+			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
 			}
 		})
 	}
@@ -217,8 +216,8 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 			updatedProject.ObjectMeta.ResourceVersion = ""
 			test.expectedProject.ObjectMeta.ResourceVersion = ""
 
-			if !equality.Semantic.DeepEqual(updatedProject, test.expectedProject) {
-				t.Fatalf("%v", diff.ObjectDiff(updatedProject, test.expectedProject))
+			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
 			}
 		})
 	}

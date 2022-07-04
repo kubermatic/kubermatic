@@ -18,7 +18,6 @@ package presetsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -27,10 +26,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -107,11 +106,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get template: %v", err)
 				}
-				if !reflect.DeepEqual(seedPreset.Spec, tc.expectedPreset.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedPreset, tc.expectedPreset))
-				}
-				if !reflect.DeepEqual(seedPreset.Name, tc.expectedPreset.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedPreset, tc.expectedPreset))
+
+				seedPreset.ResourceVersion = ""
+				seedPreset.APIVersion = ""
+				seedPreset.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedPreset, seedPreset) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedPreset, seedPreset))
 				}
 			}
 		})

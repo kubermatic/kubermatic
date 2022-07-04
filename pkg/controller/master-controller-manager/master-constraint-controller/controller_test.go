@@ -18,7 +18,6 @@ package masterconstraintsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -27,12 +26,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/diff"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -121,12 +120,11 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint: %v", err)
 			}
 
-			if !reflect.DeepEqual(constraint.Spec, tc.expectedConstraint.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
-			}
+			constraint.ResourceVersion = tc.expectedConstraint.ResourceVersion
+			constraint.Namespace = tc.expectedConstraint.Namespace
 
-			if !reflect.DeepEqual(constraint.Name, tc.expectedConstraint.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}

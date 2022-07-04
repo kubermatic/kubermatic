@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap/zaptest"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -38,6 +37,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -370,8 +370,8 @@ func TestSync(t *testing.T) {
 			// It would just pollute the testing code
 			delete(gotClusters, "service_stats")
 
-			if diff := deep.Equal(gotClusters, test.expectedClusters); diff != nil {
-				t.Errorf("Got unexpected clusters. Diff to expected: %v", diff)
+			if d := diff.ObjectDiff(test.expectedClusters, gotClusters); d != "" {
+				t.Errorf("Got unexpected clusters:\n%v", d)
 			}
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
@@ -380,8 +380,8 @@ func TestSync(t *testing.T) {
 			}
 			delete(gotListeners, "service_stats")
 
-			if diff := deep.Equal(gotListeners, test.expectedListener); diff != nil {
-				t.Errorf("Got unexpected listeners. Diff to expected: %v", diff)
+			if d := diff.ObjectDiff(test.expectedListener, gotListeners); d != "" {
+				t.Errorf("Got unexpected listeners:\n%v", d)
 			}
 		})
 	}
@@ -593,8 +593,8 @@ func TestNewEndpointHandler(t *testing.T) {
 
 			res := handler(tt.eps)
 
-			if diff := deep.Equal(res, tt.expectResults); diff != nil {
-				t.Errorf("Got unexpected results. Diff to expected: %v", diff)
+			if d := diff.ObjectDiff(tt.expectResults, res); d != "" {
+				t.Errorf("Got unexpected results:\n%v", d)
 			}
 		})
 	}

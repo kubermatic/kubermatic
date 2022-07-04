@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1559,8 +1560,8 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						if existingRole.Name != expectedRole.Name {
 							continue
 						}
-						if diff := deep.Equal(existingRole, *expectedRole); diff != nil {
-							t.Errorf("Got unexpected result for %s role. Diff to expected: %v", expectedRole.Name, diff)
+						if d := diff.ObjectDiff(*expectedRole, existingRole); d != "" {
+							t.Errorf("Got unexpected result for %s role:\n%v", expectedRole.Name, d)
 						}
 						continue expectedRolesLoop
 					}
@@ -1586,8 +1587,8 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						if existingRoleBinding.Name != expectedRoleBinding.Name {
 							continue
 						}
-						if diff := deep.Equal(existingRoleBinding, *expectedRoleBinding); diff != nil {
-							t.Errorf("Got unexpected result for %s rolebinding. Diff to expected: %v", expectedRoleBinding.Name, diff)
+						if d := diff.ObjectDiff(*expectedRoleBinding, existingRoleBinding); d != "" {
+							t.Errorf("Got unexpected result for %s rolebinding:\n%v", expectedRoleBinding.Name, d)
 						}
 						continue expectedRoleBindingsLoop
 					}
@@ -3104,8 +3105,8 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				if !ok {
 					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
 				}
-				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
-					t.Errorf("Got unexpected rolebinding %s. Diff to expected: %v", expectedRoleBinding.Name, diff)
+				if d := diff.ObjectDiff(*expectedRoleBinding, resultRoleBinding); d != "" {
+					t.Errorf("Got unexpected rolebinding %s:\n%v", expectedRoleBinding.Name, d)
 				}
 			}
 		})
@@ -3534,8 +3535,8 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 				if !ok {
 					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
 				}
-				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
-					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
+				if d := diff.ObjectDiff(*expectedRoleBinding, resultRoleBinding); d != "" {
+					t.Errorf("Got unexpected rolebinding:\n%v", d)
 				}
 			}
 		})
@@ -3854,8 +3855,8 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 				if !ok {
 					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
 				}
-				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
-					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
+				if d := diff.ObjectDiff(*expectedRoleBinding, resultRoleBinding); d != "" {
+					t.Errorf("Got unexpected rolebinding:\n%v", d)
 				}
 			}
 		})

@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -141,12 +140,12 @@ func TestReconciliation(t *testing.T) {
 			}
 
 			for _, cluster := range clusters.Items {
-				if diff := deep.Equal(cluster.Labels, tc.expectedLabels[cluster.Name]); diff != nil {
-					t.Errorf("Expected labels on cluster %q do not match actual labels, diff: %v", cluster.Name, diff)
+				if expected := tc.expectedLabels[cluster.Name]; !diff.SemanticallyEqual(expected, cluster.Labels) {
+					t.Errorf("Expected labels on cluster %q do not match actual labels:\n%v", cluster.Name, diff.ObjectDiff(expected, cluster.Labels))
 				}
 
-				if diff := deep.Equal(cluster.Status.InheritedLabels, tc.expectedInheritedLabels[cluster.Name]); diff != nil {
-					t.Errorf("Expected inherited labels on cluster %q do not match actual inherited labels, diff: %v", cluster.Name, diff)
+				if expected := tc.expectedInheritedLabels[cluster.Name]; !diff.SemanticallyEqual(expected, cluster.Status.InheritedLabels) {
+					t.Errorf("Expected inherited labels on cluster %q do not match actual inherited labels:\n%v", cluster.Name, diff.ObjectDiff(expected, cluster.Status.InheritedLabels))
 				}
 			}
 		})

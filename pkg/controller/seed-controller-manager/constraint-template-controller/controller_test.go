@@ -18,7 +18,6 @@ package constrainttemplatecontroller
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -31,11 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -137,15 +136,20 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec.CRD, tc.expectedCT.Spec.CRD) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.CRD, tc.expectedCT.Spec.CRD))
-			}
-			if !reflect.DeepEqual(ct.Spec.Targets, tc.expectedCT.Spec.Targets) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.Targets, tc.expectedCT.Spec.Targets))
+			ct.ResourceVersion = ""
+			ct.APIVersion = ""
+			ct.Kind = ""
+
+			if tc.expectedCT.Name != ct.Name {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 
-			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT.Spec.CRD, ct.Spec.CRD) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
+			}
+
+			if !diff.SemanticallyEqual(tc.expectedCT.Spec.Targets, ct.Spec.Targets) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 		})
 	}
