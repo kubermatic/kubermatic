@@ -45,11 +45,10 @@ const (
 )
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	recorder        record.EventRecorder
-	masterClient    ctrlruntimeclient.Client
-	masterAPIClient ctrlruntimeclient.Reader
-	seedClients     map[string]ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	seedClients  map[string]ctrlruntimeclient.Client
 }
 
 func Add(
@@ -59,11 +58,10 @@ func Add(
 	numWorkers int,
 ) error {
 	r := &reconciler{
-		log:             log.Named(ControllerName),
-		recorder:        masterManager.GetEventRecorderFor(ControllerName),
-		masterClient:    masterManager.GetClient(),
-		masterAPIClient: masterManager.GetAPIReader(),
-		seedClients:     map[string]ctrlruntimeclient.Client{},
+		log:          log.Named(ControllerName),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -97,7 +95,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("request", request)
 
 	project := &kubermaticv1.Project{}
-	if err := r.masterAPIClient.Get(ctx, request.NamespacedName, project); err != nil {
+	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
