@@ -233,6 +233,10 @@ const (
 	PrometheusConfigConfigMapName = "prometheus"
 	// AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
 	AuditConfigMapName = "audit-config"
+
+	// FluentBitSecretName is the name of the secret that contains the fluent-bit configuration mounted
+	// into kube-apisever and used by the "audit-logs" sidecar to ship audit logs.
+	FluentBitSecretName = "audit-logs-fluentbit"
 	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file.
 	AdmissionControlConfigMapName = "adm-control"
 

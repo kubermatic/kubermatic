@@ -21767,6 +21767,9 @@
         },
         "policyPreset": {
           "$ref": "#/definitions/AuditPolicyPreset"
+        },
+        "sidecar": {
+          "$ref": "#/definitions/AuditSidecarSettings"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -21774,6 +21777,53 @@
     "AuditPolicyPreset": {
       "description": "AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values\nare `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.",
       "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "AuditSidecarConfiguration": {
+      "description": "Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.",
+      "type": "object",
+      "title": "AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.",
+      "properties": {
+        "filters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "x-go-name": "Filters"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "x-go-name": "Outputs"
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Service"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "AuditSidecarSettings": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/AuditSidecarConfiguration"
+        },
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Azure": {

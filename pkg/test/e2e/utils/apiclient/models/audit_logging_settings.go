@@ -23,6 +23,9 @@ type AuditLoggingSettings struct {
 
 	// policy preset
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
+
+	// sidecar
+	Sidecar *AuditSidecarSettings `json:"sidecar,omitempty"`
 }
 
 // Validate validates this audit logging settings
@@ -30,6 +33,10 @@ func (m *AuditLoggingSettings) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validatePolicyPreset(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSidecar(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -56,11 +63,34 @@ func (m *AuditLoggingSettings) validatePolicyPreset(formats strfmt.Registry) err
 	return nil
 }
 
+func (m *AuditLoggingSettings) validateSidecar(formats strfmt.Registry) error {
+	if swag.IsZero(m.Sidecar) { // not required
+		return nil
+	}
+
+	if m.Sidecar != nil {
+		if err := m.Sidecar.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("sidecar")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sidecar")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this audit logging settings based on the context it is used
 func (m *AuditLoggingSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidatePolicyPreset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSidecar(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,6 +109,22 @@ func (m *AuditLoggingSettings) contextValidatePolicyPreset(ctx context.Context, 
 			return ce.ValidateName("policyPreset")
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (m *AuditLoggingSettings) contextValidateSidecar(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Sidecar != nil {
+		if err := m.Sidecar.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("sidecar")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sidecar")
+			}
+			return err
+		}
 	}
 
 	return nil
