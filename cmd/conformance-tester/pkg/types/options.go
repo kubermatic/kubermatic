@@ -90,7 +90,7 @@ type Options struct {
 }
 
 func NewDefaultOptions() *Options {
-	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmware-cloud-director")
+	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmwareclouddirector")
 
 	return &Options{
 		Client:                       "api",

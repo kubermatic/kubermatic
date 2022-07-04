@@ -81,7 +81,7 @@ type DatacenterSpec struct {
 	Alibaba             *kubermaticv1.DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
 	Anexia              *kubermaticv1.DatacenterSpecAnexia              `json:"anexia,omitempty"`
 	Nutanix             *kubermaticv1.DatacenterSpecNutanix             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *kubermaticv1.DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *kubermaticv1.DatacenterSpecVMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -1042,7 +1042,7 @@ type PublicCloudSpec struct {
 	Alibaba             *PublicAlibabaCloudSpec             `json:"alibaba,omitempty"`
 	Anexia              *PublicAnexiaCloudSpec              `json:"anexia,omitempty"`
 	Nutanix             *PublicNutanixCloudSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *PublicVMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *PublicVMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -1334,7 +1334,7 @@ type NodeCloudSpec struct {
 	Alibaba             *AlibabaNodeSpec             `json:"alibaba,omitempty"`
 	Anexia              *AnexiaNodeSpec              `json:"anexia,omitempty"`
 	Nutanix             *NutanixNodeSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirectorNodeSpec `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorNodeSpec `json:"vmwareclouddirector,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings

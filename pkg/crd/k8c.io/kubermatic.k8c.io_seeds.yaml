@@ -447,7 +447,7 @@ spec:
                           items:
                             type: string
                           type: array
-                        vmwareCloudDirector:
+                        vmwareclouddirector:
                           properties:
                             allowInsecure:
                               description: If set to true, disables the TLS certificate

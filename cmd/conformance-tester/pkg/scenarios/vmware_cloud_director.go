@@ -75,7 +75,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: vmwareCloudDirectorDatacenter,
-					VmwareCloudDirector: &apimodels.VMwareCloudDirectorCloudSpec{
+					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
 						Username:     secrets.VMwareCloudDirector.Username,
 						Password:     secrets.VMwareCloudDirector.Password,
 						Organization: secrets.VMwareCloudDirector.Organization,
@@ -124,7 +124,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Replicas: &replicas,
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
-						VmwareCloudDirector: &apimodels.VMwareCloudDirectorNodeSpec{
+						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
 							Template:         fmt.Sprintf("machine-controller-%s", osName),
 							Catalog:          vmwareCloudDirectorCatalog,
 							CPUs:             vmwareCloudDirectorCPUs,

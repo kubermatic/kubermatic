@@ -916,7 +916,7 @@ type CloudSpec struct {
 	Alibaba             *AlibabaCloudSpec             `json:"alibaba,omitempty"`
 	Anexia              *AnexiaCloudSpec              `json:"anexia,omitempty"`
 	Nutanix             *NutanixCloudSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.

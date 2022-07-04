@@ -15,7 +15,7 @@
 # Sourced from:
 # - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/vcloud-basic-auth.yaml
 
-{{ if eq .Cluster.CloudProviderName "vmware-cloud-director" }}
+{{ if eq .Cluster.CloudProviderName "vmwareclouddirector" }}
 
 apiVersion: v1
 kind: Secret
