@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -164,12 +165,7 @@ func (r *reconciler) ensureGlobalUsage(ctx context.Context, log *zap.SugaredLogg
 		"memory", globalUsage.Memory.String(),
 		"storage", globalUsage.Storage.String())
 
-	oldResourceQuota := resourceQuota.DeepCopy()
-
-	resourceQuota.Status.GlobalUsage = *globalUsage
-	if err := r.masterClient.Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(oldResourceQuota)); err != nil {
-		return fmt.Errorf("failed to patch resource quota %q: %w", resourceQuota.Name, err)
-	}
-
-	return nil
+	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+		rq.Status.GlobalUsage = *globalUsage
+	})
 }
