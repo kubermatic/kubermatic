@@ -173,6 +173,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -185,6 +186,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-2",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-2"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -204,6 +206,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -216,6 +219,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-2",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-2"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -228,6 +232,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-3",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-3"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -261,6 +266,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -280,6 +286,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -313,6 +320,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -332,6 +340,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -365,6 +374,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -377,6 +387,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -396,6 +407,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-3"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -456,6 +468,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -468,6 +481,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -508,6 +522,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -527,6 +542,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -560,6 +576,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -572,6 +589,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -591,6 +609,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-1",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-3"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -678,6 +697,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -690,6 +710,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -768,6 +789,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-1",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -780,6 +802,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-3",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-3"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
@@ -792,6 +815,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-2",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-2"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -804,6 +828,7 @@ func TestReconcileCluster(t *testing.T) {
 						Name:            "test-pool-3",
 						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
 						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-3"}},
 					},
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -823,6 +848,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-2",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-3"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-2"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
@@ -835,6 +861,7 @@ func TestReconcileCluster(t *testing.T) {
 							Name:            "test-pool-3",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-3"),
 							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-3"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,

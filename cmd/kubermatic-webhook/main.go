@@ -36,6 +36,7 @@ import (
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 	clustertemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/clustertemplate/validation"
+	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
@@ -215,6 +216,14 @@ func main() {
 
 	// Setup the validation admission handler for ApplicationDefinition CRDs
 	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup IPAMPool webhook
+
+	ipamPoolValidator := ipampoolvalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// Here we go!
