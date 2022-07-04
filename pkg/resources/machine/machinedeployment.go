@@ -242,7 +242,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.VMwareCloudDirector != nil && dc.Spec.VMwareCloudDirector != nil:
-		config.CloudProvider = providerconfig.CloudProviderVcloudDirector
+		config.CloudProvider = providerconfig.CloudProviderVMwareCloudDirector
 		cloudExt, err = getVMwareCloudDirectorProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err

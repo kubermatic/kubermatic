@@ -22,9 +22,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// KubeSystemRoleBinding returns the RoleBinding for the OSM in kube-system ns.
+// KubeSystemRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
 func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return RoleBindingCreator()
 }
@@ -33,6 +34,52 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+
+			rb.RoleRef = rbacv1.RoleRef{
+				Name:     resources.OperatingSystemManagerRoleName,
+				Kind:     "Role",
+				APIGroup: rbacv1.GroupName,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:     rbacv1.UserKind,
+					Name:     resources.OperatingSystemManagerCertUsername,
+					APIGroup: rbacv1.GroupName,
+				},
+			}
+			return rb, nil
+		}
+	}
+}
+
+// KubePublicRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
+func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Namespace = metav1.NamespacePublic
+
+			rb.RoleRef = rbacv1.RoleRef{
+				Name:     resources.OperatingSystemManagerRoleName,
+				Kind:     "Role",
+				APIGroup: rbacv1.GroupName,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:     rbacv1.UserKind,
+					Name:     resources.OperatingSystemManagerCertUsername,
+					APIGroup: rbacv1.GroupName,
+				},
+			}
+			return rb, nil
+		}
+	}
+}
+
+// DefaultRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
+func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Namespace = metav1.NamespaceDefault
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.OperatingSystemManagerRoleName,
