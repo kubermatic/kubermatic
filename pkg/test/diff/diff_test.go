@@ -28,7 +28,7 @@ func TestYAMLDiff(t *testing.T) {
 	left.Name = "lefty"
 
 	right := corev1.Pod{}
-	right.Name = "lefty"
+	right.Name = "righty"
 
-	fmt.Printf("diff: %q\n", ObjectDiff(left, right))
+	fmt.Println(ObjectDiff(left, right))
 }

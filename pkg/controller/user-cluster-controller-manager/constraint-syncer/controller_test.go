@@ -19,9 +19,9 @@ limitations under the License.
 package constraintsyncer
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 	"time"
 
@@ -32,12 +32,12 @@ import (
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -260,8 +260,8 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// compare
-			if !reflect.DeepEqual(matchMap, resultMatch) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
+			if !diff.SemanticallyEqual(matchMap, resultMatch) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(matchMap, resultMatch))
 			}
 			// cast params to bytes for comparison
 			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
@@ -274,12 +274,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(expectedParamsBytes, resultParamsBytes) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
+			if !bytes.Equal(expectedParamsBytes, resultParamsBytes) {
+				t.Fatalf("Parameters differ:\n%v", diff.ObjectDiff(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
 			}
 
-			if !reflect.DeepEqual(reqLabel.GetName(), tc.expectedConstraint.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(reqLabel.GetName(), tc.expectedConstraint.Name))
+			if reqLabel.GetName() != tc.expectedConstraint.Name {
+				t.Fatalf("Expected name %q, got %q", tc.expectedConstraint.Name, reqLabel.GetName())
 			}
 		})
 	}

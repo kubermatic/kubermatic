@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -138,8 +137,8 @@ func TestReconcile(t *testing.T) {
 			existingBinding := clusterRoleBindingList.Items[0]
 			existingBinding.Name = tc.expectedBinding.Name
 
-			if diff := deep.Equal(existingBinding, tc.expectedBinding); diff != nil {
-				t.Errorf("bindings are not equal, diff: %v", diff)
+			if !diff.SemanticallyEqual(tc.expectedBinding, existingBinding) {
+				t.Fatalf("bindings are not equal:\n%v", diff.ObjectDiff(tc.expectedBinding, existingBinding))
 			}
 		})
 	}

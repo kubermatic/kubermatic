@@ -31,10 +31,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eeconstraintcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -145,11 +145,11 @@ func TestGetClustersForConstraint(t *testing.T) {
 			}
 
 			if !resultSetDesired.Equal(tc.expectedDesiredClusters) {
-				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSetDesired, tc.expectedDesiredClusters))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedDesiredClusters, resultSetDesired))
 			}
 
 			if !resultSetUnwanted.Equal(tc.expectedUnwantedClusters) {
-				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSetUnwanted, tc.expectedUnwantedClusters))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedUnwantedClusters, resultSetUnwanted))
 			}
 		})
 	}

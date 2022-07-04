@@ -30,6 +30,14 @@ func SemanticallyEqual(expected, actual interface{}) bool {
 	return apiequality.Semantic.DeepEqual(expected, actual)
 }
 
+type SetLike[T any] interface {
+	List() []T
+}
+
+func SetDiff[T any](expected, actual SetLike[T]) string {
+	return ObjectDiff(expected.List(), actual.List())
+}
+
 func ObjectDiff(expected, actual interface{}) string {
 	expectedYAML, err := yaml.Marshal(expected)
 	if err != nil {

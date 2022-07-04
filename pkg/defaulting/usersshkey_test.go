@@ -19,9 +19,8 @@ package defaulting
 import (
 	"testing"
 
-	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -183,8 +182,8 @@ func TestDefaultUserSSHKey(t *testing.T) {
 				return
 			}
 
-			if diff := deep.Equal(tt.expectedKey, mutatedKey); len(diff) > 0 {
-				t.Errorf("Diff found between expected and actual key: %+v", diff)
+			if !diff.SemanticallyEqual(tt.expectedKey, mutatedKey) {
+				t.Fatalf("Diff found between expected and actual key:\n%v", diff.ObjectDiff(tt.expectedKey, mutatedKey))
 			}
 		})
 	}
