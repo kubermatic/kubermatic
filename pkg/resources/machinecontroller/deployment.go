@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.45.0"
+	Tag  = "v1.52.0"
 )
 
 type machinecontrollerData interface {
@@ -148,7 +148,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.EnableOperatingSystemManager),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.EnableOperatingSystemManager, data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -273,11 +273,9 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, enableOperatingSystemManager bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager bool, features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-logtostderr",
-		"-v", "4",
 		"-cluster-dns", clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
@@ -303,8 +301,17 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		}
 	}
 
+	externalCloudProvider := features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+	if externalCloudProvider {
+		flags = append(flags, "-node-external-cloud-provider")
+	}
+
 	if cri != "" {
 		flags = append(flags, "-node-container-runtime", cri)
+	}
+
+	if imagePullSecret != nil {
+		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
 	}
 
 	// Machine Controller will use OSM for managing machine's provisioning and bootstrapping configurations

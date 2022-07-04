@@ -357,7 +357,9 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator(),
+			operatingsystemmanager.KubePublicRoleCreator(),
+			operatingsystemmanager.DefaultRoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -432,7 +434,9 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator(),
+			operatingsystemmanager.KubePublicRoleBindingCreator(),
+			operatingsystemmanager.DefaultRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -823,6 +827,17 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
+		}
+	}
+
+	// Operating System Manager
+	if r.enableOperatingSystemManager {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			cloudinitsettings.SecretCreator(),
+		}
+
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 		}
 	}
 

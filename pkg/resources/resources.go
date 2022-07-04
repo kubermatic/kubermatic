@@ -594,6 +594,9 @@ const (
 	NutanixCSIPassword = "csiPassword"
 	NutanixProxyURL    = "proxyURL"
 
+	ServiceAccountTokenType       = "kubernetes.io/service-account-token"
+	ServiceAccountTokenAnnotation = "kubernetes.io/service-account.name"
+
 	UserSSHKeys = "usersshkeys"
 )
 
