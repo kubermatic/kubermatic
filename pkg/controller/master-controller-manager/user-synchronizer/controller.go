@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -135,12 +136,21 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		userCreatorGetter(user),
 	}
 	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
+		seedUser := &kubermaticv1.User{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedUser.UID == user.UID {
+			return nil
+		}
+
 		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile user: %w", err)
 		}
 
-		seedUser := &kubermaticv1.User{}
 		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil {
 			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
 		}

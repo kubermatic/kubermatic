@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -123,6 +124,16 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+		seedBinding := &kubermaticv1.UserProjectBinding{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedBinding); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch UserProjectBinding on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedBinding.UID == userProjectBinding.UID {
+			return nil
+		}
+
 		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClusterClient)
 	})
 

@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -120,12 +121,33 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
+		seedProject := &kubermaticv1.Project{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedProject); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+		}
+
+		// The informer can trigger a reconciliation before the cache backing the
+		// master client has been updated; this can make the reconciler read
+		// an old state and would replicate this old state onto seeds; if master
+		// and seed are the same cluster, this would effectively overwrite the
+		// change that just happened.
+		// To prevent this from occuring, we check the UID and refuse to update
+		// the project if the UID on the seed == UID on the master.
+		// Note that in this distinction cannot be made inside the creator function
+		// further down, as the reconciling framework reads the current state
+		// from cache and even if no changes were made (because of the UID match),
+		// it would still persist the new object and might overwrite the actual,
+		// new state.
+		if seedProject.UID == project.UID {
+			return nil
+		}
+
 		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile project: %w", err)
 		}
 
-		seedProject := &kubermaticv1.Project{}
+		// fetch the updated project from the cache
 		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedProject); err != nil {
 			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
 		}
