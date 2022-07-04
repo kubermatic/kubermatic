@@ -350,7 +350,7 @@ spec:
                 items:
                   type: string
                 type: array
-              vmwareCloudDirector:
+              vmwareclouddirector:
                 properties:
                   datacenter:
                     type: string

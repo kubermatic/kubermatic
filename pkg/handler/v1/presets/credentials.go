@@ -45,7 +45,7 @@ var providerNames = []string{
 	"alibaba",
 	"anexia",
 	"nutanix",
-	"vmware-cloud-director",
+	"vmwareclouddirector",
 }
 
 // providerReq represents a request for provider name

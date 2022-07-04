@@ -415,13 +415,13 @@ func TestCredentialEndpoint(t *testing.T) {
 		},
 		{
 			name:             "test no credentials for VMware Cloud Director",
-			provider:         "vmware-cloud-director",
+			provider:         "vmwareclouddirector",
 			httpStatus:       http.StatusOK,
 			expectedResponse: "{}",
 		},
 		{
 			name:     "test list of credential names for VMware Cloud Director",
-			provider: "vmware-cloud-director",
+			provider: "vmwareclouddirector",
 			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{

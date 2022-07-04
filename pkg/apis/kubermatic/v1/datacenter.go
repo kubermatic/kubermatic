@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmware-cloud-director
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 
 type ProviderType string
 
@@ -51,7 +51,7 @@ const (
 	NutanixCloudProvider             ProviderType = "nutanix"
 	OpenstackCloudProvider           ProviderType = "openstack"
 	PacketCloudProvider              ProviderType = "packet"
-	VMwareCloudDirectorCloudProvider ProviderType = "vmware-cloud-director"
+	VMwareCloudDirectorCloudProvider ProviderType = "vmwareclouddirector"
 	VSphereCloudProvider             ProviderType = "vsphere"
 
 	DefaultSSHPort     = 22
@@ -379,7 +379,7 @@ type DatacenterSpec struct {
 	Packet              *DatacenterSpecPacket              `json:"packet,omitempty"`
 	Hetzner             *DatacenterSpecHetzner             `json:"hetzner,omitempty"`
 	VSphere             *DatacenterSpecVSphere             `json:"vsphere,omitempty"`
-	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
 	GCP                 *DatacenterSpecGCP                 `json:"gcp,omitempty"`
 	Kubevirt            *DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
 	Alibaba             *DatacenterSpecAlibaba             `json:"alibaba,omitempty"`

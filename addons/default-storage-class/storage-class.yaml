@@ -167,7 +167,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 {{ end }}
 
-{{ if eq .Cluster.CloudProviderName "vmware-cloud-director" }}
+{{ if eq .Cluster.CloudProviderName "vmwareclouddirector" }}
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:

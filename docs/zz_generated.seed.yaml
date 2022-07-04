@@ -200,7 +200,7 @@ spec:
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
         requiredEmails: []
-        vmwareCloudDirector:
+        vmwareclouddirector:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
           # The default catalog which contains the VM templates.

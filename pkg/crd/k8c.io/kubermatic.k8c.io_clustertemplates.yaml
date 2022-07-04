@@ -974,7 +974,7 @@ spec:
                       for this cluster. This must match the given provider spec (e.g.
                       if the providerName is "aws", then the `aws` field must be set).
                     type: string
-                  vmwareCloudDirector:
+                  vmwareclouddirector:
                     description: VMwareCloudDirectorCloudSpec specifies access data
                       to VMware Cloud Director cloud.
                     properties:

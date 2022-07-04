@@ -19,7 +19,7 @@
 # - image source includes registry templating
 # - add a securityContext
 
-{{ if eq .Cluster.CloudProviderName "vmware-cloud-director" }}
+{{ if eq .Cluster.CloudProviderName "vmwareclouddirector" }}
 
 ---
 apiVersion: v1
