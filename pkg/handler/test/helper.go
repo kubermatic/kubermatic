@@ -223,6 +223,7 @@ type newRoutingFunc func(
 	resourceQuotaProvider provider.ResourceQuotaProvider,
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	features features.FeatureGate,
+	ipamPoolProvider provider.IPAMPoolProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -552,6 +553,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	featureGatesProvider := kubernetes.NewFeatureGatesProvider(featureGates)
 
+	ipamPoolProvider := kubernetes.NewIPAMPoolProvider(fakeClient)
+	fakeIPAMPoolProvider := &FakeIPAMPoolProvider{
+		Provider:   ipamPoolProvider,
+		FakeClient: fakeClient,
+	}
+
 	mainRouter := routingFunc(
 		adminProvider,
 		settingsProvider,
@@ -607,6 +614,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		resourceQuotaProvider,
 		groupProjectBindingProvider,
 		featureGates,
+		fakeIPAMPoolProvider,
 	)
 
 	return mainRouter, &ClientsSets{fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

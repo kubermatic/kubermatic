@@ -33,7 +33,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ipamPoolReq represents a request for managing a IPAM pool.
@@ -156,7 +155,7 @@ func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
 		ipamPoolList, err := provider.ListUnsecured(ctx)
@@ -180,7 +179,7 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
 		ipamPoolReq, ok := req.(ipamPoolReq)
@@ -210,7 +209,7 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
 		createIPAMPoolReq, ok := req.(createIPAMPoolReq)
@@ -242,7 +241,7 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
 		patchIPAMPoolReq, ok := req.(patchIPAMPoolReq)
@@ -282,7 +281,7 @@ func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
 		ipamPoolReq, ok := req.(ipamPoolReq)
