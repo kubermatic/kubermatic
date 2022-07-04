@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -131,10 +132,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
 		}
 
-		oldProject := seedProject.DeepCopy()
-		seedProject.Status = project.Status
-		if err := seedClusterClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
-			return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+		if !equality.Semantic.DeepEqual(seedProject.Status, project.Status) {
+			oldProject := seedProject.DeepCopy()
+			seedProject.Status = project.Status
+			if err := seedClusterClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+				return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+			}
 		}
 
 		return nil
