@@ -175,12 +175,12 @@ func getVMareCloudDirectorCredentialsFromReq(ctx context.Context, req VMwareClou
 
 func VMwareCloudDirectorNetworksEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(VMwareCloudDirectorNetworkReq)
+		req, ok := request.(VMwareCloudDirectorCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
-		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req.VMwareCloudDirectorCommonReq, userInfoGetter, presetProvider, seedsGetter)
+		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, seedsGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -191,12 +191,12 @@ func VMwareCloudDirectorNetworksEndpoint(presetProvider provider.PresetProvider,
 
 func VMwareCloudDirectorStorageProfilesEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(VMwareCloudDirectorStorageProfileReq)
+		req, ok := request.(VMwareCloudDirectorCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
-		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req.VMwareCloudDirectorCommonReq, userInfoGetter, presetProvider, seedsGetter)
+		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, seedsGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -207,12 +207,12 @@ func VMwareCloudDirectorStorageProfilesEndpoint(presetProvider provider.PresetPr
 
 func VMwareCloudDirectorCatalogsEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(VMwareCloudDirectorCatalogReq)
+		req, ok := request.(VMwareCloudDirectorCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
-		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req.VMwareCloudDirectorCommonReq, userInfoGetter, presetProvider, seedsGetter)
+		creds, err := getVMareCloudDirectorCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, seedsGetter)
 		if err != nil {
 			return nil, err
 		}
