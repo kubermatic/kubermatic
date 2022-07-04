@@ -221,7 +221,6 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 		}
 
 		ipamPool := toIPAMPoolKubermaticModel(&createIPAMPoolReq.Body)
-		// TODO: same webhook validations here with "ipamPool"
 
 		if err := provider.CreateUnsecured(ctx, ipamPool); err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -261,7 +260,6 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 		}
 		newIPAMPool := originalIPAMPool.DeepCopy()
 		newIPAMPool.Spec = toIPAMPoolKubermaticModel(&patchIPAMPoolReq.Body).Spec
-		// TODO: same webhook validations here with "newIPAMPool"
 
 		if err := provider.PatchUnsecured(ctx, originalIPAMPool, newIPAMPool); err != nil {
 			if apierrors.IsNotFound(err) {
