@@ -85,8 +85,16 @@ type ExternalClusterSpec struct {
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
+	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
-	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
+	// CloudSpec contains provider specific fields
+	CloudSpec *ExternalClusterCloudSpec `json:"cloudSpec,omitempty"`
+	// If this is set to true, the cluster will not be reconciled by KKP.
+	// This indicates that the user needs to do some action to resolve the pause.
+	Pause bool `json:"pause"`
+	// PauseReason is the reason why the cluster is not being managed. This field is for informational
+	// purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
+	PauseReason string `json:"pauseReason,omitempty"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
