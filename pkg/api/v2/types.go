@@ -1445,6 +1445,6 @@ type IPAMPool struct {
 type IPAMPoolDatacenterSettings struct {
 	Type             kubermaticv1.IPAMPoolAllocationType `json:"type"`
 	PoolCIDR         kubermaticv1.SubnetCIDR             `json:"poolCidr"`
-	AllocationPrefix uint8                               `json:"allocationPrefix,omitempty"`
-	AllocationRange  uint32                              `json:"allocationRange,omitempty"`
+	AllocationPrefix int                                 `json:"allocationPrefix,omitempty"`
+	AllocationRange  int                                 `json:"allocationRange,omitempty"`
 }

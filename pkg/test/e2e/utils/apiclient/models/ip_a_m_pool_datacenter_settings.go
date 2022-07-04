@@ -19,10 +19,10 @@ import (
 type IPAMPoolDatacenterSettings struct {
 
 	// allocation prefix
-	AllocationPrefix uint8 `json:"allocationPrefix,omitempty"`
+	AllocationPrefix int64 `json:"allocationPrefix,omitempty"`
 
 	// allocation range
-	AllocationRange uint32 `json:"allocationRange,omitempty"`
+	AllocationRange int64 `json:"allocationRange,omitempty"`
 
 	// pool cidr
 	PoolCidr SubnetCIDR `json:"poolCidr,omitempty"`

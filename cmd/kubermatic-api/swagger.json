@@ -26757,12 +26757,12 @@
       "properties": {
         "allocationPrefix": {
           "type": "integer",
-          "format": "uint8",
+          "format": "int64",
           "x-go-name": "AllocationPrefix"
         },
         "allocationRange": {
           "type": "integer",
-          "format": "uint32",
+          "format": "int64",
           "x-go-name": "AllocationRange"
         },
         "poolCidr": {
