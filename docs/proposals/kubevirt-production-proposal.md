@@ -4,7 +4,7 @@
 
 **Status**: Draft proposal
 
-**Issues**: 
+**Issues**:
 
 * https://github.com/kubermatic/kubermatic/issues/7068
 * https://github.com/kubermatic/kubermatic/issues/6516
@@ -43,7 +43,7 @@ we should take to deliver production-ready KubeVirt, the document should evolve 
 The end user would like to have automatic deployment of KubeVirt addon with some additional components like Containerized Data Importer and Multus.
 Currently for KubeVirt we are not able to use the KKP addon mechanism because its purpose is not to install more complex projects (simple deployments).
 The scope of automation on our side is only limited to the k8s cluster (that means installing only k8s addons).
-It is expected that the configured k8s cluster is provided by the customer or KKP bare-metal cloud provider.
+It is expected that the configured k8s cluster is provided by the admin or KKP bare-metal cloud provider.
 
 ### Goals
 
@@ -95,7 +95,7 @@ or create your own custom template.
         * Improve selection, list all available and supported cloud images
     * Performance settings:
         * Allow to modify all crucial KubeVirt performance settings (only custom template)
-            * More about it in the Virtual Machine Flavors section 
+            * More about it in the Virtual Machine Flavors section
     * Resource settings:
         * Allow to change CPU (only custom template)
         * Allow to change memory (only custom template)
@@ -122,7 +122,7 @@ we have to fine-tune the implementation to add extra options that will cover the
 ### Overview
 
 We must provide generic templates for virtual machines that users can use.
-This is going to be useful for customers that don't have deep knowledge of virtualization,
+This is going to be useful for admins that don't have deep knowledge of virtualization,
 it should cover most of the use cases. For more advanced users we should allow the creation of custom VMs and
 support all features that KubeVirt provides regarding performance and scalability.
 
@@ -249,7 +249,7 @@ General overview of the standard network setting with a possibility to add custo
 
 ![Network isolation](images/kubevirt-network-isolation.png)
 
-VMs in the same cluster will be attached to the same VLANs and communication VM to VM (for the same KubeVirt cluster) 
+VMs in the same cluster will be attached to the same VLANs and communication VM to VM (for the same KubeVirt cluster)
 should go through the VLAN not over the pod network, pod network is only attached to expose the VM as a service.
 We should set appropriate pod network policies and routing tables on VMs to achieve the isolation goal.
 
@@ -264,7 +264,7 @@ The final goal is to deploy the CCM over Platform Extension, however, it is in t
 
 #### Underlying Cluster Exposure
 
-We can recommend and support metal-lb deployment in case a customer does not have a possibility (or does not want to) to use a self-provisioned edge.
+We can recommend and support metal-lb deployment in case an admin does not have a possibility (or does not want to) to use a self-provisioned edge.
 We have to set appropriate metal-lb setup that we would support based on benchmarking.
 
 #### Performance
@@ -287,16 +287,16 @@ as well we have to use libvirt to attach disks to nodes instead of using NFS dir
 ### Goals
 
 * Support for hot-pluggable disks to avoid attaching NFS storage directly to the VM.
-* Support for Data Volume registry 
+* Support for Data Volume registry
   * Host assisted data clone
   * Snapshot data clone (not every CSI driver and storage support this)
 * Provide optimal storage setup that work together with KubeVirt, it is about a document or support for storage solutions
-  we choose (customers often ask about that), like CEPH, Quobyte etc.
+  we choose (admins often ask about that), like CEPH, Quobyte etc.
 
 ### Non-Goals
 
 * Allow crossed namespace Data Volume registry
-* Support for live migration 
+* Support for live migration
     * In the future we want to support live migration
 
 ### Implementation

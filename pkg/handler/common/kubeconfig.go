@@ -80,7 +80,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 
 	if adminUserInfo.IsAdmin {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -93,9 +93,9 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 	if strings.HasPrefix(userInfo.Group, "viewers") {
 		filePrefix = "viewer"
-		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(ctx, cluster)
+		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForUserCluster(ctx, cluster)
 	} else {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
 	}
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -133,7 +133,7 @@ func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.User
 	if err != nil {
 		return nil, err
 	}
-	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
+	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -207,7 +207,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 			return nil, utilerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
 		}
 
-		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
+		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -331,7 +331,7 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 			return nil, utilerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
 		}
 
-		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
+		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -380,7 +380,7 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 		rsp := createOIDCKubeconfigRsp{}
 		rsp.phase = kubeconfigGenerated
 		rsp.secureCookieMode = oidcCfg.CookieSecureMode
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+		client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

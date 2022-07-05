@@ -405,7 +405,7 @@ func ListMachineDeploymentMetrics(ctx context.Context, userInfoGetter provider.U
 		}
 	}
 
-	dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+	dynamicCLient, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -559,7 +559,7 @@ func ListMachineDeploymentNodesEvents(ctx context.Context, userInfoGetter provid
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -771,7 +771,7 @@ func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialN
 }
 
 func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
-	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}

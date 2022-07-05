@@ -325,8 +325,8 @@ func (p *ClusterProvider) Update(ctx context.Context, project *kubermaticv1.Proj
 	return newCluster, nil
 }
 
-// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster.
-func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+// GetAdminKubeconfigForUserCluster returns the admin kubeconfig for the given cluster.
+func (p *ClusterProvider) GetAdminKubeconfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: c.Status.NamespaceName,
@@ -339,8 +339,8 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(ctx context.Conte
 	return clientcmd.Load(secret.Data[resources.KubeconfigSecretKey])
 }
 
-// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster.
-func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+// GetViewerKubeconfigForUserCluster returns the viewer kubeconfig for the given cluster.
+func (p *ClusterProvider) GetViewerKubeconfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	s := &corev1.Secret{}
 
 	if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
@@ -400,36 +400,36 @@ func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermat
 	return nil
 }
 
-// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
+// GetAdminClientForUserCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client you will get has admin privileges.
-func (p *ClusterProvider) GetAdminClientForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
+func (p *ClusterProvider) GetAdminClientForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(ctx, c)
 }
 
-// GetAdminK8sClientForCustomerCluster returns a k8s go client to interact with all resources in the given cluster
+// GetAdminK8sClientForUserCluster returns a k8s go client to interact with all resources in the given cluster
 //
 // Note that the client you will get has admin privileges.
-func (p *ClusterProvider) GetAdminK8sClientForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
+func (p *ClusterProvider) GetAdminK8sClientForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetK8sClient(ctx, c)
 }
 
-// GetAdminClientConfigForCustomerCluster returns a client config
+// GetAdminClientConfigForUserCluster returns a client config
 //
 // Note that the client you will get has admin privileges.
-func (p *ClusterProvider) GetAdminClientConfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error) {
+func (p *ClusterProvider) GetAdminClientConfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error) {
 	return p.userClusterConnProvider.GetClientConfig(ctx, c)
 }
 
-// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
+// GetClientForUserCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 // This implies that you have to make sure the user has the appropriate permissions inside the user cluster.
-func (p *ClusterProvider) GetClientForCustomerCluster(ctx context.Context, userInfo *provider.UserInfo, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
+func (p *ClusterProvider) GetClientForUserCluster(ctx context.Context, userInfo *provider.UserInfo, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(ctx, c, p.withImpersonation(userInfo))
 }
 
-func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
+func (p *ClusterProvider) GetTokenForUserCluster(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
 	parts := strings.Split(userInfo.Group, "-")
 	switch parts[0] {
 	case "editors":

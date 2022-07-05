@@ -219,7 +219,7 @@ type KubermaticUserClusterConfiguration struct {
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
-	// NodePortRange is the port range for customer clusters - this must match the NodePort
+	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.

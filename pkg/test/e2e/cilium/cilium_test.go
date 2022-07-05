@@ -627,7 +627,7 @@ func createUserCluster(
 	log.Info("Retrieving cluster client...")
 	var clusterClient ctrlruntimeclient.Client
 	err = wait.Poll(1*time.Second, 30*time.Second, func() (transient error, terminal error) {
-		clusterClient, transient = clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+		clusterClient, transient = clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 		return transient, nil
 	})
 	if err != nil {

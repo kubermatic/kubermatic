@@ -695,7 +695,7 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 		availableResources[n.Name] = n.Status.Allocatable
 	}
 
-	dynamicClient, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+	dynamicClient, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

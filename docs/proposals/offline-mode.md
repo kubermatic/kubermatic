@@ -6,7 +6,7 @@
 
 ## Motivation and background
 
-In order to allow customers do use Kubermatic in an environment that has no access to the Internet we must
+In order to allow admins to use Kubermatic in an environment that has no access to the Internet we must
 find all places where Kubermatic downloads stuff from the Internet, add configuration options, test and document
 those.
 
@@ -25,7 +25,7 @@ Kubermatic:
 * Writing a script that downloads all required images, retags them and uploads them to a private registry
 * Add flag to the `cluster-controller` to set just the repository for all images
 * Provide an easy/convenient way to have an image pull secret available on all nodes
-* Allow dex to be configured to either use a customer-provided IDP or static user definitions
+* Allow dex to be configured to either use a admin-provided IDP or static user definitions
 * Write an e2e test for this:
     * Create a kubeadm seed + master cluster, during this phase Internet may be reachable
     * Execute the script that downloads and retags the images, during this phase Internet may be reachable

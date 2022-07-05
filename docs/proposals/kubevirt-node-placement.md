@@ -4,7 +4,7 @@
 
 **Status**: Draft proposal
 
-**Issues**: 
+**Issues**:
 
 * https://github.com/kubermatic/kubermatic/issues/8742
 
@@ -98,13 +98,13 @@ spec:
             storageClassName: local-path
             podAffinityPreset: ""                # Allowed values: "", "soft", "hard"
             podAntiAffinityPreset: "soft"        # Allowed values: "", "soft", "hard"
-            nodeAffinityPreset: 
+            nodeAffinityPreset:
                 type: "soft"                     # Allowed values: "", "soft", "hard"
                 key: "foo"
                 values:
                 - bar1
                 - bar2
-            nodeAntiAffinityPreset: 
+            nodeAntiAffinityPreset:
                 type: "soft"                     # Allowed values: "", "soft", "hard"
                 key: "foo"
                 values:
@@ -134,7 +134,7 @@ The added *providerSpec* part is:
 ```yaml
             podAffinityPreset: ""                # Allowed values: "", "soft", "hard"
             podAntiAffinityPreset: "soft"        # Allowed values: "", "soft", "hard"
-            nodeAffinityPreset: 
+            nodeAffinityPreset:
                 type: "soft"                     # Allowed values: "", "soft", "hard"
                 key: "foo"
                 values:
@@ -168,7 +168,7 @@ metadata:
   uid: 4034c48c-f61c-43bb-ab43-6c59e41d8605
 spec:
   dataVolumeTemplates:
-# ...  no change 
+# ...  no change
   template:
     metadata:
       creationTimestamp: null
@@ -176,9 +176,9 @@ spec:
         kubevirt.io/vm: prow-e2e-kubevirt-centos-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
     spec:
       affinity:
-          # Section podAntiAffinity present if: 
-          #         MD.providerSpec.value.cloudProviderSpec.podAntiAffinityPreset != "" 
-          podAntiAffinity: 
+          # Section podAntiAffinity present if:
+          #         MD.providerSpec.value.cloudProviderSpec.podAntiAffinityPreset != ""
+          podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:      # if podAntiAffinityPreset = "hard"
             # preferredDuringSchedulingIgnoredDuringExecution    # if podAntiAffinityPreset = "soft"
               - labelSelector:
@@ -191,8 +191,8 @@ spec:
                                                                 # already common to all machine from the same MD
                 topologyKey: topologyKey:kubernetes.io/hostname
             # Section podAffinity present if:
-            #        MD.providerSpec.value.cloudProviderSpec.podAffinityPreset != "" 
-            podAffinity: 
+            #        MD.providerSpec.value.cloudProviderSpec.podAffinityPreset != ""
+            podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:        # if podAffinityPreset = "hard"
               # preferredDuringSchedulingIgnoredDuringExecution      # if podAffinityPreset = "soft"
                 - labelSelector:
@@ -204,7 +204,7 @@ spec:
                   topologyKey: topologyKey:kubernetes.io/hostname
             # Section nodeAffinity present if:
             #         MD.providerSpec.value.cloudProviderSpec.nodeAffinityPreset.type != ""
-            nodeAffinity: 
+            nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:       # if nodeAffinityPreset.type = "hard"
               # preferredDuringSchedulingIgnoredDuringExecution     # if nodeAffinityPreset.type = "soft"
                 nodeSelectorTerms:
@@ -213,7 +213,7 @@ spec:
                     operator: In
                     values:
                     - bar1
-                    - bar2  
+                    - bar2
             #### same goes for nodeAntiAffinity
       dnsConfig:
         nameservers:
@@ -224,7 +224,7 @@ spec:
 ```
 
 
-In order to have a *podAffinity* and *podAntiAffinity*, we need a common label among the *Machine* as we reconcile and watch the *Machine*. 
+In order to have a *podAffinity* and *podAntiAffinity*, we need a common label among the *Machine* as we reconcile and watch the *Machine*.
 We already have a common label among the Machines from the same *MachineDeployment*, which is:
 ```yaml
 machine: md-<machine id>
@@ -234,7 +234,7 @@ We just need to add this label to the *VirtualMachineInstance*.
 
 ## Control of VM placement over infra cluster nodes
 
-**The customer is responsible of labelling the infra cluster nodes**
+**The admin is responsible of labelling the infra cluster nodes**
 
 Based on those existing infra cluster node labels, and with the facade defined in the MachineDeployment manifest and the VMi specification, we can have a quite flexible way of controlling the placement of the VMi on the infra cluster nodes.
 
@@ -250,7 +250,7 @@ This change requires an update of the dashboard to enter those values:
 
 ## Control of user cluster pod placement over infra cluster nodes
 
-Now, if the customer wants to control the placement of the user cluster workload over the infra cluster nodes, using affinity/antiaffinity, the user cluster nodes need to have the needed labels from the infra cluster replicated.
+Now, if the admin wants to control the placement of the user cluster workload over the infra cluster nodes, using affinity/antiaffinity, the user cluster nodes need to have the needed labels from the infra cluster replicated.
 
 **KubeVirt CCM is already replicating 2 topology labels from the infra cluster to the user cluster nodes:**
 - topology.kubernetes.io/region

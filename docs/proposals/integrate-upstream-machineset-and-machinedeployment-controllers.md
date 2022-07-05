@@ -5,7 +5,7 @@
 
 ## Motivation and Background
 
-In order to simplify management of nodes, we want to offer to our customers the possibility
+In order to simplify management of nodes, we want to offer to KKP admins the possibility
 of grouping identical machines into `machineSets` and manage configuration changes of `machineSets`
 via `machineDeployments`. This in turn means, that we need controllers for both `machineSets` and
 `machineDeployments`.
