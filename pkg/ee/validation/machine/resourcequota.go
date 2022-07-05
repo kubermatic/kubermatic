@@ -39,8 +39,13 @@ import (
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
-func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client,
-	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle, resourceQuota *kubermaticv1.ResourceQuota) error {
+func ValidateQuota(ctx context.Context,
+	log *zap.SugaredLogger,
+	userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine,
+	caBundle *certificates.CABundle,
+	resourceQuota *kubermaticv1.ResourceQuota,
+) error {
 	machineResourceUsage, err := GetMachineResourceUsage(ctx, userClient, machine, caBundle)
 	if err != nil {
 		return fmt.Errorf("error getting machine resource request: %w", err)
