@@ -29,7 +29,6 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -38,15 +37,11 @@ import (
 type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
-
-	client ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new validation AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
-	return &AdmissionHandler{
-		client: client,
-	}
+func NewAdmissionHandler() *AdmissionHandler {
+	return &AdmissionHandler{}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
@@ -73,7 +68,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, ad); err != nil {
 			return webhook.Errored(http.StatusBadRequest, err)
 		}
-		allErrs = append(allErrs, validation.ValidateApplicationInstallationSpec(ctx, h.client, ad.Spec)...)
+		allErrs = append(allErrs, validation.ValidateApplicationInstallationSpec(ctx, ad.Spec)...)
 
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, ad); err != nil {
@@ -82,7 +77,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.DecodeRaw(req.OldObject, oldAD); err != nil {
 			return webhook.Errored(http.StatusBadRequest, err)
 		}
-		allErrs = append(allErrs, validation.ValidateApplicationInstallationUpdate(ctx, h.client, *ad, *oldAD)...)
+		allErrs = append(allErrs, validation.ValidateApplicationInstallationUpdate(ctx, *ad, *oldAD)...)
 
 	case admissionv1.Delete:
 		// NOP we always allow delete operations

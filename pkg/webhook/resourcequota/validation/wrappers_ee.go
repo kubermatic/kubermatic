@@ -21,22 +21,22 @@ package validation
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eeresourcequotavalidation "k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func validateCreate(ctx context.Context,
-	obj runtime.Object,
+	obj *kubermaticv1.ResourceQuota,
 	client ctrlruntimeclient.Client,
 ) error {
 	return eeresourcequotavalidation.ValidateCreate(ctx, obj, client)
 }
 
 func validateUpdate(ctx context.Context,
-	oldObj runtime.Object,
-	newObj runtime.Object,
+	oldObj *kubermaticv1.ResourceQuota,
+	newObj *kubermaticv1.ResourceQuota,
 ) error {
 	return eeresourcequotavalidation.ValidateUpdate(ctx, oldObj, newObj)
 }

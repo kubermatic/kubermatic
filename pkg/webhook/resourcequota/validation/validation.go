@@ -19,6 +19,8 @@ package validation
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -39,11 +41,11 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return validateCreate(ctx, obj, v.client)
+	return validateCreate(ctx, obj.(*kubermaticv1.ResourceQuota), v.client)
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return validateUpdate(ctx, oldObj, newObj)
+	return validateUpdate(ctx, oldObj.(*kubermaticv1.ResourceQuota), newObj.(*kubermaticv1.ResourceQuota))
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {

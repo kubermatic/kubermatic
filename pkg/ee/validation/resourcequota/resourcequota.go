@@ -26,23 +26,15 @@ package resourcequota
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ValidateCreate(ctx context.Context,
-	obj runtime.Object,
-	client ctrlruntimeclient.Client) error {
-	incomingQuota, ok := obj.(*kubermaticv1.ResourceQuota)
-	if !ok {
-		return errors.New("object is not a Resource Quota")
-	}
+func ValidateCreate(ctx context.Context, incomingQuota *kubermaticv1.ResourceQuota, client ctrlruntimeclient.Client) error {
 	if incomingQuota == nil {
 		return nil
 	}
@@ -65,27 +57,12 @@ func ValidateCreate(ctx context.Context,
 	return nil
 }
 
-func ValidateUpdate(ctx context.Context,
-	oldObj runtime.Object,
-	newObj runtime.Object) error {
-	oldQuota, ok := oldObj.(*kubermaticv1.ResourceQuota)
-	if !ok {
-		return errors.New("existing object is not a Resource Quota")
-	}
-	if oldQuota == nil {
-		return nil
-	}
-	newQuota, ok := newObj.(*kubermaticv1.ResourceQuota)
-	if !ok {
-		return errors.New("updated object is not a Resource Quota")
-	}
-	if newQuota == nil {
+func ValidateUpdate(ctx context.Context, oldQuota *kubermaticv1.ResourceQuota, newQuota *kubermaticv1.ResourceQuota) error {
+	if oldQuota == nil || newQuota == nil {
 		return nil
 	}
 
-	oldSubject := oldQuota.Spec.Subject
-	newSubject := newQuota.Spec.Subject
-	if oldSubject != newSubject {
+	if oldQuota.Spec.Subject != newQuota.Spec.Subject {
 		return fmt.Errorf("Operation not permitted: updating ResourceQuota Subject is not allowed!")
 	}
 

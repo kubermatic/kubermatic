@@ -30,7 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -49,21 +48,11 @@ func init() {
 }
 
 func TestValidateApplicationInsallation(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName)
-	fakeClient := fakectrlruntimeclient.
-		NewClientBuilder().
-		WithScheme(testScheme).
-		WithObjects(ad).
-		Build()
-
 	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion)
 	validRaw := applicationInstallationToRawExt(*ai)
 
 	ai.Spec.Namespace.Create = false
 	invalidUpdateRaw := applicationInstallationToRawExt(*ai)
-
-	ai.Spec.ApplicationRef.Name = "invalid"
-	invalidRaw := applicationInstallationToRawExt(*ai)
 
 	tests := []struct {
 		name        string
@@ -85,22 +74,6 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-		},
-		{
-			name: "Create ApplicationInstallation Failure",
-			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Create,
-					RequestKind: &metav1.GroupVersionKind{
-						Group:   appskubermaticv1.GroupName,
-						Version: appskubermaticv1.GroupVersion,
-						Kind:    "ApplicationInstallation",
-					},
-					Name:   "default",
-					Object: invalidRaw,
-				},
-			},
-			wantAllowed: false,
 		},
 		{
 			name: "Delete ApplicationInstallation Success",
@@ -147,7 +120,6 @@ func TestValidateApplicationInsallation(t *testing.T) {
 			handler := AdmissionHandler{
 				log:     logr.Discard(),
 				decoder: d,
-				client:  fakeClient,
 			}
 
 			if res := handler.Handle(context.Background(), tt.req); res.Allowed != tt.wantAllowed {
@@ -155,22 +127,6 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				t.Logf("Response: %v", res)
 			}
 		})
-	}
-}
-
-func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
-	return &appskubermaticv1.ApplicationDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: appskubermaticv1.ApplicationDefinitionSpec{
-			Description: "Description",
-			Versions: []appskubermaticv1.ApplicationVersion{
-				{
-					Version: defaultAppVersion,
-				},
-			},
-		},
 	}
 }
 

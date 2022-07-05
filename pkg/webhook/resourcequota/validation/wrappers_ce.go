@@ -21,20 +21,14 @@ package validation
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateCreate(_ context.Context,
-	_ runtime.Object,
-	_ ctrlruntimeclient.Client,
-) error {
+func validateCreate(_ context.Context, _ *kubermaticv1.ResourceQuota, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func validateUpdate(_ context.Context,
-	_ runtime.Object,
-	_ runtime.Object,
-) error {
+func validateUpdate(_ context.Context, _ *kubermaticv1.ResourceQuota, _ *kubermaticv1.ResourceQuota) error {
 	return nil
 }
