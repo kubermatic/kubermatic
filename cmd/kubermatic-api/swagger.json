@@ -23165,8 +23165,8 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ConstraintTemplateStatus": {
-      "description": "ConstraintTemplateStatus defines the observed state of ConstraintTemplate",
       "type": "object",
+      "title": "ConstraintTemplateStatus defines the observed state of ConstraintTemplate.",
       "properties": {
         "byPod": {
           "type": "array",
