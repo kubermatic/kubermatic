@@ -246,7 +246,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			DiskIOPS:         config.DiskIOPS,
 			VApp:             config.VApp.Value,
 			Network:          config.Network.Value,
-			IPAllocationMode: string(config.IPAllocationMode),
+			IPAllocationMode: config.IPAllocationMode,
 		}
 
 		if config.StorageProfile != nil {

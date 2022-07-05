@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -32,9 +33,6 @@ type VMwareCloudDirectorNodeSpec struct {
 	// disk size g b
 	DiskSizeGB int64 `json:"diskSizeGB,omitempty"`
 
-	// IP allocation mode
-	IPAllocationMode string `json:"ipAllocationMode,omitempty"`
-
 	// memory m b
 	MemoryMB int64 `json:"memoryMB,omitempty"`
 
@@ -52,15 +50,67 @@ type VMwareCloudDirectorNodeSpec struct {
 
 	// v app
 	VApp string `json:"vapp,omitempty"`
+
+	// ip allocation mode
+	IPAllocationMode IPAllocationMode `json:"ipAllocationMode,omitempty"`
 }
 
 // Validate validates this v mware cloud director node spec
 func (m *VMwareCloudDirectorNodeSpec) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateIPAllocationMode(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this v mware cloud director node spec based on context it is used
+func (m *VMwareCloudDirectorNodeSpec) validateIPAllocationMode(formats strfmt.Registry) error {
+	if swag.IsZero(m.IPAllocationMode) { // not required
+		return nil
+	}
+
+	if err := m.IPAllocationMode.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipAllocationMode")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipAllocationMode")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this v mware cloud director node spec based on the context it is used
 func (m *VMwareCloudDirectorNodeSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIPAllocationMode(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *VMwareCloudDirectorNodeSpec) contextValidateIPAllocationMode(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.IPAllocationMode.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipAllocationMode")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipAllocationMode")
+		}
+		return err
+	}
+
 	return nil
 }
 

@@ -247,7 +247,8 @@ func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.
 		CPUs:             int64(nodeSpec.Cloud.VMwareCloudDirector.CPUs),
 		CPUCores:         int64(nodeSpec.Cloud.VMwareCloudDirector.CPUCores),
 		MemoryMB:         int64(nodeSpec.Cloud.VMwareCloudDirector.MemoryMB),
-		IPAllocationMode: vcd.IPAllocationMode(nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode),
+		IPAllocationMode: nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode,
+		AllowInsecure:    providerconfig.ConfigVarBool{Value: pointer.Bool(dc.Spec.VMwareCloudDirector.AllowInsecure)},
 	}
 
 	if storageProfile != "" {

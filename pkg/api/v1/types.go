@@ -25,6 +25,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -2154,17 +2155,17 @@ func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
 // VMwareCloudDirectorNodeSpec VMware Cloud Director node settings
 // swagger:model VMwareCloudDirectorNodeSpec
 type VMwareCloudDirectorNodeSpec struct {
-	CPUs             int    `json:"cpus"`
-	CPUCores         int    `json:"cpuCores"`
-	MemoryMB         int    `json:"memoryMB"`
-	DiskSizeGB       *int64 `json:"diskSizeGB,omitempty"`
-	DiskIOPS         *int64 `json:"diskIOPS,omitempty"`
-	Template         string `json:"template"`
-	Catalog          string `json:"catalog"`
-	StorageProfile   string `json:"storageProfile,omitempty"`
-	IPAllocationMode string `json:"ipAllocationMode,omitempty"`
-	VApp             string `json:"vapp"`
-	Network          string `json:"network"`
+	CPUs             int                  `json:"cpus"`
+	CPUCores         int                  `json:"cpuCores"`
+	MemoryMB         int                  `json:"memoryMB"`
+	DiskSizeGB       *int64               `json:"diskSizeGB,omitempty"`
+	DiskIOPS         *int64               `json:"diskIOPS,omitempty"`
+	Template         string               `json:"template"`
+	Catalog          string               `json:"catalog"`
+	StorageProfile   string               `json:"storageProfile"`
+	IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
+	VApp             string               `json:"vapp,omitempty"`
+	Network          string               `json:"network"`
 	// Additional metadata to set
 	// required: false
 	Metadata map[string]string `json:"metadata,omitempty"`
@@ -2201,16 +2202,8 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 		missing = append(missing, "catalog")
 	}
 
-	if len(spec.VApp) == 0 {
-		missing = append(missing, "vapp")
-	}
-
 	if len(spec.Network) == 0 {
 		missing = append(missing, "network")
-	}
-
-	if len(spec.IPAllocationMode) == 0 {
-		missing = append(missing, "ipAllocationMode")
 	}
 
 	if len(missing) > 0 {
@@ -2218,18 +2211,18 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		CPUs             int               `json:"cpus"`
-		CPUCores         int               `json:"cpuCores"`
-		MemoryMB         int               `json:"memoryMB"`
-		DiskSizeGB       *int64            `json:"diskSizeGB,omitempty"`
-		DiskIOPS         *int64            `json:"diskIOPS,omitempty"`
-		Catalog          string            `json:"catalog"`
-		Template         string            `json:"template"`
-		StorageProfile   string            `json:"storageProfile,omitempty"`
-		IPAllocationMode string            `json:"ipAllocationMode,omitempty"`
-		VApp             string            `json:"vapp"`
-		Network          string            `json:"network"`
-		Metadata         map[string]string `json:"metadata,omitempty"`
+		CPUs             int                  `json:"cpus"`
+		CPUCores         int                  `json:"cpuCores"`
+		MemoryMB         int                  `json:"memoryMB"`
+		DiskSizeGB       *int64               `json:"diskSizeGB,omitempty"`
+		DiskIOPS         *int64               `json:"diskIOPS,omitempty"`
+		Catalog          string               `json:"catalog"`
+		Template         string               `json:"template"`
+		StorageProfile   string               `json:"storageProfile,omitempty"`
+		IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
+		VApp             string               `json:"vapp,omitempty"`
+		Network          string               `json:"network"`
+		Metadata         map[string]string    `json:"metadata,omitempty"`
 	}{
 		CPUs:             spec.CPUs,
 		CPUCores:         spec.CPUCores,
