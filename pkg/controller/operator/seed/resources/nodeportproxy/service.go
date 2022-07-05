@@ -26,7 +26,7 @@ import (
 )
 
 // NB: Changing anything in this service can lead to new LoadBalancers being
-// created and IPs changing. This must not happen when customers upgrade Kubermatic,
+// created and IPs changing. This must not happen when admins upgrade Kubermatic,
 // as all existing kubeconfigs for user clusters would be broken.
 
 const (

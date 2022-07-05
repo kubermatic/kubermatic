@@ -183,11 +183,11 @@ type ClusterProvider interface {
 	// Delete deletes the given cluster
 	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) error
 
-	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
-	GetAdminKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	// GetAdminKubeconfigForUserCluster returns the admin kubeconfig for the given cluster
+	GetAdminKubeconfigForUserCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
-	// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
-	GetViewerKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	// GetViewerKubeconfigForUserCluster returns the viewer kubeconfig for the given cluster
+	GetViewerKubeconfigForUserCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
 	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
 	RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
@@ -195,29 +195,29 @@ type ClusterProvider interface {
 	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
 	RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
 
-	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
+	// GetAdminClientForUserCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
-	GetAdminClientForCustomerCluster(context.Context, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+	GetAdminClientForUserCluster(context.Context, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
-	// GetAdminK8sClientForCustomerCluster returns a k8s go client to interact with all resources in the given cluster
+	// GetAdminK8sClientForUserCluster returns a k8s go client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
-	GetAdminK8sClientForCustomerCluster(context.Context, *kubermaticv1.Cluster) (kubernetes.Interface, error)
+	GetAdminK8sClientForUserCluster(context.Context, *kubermaticv1.Cluster) (kubernetes.Interface, error)
 
-	// GetAdminClientConfigForCustomerCluster returns a client config
+	// GetAdminClientConfigForUserCluster returns a client config
 	//
 	// Note that the client you will get has admin privileges.
-	GetAdminClientConfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error)
+	GetAdminClientConfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error)
 
-	// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
+	// GetClientForUserCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-	GetClientForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+	GetClientForUserCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
-	// GetTokenForCustomerCluster returns a token for the given cluster with permissions granted to group that
+	// GetTokenForUserCluster returns a token for the given cluster with permissions granted to group that
 	// user belongs to.
-	GetTokenForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
+	GetTokenForUserCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
 
 	// IsCluster checks if cluster exist with the given name
 	IsCluster(ctx context.Context, clusterName string) bool
