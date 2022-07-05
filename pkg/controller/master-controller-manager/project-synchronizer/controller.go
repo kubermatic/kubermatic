@@ -131,14 +131,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		// an old state and would replicate this old state onto seeds; if master
 		// and seed are the same cluster, this would effectively overwrite the
 		// change that just happened.
-		// To prevent this from occuring, we check the UID and refuse to update
+		// To prevent this from occurring, we check the UID and refuse to update
 		// the project if the UID on the seed == UID on the master.
 		// Note that in this distinction cannot be made inside the creator function
 		// further down, as the reconciling framework reads the current state
 		// from cache and even if no changes were made (because of the UID match),
 		// it would still persist the new object and might overwrite the actual,
 		// new state.
-		if seedProject.UID == project.UID {
+		if seedProject.UID != "" && seedProject.UID == project.UID {
 			return nil
 		}
 

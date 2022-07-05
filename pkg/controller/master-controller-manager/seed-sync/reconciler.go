@@ -140,7 +140,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	// see project-synchronizer's syncAllSeeds comment
-	if seedInSeed.UID != seed.UID {
+	if seedInSeed.UID == "" || seedInSeed.UID != seed.UID {
 		seedCreators := []reconciling.NamedSeedCreatorGetter{
 			seedCreator(seed),
 		}

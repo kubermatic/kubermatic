@@ -122,7 +122,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		}
 
 		// see project-synchronizer's syncAllSeeds comment
-		if seedDef.UID == appDef.UID {
+		if seedDef.UID != "" && seedDef.UID == appDef.UID {
 			return nil
 		}
 

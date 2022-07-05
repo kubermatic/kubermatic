@@ -130,7 +130,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		// see project-synchronizer's syncAllSeeds comment
-		if seedBinding.UID == userProjectBinding.UID {
+		if seedBinding.UID != "" && seedBinding.UID == userProjectBinding.UID {
 			return nil
 		}
 
