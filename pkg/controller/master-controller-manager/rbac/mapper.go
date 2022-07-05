@@ -517,7 +517,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		// editors of a project
 		// special case - editors are not allowed to delete a project
-		if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
+		if resourceKind == kubermaticv1.ProjectKindName {
 			return []string{"get", "update", "patch"}, nil
 		}
 
