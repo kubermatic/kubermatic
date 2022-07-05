@@ -514,53 +514,60 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 
 	// verbs for editors
 	//
-	// editors of a project
-	// special case - editors are not allowed to delete a project
-	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
-		return []string{"get", "update", "patch"}, nil
-	}
-	// special case - editors are not allowed to interact with members of a project (UserProjectBinding)
-	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
-		return nil, nil
-	}
-	// special case - editors are not allowed to interact with service accounts (User)
-	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
-		return nil, nil
-	}
-
-	// editors of a named resource
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
+		// editors of a project
+		// special case - editors are not allowed to delete a project
+		if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
+			return []string{"get", "update", "patch"}, nil
+		}
+
+		// special case - editors are not allowed to interact with members of a project (UserProjectBinding, GroupProjectBinding)
+		if resourceKind == kubermaticv1.UserProjectBindingKind || resourceKind == kubermaticv1.GroupProjectBindingKind {
+			return nil, nil
+		}
+
+		// special case - editors are not allowed to interact with service accounts (User)
+		if resourceKind == kubermaticv1.UserKindName {
+			return nil, nil
+		}
+
+		// editors of a named resource
 		return []string{"get", "update", "patch", "delete"}, nil
 	}
 
 	// verbs for viewers
 	//
-	// viewers of a named resource
-	// special case - viewers are not allowed to interact with members of a project (UserProjectBinding)
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
-		return nil, nil
-	}
-	// special case - viewers are not allowed to interact with service accounts (User)
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
-		return nil, nil
-	}
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
+		// viewers of a named resource
+		// special case - viewers are not allowed to interact with members of a project (UserProjectBinding, GroupProjectBinding)
+		if resourceKind == kubermaticv1.UserProjectBindingKind || resourceKind == kubermaticv1.GroupProjectBindingKind {
+			return nil, nil
+		}
+
+		// special case - viewers are not allowed to interact with service accounts (User)
+		if resourceKind == kubermaticv1.UserKindName {
+			return nil, nil
+		}
+
 		return []string{"get"}, nil
 	}
 
 	// verbs for projectmanagers
 	//
-	// special case - projectmanagers are not allowed to interact with clusters
-	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ClusterKindName {
-		return nil, nil
-	}
-	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ExternalClusterKind {
-		return nil, nil
-	}
-	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ClusterTemplateInstanceKindName {
-		return nil, nil
-	}
 	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
+		// special cases - projectmanagers are not allowed to interact with clusters
+		if resourceKind == kubermaticv1.ClusterKindName {
+			return nil, nil
+		}
+
+		if resourceKind == kubermaticv1.ExternalClusterKind {
+			return nil, nil
+		}
+
+		if resourceKind == kubermaticv1.ClusterTemplateInstanceKindName {
+			return nil, nil
+		}
+
 		return []string{"get", "update", "patch", "delete"}, nil
 	}
 

@@ -155,6 +155,15 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 				},
 			},
 		},
+
+		{
+			object: &kubermaticv1.GroupProjectBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.GroupProjectBindingKind,
+				},
+			},
+		},
 	}
 
 	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, log, projectResources, workerPredicate); err != nil {
