@@ -22,8 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pmezard/go-difflib/difflib"
 	yaml "gopkg.in/yaml.v3"
+
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func getTestcaseYAML(t *testing.T, filename string) string {
@@ -68,20 +69,8 @@ func assertEqualYAML(t *testing.T, actual *Document, expected string) {
 
 	out := buf.String()
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(expected),
-		B:        difflib.SplitLines(strings.TrimSpace(out)),
-		FromFile: "Expected",
-		ToFile:   "Actual",
-		Context:  3,
-	}
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diffStr != "" {
-		t.Fatalf("got diff between expected and actual result: \n%s\n", diffStr)
+	if d := diff.StringDiff(expected, strings.TrimSpace(out)); d != "" {
+		t.Fatalf("got diff between expected and actual result:\n%v", d)
 	}
 }
 

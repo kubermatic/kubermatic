@@ -31,12 +31,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -305,14 +304,12 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("did not find expected ClusterRoleBinding: %v", err)
 				}
 
-				if !equality.Semantic.DeepEqual(clusterRoleBinding.OwnerReferences, expectedClusterRoleBinding.OwnerReferences) ||
-					!equality.Semantic.DeepEqual(clusterRoleBinding.Labels, expectedClusterRoleBinding.Labels) ||
-					!equality.Semantic.DeepEqual(clusterRoleBinding.RoleRef, expectedClusterRoleBinding.RoleRef) ||
-					!equality.Semantic.DeepEqual(clusterRoleBinding.Subjects, expectedClusterRoleBinding.Subjects) {
-					t.Fatalf(
-						"ClusterRoleBinding does not match expected resource, diff: %s",
-						diff.ObjectGoPrintSideBySide(clusterRoleBinding, expectedClusterRoleBinding),
-					)
+				clusterRoleBinding.ResourceVersion = ""
+				clusterRoleBinding.APIVersion = ""
+				clusterRoleBinding.Kind = ""
+
+				if !diff.SemanticallyEqual(expectedClusterRoleBinding, *clusterRoleBinding) {
+					t.Fatalf("ClusterRoleBinding does not match expected resource:\n%v", diff.ObjectDiff(expectedClusterRoleBinding, clusterRoleBinding))
 				}
 			}
 
@@ -322,14 +319,12 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("did not find expected RoleBinding: %v", err)
 				}
 
-				if !equality.Semantic.DeepEqual(roleBinding.OwnerReferences, expectedRoleBinding.OwnerReferences) ||
-					!equality.Semantic.DeepEqual(roleBinding.Labels, expectedRoleBinding.Labels) ||
-					!equality.Semantic.DeepEqual(roleBinding.RoleRef, expectedRoleBinding.RoleRef) ||
-					!equality.Semantic.DeepEqual(roleBinding.Subjects, expectedRoleBinding.Subjects) {
-					t.Fatalf(
-						"RoleBinding does not match expected resource, diff: %s",
-						diff.ObjectGoPrintSideBySide(roleBinding, expectedRoleBinding),
-					)
+				roleBinding.ResourceVersion = ""
+				roleBinding.APIVersion = ""
+				roleBinding.Kind = ""
+
+				if !diff.SemanticallyEqual(expectedRoleBinding, *roleBinding) {
+					t.Fatalf("RoleBinding does not match expected resource:\n%v", diff.ObjectDiff(expectedRoleBinding, roleBinding))
 				}
 			}
 		})

@@ -25,8 +25,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"

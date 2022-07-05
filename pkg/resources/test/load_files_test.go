@@ -28,7 +28,6 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -42,6 +41,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -89,20 +89,8 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	resStr := strings.TrimSpace(string(res))
 	expStr := strings.TrimSpace(string(exp))
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(expStr),
-		B:        difflib.SplitLines(resStr),
-		FromFile: "Fixture",
-		ToFile:   "Current",
-		Context:  3,
-	}
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	if resStr != expStr {
-		t.Errorf("\nDeployment file changed and does not match fixture(%q) anymore: \n %s\n\nMake sure you update all fixtures after changing templates. If the diff seems valid, run the tests again with '-update'", path, diffStr)
+		t.Errorf("Deployment file changed and does not match fixture(%q) anymore. Make sure you update all fixtures after changing templates. If the diff seems valid, run the tests again with '-update':\n%v", path, diff.StringDiff(expStr, resStr))
 	}
 }
 

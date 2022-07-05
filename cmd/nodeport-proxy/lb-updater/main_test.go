@@ -18,14 +18,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -729,10 +728,8 @@ func TestReconciliation(t *testing.T) {
 				tc.expectedServices.Items[i].ResourceVersion = ""
 			}
 
-			if diff := deep.Equal(resultingServices.Items, tc.expectedServices.Items); diff != nil {
-				expected, _ := json.Marshal(tc.expectedServices.Items)
-				actual, _ := json.Marshal(resultingServices.Items)
-				t.Fatalf("resulting services differ from expected services, diff:\n%v, expected:\n%s\nactual:\n%s", diff, expected, actual)
+			if !diff.SemanticallyEqual(resultingServices.Items, tc.expectedServices.Items) {
+				t.Fatalf("resulting services differ from expected services:\n%s", diff.ObjectDiff(tc.expectedServices.Items, resultingServices.Items))
 			}
 		})
 	}

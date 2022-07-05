@@ -28,7 +28,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -36,6 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -580,8 +580,8 @@ func TestUpdatePresetStatus(t *testing.T) {
 
 			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}
@@ -824,8 +824,8 @@ func TestCreatePreset(t *testing.T) {
 
 			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}
@@ -1181,8 +1181,8 @@ func TestUpdatePreset(t *testing.T) {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}
@@ -1285,8 +1285,8 @@ func TestDeleteProviderPreset(t *testing.T) {
 				}
 			}
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}
@@ -1390,8 +1390,8 @@ func TestDeletePresetProvider(t *testing.T) {
 
 			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}
@@ -1468,8 +1468,8 @@ func TestDeletePreset(t *testing.T) {
 
 			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
-			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
-				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			if !diff.SemanticallyEqual(tc.ExpectedPreset, preset) {
+				t.Fatalf("Got different preset than expected:\n%v", diff.ObjectDiff(tc.ExpectedPreset, preset))
 			}
 		})
 	}

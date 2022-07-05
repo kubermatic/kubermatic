@@ -18,15 +18,14 @@ package kubernetes_test
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,8 +128,8 @@ func TestGetConstraintTemplates(t *testing.T) {
 
 			tc.expectedCT.ResourceVersion = ct.ResourceVersion
 
-			if !reflect.DeepEqual(ct, tc.expectedCT) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT, ct) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 		})
 	}
@@ -169,8 +168,9 @@ func TestCreateConstraintTemplates(t *testing.T) {
 
 			// set the RV because it gets set when created
 			tc.expectedCT.ResourceVersion = "1"
-			if !reflect.DeepEqual(ct, tc.expectedCT) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+
+			if !diff.SemanticallyEqual(tc.expectedCT, ct) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 		})
 	}
@@ -226,8 +226,8 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(ct, updatedCT) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, updatedCT))
+			if !diff.SemanticallyEqual(ct, updatedCT) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(ct, updatedCT))
 			}
 		})
 	}

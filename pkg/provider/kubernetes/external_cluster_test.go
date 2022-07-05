@@ -19,17 +19,16 @@ package kubernetes_test
 import (
 	"context"
 	"encoding/base64"
-	"reflect"
 	"testing"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -142,8 +141,9 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 			tc.expectedSecret.Data = map[string][]byte{resources.ExternalClusterKubeconfig: kubeconfig}
-			if !reflect.DeepEqual(secret, tc.expectedSecret) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
+
+			if !diff.SemanticallyEqual(tc.expectedSecret, secret) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSecret, secret))
 			}
 		})
 	}
@@ -276,8 +276,8 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(tc.expectedSecret, secret) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
+			if !diff.SemanticallyEqual(tc.expectedSecret, secret) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSecret, secret))
 			}
 		})
 	}

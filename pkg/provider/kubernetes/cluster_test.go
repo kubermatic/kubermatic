@@ -18,16 +18,15 @@ package kubernetes_test
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -145,8 +144,8 @@ func TestCreateCluster(t *testing.T) {
 				cluster.Status.CloudMigrationRevision = tc.expectedCluster.Status.CloudMigrationRevision
 				cluster.Status.UserEmail = tc.expectedCluster.Status.UserEmail
 
-				if !reflect.DeepEqual(cluster, tc.expectedCluster) {
-					t.Fatalf("%v", diff.ObjectDiff(tc.expectedCluster, cluster))
+				if !diff.SemanticallyEqual(tc.expectedCluster, cluster) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCluster, cluster))
 				}
 			}
 		})

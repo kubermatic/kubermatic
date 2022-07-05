@@ -22,10 +22,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 // NewSSHKeyV1SliceWrapper wraps []apiv1.SSHKey
@@ -53,8 +52,9 @@ func (k *NewSSHKeyV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewSSH
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewSSHKeyV1SliceWrapper) EqualOrDie(expected NewSSHKeyV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -83,8 +83,9 @@ func (k *NewUserV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewUserV
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewUserV1SliceWrapper) EqualOrDie(expected NewUserV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -113,12 +114,9 @@ func (k *NodeV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NodeV1Slice
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NodeV1SliceWrapper) EqualOrDie(expected NodeV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		originalMarshalled, _ := json.Marshal(k)
-		expectedMarshalled, _ := json.Marshal(expected)
-		t.Logf("Original:\n---\n%s\n---\n", string(originalMarshalled))
-		t.Logf("expected:\n---\n%s\n---\n", string(expectedMarshalled))
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -147,8 +145,9 @@ func (k *NewClusterV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewCl
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewClusterV1SliceWrapper) EqualOrDie(expected NewClusterV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -177,8 +176,9 @@ func (k *ProjectV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *ProjectV
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k ProjectV1SliceWrapper) EqualOrDie(expected ProjectV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -207,8 +207,9 @@ func (k *NewServiceAccountV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T)
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewServiceAccountV1SliceWrapper) EqualOrDie(expected NewServiceAccountV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -237,8 +238,9 @@ func (k *NewServiceAccountTokenV1SliceWrapper) DecodeOrDie(r io.Reader, t *testi
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewServiceAccountTokenV1SliceWrapper) EqualOrDie(expected NewServiceAccountTokenV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -267,8 +269,9 @@ func (k *NewAddonSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewAddonS
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewAddonSliceWrapper) EqualOrDie(expected NewAddonSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -297,8 +300,9 @@ func (k *NewRoleNameSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewRol
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewRoleNameSliceWrapper) EqualOrDie(expected NewRoleNameSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -327,8 +331,9 @@ func (k NewConstraintTemplateV1SliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewConstraintTemplateV1SliceWrapper) EqualOrDie(expected NewConstraintTemplateV1SliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -357,8 +362,9 @@ func (k NewConstraintsSliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewConstraintsSliceWrapper) EqualOrDie(expected NewConstraintsSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -387,8 +393,9 @@ func (k *NodeDeploymentSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *Nod
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NodeDeploymentSliceWrapper) EqualOrDie(expected NodeDeploymentSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -417,8 +424,9 @@ func (k *NewClusterTemplateSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) 
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewClusterTemplateSliceWrapper) EqualOrDie(expected NewClusterTemplateSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -447,8 +455,9 @@ func (k NewRuleGroupSliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewRuleGroupSliceWrapper) EqualOrDie(expected NewRuleGroupSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -477,8 +486,9 @@ func (k NewAllowedRegistrySliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewAllowedRegistrySliceWrapper) EqualOrDie(expected NewAllowedRegistrySliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -507,8 +517,9 @@ func (k NewEtcdBackupConfigSliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewEtcdBackupConfigSliceWrapper) EqualOrDie(expected NewEtcdBackupConfigSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }
 
@@ -537,7 +548,8 @@ func (k NewEtcdRestoreSliceWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewEtcdRestoreSliceWrapper) EqualOrDie(expected NewEtcdRestoreSliceWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one:\n%v", d)
 	}
 }

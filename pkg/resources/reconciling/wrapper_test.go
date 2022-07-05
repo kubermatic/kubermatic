@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -429,8 +429,8 @@ func TestDefaultPodSpec(t *testing.T) {
 				t.Errorf("DefaultPodSpec returned an unexpected error: %v", err)
 			}
 
-			if diff := deep.Equal(result, test.expectedObject); diff != nil {
-				t.Errorf("The PodSpec from the client does not match the expected PodSpec. Diff: \n%v", diff)
+			if !diff.SemanticallyEqual(test.expectedObject, result) {
+				t.Fatalf("The PodSpec from the client does not match the expected PodSpec:\n%v", diff.ObjectDiff(test.expectedObject, result))
 			}
 		})
 	}
@@ -517,8 +517,8 @@ func TestDefaultDeployment(t *testing.T) {
 	actualDeployment.TypeMeta = metav1.TypeMeta{}
 	actualDeployment.ResourceVersion = ""
 
-	if diff := deep.Equal(actualDeployment, expectedObject); diff != nil {
-		t.Errorf("The Deployment from the client does not match the expected Deployment. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualDeployment) {
+		t.Fatalf("The Deployment from the client does not match the expected Deployment:\n%v", diff.ObjectDiff(expectedObject, actualDeployment))
 	}
 }
 
@@ -590,8 +590,8 @@ func TestDefaultStatefulSet(t *testing.T) {
 	actualStatefulSet.TypeMeta = metav1.TypeMeta{}
 	actualStatefulSet.ResourceVersion = ""
 
-	if diff := deep.Equal(actualStatefulSet, expectedObject); diff != nil {
-		t.Errorf("The StatefulSet from the client does not match the expected StatefulSet. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualStatefulSet) {
+		t.Fatalf("The StatefulSet from the client does not match the expected StatefulSet:\n%v", diff.ObjectDiff(expectedObject, actualStatefulSet))
 	}
 }
 
@@ -663,8 +663,8 @@ func TestDefaultDaemonSet(t *testing.T) {
 	actualDaemonSet.TypeMeta = metav1.TypeMeta{}
 	actualDaemonSet.ResourceVersion = ""
 
-	if diff := deep.Equal(actualDaemonSet, expectedObject); diff != nil {
-		t.Errorf("The DaemonSet from the client does not match the expected DaemonSet. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualDaemonSet) {
+		t.Fatalf("The DaemonSet from the client does not match the expected DaemonSet:\n%v", diff.ObjectDiff(expectedObject, actualDaemonSet))
 	}
 }
 
@@ -744,8 +744,8 @@ func TestDefaultCronJob(t *testing.T) {
 	actualCronJob.TypeMeta = metav1.TypeMeta{}
 	actualCronJob.ResourceVersion = ""
 
-	if diff := deep.Equal(actualCronJob, expectedObject); diff != nil {
-		t.Errorf("The CronJob from the client does not match the expected CronJob. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualCronJob) {
+		t.Fatalf("The CronJob from the client does not match the expected CronJob:\n%v", diff.ObjectDiff(expectedObject, actualCronJob))
 	}
 }
 

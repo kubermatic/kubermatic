@@ -18,7 +18,6 @@ package kubernetes_test
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -27,8 +26,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -149,8 +148,8 @@ func TestGetConstraint(t *testing.T) {
 
 			tc.expectedConstraint.ResourceVersion = constraint.ResourceVersion
 
-			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}
@@ -239,8 +238,8 @@ func TestCreateConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(constraint, tc.constraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.constraint))
+			if !diff.SemanticallyEqual(tc.constraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.constraint, constraint))
 			}
 		})
 	}
@@ -300,8 +299,9 @@ func TestUpdateConstraint(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(constraint, updatedConstraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, updatedConstraint))
+
+			if !diff.SemanticallyEqual(constraint, updatedConstraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(constraint, updatedConstraint))
 			}
 		})
 	}
@@ -340,8 +340,9 @@ func TestCreateDefaultConstraint(t *testing.T) {
 
 			// set the RV because it gets set when created
 			tc.expectedCT.ResourceVersion = "1"
-			if !reflect.DeepEqual(constraint, tc.expectedCT) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedCT))
+
+			if !diff.SemanticallyEqual(tc.expectedCT, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, constraint))
 			}
 		})
 	}
@@ -450,8 +451,8 @@ func TestGetDefaultConstraint(t *testing.T) {
 
 			tc.expectedConstraint.ResourceVersion = constraint.ResourceVersion
 
-			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}
@@ -550,8 +551,8 @@ func TestUpdateDefaultConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(constraint, updatedCT) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, updatedCT))
+			if !diff.SemanticallyEqual(constraint, updatedCT) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(constraint, updatedCT))
 			}
 		})
 	}

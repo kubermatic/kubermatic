@@ -18,6 +18,7 @@ package diff
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pmezard/go-difflib/difflib"
@@ -25,6 +26,10 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/yaml"
 )
+
+func DeepEqual(expected, actual interface{}) bool {
+	return reflect.DeepEqual(expected, actual)
+}
 
 func SemanticallyEqual(expected, actual interface{}) bool {
 	return apiequality.Semantic.DeepEqual(expected, actual)

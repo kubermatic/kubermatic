@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -101,8 +102,8 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 			t.Logf("Got folders: %v", gotFolders.List())
 
-			if diff := test.expectedFolders.Difference(gotFolders); diff.Len() > 0 {
-				t.Errorf("Response is missing expected folders: %v", diff.List())
+			if test.expectedFolders.Difference(gotFolders).Len() > 0 {
+				t.Fatalf("Response is missing expected folders:\n%v", diff.SetDiff[string](test.expectedFolders, gotFolders))
 			}
 		})
 	}

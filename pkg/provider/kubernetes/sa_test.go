@@ -23,9 +23,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
-	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,8 +87,8 @@ func TestCreateProjectServiceAccount(t *testing.T) {
 			sa.Spec.Email = ""
 			sa.ResourceVersion = ""
 
-			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
+			if !diff.SemanticallyEqual(tc.expectedSA, sa) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSA, sa))
 			}
 		})
 	}
@@ -161,8 +160,8 @@ func TestListProjectServiceAccount(t *testing.T) {
 				tc.expectedSA[i].ResourceVersion = ""
 			}
 
-			if !equality.Semantic.DeepEqual(saList, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, saList))
+			if !diff.SemanticallyEqual(tc.expectedSA, saList) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSA, saList))
 			}
 		})
 	}
@@ -219,8 +218,8 @@ func TestGetProjectServiceAccount(t *testing.T) {
 
 			tc.expectedSA.ResourceVersion = sa.ResourceVersion
 
-			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
+			if !diff.SemanticallyEqual(tc.expectedSA, sa) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSA, sa))
 			}
 		})
 	}
@@ -286,8 +285,8 @@ func TestUpdateProjectServiceAccount(t *testing.T) {
 
 			tc.expectedSA.ResourceVersion = expectedSA.ResourceVersion
 
-			if !equality.Semantic.DeepEqual(expectedSA, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, expectedSA))
+			if !diff.SemanticallyEqual(tc.expectedSA, expectedSA) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSA, expectedSA))
 			}
 		})
 	}

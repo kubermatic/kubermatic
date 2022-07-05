@@ -31,8 +31,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

@@ -22,11 +22,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +53,7 @@ func TestKubermaticVersion(t *testing.T) {
 		API: kubermatic.NewFakeVersions().Kubermatic,
 	}
 
-	if diff := deep.Equal(gotVersion, expectedVersions); diff != nil {
-		t.Fatalf("got different upgrade response than expected. Diff: %v", diff)
+	if !diff.SemanticallyEqual(expectedVersions, gotVersion) {
+		t.Fatalf("got different upgrade response than expected:\n%v", diff.ObjectDiff(expectedVersions, gotVersion))
 	}
 }
