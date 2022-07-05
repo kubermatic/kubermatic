@@ -25864,6 +25864,10 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "IPAllocationMode": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
+    },
     "IPFamily": {
       "description": "+kubebuilder:validation:Enum=\"\";IPv4;IPv4+IPv6",
       "type": "string",
@@ -30535,8 +30539,7 @@
           "x-go-name": "DiskSizeGB"
         },
         "ipAllocationMode": {
-          "type": "string",
-          "x-go-name": "IPAllocationMode"
+          "$ref": "#/definitions/IPAllocationMode"
         },
         "memoryMB": {
           "type": "integer",
