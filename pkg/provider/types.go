@@ -1328,3 +1328,7 @@ type ResourceQuotaProvider interface {
 	// is unsafe in a sense that it uses privileged account to update the resource
 	DeleteUnsecured(ctx context.Context, name string) error
 }
+
+type GroupProjectBindingProvider interface {
+	List(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.GroupProjectBinding, error)
+}

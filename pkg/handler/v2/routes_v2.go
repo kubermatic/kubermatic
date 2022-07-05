@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -1012,6 +1013,11 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodDelete).
 		Path("/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
+
+	// Defines endpoints to interact with project group bindings
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/groupbindings").
+		Handler(r.listGroupProjectBindings())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -6783,6 +6789,35 @@ func (r Routing) deleteResourceQuota() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(resourcequota.DeleteResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
 		resourcequota.DecodeResourceQuotasReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route get /api/v2/projects/{project_id}/groupbindings groupBindings listGroupProjectBindings
+//
+//    Lists project's group bindings.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) listGroupProjectBindings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.ListGroupProjectBindingsEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		common.DecodeGetProject,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

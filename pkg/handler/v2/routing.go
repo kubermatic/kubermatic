@@ -95,6 +95,7 @@ type Routing struct {
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
 	seedProvider                            provider.SeedProvider
 	resourceQuotaProvider                   provider.ResourceQuotaProvider
+	groupProjectBindingProvider             provider.GroupProjectBindingProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 	features                                features.FeatureGate
@@ -157,6 +158,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		privilegedMLAAdminSettingProviderGetter: routingParams.PrivilegedMLAAdminSettingProviderGetter,
 		seedProvider:                            routingParams.SeedProvider,
 		resourceQuotaProvider:                   routingParams.ResourceQuotaProvider,
+		groupProjectBindingProvider:             routingParams.GroupProjectBindingProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 		features:                                routingParams.Features,
