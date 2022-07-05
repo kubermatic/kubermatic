@@ -207,7 +207,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 // project bindings for the user and returns the role set.
 // This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
 func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
-	projectReq, err := labels.NewRequirement("projectID", selection.Equals, []string{projectID})
+	projectReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{projectID})
 	if err != nil {
 		return sets.String{}, fmt.Errorf("failed to construct project label selector: %w", err)
 	}
@@ -229,6 +229,9 @@ func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kuberm
 	userBindingRole, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
 	if err != nil {
 		return sets.String{}, err
+	}
+	if userBindingRole == "" {
+		return roles, nil
 	}
 	// extract just the role
 	userBindingRole = apiv1.ExtractGroupPrefix(userBindingRole)
