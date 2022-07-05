@@ -494,7 +494,13 @@ func TestValidator(t *testing.T) {
 				WithObjects(tc.objects...).
 				Build()
 
-			validator := NewValidator(seedClient)
+			validator := NewValidator(
+				func() (*kubermaticv1.Seed, error) {
+					return &kubermaticv1.Seed{}, nil
+				},
+				func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+					return seedClient, nil
+				})
 
 			ctx := context.Background()
 			var err error

@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,13 +34,15 @@ import (
 
 // validator for validating Resource Quota CRD.
 type validator struct {
-	client ctrlruntimeclient.Client
+	seedGetter       provider.SeedGetter
+	seedClientGetter provider.SeedClientGetter
 }
 
 // NewValidator returns a new Resource Quota validator.
-func NewValidator(client ctrlruntimeclient.Client) *validator {
+func NewValidator(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *validator {
 	return &validator{
-		client: client,
+		seedGetter:       seedGetter,
+		seedClientGetter: seedClientGetter,
 	}
 }
 
@@ -137,9 +140,14 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 }
 
 func (v *validator) validateDCRemoval(ctx context.Context, ipamPool *kubermaticv1.IPAMPool, dc string) error {
+	seedClient, err := v.getSeedClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// List all IPAM allocations
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err := v.client.List(ctx, ipamAllocationList)
+	err = seedClient.List(ctx, ipamAllocationList)
 	if err != nil {
 		return fmt.Errorf("failed to list IPAM allocations: %w", err)
 	}
@@ -157,4 +165,21 @@ func (v *validator) validateDCRemoval(ctx context.Context, ipamPool *kubermaticv
 	}
 
 	return nil
+}
+
+func (v *validator) getSeedClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
+	seed, err := v.seedGetter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current seed: %w", err)
+	}
+	if seed == nil {
+		return nil, errors.New("webhook not configured for a seed cluster")
+	}
+
+	client, err := v.seedClientGetter(seed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seed client: %w", err)
+	}
+
+	return client, nil
 }
