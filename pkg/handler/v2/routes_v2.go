@@ -1018,6 +1018,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings").
 		Handler(r.listGroupProjectBindings())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/groupbindings/{binding_name}").
+		Handler(r.getGroupProjectBinding())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -6794,7 +6798,7 @@ func (r Routing) deleteResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route get /api/v2/projects/{project_id}/groupbindings groupBindings listGroupProjectBindings
+//swagger:route get /api/v2/projects/{project_id}/groupbindings groupProjectBinding listGroupProjectBindings
 //
 //    Lists project's group bindings.
 //
@@ -6803,7 +6807,7 @@ func (r Routing) deleteResourceQuota() http.Handler {
 //
 //    Responses:
 //      default: errorResponse
-//      200: empty
+//      200: []GroupProjectBinding
 //      401: empty
 //      403: empty
 func (r Routing) listGroupProjectBindings() http.Handler {
@@ -6812,6 +6816,35 @@ func (r Routing) listGroupProjectBindings() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(groupprojectbinding.ListGroupProjectBindingsEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		common.DecodeGetProject,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route get /api/v2/projects/{project_id}/groupbindings/{binding_name} groupProjectBinding getGroupProjectBinding
+//
+//    Get project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: GroupProjectBinding
+//      401: empty
+//      403: empty
+func (r Routing) getGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.GetGroupProjectBindingEndpoint(
 			r.userInfoGetter,
 			r.projectProvider,
 			r.privilegedProjectProvider,

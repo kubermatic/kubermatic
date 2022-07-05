@@ -33,8 +33,17 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func ListGroupProjectBindings(
-	ctx context.Context, request interface{},
+type GetGroupProjectBindingRq struct {
+	// in: path
+	// required: true
+	ProjectID string `json:"project_id"`
+
+	// in: path
+	// required: true
+	GroupProjectBindingName string `json:"binding_name"`
+}
+
+func ListGroupProjectBindings(ctx context.Context, request interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -60,4 +69,27 @@ func ListGroupProjectBindings(
 	}
 
 	return bindingProvider.List(ctx, userInfo)
+}
+
+func GetGroupProjectBinding(ctx context.Context, request interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) (*v1.GroupProjectBinding, error) {
+	req, ok := request.(GetGroupProjectBindingRq)
+	if !ok {
+		return nil, utilerrors.NewBadRequest("invalid request")
+	}
+	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return bindingProvider.Get(ctx, userInfo, req.GroupProjectBindingName)
 }

@@ -1331,4 +1331,5 @@ type ResourceQuotaProvider interface {
 
 type GroupProjectBindingProvider interface {
 	List(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.GroupProjectBinding, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error)
 }

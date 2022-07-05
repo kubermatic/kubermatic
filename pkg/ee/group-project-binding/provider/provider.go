@@ -27,6 +27,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"k8s.io/apimachinery/pkg/types"
 
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -70,4 +71,27 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 		return nil, err
 	}
 	return bindingList.Items, nil
+}
+
+func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*v1.GroupProjectBinding, error) {
+	if userInfo == nil {
+		return nil, errors.New("a user is missing but required")
+	}
+
+	impersonationCfg := restclient.ImpersonationConfig{
+		UserName: userInfo.Email,
+		Groups:   []string{userInfo.Group},
+	}
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	binding := &v1.GroupProjectBinding{}
+	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{Name: name}, binding); err != nil {
+		return nil, err
+	}
+
+	return binding, nil
 }

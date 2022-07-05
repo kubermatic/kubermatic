@@ -39,3 +39,21 @@ func ListGroupProjectBindingsEndpoint(
 		)
 	}
 }
+
+func GetGroupProjectBindingEndpoint(
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return getGroupProjectBinding(
+			ctx,
+			req,
+			userInfoGetter,
+			projectProvider,
+			privilegedProjectProvider,
+			bindingProvider,
+		)
+	}
+}

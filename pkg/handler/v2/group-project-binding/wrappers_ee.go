@@ -34,3 +34,13 @@ func listGroupProjectBindings(
 ) (interface{}, error) {
 	return groupprojectbinding.ListGroupProjectBindings(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }
+
+func getGroupProjectBinding(
+	ctx context.Context, req interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return groupprojectbinding.GetGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
+}
