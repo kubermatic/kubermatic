@@ -29478,11 +29478,11 @@
         "status": {
           "$ref": "#/definitions/ResourceQuotaStatus"
         },
-        "subject_kind": {
+        "subjectKind": {
           "type": "string",
           "x-go-name": "SubjectKind"
         },
-        "subject_name": {
+        "subjectName": {
           "type": "string",
           "x-go-name": "SubjectName"
         }
