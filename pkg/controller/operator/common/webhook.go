@@ -73,7 +73,7 @@ func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"clustertemplates", "projects"},
+					Resources: []string{"clustertemplates", "projects", "ipampools"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
@@ -111,7 +111,7 @@ func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.N
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"seeds", "kubermaticconfigurations"},
+					Resources: []string{"seeds", "kubermaticconfigurations", "resourcequotas"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 				{
