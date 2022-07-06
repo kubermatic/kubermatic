@@ -24,7 +24,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const ApplicationInstallationsFQDNName = "applicationinstallations." + GroupName
+const (
+	// ApplicationInstallationResourceName represents "Resource" defined in Kubernetes.
+	ApplicationInstallationResourceName = "applicationinstallations"
+
+	// ApplicationInstallationKindName represents "Kind" defined in Kubernetes.
+	ApplicationInstallationKindName = "ApplicationInstallations"
+
+	// ApplicationInstallationsFQDNName represents "FQDN" defined in Kubernetes.
+	ApplicationInstallationsFQDNName = ApplicationInstallationResourceName + "." + GroupName
+)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -70,7 +79,7 @@ type NamespaceSpec struct {
 	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
-	// +kubebuilder:default:=true
+	// +kubebuilder:default:true
 	// Create defines whether the namespace should be created if it does not exist. Defaults to true
 	Create bool `json:"create"`
 
