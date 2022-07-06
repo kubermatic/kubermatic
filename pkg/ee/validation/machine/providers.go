@@ -55,8 +55,37 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine,
-	caBundle *certificates.CABundle) (*ResourceDetails, error) {
+const (
+	// GCP credential env.
+	envGoogleServiceAccount = "GOOGLE_SERVICE_ACCOUNT"
+	// Azure credential env.
+	envAzureClientID       = "AZURE_CLIENT_ID"
+	envAzureClientSecret   = "AZURE_CLIENT_SECRET"
+	envAzureTenantID       = "AZURE_TENANT_ID"
+	envAzureSubscriptionID = "AZURE_SUBSCRIPTION_ID"
+	// Openstack credential env.
+	envOSUsername                    = "OS_USER_NAME"
+	envOSPassword                    = "OS_PASSWORD"
+	envOSDomain                      = "OS_DOMAIN_NAME"
+	envOSApplicationCredentialID     = "OS_APPLICATION_CREDENTIAL_ID"
+	envOSApplicationCredentialSecret = "OS_APPLICATION_CREDENTIAL_SECRET"
+	envOSToken                       = "OS_TOKEN"
+	envOSProjectName                 = "OS_PROJECT_NAME"
+	envOSProjectID                   = "OS_PROJECT_ID"
+	// DigitalOcean credential env.
+	envDOToken = "DO_TOKEN"
+	// Hetzner credential env.
+	envHZToken = "HZ_TOKEN"
+	// Alibaba credential env.
+	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
+	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
+)
+
+func GetMachineResourceUsage(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine,
+	caBundle *certificates.CABundle,
+) (*ResourceDetails, error) {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
@@ -85,6 +114,8 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		quotaUsage, err = getHetznerResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderNutanix:
 		quotaUsage, err = getNutanixResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderDigitalocean:
+		quotaUsage, err = getDigitalOceanResourceRequirements(ctx, userClient, config)
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
@@ -128,18 +159,21 @@ func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getGCPResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP raw config: %w", err)
 	}
 
-	// todo: get form env
-	serviceAccount, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServiceAccount)
+	serviceAccount, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ServiceAccount, envGoogleServiceAccount)
 	if err != nil {
-		return nil, fmt.Errorf("error getting GCP service account from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"serviceAccount\" field, error = %w", err)
 	}
+
 	machineType, err := configVarResolver.GetConfigVarStringValue(rawConfig.MachineType)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine type from machine config: %w", err)
@@ -172,29 +206,36 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAzureResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting Azure raw config: %w", err)
 	}
 
-	subId, err := configVarResolver.GetConfigVarStringValue(rawConfig.SubscriptionID)
+	subscriptionID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.SubscriptionID, envAzureSubscriptionID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure subscription ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"subscriptionID\" field, error = %w", err)
 	}
-	clientId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientID)
+
+	tenantID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, envAzureTenantID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure client ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"tenantID\" field, error = %w", err)
 	}
-	clientSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientSecret)
+
+	clientID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientID, envAzureClientID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure client secret from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"clientID\" field, error = %w", err)
 	}
-	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+
+	clientSecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientSecret, envAzureClientSecret)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure tenant ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"clientSecret\" field, error = %w", err)
 	}
+
 	location, err := configVarResolver.GetConfigVarStringValue(rawConfig.Location)
 	if err != nil {
 		return nil, fmt.Errorf("error getting Azure location from machine config: %w", err)
@@ -204,7 +245,7 @@ func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimecli
 		return nil, fmt.Errorf("error getting Azure vm size name from machine config: %w", err)
 	}
 
-	vmSize, err := provider.GetAzureVMSize(ctx, subId, clientId, clientSecret, tenantId, location, vmSizeName)
+	vmSize, err := provider.GetAzureVMSize(ctx, subscriptionID, clientID, clientSecret, tenantID, location, vmSizeName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting Azure vm size data %w", err)
 	}
@@ -234,8 +275,11 @@ func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimecli
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getKubeVirtResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+func getKubeVirtResourceRequirements(ctx context.Context,
+	client ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting kubevirt raw config: %w", err)
@@ -333,7 +377,11 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func getOpenstackResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+	caBundle *certificates.CABundle,
+) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
@@ -341,6 +389,48 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 		return nil, fmt.Errorf("error getting Openstack raw config: %w", err)
 	}
 
+	creds := &resources.OpenstackCredentials{}
+
+	creds.Username, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, envOSUsername)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"username\" field, error = %w", err)
+	}
+	creds.Password, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Password, envOSPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"password\" field, error = %w", err)
+	}
+	creds.ProjectID, err = getProjectIDOrTenantID(configVarResolver, rawConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"projectID\" or fallback to\"tenantID\" field, error = %w", err)
+	}
+	creds.Project, err = getProjectNameOrTenantName(configVarResolver, rawConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"projectName\" field or fallback to \"tenantName\" field, error = %w", err)
+	}
+	creds.ApplicationCredentialID, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ApplicationCredentialID, envOSApplicationCredentialID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"applicationCredentialID\" field, error = %w", err)
+	}
+	if creds.ApplicationCredentialID != "" {
+		creds.ApplicationCredentialSecret, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ApplicationCredentialSecret, envOSApplicationCredentialSecret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get the value of \"applicationCredentialSecret\" field, error = %w", err)
+		}
+		return nil, nil
+	}
+	creds.Domain, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, envOSDomain)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"domainName\" field, error = %w", err)
+	}
+	creds.Token, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TokenID, envOSToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"token\" field, error = %w", err)
+	}
+
+	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack flavor from machine config: %w", err)
+	}
 	identityEndpoint, err := configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting OpenStack identity endpoint from machine config: %w", err)
@@ -349,70 +439,6 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 	if err != nil {
 		return nil, fmt.Errorf("error getting OpenStack region from machine config: %w", err)
 	}
-	username, err := configVarResolver.GetConfigVarStringValue(rawConfig.Username)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack username from machine config: %w", err)
-	}
-	password, err := configVarResolver.GetConfigVarStringValue(rawConfig.Password)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack password from machine config: %w", err)
-	}
-	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant ID from machine config: %w", err)
-	}
-	projectId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack project ID from machine config: %w", err)
-	}
-	tenantName, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %w", err)
-	}
-	projectName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %w", err)
-	}
-	appCredId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack application credential ID from machine config: %w", err)
-	}
-	appCredSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialSecret)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack application credential secret from machine config: %w", err)
-	}
-	tokenId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack token ID from machine config: %w", err)
-	}
-	domainName, err := configVarResolver.GetConfigVarStringValue(rawConfig.DomainName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack domain name from machine config: %w", err)
-	}
-	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack flavor from machine config: %w", err)
-	}
-
-	creds := &resources.OpenstackCredentials{
-		Username:                    username,
-		Password:                    password,
-		Domain:                      domainName,
-		ProjectID:                   projectId,
-		Project:                     projectName,
-		ApplicationCredentialID:     appCredId,
-		ApplicationCredentialSecret: appCredSecret,
-		Token:                       tokenId,
-	}
-
-	// if projectName and projectId are empty, fallback to tenantName and tenantId
-	if len(projectId) == 0 {
-		creds.Project = tenantId
-	}
-	if len(projectName) == 0 {
-		creds.Project = tenantName
-	}
-
 	flavorSize, err := provider.GetOpenStackFlavorSize(creds, identityEndpoint, region, caBundle.CertPool(), flavor)
 	if err != nil {
 		return nil, fmt.Errorf("error getting OpenStack flavor size data %w", err)
@@ -436,6 +462,28 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
+// Get the Project name from config or env var. If not defined fallback to tenant name.
+func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+	projectName, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectName, envOSProjectName)
+	if err == nil && len(projectName) > 0 {
+		return projectName, nil
+	}
+
+	// fallback to tenantName.
+	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
+}
+
+// Get the Project id from config or env var. If not defined fallback to tenant id.
+func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envOSProjectID)
+	if err == nil && len(projectID) > 0 {
+		return projectID, nil
+	}
+
+	// fallback to tenantName.
+	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+}
+
 func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	rawConfig, err := alibabatypes.GetConfig(*config)
 	if err != nil {
@@ -447,13 +495,13 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	if err != nil {
 		return nil, fmt.Errorf("error getting alibaba instanceType from machine config: %w", err)
 	}
-	accessKeyID, err := configVarResolver.GetConfigVarStringValue(rawConfig.AccessKeyID)
+	accessKeyID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.AccessKeyID, envAlibabaAccessKeyID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting alibaba accessKeyID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of alibaba \"accessKeyID\" field, error = %w", err)
 	}
-	accessKeySecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.AccessKeySecret)
+	accessKeySecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.AccessKeySecret, envAlibabaAccessKeySecret)
 	if err != nil {
-		return nil, fmt.Errorf("error getting alibaba accessKeySecret from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of alibaba \"accessKeySecret\" field, error = %w", err)
 	}
 	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.RegionID)
 	if err != nil {
@@ -482,7 +530,7 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 		if instType.InstanceTypeId == instanceType {
 			// parse the Alibaba resource requests
 			// memory is in GB and storage is in GB
-			// todo: CpuCoreCount or Cores
+			// TODO: CpuCoreCount or Cores
 			cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
 			if err != nil {
 				return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
@@ -513,10 +561,9 @@ func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	if err != nil {
 		return nil, fmt.Errorf("error getting Hetzner server type from machine config: %w", err)
 	}
-	// TODO: get token from env
-	token, err := configVarResolver.GetConfigVarStringValue(rawConfig.Token)
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envHZToken)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Hetzner token from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"token\" field, error = %w", err)
 	}
 	hClient := hcloud.NewClient(hcloud.WithToken(token))
 
@@ -533,7 +580,7 @@ func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 	}
-	Todo: verify if gb or not/ number of disks or size
+	// Todo: verify if gb or not/ number of disks or size
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", size.Disk))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
@@ -579,10 +626,9 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 	}
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 
-	// get token from env
-	token, err := configVarResolver.GetConfigVarStringValue(rawConfig.Token)
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envDOToken)
 	if err != nil {
-		return nil, fmt.Errorf("error getting DigitalOcean token from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"token\" field, error = %w", err)
 	}
 	size, err := configVarResolver.GetConfigVarStringValue(rawConfig.Size)
 	if err != nil {

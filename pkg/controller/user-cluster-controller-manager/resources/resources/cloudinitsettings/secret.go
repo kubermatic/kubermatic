@@ -35,7 +35,9 @@ func SecretCreator() reconciling.NamedSecretCreatorGetter {
 		return cloudInitGetterToken, func(sec *corev1.Secret) (*corev1.Secret, error) {
 			sec.Type = resources.ServiceAccountTokenType
 			sec.Namespace = resources.CloudInitSettingsNamespace
-			sec.Annotations[resources.ServiceAccountTokenAnnotation] = cloudInitGetterAnnotation
+			sec.Annotations = map[string]string{
+				resources.ServiceAccountTokenAnnotation: cloudInitGetterAnnotation,
+			}
 
 			return sec, nil
 		}

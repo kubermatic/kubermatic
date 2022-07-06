@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: applicationdefinitions.apps.kubermatic.k8c.io
 spec:
@@ -143,6 +143,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     sshKey:
                                       description: SSHKey holds the ref and key in
                                         the secret for the SshKey credential. Secret
@@ -165,6 +166,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     token:
                                       description: Token holds the ref and key in
                                         the secret for the token credential. Secret
@@ -187,6 +189,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     username:
                                       description: Username holds the ref and key
                                         in the secret for the username credential.
@@ -210,6 +213,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   required:
                                   - method
                                   type: object
@@ -284,6 +288,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     username:
                                       description: Username holds the ref and key
                                         in the secret for the username credential.
@@ -307,6 +312,7 @@ spec:
                                       required:
                                       - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   required:
                                   - password
                                   - username

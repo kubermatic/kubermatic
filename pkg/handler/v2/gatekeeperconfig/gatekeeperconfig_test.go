@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
+	"github.com/open-policy-agent/gatekeeper/pkg/util"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -507,7 +508,7 @@ func genGatekeeperConfig() *configv1alpha1.Config {
 		},
 		Match: []configv1alpha1.MatchEntry{
 			{
-				ExcludedNamespaces: []string{"default", "kube-system"},
+				ExcludedNamespaces: []util.Wildcard{"default", "kube-system"},
 				Processes:          []string{"audit"},
 			},
 		},
