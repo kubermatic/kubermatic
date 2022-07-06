@@ -26,21 +26,39 @@ package handler
 
 import (
 	"context"
+	"github.com/gorilla/mux"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	"net/http"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-type GetGroupProjectBindingRq struct {
+type getGroupProjectBindingRq struct {
 	// in: path
 	// required: true
 	ProjectID string `json:"project_id"`
 
 	// in: path
 	// required: true
-	GroupProjectBindingName string `json:"binding_name"`
+	BindingName string `json:"binding_name"`
+}
+
+func DecodeGetGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+	var req getGroupProjectBindingRq
+
+	req.ProjectID = mux.Vars(r)["project_id"]
+	if req.ProjectID == "" {
+		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
+	}
+
+	req.BindingName = mux.Vars(r)["binding_name"]
+	if req.BindingName == "" {
+		return nil, utilerrors.NewBadRequest("`binding_name` cannot be empty")
+	}
+
+	return req, nil
 }
 
 func ListGroupProjectBindings(ctx context.Context, request interface{},
@@ -48,7 +66,7 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) ([]v1.GroupProjectBinding, error) {
+) ([]apiv2.GroupProjectBinding, error) {
 	req, ok := request.(common.GetProjectRq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -68,7 +86,22 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 		return nil, err
 	}
 
-	return bindingProvider.List(ctx, userInfo, kubermaticProject.Name)
+	bindingList, err := bindingProvider.List(ctx, userInfo, kubermaticProject.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	var bindingAPIObjList []apiv2.GroupProjectBinding
+	for _, binding := range bindingList {
+		bindingAPIObjList = append(bindingAPIObjList, apiv2.GroupProjectBinding{
+			Name:      binding.Name,
+			Group:     binding.Spec.Group,
+			ProjectID: binding.Spec.ProjectID,
+			Role:      binding.Spec.Role,
+		})
+	}
+
+	return bindingAPIObjList, nil
 }
 
 func GetGroupProjectBinding(ctx context.Context, request interface{},
@@ -76,8 +109,8 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) (*v1.GroupProjectBinding, error) {
-	req, ok := request.(GetGroupProjectBindingRq)
+) (*apiv2.GroupProjectBinding, error) {
+	req, ok := request.(getGroupProjectBindingRq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
@@ -91,5 +124,15 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 		return nil, err
 	}
 
-	return bindingProvider.Get(ctx, userInfo, req.GroupProjectBindingName)
+	binding, err := bindingProvider.Get(ctx, userInfo, req.BindingName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv2.GroupProjectBinding{
+		Name:      binding.Name,
+		Group:     binding.Spec.Group,
+		ProjectID: binding.Spec.ProjectID,
+		Role:      binding.Spec.Role,
+	}, nil
 }

@@ -71,10 +71,10 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 
 	if len(projectBindings) > 0 {
 		// Fetch first binding to ensure user has permissions
-		_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
-		if err != nil {
-			return nil, err
-		}
+		//_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
+		//if err != nil {
+		//	return nil, err
+		//}
 	} else {
 		return nil, nil
 	}

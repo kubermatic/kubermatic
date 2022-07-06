@@ -6850,7 +6850,7 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 			r.privilegedProjectProvider,
 			r.groupProjectBindingProvider,
 		)),
-		common.DecodeGetProject,
+		groupprojectbinding.DecodeGetGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

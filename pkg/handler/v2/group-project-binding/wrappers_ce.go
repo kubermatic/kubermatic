@@ -18,8 +18,34 @@ limitations under the License.
 
 package groupprojectbinding
 
-import "context"
+import (
+	"context"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"net/http"
+)
 
-func listGroupProjectBindings(_ context.Context, _ interface{}) (interface{}, error) {
+func DecodeGetGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func listGroupProjectBindings(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return nil, nil
+}
+
+func getGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) (interface{}, error) {
 	return nil, nil
 }

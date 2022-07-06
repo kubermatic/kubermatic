@@ -1415,3 +1415,11 @@ type ResourceQuota struct {
 	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
 	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
 }
+
+// swagger:model GroupProjectBinding
+type GroupProjectBinding struct {
+	Name      string `json:"name"`
+	Group     string `json:"group"`
+	ProjectID string `json:"projectID"`
+	Role      string `json:"role"`
+}

@@ -20,10 +20,15 @@ package groupprojectbinding
 
 import (
 	"context"
+	"net/http"
 
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/handler"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
+
+func DecodeGetGroupProjectBindingReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodeGetGroupProjectBindingReq(r)
+}
 
 func listGroupProjectBindings(
 	ctx context.Context, req interface{},
