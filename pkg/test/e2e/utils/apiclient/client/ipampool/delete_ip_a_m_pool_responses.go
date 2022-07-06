@@ -66,7 +66,7 @@ type DeleteIPAMPoolOK struct {
 }
 
 func (o *DeleteIPAMPoolOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/ipampools/{ipampool_name}][%d] deleteIpAMPoolOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolOK ", 200)
 }
 
 func (o *DeleteIPAMPoolOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type DeleteIPAMPoolUnauthorized struct {
 }
 
 func (o *DeleteIPAMPoolUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/ipampools/{ipampool_name}][%d] deleteIpAMPoolUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolUnauthorized ", 401)
 }
 
 func (o *DeleteIPAMPoolUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteIPAMPoolForbidden struct {
 }
 
 func (o *DeleteIPAMPoolForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/ipampools/{ipampool_name}][%d] deleteIpAMPoolForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolForbidden ", 403)
 }
 
 func (o *DeleteIPAMPoolForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *DeleteIPAMPoolDefault) Code() int {
 }
 
 func (o *DeleteIPAMPoolDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/ipampools/{ipampool_name}][%d] deleteIPAMPool default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIPAMPool default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeleteIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

@@ -66,7 +66,7 @@ type CreateIPAMPoolCreated struct {
 }
 
 func (o *CreateIPAMPoolCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v2/ipampools][%d] createIpAMPoolCreated ", 201)
+	return fmt.Sprintf("[POST /api/v2/seeds/{seed_name}/ipampools][%d] createIpAMPoolCreated ", 201)
 }
 
 func (o *CreateIPAMPoolCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type CreateIPAMPoolUnauthorized struct {
 }
 
 func (o *CreateIPAMPoolUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v2/ipampools][%d] createIpAMPoolUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v2/seeds/{seed_name}/ipampools][%d] createIpAMPoolUnauthorized ", 401)
 }
 
 func (o *CreateIPAMPoolUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type CreateIPAMPoolForbidden struct {
 }
 
 func (o *CreateIPAMPoolForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v2/ipampools][%d] createIpAMPoolForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v2/seeds/{seed_name}/ipampools][%d] createIpAMPoolForbidden ", 403)
 }
 
 func (o *CreateIPAMPoolForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *CreateIPAMPoolDefault) Code() int {
 }
 
 func (o *CreateIPAMPoolDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v2/ipampools][%d] createIPAMPool default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/seeds/{seed_name}/ipampools][%d] createIPAMPool default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

@@ -62,6 +62,9 @@ type DeleteIPAMPoolParams struct {
 	// IpampoolName.
 	IPAMPoolName string
 
+	// SeedName.
+	SeedName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -126,6 +129,17 @@ func (o *DeleteIPAMPoolParams) SetIPAMPoolName(ipampoolName string) {
 	o.IPAMPoolName = ipampoolName
 }
 
+// WithSeedName adds the seedName to the delete IP a m pool params
+func (o *DeleteIPAMPoolParams) WithSeedName(seedName string) *DeleteIPAMPoolParams {
+	o.SetSeedName(seedName)
+	return o
+}
+
+// SetSeedName adds the seedName to the delete IP a m pool params
+func (o *DeleteIPAMPoolParams) SetSeedName(seedName string) {
+	o.SeedName = seedName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DeleteIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -136,6 +150,11 @@ func (o *DeleteIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 	// path param ipampool_name
 	if err := r.SetPathParam("ipampool_name", o.IPAMPoolName); err != nil {
+		return err
+	}
+
+	// path param seed_name
+	if err := r.SetPathParam("seed_name", o.SeedName); err != nil {
 		return err
 	}
 

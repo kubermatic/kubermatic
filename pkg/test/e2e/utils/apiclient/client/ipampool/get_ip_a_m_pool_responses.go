@@ -67,7 +67,7 @@ type GetIPAMPoolOK struct {
 }
 
 func (o *GetIPAMPoolOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools/{ipampool_name}][%d] getIpAMPoolOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] getIpAMPoolOK  %+v", 200, o.Payload)
 }
 func (o *GetIPAMPoolOK) GetPayload() *models.IPAMPool {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetIPAMPoolUnauthorized struct {
 }
 
 func (o *GetIPAMPoolUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools/{ipampool_name}][%d] getIpAMPoolUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] getIpAMPoolUnauthorized ", 401)
 }
 
 func (o *GetIPAMPoolUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetIPAMPoolForbidden struct {
 }
 
 func (o *GetIPAMPoolForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools/{ipampool_name}][%d] getIpAMPoolForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] getIpAMPoolForbidden ", 403)
 }
 
 func (o *GetIPAMPoolForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetIPAMPoolDefault) Code() int {
 }
 
 func (o *GetIPAMPoolDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools/{ipampool_name}][%d] getIPAMPool default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] getIPAMPool default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

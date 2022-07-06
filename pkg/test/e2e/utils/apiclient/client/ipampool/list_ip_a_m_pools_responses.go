@@ -67,7 +67,7 @@ type ListIPAMPoolsOK struct {
 }
 
 func (o *ListIPAMPoolsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools][%d] listIpAMPoolsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsOK  %+v", 200, o.Payload)
 }
 func (o *ListIPAMPoolsOK) GetPayload() []*models.IPAMPool {
 	return o.Payload
@@ -96,7 +96,7 @@ type ListIPAMPoolsUnauthorized struct {
 }
 
 func (o *ListIPAMPoolsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools][%d] listIpAMPoolsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsUnauthorized ", 401)
 }
 
 func (o *ListIPAMPoolsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -117,7 +117,7 @@ type ListIPAMPoolsForbidden struct {
 }
 
 func (o *ListIPAMPoolsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools][%d] listIpAMPoolsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsForbidden ", 403)
 }
 
 func (o *ListIPAMPoolsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -148,7 +148,7 @@ func (o *ListIPAMPoolsDefault) Code() int {
 }
 
 func (o *ListIPAMPoolsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/ipampools][%d] listIPAMPools default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIPAMPools default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListIPAMPoolsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

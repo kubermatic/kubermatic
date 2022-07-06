@@ -62,6 +62,9 @@ type GetIPAMPoolParams struct {
 	// IpampoolName.
 	IPAMPoolName string
 
+	// SeedName.
+	SeedName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -126,6 +129,17 @@ func (o *GetIPAMPoolParams) SetIPAMPoolName(ipampoolName string) {
 	o.IPAMPoolName = ipampoolName
 }
 
+// WithSeedName adds the seedName to the get IP a m pool params
+func (o *GetIPAMPoolParams) WithSeedName(seedName string) *GetIPAMPoolParams {
+	o.SetSeedName(seedName)
+	return o
+}
+
+// SetSeedName adds the seedName to the get IP a m pool params
+func (o *GetIPAMPoolParams) SetSeedName(seedName string) {
+	o.SeedName = seedName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -136,6 +150,11 @@ func (o *GetIPAMPoolParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 	// path param ipampool_name
 	if err := r.SetPathParam("ipampool_name", o.IPAMPoolName); err != nil {
+		return err
+	}
+
+	// path param seed_name
+	if err := r.SetPathParam("seed_name", o.SeedName); err != nil {
 		return err
 	}
 

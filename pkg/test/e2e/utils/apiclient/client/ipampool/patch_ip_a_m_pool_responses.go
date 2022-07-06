@@ -66,7 +66,7 @@ type PatchIPAMPoolOK struct {
 }
 
 func (o *PatchIPAMPoolOK) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/ipampools/{ipampool_name}][%d] patchIpAMPoolOK ", 200)
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolOK ", 200)
 }
 
 func (o *PatchIPAMPoolOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type PatchIPAMPoolUnauthorized struct {
 }
 
 func (o *PatchIPAMPoolUnauthorized) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/ipampools/{ipampool_name}][%d] patchIpAMPoolUnauthorized ", 401)
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolUnauthorized ", 401)
 }
 
 func (o *PatchIPAMPoolUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type PatchIPAMPoolForbidden struct {
 }
 
 func (o *PatchIPAMPoolForbidden) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/ipampools/{ipampool_name}][%d] patchIpAMPoolForbidden ", 403)
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolForbidden ", 403)
 }
 
 func (o *PatchIPAMPoolForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *PatchIPAMPoolDefault) Code() int {
 }
 
 func (o *PatchIPAMPoolDefault) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/ipampools/{ipampool_name}][%d] patchIPAMPool default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIPAMPool default  %+v", o._statusCode, o.Payload)
 }
 func (o *PatchIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

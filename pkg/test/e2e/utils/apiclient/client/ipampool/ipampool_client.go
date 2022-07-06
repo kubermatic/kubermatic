@@ -52,7 +52,7 @@ func (a *Client) CreateIPAMPool(params *CreateIPAMPoolParams, authInfo runtime.C
 	op := &runtime.ClientOperation{
 		ID:                 "createIPAMPool",
 		Method:             "POST",
-		PathPattern:        "/api/v2/ipampools",
+		PathPattern:        "/api/v2/seeds/{seed_name}/ipampools",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -90,7 +90,7 @@ func (a *Client) DeleteIPAMPool(params *DeleteIPAMPoolParams, authInfo runtime.C
 	op := &runtime.ClientOperation{
 		ID:                 "deleteIPAMPool",
 		Method:             "DELETE",
-		PathPattern:        "/api/v2/ipampools/{ipampool_name}",
+		PathPattern:        "/api/v2/seeds/{seed_name}/ipampools/{ipampool_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -128,7 +128,7 @@ func (a *Client) GetIPAMPool(params *GetIPAMPoolParams, authInfo runtime.ClientA
 	op := &runtime.ClientOperation{
 		ID:                 "getIPAMPool",
 		Method:             "GET",
-		PathPattern:        "/api/v2/ipampools/{ipampool_name}",
+		PathPattern:        "/api/v2/seeds/{seed_name}/ipampools/{ipampool_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -166,7 +166,7 @@ func (a *Client) ListIPAMPools(params *ListIPAMPoolsParams, authInfo runtime.Cli
 	op := &runtime.ClientOperation{
 		ID:                 "listIPAMPools",
 		Method:             "GET",
-		PathPattern:        "/api/v2/ipampools",
+		PathPattern:        "/api/v2/seeds/{seed_name}/ipampools",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -204,7 +204,7 @@ func (a *Client) PatchIPAMPool(params *PatchIPAMPoolParams, authInfo runtime.Cli
 	op := &runtime.ClientOperation{
 		ID:                 "patchIPAMPool",
 		Method:             "PATCH",
-		PathPattern:        "/api/v2/ipampools/{ipampool_name}",
+		PathPattern:        "/api/v2/seeds/{seed_name}/ipampools/{ipampool_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

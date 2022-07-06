@@ -9700,196 +9700,6 @@
         }
       }
     },
-    "/api/v2/ipampools": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ipampool"
-        ],
-        "summary": "Lists IPAM pools.",
-        "operationId": "listIPAMPools",
-        "responses": {
-          "200": {
-            "description": "IPAMPool",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/IPAMPool"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "tags": [
-          "ipampool"
-        ],
-        "summary": "Creates a IPAM pool.",
-        "operationId": "createIPAMPool",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/IPAMPool"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/ipampools/{ipampool_name}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ipampool"
-        ],
-        "summary": "Gets a specific IPAM pool.",
-        "operationId": "getIPAMPool",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "IPAMPoolName",
-            "name": "ipampool_name",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "IPAMPool",
-            "schema": {
-              "$ref": "#/definitions/IPAMPool"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "ipampool"
-        ],
-        "summary": "Removes an existing IPAM pool.",
-        "operationId": "deleteIPAMPool",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "IPAMPoolName",
-            "name": "ipampool_name",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "patch": {
-        "consumes": [
-          "application/json"
-        ],
-        "tags": [
-          "ipampool"
-        ],
-        "summary": "Patches a IPAM pool.",
-        "operationId": "patchIPAMPool",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "IPAMPoolName",
-            "name": "ipampool_name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/IPAMPool"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
     "/api/v2/kubeconfig/secret": {
       "get": {
         "description": "Starts OIDC flow and generates kubeconfig, the generated config\ncontains OIDC provider authentication info. The kubeconfig is stored in the secret.",
@@ -20698,6 +20508,233 @@
             "in": "body",
             "schema": {
               "$ref": "#/definitions/bcBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/seeds/{seed_name}/ipampools": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Lists IPAM pools.",
+        "operationId": "listIPAMPools",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IPAMPool",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/IPAMPool"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Creates a IPAM pool.",
+        "operationId": "createIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IPAMPool"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/seeds/{seed_name}/ipampools/{ipampool_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Gets a specific IPAM pool.",
+        "operationId": "getIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IPAMPool",
+            "schema": {
+              "$ref": "#/definitions/IPAMPool"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Removes an existing IPAM pool.",
+        "operationId": "deleteIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "ipampool"
+        ],
+        "summary": "Patches a IPAM pool.",
+        "operationId": "patchIPAMPool",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "IPAMPoolName",
+            "name": "ipampool_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IPAMPool"
             }
           }
         ],
