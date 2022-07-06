@@ -13583,13 +13583,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13601,6 +13594,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -15999,6 +15999,73 @@
               "items": {
                 "$ref": "#/definitions/EtcdRestore"
               }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/groupbindings": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "groupProjectBinding"
+        ],
+        "summary": "Lists project's group bindings.",
+        "operationId": "listGroupProjectBindings",
+        "responses": {
+          "200": {
+            "description": "GroupProjectBinding",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GroupProjectBinding"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/groupbindings/{binding_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "groupProjectBinding"
+        ],
+        "summary": "Get project group binding.",
+        "operationId": "getGroupProjectBinding",
+        "responses": {
+          "200": {
+            "description": "GroupProjectBinding",
+            "schema": {
+              "$ref": "#/definitions/GroupProjectBinding"
             }
           },
           "401": {
@@ -25689,6 +25756,28 @@
     "GlobalSettings": {
       "description": "GlobalSettings defines global settings",
       "$ref": "#/definitions/SettingSpec"
+    },
+    "GroupProjectBinding": {
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "Group"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "role": {
+          "type": "string",
+          "x-go-name": "Role"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "HealthStatus": {
       "type": "string",
