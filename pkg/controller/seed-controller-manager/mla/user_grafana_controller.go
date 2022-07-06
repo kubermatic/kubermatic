@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -125,8 +127,13 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	}
 
 	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user, grafanaClient); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to add grafana user: %w", err)
+		if strings.Contains(err.Error(), "project should have grafana org annotation set") {
+			log.Warnf("unable to ensure Grafana User, retrying in 30s: %s", err.Error())
+			return reconcile.Result{RequeueAfter: time.Second * 30}, nil
+		}
+		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana User: %w", err)
 	}
+
 	return reconcile.Result{}, nil
 }
 

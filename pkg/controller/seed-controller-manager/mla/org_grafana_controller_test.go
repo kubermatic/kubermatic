@@ -236,7 +236,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: true,
-			err:          false,
 		},
 		{
 			name:        "update org for project",
