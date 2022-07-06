@@ -272,7 +272,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
 	resourceQuotaProvider := resourceQuotaProviderFactory(defaultImpersonationClient.CreateImpersonatedClient, client)
-	groupProjectBindingProvider := groupProjectBindingFactory(defaultImpersonationClient.CreateImpersonatedClient)
+	groupProjectBindingProvider := groupProjectBindingFactory(defaultImpersonationClient.CreateImpersonatedClient, client)
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {

@@ -68,7 +68,7 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 		return nil, err
 	}
 
-	return bindingProvider.List(ctx, userInfo)
+	return bindingProvider.List(ctx, userInfo, kubermaticProject.Name)
 }
 
 func GetGroupProjectBinding(ctx context.Context, request interface{},

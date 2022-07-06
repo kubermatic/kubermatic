@@ -1330,6 +1330,18 @@ type ResourceQuotaProvider interface {
 }
 
 type GroupProjectBindingProvider interface {
-	List(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.GroupProjectBinding, error)
+	// List returns a list of GroupProjectBindings for a given project.
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]kubermaticv1.GroupProjectBinding, error)
+
+	// Get returns a GroupProjectBinding of a given name.
 	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error)
+
+	// Create creates a new GroupProjectBinding.
+	Create(ctx context.Context, userInfo *UserInfo, binding *kubermaticv1.GroupProjectBinding) error
+
+	// Patch patches an existing GroupProjectBinding.
+	Patch(ctx context.Context, userInfo *UserInfo, oldBinding, newBinding *kubermaticv1.GroupProjectBinding) error
+
+	// Delete removes an existing GroupProjectBinding.
+	Delete(ctx context.Context, userInfo *UserInfo, name string) error
 }
