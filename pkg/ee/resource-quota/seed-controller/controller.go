@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -178,14 +179,9 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 		"memory", localUsage.Memory.String(),
 		"storage", localUsage.Storage.String())
 
-	oldResourceQuota := resourceQuota.DeepCopy()
-
-	resourceQuota.Status.LocalUsage = *localUsage
-	if err := r.seedClient.Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(oldResourceQuota)); err != nil {
-		return fmt.Errorf("failed to patch resource quota %q: %w", resourceQuota.Name, err)
-	}
-
-	return nil
+	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+		rq.Status.LocalUsage = *localUsage
+	})
 }
 
 func withClusterEventFilter() predicate.Predicate {

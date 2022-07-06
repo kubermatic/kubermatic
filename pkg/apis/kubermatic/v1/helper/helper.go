@@ -319,3 +319,30 @@ func SetSeedCondition(seed *kubermaticv1.Seed, conditionType kubermaticv1.SeedCo
 	}
 	seed.Status.Conditions[conditionType] = newCondition
 }
+
+type ResourceQuotaPatchFunc func(resourceQuota *kubermaticv1.ResourceQuota)
+
+// UpdateResourceQuotaStatus will attempt to patch the resource quota status
+// of the given resource quota.
+func UpdateResourceQuotaStatus(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota, patch ResourceQuotaPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(resourceQuota)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the resourceQuota
+		if err := client.Get(ctx, key, resourceQuota); err != nil {
+			return err
+		}
+
+		// modify it
+		original := resourceQuota.DeepCopy()
+		patch(resourceQuota)
+
+		// save some work
+		if reflect.DeepEqual(original.Status, resourceQuota.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(original))
+	})
+}

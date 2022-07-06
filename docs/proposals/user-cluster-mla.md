@@ -234,7 +234,7 @@ within the organization. The regular users won’t be able to manage data source
 restricted to only see logs & matrics matching their organization. Also, Grafana can be configured with different
 permission levels (admin / editor / viewer) for different users according to their permission levels in the KKP project.
 
-For Managed Service Provider users (superusers), who should be able to access data of all Customer Clusters, a superuser
+For Managed Service Provider users (superusers), who should be able to access data of all User Clusters, a superuser
 Grafana organization will be created. The organization will have to be configured with multiple Loki and Cortex data
 sources off all User Clusters.
 

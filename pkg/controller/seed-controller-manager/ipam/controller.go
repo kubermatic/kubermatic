@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -188,7 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return nil, err
 		}
 
-		err = r.generateNewClusterAllocationForPool(ctx, cluster, ipamPool.Name, dcIPAMPoolCfg, dcIPAMPoolUsageMap)
+		err = r.generateNewClusterAllocationForPool(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +223,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 				return nil, err
 			}
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err = checkRangeAllocation(currentAllocatedIPs, string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange))
+			err = checkRangeAllocation(currentAllocatedIPs, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange)
 			if err != nil {
 				return nil, err
 			}
@@ -231,7 +232,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix))
+			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix)
 			if err != nil {
 				return nil, err
 			}
@@ -242,11 +243,11 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	return dcIPAMPoolUsageMap, nil
 }
 
-func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPoolName string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.String) error {
+func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.String) error {
 	newClustersAllocation := &kubermaticv1.IPAMAllocation{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
-			Name:      ipamPoolName,
+			Name:      ipamPool.Name,
 			Labels:    map[string]string{},
 		},
 		Spec: kubermaticv1.IPAMAllocationSpec{
@@ -254,16 +255,22 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 			DC:   cluster.Spec.Cloud.DatacenterName,
 		},
 	}
+	kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
+		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		Kind:       kubermaticv1.IPAMPoolKindName,
+		UID:        ipamPool.GetUID(),
+		Name:       ipamPool.Name,
+	})
 
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
-		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationRange), dcIPAMPoolUsageMap)
+		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
 		newClustersAllocation.Spec.Addresses = addresses
 	case kubermaticv1.IPAMPoolAllocationTypePrefix:
-		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), int(dcIPAMPoolCfg.AllocationPrefix), dcIPAMPoolUsageMap)
+		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
@@ -272,7 +279,7 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 
 	err := r.Create(ctx, newClustersAllocation)
 	if err != nil {
-		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPoolName, cluster.Name, err)
+		return fmt.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
 
 	return nil

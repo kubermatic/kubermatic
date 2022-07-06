@@ -55,7 +55,6 @@ spec:
                     allocationRange:
                       description: AllocationRange is the range for the allocation.
                         Used when "type=range".
-                      format: int32
                       minimum: 1
                       type: integer
                     poolCidr:

@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,7 +58,8 @@ func TestValidateCreate(t *testing.T) {
 			existingResourceQuota: []*kubermaticv1.ResourceQuota{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "existing-quota",
+						Name:      "existing-quota",
+						Namespace: resources.KubermaticNamespace,
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
@@ -69,7 +71,8 @@ func TestValidateCreate(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "existing-quota1",
+						Name:      "existing-quota1",
+						Namespace: resources.KubermaticNamespace,
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
@@ -82,7 +85,8 @@ func TestValidateCreate(t *testing.T) {
 			},
 			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "new-quota",
+					Name:      "new-quota",
+					Namespace: resources.KubermaticNamespace,
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{
@@ -98,7 +102,8 @@ func TestValidateCreate(t *testing.T) {
 			existingResourceQuota: []*kubermaticv1.ResourceQuota{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "existing-quota",
+						Name:      "existing-quota",
+						Namespace: resources.KubermaticNamespace,
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
@@ -111,7 +116,8 @@ func TestValidateCreate(t *testing.T) {
 			},
 			resourceQuotaToValidate: &kubermaticv1.ResourceQuota{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "new-quota",
+					Name:      "new-quota",
+					Namespace: resources.KubermaticNamespace,
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
 					Subject: kubermaticv1.Subject{

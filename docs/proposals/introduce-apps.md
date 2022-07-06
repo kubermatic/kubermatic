@@ -39,7 +39,7 @@ With Applications we aim to provide an easy way for user to install components i
 
 ## Motivation and Background
 
-Currently, KKP only supports one mechanism for customers to install components in user-clusters: Custom Addons. For this, all addons are stored in a single docker image that is configured in KKP. Afterwards, an initContainer is being run that starts the image and copies all addons onto the seed-controller-managers local file-system. From there, addon manifests are being rendered and rolled out to user clusters.
+Currently, KKP only supports one mechanism for KKP admins to install components in user-clusters: Custom Addons. For this, all addons are stored in a single docker image that is configured in KKP. Afterwards, an initContainer is being run that starts the image and copies all addons onto the seed-controller-managers local file-system. From there, addon manifests are being rendered and rolled out to user clusters.
 
 The current implementation of addons has some flaws for installing custom components that make the usage and maintenance cumbersome for cluster administrators:
 
@@ -49,7 +49,7 @@ The current implementation of addons has some flaws for installing custom compon
 - Complex Addons can leave a trail of reconciliation errors until successfully deployed because all manifest files are applied at the same time
 - Creating a cluster is a two-step process; firstly you have to create a cluster and only  afterward you can select custom Addons
 
-*note: PS team report that some customers are using weekly KKP update in dev environments, consequently they need to rebuild the addon image every week which is painful and error-prone.*
+*note: PS team report that some admins are using weekly KKP update in dev environments, consequently they need to rebuild the addon image every week which is painful and error-prone.*
 
 ## Goals
 
@@ -67,7 +67,7 @@ The current implementation of addons has some flaws for installing custom compon
 - Handle installation of  "Application" cross user-cluster (e.g. service-mesh or queuing system). These are considered as "Extensions" and should be handled by [KubeCarrier](https://docs.kubermatic.com/kubecarrier)
 - Notifying users if a new version of an application is available or showing in the UI that a new version of an installed application is available. While we think this is quite valuable for end-users, we have decided to leave this out for know in order to keep proposal scope manageable. The good news is that the core principles of this proposal will make it possible to implement this feature later on. It is definitely a feature that should be on roadmap for applications after the implementation of this proposal is done
 - Adding kustomize as a rendering method. We did have a longer discussion to decide which rendering methods should be included in the first version. In order to keep the size of this proposal manageable, we have decided to postpone adding kustomize as a rendering method. It is definitely a feature that should be on roadmap for applications after the implementation of this proposal is done and should fit right in the current architecture
-- Generic Pull from object storage. It is definitely a feature that should be on roadmap for applications after the implementation of this proposal is done and should fit right in the current architecture. We have made this decision after consulting with PS. It was decided to go implement Git as an external source first, as this is going to reach the majority of customers
+- Generic Pull from object storage. It is definitely a feature that should be on roadmap for applications after the implementation of this proposal is done and should fit right in the current architecture. We have made this decision after consulting with PS. It was decided to go implement Git as an external source first, as this is going to reach the majority of admins
 - Reworking of the [dashboard into an addon](https://github.com/kubermatic/dashboard/issues/3666). As the dashboard is currently a Default Addon, this proposal is not going to simplify the implementation of #3666. One possibility that can be evaluated is to convert the dashboard into an application. However we need to be aware that this makes the dashboard and optional component
 - Handling Logos. The previous version for addons allows to base64 encode logos into the CR for display in the UI. Currently there are some size concerns raised by @kubermatic/sig-api and @kubermatic/sig-ui. In order to move forward, we have decided to exclude logos for now, until a KKP wide solution has been found. However it should be no problem with the current architecture to add them later on. Either as base64 encoded field or a reference to an external source
 - Renaming the term 'Default Addons'. There has been a lot of discussion if the old term "Default Addon" was ever a good fit. While there are good arguments to rename this for the future, we have decided to not tackle the renaming in this proposal
@@ -90,13 +90,13 @@ The ApplicationDistributor resides in the master cluster. Its main job is to dis
 
 In order to work properly, the ApplicationDistributor must (dynamically) be able to discover all available SeedClusters, so it knows where to push the ApplicationDefinitions to.
 
-In the case of the MasterCluster and SeedCluster being the same, we propose to still run the ApplicationDistributor exactly the same. Concretely this means it would have one target seed cluster (itself) and create a merged catalogue for it. This would have the advantage, that in case customers decide to add new seed clusters, the new seed clusters would work right out-of-the-box. Additionally, this helps keeping the code generic, which is in line with KKPs development pattern.
+In the case of the MasterCluster and SeedCluster being the same, we propose to still run the ApplicationDistributor exactly the same. Concretely this means it would have one target seed cluster (itself) and create a merged catalogue for it. This would have the advantage, that in case admins decide to add new seed clusters, the new seed clusters would work right out-of-the-box. Additionally, this helps keeping the code generic, which is in line with KKPs development pattern.
 
 Furthermore, the ApplicationDistributor ensures that there are no duplicate Applications. A duplicate is defined by two Applications having the same `name` and `version`. We propose to protect against accidental duplicates using a ValidationWebhook.
 Lastly, we envisioned two possible sources for a ApplicationDefinitions:
 
 - watching for changes of ApplicationDefinition Custom Resources directly inside KKP master
-- watching a git repository → this idea was developed from PS feedback. It would enable customers to manage their applications in a GitOps way
+- watching a git repository → this idea was developed from PS feedback. It would enable admins to manage their applications in a GitOps way
 
   *tbd:  Alternatively to achieve GitOps, it would also be possible to have a CI/CD pipeline directly update the ApplicationDefinition CRs in the master cluster. We are currently unsure if this is better or worse. We have decided to offload this decision to the implementation phase*
 
@@ -115,12 +115,12 @@ Lastly, we envisioned two possible sources for a ApplicationDefinitions:
       - type →Type of the field. We propose that references for now can only be primary types (number, string, ...), but do not allow for nested types (e.g. objects). This makes rendering them a lot more convenient
       - (optional) helpText →helpText to be displayed in the UI
   - a source from where to pull the data from. Possible sources are:
-    - git → a git repository from which to pull the manifests. This was considered to be especially useful by Kubermatic PS who work directly with customers
+    - git → a git repository from which to pull the manifests. This was considered to be especially useful by Kubermatic PS who work directly with admins
     - helm → a helm repository to pull charts from. Only compatible with rendering method helm
   - constraints. These describe conditions that must apply for an add-on to be compatible with a user cluster. Possible constraints are:
     - kkp-version → semVer range that describes compatible KKP versions
     - k8s-version → semVer range that describes compatible k8s versions
-  - values → These are values that can be used for overwriting defaults. We think this field will be required for Application if a customer is using a private registry. So application can be configured
+  - values → These are values that can be used for overwriting defaults. We think this field will be required for Application if an admin is using a private registry. So application can be configured
 
 An example CR could look like this:
 
@@ -194,7 +194,7 @@ In order to make it possible for users to deploy a cluster with a set of Applica
 ApplicationInstallation CRs are created in the user-cluster in the `kube-system` namespace and:
 
 - contain information about the application to install which is specified by an ApplicationRef. Currently, this consists of a name and version
-- contain the merged values that are being passed for the installation. This is needed as customers can set custom values for each installation.
+- contain the merged values that are being passed for the installation. This is needed as admins can set custom values for each installation.
 
 ```yaml
 apiVersion: apps.kubermatic.k8c.io/v1
@@ -289,12 +289,12 @@ A *Default Addon* is installed on all user clusters based on configuration. The 
 
 ## Application
 
-An *Application* is an additional component installed in all user clusters on-demand, but not shipped with KKP. It is provided by the customer or a third party (e.g. helm community):
+An *Application* is an additional component installed in all user clusters on-demand, but not shipped with KKP. It is provided by the admin or a third party (e.g. helm community):
 
-- Shipped by the customer
+- Shipped by the admin
 - Not tested nor supported by Kubermatic
 - Could break clusters
-- The customer is fully responsible
+- The admin is fully responsible
 
 ## Application by Kubermatic
 

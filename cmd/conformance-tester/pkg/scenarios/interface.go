@@ -98,7 +98,7 @@ func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
 		log.Info("Adding Nutanix scenarios")
 		scenarios = append(scenarios, GetNutanixScenarios(opts.Versions)...)
 	}
-	if opts.Providers.Has("vmware-cloud-director") {
+	if opts.Providers.Has("vmwareclouddirector") {
 		log.Info("Adding VMware Cloud Director scenarios")
 		scenarios = append(scenarios, GetVMwareCloudDirectorScenarios(opts.Versions)...)
 	}

@@ -22,10 +22,10 @@ type ResourceQuota struct {
 	Name string `json:"name,omitempty"`
 
 	// subject kind
-	SubjectKind string `json:"subject_kind,omitempty"`
+	SubjectKind string `json:"subjectKind,omitempty"`
 
 	// subject name
-	SubjectName string `json:"subject_name,omitempty"`
+	SubjectName string `json:"subjectName,omitempty"`
 
 	// quota
 	Quota *ResourceDetails `json:"quota,omitempty"`

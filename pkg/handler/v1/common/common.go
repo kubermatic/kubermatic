@@ -303,12 +303,12 @@ func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
 	if adminUserInfo.IsAdmin {
-		return clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+		return clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
-	return clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
+	return clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
 }

@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -184,11 +185,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		}
 	}
 
-	oldAppInstallation := appInstallation.DeepCopy()
-	appInstallation.Status.ApplicationVersion = appVersion
+	if !equality.Semantic.DeepEqual(appVersion, appInstallation.Status.ApplicationVersion) {
+		oldAppInstallation := appInstallation.DeepCopy()
+		appInstallation.Status.ApplicationVersion = appVersion
 
-	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
-		return fmt.Errorf("failed to update status with applicationVersion: %w", err)
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status with applicationVersion: %w", err)
+		}
 	}
 
 	// install application into the user-cluster

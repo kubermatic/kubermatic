@@ -133,7 +133,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
-	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

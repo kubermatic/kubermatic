@@ -24,7 +24,7 @@ This proposal has the following goals. Also check [Motivation and Background](#m
 
 etcd is a distributed key-value store that is used by the Kubernetes API as data storage. By default, data in etcd is not encrypted at rest. KKP only encrypts etcd data in transit right now. Kubernetes provides the ability to configure a pluggable encryption mechanism that allows encrypting arbitrary resources (usually, `Secrets`) when stored in etcd. It supports a couple of "static" encryption schemes where a key is provided in the encryption configuration (secretbox, aesgcm, aescbc) and integration with an external KMS system via a plugin mechanism.
 
-Encrypting data in etcd for sensitive information like secret data is recommended by security benchmarks and best practices. It further improves the security of our etcd backup feature, as an attacker that gets hold of a backup archive cannot extract `Secrets` content from it. 
+Encrypting data in etcd for sensitive information like secret data is recommended by security benchmarks and best practices. It further improves the security of our etcd backup feature, as an attacker that gets hold of a backup archive cannot extract `Secrets` content from it.
 
 KKP users might want to encrypt their data at rest in user clusters to improve their security posture and/or fulfill regulatory requirements or prepare their environments for audits.
 
@@ -180,7 +180,7 @@ Even access to the encryption configuration `Secret` can be partially mitigated 
 
 Since Kubernetes does not offer another mechanism for data encryption at rest, alternatives are sparse. Considerations are mainly within the scope of "implementing the encryption configuration":
 
-* Developing a Hashicorp Vault KMS plugin: For customers that do not want to rely on cloud provider KMS services, Hashicorp Vault might be an interesting alternative to static key encryption. Since no KMS plugin exists, developing one is a consideration to keep in mind, depending on customer interest. For now, it seems out of scope. We should support cloud provider KMS plugins first.
+* Developing a Hashicorp Vault KMS plugin: For KKP admins that do not want to rely on cloud provider KMS services, Hashicorp Vault might be an interesting alternative to static key encryption. Since no KMS plugin exists, developing one is a consideration to keep in mind, depending on admin interest. For now, it seems out of scope. We should support cloud provider KMS plugins first.
 * Support encryption schemes `aesgcm` and `aescbc`:
   * `aesgcm`: Must be rotated every 200k writes, which might be hard to track. Since we do not plan to start with an automated key rotation scheme, this is discouraged by upstream.
   * `aescbc`: Considered weak as it's vulnerable to padding oracle attacks. Therefore not considered for inclusion.

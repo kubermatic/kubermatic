@@ -1410,8 +1410,8 @@ type OpenstackSubnetPool struct {
 // swagger:model ResourceQuota
 type ResourceQuota struct {
 	Name        string                           `json:"name"`
-	SubjectName string                           `json:"subject_name"`
-	SubjectKind string                           `json:"subject_kind"`
+	SubjectName string                           `json:"subjectName"`
+	SubjectKind string                           `json:"subjectKind"`
 	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
 	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
 }

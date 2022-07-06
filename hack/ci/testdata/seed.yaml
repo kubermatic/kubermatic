@@ -77,7 +77,7 @@ spec:
       location: Hamburg
       country: DE
       spec:
-        vmwareCloudDirector:
+        vmwareclouddirector:
           url: "__VCD_URL__"
           allowInsecure: false
           catalog: "kubermatic"

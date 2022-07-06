@@ -2,7 +2,7 @@
 
 This directory contains all possible default addons.
 All addons will be build into a docker container which the kubermatic-addon-controller uses to install addons.
-The docker image should be freely accessible to let customers extend & modify this image for their own purpose.
+The docker image should be freely accessible to let admins extend & modify this image for their own purpose.
 
 ### Release / Development Cycle
 

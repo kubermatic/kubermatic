@@ -59,7 +59,7 @@ type PresetSpec struct {
 	Alibaba             *Alibaba             `json:"alibaba,omitempty"`
 	Anexia              *Anexia              `json:"anexia,omitempty"`
 	Nutanix             *Nutanix             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
 	GKE                 *GKE                 `json:"gke,omitempty"`
 	EKS                 *EKS                 `json:"eks,omitempty"`
 	AKS                 *AKS                 `json:"aks,omitempty"`

@@ -31,7 +31,7 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -231,7 +231,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				CategoryID:  v.CategoryID,
 			})
 		}
-	case providerconfig.CloudProviderVcloudDirector:
+	case providerconfig.CloudProviderVMwareCloudDirector:
 		config := &vcd.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse VMWare Cloud Director config: %w", err)
@@ -246,7 +246,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			DiskIOPS:         config.DiskIOPS,
 			VApp:             config.VApp.Value,
 			Network:          config.Network.Value,
-			IPAllocationMode: string(config.IPAllocationMode),
+			IPAllocationMode: config.IPAllocationMode,
 		}
 
 		if config.StorageProfile != nil {

@@ -13583,13 +13583,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13601,6 +13594,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -21767,6 +21767,9 @@
         },
         "policyPreset": {
           "$ref": "#/definitions/AuditPolicyPreset"
+        },
+        "sidecar": {
+          "$ref": "#/definitions/AuditSidecarSettings"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -21774,6 +21777,53 @@
     "AuditPolicyPreset": {
       "description": "AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values\nare `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.",
       "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "AuditSidecarConfiguration": {
+      "description": "Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.",
+      "type": "object",
+      "title": "AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.",
+      "properties": {
+        "filters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "x-go-name": "Filters"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "x-go-name": "Outputs"
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Service"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "AuditSidecarSettings": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/AuditSidecarConfiguration"
+        },
+        "resources": {
+          "$ref": "#/definitions/ResourceRequirements"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Azure": {
@@ -22369,7 +22419,7 @@
           "type": "string",
           "x-go-name": "ProviderName"
         },
-        "vmwareCloudDirector": {
+        "vmwareclouddirector": {
           "$ref": "#/definitions/VMwareCloudDirectorCloudSpec"
         },
         "vsphere": {
@@ -23452,7 +23502,7 @@
           "type": "string",
           "x-go-name": "Seed"
         },
-        "vmwareCloudDirector": {
+        "vmwareclouddirector": {
           "$ref": "#/definitions/DatacenterSpecVMwareCloudDirector"
         },
         "vsphere": {
@@ -25814,6 +25864,10 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "IPAllocationMode": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
+    },
     "IPFamily": {
       "description": "+kubebuilder:validation:Enum=\"\";IPv4;IPv4+IPv6",
       "type": "string",
@@ -27324,7 +27378,7 @@
         "packet": {
           "$ref": "#/definitions/PacketNodeSpec"
         },
-        "vmwareCloudDirector": {
+        "vmwareclouddirector": {
           "$ref": "#/definitions/VMwareCloudDirectorNodeSpec"
         },
         "vsphere": {
@@ -28986,7 +29040,7 @@
           },
           "x-go-name": "RequiredEmails"
         },
-        "vmwareCloudDirector": {
+        "vmwareclouddirector": {
           "$ref": "#/definitions/VMwareCloudDirector"
         },
         "vsphere": {
@@ -29201,7 +29255,7 @@
         "packet": {
           "$ref": "#/definitions/PublicPacketCloudSpec"
         },
-        "vmwareCloudDirector": {
+        "vmwareclouddirector": {
           "$ref": "#/definitions/PublicVMwareCloudDirectorCloudSpec"
         },
         "vsphere": {
@@ -29428,11 +29482,11 @@
         "status": {
           "$ref": "#/definitions/ResourceQuotaStatus"
         },
-        "subject_kind": {
+        "subjectKind": {
           "type": "string",
           "x-go-name": "SubjectKind"
         },
-        "subject_name": {
+        "subjectName": {
           "type": "string",
           "x-go-name": "SubjectName"
         }
@@ -30485,8 +30539,7 @@
           "x-go-name": "DiskSizeGB"
         },
         "ipAllocationMode": {
-          "type": "string",
-          "x-go-name": "IPAllocationMode"
+          "$ref": "#/definitions/IPAllocationMode"
         },
         "memoryMB": {
           "type": "integer",

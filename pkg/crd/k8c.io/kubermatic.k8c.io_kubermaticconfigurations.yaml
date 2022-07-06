@@ -509,7 +509,7 @@ spec:
                         type: string
                     type: object
                   nodePortRange:
-                    description: NodePortRange is the port range for customer clusters
+                    description: NodePortRange is the port range for user clusters
                       - this must match the NodePort range of the seed cluster.
                     type: string
                   operatingSystemManager:
@@ -584,7 +584,7 @@ spec:
                           - alibaba
                           - anexia
                           - fake
-                          - vmware-cloud-director
+                          - vmwareclouddirector
                           type: string
                         version:
                           description: Version is the Kubernetes version that must

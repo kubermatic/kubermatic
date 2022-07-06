@@ -185,15 +185,15 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 
 		userEmailID := wsh.EncodeUserEmailtoID(authenticatedUser.Email)
 		podAndKubeconfigSecretName := userEmailID
-		k8sClient, err := clusterProvider.GetAdminK8sClientForCustomerCluster(ctx, cluster)
+		k8sClient, err := clusterProvider.GetAdminK8sClientForUserCluster(ctx, cluster)
 		if err != nil {
 			return
 		}
-		cfg, err := clusterProvider.GetAdminClientConfigForCustomerCluster(ctx, cluster)
+		cfg, err := clusterProvider.GetAdminClientConfigForUserCluster(ctx, cluster)
 		if err != nil {
 			return
 		}
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
+		client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 		if err != nil {
 			return
 		}

@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
+	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -75,7 +75,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: vmwareCloudDirectorDatacenter,
-					VmwareCloudDirector: &apimodels.VMwareCloudDirectorCloudSpec{
+					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
 						Username:     secrets.VMwareCloudDirector.Username,
 						Password:     secrets.VMwareCloudDirector.Password,
 						Organization: secrets.VMwareCloudDirector.Organization,
@@ -124,7 +124,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Replicas: &replicas,
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
-						VmwareCloudDirector: &apimodels.VMwareCloudDirectorNodeSpec{
+						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
 							Template:         fmt.Sprintf("machine-controller-%s", osName),
 							Catalog:          vmwareCloudDirectorCatalog,
 							CPUs:             vmwareCloudDirectorCPUs,
@@ -152,7 +152,7 @@ func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num 
 	os := getOSNameFromSpec(s.osSpec)
 	template := fmt.Sprintf("machine-controller-%s", os)
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVcloudDirector, vcdtypes.RawConfig{
+	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, vcdtypes.RawConfig{
 		Template:         providerconfig.ConfigVarString{Value: template},
 		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
 		CPUs:             vmwareCloudDirectorCPUs,
