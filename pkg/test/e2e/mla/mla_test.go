@@ -215,8 +215,11 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("waiting for grafana user: %v", err)
 	}
 	t.Log("user added to Grafana")
-	if user.IsGrafanaAdmin != true || user.OrgID != org.ID {
-		t.Fatalf("user[%v] expected to be Grafana Admin and has orgID=%d", user, org.ID)
+	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+		user, _ = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
+		return (user.IsGrafanaAdmin == true) && (user.OrgID == org.ID)
+	}) {
+		t.Fatalf("user[%+v] expected to be Grafana Admin and have orgID=%d", user, org.ID)
 	}
 
 	orgUser, err := mla.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
