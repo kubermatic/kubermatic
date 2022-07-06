@@ -21,6 +21,8 @@ import (
 	"encoding/base64"
 	"net/http"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
@@ -30,14 +32,13 @@ import (
 	kubevirtcli "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 )
 
 var NewKubeVirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {

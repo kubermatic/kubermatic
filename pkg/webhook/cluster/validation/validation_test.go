@@ -20,9 +20,9 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	
+
 	"github.com/go-logr/logr"
-	
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
-	
+
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,7 +78,7 @@ func TestHandle(t *testing.T) {
 			},
 		},
 	}
-	
+
 	tests := []struct {
 		name        string
 		req         webhook.AdmissionRequest
@@ -1669,22 +1669,22 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 	}
-	
+
 	seedClient := ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithScheme(testScheme).
 		WithObjects(&seed).
 		Build()
-	
+
 	seedGetter := test.NewSeedGetter(&seed)
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d, err := admission.NewDecoder(testScheme)
 			if err != nil {
 				t.Fatalf("error occurred while creating decoder: %v", err)
 			}
-			
+
 			handler := AdmissionHandler{
 				log:                       logr.Discard(),
 				decoder:                   d,
@@ -1693,7 +1693,7 @@ func TestHandle(t *testing.T) {
 				seedGetter:                seedGetter,
 				disableProviderValidation: true,
 			}
-			
+
 			if res := handler.Handle(context.TODO(), tt.req); res.Allowed != tt.wantAllowed {
 				t.Errorf("Allowed %t, but wanted %t", res.Allowed, tt.wantAllowed)
 				t.Logf("Response: %v", res)

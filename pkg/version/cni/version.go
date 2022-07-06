@@ -30,7 +30,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.22",
+		kubermaticv1.CNIPluginTypeCanal:  "v3.21",
 		kubermaticv1.CNIPluginTypeCilium: "v1.11",
 	}
 )

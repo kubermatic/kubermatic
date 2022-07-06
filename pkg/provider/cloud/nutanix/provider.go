@@ -24,12 +24,13 @@ import (
 
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
 	"go.uber.org/zap"
-	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
