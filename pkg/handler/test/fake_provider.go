@@ -376,28 +376,3 @@ func (p *FakeEtcdRestoreProvider) List(ctx context.Context, userInfo *provider.U
 func (p *FakeEtcdRestoreProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
 	return p.Provider.Delete(ctx, userInfo, cluster, name)
 }
-
-type FakeIPAMPoolProvider struct {
-	Provider   *kubernetes.PrivilegedIPAMPoolProvider
-	FakeClient ctrlruntimeclient.Client
-}
-
-func (p *FakeIPAMPoolProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.IPAMPoolList, error) {
-	return p.Provider.ListUnsecured(ctx)
-}
-
-func (p *FakeIPAMPoolProvider) GetUnsecured(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
-	return p.Provider.GetUnsecured(ctx, ipamPoolName)
-}
-
-func (p *FakeIPAMPoolProvider) DeleteUnsecured(ctx context.Context, ipamPoolName string) error {
-	return p.Provider.DeleteUnsecured(ctx, ipamPoolName)
-}
-
-func (p *FakeIPAMPoolProvider) CreateUnsecured(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
-	return p.Provider.CreateUnsecured(ctx, ipamPool)
-}
-
-func (p *FakeIPAMPoolProvider) PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
-	return p.Provider.PatchUnsecured(ctx, oldIPAMPool, newIPAMPool)
-}

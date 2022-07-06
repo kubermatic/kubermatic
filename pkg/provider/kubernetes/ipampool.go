@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -80,4 +81,20 @@ func (p *PrivilegedIPAMPoolProvider) CreateUnsecured(ctx context.Context, ipamPo
 // PatchUnsecured patches a IPAM pool.
 func (p *PrivilegedIPAMPoolProvider) PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
 	return p.privilegedClient.Patch(ctx, newIPAMPool, ctrlruntimeclient.MergeFrom(oldIPAMPool))
+}
+
+func PrivilegedIPAMPoolProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.PrivilegedIPAMPoolProviderGetter {
+	return func(seed *kubermaticv1.Seed) (provider.PrivilegedIPAMPoolProvider, error) {
+		cfg, err := seedKubeconfigGetter(seed)
+		if err != nil {
+			return nil, err
+		}
+		privilegedClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+		if err != nil {
+			return nil, err
+		}
+		return NewPrivilegedIPAMPoolProvider(
+			privilegedClient,
+		), nil
+	}
 }

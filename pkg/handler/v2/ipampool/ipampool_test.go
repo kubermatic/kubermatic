@@ -146,9 +146,9 @@ func TestListIPAMPools(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser))
+			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
-			req := httptest.NewRequest("GET", "/api/v2/ipampools", strings.NewReader(""))
+			req := httptest.NewRequest("GET", "/api/v2/seeds/us-central1/ipampools", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)
@@ -271,9 +271,9 @@ func TestGetIPAMPool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser))
+			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/ipampools/%s", tc.ipamPoolName), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/seeds/us-central1/ipampools/%s", tc.ipamPoolName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)
@@ -478,12 +478,12 @@ func TestCreateIPAMPool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser))
+			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
 			reqBody, err := json.Marshal(tc.ipamPool)
 			assert.NoError(t, err)
 
-			req := httptest.NewRequest("POST", "/api/v2/ipampools", bytes.NewReader(reqBody))
+			req := httptest.NewRequest("POST", "/api/v2/seeds/us-central1/ipampools", bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)
@@ -564,9 +564,9 @@ func TestDeleteIPAMPool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser))
+			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/ipampools/%s", tc.ipamPoolName), strings.NewReader(""))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/seeds/us-central1/ipampools/%s", tc.ipamPoolName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)
@@ -765,12 +765,12 @@ func TestPatchIPAMPool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser))
+			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
 			reqBody, err := json.Marshal(tc.ipamPool)
 			assert.NoError(t, err)
 
-			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/ipampools/%s", tc.ipamPool.Name), bytes.NewReader(reqBody))
+			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/seeds/us-central1/ipampools/%s", tc.ipamPool.Name), bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)

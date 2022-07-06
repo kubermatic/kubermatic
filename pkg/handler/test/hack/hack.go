@@ -98,7 +98,7 @@ func NewTestRouting(
 	resourceQuotaProvider provider.ResourceQuotaProvider,
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	features features.FeatureGate,
-	privilegedIPAMPoolProvider provider.PrivilegedIPAMPoolProvider) http.Handler {
+	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
 		PresetProvider:                          presetProvider,
@@ -157,7 +157,7 @@ func NewTestRouting(
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
 		Features:                                features,
-		PrivilegedIPAMPoolProvider:              privilegedIPAMPoolProvider,
+		PrivilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
 	}
 
 	r := handler.NewRouting(routingParams, masterClient)

@@ -1070,23 +1070,23 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	// Defines endpoints to manage IPAM pools
 
 	mux.Methods(http.MethodGet).
-		Path("/ipampools").
+		Path("/seeds/{seed_name}/ipampools").
 		Handler(r.listIPAMPools())
 
 	mux.Methods(http.MethodGet).
-		Path("/ipampools/{ipampool_name}").
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
 		Handler(r.getIPAMPool())
 
 	mux.Methods(http.MethodPost).
-		Path("/ipampools").
+		Path("/seeds/{seed_name}/ipampools").
 		Handler(r.createIPAMPool())
 
 	mux.Methods(http.MethodPatch).
-		Path("/ipampools/{ipampool_name}").
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
 		Handler(r.patchIPAMPool())
 
 	mux.Methods(http.MethodDelete).
-		Path("/ipampools/{ipampool_name}").
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
 		Handler(r.deleteIPAMPool())
 }
 
@@ -7173,7 +7173,7 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 		r.defaultServerOptions()...,
 	)
 
-//swagger:route GET /api/v2/ipampools ipampool listIPAMPools
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools ipampool listIPAMPools
 //
 //    Lists IPAM pools.
 //
@@ -7190,14 +7190,15 @@ func (r Routing) listIPAMPools() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
-		common.DecodeEmptyReq,
+			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter)),
+		ipampool.DecodeSeedReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route GET /api/v2/ipampools/{ipampool_name} ipampool getIPAMPool
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool getIPAMPool
 //
 //    Gets a specific IPAM pool.
 //
@@ -7214,14 +7215,15 @@ func (r Routing) getIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
+			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route POST /api/v2/ipampools ipampool createIPAMPool
+//swagger:route POST /api/v2/seeds/{seed_name}/ipampools ipampool createIPAMPool
 //
 //    Creates a IPAM pool.
 //
@@ -7238,14 +7240,15 @@ func (r Routing) createIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
+			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeCreateIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route PATCH /api/v2/ipampools/{ipampool_name} ipampool patchIPAMPool
+//swagger:route PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool patchIPAMPool
 //
 //    Patches a IPAM pool.
 //
@@ -7262,14 +7265,15 @@ func (r Routing) patchIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
+			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodePatchIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route DELETE /api/v2/ipampools/{ipampool_name} ipampool deleteIPAMPool
+//swagger:route DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool deleteIPAMPool
 //
 //    Removes an existing IPAM pool.
 //
@@ -7283,7 +7287,8 @@ func (r Routing) deleteIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
+			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

@@ -26,8 +26,10 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -35,9 +37,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// seedReq represents a request for referencing a seed
+// swagger:parameters listIPAMPools
+type seedReq struct {
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
+}
+
+func (req seedReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
+func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req seedReq
+	seedName := mux.Vars(r)["seed_name"]
+	if seedName == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
+	}
+	req.SeedName = seedName
+	return req, nil
+}
+
 // ipamPoolReq represents a request for managing a IPAM pool.
 // swagger:parameters getIPAMPool deleteIPAMPool
 type ipamPoolReq struct {
+	seedReq
+
 	// in: path
 	// required: true
 	IPAMPoolName string `json:"ipampool_name"`
@@ -52,14 +80,24 @@ func (r ipamPoolReq) Validate() error {
 }
 
 func DecodeIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	return ipamPoolReq{
+	req := ipamPoolReq{
 		IPAMPoolName: mux.Vars(r)["ipampool_name"],
-	}, nil
+	}
+
+	seedRequest, err := DecodeSeedReq(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	req.seedReq = seedRequest.(seedReq)
+
+	return req, nil
 }
 
 // createIPAMPoolReq represents a request to create a IPAM pool
 // swagger:parameters createIPAMPool
 type createIPAMPoolReq struct {
+	seedReq
+
 	// in: body
 	// required: true
 	Body apiv2.IPAMPool
@@ -101,8 +139,14 @@ func validateDatacenters(datacenters map[string]apiv2.IPAMPoolDatacenterSettings
 	return nil
 }
 
-func DecodeCreateIPAMPoolReq(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeCreateIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req createIPAMPoolReq
+
+	seedRequest, err := DecodeSeedReq(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	req.seedReq = seedRequest.(seedReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -148,7 +192,7 @@ func DecodePatchIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
+func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -158,7 +202,9 @@ func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		ipamPoolList, err := provider.ListUnsecured(ctx)
+		privilegedIPAMPoolProvider := ctx.Value(middleware.PrivilegedIPAMPoolProviderContextKey).(provider.PrivilegedIPAMPoolProvider)
+
+		ipamPoolList, err := privilegedIPAMPoolProvider.ListUnsecured(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +218,7 @@ func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 	}
 }
 
-func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
+func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -190,7 +236,9 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		ipamPool, err := provider.GetUnsecured(ctx, ipamPoolReq.IPAMPoolName)
+		privilegedIPAMPoolProvider := ctx.Value(middleware.PrivilegedIPAMPoolProviderContextKey).(provider.PrivilegedIPAMPoolProvider)
+
+		ipamPool, err := privilegedIPAMPoolProvider.GetUnsecured(ctx, ipamPoolReq.IPAMPoolName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
@@ -202,7 +250,7 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 	}
 }
 
-func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
+func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -222,7 +270,9 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 
 		ipamPool := toIPAMPoolKubermaticModel(&createIPAMPoolReq.Body)
 
-		if err := provider.CreateUnsecured(ctx, ipamPool); err != nil {
+		privilegedIPAMPoolProvider := ctx.Value(middleware.PrivilegedIPAMPoolProviderContextKey).(provider.PrivilegedIPAMPoolProvider)
+
+		if err := privilegedIPAMPoolProvider.CreateUnsecured(ctx, ipamPool); err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				return nil, utilerrors.NewAlreadyExists("IPAMPool", createIPAMPoolReq.Body.Name)
 			}
@@ -233,7 +283,7 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 	}
 }
 
-func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
+func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -251,7 +301,9 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		originalIPAMPool, err := provider.GetUnsecured(ctx, patchIPAMPoolReq.IPAMPoolName)
+		privilegedIPAMPoolProvider := ctx.Value(middleware.PrivilegedIPAMPoolProviderContextKey).(provider.PrivilegedIPAMPoolProvider)
+
+		originalIPAMPool, err := privilegedIPAMPoolProvider.GetUnsecured(ctx, patchIPAMPoolReq.IPAMPoolName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", patchIPAMPoolReq.IPAMPoolName)
@@ -261,7 +313,7 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 		newIPAMPool := originalIPAMPool.DeepCopy()
 		newIPAMPool.Spec = toIPAMPoolKubermaticModel(&patchIPAMPoolReq.Body).Spec
 
-		if err := provider.PatchUnsecured(ctx, originalIPAMPool, newIPAMPool); err != nil {
+		if err := privilegedIPAMPoolProvider.PatchUnsecured(ctx, originalIPAMPool, newIPAMPool); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", patchIPAMPoolReq.IPAMPoolName)
 			}
@@ -272,7 +324,7 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 	}
 }
 
-func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
+func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -290,7 +342,9 @@ func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		if err := provider.DeleteUnsecured(ctx, ipamPoolReq.IPAMPoolName); err != nil {
+		privilegedIPAMPoolProvider := ctx.Value(middleware.PrivilegedIPAMPoolProviderContextKey).(provider.PrivilegedIPAMPoolProvider)
+
+		if err := privilegedIPAMPoolProvider.DeleteUnsecured(ctx, ipamPoolReq.IPAMPoolName); err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewNotFound("IPAMPool", ipamPoolReq.IPAMPoolName)
 			}

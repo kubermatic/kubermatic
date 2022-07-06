@@ -348,6 +348,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	privilegedMLAAdminSettingProviderGetter := kubernetesprovider.PrivilegedMLAAdminSettingProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
+	privilegedIPAMPoolProviderGetter := kubernetesprovider.PrivilegedIPAMPoolProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
@@ -373,8 +375,6 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	settingsInformer.AddEventHandler(settingsWatcher)
 
 	featureGatesProvider := kubernetesprovider.NewFeatureGatesProvider(options.featureGates)
-
-	privilegedIPAMPoolProvider := kubernetesprovider.NewPrivilegedIPAMPoolProvider(client)
 
 	return providers{
 		sshKey:                                  sshKeyProvider,
@@ -423,7 +423,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		seedProvider:                            seedProvider,
 		resourceQuotaProvider:                   resourceQuotaProvider,
 		groupProjectBindingProvider:             groupProjectBindingProvider,
-		privilegedIPAMPoolProvider:              privilegedIPAMPoolProvider,
+		privilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
 	}, nil
 }
 
@@ -545,7 +545,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		SeedProvider:                            prov.seedProvider,
 		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
 		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
-		PrivilegedIPAMPoolProvider:              prov.privilegedIPAMPoolProvider,
+		PrivilegedIPAMPoolProviderGetter:        prov.privilegedIPAMPoolProviderGetter,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,
