@@ -215,13 +215,6 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		helmValues.Set(path, config.Spec.ImagePullSecret)
 	}
 
-	if !opt.DisableTelemetry {
-		path = yamled.Path{"telemetry", "uuid"}
-		if value, _ := helmValues.GetString(path); value == "" {
-			failures = append(failures, errors.New("Telemetry is enabled, but no UUID was configured; generate a UUID and set it as telemetry.uuid in your Helm values"))
-		}
-	}
-
 	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
