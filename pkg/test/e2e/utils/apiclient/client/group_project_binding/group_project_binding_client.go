@@ -30,7 +30,7 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	GetGroupProjectBinding(params *GetGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGroupProjectBindingOK, error)
 
-	ListGroupProjectBindings(params *ListGroupProjectBindingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingsOK, error)
+	ListGroupProjectBinding(params *ListGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -74,22 +74,22 @@ func (a *Client) GetGroupProjectBinding(params *GetGroupProjectBindingParams, au
 }
 
 /*
-  ListGroupProjectBindings lists project s group bindings
+  ListGroupProjectBinding lists project s group bindings
 */
-func (a *Client) ListGroupProjectBindings(params *ListGroupProjectBindingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingsOK, error) {
+func (a *Client) ListGroupProjectBinding(params *ListGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListGroupProjectBindingsParams()
+		params = NewListGroupProjectBindingParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listGroupProjectBindings",
+		ID:                 "listGroupProjectBinding",
 		Method:             "GET",
 		PathPattern:        "/api/v2/projects/{project_id}/groupbindings",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListGroupProjectBindingsReader{formats: a.formats},
+		Reader:             &ListGroupProjectBindingReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -102,12 +102,12 @@ func (a *Client) ListGroupProjectBindings(params *ListGroupProjectBindingsParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListGroupProjectBindingsOK)
+	success, ok := result.(*ListGroupProjectBindingOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListGroupProjectBindingsDefault)
+	unexpectedSuccess := result.(*ListGroupProjectBindingDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

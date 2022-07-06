@@ -58,6 +58,13 @@ func NewGetGroupProjectBindingParamsWithHTTPClient(client *http.Client) *GetGrou
    Typically these are written to a http.Request.
 */
 type GetGroupProjectBindingParams struct {
+
+	// BindingName.
+	BindingName string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +118,28 @@ func (o *GetGroupProjectBindingParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithBindingName adds the bindingName to the get group project binding params
+func (o *GetGroupProjectBindingParams) WithBindingName(bindingName string) *GetGroupProjectBindingParams {
+	o.SetBindingName(bindingName)
+	return o
+}
+
+// SetBindingName adds the bindingName to the get group project binding params
+func (o *GetGroupProjectBindingParams) SetBindingName(bindingName string) {
+	o.BindingName = bindingName
+}
+
+// WithProjectID adds the projectID to the get group project binding params
+func (o *GetGroupProjectBindingParams) WithProjectID(projectID string) *GetGroupProjectBindingParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the get group project binding params
+func (o *GetGroupProjectBindingParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetGroupProjectBindingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +147,16 @@ func (o *GetGroupProjectBindingParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
+
+	// path param binding_name
+	if err := r.SetPathParam("binding_name", o.BindingName); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
