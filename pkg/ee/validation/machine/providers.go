@@ -30,15 +30,17 @@ import (
 	"strconv"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -75,6 +77,8 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
 	case types.CloudProviderAlibaba:
 		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderHetzner:
+		quotaUsage, err = getHetznerResourceRequirements(ctx, userClient, config)
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
@@ -83,8 +87,8 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	return quotaUsage, err
 }
 
-func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting aws raw config: %w", err)
@@ -118,8 +122,8 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP raw config: %w", err)
@@ -161,8 +165,8 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting Azure raw config: %w", err)
@@ -223,8 +227,8 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getKubeVirtResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting kubevirt raw config: %w", err)
@@ -322,9 +326,9 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting Openstack raw config: %w", err)
@@ -425,13 +429,13 @@ func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimecli
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getAlibabaResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	rawConfig, err := alibabatypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting alibaba raw config: %w", err)
 	}
 
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
 	if err != nil {
 		return nil, fmt.Errorf("error getting alibaba instanceType from machine config: %w", err)
@@ -451,10 +455,6 @@ func getAlibabaResourceRequirements(ctx context.Context, client ctrlruntimeclien
 	disk, err := configVarResolver.GetConfigVarStringValue(rawConfig.DiskSize)
 	if err != nil {
 		return nil, fmt.Errorf("error getting alibaba disk from machine config: %w", err)
-	}
-
-	if err := ValidateCredentials(region, accessKeyID, accessKeySecret); err != nil {
-		return nil, nil
 	}
 
 	alibabaClient, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -494,15 +494,40 @@ func getAlibabaResourceRequirements(ctx context.Context, client ctrlruntimeclien
 	return nil, nil
 }
 
-func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := hetznertypes.GetConfig(*config)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error getting hetzner raw config: %w", err)
+	}
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+
+	serverType, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServerType)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Hetzner server type from machine config: %w", err)
+	}
+	token, err := configVarResolver.GetConfigVarStringValue(rawConfig.Token)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Hetzner token from machine config: %w", err)
+	}
+	hClient := hcloud.NewClient(hcloud.WithToken(token))
+
+	size, _, err := hClient.ServerType.Get(ctx, serverType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
-	requestZones := ecs.CreateDescribeZonesRequest()
-	requestZones.Scheme = "https"
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(size.Cores))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", size.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", size.Disk))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+	}
 
-	_, err = client.DescribeZones(requestZones)
-	return err
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
