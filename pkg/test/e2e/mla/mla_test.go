@@ -1,4 +1,4 @@
-//go:build mla
+//--- go:build mla
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,15 +35,17 @@ import (
 	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,60 +69,71 @@ alertmanager_config: |
 var (
 	datacenter = "kubermatic"
 	location   = "hetzner-hel1"
-	version    = utils.KubernetesVersion()
+	logOptions = log.NewDefaultOptions()
 	credential = "e2e-hetzner"
 )
 
+func init() {
+	logOptions.AddFlags(flag.CommandLine)
+}
+
 func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
 	seedClient, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// login
-	masterToken, err := utils.RetrieveMasterToken(ctx)
-	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-	masterClient := utils.NewTestClient(masterToken, t)
-
-	masterAdminToken, err := utils.RetrieveAdminMasterToken(ctx)
-	if err != nil {
-		t.Fatalf("failed to get master admin token: %v", err)
-	}
-	masterAdminClient := utils.NewTestClient(masterAdminToken, t)
-
 	// create dummy project
-	t.Log("creating project...")
-	project, err := masterClient.CreateProject(rand.String(10))
+	projectJig := jig.NewProjectJig(seedClient, logger)
+	project, err := projectJig.Create(ctx, true)
 	if err != nil {
-		t.Fatalf("failed to create project: %v", getErrorResponse(err))
+		t.Errorf("failed to create project: %v", err)
+		return
 	}
-	defer masterClient.CleanupProject(t, project.ID)
+	defer projectJig.Delete(ctx, true)
 
-	t.Log("creating cluster...")
-	apiCluster, err := masterClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
+	// create test cluster
+	clusterJig := jig.NewClusterJig(seedClient, logger)
+	cluster, err := clusterJig.
+		WithProject(project).
+		WithGenerateName("e2e-mla-").
+		WithHumanReadableName("MLA test cluster").
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: datacenter,
+			Hetzner: &kubermaticv1.HetznerCloudSpec{
+				CredentialsReference: &providerconfig.GlobalSecretKeySelector{
+					ObjectReference: corev1.ObjectReference{
+						Name:      credential,
+						Namespace: "kubermatic",
+					},
+				},
+			},
+		}).
+		Create(ctx, true)
 	if err != nil {
-		t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
+		t.Errorf("failed to create cluster: %v", err)
+		return
+	}
+	defer clusterJig.Delete(ctx, true)
+
+	// create a few test nodes
+	machineJig := jig.NewMachineJig(seedClient, logger, cluster)
+	err = machineJig.
+		WithName("workers").
+		WithReplicas(1).
+		WithUbuntu().
+		WithHetzner("cx21").
+		Create(ctx, jig.WaitForReadyPods)
+	if err != nil {
+		t.Errorf("failed to create worker nodes: %v", err)
+		return
 	}
 
-	// wait for the cluster to become healthy
-	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster did not become healthy: %v", err)
-	}
-
-	if err := masterClient.WaitForClusterNodeDeploymentsToByReady(project.ID, datacenter, apiCluster.ID, 1); err != nil {
-		t.Fatalf("cluster nodes not ready: %v", err)
-	}
-
-	// get the cluster object (the CRD, not the API's representation)
-	cluster := &kubermaticv1.Cluster{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-		t.Fatalf("failed to get cluster: %v", err)
-	}
-
+	// ennable MLA
+	logger.Info("Enabling MLA...")
 	seed := &kubermaticv1.Seed{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: "kubermatic", Namespace: "kubermatic"}, seed); err != nil {
 		t.Fatalf("failed to get seed: %v", err)
@@ -131,17 +145,15 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to update seed: %v", err)
 	}
 
-	// enable MLA
-	t.Log("enabling MLA...")
 	if err := setMLAIntegration(ctx, seedClient, cluster, true); err != nil {
 		t.Fatalf("failed to set MLA integration to true: %v", err)
 	}
 
-	t.Log("waiting for project to get grafana org annotation")
+	logger.Info("Waiting for project to get grafana org annotation...")
 	p := &kubermaticv1.Project{}
-	timeout := 300 * time.Second
+	timeout := 5 * time.Minute
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.ID}, p); err != nil {
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
 			t.Fatalf("failed to get project: %v", err)
 		}
 
@@ -151,7 +163,7 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("waiting for project annotation %+v", p)
 	}
 
-	t.Log("creating client for user cluster...")
+	logger.Info("Creating Grafana client for user cluster...")
 	grafanaSecret := "mla/grafana"
 
 	split := strings.Split(grafanaSecret, "/")

@@ -478,6 +478,10 @@ func createUserCluster(
 				AccessKeyID:     accessKeyID,
 			},
 		}).
+		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCilium,
+			Version: "v1.11",
+		}).
 		Create(ctx, true)
 	if err != nil {
 		return nil, cleanup, log, err
@@ -514,7 +518,7 @@ func createUserCluster(
 		WithAWS("t3.small", "eu-central-1", "eu-central-1a").
 		Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to create nodes: %w", err)
+		return nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
 	}
 
 	clusterClient, err := clusterJig.ClusterClient(ctx)

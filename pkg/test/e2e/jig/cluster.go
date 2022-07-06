@@ -133,6 +133,16 @@ func (j *ClusterJig) WithCloudSpec(spec *kubermaticv1.CloudSpec) *ClusterJig {
 	return j
 }
 
+func (j *ClusterJig) WithCNIPlugin(settings *kubermaticv1.CNIPluginSettings) *ClusterJig {
+	j.spec.CNIPlugin = settings
+	return j
+}
+
+func (j *ClusterJig) WithPatch(patcher func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec) *ClusterJig {
+	j.spec = patcher(j.spec)
+	return j
+}
+
 func (j *ClusterJig) ClusterName() string {
 	return j.clusterName
 }
@@ -183,6 +193,10 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		return nil, errors.New("cluster was already created; delete it first or use a different cluster jig")
 	}
 
+	if j.projectName == "" {
+		return nil, errors.New("no project specified")
+	}
+
 	project, err := j.getProject(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get parent project: %w", err)
@@ -201,13 +215,16 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		Spec: *j.spec,
 	}
 
-	j.log.Info("Creating cluster...", "humanname", j.spec.HumanReadableName)
+	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName)
 	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, j.ownerEmail)
 	if err != nil {
 		return nil, err
 	}
 
 	log := j.log.With("cluster", cluster.Name)
+
+	log.Info("Cluster created successfully.")
+	j.clusterName = cluster.Name
 
 	if waitForHealthy {
 		log.Info("Waiting for cluster to become healthy...")
@@ -220,9 +237,6 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	if err := j.client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
 		return nil, fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
-
-	log.Info("Cluster created successfully.")
-	j.clusterName = cluster.Name
 
 	return cluster, nil
 }

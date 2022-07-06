@@ -27,6 +27,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -119,6 +120,12 @@ func (j *MachineJig) WithAWS(instanceType string, region string, az string) *Mac
 	})
 }
 
+func (j *MachineJig) WithHetzner(instanceSize string) *MachineJig {
+	return j.WithProviderSpec(hetznertypes.RawConfig{
+		ServerType: providerconfig.ConfigVarString{Value: instanceSize},
+	})
+}
+
 type MachineWaitMode string
 
 const (
@@ -128,7 +135,7 @@ const (
 )
 
 func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error {
-	j.log.Info("Creating MachineDeployment...", "name", j.name, "replicas", j.replicas)
+	j.log.Infow("Creating MachineDeployment...", "name", j.name, "replicas", j.replicas)
 
 	provider, err := j.determineCloudProvider()
 	if err != nil {
@@ -274,14 +281,7 @@ func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlrun
 
 		unready := sets.NewString()
 		for _, pod := range pods.Items {
-			ready := false
-			for _, c := range pod.Status.Conditions {
-				if c.Type == corev1.ContainersReady {
-					ready = c.Status == corev1.ConditionTrue
-				}
-			}
-
-			if !ready {
+			if !podIsReadyOrCompleted(&pod) {
 				unready.Insert(pod.Name)
 			}
 		}
@@ -292,6 +292,34 @@ func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlrun
 
 		return nil, nil
 	})
+}
+
+func podIsReadyOrCompleted(pod *corev1.Pod) bool {
+	for _, cs := range pod.Status.ContainerStatuses {
+		if !containerIsReadyOrCompleted(cs) {
+			return false
+		}
+	}
+
+	for _, cs := range pod.Status.InitContainerStatuses {
+		if !containerIsReadyOrCompleted(cs) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func containerIsReadyOrCompleted(cs corev1.ContainerStatus) bool {
+	if cs.Ready {
+		return true
+	}
+
+	if cs.State.Terminated != nil && cs.State.Terminated.ExitCode == 0 {
+		return true
+	}
+
+	return false
 }
 
 func (j *MachineJig) Delete(ctx context.Context, synchronous bool) error {
@@ -343,7 +371,16 @@ func (j *MachineJig) getClusterClient(ctx context.Context) (ctrlruntimeclient.Cl
 		return j.clusterClient, nil
 	}
 
-	return NewClusterJig(j.client, j.log).WithExistingCluster(j.cluster.Name).ClusterClient(ctx)
+	if j.cluster == nil {
+		return nil, errors.New("no cluster specified")
+	}
+
+	projectName := j.cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+
+	return NewClusterJig(j.client, j.log).
+		WithExistingCluster(j.cluster.Name).
+		WithProjectName(projectName).
+		ClusterClient(ctx)
 }
 
 func (j *MachineJig) determineCloudProvider() (providerconfig.CloudProvider, error) {
@@ -388,6 +425,8 @@ func (j *MachineJig) enrichProviderSpec(provider providerconfig.CloudProvider) (
 	switch provider {
 	case providerconfig.CloudProviderAWS:
 		return j.enrichAWSProviderSpec()
+	case providerconfig.CloudProviderHetzner:
+		return j.enrichHetznerProviderSpec()
 	default:
 		return nil, fmt.Errorf("don't know how to handle %q provider specs", provider)
 	}
@@ -436,4 +475,23 @@ func (j *MachineJig) enrichAWSProviderSpec() (interface{}, error) {
 	awsConfig.Tags = j.clusterTags()
 
 	return awsConfig, nil
+}
+
+func (j *MachineJig) enrichHetznerProviderSpec() (interface{}, error) {
+	hetznerConfig, ok := j.providerSpec.(hetznertypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Hetzner, but given provider spec was %T", j.providerSpec)
+	}
+
+	if hetznerConfig.Datacenter.Value == "" {
+		hetznerConfig.Datacenter.Value = "hel1-dc2"
+	}
+
+	if len(hetznerConfig.Networks) == 0 {
+		hetznerConfig.Networks = []providerconfig.ConfigVarString{{
+			Value: "kubermatic-e2e",
+		}}
+	}
+
+	return hetznerConfig, nil
 }

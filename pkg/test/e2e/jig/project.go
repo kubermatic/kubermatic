@@ -46,8 +46,9 @@ type ProjectJig struct {
 
 func NewProjectJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ProjectJig {
 	return &ProjectJig{
-		client: client,
-		log:    log,
+		client:            client,
+		log:               log,
+		humanReadableName: "e2e test project",
 	}
 }
 
@@ -77,11 +78,13 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 		return nil, fmt.Errorf("failed to create project provider: %w", err)
 	}
 
-	j.log.Info("Creating project...", "humanname", j.humanReadableName)
+	j.log.Infow("Creating project...", "humanname", j.humanReadableName)
 	project, err := projectProvider.New(ctx, j.projectName, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	j.projectName = project.Name
 
 	if waitForActive {
 		j.log.Info("Waiting for project to become active...")
@@ -113,7 +116,6 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 	}
 
 	j.log.Info("Project created successfully.", "name", project.Name)
-	j.projectName = project.Name
 
 	return project, nil
 }
