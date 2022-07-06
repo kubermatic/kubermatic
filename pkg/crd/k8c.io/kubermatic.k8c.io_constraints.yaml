@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: constraints.kubermatic.k8c.io
 spec:
@@ -122,6 +122,7 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   namespaceSelector:
                     description: NamespaceSelector  is a standard Kubernetes namespace
                       selector. If defined, make sure to add Namespaces to your configs.config.gatekeeper.sh
@@ -168,6 +169,7 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   namespaces:
                     description: Namespaces is a list of namespace names. If defined,
                       a constraint will only apply to resources in a listed namespace.
@@ -237,6 +239,7 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   providers:
                     description: Providers is a list of cloud providers to which the
                       Constraint applies to. Empty means all providers are selected.

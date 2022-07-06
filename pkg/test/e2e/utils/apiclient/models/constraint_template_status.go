@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintTemplateStatus ConstraintTemplateStatus defines the observed state of ConstraintTemplate
+// ConstraintTemplateStatus ConstraintTemplateStatus defines the observed state of ConstraintTemplate.
 //
 // swagger:model ConstraintTemplateStatus
 type ConstraintTemplateStatus struct {
