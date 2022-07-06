@@ -48,12 +48,12 @@ import (
 
 const (
 	// GCP credential env.
-	envServiceAccount = "GOOGLE_SERVICE_ACCOUNT"
+	envGoogleServiceAccount = "GOOGLE_SERVICE_ACCOUNT"
 	// Azure credential env.
-	envClientID       = "AZURE_CLIENT_ID"
-	envClientSecret   = "AZURE_CLIENT_SECRET"
-	envTenantID       = "AZURE_TENANT_ID"
-	envSubscriptionID = "AZURE_SUBSCRIPTION_ID"
+	envAzureClientID       = "AZURE_CLIENT_ID"
+	envAzureClientSecret   = "AZURE_CLIENT_SECRET"
+	envAzureTenantID       = "AZURE_TENANT_ID"
+	envAzureSubscriptionID = "AZURE_SUBSCRIPTION_ID"
 	// Openstack credential env.
 	envOSUsername                    = "OS_USER_NAME"
 	envOSPassword                    = "OS_PASSWORD"
@@ -145,7 +145,7 @@ func getGCPResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting GCP raw config: %w", err)
 	}
 
-	serviceAccount, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ServiceAccount, envServiceAccount)
+	serviceAccount, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ServiceAccount, envGoogleServiceAccount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"serviceAccount\" field, error = %w", err)
 	}
@@ -192,22 +192,22 @@ func getAzureResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting Azure raw config: %w", err)
 	}
 
-	subscriptionID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.SubscriptionID, envSubscriptionID)
+	subscriptionID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.SubscriptionID, envAzureSubscriptionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"subscriptionID\" field, error = %w", err)
 	}
 
-	tenantID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, envTenantID)
+	tenantID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, envAzureTenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"tenantID\" field, error = %w", err)
 	}
 
-	clientID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientID, envClientID)
+	clientID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientID, envAzureClientID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"clientID\" field, error = %w", err)
 	}
 
-	clientSecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientSecret, envClientSecret)
+	clientSecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientSecret, envAzureClientSecret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"clientSecret\" field, error = %w", err)
 	}
