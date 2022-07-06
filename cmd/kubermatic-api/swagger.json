@@ -14598,6 +14598,182 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/catalogs": {
+      "get": {
+        "description": "List VMware Cloud Director Catalogs",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorCatalogsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorCatalogList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorCatalogList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/networks": {
+      "get": {
+        "description": "List VMware Cloud Director OVDC Networks",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorNetworksNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorNetworkList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorNetworkList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/storageprofiles": {
+      "get": {
+        "description": "List VMware Cloud Director Storage Profiles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorStorageProfilesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorStorageProfileList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorStorageProfileList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/templates/{catalog_name}": {
+      "get": {
+        "description": "List VMware Cloud Director Templates",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vmwareclouddirector"
+        ],
+        "operationId": "listVMwareCloudDirectorTemplatesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "CatalogName",
+            "description": "Catalog name to fetch the templates from",
+            "name": "catalog_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VMwareCloudDirectorTemplateList",
+            "schema": {
+              "$ref": "#/definitions/VMwareCloudDirectorTemplateList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/folders": {
       "get": {
         "description": "Lists folders from vsphere datacenter",
@@ -19338,6 +19514,7 @@
           {
             "type": "string",
             "x-go-name": "CatalogName",
+            "description": "Catalog name to fetch the templates from",
             "name": "catalog_name",
             "in": "path",
             "required": true
@@ -30459,7 +30636,7 @@
           "$ref": "#/definitions/VMwareCloudDirectorCSIConfig"
         },
         "organization": {
-          "description": "Password is the VMware Cloud Director user password.\n+optional",
+          "description": "Organization is the name of organization to use.\n+optional",
           "type": "string",
           "x-go-name": "Organization"
         },

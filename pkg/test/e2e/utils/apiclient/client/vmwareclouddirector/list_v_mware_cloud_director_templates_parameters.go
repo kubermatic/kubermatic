@@ -74,7 +74,10 @@ type ListVMwareCloudDirectorTemplatesParams struct {
 	// VDC.
 	VDC *string
 
-	// CatalogName.
+	/* CatalogName.
+
+	   Catalog name to fetch the templates from
+	*/
 	CatalogName string
 
 	/* Dc.

@@ -21,7 +21,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	// Network is the name of organizational virtual data center network that will be associated with the VMs and vApp.
 	OVDCNetwork string `json:"ovdcNetwork,omitempty"`
 
-	// Password is the VMware Cloud Director user password.
+	// Organization is the name of organization to use.
 	// +optional
 	Organization string `json:"organization,omitempty"`
 
