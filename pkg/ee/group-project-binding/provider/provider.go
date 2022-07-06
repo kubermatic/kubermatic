@@ -27,12 +27,12 @@ package provider
 import (
 	"context"
 	"errors"
-	"k8s.io/apimachinery/pkg/types"
 
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
+	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -71,10 +71,10 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 
 	if len(projectBindings) > 0 {
 		// Fetch first binding to ensure user has permissions
-		//_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
-		//if err != nil {
-		//	return nil, err
-		//}
+		_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		return nil, nil
 	}

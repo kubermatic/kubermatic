@@ -26,16 +26,17 @@ package handler
 
 import (
 	"context"
-	"github.com/gorilla/mux"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-type getGroupProjectBindingRq struct {
+type getGroupProjectBindingReq struct {
 	// in: path
 	// required: true
 	ProjectID string `json:"project_id"`
@@ -46,7 +47,7 @@ type getGroupProjectBindingRq struct {
 }
 
 func DecodeGetGroupProjectBindingReq(r *http.Request) (interface{}, error) {
-	var req getGroupProjectBindingRq
+	var req getGroupProjectBindingReq
 
 	req.ProjectID = mux.Vars(r)["project_id"]
 	if req.ProjectID == "" {
@@ -110,7 +111,7 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
 ) (*apiv2.GroupProjectBinding, error) {
-	req, ok := request.(getGroupProjectBindingRq)
+	req, ok := request.(getGroupProjectBindingReq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}

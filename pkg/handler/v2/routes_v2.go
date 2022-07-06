@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -42,6 +41,7 @@ import (
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
