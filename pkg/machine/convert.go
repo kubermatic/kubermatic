@@ -110,7 +110,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemRockyLinux:
 		config := &rockylinux.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse rhel config: %w", err)
+			return nil, fmt.Errorf("failed to parse rockylinux config: %w", err)
 		}
 		operatingSystemSpec.RockyLinux = &apiv1.RockyLinuxSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
