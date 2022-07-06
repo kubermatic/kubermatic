@@ -7190,7 +7190,7 @@ func (r Routing) listIPAMPools() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
 		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7214,7 +7214,7 @@ func (r Routing) getIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7238,7 +7238,7 @@ func (r Routing) createIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
 		ipampool.DecodeCreateIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7262,7 +7262,7 @@ func (r Routing) patchIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
 		ipampool.DecodePatchIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7283,7 +7283,7 @@ func (r Routing) deleteIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter, r.ipamPoolProvider)),
+		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter, r.privilegedIPAMPoolProvider)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

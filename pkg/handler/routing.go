@@ -205,7 +205,7 @@ type RoutingParams struct {
 	SeedProvider                            provider.SeedProvider
 	ResourceQuotaProvider                   provider.ResourceQuotaProvider
 	GroupProjectBindingProvider             provider.GroupProjectBindingProvider
-	IPAMPoolProvider                        provider.IPAMPoolProvider
+	PrivilegedIPAMPoolProvider              provider.PrivilegedIPAMPoolProvider
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 	Features                                features.FeatureGate

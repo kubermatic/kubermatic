@@ -26,22 +26,22 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// IPAMPoolProvider struct that holds required components of the IPAMPoolProvider.
-type IPAMPoolProvider struct {
+// PrivilegedIPAMPoolProvider struct that holds required components of the PrivilegedIPAMPoolProvider.
+type PrivilegedIPAMPoolProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-var _ provider.IPAMPoolProvider = &IPAMPoolProvider{}
+var _ provider.PrivilegedIPAMPoolProvider = &PrivilegedIPAMPoolProvider{}
 
-// NewIPAMPoolProvider returns a new IPAMPoolProvider.
-func NewIPAMPoolProvider(privilegedClient ctrlruntimeclient.Client) *IPAMPoolProvider {
-	return &IPAMPoolProvider{
+// NewPrivilegedIPAMPoolProvider returns a new PrivilegedIPAMPoolProvider.
+func NewPrivilegedIPAMPoolProvider(privilegedClient ctrlruntimeclient.Client) *PrivilegedIPAMPoolProvider {
+	return &PrivilegedIPAMPoolProvider{
 		privilegedClient: privilegedClient,
 	}
 }
 
 // ListUnsecured lists available IPAM pools.
-func (p *IPAMPoolProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.IPAMPoolList, error) {
+func (p *PrivilegedIPAMPoolProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.IPAMPoolList, error) {
 	ipamPoolList := &kubermaticv1.IPAMPoolList{}
 	if err := p.privilegedClient.List(ctx, ipamPoolList); err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (p *IPAMPoolProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.IPA
 }
 
 // GetUnsecured gets IPAM pool by name.
-func (p *IPAMPoolProvider) GetUnsecured(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
+func (p *PrivilegedIPAMPoolProvider) GetUnsecured(ctx context.Context, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
 	ipamPool := &kubermaticv1.IPAMPool{}
 	if err := p.privilegedClient.Get(ctx, types.NamespacedName{Name: ipamPoolName}, ipamPool); err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (p *IPAMPoolProvider) GetUnsecured(ctx context.Context, ipamPoolName string
 }
 
 // DeleteUnsecured deletes IPAM pool by name.
-func (p *IPAMPoolProvider) DeleteUnsecured(ctx context.Context, ipamPoolName string) error {
+func (p *PrivilegedIPAMPoolProvider) DeleteUnsecured(ctx context.Context, ipamPoolName string) error {
 	ipamPool, err := p.GetUnsecured(ctx, ipamPoolName)
 	if err != nil {
 		return err
@@ -73,11 +73,11 @@ func (p *IPAMPoolProvider) DeleteUnsecured(ctx context.Context, ipamPoolName str
 }
 
 // CreateUnsecured creates a IPAM pool.
-func (p *IPAMPoolProvider) CreateUnsecured(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
+func (p *PrivilegedIPAMPoolProvider) CreateUnsecured(ctx context.Context, ipamPool *kubermaticv1.IPAMPool) error {
 	return p.privilegedClient.Create(ctx, ipamPool)
 }
 
 // PatchUnsecured patches a IPAM pool.
-func (p *IPAMPoolProvider) PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
+func (p *PrivilegedIPAMPoolProvider) PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error {
 	return p.privilegedClient.Patch(ctx, newIPAMPool, ctrlruntimeclient.MergeFrom(oldIPAMPool))
 }

@@ -1346,7 +1346,7 @@ type GroupProjectBindingProvider interface {
 	Delete(ctx context.Context, userInfo *UserInfo, name string) error
 }
 
-type IPAMPoolProvider interface {
+type PrivilegedIPAMPoolProvider interface {
 	// ListUnsecured gets the IPAM pool list.
 	//
 	// Note that this function:

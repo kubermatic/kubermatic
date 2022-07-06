@@ -134,7 +134,7 @@ func TestListIPAMPools(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 
-			ipamPoolProvider := kubernetes.NewIPAMPoolProvider(client)
+			ipamPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(client)
 
 			resp, err := ipamPoolProvider.ListUnsecured(context.Background())
 			assert.NoError(t, err)
@@ -228,7 +228,7 @@ func TestGetIPAMPool(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 
-			ipamPoolProvider := kubernetes.NewIPAMPoolProvider(client)
+			ipamPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(client)
 
 			resp, err := ipamPoolProvider.GetUnsecured(context.Background(), tc.ipamPoolName)
 			assert.Equal(t, tc.expectedError, err)
@@ -312,7 +312,7 @@ func TestCreateIPAMPool(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 
-			ipamPoolProvider := kubernetes.NewIPAMPoolProvider(client)
+			ipamPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(client)
 
 			err := ipamPoolProvider.CreateUnsecured(context.Background(), tc.ipamPool)
 			assert.Equal(t, tc.expectedError, err)
@@ -364,7 +364,7 @@ func TestDeleteIPAMPool(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 
-			ipamPoolProvider := kubernetes.NewIPAMPoolProvider(client)
+			ipamPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(client)
 
 			err := ipamPoolProvider.DeleteUnsecured(context.Background(), tc.ipamPoolName)
 			assert.Equal(t, tc.expectedError, err)
@@ -465,7 +465,7 @@ func TestPatchIPAMPool(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 
-			ipamPoolProvider := kubernetes.NewIPAMPoolProvider(client)
+			ipamPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(client)
 
 			originalIPAMPool, err := ipamPoolProvider.GetUnsecured(ctx, tc.newIPAMPool.Name)
 			assert.Equal(t, tc.expectedGetError, err)

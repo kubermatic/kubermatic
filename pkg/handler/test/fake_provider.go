@@ -378,7 +378,7 @@ func (p *FakeEtcdRestoreProvider) Delete(ctx context.Context, userInfo *provider
 }
 
 type FakeIPAMPoolProvider struct {
-	Provider   *kubernetes.IPAMPoolProvider
+	Provider   *kubernetes.PrivilegedIPAMPoolProvider
 	FakeClient ctrlruntimeclient.Client
 }
 

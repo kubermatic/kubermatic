@@ -148,7 +148,7 @@ func DecodePatchIPAMPoolReq(ctx context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -172,7 +172,7 @@ func ListIPAMPoolsEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 	}
 }
 
-func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -202,7 +202,7 @@ func GetIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provid
 	}
 }
 
-func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -233,7 +233,7 @@ func CreateIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider pro
 	}
 }
 
-func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -272,7 +272,7 @@ func PatchIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider prov
 	}
 }
 
-func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.IPAMPoolProvider) endpoint.Endpoint {
+func DeleteIPAMPoolEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.PrivilegedIPAMPoolProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
