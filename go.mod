@@ -132,7 +132,7 @@ require (
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
+	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.1.0 // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
@@ -154,7 +154,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.1-0.20210504230335-f78f29fc09ea // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -255,6 +254,7 @@ require (
 
 replace (
 	github.com/apoydence/onpar => github.com/poy/onpar v0.0.0-20200406201722-06f95a1c68e8
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
@@ -266,7 +266,9 @@ replace (
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.6
 	k8s.io/code-generator => k8s.io/code-generator v0.23.6
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.6
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	k8s.io/kubectl => k8s.io/kubectl v0.23.6
 	k8s.io/kubelet => k8s.io/kubelet v0.23.6
 	k8s.io/metrics => k8s.io/metrics v0.23.6
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.11.0
 )
