@@ -3977,6 +3977,11 @@
         "parameters": [
           {
             "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -3995,11 +4000,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "header"
           }
         ],
         "responses": {
@@ -16025,7 +16025,16 @@
           "groupProjectBinding"
         ],
         "summary": "Lists project's group bindings.",
-        "operationId": "listGroupProjectBindings",
+        "operationId": "listGroupProjectBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "GroupProjectBinding",
@@ -16061,6 +16070,22 @@
         ],
         "summary": "Get project group binding.",
         "operationId": "getGroupProjectBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "BindingName",
+            "name": "binding_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "GroupProjectBinding",

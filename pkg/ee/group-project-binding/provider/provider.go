@@ -28,7 +28,7 @@ import (
 	"context"
 	"errors"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -51,18 +51,18 @@ func NewGroupProjectBindingProvider(createMasterImpersonatedClient kubernetes.Im
 	}
 }
 
-func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provider.UserInfo, projectID string) ([]v1.GroupProjectBinding, error) {
+func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provider.UserInfo, projectID string) ([]kubermaticv1.GroupProjectBinding, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
 
-	allBindings := &v1.GroupProjectBindingList{}
+	allBindings := &kubermaticv1.GroupProjectBindingList{}
 	listOpts := &ctrlruntimeclient.ListOptions{}
 	if err := p.clientPrivileged.List(ctx, allBindings, listOpts); err != nil {
 		return nil, err
 	}
 
-	var projectBindings []v1.GroupProjectBinding
+	var projectBindings []kubermaticv1.GroupProjectBinding
 	for _, binding := range allBindings.Items {
 		if binding.Spec.ProjectID == projectID {
 			projectBindings = append(projectBindings, binding)
@@ -82,7 +82,7 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 	return projectBindings, nil
 }
 
-func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*v1.GroupProjectBinding, error) {
+func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
@@ -97,7 +97,7 @@ func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provide
 		return nil, err
 	}
 
-	binding := &v1.GroupProjectBinding{}
+	binding := &kubermaticv1.GroupProjectBinding{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{Name: name}, binding); err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provide
 	return binding, nil
 }
 
-func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *provider.UserInfo, binding *v1.GroupProjectBinding) error {
+func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.GroupProjectBinding) error {
 	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}
@@ -123,7 +123,7 @@ func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *prov
 	return masterImpersonatedClient.Create(ctx, binding)
 }
 
-func (p *GroupProjectBindingProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldBinding, newBinding *v1.GroupProjectBinding) error {
+func (p *GroupProjectBindingProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldBinding, newBinding *kubermaticv1.GroupProjectBinding) error {
 	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}

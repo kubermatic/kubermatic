@@ -6798,7 +6798,7 @@ func (r Routing) deleteResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route get /api/v2/projects/{project_id}/groupbindings groupProjectBinding listGroupProjectBindings
+//swagger:route get /api/v2/projects/{project_id}/groupbindings groupProjectBinding listGroupProjectBinding
 //
 //    Lists project's group bindings.
 //

@@ -36,6 +36,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
+// swagger:parameters getGroupProjectBinding
 type getGroupProjectBindingReq struct {
 	// in: path
 	// required: true
