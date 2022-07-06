@@ -75,7 +75,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 		{
 			name:        "User not found",
 			requestName: "notfound",
-			err:         false,
+			err:         true,
 			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.UserProjectBinding{
 					ObjectMeta: metav1.ObjectMeta{
