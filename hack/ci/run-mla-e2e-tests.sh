@@ -61,6 +61,9 @@ spec:
 EOF
 retry 2 kubectl apply -f user.yaml
 
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 echodate "Running MLA tests..."
 
 go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
