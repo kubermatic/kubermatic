@@ -1,4 +1,4 @@
-//--- go:build mla
+//go:build mla
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -70,8 +70,7 @@ alertmanager_config: |
 )
 
 var (
-	datacenter = "kubermatic"
-	location   = "hetzner-hel1"
+	datacenter = "hetzner-hel1"
 	logOptions = log.NewDefaultOptions()
 	credential = "e2e-hetzner"
 )

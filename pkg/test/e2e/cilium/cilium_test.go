@@ -483,9 +483,6 @@ func createUserCluster(
 			Version: "v1.11",
 		}).
 		Create(ctx, true)
-	if err != nil {
-		return nil, cleanup, log, err
-	}
 	teardowns = append(teardowns, func() {
 		// This deletion will happen in the background, i.e. we are not waiting
 		// for its completion. This is fine in e2e tests, where the surrounding
@@ -495,6 +492,9 @@ func createUserCluster(
 			t.Errorf("failed to delete cluster: %v", err)
 		}
 	})
+	if err != nil {
+		return nil, cleanup, log, err
+	}
 
 	// create hubble addon
 	log.Info("Installing hubble addon...")
