@@ -119,7 +119,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	err = r.reconcileAllSeeds(ctx, log, seedsecret, func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
 		seedSecret := &corev1.Secret{}
 		if err := c.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seedsecret), seedSecret); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to fetch ClusterTemplate on seed cluster: %w", err)
+			return fmt.Errorf("failed to fetch Secret on seed cluster: %w", err)
 		}
 
 		// see project-synchronizer's syncAllSeeds comment

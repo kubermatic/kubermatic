@@ -118,7 +118,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, appDef *appskubermaticv1.ApplicationDefinition) error {
 		seedDef := &appskubermaticv1.ApplicationDefinition{}
 		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(appDef), seedDef); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to fetch ClusterTemplate on seed cluster: %w", err)
+			return fmt.Errorf("failed to fetch ApplicationDefinition on seed cluster: %w", err)
 		}
 
 		// see project-synchronizer's syncAllSeeds comment
