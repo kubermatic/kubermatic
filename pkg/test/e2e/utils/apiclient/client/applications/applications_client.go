@@ -28,9 +28,49 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CreateApplicationInstallation(params *CreateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateApplicationInstallationCreated, error)
+
 	ListApplicationInstallations(params *ListApplicationInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationInstallationsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  CreateApplicationInstallation Lists ApplicationInstallations which belong to the given cluster
+*/
+func (a *Client) CreateApplicationInstallation(params *CreateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateApplicationInstallationCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateApplicationInstallationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createApplicationInstallation",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateApplicationInstallationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateApplicationInstallationCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateApplicationInstallationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

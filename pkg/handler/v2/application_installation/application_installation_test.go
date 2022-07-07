@@ -17,6 +17,8 @@ limitations under the License.
 package applicationinstallation_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -127,6 +129,85 @@ func TestListApplicationInstallations(t *testing.T) {
 			wrappedExpectedApplicationInstallations.Sort()
 
 			actualApplicationInstallations.EqualOrDie(wrappedExpectedApplicationInstallations, t)
+		})
+	}
+}
+
+// TODO I am undecided if we need any more testcases here. They all seem to be standard cases, which are
+// handled by generic errors (e.g. object already exists, invalid spec)
+func TestCreateApplicationInstallation(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                      string
+		ProjectID                 string
+		ClusterID                 string
+		ExistingKubermaticObjects []ctrlruntimeclient.Object
+		ExistingAPIUser           *apiv1.User
+		ApplicationInstallation   *apiv2.ApplicationInstallation
+		ExpectedResponse          *apiv2.ApplicationInstallation
+		ExpectedHTTPStatusCode    int
+	}{
+		{
+			Name:      "create ApplicationInstallation that matches spec",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser:         test.GenDefaultAPIUser(),
+			ApplicationInstallation: test.GenApiApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			ExpectedHTTPStatusCode:  http.StatusOK,
+			ExpectedResponse: &apiv2.ApplicationInstallation{
+				ObjectMeta: apiv1.ObjectMeta{
+					Name: "app1",
+				},
+				Namespace: app1TargetNamespace,
+				Spec: &appskubermaticv1.ApplicationInstallationSpec{
+					Namespace: appskubermaticv1.NamespaceSpec{
+						Name:   app1TargetNamespace,
+						Create: true,
+					},
+					ApplicationRef: appskubermaticv1.ApplicationRef{
+						Name: "sample-app",
+						Version: appskubermaticv1.Version{
+							Version: *semverlib.MustParse("v1.0.0"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations", tc.ProjectID, tc.ClusterID)
+			body, err := json.Marshal(tc.ApplicationInstallation)
+			if err != nil {
+				t.Fatalf("failed to marshalling mla admin setting: %v", err)
+			}
+			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedHTTPStatusCode {
+				t.Errorf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, res.Code, res.Body.String())
+				return
+			}
+
+			if res.Code == http.StatusOK {
+				b, err := json.Marshal(tc.ExpectedResponse)
+				if err != nil {
+					t.Fatalf("failed to marshal expected response: %v", err)
+				}
+				test.CompareWithResult(t, res, string(b))
+			}
 		})
 	}
 }

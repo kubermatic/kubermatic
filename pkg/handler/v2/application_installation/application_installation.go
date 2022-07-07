@@ -26,26 +26,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(listApplicationInstallationsReq)
 
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		installList := &appskubermaticv1.ApplicationInstallationList{}
@@ -62,6 +53,24 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoi
 	}
 }
 
+func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(createApplicationInstallationReq)
+
+		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+
+		internalAppInstall := convertExternalToInternal(&req.Body)
+		if err := client.Create(ctx, internalAppInstall); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToExternal(internalAppInstall), nil
+	}
+}
+
 func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
 	return &apiv2.ApplicationInstallation{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -71,4 +80,38 @@ func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *a
 		Namespace: app.Namespace,
 		Spec:      &app.Spec,
 	}
+}
+
+func convertExternalToInternal(app *apiv2.ApplicationInstallation) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       appskubermaticv1.ApplicationInstallationKindName,
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+		Spec: *app.Spec,
+	}
+}
+
+func userClientFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return client, nil
 }

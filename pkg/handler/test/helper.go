@@ -2123,3 +2123,25 @@ func GenApplicationInstallation(name, clusterName, targetnamespace string) *apps
 		},
 	}
 }
+
+func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *apiv2.ApplicationInstallation {
+	return &apiv2.ApplicationInstallation{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: name,
+			ID:   name,
+		},
+		Namespace: targetnamespace,
+		Spec: &appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
+				Name:   targetnamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name: "sample-app",
+				Version: appskubermaticv1.Version{
+					Version: *semverlib.MustParse("v1.0.0"),
+				},
+			},
+		},
+	}
+}

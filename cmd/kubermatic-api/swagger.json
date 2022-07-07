@@ -10691,6 +10691,63 @@
             }
           }
         }
+      },
+      "post": {
+        "description": "Lists ApplicationInstallations which belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "createApplicationInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ApplicationInstallation",
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations": {

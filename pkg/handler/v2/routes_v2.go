@@ -403,6 +403,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations").
 		Handler(r.listApplicationInstallations())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations").
+		Handler(r.createApplicationInstallation())
+
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
 		Path("/constrainttemplates").

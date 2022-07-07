@@ -18,9 +18,11 @@ package applicationinstallation
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 )
 
@@ -32,7 +34,20 @@ type listApplicationInstallationsReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-func DecodeApplicationInstallations(c context.Context, r *http.Request) (interface{}, error) {
+// createApplicationInstallationReq defines HTTP request for createApplicationInstallations
+// swagger:parameters createApplicationInstallation
+type createApplicationInstallationReq struct {
+	common.ProjectReq
+
+	// in: path
+	ClusterID string `json:"cluster_id"`
+
+	// in: body
+	// required: true
+	Body apiv2.ApplicationInstallation
+}
+
+func DecodeListApplicationInstallations(c context.Context, r *http.Request) (interface{}, error) {
 	var req listApplicationInstallationsReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
@@ -50,7 +65,34 @@ func DecodeApplicationInstallations(c context.Context, r *http.Request) (interfa
 	return req, nil
 }
 
+func DecodeCreateApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
+	var req createApplicationInstallationReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
 func (req listApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func (req createApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
