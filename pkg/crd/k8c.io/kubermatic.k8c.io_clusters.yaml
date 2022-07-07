@@ -1132,7 +1132,7 @@ spec:
                         - storageProfile
                         type: object
                       organization:
-                        description: Password is the VMware Cloud Director user password.
+                        description: Organization is the name of organization to use.
                         type: string
                       ovdcNetwork:
                         description: Network is the name of organizational virtual

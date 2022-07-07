@@ -91,6 +91,22 @@ func NewClientWithAuth(auth Auth) (*Client, error) {
 	return &client, nil
 }
 
+func GetAuthInfo(spec kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, dc *kubermaticv1.DatacenterSpecVMwareCloudDirector) (*Auth, error) {
+	creds, err := GetCredentialsForCluster(spec, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Auth{
+		Username:      creds.Username,
+		Password:      creds.Password,
+		Organization:  creds.Organization,
+		URL:           dc.URL,
+		AllowInsecure: dc.AllowInsecure,
+		VDC:           creds.VDC,
+	}, nil
+}
+
 func (c *Client) GetAuthenticatedClient() (*govcd.VCDClient, error) {
 	// Ensure that all required fields for authentication are provided
 	// Fail early, without any API calls, if some required field is missing.

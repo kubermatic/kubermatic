@@ -1046,7 +1046,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	// +optional
 	Password string `json:"password,omitempty"`
 
-	// Password is the VMware Cloud Director user password.
+	// Organization is the name of organization to use.
 	// +optional
 	Organization string `json:"organization,omitempty"`
 
