@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -872,6 +873,21 @@ const (
 	// IPv6MatchAnyCIDR is the CIDR used for matching with any IPv6 address.
 	IPv6MatchAnyCIDR = "::/0"
 )
+
+const (
+	ApplicationCacheVolumeName = "applications-cache"
+	ApplicationCacheMountPath  = "/applications-cache"
+)
+
+var DefaultApplicationCacheSize = resource.MustParse("300Mi")
+
+// GetApplicationCacheSize return the application cache size if defined, otherwise fallback to the default size.
+func GetApplicationCacheSize(appSettings *kubermaticv1.ApplicationSettings) *resource.Quantity {
+	if appSettings == nil || appSettings.CacheSize == nil {
+		return &DefaultApplicationCacheSize
+	}
+	return appSettings.CacheSize
+}
 
 // List of allowed TLS cipher suites.
 var allowedTLSCipherSuites = []string{

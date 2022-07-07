@@ -89,6 +89,8 @@ else
   ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
 
+APPTMPDIR=$(mktemp -d ${TMPDIR}/application.XXXXX)
+
 echodate "Starting user-cluster-controller-manager..."
 set -x
 ./_build/user-cluster-controller-manager \
@@ -108,4 +110,5 @@ set -x
   -seed-kubeconfig=${SEED_KUBECONFIG} \
   -owner-email=${OWNER_EMAIL} \
   -dns-cluster-ip=10.240.16.10 \
+  -application-cache="${APPTMPDIR}" \
   ${ARGS}

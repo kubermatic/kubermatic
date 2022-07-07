@@ -100,7 +100,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data)
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
@@ -139,6 +139,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-dns-cluster-ip", dnsClusterIP,
 				"-overwrite-registry", data.ImageRegistry(""),
 				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
+				"-application-cache", resources.ApplicationCacheMountPath,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
@@ -284,6 +285,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 							MountPath: "/opt/ca-bundle/",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.ApplicationCacheVolumeName,
+							MountPath: resources.ApplicationCacheMountPath,
+							ReadOnly:  false,
+						},
 					},
 				},
 			}
@@ -304,7 +310,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 	}
 }
 
-func getVolumes() []corev1.Volume {
+func getVolumes(data userclusterControllerData) []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -321,6 +327,14 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CABundleConfigMapName,
 					},
+				},
+			},
+		},
+		{
+			Name: resources.ApplicationCacheVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: resources.GetApplicationCacheSize(data.Cluster().Spec.ApplicationSettings),
 				},
 			},
 		},

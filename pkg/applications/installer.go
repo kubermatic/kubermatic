@@ -19,10 +19,12 @@ package applications
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/providers"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,14 +44,42 @@ type ApplicationInstaller interface {
 
 // ApplicationManager handles the installation / uninstallation of an Application on the user-cluster.
 type ApplicationManager struct {
+	// ApplicationCache is the path to the directory used for caching applications. (i.e. location where application's source will be downloaded, Helm repository cache ...)
+	ApplicationCache string
+
+	// Namespace where credentials secrets are stored.
+	SecretNamespace string
 }
 
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
 func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	// initialize tools
+	sourceProvider, err := providers.NewSourceProvider(ctx, seedClient, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to initialize source provider: %w", err)
+	}
+
+	downloadDest, err := os.MkdirTemp(a.ApplicationCache, applicationInstallation.Namespace+"-"+applicationInstallation.Name)
+	if err != nil {
+		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(downloadDest); err != nil {
+			log.Error("failed to remove temporary directory where application source has been downloaded: %s", err)
+		}
+	}()
+
+	// start reconciliation
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
 		return err
 	}
-	// todo logic to download source and install app
+
+	appSourcePath, err := sourceProvider.DownloadSource(downloadDest)
+	if err != nil {
+		return fmt.Errorf("failed to download application source: %w", err)
+	}
+
+	log.Debugw("application successfully downloaded", "location", appSourcePath)
 	return nil
 }
 

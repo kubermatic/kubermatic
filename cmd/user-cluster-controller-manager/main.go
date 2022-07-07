@@ -102,6 +102,7 @@ type controllerRunOptions struct {
 	konnectivityServerHost       string
 	konnectivityServerPort       int
 	enableOperatingSystemManager bool
+	applicationCache             string
 }
 
 func main() {
@@ -148,6 +149,7 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.BoolVar(&runOp.enableOperatingSystemManager, "operating-system-manager-enabled", false, "Enable Operating System Manager, this only enables deployment of OSM resources.")
+	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -189,6 +191,10 @@ func main() {
 		if runOp.mlaGatewayURL == "" {
 			log.Fatal("-mla-gateway-url must be set when enabling user cluster logging or monitoring")
 		}
+	}
+
+	if runOp.applicationCache == "" {
+		log.Fatal("application-cache must be set")
 	}
 
 	nodeLabels := map[string]string{}
@@ -386,7 +392,7 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{}); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, SecretNamespace: runOp.namespace}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")
