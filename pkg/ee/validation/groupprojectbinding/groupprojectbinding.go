@@ -30,9 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func ValidateUpdate(oldGroupProjectBinding *kubermaticv1.GroupProjectBinding,
-	newGroupProjectBinding *kubermaticv1.GroupProjectBinding) error {
-
+func ValidateUpdate(oldGroupProjectBinding *kubermaticv1.GroupProjectBinding, newGroupProjectBinding *kubermaticv1.GroupProjectBinding) error {
 	if oldGroupProjectBinding.Spec.ProjectID != newGroupProjectBinding.Spec.ProjectID {
 		return errors.New("attribute \"projectID\" cannot be updated for existing GroupProjectBinding resource")
 	}
