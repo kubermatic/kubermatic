@@ -44,7 +44,7 @@ type ApplicationInstaller interface {
 
 // ApplicationManager handles the installation / uninstallation of an Application on the user-cluster.
 type ApplicationManager struct {
-	// ApplicationCache is the path to the directory used for chaching applications. (i.e. locaction where application's source will be downloaded, Helm repository cache ...)
+	// ApplicationCache is the path to the directory used for caching applications. (i.e. location where application's source will be downloaded, Helm repository cache ...)
 	ApplicationCache string
 
 	// Namespace where credentials secrets are stored.
@@ -59,7 +59,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to initialize source provider: %w", err)
 	}
 
-	downloadDest, err := os.MkdirTemp(a.ApplicationCache, applicationInstallation.Namespace+"-"+applicationInstallation.Namespace)
+	downloadDest, err := os.MkdirTemp(a.ApplicationCache, applicationInstallation.Namespace+"-"+applicationInstallation.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
 	}

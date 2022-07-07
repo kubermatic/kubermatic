@@ -150,31 +150,27 @@ type checkoutFunc func(ctx context.Context, destination string, gitSource *appsk
 func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	var repo *git.Repository
 	var err error
+
+	cloneOptions := &git.CloneOptions{
+		URL:        gitSource.Remote,
+		Auth:       auth,
+		Progress:   nil,
+		Tags:       git.NoTags,
+		NoCheckout: true,
+	}
+
 	if len(gitSource.Ref.Branch) > 0 {
-		repo, err = git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
-			URL:           gitSource.Remote,
-			Auth:          auth,
-			Progress:      nil,
-			SingleBranch:  true,
-			ReferenceName: plumbing.NewBranchReferenceName(gitSource.Ref.Branch),
-			Tags:          git.NoTags,
-			NoCheckout:    true,
-		})
-		if err != nil {
-			return err
-		}
+		// Clone only one branch. The commit must belong to this branch.
+		cloneOptions.SingleBranch = true
+		cloneOptions.ReferenceName = plumbing.NewBranchReferenceName(gitSource.Ref.Branch)
 	} else {
-		repo, err = git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
-			URL:          gitSource.Remote,
-			Auth:         auth,
-			Progress:     nil,
-			SingleBranch: false,
-			Tags:         git.NoTags,
-			NoCheckout:   true,
-		})
-		if err != nil {
-			return err
-		}
+		// Clone all repository.
+		cloneOptions.SingleBranch = false
+	}
+
+	repo, err = git.PlainCloneContext(ctx, destination, false, cloneOptions)
+	if err != nil {
+		return err
 	}
 
 	workTree, err := repo.Worktree()
