@@ -64,6 +64,8 @@ var (
 	logOptions      = log.NewDefaultOptions()
 	namespace       = "kubermatic"
 	datacenter      = ""
+	awsRegion       = ""
+	awsAZ           = ""
 )
 
 const (
@@ -75,6 +77,8 @@ func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&namespace, "namespace", namespace, "namespace where KKP is installed into")
 	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must be an AWS DC)")
+	flag.StringVar(&awsRegion, "aws-region", awsRegion, "AWS region to use for workers")
+	flag.StringVar(&awsAZ, "aws-az", awsAZ, "AWS availability zone to use for workers")
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -518,7 +522,7 @@ func createUserCluster(
 		WithName("workers").
 		WithReplicas(2).
 		WithUbuntu().
-		WithAWS("t3.small", "eu-central-1", "eu-central-1a").
+		WithAWS("t3.small", awsRegion, awsAZ).
 		Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
