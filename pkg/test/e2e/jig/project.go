@@ -84,10 +84,13 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 		return nil, err
 	}
 
+	log := j.log.With("project", project.Name)
+
+	log.Info("Project created successfully.")
 	j.projectName = project.Name
 
 	if waitForActive {
-		j.log.Info("Waiting for project to become active...")
+		log.Info("Waiting for project to become active...")
 
 		projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
 		if err != nil {
@@ -114,8 +117,6 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 			return nil, fmt.Errorf("failed to wait for project to become active: %w", err)
 		}
 	}
-
-	j.log.Info("Project created successfully.", "name", project.Name)
 
 	return project, nil
 }
