@@ -55,6 +55,10 @@ type GroupProjectBindingSpec struct {
 	// Group is the group name that is bound to the given project.
 	Group string `json:"group"`
 	// ProjectID is the ID of the target project.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
 	ProjectID string `json:"projectID"`
 
 	// +kubebuilder:validation:Enum=viewers;editors;owners;
