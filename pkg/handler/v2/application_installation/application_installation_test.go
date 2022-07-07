@@ -26,13 +26,14 @@ import (
 	"strings"
 	"testing"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
