@@ -156,25 +156,6 @@ func TestValidator(t *testing.T) {
 			expectedError: errors.New("the pool is too big to be processed"),
 		},
 		{
-			name: "pool too big for range allocation 2",
-			op:   admissionv1.Create,
-			ipamPool: &kubermaticv1.IPAMPool{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-ipam-pool",
-				},
-				Spec: kubermaticv1.IPAMPoolSpec{
-					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-						"dc": {
-							Type:            "range",
-							PoolCIDR:        "192.168.0.1/19",
-							AllocationRange: 8,
-						},
-					},
-				},
-			},
-			expectedError: errors.New("pool prefix is too low for range allocation type"),
-		},
-		{
 			name: "allowed prefix creation",
 			op:   admissionv1.Create,
 			ipamPool: &kubermaticv1.IPAMPool{
