@@ -145,7 +145,7 @@ func DecodeSSHKeyID(c context.Context, r *http.Request) (string, error) {
 	return keyID, nil
 }
 
-// DecodeNamespace decodes the namespace out of the htt.Request path
+// DecodeNamespace decodes the namespace out of http.Request's path.
 func DecodeNamespace(c context.Context, r *http.Request) (string, error) {
 	namespace := mux.Vars(r)["namespace"]
 	if namespace == "" {
