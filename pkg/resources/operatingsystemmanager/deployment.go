@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.4.1"
+	Tag  = "v0.4.5"
 )
 
 type operatingSystemManagerData interface {
@@ -256,16 +256,8 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
 		}
 		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
 		}
-	}
-
-	if cs.podCidr != "" {
-		flags = append(flags, "-pod-cidr", cs.podCidr)
-	}
-
-	if cs.nodePortRange != "" {
-		flags = append(flags, "-node-port-range", cs.nodePortRange)
 	}
 
 	if cs.containerRuntime != "" {
