@@ -473,6 +473,7 @@ func createUserCluster(
 		WithGenerateName("e2e-cilium-").
 		WithHumanReadableName("Cilium e2e test").
 		WithProject(project).
+		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: datacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{

@@ -115,6 +115,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 		WithProject(project).
 		WithGenerateName("e2e-mla-").
 		WithHumanReadableName("MLA test cluster").
+		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: datacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
