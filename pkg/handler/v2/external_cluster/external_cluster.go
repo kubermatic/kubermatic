@@ -442,9 +442,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		apiCluster.Spec = apiv2.ExternalClusterSpec{
-			Version: *version,
-		}
+		apiCluster.Spec.Version = *version
 
 		return apiCluster, nil
 	}
