@@ -110,7 +110,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 	}
 
 	// create test cluster
-	j.clusterJig = jig.NewClusterJig(j.client, j.log)
+	j.clusterJig = jig.NewClusterJig(j.client, j.log, namespace)
 	cluster, err := j.clusterJig.
 		WithProject(project).
 		WithGenerateName("e2e-mla-").

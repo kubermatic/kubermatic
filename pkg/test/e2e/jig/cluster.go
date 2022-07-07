@@ -41,9 +41,10 @@ import (
 )
 
 type ClusterJig struct {
-	client   ctrlruntimeclient.Client
-	log      *zap.SugaredLogger
-	versions kubermatic.Versions
+	client       ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	kkpNamespace string
+	versions     kubermatic.Versions
 
 	// user-controller parameters
 	projectName  string
@@ -56,10 +57,11 @@ type ClusterJig struct {
 	clusterName string
 }
 
-func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
+func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, kkpNamespace string) *ClusterJig {
 	jig := &ClusterJig{
 		client:       client,
 		log:          log,
+		kkpNamespace: kkpNamespace,
 		versions:     kubermatic.NewFakeVersions(),
 		spec:         &kubermaticv1.ClusterSpec{},
 		labels:       map[string]string{},
@@ -305,6 +307,25 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 	}
 
 	j.clusterName = ""
+
+	return nil
+}
+
+func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
+	cluster, err := j.Cluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get current cluster: %w", err)
+	}
+
+	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(j.client, j.kkpNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to create configGetter: %w", err)
+	}
+
+	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
+	if _, err = addonProvider.NewUnsecured(ctx, cluster, addonName, nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to ensure addon: %w", err)
+	}
 
 	return nil
 }

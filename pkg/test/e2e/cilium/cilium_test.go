@@ -39,15 +39,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -472,7 +469,7 @@ func createUserCluster(
 	})
 
 	// create the cluster
-	clusterJig := jig.NewClusterJig(masterClient, log)
+	clusterJig := jig.NewClusterJig(masterClient, log, namespace)
 	cluster, err := clusterJig.
 		WithGenerateName("e2e-cilium-").
 		WithHumanReadableName("Cilium e2e test").
@@ -505,14 +502,7 @@ func createUserCluster(
 
 	// create hubble addon
 	log.Info("Installing hubble addon...")
-
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(masterClient, namespace)
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create configGetter: %w", err)
-	}
-
-	addonProvider := kubernetes.NewAddonProvider(masterClient, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, "hubble", nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
+	if err = clusterJig.EnsureAddon(ctx, "hubble"); err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
 	}
 

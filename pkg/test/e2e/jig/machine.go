@@ -377,7 +377,7 @@ func (j *MachineJig) getClusterClient(ctx context.Context) (ctrlruntimeclient.Cl
 
 	projectName := j.cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 
-	return NewClusterJig(j.client, j.log).
+	return NewClusterJig(j.client, j.log, "").
 		WithExistingCluster(j.cluster.Name).
 		WithProjectName(projectName).
 		ClusterClient(ctx)
