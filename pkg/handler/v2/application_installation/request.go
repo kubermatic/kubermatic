@@ -49,9 +49,9 @@ type createApplicationInstallationReq struct {
 	Body apiv2.ApplicationInstallation
 }
 
-// deleteApplicationInstallationsReq defines HTTP request for deleteApplicationInstallation
+// deleteApplicationInstallationReq defines HTTP request for deleteApplicationInstallation
 // swagger:parameters deleteApplicationInstallation
-type deleteApplicationInstallationsReq struct {
+type deleteApplicationInstallationReq struct {
 	common.ProjectReq
 	// in: path
 	ClusterID string `json:"cluster_id"`
@@ -75,6 +75,24 @@ type getApplicationInstallationReq struct {
 
 	// in: path
 	ApplicationInstallationName string `json:"appinstall_name"`
+}
+
+// updateApplicationInstallationReq defines HTTP request for updateApplicationInstallation
+// swagger:parameters updateApplicationInstallation
+type updateApplicationInstallationReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+
+	// in: path
+	Namespace string `json:"namespace"`
+
+	// in: path
+	ApplicationInstallationName string `json:"appinstall_name"`
+
+	// in: body
+	// required: true
+	Body apiv2.ApplicationInstallation
 }
 
 func DecodeListApplicationInstallations(c context.Context, r *http.Request) (interface{}, error) {
@@ -129,7 +147,7 @@ func (req createApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
 }
 
 func DecodeDeleteApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
-	var req deleteApplicationInstallationsReq
+	var req deleteApplicationInstallationReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -158,7 +176,7 @@ func DecodeDeleteApplicationInstallation(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func (req deleteApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster {
+func (req deleteApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
@@ -199,6 +217,47 @@ func (req getApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
 		ClusterID: req.ClusterID,
 	}
 }
+
+func DecodeUpdateApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateApplicationInstallationReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	namespace, err := common.DecodeNamespace(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Namespace = namespace
+
+	appInstallName, err := DecodeApplicationInstallationName(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ApplicationInstallationName = appInstallName
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func (req updateApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
 func DecodeApplicationInstallationName(c context.Context, r *http.Request) (string, error) {
 	appInstallName := mux.Vars(r)["appinstall_name"]
 	if appInstallName == "" {

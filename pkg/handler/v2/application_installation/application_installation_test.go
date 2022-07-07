@@ -135,7 +135,7 @@ func TestListApplicationInstallations(t *testing.T) {
 }
 
 // TODO I am undecided if we need any more testcases here. They all seem to be standard cases, which are
-// handled by generic errors (e.g. object already exists, invalid spec)
+// handled by generic errors (e.g. object already exists, invalid spec).
 func TestCreateApplicationInstallation(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -185,7 +185,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations", tc.ProjectID, tc.ClusterID)
 			body, err := json.Marshal(tc.ApplicationInstallation)
 			if err != nil {
-				t.Fatalf("failed to marshalling mla admin setting: %v", err)
+				t.Fatalf("failed to marshal ApplicationInstallation: %v", err)
 			}
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
@@ -355,6 +355,104 @@ func TestGetApplication(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations/%s/%s", tc.ProjectID, tc.ClusterID, tc.ApplicationInstallationNS, tc.ApplicationInstallationName)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedHTTPStatusCode {
+				t.Errorf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, res.Code, res.Body.String())
+				return
+			}
+
+			if res.Code == http.StatusOK {
+				b, err := json.Marshal(tc.ExpectedResponse)
+				if err != nil {
+					t.Fatalf("failed to marshal expected response: %v", err)
+				}
+				test.CompareWithResult(t, res, string(b))
+			}
+		})
+	}
+}
+
+func TestUpdateApplicationInstallation(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                        string
+		ProjectID                   string
+		ClusterID                   string
+		ApplicationInstallationName string
+		ApplicationInstallationNS   string
+		ExistingKubermaticObjects   []ctrlruntimeclient.Object
+		ExistingAPIUser             *apiv1.User
+		ApplicationInstallation     *apiv2.ApplicationInstallation
+		ExpectedResponse            *apiv2.ApplicationInstallation
+		ExpectedHTTPStatusCode      int
+	}{
+		{
+			Name:                        "update an existing ApplicationInstallation",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "app1",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			),
+			ExistingAPIUser:         test.GenDefaultAPIUser(),
+			ApplicationInstallation: test.GenApiApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			ExpectedHTTPStatusCode:  http.StatusOK,
+			ExpectedResponse: &apiv2.ApplicationInstallation{
+				ObjectMeta: apiv1.ObjectMeta{
+					Name: "app1",
+				},
+				Namespace: app1TargetNamespace,
+				Spec: &appskubermaticv1.ApplicationInstallationSpec{
+					Namespace: appskubermaticv1.NamespaceSpec{
+						Name:   app1TargetNamespace,
+						Create: true,
+					},
+					ApplicationRef: appskubermaticv1.ApplicationRef{
+						Name: "sample-app",
+						Version: appskubermaticv1.Version{
+							Version: *semverlib.MustParse("v1.0.0"),
+						},
+					},
+					Values: *test.CreateRawVariables(t, map[string]interface{}{"key": "val"}),
+				},
+			},
+		},
+		{
+			Name:                        "try to update an ApplicationInstallation that does not exist",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "app1",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser:         test.GenDefaultAPIUser(),
+			ApplicationInstallation: test.GenApiApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			ExpectedHTTPStatusCode:  http.StatusNotFound,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations/%s/%s", tc.ProjectID, tc.ClusterID, tc.ApplicationInstallationNS, tc.ApplicationInstallationName)
+			tc.ApplicationInstallation.Spec.Values = *test.CreateRawVariables(t, map[string]interface{}{"key": "val"})
+			body, err := json.Marshal(tc.ApplicationInstallation)
+			if err != nil {
+				t.Fatalf("failed to marshal ApplicationInstallation: %v", err)
+			}
+			req := httptest.NewRequest(http.MethodPut, requestURL, bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)

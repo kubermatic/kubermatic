@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListApplicationInstallations(params *ListApplicationInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationInstallationsOK, error)
 
+	UpdateApplicationInstallation(params *UpdateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateApplicationInstallationOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -188,6 +190,44 @@ func (a *Client) ListApplicationInstallations(params *ListApplicationInstallatio
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListApplicationInstallationsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateApplicationInstallation Updates the given ApplicationInstallation
+*/
+func (a *Client) UpdateApplicationInstallation(params *UpdateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateApplicationInstallationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateApplicationInstallationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "updateApplicationInstallation",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateApplicationInstallationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateApplicationInstallationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateApplicationInstallationDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

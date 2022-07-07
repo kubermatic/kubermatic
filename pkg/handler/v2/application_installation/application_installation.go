@@ -74,7 +74,7 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 
 func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteApplicationInstallationsReq)
+		req := request.(deleteApplicationInstallationReq)
 
 		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
@@ -117,6 +117,34 @@ func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint
 		return convertInternalToExternal(applicationInstallation), nil
 	}
 }
+
+func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(updateApplicationInstallationReq)
+
+		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+
+		// first fetch the currentAppInstall to make sure it exists
+		currentAppInstall := &appskubermaticv1.ApplicationInstallation{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.ApplicationInstallationName}, currentAppInstall); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		newAppInstall := convertExternalToInternal(&req.Body)
+		currentAppInstall.Spec = newAppInstall.Spec
+
+		err = client.Update(ctx, currentAppInstall)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToExternal(currentAppInstall), nil
+	}
+}
+
 func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
 	return &apiv2.ApplicationInstallation{
 		ObjectMeta: apiv1.ObjectMeta{

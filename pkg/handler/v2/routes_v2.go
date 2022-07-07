@@ -415,6 +415,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
 		Handler(r.getApplicationInstallation())
 
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
+		Handler(r.updateApplicationInstallation())
+
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
 		Path("/constrainttemplates").
@@ -7169,6 +7173,35 @@ func (r Routing) getApplicationInstallation() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter)),
 		applicationinstallation.DecodeGetApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications updateApplicationInstallation
+//
+//    Updates the given ApplicationInstallation
+//
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) updateApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeUpdateApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
