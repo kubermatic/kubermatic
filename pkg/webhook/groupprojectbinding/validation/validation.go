@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -29,7 +28,7 @@ type validator struct {
 }
 
 // NewValidator returns a new GroupProjectBinding validator.
-func NewValidator(client ctrlruntimeclient.Client) *validator {
+func NewValidator() *validator {
 	return &validator{}
 }
 
