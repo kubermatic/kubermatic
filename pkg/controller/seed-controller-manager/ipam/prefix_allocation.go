@@ -55,7 +55,7 @@ func checkPrefixAllocation(subnetCIDR, poolCIDR string, allocationPrefix int) er
 	return nil
 }
 
-func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.String) (string, error) {
+func findFirstFreeSubnetOfPool(poolName, poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.String) (string, error) {
 	poolIP, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return "", err
@@ -80,5 +80,5 @@ func findFirstFreeSubnetOfPool(poolCIDR string, subnetPrefix int, dcIPAMPoolUsag
 		}
 	}
 
-	return "", errors.New("cannot find free subnet")
+	return "", fmt.Errorf("there is no free subnet available for IPAM Pool \"%s\"", poolName)
 }

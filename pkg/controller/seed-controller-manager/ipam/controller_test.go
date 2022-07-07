@@ -443,7 +443,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("there is no enough free IPs available for pool"),
+			expectedError: errors.New("there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "range: single pool, not enough IPs from pool (2)",
@@ -497,7 +497,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("there is no enough free IPs available for pool"),
+			expectedError: errors.New("there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "prefix: single pool",
@@ -726,7 +726,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("cannot find free subnet"),
+			expectedError: errors.New("there is no free subnet available for IPAM Pool \"test-pool-1\""),
 		},
 		{
 			name:    "multiple pools, clusters and DCs",

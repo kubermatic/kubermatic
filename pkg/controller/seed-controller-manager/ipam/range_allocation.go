@@ -86,7 +86,7 @@ func calculateRangeFreeIPsFromDatacenterPool(poolCIDR string, dcIPAMPoolUsageMap
 	return rangeFreeIPs, nil
 }
 
-func findFirstFreeRangesOfPool(poolCIDR string, allocationRange int, dcIPAMPoolUsageMap sets.String) ([]string, error) {
+func findFirstFreeRangesOfPool(poolName, poolCIDR string, allocationRange int, dcIPAMPoolUsageMap sets.String) ([]string, error) {
 	addressRanges := []string{}
 
 	rangeFreeIPs, err := calculateRangeFreeIPsFromDatacenterPool(poolCIDR, dcIPAMPoolUsageMap)
@@ -95,7 +95,7 @@ func findFirstFreeRangesOfPool(poolCIDR string, allocationRange int, dcIPAMPoolU
 	}
 
 	if allocationRange > len(rangeFreeIPs) {
-		return nil, errors.New("there is no enough free IPs available for pool")
+		return nil, fmt.Errorf("there is no enough free IPs available for IPAM pool \"%s\"", poolName)
 	}
 
 	rangeFreeIPsIterator := 0
