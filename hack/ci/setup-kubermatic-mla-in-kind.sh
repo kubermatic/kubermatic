@@ -110,16 +110,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building user-ssh-keys-agent image"
-  TEST_NAME="Build user-ssh-keys-agent Docker image"
-  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  cd cmd/user-ssh-keys-agent
-  make build
-  IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 docker push "${IMAGE_NAME}"
-)
-(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"
@@ -147,14 +137,7 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
-
-nginx:
-  controller:
-    replicaCount: 1
 EOF
-
-# append custom Dex configuration
-cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # prepare CRDs
 copy_crds_to_chart
@@ -193,15 +176,7 @@ echodate "Waiting for Kubermatic Operator to deploy Seed components..."
 retry 8 check_all_deployments_ready kubermatic
 echodate "Kubermatic Seed is ready."
 
-echodate "Waiting for VPA to be ready..."
-retry 8 check_all_deployments_ready kube-system
-echodate "VPA is ready."
-
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
-
-echodate "Exposing Dex and Kubermatic API to localhost..."
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
 
 hack/ci/setup-mla.sh
 
