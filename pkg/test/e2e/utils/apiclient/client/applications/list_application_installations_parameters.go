@@ -59,8 +59,14 @@ func NewListApplicationInstallationsParamsWithHTTPClient(client *http.Client) *L
 */
 type ListApplicationInstallationsParams struct {
 
+	// AppinstallName.
+	ApplicationInstallationName string
+
 	// ClusterID.
 	ClusterID string
+
+	// Namespace.
+	Namespace string
 
 	// ProjectID.
 	ProjectID string
@@ -118,6 +124,17 @@ func (o *ListApplicationInstallationsParams) SetHTTPClient(client *http.Client) 
 	o.HTTPClient = client
 }
 
+// WithApplicationInstallationName adds the appinstallName to the list application installations params
+func (o *ListApplicationInstallationsParams) WithApplicationInstallationName(appinstallName string) *ListApplicationInstallationsParams {
+	o.SetApplicationInstallationName(appinstallName)
+	return o
+}
+
+// SetApplicationInstallationName adds the appinstallName to the list application installations params
+func (o *ListApplicationInstallationsParams) SetApplicationInstallationName(appinstallName string) {
+	o.ApplicationInstallationName = appinstallName
+}
+
 // WithClusterID adds the clusterID to the list application installations params
 func (o *ListApplicationInstallationsParams) WithClusterID(clusterID string) *ListApplicationInstallationsParams {
 	o.SetClusterID(clusterID)
@@ -127,6 +144,17 @@ func (o *ListApplicationInstallationsParams) WithClusterID(clusterID string) *Li
 // SetClusterID adds the clusterId to the list application installations params
 func (o *ListApplicationInstallationsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
+}
+
+// WithNamespace adds the namespace to the list application installations params
+func (o *ListApplicationInstallationsParams) WithNamespace(namespace string) *ListApplicationInstallationsParams {
+	o.SetNamespace(namespace)
+	return o
+}
+
+// SetNamespace adds the namespace to the list application installations params
+func (o *ListApplicationInstallationsParams) SetNamespace(namespace string) {
+	o.Namespace = namespace
 }
 
 // WithProjectID adds the projectID to the list application installations params
@@ -148,8 +176,18 @@ func (o *ListApplicationInstallationsParams) WriteToRequest(r runtime.ClientRequ
 	}
 	var res []error
 
+	// path param appinstall_name
+	if err := r.SetPathParam("appinstall_name", o.ApplicationInstallationName); err != nil {
+		return err
+	}
+
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param namespace
+	if err := r.SetPathParam("namespace", o.Namespace); err != nil {
 		return err
 	}
 

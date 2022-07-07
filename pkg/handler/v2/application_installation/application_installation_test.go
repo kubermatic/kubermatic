@@ -18,6 +18,7 @@ package applicationinstallation_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -207,6 +208,97 @@ func TestCreateApplicationInstallation(t *testing.T) {
 					t.Fatalf("failed to marshal expected response: %v", err)
 				}
 				test.CompareWithResult(t, res, string(b))
+			}
+		})
+	}
+}
+
+func TestDeleteApplication(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                                 string
+		ProjectID                            string
+		ClusterID                            string
+		ApplicationInstallationName          string
+		ApplicationInstallationNS            string
+		ExistingKubermaticObjects            []ctrlruntimeclient.Object
+		ExistingAPIUser                      *apiv1.User
+		ExpectedApplicationinstallationCount int
+		ExpectedHTTPStatusCode               int
+	}{
+		{
+			Name:                        "delete an ApplicationInstallation that belongs to the given cluster",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "app1",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+				test.GenApplicationInstallation("app2", test.GenDefaultCluster().Name, app2TargetNamespace),
+			),
+			ExistingAPIUser:                      test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode:               http.StatusOK,
+			ExpectedApplicationinstallationCount: 1,
+		},
+		{
+			Name:                        "try to delete an ApplicationInstallation that does not exist",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "does-not-exist",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			),
+			ExistingAPIUser:                      test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode:               http.StatusNotFound,
+			ExpectedApplicationinstallationCount: 1,
+		},
+		{
+			Name:                        "John cannot delete Bob's ApplicationInstallation",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "app1",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			),
+			ExistingAPIUser:                      test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatusCode:               http.StatusForbidden,
+			ExpectedApplicationinstallationCount: 1,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations/%s/%s", tc.ProjectID, tc.ClusterID, tc.ApplicationInstallationNS, tc.ApplicationInstallationName)
+			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
+			res := httptest.NewRecorder()
+
+			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedHTTPStatusCode {
+				t.Errorf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, res.Code, res.Body.String())
+				return
+			}
+
+			appInstalls := &appskubermaticv1.ApplicationInstallationList{}
+			if err := clients.FakeClient.List(context.Background(), appInstalls); err != nil {
+				t.Fatalf("failed to list MachineDeployments: %v", err)
+			}
+
+			if appInstalls := len(appInstalls.Items); tc.ExpectedApplicationinstallationCount != appInstalls {
+				t.Errorf("Expected %d  ApplicationInstallations but got %d", tc.ExpectedApplicationinstallationCount, appInstalls)
 			}
 		})
 	}

@@ -71,6 +71,34 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	}
 }
 
+func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(deleteApplicationInstallationsReq)
+
+		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+
+		delObj := &appskubermaticv1.ApplicationInstallation{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       appskubermaticv1.ApplicationInstallationKindName,
+				APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      req.ApplicationInstallationName,
+				Namespace: req.Namespace,
+			},
+		}
+		err = client.Delete(ctx, delObj)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
 func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
 	return &apiv2.ApplicationInstallation{
 		ObjectMeta: apiv1.ObjectMeta{

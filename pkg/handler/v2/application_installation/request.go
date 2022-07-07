@@ -19,8 +19,10 @@ package applicationinstallation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -47,6 +49,20 @@ type createApplicationInstallationReq struct {
 	Body apiv2.ApplicationInstallation
 }
 
+// deleteApplicationInstallationsReq defines HTTP request for listApplicationInstallations
+// swagger:parameters listApplicationInstallations
+type deleteApplicationInstallationsReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+
+	// in: path
+	Namespace string `json:"namespace"`
+
+	// in: path
+	ApplicationInstallationName string `json:"appinstall_name"`
+}
+
 func DecodeListApplicationInstallations(c context.Context, r *http.Request) (interface{}, error) {
 	var req listApplicationInstallationsReq
 
@@ -63,6 +79,12 @@ func DecodeListApplicationInstallations(c context.Context, r *http.Request) (int
 	req.ProjectReq = projectReq.(common.ProjectReq)
 
 	return req, nil
+}
+
+func (req listApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
 }
 
 func DecodeCreateApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
@@ -86,14 +108,53 @@ func DecodeCreateApplicationInstallation(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func (req listApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster {
+func (req createApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
 }
 
-func (req createApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
+func DecodeDeleteApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteApplicationInstallationsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	namespace, err := common.DecodeNamespace(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Namespace = namespace
+
+	appInstallName, err := DecodeApplicationInstallationName(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ApplicationInstallationName = appInstallName
+
+	return req, nil
+}
+
+func (req deleteApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
+}
+
+func DecodeApplicationInstallationName(c context.Context, r *http.Request) (string, error) {
+	appInstallName := mux.Vars(r)["appinstall_name"]
+	if appInstallName == "" {
+		return "", fmt.Errorf("'appInstallName' parameter is required but was not provided")
+	}
+
+	return appInstallName, nil
 }
