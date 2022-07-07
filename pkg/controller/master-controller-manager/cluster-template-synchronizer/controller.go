@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -118,6 +119,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	err := r.syncAllSeeds(log, clusterTemplate, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+		seedTpl := &kubermaticv1.ClusterTemplate{}
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(template), seedTpl); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch ClusterTemplate on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedTpl.UID != "" && seedTpl.UID == template.UID {
+			return nil
+		}
+
 		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
 	})
 	if err != nil {

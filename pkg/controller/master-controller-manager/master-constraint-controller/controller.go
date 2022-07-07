@@ -28,6 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -147,6 +148,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	return r.syncAllSeeds(ctx, log, constraint, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint) error {
+		seedConst := &kubermaticv1.Constraint{}
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(constraint), seedConst); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch Constraint on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedConst.UID != "" && seedConst.UID == constraint.UID {
+			return nil
+		}
+
 		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, seedClient)
 	})
 }

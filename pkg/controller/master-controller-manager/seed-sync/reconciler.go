@@ -134,12 +134,20 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
-	seedCreators := []reconciling.NamedSeedCreatorGetter{
-		seedCreator(seed),
+	seedInSeed := &kubermaticv1.Seed{}
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %w", err)
+	// see project-synchronizer's syncAllSeeds comment
+	if seedInSeed.UID == "" || seedInSeed.UID != seed.UID {
+		seedCreators := []reconciling.NamedSeedCreatorGetter{
+			seedCreator(seed),
+		}
+
+		if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
+			return fmt.Errorf("failed to reconcile seed: %w", err)
+		}
 	}
 
 	configCreators := []reconciling.NamedKubermaticConfigurationCreatorGetter{
@@ -147,7 +155,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %w", err)
+		return fmt.Errorf("failed to reconcile Kubermatic configuration: %w", err)
 	}
 
 	return nil

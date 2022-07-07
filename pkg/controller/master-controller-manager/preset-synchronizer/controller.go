@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -96,7 +97,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	preset := &kubermaticv1.Preset{}
-	if err := r.masterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: request.Name}, preset); err != nil {
+	if err := r.masterClient.Get(ctx, request.NamespacedName, preset); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
@@ -117,6 +118,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	err := r.syncAllSeeds(log, preset, func(seedClient ctrlruntimeclient.Client, preset *kubermaticv1.Preset) error {
+		seedPreset := &kubermaticv1.Preset{}
+		if err := seedClient.Get(ctx, request.NamespacedName, seedPreset); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch preset on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedPreset.UID != "" && seedPreset.UID == preset.UID {
+			return nil
+		}
+
 		return reconciling.ReconcileKubermaticV1Presets(ctx, presetCreatorGetters, "", seedClient)
 	})
 	if err != nil {

@@ -89,11 +89,10 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
-				log:             kubermaticlog.Logger,
-				recorder:        &record.FakeRecorder{},
-				masterClient:    tc.masterClient,
-				masterAPIClient: tc.masterClient,
-				seedClients:     map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: tc.masterClient,
+				seedClients:  map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}

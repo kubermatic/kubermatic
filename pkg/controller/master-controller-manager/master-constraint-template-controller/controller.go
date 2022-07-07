@@ -155,6 +155,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 	}
 
 	return r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
+		seedCT := &kubermaticv1.ConstraintTemplate{}
+		if err := seedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ct), seedCT); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch ConstraintTemplate on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedCT.UID != "" && seedCT.UID == ct.UID {
+			return nil
+		}
+
 		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClusterClient)
 	})
 }
