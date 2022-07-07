@@ -23,6 +23,9 @@ type PacketNodeSpec struct {
 	// Required: true
 	InstanceType *string `json:"instanceType"`
 
+	// Metros are facilities that are grouped together geographically and share capacity and networking features.
+	Metro string `json:"metro,omitempty"`
+
 	// additional instance tags
 	Tags []string `json:"tags"`
 }

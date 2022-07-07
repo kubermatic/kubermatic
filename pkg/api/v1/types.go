@@ -1799,6 +1799,9 @@ type PacketNodeSpec struct {
 	// InstanceType denotes the plan to which the device will be provisioned.
 	// required: true
 	InstanceType string `json:"instanceType"`
+	// Metros are facilities that are grouped together geographically and share capacity and networking features.
+	// required: false
+	Metro string `json:"metro"`
 	// additional instance tags
 	// required: false
 	Tags []string `json:"tags"`
@@ -1818,9 +1821,11 @@ func (spec *PacketNodeSpec) MarshalJSON() ([]byte, error) {
 	res := struct {
 		InstanceType string   `json:"instanceType"`
 		Tags         []string `json:"tags"`
+		Metro        string   `json:"metro"`
 	}{
 		InstanceType: spec.InstanceType,
 		Tags:         spec.Tags,
+		Metro:        spec.Metro,
 	}
 
 	return json.Marshal(&res)

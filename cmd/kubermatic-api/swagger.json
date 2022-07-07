@@ -28733,6 +28733,11 @@
           "type": "string",
           "x-go-name": "InstanceType"
         },
+        "metro": {
+          "description": "Metros are facilities that are grouped together geographically and share capacity and networking features.",
+          "type": "string",
+          "x-go-name": "Metro"
+        },
         "tags": {
           "description": "additional instance tags",
           "type": "array",

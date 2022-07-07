@@ -411,6 +411,8 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 		config.Tags[i].Value = tag
 	}
 
+	config.Metro = providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.Metro}
+
 	facilities := sets.NewString(dc.Spec.Packet.Facilities...)
 	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
 	for i, facility := range facilities.List() {

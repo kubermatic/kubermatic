@@ -31,8 +31,7 @@ import (
 )
 
 const (
-	packetInstanceType = "t1.small.x86"
-	packetDatacenter   = "packet-ewr1"
+	packetDatacenter = "packet-ewr1"
 )
 
 // GetPacketScenarios returns a matrix of (version x operating system).
@@ -41,14 +40,18 @@ func GetPacketScenarios(versions []*semver.Semver) []Scenario {
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &packetScenario{
-			version: v,
+			version:      v,
+			metro:        "TY",
+			instanceType: "m3.small.x86",
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &packetScenario{
-			version: v,
+			version:      v,
+			metro:        "AM",
+			instanceType: "c3.small.x86",
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -59,8 +62,10 @@ func GetPacketScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type packetScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version      *semver.Semver
+	metro        string
+	instanceType string
+	osSpec       apimodels.OperatingSystemSpec
 }
 
 func (s *packetScenario) Name() string {
@@ -98,7 +103,6 @@ func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 }
 
 func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	instanceType := packetInstanceType
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
 		{
@@ -107,7 +111,8 @@ func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Sec
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Packet: &apimodels.PacketNodeSpec{
-							InstanceType: &instanceType,
+							InstanceType: &s.instanceType,
+							Metro:        s.metro,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -126,7 +131,7 @@ func (s *packetScenario) MachineDeployments(_ context.Context, num int, secrets 
 
 	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderPacket, equinixmetaltypes.RawConfig{
-		InstanceType: providerconfig.ConfigVarString{Value: packetInstanceType},
+		InstanceType: providerconfig.ConfigVarString{Value: s.instanceType},
 	})
 	if err != nil {
 		return nil, err

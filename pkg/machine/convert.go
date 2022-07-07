@@ -264,6 +264,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		}
 		cloudSpec.Packet = &apiv1.PacketNodeSpec{
 			InstanceType: config.InstanceType.Value,
+			Metro:        config.Metro.Value,
 		}
 		for _, v := range config.Tags {
 			cloudSpec.Packet.Tags = append(cloudSpec.Packet.Tags, v.Value)
