@@ -303,3 +303,79 @@ func TestDeleteApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestGetApplication(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                        string
+		ProjectID                   string
+		ClusterID                   string
+		ApplicationInstallationName string
+		ApplicationInstallationNS   string
+		ExistingKubermaticObjects   []ctrlruntimeclient.Object
+		ExistingAPIUser             *apiv1.User
+		ExpectedResponse            *apiv2.ApplicationInstallation
+		ExpectedHTTPStatusCode      int
+	}{
+		{
+			Name:                        "get ApplicationInstallation that belongs to the given cluster",
+			ProjectID:                   test.GenDefaultProject().Name,
+			ClusterID:                   test.GenDefaultCluster().Name,
+			ApplicationInstallationName: "app1",
+			ApplicationInstallationNS:   app1TargetNamespace,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: &apiv2.ApplicationInstallation{
+				ObjectMeta: apiv1.ObjectMeta{
+					Name: "app1",
+				},
+				Namespace: app1TargetNamespace,
+				Spec: &appskubermaticv1.ApplicationInstallationSpec{
+					Namespace: appskubermaticv1.NamespaceSpec{
+						Name:   app1TargetNamespace,
+						Create: true,
+					},
+					ApplicationRef: appskubermaticv1.ApplicationRef{
+						Name: "sample-app",
+						Version: appskubermaticv1.Version{
+							Version: *semverlib.MustParse("v1.0.0"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/applicationinstallations/%s/%s", tc.ProjectID, tc.ClusterID, tc.ApplicationInstallationNS, tc.ApplicationInstallationName)
+			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedHTTPStatusCode {
+				t.Errorf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, res.Code, res.Body.String())
+				return
+			}
+
+			if res.Code == http.StatusOK {
+				b, err := json.Marshal(tc.ExpectedResponse)
+				if err != nil {
+					t.Fatalf("failed to marshal expected response: %v", err)
+				}
+				test.CompareWithResult(t, res, string(b))
+			}
+		})
+	}
+}

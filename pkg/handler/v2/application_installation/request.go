@@ -36,7 +36,7 @@ type listApplicationInstallationsReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// createApplicationInstallationReq defines HTTP request for createApplicationInstallations
+// createApplicationInstallationReq defines HTTP request for createApplicationInstallation
 // swagger:parameters createApplicationInstallation
 type createApplicationInstallationReq struct {
 	common.ProjectReq
@@ -49,9 +49,23 @@ type createApplicationInstallationReq struct {
 	Body apiv2.ApplicationInstallation
 }
 
-// deleteApplicationInstallationsReq defines HTTP request for listApplicationInstallations
-// swagger:parameters listApplicationInstallations
+// deleteApplicationInstallationsReq defines HTTP request for deleteApplicationInstallation
+// swagger:parameters deleteApplicationInstallation
 type deleteApplicationInstallationsReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+
+	// in: path
+	Namespace string `json:"namespace"`
+
+	// in: path
+	ApplicationInstallationName string `json:"appinstall_name"`
+}
+
+// getApplicationInstallationsReq defines HTTP request for getApplicationInstallation
+// swagger:parameters getApplicationInstallation
+type getApplicationInstallationReq struct {
 	common.ProjectReq
 	// in: path
 	ClusterID string `json:"cluster_id"`
@@ -150,6 +164,41 @@ func (req deleteApplicationInstallationsReq) GetSeedCluster() apiv1.SeedCluster 
 	}
 }
 
+func DecodeGetApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
+	var req getApplicationInstallationReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	namespace, err := common.DecodeNamespace(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Namespace = namespace
+
+	appInstallName, err := DecodeApplicationInstallationName(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ApplicationInstallationName = appInstallName
+
+	return req, nil
+}
+
+func (req getApplicationInstallationReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
 func DecodeApplicationInstallationName(c context.Context, r *http.Request) (string, error) {
 	appInstallName := mux.Vars(r)["appinstall_name"]
 	if appInstallName == "" {

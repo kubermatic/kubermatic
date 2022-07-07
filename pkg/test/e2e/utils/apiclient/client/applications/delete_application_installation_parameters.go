@@ -58,6 +58,19 @@ func NewDeleteApplicationInstallationParamsWithHTTPClient(client *http.Client) *
    Typically these are written to a http.Request.
 */
 type DeleteApplicationInstallationParams struct {
+
+	// AppinstallName.
+	ApplicationInstallationName string
+
+	// ClusterID.
+	ClusterID string
+
+	// Namespace.
+	Namespace string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +124,50 @@ func (o *DeleteApplicationInstallationParams) SetHTTPClient(client *http.Client)
 	o.HTTPClient = client
 }
 
+// WithApplicationInstallationName adds the appinstallName to the delete application installation params
+func (o *DeleteApplicationInstallationParams) WithApplicationInstallationName(appinstallName string) *DeleteApplicationInstallationParams {
+	o.SetApplicationInstallationName(appinstallName)
+	return o
+}
+
+// SetApplicationInstallationName adds the appinstallName to the delete application installation params
+func (o *DeleteApplicationInstallationParams) SetApplicationInstallationName(appinstallName string) {
+	o.ApplicationInstallationName = appinstallName
+}
+
+// WithClusterID adds the clusterID to the delete application installation params
+func (o *DeleteApplicationInstallationParams) WithClusterID(clusterID string) *DeleteApplicationInstallationParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the delete application installation params
+func (o *DeleteApplicationInstallationParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithNamespace adds the namespace to the delete application installation params
+func (o *DeleteApplicationInstallationParams) WithNamespace(namespace string) *DeleteApplicationInstallationParams {
+	o.SetNamespace(namespace)
+	return o
+}
+
+// SetNamespace adds the namespace to the delete application installation params
+func (o *DeleteApplicationInstallationParams) SetNamespace(namespace string) {
+	o.Namespace = namespace
+}
+
+// WithProjectID adds the projectID to the delete application installation params
+func (o *DeleteApplicationInstallationParams) WithProjectID(projectID string) *DeleteApplicationInstallationParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the delete application installation params
+func (o *DeleteApplicationInstallationParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DeleteApplicationInstallationParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +175,26 @@ func (o *DeleteApplicationInstallationParams) WriteToRequest(r runtime.ClientReq
 		return err
 	}
 	var res []error
+
+	// path param appinstall_name
+	if err := r.SetPathParam("appinstall_name", o.ApplicationInstallationName); err != nil {
+		return err
+	}
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param namespace
+	if err := r.SetPathParam("namespace", o.Namespace); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

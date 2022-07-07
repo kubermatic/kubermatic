@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -99,6 +100,23 @@ func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	}
 }
 
+func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getApplicationInstallationReq)
+
+		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		if err != nil {
+			return nil, err
+		}
+
+		applicationInstallation := &appskubermaticv1.ApplicationInstallation{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: req.ApplicationInstallationName}, applicationInstallation); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToExternal(applicationInstallation), nil
+	}
+}
 func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
 	return &apiv2.ApplicationInstallation{
 		ObjectMeta: apiv1.ObjectMeta{

@@ -411,6 +411,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
 		Handler(r.deleteApplicationInstallation())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
+		Handler(r.getApplicationInstallation())
+
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
 		Path("/constrainttemplates").
@@ -7139,6 +7143,32 @@ func (r Routing) deleteApplicationInstallation() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(applicationinstallation.DeleteApplicationInstallation(r.userInfoGetter)),
 		applicationinstallation.DecodeDeleteApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications getApplicationInstallation
+//
+//    Gets the given ApplicationInstallation
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) getApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeGetApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
