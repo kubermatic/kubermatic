@@ -23,15 +23,10 @@ import (
 )
 
 func deleteVApp(vdc *govcd.Vdc, vapp *govcd.VApp) error {
-	waitForUndeploy := true
+	// Undeploy failed, it's still safe to delete vApp directly since it will take care of all the cleanup.
+	// Most common reason for failure is that the vApp is not in "running" state.
 	task, err := vapp.Undeploy()
-	if err != nil {
-		// Undeploy failed, it's still safe to delete vApp directly since it will take care of all the cleanup.
-		// Most common reason for failure is that the vApp is not in "running" state.
-		waitForUndeploy = false
-	}
-
-	if waitForUndeploy {
+	if err == nil {
 		if err = task.WaitTaskCompletion(); err != nil {
 			return fmt.Errorf("error waiting for vApp undeploy to complete: %w", err)
 		}
