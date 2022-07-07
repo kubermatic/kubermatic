@@ -7190,7 +7190,7 @@ func (r Routing) listIPAMPools() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter)),
 		ipampool.DecodeSeedReq,
 		handler.EncodeJSON,
@@ -7215,7 +7215,7 @@ func (r Routing) getIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
@@ -7240,7 +7240,7 @@ func (r Routing) createIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeCreateIPAMPoolReq,
 		handler.EncodeJSON,
@@ -7265,7 +7265,7 @@ func (r Routing) patchIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodePatchIPAMPoolReq,
 		handler.EncodeJSON,
@@ -7287,7 +7287,7 @@ func (r Routing) deleteIPAMPool() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.PrivilegedIPAMPool(r.clusterProviderGetter, r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
