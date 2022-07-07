@@ -21,7 +21,11 @@ import (
 	"strings"
 	"testing"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
@@ -37,6 +41,32 @@ var (
 		},
 	}
 )
+
+func TestValidateClusterSpec(t *testing.T) {
+	tests := []struct {
+		name  string
+		spec  *kubermaticv1.ClusterSpec
+		valid bool
+	}{
+		{
+			name:  "empty spec should not cause a panic",
+			valid: false,
+			spec:  &kubermaticv1.ClusterSpec{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, []*version.Version{{
+				Version: semverlib.MustParse("1.2.3"),
+			}}, nil).ToAggregate()
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
+		})
+	}
+}
 
 func TestValidateCloudSpec(t *testing.T) {
 	tests := []struct {

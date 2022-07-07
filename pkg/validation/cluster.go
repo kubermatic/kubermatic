@@ -62,23 +62,23 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
 		allErrs = append(allErrs, field.Required(parentFieldPath.Child("version"), "version is required but was not specified"))
-	}
+	} else {
+		var (
+			validVersions []string
+			versionValid  bool
+		)
 
-	var (
-		validVersions []string
-		versionValid  bool
-	)
-
-	for _, availableVersion := range versions {
-		validVersions = append(validVersions, availableVersion.Version.String())
-		if spec.Version.Semver().Equal(availableVersion.Version) {
-			versionValid = true
-			break
+		for _, availableVersion := range versions {
+			validVersions = append(validVersions, availableVersion.Version.String())
+			if spec.Version.Semver().Equal(availableVersion.Version) {
+				versionValid = true
+				break
+			}
 		}
-	}
 
-	if !versionValid {
-		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("version"), spec.Version.String(), validVersions))
+		if !versionValid {
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("version"), spec.Version.String(), validVersions))
+		}
 	}
 
 	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
