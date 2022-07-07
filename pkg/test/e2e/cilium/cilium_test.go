@@ -63,6 +63,7 @@ var (
 	secretAccessKey string
 	logOptions      = log.NewDefaultOptions()
 	namespace       = "kubermatic"
+	datacenter      = ""
 )
 
 const (
@@ -73,6 +74,7 @@ const (
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&namespace, "namespace", namespace, "namespace where KKP is installed into")
+	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must be an AWS DC)")
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -472,7 +474,7 @@ func createUserCluster(
 		WithHumanReadableName("Cilium e2e test").
 		WithProject(project).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: "aws-eu-central-1a",
+			DatacenterName: datacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{
 				SecretAccessKey: secretAccessKey,
 				AccessKeyID:     accessKeyID,

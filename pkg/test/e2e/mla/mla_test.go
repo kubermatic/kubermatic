@@ -70,12 +70,18 @@ alertmanager_config: |
 )
 
 var (
-	datacenter = "hetzner-hel1"
+	namespace  = "kubermatic"
+	seed       = ""
+	datacenter = ""
+	preset     = ""
 	logOptions = log.NewDefaultOptions()
-	credential = "e2e-hetzner"
 )
 
 func init() {
+	flag.StringVar(&namespace, "namespace", namespace, "Namespace where KKP is installed to")
+	flag.StringVar(&seed, "seed", seed, "KKP seed to use (must contain the -datacenter)")
+	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must be a Hetzner DC)")
+	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -114,8 +120,8 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
 				CredentialsReference: &providerconfig.GlobalSecretKeySelector{
 					ObjectReference: corev1.ObjectReference{
-						Name:      credential,
-						Namespace: "kubermatic",
+						Name:      preset,
+						Namespace: namespace,
 					},
 				},
 			},
@@ -649,16 +655,16 @@ func getGrafanaClient(ctx context.Context, client ctrlruntimeclient.Client) (*gr
 }
 
 func toggleMLAInSeed(ctx context.Context, client ctrlruntimeclient.Client, enable bool) error {
-	seed := &kubermaticv1.Seed{}
-	if err := client.Get(ctx, types.NamespacedName{Name: "kubermatic", Namespace: "kubermatic"}, seed); err != nil {
+	seedObj := &kubermaticv1.Seed{}
+	if err := client.Get(ctx, types.NamespacedName{Name: seed, Namespace: namespace}, seedObj); err != nil {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
+	seedObj.Spec.MLA = &kubermaticv1.SeedMLASettings{
 		UserClusterMLAEnabled: enable,
 	}
 
-	if err := client.Update(ctx, seed); err != nil {
+	if err := client.Update(ctx, seedObj); err != nil {
 		return fmt.Errorf("failed to update seed: %w", err)
 	}
 

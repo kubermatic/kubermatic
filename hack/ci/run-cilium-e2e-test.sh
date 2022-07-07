@@ -47,8 +47,10 @@ export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
 export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
-echodate "Running cilium tests..."
+echodate "Running Cilium tests..."
 
-go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium
+go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium \
+  -namespace kubermatic \
+  -datacenter aws-eu-central-1a
 
 echodate "Cilium tests done."
