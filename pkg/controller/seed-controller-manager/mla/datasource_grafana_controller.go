@@ -131,7 +131,7 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 		r.versions,
 		kubermaticv1.ClusterConditionMLAControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.datasourceGrafanaController.reconcile(ctx, cluster)
+			return r.datasourceGrafanaController.reconcile(ctx, cluster, log)
 		},
 	)
 	if err != nil {
@@ -171,7 +171,7 @@ func newDatasourceGrafanaController(
 	}
 }
 
-func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*reconcile.Result, error) {
 	// disabled by default
 	if cluster.Spec.MLA == nil {
 		cluster.Spec.MLA = &kubermaticv1.MLASettings{}
@@ -208,7 +208,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		// This fails very often because of racing between the controllers - can't get a grafana organization from a project before it gets assigned
 		// Once the organization controller adds the annotation to the project, we will reconcile again, so we skip reconciliation in this case
 		// This works around potential resources abuse documented in https://github.com/kubermatic/kubermatic/issues/9970
-		r.log.Warnf("failed to get grafana org from a project, waiting until the next reconciliation: %w", err)
+		log.Warnf("failed to get grafana org from a project, waiting until the next reconciliation: %s", err)
 		return nil, nil
 	}
 	// set header from the very beginning so all other calls will be within this organization

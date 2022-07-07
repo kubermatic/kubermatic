@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -61,6 +63,14 @@ func newOrgUserGrafanaReconciler(
 	orgUserGrafanaController *orgUserGrafanaController,
 ) error {
 	client := mgr.GetClient()
+
+	// Add index on email flag
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kubermaticv1.User{}, "spec.email", func(rawObj ctrlruntimeclient.Object) []string {
+		a := rawObj.(*kubermaticv1.User)
+		return []string{a.Spec.Email}
+	}); err != nil {
+		return fmt.Errorf("failed to add index on User Email parameter: %w", err)
+	}
 
 	reconciler := &orgUserGrafanaReconciler{
 		Client: client,
@@ -127,8 +137,21 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, fmt.Errorf("failed to get project: %w", err)
 	}
 
+	userList := &kubermaticv1.UserList{}
+	if err := r.List(ctx, userList, ctrlruntimeclient.MatchingFields{"spec.email": userProjectBinding.Spec.UserEmail}); err != nil {
+		log.Errorf("Failed to check for existence of a user %s: %s", userProjectBinding.Spec.UserEmail, err.Error())
+		return reconcile.Result{}, err
+	} else if len(userList.Items) == 0 {
+		log.Warnf("User %s does not exist, ignoring UserProjectBinding %s for 30 minutes.", userProjectBinding.Spec.UserEmail, userProjectBinding.Name)
+		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+	}
+
 	if err := ensureOrgUser(ctx, grafanaClient, project, userProjectBinding); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to ensure Grafana Org/User: %w", err)
+		if strings.Contains(err.Error(), "project should have grafana org annotation set") {
+			log.Warnf("unable to ensure Grafana Org/User, retrying in 30s: %w", err)
+			return reconcile.Result{RequeueAfter: time.Second * 30}, nil
+		}
+		return reconcile.Result{}, fmt.Errorf("failed to ensure project: %w", err)
 	}
 
 	return reconcile.Result{}, nil
