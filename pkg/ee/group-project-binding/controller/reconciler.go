@@ -69,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if r.setOwnerRef {
-		// validate that GroupProjectBinding references an existing project and set an owner reference
+		// validate that GroupProjectBinding references an existing project and set an owner reference and project-id label
 
 		project := &kubermaticv1.Project{}
 		if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.ProjectID}, project); err != nil {
@@ -85,6 +85,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 				Kind:       kubermaticv1.ProjectKindName,
 				Name:       project.Name,
 				UID:        project.UID,
+			})
+			kuberneteshelper.EnsureLabels(binding, map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
 			})
 		}); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to set project owner reference: %w", err)
