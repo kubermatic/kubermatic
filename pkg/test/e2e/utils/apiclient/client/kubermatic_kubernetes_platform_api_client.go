@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/get"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gke"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/group_project_binding"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
@@ -125,7 +124,6 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Gcp = gcp.New(transport, formats)
 	cli.Get = get.New(transport, formats)
 	cli.Gke = gke.New(transport, formats)
-	cli.GroupProjectBinding = group_project_binding.New(transport, formats)
 	cli.Hetzner = hetzner.New(transport, formats)
 	cli.Kubevirt = kubevirt.New(transport, formats)
 	cli.Metering = metering.New(transport, formats)
@@ -240,8 +238,6 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Gke gke.ClientService
 
-	GroupProjectBinding group_project_binding.ClientService
-
 	Hetzner hetzner.ClientService
 
 	Kubevirt kubevirt.ClientService
@@ -319,7 +315,6 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Gcp.SetTransport(transport)
 	c.Get.SetTransport(transport)
 	c.Gke.SetTransport(transport)
-	c.GroupProjectBinding.SetTransport(transport)
 	c.Hetzner.SetTransport(transport)
 	c.Kubevirt.SetTransport(transport)
 	c.Metering.SetTransport(transport)
