@@ -722,7 +722,7 @@ type GKEClusterList []GKECluster
 // swagger:model GKEImage
 type GKEImage struct {
 	Name      string `json:"name"`
-	IsDefault bool   `json:"default"`
+	IsDefault bool   `json:"default,omitempty"`
 }
 
 // GKEImageList represents an array of GKE images.
@@ -733,7 +733,7 @@ type GKEImageList []GKEImage
 // swagger:model GKEZone
 type GKEZone struct {
 	Name      string `json:"name"`
-	IsDefault bool   `json:"default"`
+	IsDefault bool   `json:"default,omitempty"`
 }
 
 // GKEZoneList represents an array of GKE zones.

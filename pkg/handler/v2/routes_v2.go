@@ -72,6 +72,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listGKEImages())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/gke/zones").
+		Handler(r.listGKEZones())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gke/validatecredentials").
 		Handler(r.validateGKECredentials())
 
@@ -5751,6 +5755,28 @@ func (r Routing) listGKEImages() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeGKEImagesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/zones gke listGKEZones
+//
+// Lists GKE zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEZoneList
+func (r Routing) listGKEZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeGKECommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

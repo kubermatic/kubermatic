@@ -26,6 +26,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/container/v1"
 	"google.golang.org/api/option"
 
@@ -34,6 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -316,6 +318,24 @@ func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, er
 	}
 
 	return images, nil
+}
+
+func ListGKEZones(ctx context.Context, sa string) (apiv2.GKEZoneList, error) {
+	computeService, gcpProject, err := gcp.ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return nil, err
+	}
+
+	zones := apiv2.GKEZoneList{}
+	zoneReq := computeService.Zones.List(gcpProject)
+	err = zoneReq.Pages(ctx, func(page *compute.ZoneList) error {
+		for _, zone := range page.Items {
+			zones = append(zones, apiv2.GKEZone{Name: zone.Name})
+		}
+		return nil
+	})
+
+	return zones, err
 }
 
 func ValidateGKECredentials(ctx context.Context, sa string) error {
