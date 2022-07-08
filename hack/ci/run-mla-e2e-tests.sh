@@ -33,6 +33,10 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
 echodate "Creating Hetzner preset..."
@@ -60,9 +64,6 @@ spec:
   name: roxy-admin
 EOF
 retry 2 kubectl apply -f user.yaml
-
-# gather the logs of all things in the Kubermatic namespace
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 echodate "Running MLA tests..."
 

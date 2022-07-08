@@ -22,12 +22,12 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-function cleanup() {
-  if [[ -n "${TMP:-}" ]]; then
-    rm -rf "${TMP}"
-  fi
-}
-trap cleanup EXIT SIGINT SIGTERM
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
