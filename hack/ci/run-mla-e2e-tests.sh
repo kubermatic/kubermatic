@@ -69,7 +69,6 @@ echodate "Running MLA tests..."
 
 go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
   -kubeconfig "$KUBECONFIG" \
-  -seed kubermatic \
   -datacenter hetzner-hel1 \
   -preset e2e-hetzner
 

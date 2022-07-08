@@ -41,10 +41,9 @@ import (
 )
 
 type ClusterJig struct {
-	client       ctrlruntimeclient.Client
-	log          *zap.SugaredLogger
-	kkpNamespace string
-	versions     kubermatic.Versions
+	client   ctrlruntimeclient.Client
+	log      *zap.SugaredLogger
+	versions kubermatic.Versions
 
 	// user-controller parameters
 	projectName  string
@@ -58,11 +57,10 @@ type ClusterJig struct {
 	clusterName string
 }
 
-func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, kkpNamespace string) *ClusterJig {
+func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
 		client:       client,
 		log:          log,
-		kkpNamespace: kkpNamespace,
 		versions:     kubermatic.NewFakeVersions(),
 		spec:         &kubermaticv1.ClusterSpec{},
 		labels:       map[string]string{},
@@ -336,7 +334,7 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
 		return fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(j.client, j.kkpNamespace)
+	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamepace())
 	if err != nil {
 		return fmt.Errorf("failed to create configGetter: %w", err)
 	}

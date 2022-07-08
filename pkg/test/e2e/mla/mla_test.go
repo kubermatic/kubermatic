@@ -68,18 +68,13 @@ alertmanager_config: |
 )
 
 var (
-	namespace  = "kubermatic"
-	seed       = ""
-	datacenter = ""
 	preset     = ""
 	logOptions = log.NewDefaultOptions()
 )
 
 func init() {
-	flag.StringVar(&namespace, "namespace", namespace, "Namespace where KKP is installed to")
-	flag.StringVar(&seed, "seed", seed, "KKP seed to use (must contain the -datacenter)")
-	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must be a Hetzner DC)")
 	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
+	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -108,7 +103,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 	}
 
 	// create test cluster
-	j.clusterJig = jig.NewClusterJig(j.client, j.log, namespace)
+	j.clusterJig = jig.NewClusterJig(j.client, j.log)
 	cluster, err := j.clusterJig.
 		WithProject(project).
 		WithGenerateName("e2e-mla-").
@@ -116,7 +111,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 		WithPreset(preset).
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: datacenter,
+			DatacenterName: jig.DatacenterName(),
 			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 		}).
@@ -666,16 +661,16 @@ func getGrafanaClient(ctx context.Context, client ctrlruntimeclient.Client) (*gr
 }
 
 func toggleMLAInSeed(ctx context.Context, client ctrlruntimeclient.Client, enable bool) error {
-	seedObj := &kubermaticv1.Seed{}
-	if err := client.Get(ctx, types.NamespacedName{Name: seed, Namespace: namespace}, seedObj); err != nil {
+	seed, _, err := jig.Seed(ctx, client)
+	if err != nil {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	seedObj.Spec.MLA = &kubermaticv1.SeedMLASettings{
+	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
 		UserClusterMLAEnabled: enable,
 	}
 
-	if err := client.Update(ctx, seedObj); err != nil {
+	if err := client.Update(ctx, seed); err != nil {
 		return fmt.Errorf("failed to update seed: %w", err)
 	}
 

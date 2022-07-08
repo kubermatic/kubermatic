@@ -112,11 +112,9 @@ func (j *MachineJig) WithClusterClient(client ctrlruntimeclient.Client) *Machine
 	return j
 }
 
-func (j *MachineJig) WithAWS(instanceType string, region string, az string) *MachineJig {
+func (j *MachineJig) WithAWS(instanceType string) *MachineJig {
 	return j.WithProviderSpec(awstypes.RawConfig{
-		InstanceType:     providerconfig.ConfigVarString{Value: instanceType},
-		Region:           providerconfig.ConfigVarString{Value: region},
-		AvailabilityZone: providerconfig.ConfigVarString{Value: az},
+		InstanceType: providerconfig.ConfigVarString{Value: instanceType},
 	})
 }
 
@@ -147,7 +145,12 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 		return fmt.Errorf("failed to determine operating system: %w", err)
 	}
 
-	providerSpec, err := j.enrichProviderSpec(provider)
+	_, datacenter, err := Seed(ctx, j.client)
+	if err != nil {
+		return fmt.Errorf("failed to determine target datacenter: %w", err)
+	}
+
+	providerSpec, err := j.enrichProviderSpec(provider, datacenter)
 	if err != nil {
 		return fmt.Errorf("failed to apply cluster information to the provider spec: %w", err)
 	}
@@ -377,7 +380,7 @@ func (j *MachineJig) getClusterClient(ctx context.Context) (ctrlruntimeclient.Cl
 
 	projectName := j.cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 
-	return NewClusterJig(j.client, j.log, "").
+	return NewClusterJig(j.client, j.log).
 		WithExistingCluster(j.cluster.Name).
 		WithProjectName(projectName).
 		ClusterClient(ctx)
@@ -421,18 +424,18 @@ func (j *MachineJig) clusterTags() map[string]string {
 	}
 }
 
-func (j *MachineJig) enrichProviderSpec(provider providerconfig.CloudProvider) (interface{}, error) {
+func (j *MachineJig) enrichProviderSpec(provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter) (interface{}, error) {
 	switch provider {
 	case providerconfig.CloudProviderAWS:
-		return j.enrichAWSProviderSpec()
+		return j.enrichAWSProviderSpec(datacenter.Spec.AWS)
 	case providerconfig.CloudProviderHetzner:
-		return j.enrichHetznerProviderSpec()
+		return j.enrichHetznerProviderSpec(datacenter.Spec.Hetzner)
 	default:
 		return nil, fmt.Errorf("don't know how to handle %q provider specs", provider)
 	}
 }
 
-func (j *MachineJig) enrichAWSProviderSpec() (interface{}, error) {
+func (j *MachineJig) enrichAWSProviderSpec(datacenter *kubermaticv1.DatacenterSpecAWS) (interface{}, error) {
 	awsConfig, ok := j.providerSpec.(awstypes.RawConfig)
 	if !ok {
 		return nil, fmt.Errorf("cluster uses AWS, but given provider spec was %T", j.providerSpec)
@@ -459,7 +462,7 @@ func (j *MachineJig) enrichAWSProviderSpec() (interface{}, error) {
 	}
 
 	if awsConfig.Region.Value == "" {
-		awsConfig.Region.Value = "eu-central-1"
+		awsConfig.Region.Value = datacenter.Region
 	}
 
 	if awsConfig.AvailabilityZone.Value == "" {
@@ -477,14 +480,20 @@ func (j *MachineJig) enrichAWSProviderSpec() (interface{}, error) {
 	return awsConfig, nil
 }
 
-func (j *MachineJig) enrichHetznerProviderSpec() (interface{}, error) {
+func (j *MachineJig) enrichHetznerProviderSpec(datacenter *kubermaticv1.DatacenterSpecHetzner) (interface{}, error) {
 	hetznerConfig, ok := j.providerSpec.(hetznertypes.RawConfig)
 	if !ok {
 		return nil, fmt.Errorf("cluster uses Hetzner, but given provider spec was %T", j.providerSpec)
 	}
 
 	if hetznerConfig.Datacenter.Value == "" {
-		hetznerConfig.Datacenter.Value = "hel1-dc2"
+		hetznerConfig.Datacenter.Value = datacenter.Datacenter
+	}
+
+	if len(hetznerConfig.Networks) == 0 && datacenter.Network != "" {
+		hetznerConfig.Networks = []providerconfig.ConfigVarString{{
+			Value: datacenter.Network,
+		}}
 	}
 
 	if len(hetznerConfig.Networks) == 0 {

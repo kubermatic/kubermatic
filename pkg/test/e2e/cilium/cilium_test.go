@@ -59,10 +59,6 @@ var (
 	accessKeyID     string
 	secretAccessKey string
 	logOptions      = log.NewDefaultOptions()
-	namespace       = "kubermatic"
-	datacenter      = ""
-	awsRegion       = ""
-	awsAZ           = ""
 )
 
 const (
@@ -72,10 +68,7 @@ const (
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
-	flag.StringVar(&namespace, "namespace", namespace, "namespace where KKP is installed into")
-	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must be an AWS DC)")
-	flag.StringVar(&awsRegion, "aws-region", awsRegion, "AWS region to use for workers")
-	flag.StringVar(&awsAZ, "aws-az", awsAZ, "AWS availability zone to use for workers")
+	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -469,14 +462,15 @@ func createUserCluster(
 	})
 
 	// create the cluster
-	clusterJig := jig.NewClusterJig(masterClient, log, namespace)
+	clusterJig := jig.NewClusterJig(masterClient, log)
 	cluster, err := clusterJig.
 		WithGenerateName("e2e-cilium-").
 		WithHumanReadableName("Cilium e2e test").
 		WithProject(project).
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: datacenter,
+			DatacenterName: jig.DatacenterName(),
+			ProviderName:   string(kubermaticv1.AWSCloudProvider),
 			AWS: &kubermaticv1.AWSCloudSpec{
 				SecretAccessKey: secretAccessKey,
 				AccessKeyID:     accessKeyID,
@@ -512,7 +506,7 @@ func createUserCluster(
 		WithName("workers").
 		WithReplicas(2).
 		WithUbuntu().
-		WithAWS("t3.small", awsRegion, awsAZ).
+		WithAWS("t3.small").
 		Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
