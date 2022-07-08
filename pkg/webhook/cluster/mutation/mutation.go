@@ -238,8 +238,8 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 				Version: "v3.22",
 			}
 			if cniVersion.Minor() < 21 {
-				// label the cluster with unsafe-cni-upgrade label to leave traces about the upgrade
-				// and pass the cluster validation
+				// if more than 1 minor version needs to be skipped, label the cluster with the unsafe-cni-upgrade label
+				// to leave traces about the upgrade and pass the cluster validation
 				if newCluster.Labels == nil {
 					newCluster.Labels = make(map[string]string)
 				}
