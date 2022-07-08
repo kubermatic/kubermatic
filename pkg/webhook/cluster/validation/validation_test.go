@@ -957,7 +957,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.19",
+					Version: "v3.20",
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
