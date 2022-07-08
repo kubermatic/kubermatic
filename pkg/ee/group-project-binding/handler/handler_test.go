@@ -125,7 +125,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			},
 		},
 		{
-			name:            "scenario 4: get a non-exising GroupProjectBinding",
+			name:            "scenario 4: get a non-existing GroupProjectBinding",
 			method:          "GET",
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-DoesNotExist",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
