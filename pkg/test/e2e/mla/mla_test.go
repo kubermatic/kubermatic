@@ -35,7 +35,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
@@ -115,17 +114,11 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 		WithProject(project).
 		WithGenerateName("e2e-mla-").
 		WithHumanReadableName("MLA test cluster").
+		WithPreset(preset).
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: datacenter,
-			Hetzner: &kubermaticv1.HetznerCloudSpec{
-				CredentialsReference: &providerconfig.GlobalSecretKeySelector{
-					ObjectReference: corev1.ObjectReference{
-						Name:      preset,
-						Namespace: namespace,
-					},
-				},
-			},
+			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 		}).
 		Create(ctx, true)
 	if err != nil {

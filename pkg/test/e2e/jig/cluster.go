@@ -52,6 +52,7 @@ type ClusterJig struct {
 	generateName string
 	ownerEmail   string
 	labels       map[string]string
+	presetSecret string
 
 	// data about the generated cluster
 	clusterName string
@@ -145,6 +146,11 @@ func (j *ClusterJig) WithPatch(patcher func(c *kubermaticv1.ClusterSpec) *kuberm
 	return j
 }
 
+func (j *ClusterJig) WithPreset(presetSecret string) *ClusterJig {
+	j.presetSecret = presetSecret
+	return j
+}
+
 func (j *ClusterJig) ClusterName() string {
 	return j.clusterName
 }
@@ -215,6 +221,10 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 			Labels:       j.labels,
 		},
 		Spec: *j.spec,
+	}
+
+	if j.presetSecret != "" {
+		cluster, err = j.applyPreset(ctx, cluster)
 	}
 
 	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName)
@@ -328,6 +338,12 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
 	}
 
 	return nil
+}
+
+func (j *ClusterJig) applyPreset(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	err := kubernetes.CreateOrUpdateCredentialSecretForCluster(ctx, j.client, cluster)
+
+	return cluster, err
 }
 
 func (j *ClusterJig) getClusterProvider() (*kubernetes.ClusterProvider, error) {
