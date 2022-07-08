@@ -477,6 +477,7 @@ func createUserCluster(
 			},
 		}).
 		WithProxyMode(proxyMode).
+		WithKonnectivity(true).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
 			Version: "v1.11",
