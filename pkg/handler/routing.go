@@ -204,6 +204,7 @@ type RoutingParams struct {
 	PrivilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter
 	SeedProvider                            provider.SeedProvider
 	ResourceQuotaProvider                   provider.ResourceQuotaProvider
+	GroupProjectBindingProvider             provider.GroupProjectBindingProvider
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 	Features                                features.FeatureGate

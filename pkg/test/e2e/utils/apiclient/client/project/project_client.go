@@ -156,6 +156,8 @@ type ClientService interface {
 
 	GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGatekeeperConfigOK, error)
 
+	GetGroupProjectBinding(params *GetGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGroupProjectBindingOK, error)
+
 	GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMachineDeploymentOK, error)
 
 	GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeDeploymentOK, error)
@@ -217,6 +219,8 @@ type ClientService interface {
 	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error)
 
 	ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error)
+
+	ListGroupProjectBinding(params *ListGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingOK, error)
 
 	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error)
 
@@ -2746,6 +2750,44 @@ func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo
 }
 
 /*
+  GetGroupProjectBinding gets project group binding
+*/
+func (a *Client) GetGroupProjectBinding(params *GetGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGroupProjectBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetGroupProjectBindingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getGroupProjectBinding",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/groupbindings/{binding_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetGroupProjectBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetGroupProjectBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetGroupProjectBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetMachineDeployment gets a machine deployment that is assigned to the given cluster
 */
 func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMachineDeploymentOK, error) {
@@ -3920,6 +3962,44 @@ func (a *Client) ListGKEClusters(params *ListGKEClustersParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListGKEClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGroupProjectBinding lists project s group bindings
+*/
+func (a *Client) ListGroupProjectBinding(params *ListGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGroupProjectBindingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGroupProjectBinding",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/groupbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGroupProjectBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGroupProjectBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGroupProjectBindingDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

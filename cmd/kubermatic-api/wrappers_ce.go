@@ -43,3 +43,7 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 func resourceQuotaProviderFactory(_ kubernetes.ImpersonationClient, _ ctrlruntimeclient.Client) provider.ResourceQuotaProvider {
 	return nil
 }
+
+func groupProjectBindingFactory(_ kubernetes.ImpersonationClient, _ ctrlruntimeclient.Client) provider.GroupProjectBindingProvider {
+	return nil
+}

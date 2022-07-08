@@ -272,6 +272,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
 	resourceQuotaProvider := resourceQuotaProviderFactory(defaultImpersonationClient.CreateImpersonatedClient, client)
+	groupProjectBindingProvider := groupProjectBindingFactory(defaultImpersonationClient.CreateImpersonatedClient, client)
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
@@ -419,6 +420,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		privilegedMLAAdminSettingProviderGetter: privilegedMLAAdminSettingProviderGetter,
 		seedProvider:                            seedProvider,
 		resourceQuotaProvider:                   resourceQuotaProvider,
+		groupProjectBindingProvider:             groupProjectBindingProvider,
 	}, nil
 }
 
@@ -539,6 +541,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		PrivilegedMLAAdminSettingProviderGetter: prov.privilegedMLAAdminSettingProviderGetter,
 		SeedProvider:                            prov.seedProvider,
 		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
+		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,

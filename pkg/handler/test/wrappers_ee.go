@@ -29,3 +29,7 @@ import (
 func resourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.ResourceQuotaProvider {
 	return eeapi.ResourceQuotaProviderFactory(createMasterImpersonatedClient, privilegedClient)
 }
+
+func groupProjectBindingProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.GroupProjectBindingProvider {
+	return eeapi.GroupProjectBindingProviderFactory(createMasterImpersonatedClient, privilegedClient)
+}

@@ -27,6 +27,7 @@ package kubermaticapi
 import (
 	"context"
 
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/provider"
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -43,6 +44,10 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
 }
 
-func ResourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *resourcequotas.ResourceQuotaProvider {
+func ResourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.ResourceQuotaProvider {
 	return resourcequotas.NewResourceQuotaProvider(createMasterImpersonatedClient, privilegedClient)
+}
+
+func GroupProjectBindingProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.GroupProjectBindingProvider {
+	return groupprojectbinding.NewGroupProjectBindingProvider(createMasterImpersonatedClient, privilegedClient)
 }
