@@ -963,6 +963,9 @@ func GenGroupBinding(projectID, groupName, role string) *kubermaticv1.GroupProje
 	return &kubermaticv1.GroupProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s", projectID, groupName),
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+			},
 		},
 		Spec: kubermaticv1.GroupProjectBindingSpec{
 			Role:      role,

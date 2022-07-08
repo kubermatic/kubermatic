@@ -27,11 +27,14 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,24 +59,20 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 		return nil, errors.New("a user is missing but required")
 	}
 
-	allBindings := &kubermaticv1.GroupProjectBindingList{}
-	// TODO: add list opts to filter by projectID and delete loop below once mutating webhook for GroupProjectBinding is done.
-	listOpts := &ctrlruntimeclient.ListOptions{}
-	if err := p.clientPrivileged.List(ctx, allBindings, listOpts); err != nil {
+	projectBindings := &kubermaticv1.GroupProjectBindingList{}
+	projectReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{projectID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct project label selector: %w", err)
+	}
+	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectReq)}
+	if err := p.clientPrivileged.List(ctx, projectBindings, listOpts); err != nil {
 		return nil, err
 	}
 
-	var projectBindings []kubermaticv1.GroupProjectBinding
-	for _, binding := range allBindings.Items {
-		if binding.Spec.ProjectID == projectID {
-			projectBindings = append(projectBindings, binding)
-		}
-	}
-
-	if len(projectBindings) > 0 {
+	if len(projectBindings.Items) > 0 {
 		// TODO: once we merge group support, instead of kube api request, read permissions from userInfo.
 		// Fetch first binding with kube API to ensure user has permissions
-		_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
+		_, err := p.Get(ctx, userInfo, projectBindings.Items[0].Name)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +80,7 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 		return nil, nil
 	}
 
-	return projectBindings, nil
+	return projectBindings.Items, nil
 }
 
 func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error) {
