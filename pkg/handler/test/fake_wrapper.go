@@ -579,7 +579,7 @@ func (k NewApplicationInstallationWrapper) Sort() {
 // EqualOrDie compares whether expected collection is equal to the actual one.
 func (k NewApplicationInstallationWrapper) EqualOrDie(expected NewApplicationInstallationWrapper, t *testing.T) {
 	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", d)
 	}
 }
