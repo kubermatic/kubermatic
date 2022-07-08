@@ -554,7 +554,7 @@ func (k NewEtcdRestoreSliceWrapper) EqualOrDie(expected NewEtcdRestoreSliceWrapp
 	}
 }
 
-// NewApplicationInstallationWrapper wraps []apiv2.EtcdRestore
+// NewApplicationInstallationWrapper wraps []apiv2.ApplicationInstallation
 // to provide convenient methods for tests.
 type NewApplicationInstallationWrapper []*apiv2.ApplicationInstallation
 
