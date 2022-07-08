@@ -184,7 +184,7 @@ func userClientFromContext(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
+	client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
