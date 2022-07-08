@@ -119,8 +119,18 @@ func (j *ClusterJig) WithSSHKeyAgent(enabled bool) *ClusterJig {
 	return j
 }
 
+func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
+	j.spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(enabled)
+	return j
+}
+
 func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
 	j.spec.EnableOperatingSystemManager = enabled
+	return j
+}
+
+func (j *ClusterJig) WithProxyMode(mode string) *ClusterJig {
+	j.spec.ClusterNetwork.ProxyMode = mode
 	return j
 }
 

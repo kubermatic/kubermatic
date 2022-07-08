@@ -62,10 +62,12 @@ type MachineJig struct {
 
 func NewMachineJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) *MachineJig {
 	return &MachineJig{
-		client:  client,
-		log:     log,
-		cluster: cluster,
-		name:    "e2e-workers",
+		client:   client,
+		log:      log,
+		cluster:  cluster,
+		name:     "e2e-workers",
+		osSpec:   ubuntu.Config{},
+		replicas: 1,
 	}
 }
 

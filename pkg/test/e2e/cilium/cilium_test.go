@@ -476,6 +476,7 @@ func createUserCluster(
 				AccessKeyID:     accessKeyID,
 			},
 		}).
+		WithProxyMode(proxyMode).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
 			Version: "v1.11",
@@ -502,12 +503,7 @@ func createUserCluster(
 
 	// create a few test nodes
 	machineJig := jig.NewMachineJig(masterClient, log, cluster)
-	err = machineJig.
-		WithName("workers").
-		WithReplicas(2).
-		WithUbuntu().
-		WithAWS("t3.small").
-		Create(ctx, jig.WaitForReadyPods)
+	err = machineJig.WithReplicas(2).WithAWS("t3.small").Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
 	}

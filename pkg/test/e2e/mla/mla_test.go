@@ -122,12 +122,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 
 	// create a few test nodes
 	machineJig := jig.NewMachineJig(j.client, j.log, cluster)
-	err = machineJig.
-		WithName("workers").
-		WithReplicas(1).
-		WithUbuntu().
-		WithHetzner("cx21").
-		Create(ctx, jig.WaitForReadyPods)
+	err = machineJig.WithHetzner("cx21").Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create worker nodes: %w", err)
 	}
