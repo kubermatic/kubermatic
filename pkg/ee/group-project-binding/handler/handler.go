@@ -85,12 +85,12 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 
 	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	bindingList, err := bindingProvider.List(ctx, userInfo, kubermaticProject.Name)
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	var bindingAPIObjList []apiv2.GroupProjectBinding
@@ -123,12 +123,12 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 
 	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	binding, err := bindingProvider.Get(ctx, userInfo, req.BindingName)
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	return &apiv2.GroupProjectBinding{

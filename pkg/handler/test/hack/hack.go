@@ -96,6 +96,7 @@ func NewTestRouting(
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
 	resourceQuotaProvider provider.ResourceQuotaProvider,
+	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	features features.FeatureGate) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
@@ -151,6 +152,7 @@ func NewTestRouting(
 		PrivilegedMLAAdminSettingProviderGetter: privilegedMLAAdminSettingProviderGetter,
 		SeedProvider:                            seedProvider,
 		ResourceQuotaProvider:                   resourceQuotaProvider,
+		GroupProjectBindingProvider:             groupProjectBindingProvider,
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
 		Features:                                features,

@@ -27,6 +27,10 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -73,6 +77,13 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 		// Fetch first binding to ensure user has permissions
 		_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
 		if err != nil {
+			if strings.Contains(err.Error(), "forbidden") {
+				return nil, apierrors.NewForbidden(
+					schema.GroupResource{},
+					projectID,
+					fmt.Errorf("%q doesn't belong to project %s", userInfo.Email, projectID),
+				)
+			}
 			return nil, err
 		}
 	} else {

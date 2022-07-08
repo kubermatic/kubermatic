@@ -219,6 +219,7 @@ type newRoutingFunc func(
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
 	resourceQuotaProvider provider.ResourceQuotaProvider,
+	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	features features.FeatureGate,
 ) http.Handler
 
@@ -296,6 +297,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	resourceQuotaProvider := resourceQuotaProviderFactory(fakeImpersonationClient, fakeClient)
+	groupProjectBindingProvider := groupProjectBindingProviderFactory(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -601,6 +603,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		featureGatesProvider,
 		seedProvider,
 		resourceQuotaProvider,
+		groupProjectBindingProvider,
 		featureGates,
 	)
 
@@ -951,6 +954,20 @@ func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 			UserEmail: email,
 			ProjectID: projectID,
 			Group:     fmt.Sprintf("%s-%s", group, projectID),
+		},
+	}
+}
+
+// GenGroupBinding generates a binding.
+func GenGroupBinding(projectID, groupName, role string) *kubermaticv1.GroupProjectBinding {
+	return &kubermaticv1.GroupProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", projectID, groupName),
+		},
+		Spec: kubermaticv1.GroupProjectBindingSpec{
+			Role:      role,
+			ProjectID: projectID,
+			Group:     groupName,
 		},
 	}
 }
