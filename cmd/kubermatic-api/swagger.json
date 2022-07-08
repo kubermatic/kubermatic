@@ -10642,6 +10642,304 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations": {
+      "get": {
+        "description": "List ApplicationInstallations which belong to the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "listApplicationInstallations",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ApplicationInstallation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ApplicationInstallation"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates ApplicationInstallation into the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "createApplicationInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ApplicationInstallation",
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}": {
+      "get": {
+        "description": "Gets the given ApplicationInstallation",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "getApplicationInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ApplicationInstallationName",
+            "name": "appinstall_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ApplicationInstallation",
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Updates the given ApplicationInstallation",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "updateApplicationInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ApplicationInstallationName",
+            "name": "appinstall_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ApplicationInstallation",
+            "schema": {
+              "$ref": "#/definitions/ApplicationInstallation"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes the given ApplicationInstallation",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "deleteApplicationInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ApplicationInstallationName",
+            "name": "appinstall_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations": {
       "get": {
         "description": "Gets possible backup destination names for a cluster",
@@ -21993,19 +22291,80 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "ApplicationRef": {
+    "ApplicationInstallation": {
+      "type": "object",
+      "title": "ApplicationInstallation is the object representing an ApplicationInstallation.",
+      "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "spec": {
+          "$ref": "#/definitions/ApplicationInstallationSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationInstallationSpec": {
       "type": "object",
       "properties": {
+        "applicationRef": {
+          "$ref": "#/definitions/ApplicationRef"
+        },
+        "namespace": {
+          "$ref": "#/definitions/NamespaceSpec"
+        },
+        "values": {
+          "$ref": "#/definitions/RawExtension"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "ApplicationRef": {
+      "type": "object",
+      "title": "ApplicationRef describes a KKP-wide, unique reference to an Application.",
+      "properties": {
         "name": {
-          "description": "Name of the Application",
+          "description": "Name of the Application.\nShould be a valid lowercase RFC1123 domain name",
           "type": "string",
+          "pattern": "=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`",
           "x-go-name": "Name"
         },
         "version": {
           "$ref": "#/definitions/Version"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "ApplicationSpec": {
       "description": "ApplicationSpec represents the specification for an application",
@@ -27459,9 +27818,10 @@
     },
     "NamespaceSpec": {
       "type": "object",
+      "title": "NamespaceSpec describe the desired state of the namespace where application will be created.",
       "properties": {
         "annotations": {
-          "description": "Annotations of the namespace",
+          "description": "Annotations of the namespace\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -27469,12 +27829,12 @@
           "x-go-name": "Annotations"
         },
         "create": {
-          "description": "Create defines whether the namespace should be created if it does not exist.",
+          "description": "Create defines whether the namespace should be created if it does not exist. Defaults to true",
           "type": "boolean",
           "x-go-name": "Create"
         },
         "labels": {
-          "description": "Labels of the namespace",
+          "description": "Labels of the namespace\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -27482,12 +27842,13 @@
           "x-go-name": "Labels"
         },
         "name": {
-          "description": "Name is the namespace to deploy the Application into",
+          "description": "Name is the namespace to deploy the Application into.\nShould be a valid lowercase RFC1123 domain name",
           "type": "string",
+          "pattern": "=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`",
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "NetworkDefaults": {
       "type": "object",
@@ -29716,6 +30077,12 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "RawExtension": {
+      "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
+      "type": "object",
+      "title": "RawExtension is used to hold extensions in external versions.",
+      "x-go-package": "k8s.io/apimachinery/pkg/runtime"
     },
     "ReadinessSpec": {
       "type": "object",

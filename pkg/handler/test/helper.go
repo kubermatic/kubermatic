@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -38,6 +39,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -2093,6 +2095,53 @@ func GenAPIMLAAdminSetting(value int32) *apiv2.MLAAdminSetting {
 			IngestionBurstSize: value,
 			QueryRate:          value,
 			QueryBurstSize:     value,
+		},
+	}
+}
+
+func GenApplicationInstallation(name, clusterName, targetnamespace string) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: targetnamespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       appskubermaticv1.ApplicationInstallationKindName,
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+		},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
+				Name:   targetnamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name: "sample-app",
+				Version: appskubermaticv1.Version{
+					Version: *semverlib.MustParse("v1.0.0"),
+				},
+			},
+		},
+	}
+}
+
+func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *apiv2.ApplicationInstallation {
+	return &apiv2.ApplicationInstallation{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: name,
+			ID:   name,
+		},
+		Namespace: targetnamespace,
+		Spec: &appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
+				Name:   targetnamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name: "sample-app",
+				Version: appskubermaticv1.Version{
+					Version: *semverlib.MustParse("v1.0.0"),
+				},
+			},
 		},
 	}
 }
