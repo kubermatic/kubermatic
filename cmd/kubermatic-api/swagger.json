@@ -3977,11 +3977,6 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Region",
-            "in": "header"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -4000,6 +3995,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
           }
         ],
         "responses": {
@@ -16022,7 +16022,7 @@
           "application/json"
         ],
         "tags": [
-          "groupProjectBinding"
+          "project"
         ],
         "summary": "Lists project's group bindings.",
         "operationId": "listGroupProjectBinding",
@@ -16066,7 +16066,7 @@
           "application/json"
         ],
         "tags": [
-          "groupProjectBinding"
+          "project"
         ],
         "summary": "Get project group binding.",
         "operationId": "getGroupProjectBinding",
