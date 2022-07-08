@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -738,7 +739,7 @@ func TestHandle(t *testing.T) {
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
-								Version: "v3.21",
+								Version: "v3.20",
 							},
 							Features: map[string]bool{
 								kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -765,7 +766,7 @@ func TestHandle(t *testing.T) {
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 								Type:    kubermaticv1.CNIPluginTypeCanal,
-								Version: "v3.21",
+								Version: "v3.20",
 							},
 							Features: map[string]bool{
 								kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -779,6 +780,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.22"),
+				jsonpatch.NewOperation("add", "/metadata/labels", map[string]interface{}{validation.UnsafeCNIUpgradeLabel: "true"}),
 			),
 		},
 		{

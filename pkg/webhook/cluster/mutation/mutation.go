@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -235,6 +236,14 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
 				Version: "v3.22",
+			}
+			if cniVersion.Minor() < 21 {
+				// label the cluster with unsafe-cni-upgrade label to leave traces about the upgrade
+				// and pass the cluster validation
+				if newCluster.Labels == nil {
+					newCluster.Labels = make(map[string]string)
+				}
+				newCluster.Labels[validation.UnsafeCNIUpgradeLabel] = "true"
 			}
 		}
 	}
