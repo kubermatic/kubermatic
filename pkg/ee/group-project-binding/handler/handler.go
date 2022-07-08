@@ -36,33 +36,6 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// swagger:parameters getGroupProjectBinding
-type getGroupProjectBindingReq struct {
-	// in: path
-	// required: true
-	ProjectID string `json:"project_id"`
-
-	// in: path
-	// required: true
-	BindingName string `json:"binding_name"`
-}
-
-func DecodeGetGroupProjectBindingReq(r *http.Request) (interface{}, error) {
-	var req getGroupProjectBindingReq
-
-	req.ProjectID = mux.Vars(r)["project_id"]
-	if req.ProjectID == "" {
-		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
-	}
-
-	req.BindingName = mux.Vars(r)["binding_name"]
-	if req.BindingName == "" {
-		return nil, utilerrors.NewBadRequest("`binding_name` cannot be empty")
-	}
-
-	return req, nil
-}
-
 func ListGroupProjectBindings(ctx context.Context, request interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,
@@ -104,6 +77,31 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 	}
 
 	return bindingAPIObjList, nil
+}
+
+// swagger:parameters getGroupProjectBinding
+type getGroupProjectBindingReq struct {
+	common.ProjectReq
+
+	// in: path
+	// required: true
+	BindingName string `json:"binding_name"`
+}
+
+func DecodeGetGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+	var req getGroupProjectBindingReq
+
+	req.ProjectID = mux.Vars(r)["project_id"]
+	if req.ProjectID == "" {
+		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
+	}
+
+	req.BindingName = mux.Vars(r)["binding_name"]
+	if req.BindingName == "" {
+		return nil, utilerrors.NewBadRequest("`binding_name` cannot be empty")
+	}
+
+	return req, nil
 }
 
 func GetGroupProjectBinding(ctx context.Context, request interface{},

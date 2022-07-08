@@ -27,11 +27,6 @@ package provider
 import (
 	"context"
 	"errors"
-	"fmt"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"strings"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -61,6 +56,7 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 	}
 
 	allBindings := &kubermaticv1.GroupProjectBindingList{}
+	// TODO: add list opts to filter by projectID and delete loop below once mutating webhook for GroupProjectBinding is done.
 	listOpts := &ctrlruntimeclient.ListOptions{}
 	if err := p.clientPrivileged.List(ctx, allBindings, listOpts); err != nil {
 		return nil, err
@@ -74,16 +70,10 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 	}
 
 	if len(projectBindings) > 0 {
-		// Fetch first binding to ensure user has permissions
+		// TODO: once we merge group support, instead of kube api request, read permissions from userInfo.
+		// Fetch first binding with kube API to ensure user has permissions
 		_, err := p.Get(ctx, userInfo, projectBindings[0].Name)
 		if err != nil {
-			if strings.Contains(err.Error(), "forbidden") {
-				return nil, apierrors.NewForbidden(
-					schema.GroupResource{},
-					projectID,
-					fmt.Errorf("%q doesn't belong to project %s", userInfo.Email, projectID),
-				)
-			}
 			return nil, err
 		}
 	} else {
@@ -94,16 +84,7 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 }
 
 func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error) {
-	if userInfo == nil {
-		return nil, errors.New("a user is missing but required")
-	}
-
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -117,16 +98,7 @@ func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provide
 }
 
 func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.GroupProjectBinding) error {
-	if userInfo == nil {
-		return errors.New("a user is missing but required")
-	}
-
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
 	if err != nil {
 		return err
 	}
@@ -135,16 +107,7 @@ func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *prov
 }
 
 func (p *GroupProjectBindingProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldBinding, newBinding *kubermaticv1.GroupProjectBinding) error {
-	if userInfo == nil {
-		return errors.New("a user is missing but required")
-	}
-
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
 	if err != nil {
 		return err
 	}
@@ -158,19 +121,21 @@ func (p *GroupProjectBindingProvider) Delete(ctx context.Context, userInfo *prov
 		return err
 	}
 
-	if userInfo == nil {
-		return errors.New("a user is missing but required")
-	}
-
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
+	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
 	if err != nil {
 		return err
 	}
 
 	return masterImpersonatedClient.Delete(ctx, binding)
+}
+
+func (p *GroupProjectBindingProvider) getImpersonatedClinet(userInfo *provider.UserInfo) (ctrlruntimeclient.Client, error) {
+	if userInfo == nil {
+		return nil, errors.New("a user is missing but required")
+	}
+	impersonationCfg := restclient.ImpersonationConfig{
+		UserName: userInfo.Email,
+		Groups:   []string{userInfo.Group},
+	}
+	return p.createMasterImpersonatedClient(impersonationCfg)
 }
