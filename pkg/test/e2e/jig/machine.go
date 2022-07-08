@@ -217,7 +217,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 
 	utilruntime.Must(clusterv1alpha1.AddToScheme(clusterClient.Scheme()))
 
-	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (error, error) {
+	err = wait.PollImmediate(1*time.Second, 2*time.Minute, func() (error, error) {
 		return clusterClient.Create(ctx, &md), nil
 	})
 	if err != nil {
