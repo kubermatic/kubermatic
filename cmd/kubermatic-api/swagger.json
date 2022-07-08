@@ -10644,7 +10644,7 @@
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations": {
       "get": {
-        "description": "Creates ApplicationInstallation which belong to the given cluster",
+        "description": "List ApplicationInstallations which belong to the given cluster",
         "produces": [
           "application/json"
         ],
@@ -10693,7 +10693,7 @@
         }
       },
       "post": {
-        "description": "Lists ApplicationInstallations which belong to the given cluster",
+        "description": "Creates ApplicationInstallation into the given cluster",
         "consumes": [
           "application/json"
         ],

@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  CreateApplicationInstallation Lists ApplicationInstallations which belong to the given cluster
+  CreateApplicationInstallation Creates ApplicationInstallation into the given cluster
 */
 func (a *Client) CreateApplicationInstallation(params *CreateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateApplicationInstallationCreated, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) GetApplicationInstallation(params *GetApplicationInstallationPa
 }
 
 /*
-  ListApplicationInstallations Creates ApplicationInstallation which belong to the given cluster
+  ListApplicationInstallations List ApplicationInstallations which belong to the given cluster
 */
 func (a *Client) ListApplicationInstallations(params *ListApplicationInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationInstallationsOK, error) {
 	// TODO: Validate the params before sending
