@@ -7043,3 +7043,84 @@ func (r Routing) createApplicationInstallation() http.Handler {
 		r.defaultServerOptions()...,
 	)
 }
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications deleteApplicationInstallation
+//
+//    Deletes the given ApplicationInstallation
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.DeleteApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeDeleteApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications getApplicationInstallation
+//
+//    Gets the given ApplicationInstallation
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) getApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeGetApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications updateApplicationInstallation
+//
+//    Updates the given ApplicationInstallation
+//
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) updateApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeUpdateApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
