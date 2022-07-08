@@ -383,3 +383,14 @@ func CheckContainerRuntime(ctx context.Context,
 	}
 	return "", fmt.Errorf("failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }
+
+func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
+	labels := o.GetLabels()
+
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	for key, value := range toEnsure {
+		labels[key] = value
+	}
+}
