@@ -118,6 +118,7 @@ func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermatic
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: datacenter,
+			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 		}).
 		Create(ctx, true)

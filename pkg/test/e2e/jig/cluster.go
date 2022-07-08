@@ -223,8 +223,17 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		Spec: *j.spec,
 	}
 
+	// Normally this label is injected by the cluster provider, but if
+	// you're applying a preset first, the code for takinng the information
+	// and putting it into a credential Secret will refuse to work properly
+	// if the label isn't set yet. So this is kind of a workaround.
+	cluster.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
+
 	if j.presetSecret != "" {
 		cluster, err = j.applyPreset(ctx, cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply preset: %w", err)
+		}
 	}
 
 	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName)
@@ -240,7 +249,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 
 	if waitForHealthy {
 		log.Info("Waiting for cluster to become healthy...")
-		if err = j.WaitForHealthyControlPlane(ctx, 2*time.Minute); err != nil {
+		if err = j.WaitForHealthyControlPlane(ctx, 5*time.Minute); err != nil {
 			return nil, fmt.Errorf("failed to wait for cluster to become healthy: %w", err)
 		}
 	}
@@ -341,6 +350,28 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
 }
 
 func (j *ClusterJig) applyPreset(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	preset := kubermaticv1.Preset{}
+	key := types.NamespacedName{Name: j.presetSecret}
+	if err := j.client.Get(ctx, key, &preset); err != nil {
+		return nil, fmt.Errorf("failed to get preset %q: %w", j.presetSecret, err)
+	}
+
+	switch cluster.Spec.Cloud.ProviderName {
+	case string(kubermaticv1.AWSCloudProvider):
+		cluster.Spec.Cloud.AWS.AccessKeyID = preset.Spec.AWS.AccessKeyID
+		cluster.Spec.Cloud.AWS.SecretAccessKey = preset.Spec.AWS.SecretAccessKey
+		cluster.Spec.Cloud.AWS.VPCID = preset.Spec.AWS.VPCID
+		cluster.Spec.Cloud.AWS.SecurityGroupID = preset.Spec.AWS.SecurityGroupID
+		cluster.Spec.Cloud.AWS.InstanceProfileName = preset.Spec.AWS.InstanceProfileName
+
+	case string(kubermaticv1.HetznerCloudProvider):
+		cluster.Spec.Cloud.Hetzner.Token = preset.Spec.Hetzner.Token
+		cluster.Spec.Cloud.Hetzner.Network = preset.Spec.Hetzner.Network
+
+	default:
+		return nil, fmt.Errorf("provider %q is not yet supported, please implement", cluster.Spec.Cloud.ProviderName)
+	}
+
 	err := kubernetes.CreateOrUpdateCredentialSecretForCluster(ctx, j.client, cluster)
 
 	return cluster, err

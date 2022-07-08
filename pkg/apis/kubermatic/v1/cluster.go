@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -27,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -1381,44 +1383,55 @@ func NewBytes(b64 string) Bytes {
 }
 
 func (cluster *Cluster) GetSecretName() string {
+	// new clusters might not have a name yet (if the user used GenerateName),
+	// so we must be careful when constructing the Secret name
+	clusterName := cluster.Name
+	if clusterName == "" {
+		clusterName = rand.String(5)
+
+		if cluster.GenerateName != "" {
+			clusterName = fmt.Sprintf("%s-%s", strings.TrimSuffix(cluster.GenerateName, "-"), clusterName)
+		}
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
-		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Azure != nil {
-		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
-		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.GCP != nil {
-		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
-		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
-		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
-		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Anexia != nil {
-		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Nutanix != nil {
-		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
-		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, clusterName)
 	}
 	return ""
 }
