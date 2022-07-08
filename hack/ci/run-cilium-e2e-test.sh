@@ -52,7 +52,7 @@ echodate "Running Cilium tests..."
 go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium \
   -namespace kubermatic \
   -datacenter aws-eu-central-1a \
-  -aws-region aws-eu-central-1 \
-  -aws-az aws-eu-central-1a
+  -aws-region eu-central-1 \
+  -aws-az eu-central-1a
 
 echodate "Cilium tests done."

@@ -218,10 +218,6 @@ func TestMLAIntegration(t *testing.T) {
 	}
 	grafanaClient.SetOrgIDHeader(org.ID)
 
-	// if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-	// 	t.Fatalf("failed to get cluster: %v", err)
-	// }
-
 	if err := verifyGrafanaDatasource(ctx, logger, grafanaClient, cluster); err != nil {
 		t.Errorf("failed to verify grafana datasource: %v", err)
 	}
@@ -295,11 +291,14 @@ func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafan
 		return fmt.Errorf("timed out waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
 	}
 
+	log.Info("Grafana datasource successfully verified.")
+
 	return nil
 }
 
 func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, org *grafanasdk.Org) error {
 	log.Info("Checking that an admin user was added to Grafana...")
+
 	user := grafanasdk.User{}
 	err := wait.Poll(1*time.Second, 2*time.Minute, func() (transient error, terminal error) {
 		user, transient = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
@@ -326,6 +325,8 @@ func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, grafanaClien
 	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
 		return fmt.Errorf("orgUser %v expected to have Editor role, but has %v", orgUser, orgUser.Role)
 	}
+
+	log.Info("Grafana user successfully verified.")
 
 	return nil
 }
@@ -386,7 +387,7 @@ rules:
 		return fmt.Errorf("log rule group not found: %w", err)
 	}
 
-	log.Info("RuleGroup successfully created.")
+	log.Info("RuleGroup successfully verified.")
 
 	return nil
 }
@@ -436,7 +437,7 @@ func verifyMetricsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client 
 		return fmt.Errorf("metric rule group not found: %w", err)
 	}
 
-	log.Info("RuleGroup successfully created.")
+	log.Info("RuleGroup successfully verified.")
 
 	return nil
 }
@@ -505,7 +506,7 @@ func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrl
 		return fmt.Errorf("failed to wait for Alertmanager config to be updated: %w", err)
 	}
 
-	log.Info("Alertmanager successfully updated.")
+	log.Info("Alertmanager successfully verified.")
 
 	return nil
 }
@@ -600,6 +601,8 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 	if err != nil {
 		return fmt.Errorf("rate lmits not equal: %w", err)
 	}
+
+	log.Info("Rate limits successfully verified.")
 
 	return nil
 }
