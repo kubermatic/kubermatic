@@ -37,7 +37,7 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoi
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(listApplicationInstallationsReq)
 
-		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(createApplicationInstallationReq)
 
-		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(deleteApplicationInstallationReq)
 
-		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getApplicationInstallationReq)
 
-		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(updateApplicationInstallationReq)
 
-		client, err := userClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +172,7 @@ func convertExternalToInternal(app *apiv2.ApplicationInstallation) *appskubermat
 	}
 }
 
-func userClientFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
+func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
@@ -181,7 +181,7 @@ func userClientFromContext(ctx context.Context, userInfoGetter provider.UserInfo
 
 	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)

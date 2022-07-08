@@ -135,8 +135,6 @@ func TestListApplicationInstallations(t *testing.T) {
 	}
 }
 
-// TODO I am undecided if we need any more testcases here. They all seem to be standard cases, which are
-// handled by generic errors (e.g. object already exists, invalid spec).
 func TestCreateApplicationInstallation(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -159,7 +157,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 			),
 			ExistingAPIUser:         test.GenDefaultAPIUser(),
 			ApplicationInstallation: test.GenApiApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
-			ExpectedHTTPStatusCode:  http.StatusOK,
+			ExpectedHTTPStatusCode:  http.StatusCreated,
 			ExpectedResponse: &apiv2.ApplicationInstallation{
 				ObjectMeta: apiv1.ObjectMeta{
 					Name: "app1",
