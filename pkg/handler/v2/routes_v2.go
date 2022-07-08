@@ -6991,7 +6991,6 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 	)
 }
 
-// TODO decide if swagger tag 'applications' is appropriate, or if it should also be added to 'projects'
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations applications listApplicationInstallations
 //
 //     List ApplicationInstallations which belong to the given cluster
