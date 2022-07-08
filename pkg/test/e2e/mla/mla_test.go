@@ -35,7 +35,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -574,11 +573,25 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 			return errors.New("no data for cluster in actual overrides"), nil
 		}
 
-		if !equality.Semantic.DeepEqual(rateLimits, actualRateLimits) {
+		actualMatches := *actualRateLimits.IngestionRate == rateLimits.IngestionRate &&
+			*actualRateLimits.IngestionBurstSize == rateLimits.IngestionBurstSize &&
+			*actualRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
+			*actualRateLimits.MaxSeriesTotal == rateLimits.MaxSeriesTotal &&
+			*actualRateLimits.MaxSamplesPerQuery == rateLimits.MaxSamplesPerQuery &&
+			*actualRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery
+
+		if !actualMatches {
 			return errors.New("actual rate limits do not match configured rate limits"), nil
 		}
 
-		if !equality.Semantic.DeepEqual(mlaAdminSetting.Spec.MonitoringRateLimits, rateLimits) {
+		configuredMatches := mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate == rateLimits.IngestionRate &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.IngestionBurstSize == rateLimits.IngestionBurstSize &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerMetric == rateLimits.MaxSeriesPerMetric &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesTotal == rateLimits.MaxSeriesTotal &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSamplesPerQuery == rateLimits.MaxSamplesPerQuery &&
+			mlaAdminSetting.Spec.MonitoringRateLimits.MaxSeriesPerQuery == rateLimits.MaxSeriesPerQuery
+
+		if !configuredMatches {
 			return errors.New("configured rate limits do not match intended rate limits"), nil
 		}
 
