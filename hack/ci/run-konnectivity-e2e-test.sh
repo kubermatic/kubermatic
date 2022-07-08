@@ -32,6 +32,10 @@ trap cleanup EXIT SIGINT SIGTERM
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_konnectivity.yaml
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
@@ -44,8 +48,9 @@ export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
 echodate "Successfully got secrets for dev from Vault"
 
-echodate "Running konnectivity tests..."
+echodate "Running Konnectivity tests..."
 
-go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity \
+  -datacenter aws-eu-central-1a
 
 echodate "Konnectivity tests done."
