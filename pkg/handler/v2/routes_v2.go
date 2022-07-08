@@ -1031,7 +1031,7 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
 
-	// Defines endpoints to interact with project group bindings
+	// Defines endpoints to interact with group project bindings
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings").
 		Handler(r.listGroupProjectBindings())
@@ -1039,6 +1039,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.getGroupProjectBinding())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/groupbindings").
+		Handler(r.createGroupProjectBinding())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -6965,6 +6969,35 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 		)),
 		groupprojectbinding.DecodeGetGroupProjectBindingReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route post /api/v2/projects/{project_id}/groupbindings project createGroupProjectBinding
+//
+//    Create project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) createGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.CreateGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodeCreateGroupProjectBindingReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

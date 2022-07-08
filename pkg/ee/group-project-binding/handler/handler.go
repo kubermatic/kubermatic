@@ -26,14 +26,27 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	ViewersRole = "viewers"
+	EditorsRole = "editors"
+	OwnersRole  = "owners"
 )
 
 func ListGroupProjectBindings(ctx context.Context, request interface{},
@@ -135,4 +148,86 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 		ProjectID: binding.Spec.ProjectID,
 		Role:      binding.Spec.Role,
 	}, nil
+}
+
+// swagger:parameters createGroupProjectBinding
+type createGroupProjectBindingReq struct {
+	common.ProjectReq
+
+	// in: body
+	// required: true
+	Body createGroupProjectBindingBody
+}
+
+func DecodeCreateGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+	var req createGroupProjectBindingReq
+
+	req.ProjectID = mux.Vars(r)["project_id"]
+	if req.ProjectID == "" {
+		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+type createGroupProjectBindingBody struct {
+	Role  string `json:"role"`
+	Group string `json:"group"`
+}
+
+func (r createGroupProjectBindingReq) Validate() error {
+	if r.Body.Group == "" {
+		return utilerrors.NewBadRequest("`group` cannot be empty")
+	}
+
+	allowedRoles := sets.NewString(ViewersRole, EditorsRole, OwnersRole)
+	if !allowedRoles.Has(r.Body.Role) {
+		return utilerrors.NewBadRequest("allowed roles are: %v", strings.Join(allowedRoles.List(), ", "))
+	}
+
+	return nil
+}
+
+func CreateGroupProjectBinding(ctx context.Context, request interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) error {
+	req, ok := request.(createGroupProjectBindingReq)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+
+	err := req.Validate()
+	if err != nil {
+		return utilerrors.NewBadRequest(err.Error())
+	}
+
+	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return err
+	}
+
+	if err := bindingProvider.Create(ctx, userInfo, &kubermaticv1.GroupProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", kubermaticProject.Name, req.Body.Group),
+		},
+		Spec: kubermaticv1.GroupProjectBindingSpec{
+			ProjectID: req.ProjectID,
+			Group:     req.Body.Group,
+			Role:      req.Body.Role,
+		},
+	}); err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
 }

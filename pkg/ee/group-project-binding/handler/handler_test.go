@@ -139,7 +139,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			},
 		},
 		{
-			name:            "scenario 4: get an illicit GroupProjectBinding",
+			name:            "scenario 5: get an illicit GroupProjectBinding",
 			method:          "GET",
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-TestGroup",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
@@ -150,6 +150,61 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
 			httpStatus: 403,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:   "scenario 6: create a new GroupProjectBinding",
+			method: "POST",
+			url:    "/api/v2/projects/foo-ID/groupbindings",
+			body: `{
+				"role": "viewers",
+				"group": "viewers-test"
+			}`,
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+			},
+			httpStatus: 201,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:   "scenario 7: create an existing GroupProjectBinding",
+			method: "POST",
+			url:    "/api/v2/projects/foo-ID/groupbindings",
+			body: `{
+				"role": "viewers",
+				"group": "viewers-test"
+			}`,
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+			},
+			httpStatus: 409,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:   "scenario 8: create a new GroupProjectBinding with invalid role name",
+			method: "POST",
+			url:    "/api/v2/projects/foo-ID/groupbindings",
+			body: `{
+				"role": "invalid",
+				"group": "viewers-test"
+			}`,
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+			},
+			httpStatus: 400,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
