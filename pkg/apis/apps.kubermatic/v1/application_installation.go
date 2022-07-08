@@ -79,7 +79,7 @@ type NamespaceSpec struct {
 	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
-	// +kubebuilder:default:true
+	// +kubebuilder:default=true
 	// Create defines whether the namespace should be created if it does not exist. Defaults to true
 	Create bool `json:"create"`
 
