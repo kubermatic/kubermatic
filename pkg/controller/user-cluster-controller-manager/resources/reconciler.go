@@ -377,9 +377,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator(),
-			operatingsystemmanager.KubePublicRoleCreator(),
-			operatingsystemmanager.DefaultRoleCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -392,6 +390,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		machinecontroller.KubePublicRoleCreator(),
 	}
 
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.KubePublicRoleCreator())
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespacePublic, err)
 	}
@@ -400,6 +402,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators = []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.EndpointReaderRoleCreator(),
 		clusterautoscaler.DefaultRoleCreator(),
+	}
+
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.DefaultRoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
