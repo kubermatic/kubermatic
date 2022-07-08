@@ -589,7 +589,7 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("rate lmits not equal: %w", err)
+		return fmt.Errorf("rate limits not equal: %w", err)
 	}
 
 	log.Info("Rate limits successfully verified.")
