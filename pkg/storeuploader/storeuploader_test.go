@@ -20,8 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/minio/minio-go/v7"
+
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func TestGetObjectsToDelete(t *testing.T) {
@@ -78,8 +79,8 @@ func TestGetObjectsToDelete(t *testing.T) {
 				t.Logf("existing object: %s - %s", object.LastModified.Format("2006-01-02T15:04:05"), object.Key)
 			}
 
-			if diff := deep.Equal(gotToDelete, test.expectedToDelete); diff != nil {
-				t.Errorf("Expected: \n\n%v \n\nGot: \n\n%v", test.expectedToDelete, gotToDelete)
+			if !diff.DeepEqual(test.expectedToDelete, gotToDelete) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedToDelete, gotToDelete))
 			}
 		})
 	}

@@ -25,14 +25,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -126,8 +125,8 @@ func TestCreateEndpoint(t *testing.T) {
 				}
 				resultEBC.ID = ""
 
-				if diff := deep.Equal(tc.ExpectedResponse, resultEBC); len(diff) != 0 {
-					t.Fatalf("Difference in expected and received result %v", diff)
+				if !diff.DeepEqual(tc.ExpectedResponse, resultEBC) {
+					t.Fatalf("Difference in expected and received result:\n%v", diff.ObjectDiff(tc.ExpectedResponse, resultEBC))
 				}
 			}
 		})

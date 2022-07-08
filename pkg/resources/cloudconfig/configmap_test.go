@@ -19,7 +19,6 @@ package cloudconfig
 import (
 	"testing"
 
-	"github.com/go-test/deep"
 	"gopkg.in/gcfg.v1"
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
@@ -27,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -155,12 +155,11 @@ func TestVSphereCloudConfig(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error trying to get cloud-config: %v", err)
 			}
-			t.Logf("config: %v", cloudConfig)
 			actual := vsphere.CloudConfig{}
 			unmarshalINICloudConfig(t, &actual, cloudConfig)
 
-			if diff := deep.Equal(&actual, tc.wantConfig); len(diff) > 0 {
-				t.Errorf("cloud-config differs from the expected one: %s", diff)
+			if !diff.SemanticallyEqual(tc.wantConfig, &actual) {
+				t.Fatalf("cloud-config differs from the expected one:\n%v", diff.ObjectDiff(tc.wantConfig, &actual))
 			}
 		})
 	}
@@ -381,12 +380,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error trying to get cloud-config: %v", err)
 			}
-			t.Logf("config: %v", cloudConfig)
 			actual := openstack.CloudConfig{}
 			unmarshalINICloudConfig(t, &actual, cloudConfig)
 
-			if diff := deep.Equal(&actual, tc.wantConfig); len(diff) > 0 {
-				t.Errorf("cloud-config differs from the expected one: %s", diff)
+			if !diff.SemanticallyEqual(tc.wantConfig, &actual) {
+				t.Fatalf("cloud-config differs from the expected one:\n%v", diff.ObjectDiff(tc.wantConfig, &actual))
 			}
 		})
 	}

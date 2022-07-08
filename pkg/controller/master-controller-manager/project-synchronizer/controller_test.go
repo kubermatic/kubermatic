@@ -19,7 +19,6 @@ package projectsynchronizer
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -27,11 +26,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -112,11 +111,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get project: %v", err)
 				}
-				if !reflect.DeepEqual(seedProject.Spec, tc.expectedProject.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedProject, tc.expectedProject))
-				}
-				if !reflect.DeepEqual(seedProject.Name, tc.expectedProject.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedProject, tc.expectedProject))
+
+				seedProject.ResourceVersion = ""
+				seedProject.APIVersion = ""
+				seedProject.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedProject, seedProject) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedProject, seedProject))
 				}
 			}
 		})

@@ -17,7 +17,6 @@ package seedconstraintsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -25,13 +24,13 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/diff"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -136,8 +135,9 @@ func TestReconcile(t *testing.T) {
 
 			// set resource version to empty as it messes up tests
 			constraint.ResourceVersion = ""
-			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("diff:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}

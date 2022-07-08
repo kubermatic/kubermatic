@@ -27,7 +27,6 @@ package allowedregistrycontroller_test
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 	"time"
 
@@ -37,12 +36,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -163,12 +161,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec, tc.expectedCT.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
-			}
+			ct.ResourceVersion = ""
+			ct.APIVersion = ""
+			ct.Kind = ""
 
-			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT, ct) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 
 			// check Constraint
@@ -181,12 +179,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint: %v", err)
 			}
 
-			if !equality.Semantic.DeepEqual(constraint.Spec, tc.expectedConstraint.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint.Spec, tc.expectedConstraint.Spec))
-			}
+			constraint.ResourceVersion = ""
+			constraint.APIVersion = ""
+			constraint.Kind = ""
 
-			if !reflect.DeepEqual(constraint.Name, tc.expectedConstraint.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint.Name, tc.expectedConstraint.Name))
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}

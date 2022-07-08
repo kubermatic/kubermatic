@@ -31,10 +31,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,7 +145,6 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	var actualResponse interface{}
 	var expectedResponse interface{}
 
-	// var err error
 	bBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
@@ -159,7 +157,8 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	if err != nil {
 		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
 	}
-	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
-		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+
+	if !diff.SemanticallyEqual(expectedResponse, actualResponse) {
+		t.Fatalf("Objects are different:\n%v", diff.ObjectDiff(expectedResponse, actualResponse))
 	}
 }

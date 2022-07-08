@@ -18,7 +18,6 @@ package userprojectbindingsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -27,11 +26,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -112,11 +111,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get userProjectBinding: %v", err)
 				}
-				if !reflect.DeepEqual(seedUserProjectBinding.Spec, tc.expectedUserProjectBinding.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
-				}
-				if !reflect.DeepEqual(seedUserProjectBinding.Name, tc.expectedUserProjectBinding.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
+
+				seedUserProjectBinding.ResourceVersion = ""
+				seedUserProjectBinding.APIVersion = ""
+				seedUserProjectBinding.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedUserProjectBinding, seedUserProjectBinding) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedUserProjectBinding, seedUserProjectBinding))
 				}
 			}
 		})

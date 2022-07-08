@@ -27,18 +27,17 @@ package resource_usage_controller
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/tools/record"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -145,8 +144,8 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get cluster: %v", err)
 			}
 
-			if !reflect.DeepEqual(cluster.Status.ResourceUsage, tc.expectedResourceUsage) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(cluster.Status.ResourceUsage, tc.expectedResourceUsage))
+			if !diff.SemanticallyEqual(tc.expectedResourceUsage, cluster.Status.ResourceUsage) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedResourceUsage, cluster.Status.ResourceUsage))
 			}
 		})
 	}

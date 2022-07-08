@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -181,8 +180,8 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get node: %v", err)
 			}
 
-			if diff := deep.Equal(node.Labels, tc.expectedLabels); diff != nil {
-				t.Errorf("node doesn't have expected labels, diff: %v", diff)
+			if !diff.SemanticallyEqual(tc.expectedLabels, node.Labels) {
+				t.Fatalf("node doesn't have expected labels:\n%v", diff.ObjectDiff(tc.expectedLabels, node.Labels))
 			}
 		})
 	}

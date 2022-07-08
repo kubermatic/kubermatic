@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -221,8 +221,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			test.expectedObject.SetUID(gotConfigMap.UID)
 			test.expectedObject.SetGeneration(gotConfigMap.Generation)
 
-			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
-				t.Errorf("The ConfigMap from the client does not match the expected ConfigMap. Diff: \n%v", diff)
+			if !diff.SemanticallyEqual(test.expectedObject, gotConfigMap) {
+				t.Fatalf("The ConfigMap from the client does not match the expected ConfigMap:\n%v", diff.ObjectDiff(test.expectedObject, gotConfigMap))
 			}
 		})
 	}

@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,8 +104,8 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get cluster role: %v", err)
 			}
 
-			if diff := deep.Equal(clusterRole.Labels, tc.expectedLabels); diff != nil {
-				t.Errorf("cluster role doesn't have expected labels, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedLabels, clusterRole.Labels); d != "" {
+				t.Errorf("cluster role doesn't have expected labels:\n%v", d)
 			}
 		})
 	}

@@ -18,7 +18,6 @@ package applicationdefinitionsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -26,11 +25,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -109,18 +108,15 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get application definition: %v", err)
 				}
-				if !reflect.DeepEqual(seedApplicationDef.Name, tc.expectedApplicationDefinition.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
+
+				seedApplicationDef.ResourceVersion = ""
+				seedApplicationDef.APIVersion = ""
+				seedApplicationDef.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedApplicationDefinition, seedApplicationDef) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedApplicationDefinition, seedApplicationDef))
 				}
-				if !reflect.DeepEqual(seedApplicationDef.Labels, tc.expectedApplicationDefinition.Labels) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
-				if !reflect.DeepEqual(seedApplicationDef.Annotations, tc.expectedApplicationDefinition.Annotations) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
-				if !reflect.DeepEqual(seedApplicationDef.Spec, tc.expectedApplicationDefinition.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
+
 				// todo label and annotation
 			}
 		})

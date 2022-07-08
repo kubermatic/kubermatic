@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -454,15 +455,15 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
-			if diff := deep.Equal(backupConfig.Status, readbackBackupConfig.Status); diff != nil {
-				t.Errorf("backupsConfig status differs from read back one, diff: %v", diff)
+			if d := diff.ObjectDiff(backupConfig.Status, readbackBackupConfig.Status); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(readbackBackupConfig.Status.CurrentBackups, tc.expectedBackups); diff != nil {
-				t.Errorf("backups differ from expected, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedBackups, readbackBackupConfig.Status.CurrentBackups); d != "" {
+				t.Errorf("backups differ from expected:\n%v", d)
 			}
 
-			if deep.Equal(reconcileAfter, tc.expectedReconcile) != nil {
+			if !diff.SemanticallyEqual(reconcileAfter, tc.expectedReconcile) {
 				t.Errorf("reconcile time differs from expected, expected: %v, actual: %v", tc.expectedReconcile, reconcileAfter)
 			}
 		})
@@ -654,19 +655,19 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
-			if diff := deep.Equal(backupConfig.Status, readbackBackupConfig.Status); diff != nil {
-				t.Errorf("backupsConfig status differs from read back one, diff: %v", diff)
+			if d := diff.ObjectDiff(backupConfig.Status, readbackBackupConfig.Status); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(readbackBackupConfig.Status.CurrentBackups, tc.expectedBackups); diff != nil {
-				t.Errorf("backups differ from expected, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedBackups, readbackBackupConfig.Status.CurrentBackups); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
-				t.Errorf("jobs differ from expected ones: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedJobs, getSortedJobs(t, reconciler)); d != "" {
+				t.Errorf("jobs differ from expected ones:\n%v", d)
 			}
 
-			if deep.Equal(reconcileAfter, tc.expectedReconcile) != nil {
+			if !diff.SemanticallyEqual(reconcileAfter, tc.expectedReconcile) {
 				t.Errorf("reconcile time differs from expected, expected: %v, actual: %v", tc.expectedReconcile, reconcileAfter)
 			}
 		})
@@ -969,19 +970,19 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
-			if diff := deep.Equal(backupConfig.Status, readbackBackupConfig.Status); diff != nil {
-				t.Errorf("backupsConfig status differs from read back one, diff: %v", diff)
+			if d := diff.ObjectDiff(backupConfig.Status, readbackBackupConfig.Status); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(readbackBackupConfig.Status.CurrentBackups, tc.expectedBackups); diff != nil {
-				t.Errorf("backups differ from expected, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedBackups, readbackBackupConfig.Status.CurrentBackups); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
-				t.Errorf("jobs differ from expected ones: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedJobs, getSortedJobs(t, reconciler)); d != "" {
+				t.Errorf("jobs differ from expected ones:\n%v", d)
 			}
 
-			if deep.Equal(reconcileAfter, tc.expectedReconcile) != nil {
+			if !diff.SemanticallyEqual(reconcileAfter, tc.expectedReconcile) {
 				t.Errorf("reconcile time differs from expected, expected: %v, actual: %v", tc.expectedReconcile, reconcileAfter)
 			}
 		})
@@ -1236,15 +1237,15 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
-			if diff := deep.Equal(backupConfig.Status, readbackBackupConfig.Status); diff != nil {
-				t.Errorf("backupsConfig status differs from read back one, diff: %v", diff)
+			if d := diff.ObjectDiff(backupConfig.Status, readbackBackupConfig.Status); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(readbackBackupConfig.Status.CurrentBackups, tc.expectedBackups); diff != nil {
-				t.Errorf("backups differ from expected, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedBackups, readbackBackupConfig.Status.CurrentBackups); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if deep.Equal(reconcileAfter, tc.expectedReconcile) != nil {
+			if !diff.SemanticallyEqual(reconcileAfter, tc.expectedReconcile) {
 				t.Errorf("reconcile time differs from expected, expected: %v, actual: %v", tc.expectedReconcile, reconcileAfter)
 			}
 		})
@@ -1533,19 +1534,19 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
-			if diff := deep.Equal(backupConfig.Status, readbackBackupConfig.Status); diff != nil {
-				t.Errorf("backupsConfig status differs from read back one, diff: %v", diff)
+			if d := diff.ObjectDiff(backupConfig.Status, readbackBackupConfig.Status); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(readbackBackupConfig.Status.CurrentBackups, tc.expectedBackups); diff != nil {
-				t.Errorf("backups differ from expected, diff: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedBackups, readbackBackupConfig.Status.CurrentBackups); d != "" {
+				t.Errorf("backupsConfig status differs from read back one:\n%v", d)
 			}
 
-			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
-				t.Errorf("jobs differ from expected ones: %v", diff)
+			if d := diff.ObjectDiff(tc.expectedJobs, getSortedJobs(t, reconciler)); d != "" {
+				t.Errorf("jobs differ from expected ones:\n%v", d)
 			}
 
-			if deep.Equal(reconcileAfter, tc.expectedReconcile) != nil {
+			if !diff.SemanticallyEqual(reconcileAfter, tc.expectedReconcile) {
 				t.Errorf("reconcile time differs from expected, expected: %v, actual: %v", tc.expectedReconcile, reconcileAfter)
 			}
 		})
@@ -1657,8 +1658,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 			_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Namespace: tc.backupConfig.Namespace, Name: tc.backupConfig.Name}})
 			if err != nil {
 				if tc.expectedErr != "" {
-					if diff := deep.Equal(err.Error(), tc.expectedErr); diff != nil {
-						t.Errorf("error differs from expected ones: %v", diff)
+					if err.Error() != tc.expectedErr {
+						t.Errorf("error differs from expected ones: expected %q, got %q", tc.expectedErr, err.Error())
 					}
 					return
 				}

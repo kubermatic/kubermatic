@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,8 +94,8 @@ func TestRemoveOwnerReferences(t *testing.T) {
 
 			RemoveOwnerReferences(fakeObj, testcase.toRemove...)
 
-			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
-				t.Fatal(diff)
+			if d := diff.ObjectDiff(testcase.expectedRefs, fakeObj.OwnerReferences); d != "" {
+				t.Fatalf("Objects differ:\n%v", d)
 			}
 		})
 	}
@@ -128,8 +128,8 @@ func TestRemoveOwnerReferenceKinds(t *testing.T) {
 
 			RemoveOwnerReferenceKinds(fakeObj, testcase.toRemove...)
 
-			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
-				t.Fatal(diff)
+			if d := diff.ObjectDiff(testcase.expectedRefs, fakeObj.OwnerReferences); d != "" {
+				t.Fatalf("Objects differ:\n%v", d)
 			}
 		})
 	}

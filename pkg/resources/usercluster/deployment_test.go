@@ -20,9 +20,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -65,8 +64,8 @@ func TestGetLabelArgsValue(t *testing.T) {
 				t.Fatalf("failed to unmarshal result: %v", err)
 			}
 
-			if diff := deep.Equal(tc.expectedLabels, actualLabels); diff != nil {
-				t.Errorf("actual labels do not match expected labels, diff: %v", err)
+			if !diff.SemanticallyEqual(tc.expectedLabels, actualLabels) {
+				t.Fatalf("actual labels do not match expected labels:\n%v", diff.ObjectDiff(tc.expectedLabels, actualLabels))
 			}
 		})
 	}

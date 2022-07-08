@@ -18,7 +18,6 @@ package clustertemplatecontroller
 
 import (
 	"context"
-	"reflect"
 	"sort"
 	"testing"
 
@@ -28,12 +27,12 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -141,8 +140,9 @@ func TestReconcile(t *testing.T) {
 
 			sortClusters(clusterList)
 			sortClusters(expectedClusterList)
-			if !reflect.DeepEqual(clusterList, expectedClusterList) {
-				t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(clusterList, expectedClusterList))
+
+			if !diff.SemanticallyEqual(expectedClusterList, clusterList) {
+				t.Fatalf("Diff:\n%s", diff.ObjectDiff(expectedClusterList, clusterList))
 			}
 		})
 	}

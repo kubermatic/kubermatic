@@ -26,18 +26,17 @@ package seedcontroller
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -101,8 +100,8 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get resource quota: %v", err)
 			}
 
-			if !reflect.DeepEqual(rq.Status.LocalUsage, tc.expectedUsage) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(rq.Status.LocalUsage, tc.expectedUsage))
+			if !diff.SemanticallyEqual(tc.expectedUsage, rq.Status.LocalUsage) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedUsage, rq.Status.LocalUsage))
 			}
 		})
 	}

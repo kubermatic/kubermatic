@@ -22,7 +22,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
@@ -50,8 +50,8 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
-				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)
+			if !diff.SemanticallyEqual(test.expectedNetworkInfos, networkInfos) {
+				t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(test.expectedNetworkInfos, networkInfos))
 			}
 		})
 	}

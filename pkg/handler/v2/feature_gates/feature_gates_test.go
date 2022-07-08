@@ -22,14 +22,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,8 +91,9 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 				if err := json.Unmarshal(resp.Body.Bytes(), &featureGates); err != nil {
 					t.Fatalf("failed to unmarshal response: %v", err)
 				}
-				if !cmp.Equal(tc.ExpectedResponse, featureGates) {
-					t.Fatalf(cmp.Diff(tc.ExpectedResponse, featureGates))
+
+				if !diff.SemanticallyEqual(tc.ExpectedResponse, featureGates) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.ExpectedResponse, featureGates))
 				}
 			}
 		})

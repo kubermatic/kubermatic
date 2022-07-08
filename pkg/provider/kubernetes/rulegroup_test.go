@@ -20,13 +20,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -191,8 +191,9 @@ func TestListRuleGroup(t *testing.T) {
 					if !ok {
 						t.Errorf("expected ruleGroup %s is not in resulting ruleGroups", expectedRuleGroup.Name)
 					}
-					if diff := deep.Equal(ruleGroup, expectedRuleGroup); diff != nil {
-						t.Errorf("Got unexpected ruleGroup. Diff to expected: %v", diff)
+
+					if !diff.SemanticallyEqual(expectedRuleGroup, ruleGroup) {
+						t.Fatalf("Got unexpected ruleGroup:\n%v", diff.ObjectDiff(expectedRuleGroup, ruleGroup))
 					}
 				}
 			} else {

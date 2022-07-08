@@ -19,19 +19,16 @@ package test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/pmezard/go-difflib/difflib"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
-
-	"sigs.k8s.io/yaml"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
@@ -53,20 +50,8 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 		t.Fatalf("failed to read .golden file: %v", err)
 	}
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(expected)),
-		B:        difflib.SplitLines(output),
-		FromFile: "Fixture",
-		ToFile:   "Current",
-		Context:  3,
-	}
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diffStr != "" {
-		t.Errorf("got diff between expected and actual result: \n%s\n", diffStr)
+	if d := diff.StringDiff(string(expected), output); d != "" {
+		t.Fatalf("got diff between expected and actual result:\n%v", d)
 	}
 }
 
@@ -98,31 +83,8 @@ func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
 func ObjectYAMLDiff(t *testing.T, expectedObj, actualObj interface{}) error {
 	t.Helper()
 
-	expectedEncoded, err := yaml.Marshal(expectedObj)
-	if err != nil {
-		return fmt.Errorf("failed to encode old object as YAML: %w", err)
-	}
-
-	actualEncoded, err := yaml.Marshal(actualObj)
-	if err != nil {
-		return fmt.Errorf("failed to encode new object as YAML: %w", err)
-	}
-
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(expectedEncoded)),
-		B:        difflib.SplitLines(string(actualEncoded)),
-		FromFile: "Expected",
-		ToFile:   "Actual",
-		Context:  3,
-	}
-
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		return fmt.Errorf("failed to create diff: %w", err)
-	}
-
-	if diffStr != "" {
-		return errors.New(diffStr)
+	if d := diff.ObjectDiff(expectedObj, actualObj); d != "" {
+		return errors.New(d)
 	}
 
 	return nil
