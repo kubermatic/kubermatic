@@ -22,7 +22,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the OSM
@@ -30,8 +29,6 @@ import (
 func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = resources.OperatingSystemManagerRoleName
-			r.Namespace = metav1.NamespaceSystem
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
@@ -69,8 +66,6 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = resources.OperatingSystemManagerRoleName
-			r.Namespace = metav1.NamespacePublic
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
@@ -93,8 +88,6 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = resources.OperatingSystemManagerRoleName
-			r.Namespace = metav1.NamespaceDefault
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
