@@ -32,6 +32,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
@@ -97,7 +98,6 @@ func resourceQuotaCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.Name
 			c.Name = rq.Name
 			c.Labels = rq.Labels
 			c.Spec = rq.Spec
-			c.Status.GlobalUsage = rq.Status.GlobalUsage
 			return c, nil
 		}
 	}
@@ -153,8 +153,17 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		resourceQuotaCreatorGetter(resourceQuota),
 	}
 
-	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
-		return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, kubermaticresources.KubermaticNamespace, seedClient)
+	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, rq *kubermaticv1.ResourceQuota) error {
+		// ensure resource quota
+		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, kubermaticresources.KubermaticNamespace, seedClient); err != nil {
+			return err
+		}
+
+		// ensure status
+		globalUsage := resourceQuota.Status.GlobalUsage.DeepCopy()
+		return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+			rq.Status.GlobalUsage = *globalUsage
+		})
 	})
 }
 
