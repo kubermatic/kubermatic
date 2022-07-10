@@ -39,6 +39,23 @@ import (
 var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
+func DigitaloceanSizes(ctx context.Context, token string) ([]godo.Size, error) {
+	client, err := getDigitalOceanClient(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	listOptions := &godo.ListOptions{
+		Page:    1,
+		PerPage: 1000,
+	}
+	sizes, _, err := client.Sizes.List(ctx, listOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list digital ocean sizes: %w", err)
+	}
+	return sizes, nil
+}
+
 func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -70,17 +87,9 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 }
 
 func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
-	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	client := godo.NewClient(oauth2.NewClient(ctx, static))
-
-	listOptions := &godo.ListOptions{
-		Page:    1,
-		PerPage: 1000,
-	}
-
-	sizes, _, err := client.Sizes.List(ctx, listOptions)
+	sizes, err := DigitaloceanSizes(ctx, token)
 	if err != nil {
-		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %w", err)
+		return apiv1.DigitaloceanSizeList{}, err
 	}
 
 	sizeList := apiv1.DigitaloceanSizeList{
@@ -111,6 +120,15 @@ func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentV
 	}
 
 	return filterDigitalOceanByQuota(sizeList, quota), nil
+}
+
+func getDigitalOceanClient(ctx context.Context, token string) (*godo.Client, error) {
+	if token == "" {
+		return nil, fmt.Errorf("digital ocean token cannot be empty")
+	}
+	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	client := godo.NewClient(oauth2.NewClient(ctx, static))
+	return client, nil
 }
 
 func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.DigitaloceanSizeList {

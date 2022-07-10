@@ -88,9 +88,9 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 	availableInstanceFamilies := sets.String{}
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := getAlibabaClient(accessKeyID, accessKeySecret, region)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, err
 	}
 
 	// get all families that are available for the Region
@@ -199,9 +199,9 @@ func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaZoneList, error) {
 	zones := apiv1.AlibabaZoneList{}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := getAlibabaClient(accessKeyID, accessKeySecret, region)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, err
 	}
 
 	requestZones := ecs.CreateDescribeZonesRequest()
@@ -222,12 +222,12 @@ func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string)
 	return zones, nil
 }
 
-func ListAlibabaVSwitches(accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaVSwitchList, error) {
+func ListAlibabaVSwitches(accessKeyID, accessKeySecret, region string) (apiv1.AlibabaVSwitchList, error) {
 	vSwitches := apiv1.AlibabaVSwitchList{}
 
-	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	client, err := getAlibabaClient(accessKeyID, accessKeySecret, region)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, err
 	}
 
 	requestVSwitches := ecs.CreateDescribeVSwitchesRequest()
@@ -282,4 +282,28 @@ func AlibabaVswitchesWithClusterCredentialsEndpoint(ctx context.Context, userInf
 	}
 
 	return ListAlibabaVSwitches(accessKeyID, accessKeySecret, region)
+}
+
+func getAlibabaClient(accessKeyID, accessKeySecret, region string) (*ecs.Client, error) {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+	}
+	return client, err
+}
+
+func AlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType string) (*ecs.DescribeInstanceTypesResponse, error) {
+	client, err := getAlibabaClient(accessKeyID, accessKeySecret, region)
+	if err != nil {
+		return nil, err
+	}
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	instanceTypes := []string{instanceType}
+	requestInstanceTypes.InstanceTypes = &instanceTypes
+
+	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instance types, error: %w", err)
+	}
+	return instTypes, nil
 }

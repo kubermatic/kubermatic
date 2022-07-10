@@ -145,3 +145,17 @@ func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.Ma
 
 	return filteredRecords
 }
+
+func GetHetznerServerType(ctx context.Context, token string, serverTypeName string) (*hcloud.ServerType, error) {
+	if token == "" {
+		return nil, fmt.Errorf("hetzner token cannot be empty")
+	} else if serverTypeName == "" {
+		return nil, fmt.Errorf("invalid hetzner serverTypeName:%v", serverTypeName)
+	}
+	hClient := hcloud.NewClient(hcloud.WithToken(token))
+	serverType, _, err := hClient.ServerType.Get(ctx, serverTypeName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list hetzner server type, error: %w", err)
+	}
+	return serverType, nil
+}

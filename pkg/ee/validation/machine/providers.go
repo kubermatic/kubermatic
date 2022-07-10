@@ -29,11 +29,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"github.com/digitalocean/godo"
-	"github.com/hetznercloud/hcloud-go/hcloud"
-	"golang.org/x/oauth2"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	anexiatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
@@ -130,7 +125,10 @@ func GetMachineResourceUsage(ctx context.Context,
 	return quotaUsage, err
 }
 
-func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAWSResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
@@ -469,7 +467,9 @@ func getOpenstackResourceRequirements(ctx context.Context,
 }
 
 // Get the Project name from config or env var. If not defined fallback to tenant name.
-func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResolver,
+	rawConfig *openstacktypes.RawConfig,
+) (string, error) {
 	projectName, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectName, envOSProjectName)
 	if err == nil && len(projectName) > 0 {
 		return projectName, nil
@@ -480,7 +480,9 @@ func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResol
 }
 
 // Get the Project id from config or env var. If not defined fallback to tenant id.
-func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver,
+	rawConfig *openstacktypes.RawConfig,
+) (string, error) {
 	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envOSProjectID)
 	if err == nil && len(projectID) > 0 {
 		return projectID, nil
@@ -490,7 +492,10 @@ func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver,
 	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
 }
 
-func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAlibabaResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := alibabatypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get alibaba raw config: %w", err)
@@ -513,31 +518,20 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of  alibaba \"region\" from machine config, error: %w", err)
 	}
-	// TODO: verify format of disk size
 	disk, err := configVarResolver.GetConfigVarStringValue(rawConfig.DiskSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of alibaba \"disk\" from machine config, error: %w", err)
 	}
 
-	alibabaClient, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	instTypes, err := provider.AlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create client, error: %w", err)
-	}
-
-	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
-	instanceTypes := []string{instanceType}
-	requestInstanceTypes.InstanceTypes = &instanceTypes
-
-	instTypes, err := alibabaClient.DescribeInstanceTypes(requestInstanceTypes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list instance types, error: %w", err)
+		return nil, err
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
 		if instType.InstanceTypeId == instanceType {
 			// parse the Alibaba resource requests
 			// memory is in GB and storage is in GB
-			// TODO: CpuCoreCount or Cores
 			cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
@@ -557,14 +551,17 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	return nil, nil
 }
 
-func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getHetznerResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := hetznertypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hetzner raw config, error: %w", err)
 	}
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 
-	serverType, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServerType)
+	serverTypeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServerType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of \"serverType\" field, error: %w", err)
 	}
@@ -572,23 +569,23 @@ func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of hetzner \"token\" field, error: %w", err)
 	}
-	hClient := hcloud.NewClient(hcloud.WithToken(token))
 
-	size, _, err := hClient.ServerType.Get(ctx, serverType)
+	serverType, err := provider.GetHetznerServerType(ctx, token, serverTypeName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list hetzner sizes, error: %w", err)
+		return nil, err
 	}
 
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(size.Cores))
+	// parse the Hetzner resource requests
+	// memory is in GB and storage is in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(serverType.Cores))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", size.Memory))
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", serverType.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
 	}
-	// Todo: verify if gb or not/ number of disks or size
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", size.Disk))
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", serverType.Disk))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
 	}
@@ -596,19 +593,24 @@ func getHetznerResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getNutanixResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := nutanixtypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nutanix raw config, error: %w", err)
 	}
 
-	// TODO: check if total cores or total cpus
-	var coresPerCPU int64
-	if rawConfig.CPUCores != nil {
-		coresPerCPU = *rawConfig.CPUCores
+	var totalCPUCores int64
+	switch {
+	case rawConfig.CPUs == 0:
+		return nil, fmt.Errorf("found invalid value of nutanix \"cpus\" from machine config, %v", rawConfig.CPUs)
+	case rawConfig.CPUCores != nil:
+		totalCPUCores = rawConfig.CPUs * (*rawConfig.CPUCores)
+	default:
+		totalCPUCores = rawConfig.CPUs
 	}
-	totalCPUs := rawConfig.CPUs
-	totalCPUCores := totalCPUs * coresPerCPU
 
 	cpuReq, err := resource.ParseQuantity(strconv.FormatInt(totalCPUCores, 10))
 	if err != nil {
@@ -626,7 +628,10 @@ func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getDigitalOceanResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := digitaloceantypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get digitalOcean raw config, error: %w", err)
@@ -635,35 +640,30 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 
 	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envDOToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of DigitalOcean \"token\" field, error: %w", err)
+		return nil, fmt.Errorf("failed to get the value of digitalOcean \"token\" field, error: %w", err)
 	}
 	size, err := configVarResolver.GetConfigVarStringValue(rawConfig.Size)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of DigitalOcean \"size\" field, error: %w", err)
+		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field, error: %w", err)
 	}
 
-	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	doclient := godo.NewClient(oauth2.NewClient(ctx, static))
-	listOptions := &godo.ListOptions{
-		Page:    1,
-		PerPage: 1000,
-	}
-	sizes, _, err := doclient.Sizes.List(ctx, listOptions)
+	sizes, err := provider.DigitaloceanSizes(ctx, token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sizes: %w", err)
+		return nil, err
 	}
 
 	for _, godosize := range sizes {
 		if godosize.Slug == size {
+			// parse the DigitalOcean resource requests
+			// memory is in MB and storage is in GB
 			cpuReq, err := resource.ParseQuantity(strconv.Itoa(godosize.Vcpus))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 			}
-			memReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", godosize.Memory))
+			memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", godosize.Memory))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
 			}
-			// TODO: check if this is number of disk or disk size
 			storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", godosize.Disk))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
@@ -675,14 +675,26 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 	return nil, nil
 }
 
-func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getVMwareCloudDirectorResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := vmwareclouddirectortypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vmwareclouddirector raw config, error: %w", err)
 	}
-	// CPUs or CPUCores
-	// TODO: cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", rawConfig.CPUs)).
-	cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", rawConfig.CPUCores))
+
+	var totalCPUCores int64
+	switch {
+	case rawConfig.CPUs == 0:
+		return nil, fmt.Errorf("found invalid value of vmwareclouddirector \"cpus\" from machine config, %v", rawConfig.CPUs)
+	case rawConfig.CPUCores != 0:
+		totalCPUCores = rawConfig.CPUs * rawConfig.CPUCores
+	default:
+		totalCPUCores = rawConfig.CPUs
+	}
+
+	cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", totalCPUCores))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 	}
@@ -698,7 +710,10 @@ func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAnexiaResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
 	rawConfig, err := anexiatypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anexia raw config, error: %w", err)
@@ -707,12 +722,10 @@ func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimecl
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 	}
-	// todo: verify format
 	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", rawConfig.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
 	}
-	// todo: verify format
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
