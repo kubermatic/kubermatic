@@ -144,6 +144,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							DNSServers:           []string{},
 							TrustDevicePath:      pointer.BoolPtr(false),
 							EnabledFlavors:       []string{},
+							IPv6Enabled:          pointer.BoolPtr(false),
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
