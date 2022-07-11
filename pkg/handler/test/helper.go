@@ -223,6 +223,7 @@ type newRoutingFunc func(
 	resourceQuotaProvider provider.ResourceQuotaProvider,
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	features features.FeatureGate,
+	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -552,6 +553,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	featureGatesProvider := kubernetes.NewFeatureGatesProvider(featureGates)
 
+	privilegedIPAMPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(fakeClient)
+	privilegedIPAMPoolProviders := map[string]provider.PrivilegedIPAMPoolProvider{"us-central1": privilegedIPAMPoolProvider}
+	privilegedIPAMPoolProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedIPAMPoolProvider, error) {
+		if privilegedIPAMPool, exists := privilegedIPAMPoolProviders[seed.Name]; exists {
+			return privilegedIPAMPool, nil
+		}
+		return nil, fmt.Errorf("can not find privilegedIPAMPoolProvider for cluster %q", seed.Name)
+	}
+
 	mainRouter := routingFunc(
 		adminProvider,
 		settingsProvider,
@@ -607,6 +617,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		resourceQuotaProvider,
 		groupProjectBindingProvider,
 		featureGates,
+		privilegedIPAMPoolProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

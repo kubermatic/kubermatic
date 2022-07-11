@@ -43,6 +43,7 @@ import (
 	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
+	ipampool "k8c.io/kubermatic/v2/pkg/handler/v2/ipampool"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
@@ -1065,6 +1066,28 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.getGroupProjectBinding())
+
+	// Defines endpoints to manage IPAM pools
+
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/ipampools").
+		Handler(r.listIPAMPools())
+
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.getIPAMPool())
+
+	mux.Methods(http.MethodPost).
+		Path("/seeds/{seed_name}/ipampools").
+		Handler(r.createIPAMPool())
+
+	mux.Methods(http.MethodPatch).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.patchIPAMPool())
+
+	mux.Methods(http.MethodDelete).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.deleteIPAMPool())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -7146,6 +7169,128 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
 		applicationinstallation.DecodeUpdateApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools ipampool listIPAMPools
+//
+//    Lists IPAM pools.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) listIPAMPools() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter)),
+		ipampool.DecodeSeedReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool getIPAMPool
+//
+//    Gets a specific IPAM pool.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) getIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route POST /api/v2/seeds/{seed_name}/ipampools ipampool createIPAMPool
+//
+//    Creates a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) createIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeCreateIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool patchIPAMPool
+//
+//    Patches a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) patchIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodePatchIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool deleteIPAMPool
+//
+//    Removes an existing IPAM pool.
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/get"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gke"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/ipampool"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
@@ -127,6 +128,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Get = get.New(transport, formats)
 	cli.Gke = gke.New(transport, formats)
 	cli.Hetzner = hetzner.New(transport, formats)
+	cli.Ipampool = ipampool.New(transport, formats)
 	cli.Kubevirt = kubevirt.New(transport, formats)
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
@@ -244,6 +246,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Hetzner hetzner.ClientService
 
+	Ipampool ipampool.ClientService
+
 	Kubevirt kubevirt.ClientService
 
 	Metering metering.ClientService
@@ -321,6 +325,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Get.SetTransport(transport)
 	c.Gke.SetTransport(transport)
 	c.Hetzner.SetTransport(transport)
+	c.Ipampool.SetTransport(transport)
 	c.Kubevirt.SetTransport(transport)
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)

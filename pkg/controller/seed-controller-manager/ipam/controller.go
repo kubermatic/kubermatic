@@ -264,13 +264,13 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
-		addresses, err := findFirstFreeRangesOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange, dcIPAMPoolUsageMap)
+		addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
 		newClustersAllocation.Spec.Addresses = addresses
 	case kubermaticv1.IPAMPoolAllocationTypePrefix:
-		subnetCIDR, err := findFirstFreeSubnetOfPool(string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
+		subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}

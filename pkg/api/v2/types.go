@@ -1434,3 +1434,17 @@ type ApplicationInstallation struct {
 
 	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
 }
+
+// swagger:model IPAMPool
+type IPAMPool struct {
+	Name        string                                `json:"name"`
+	Datacenters map[string]IPAMPoolDatacenterSettings `json:"datacenters"`
+}
+
+// swagger:model IPAMPoolDatacenterSettings
+type IPAMPoolDatacenterSettings struct {
+	Type             kubermaticv1.IPAMPoolAllocationType `json:"type"`
+	PoolCIDR         kubermaticv1.SubnetCIDR             `json:"poolCidr"`
+	AllocationPrefix int                                 `json:"allocationPrefix,omitempty"`
+	AllocationRange  int                                 `json:"allocationRange,omitempty"`
+}
