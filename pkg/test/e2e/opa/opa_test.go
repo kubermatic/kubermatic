@@ -43,8 +43,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -150,14 +150,12 @@ func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
-	if err := constrainttemplatev1.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to register gatekeeper scheme: %v", err)
-	}
-
 	seedClient, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
+
+	utilruntime.Must(constrainttemplatev1.AddToScheme(seedClient.Scheme()))
 
 	// setup a dummy project & cluster
 	testJig := newTestJig(seedClient, logger)
@@ -194,6 +192,8 @@ func TestOPAIntegration(t *testing.T) {
 		t.Fatalf("error creating user cluster client: %v", err)
 	}
 
+	utilruntime.Must(constrainttemplatev1.AddToScheme(userClient.Scheme()))
+
 	logger.Info("Waiting for CT to be synced...")
 	if err := waitForCTSync(ctx, userClient, logger, ct.Name, false); err != nil {
 		t.Fatal(err)
@@ -202,7 +202,7 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Create Default Constraint
 	logger.Info("Creating Default Constraint...")
-	defaultConstraint, err := createConstraint(ctx, userClient, defaultConstraintName, ctKind)
+	defaultConstraint, err := createConstraint(ctx, seedClient, defaultConstraintName, ctKind)
 	if err != nil {
 		t.Fatalf("error creating Default Constraint: %v", err)
 	}
