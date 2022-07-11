@@ -310,6 +310,11 @@ func PatchGroupProjectBinding(ctx context.Context, request interface{},
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
+	err := req.Validate()
+	if err != nil {
+		return utilerrors.NewBadRequest(err.Error())
+	}
+
 	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)

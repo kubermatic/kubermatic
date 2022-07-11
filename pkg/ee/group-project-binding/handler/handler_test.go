@@ -203,6 +203,60 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name:   "scenario 9: patch an existing GroupProjectBinding",
+			method: "PATCH",
+			body: `{
+				"role": "owners"
+			}`,
+			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+			},
+			httpStatus: 200,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:   "scenario 9: patch a non-existing GroupProjectBinding",
+			method: "PATCH",
+			body: `{
+				"role": "owners"
+			}`,
+			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-nonexisting",
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+			},
+			httpStatus: 404,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:   "scenario 10: patch an existing GroupProjectBinding with illicit role",
+			method: "PATCH",
+			body: `{
+				"role": "invalid"
+			}`,
+			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
+			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingObjects: []ctrlruntimeclient.Object{
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+			},
+			httpStatus: 400,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
 	}
 
 	for _, tc := range testcases {
