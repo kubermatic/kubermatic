@@ -35,13 +35,13 @@ export CGO_ENABLED=1
 LOCALSTACK_TAG="${LOCALSTACK_TAG:-0.12.19}"
 LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 
+if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
+  start_docker_daemon_ci
+fi
+
 # For the AWS tests, we need a localstack container running.
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
-
-  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-    start_docker_daemon_ci
-  fi
 
   containerName=kkp-localstack
 
@@ -71,10 +71,6 @@ fi
 # For the kubectl tests, we must build the final KKP docker image.
 if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
   echodate "Building dummy KKP image, set \$SKIP_KUBECTL_TESTS to skip..."
-
-  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-    start_docker_daemon_ci
-  fi
 
   # we do not need actual KKP binaries in the image
   touch \
