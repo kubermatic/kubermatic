@@ -123,6 +123,11 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 			if float64(numberOfPoolSubnetIPs) != numberOfPoolSubnetIPsFloat64 {
 				return errors.New("the pool is too big to be processed")
 			}
+
+			if bits-poolPrefix > 12 {
+				return errors.New("pool prefix is too low for range allocation type")
+			}
+
 			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
 				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
 			}
