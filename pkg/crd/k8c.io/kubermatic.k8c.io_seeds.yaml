@@ -375,6 +375,10 @@ spec:
                               description: Images to use for each supported operating
                                 system.
                               type: object
+                            ipv6Enabled:
+                              description: 'Optional: defines if the IPv6 is enabled
+                                for the datacenter'
+                              type: boolean
                             manageSecurityGroups:
                               description: 'Optional: Gets mapped to the "manage-security-groups"
                                 setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer

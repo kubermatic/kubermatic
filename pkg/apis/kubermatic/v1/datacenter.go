@@ -467,6 +467,8 @@ type DatacenterSpecOpenstack struct {
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
 	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {

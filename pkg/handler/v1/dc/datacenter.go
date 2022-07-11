@@ -625,9 +625,14 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 	_, isIPv6EnabledForProvider := providersWithIPv6Enabled[kubermaticv1.ProviderType(p)]
 	if isIPv6EnabledForProvider {
 		isIPv6Enabled = true
+	} else {
+		switch kubermaticv1.ProviderType(p) {
+		case kubermaticv1.OpenstackCloudProvider:
+			if dc.Spec.Openstack.IPv6Enabled != nil {
+				isIPv6Enabled = *dc.Spec.Openstack.IPv6Enabled
+			}
+		}
 	}
-	// TODO: if "isIPv6EnabledForProvider" is false, we should check if it's configured specifically
-	// for the provider datacenter (e.g. for openstack)
 
 	return &apiv1.DatacenterSpec{
 		Seed:                     seedName,
