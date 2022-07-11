@@ -36,8 +36,8 @@ func listGroupProjectBindings(
 	return groupprojectbinding.ListGroupProjectBindings(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }
 
-func DecodeGetGroupProjectBindingReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return groupprojectbinding.DecodeGetGroupProjectBindingReq(r)
+func DecodeGroupProjectBindingReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodeGroupProjectBindingReq(r)
 }
 
 func getGroupProjectBinding(
@@ -55,6 +55,16 @@ func DecodeCreateGroupProjectBindingReq(_ context.Context, r *http.Request) (int
 }
 
 func createGroupProjectBinding(
+	ctx context.Context, req interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) error {
+	return groupprojectbinding.CreateGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
+}
+
+func deleteGroupProjectBinding(
 	ctx context.Context, req interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,

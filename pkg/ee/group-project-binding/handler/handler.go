@@ -93,7 +93,7 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 }
 
 // swagger:parameters getGroupProjectBinding
-type getGroupProjectBindingReq struct {
+type groupProjectBindingReq struct {
 	common.ProjectReq
 
 	// in: path
@@ -101,8 +101,8 @@ type getGroupProjectBindingReq struct {
 	BindingName string `json:"binding_name"`
 }
 
-func DecodeGetGroupProjectBindingReq(r *http.Request) (interface{}, error) {
-	var req getGroupProjectBindingReq
+func DecodeGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+	var req groupProjectBindingReq
 
 	req.ProjectID = mux.Vars(r)["project_id"]
 	if req.ProjectID == "" {
@@ -123,7 +123,7 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
 ) (*apiv2.GroupProjectBinding, error) {
-	req, ok := request.(getGroupProjectBindingReq)
+	req, ok := request.(groupProjectBindingReq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
@@ -227,6 +227,32 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 			Role:      req.Body.Role,
 		},
 	}); err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
+}
+
+func DeleteGroupProjectBinding(ctx context.Context, request interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) error {
+	req, ok := request.(groupProjectBindingReq)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	if err := bindingProvider.Delete(ctx, userInfo, req.BindingName); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
 	return nil

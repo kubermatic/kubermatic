@@ -1043,6 +1043,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/groupbindings").
 		Handler(r.createGroupProjectBinding())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/groupbindings/{binding_name}").
+		Handler(r.deleteGroupProjectBinding())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -6967,7 +6971,7 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 			r.privilegedProjectProvider,
 			r.groupProjectBindingProvider,
 		)),
-		groupprojectbinding.DecodeGetGroupProjectBindingReq,
+		groupprojectbinding.DecodeGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6998,6 +7002,35 @@ func (r Routing) createGroupProjectBinding() http.Handler {
 		)),
 		groupprojectbinding.DecodeCreateGroupProjectBindingReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project createGroupProjectBinding
+//
+//    Delete project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.DeleteGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodeGroupProjectBindingReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

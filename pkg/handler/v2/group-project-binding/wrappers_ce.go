@@ -35,7 +35,7 @@ func listGroupProjectBindings(
 	return nil, nil
 }
 
-func DecodeGetGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+func DecodeGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
@@ -55,6 +55,17 @@ func DecodeCreateGroupProjectBindingReq(_ context.Context, r *http.Request) (int
 }
 
 func createGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) error {
+	return nil
+}
+
+func deleteGroupProjectBinding(
 	_ context.Context,
 	_ interface{},
 	_ provider.UserInfoGetter,
