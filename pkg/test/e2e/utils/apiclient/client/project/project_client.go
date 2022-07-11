@@ -58,6 +58,8 @@ type ClientService interface {
 
 	CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGatekeeperConfigCreated, error)
 
+	CreateGroupProjectBinding(params *CreateGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGroupProjectBindingCreated, error)
+
 	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error)
 
 	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNodeDeploymentCreated, error)
@@ -83,6 +85,8 @@ type ClientService interface {
 	DeleteExternalClusterMachineDeployment(params *DeleteExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterMachineDeploymentOK, error)
 
 	DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGatekeeperConfigOK, error)
+
+	DeleteGroupProjectBinding(params *DeleteGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGroupProjectBindingOK, error)
 
 	DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentOK, error)
 
@@ -273,6 +277,8 @@ type ClientService interface {
 	PatchExternalClusterMachineDeployments(params *PatchExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterMachineDeploymentsOK, error)
 
 	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error)
+
+	PatchGroupProjectBinding(params *PatchGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGroupProjectBindingOK, error)
 
 	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchMachineDeploymentOK, error)
 
@@ -884,6 +890,44 @@ func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, au
 }
 
 /*
+  CreateGroupProjectBinding creates project group binding
+*/
+func (a *Client) CreateGroupProjectBinding(params *CreateGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGroupProjectBindingCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateGroupProjectBindingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createGroupProjectBinding",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/groupbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateGroupProjectBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateGroupProjectBindingCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateGroupProjectBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   CreateMachineDeployment Creates a machine deployment that will belong to the given cluster
 */
 func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error) {
@@ -1376,6 +1420,44 @@ func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, au
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteGatekeeperConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteGroupProjectBinding deletes project group binding
+*/
+func (a *Client) DeleteGroupProjectBinding(params *DeleteGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGroupProjectBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteGroupProjectBindingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteGroupProjectBinding",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/groupbindings/{binding_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteGroupProjectBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteGroupProjectBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteGroupProjectBindingDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -4996,6 +5078,44 @@ func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchGatekeeperConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchGroupProjectBinding patches project group binding
+*/
+func (a *Client) PatchGroupProjectBinding(params *PatchGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGroupProjectBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchGroupProjectBindingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "patchGroupProjectBinding",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/groupbindings/{binding_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchGroupProjectBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchGroupProjectBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchGroupProjectBindingDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
