@@ -68,6 +68,31 @@ if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   export AWS_TEST_ENDPOINT=http://localhost:4566
 fi
 
+# For the kubectl tests, we must build the final KKP docker image.
+if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
+  echodate "Building dummy KKP image, set \$SKIP_KUBECTL_TESTS to skip..."
+
+  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
+    start_docker_daemon_ci
+  fi
+
+  # we do not need actual KKP binaries in the image
+  touch \
+    _build/kubermatic-api \
+    _build/kubermatic-operator \
+    _build/kubermatic-installer \
+    _build/kubermatic-webhook \
+    _build/master-controller-manager \
+    _build/seed-controller-manager \
+    _build/user-cluster-controller-manager \
+    _build/user-cluster-webhook \
+
+  # the existence of this env var enables the integration tests
+  export KUBECTL_TEST_IMAGE=kkpkubectltest
+
+  docker build -t $KUBECTL_TEST_IMAGE .
+fi
+
 echodate "Running integration tests..."
 
 # Run integration tests and only integration tests by:

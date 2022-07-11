@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -36,22 +37,36 @@ type kubectlVersionOutput struct {
 }
 
 func TestVersionSkewIsRespected(t *testing.T) {
+	dockerImage := os.Getenv("KUBECTL_TEST_IMAGE")
+	if dockerImage == "" {
+		t.Skip("No KUBECTL_TEST_IMAGE set, skipping kubectl version skew tests.")
+	}
+
 	for _, v := range defaults.DefaultKubernetesVersioning.Versions {
 		t.Run(v.String(), func(t *testing.T) {
-			if err := testVersionSkew(v); err != nil {
+			if err := testVersionSkew(v, dockerImage); err != nil {
 				t.Errorf("Failed to get a kubectl version that's compatible to cluster version %q: %v", v, err)
 			}
 		})
 	}
 }
 
-func testVersionSkew(clusterVersison semver.Semver) error {
+func testVersionSkew(clusterVersison semver.Semver, dockerImage string) error {
 	binary, err := BinaryForClusterVersion(&clusterVersison)
 	if err != nil {
 		return fmt.Errorf("no kubectl binary found: %w", err)
 	}
 
-	cmd := exec.Command(binary, "version", "--client", "--output", "json")
+	cmd := exec.Command("docker",
+		"run",
+		"--rm",
+		dockerImage,
+		binary,
+		"version",
+		"--client",
+		"--output",
+		"json",
+	)
 
 	var buf bytes.Buffer
 	cmd.Stdout = &buf
