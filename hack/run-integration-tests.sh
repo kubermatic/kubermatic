@@ -35,13 +35,13 @@ export CGO_ENABLED=1
 LOCALSTACK_TAG="${LOCALSTACK_TAG:-0.12.19}"
 LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 
+if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
+  start_docker_daemon_ci
+fi
+
 # For the AWS tests, we need a localstack container running.
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
-
-  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-    start_docker_daemon_ci
-  fi
 
   containerName=kkp-localstack
 
@@ -68,6 +68,28 @@ if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   export AWS_TEST_ENDPOINT=http://localhost:4566
 fi
 
+# For the kubectl tests, we must build the final KKP docker image.
+if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
+  echodate "Building dummy KKP image, set \$SKIP_KUBECTL_TESTS to skip..."
+
+  # we do not need actual KKP binaries in the image
+  mkdir _build
+  touch \
+    _build/kubermatic-api \
+    _build/kubermatic-operator \
+    _build/kubermatic-installer \
+    _build/kubermatic-webhook \
+    _build/master-controller-manager \
+    _build/seed-controller-manager \
+    _build/user-cluster-controller-manager \
+    _build/user-cluster-webhook
+
+  # the existence of this env var enables the integration tests
+  export KUBECTL_TEST_IMAGE=kkpkubectltest
+
+  docker build -t $KUBECTL_TEST_IMAGE .
+fi
+
 echodate "Running integration tests..."
 
 # Run integration tests and only integration tests by:
@@ -75,5 +97,6 @@ echodate "Running integration tests..."
 # * Extracting the dirname as the `go test` command doesn't play well with individual files as args
 # * Prefixing them with `./` as that's needed by `go test` as well
 for file in $(grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ | xargs dirname | sort -u); do
+  echodate "Testing package ${file}..."
   go_test $(echo $file | sed 's/\//_/g') -tags "integration,${KUBERMATIC_EDITION:-ce}" -race ./${file} -v
 done
