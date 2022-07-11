@@ -48,9 +48,13 @@ import (
 )
 
 type MachineJig struct {
-	client  ctrlruntimeclient.Client
-	log     *zap.SugaredLogger
-	cluster *kubermaticv1.Cluster
+	client ctrlruntimeclient.Client
+	log    *zap.SugaredLogger
+
+	// Either specify the cluster directly or specify the clusterJig,
+	// if at the time of creating the MachineJig the cluster doesn't exist yet.
+	cluster    *kubermaticv1.Cluster
+	clusterJig *ClusterJig
 
 	// user-controller parameters
 	name          string
@@ -69,6 +73,18 @@ func NewMachineJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, clus
 		osSpec:   ubuntu.Config{},
 		replicas: 1,
 	}
+}
+
+func (j *MachineJig) WithCluster(cluster *kubermaticv1.Cluster) *MachineJig {
+	j.cluster = cluster
+	j.clusterJig = nil
+	return j
+}
+
+func (j *MachineJig) WithClusterJig(jig *ClusterJig) *MachineJig {
+	j.clusterJig = jig
+	j.cluster = nil
+	return j
 }
 
 func (j *MachineJig) WithName(name string) *MachineJig {
@@ -137,7 +153,12 @@ const (
 func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error {
 	j.log.Infow("Creating MachineDeployment...", "name", j.name, "replicas", j.replicas)
 
-	provider, err := j.determineCloudProvider()
+	cluster, err := j.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to determine user cluster: %w", err)
+	}
+
+	provider, err := j.determineCloudProvider(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to determine cloud provider: %w", err)
 	}
@@ -152,7 +173,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 		return fmt.Errorf("failed to determine target datacenter: %w", err)
 	}
 
-	providerSpec, err := j.enrichProviderSpec(provider, datacenter)
+	providerSpec, err := j.enrichProviderSpec(cluster, provider, datacenter)
 	if err != nil {
 		return fmt.Errorf("failed to apply cluster information to the provider spec: %w", err)
 	}
@@ -203,7 +224,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 				},
 				Spec: clusterv1alpha1.MachineSpec{
 					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: j.cluster.Spec.Version.String(),
+						Kubelet: cluster.Spec.Version.String(),
 					},
 					ProviderSpec: clusterv1alpha1.ProviderSpec{
 						Value: &runtime.RawExtension{
@@ -215,7 +236,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 		},
 	}
 
-	clusterClient, err := j.getClusterClient(ctx)
+	clusterClient, err := j.getClusterClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster client: %w", err)
 	}
@@ -331,7 +352,12 @@ func (j *MachineJig) Delete(ctx context.Context, synchronous bool) error {
 	log := j.log.With("name", j.name)
 	log.Info("Deleting MachineDeployment...")
 
-	clusterClient, err := j.getClusterClient(ctx)
+	cluster, err := j.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to determine user cluster: %w", err)
+	}
+
+	clusterClient, err := j.getClusterClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster client: %w", err)
 	}
@@ -371,25 +397,29 @@ func (j *MachineJig) Delete(ctx context.Context, synchronous bool) error {
 	return nil
 }
 
-func (j *MachineJig) getClusterClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
+func (j *MachineJig) getCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
+	if j.clusterJig != nil {
+		return j.clusterJig.Cluster(ctx)
+	}
+
+	return j.cluster, nil
+}
+
+func (j *MachineJig) getClusterClient(ctx context.Context, cluster *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	if j.clusterClient != nil {
 		return j.clusterClient, nil
 	}
 
-	if j.cluster == nil {
-		return nil, errors.New("no cluster specified")
-	}
-
-	projectName := j.cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	projectName := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 
 	return NewClusterJig(j.client, j.log).
-		WithExistingCluster(j.cluster.Name).
+		WithExistingCluster(cluster.Name).
 		WithProjectName(projectName).
 		ClusterClient(ctx)
 }
 
-func (j *MachineJig) determineCloudProvider() (providerconfig.CloudProvider, error) {
-	provider := providerconfig.CloudProvider(j.cluster.Spec.Cloud.ProviderName)
+func (j *MachineJig) determineCloudProvider(cluster *kubermaticv1.Cluster) (providerconfig.CloudProvider, error) {
+	provider := providerconfig.CloudProvider(cluster.Spec.Cloud.ProviderName)
 
 	for _, allowed := range providerconfig.AllCloudProviders {
 		if allowed == provider {
@@ -397,7 +427,7 @@ func (j *MachineJig) determineCloudProvider() (providerconfig.CloudProvider, err
 		}
 	}
 
-	return "", fmt.Errorf("unknown cloud provider %q given in cluster cloud spec", j.cluster.Spec.Cloud.ProviderName)
+	return "", fmt.Errorf("unknown cloud provider %q given in cluster cloud spec", cluster.Spec.Cloud.ProviderName)
 }
 
 func (j *MachineJig) determineOperatingSystem() (providerconfig.OperatingSystem, error) {
@@ -417,8 +447,8 @@ func (j *MachineJig) determineOperatingSystem() (providerconfig.OperatingSystem,
 	return "", errors.New("cannot determine OS from the given osSpec")
 }
 
-func (j *MachineJig) clusterTags() map[string]string {
-	name := j.cluster.Name
+func (j *MachineJig) clusterTags(cluster *kubermaticv1.Cluster) map[string]string {
+	name := cluster.Name
 
 	return map[string]string{
 		"kubernetes.io/cluster/" + name: "",
@@ -426,10 +456,10 @@ func (j *MachineJig) clusterTags() map[string]string {
 	}
 }
 
-func (j *MachineJig) enrichProviderSpec(provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter) (interface{}, error) {
+func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter) (interface{}, error) {
 	switch provider {
 	case providerconfig.CloudProviderAWS:
-		return j.enrichAWSProviderSpec(datacenter.Spec.AWS)
+		return j.enrichAWSProviderSpec(cluster, datacenter.Spec.AWS)
 	case providerconfig.CloudProviderHetzner:
 		return j.enrichHetznerProviderSpec(datacenter.Spec.Hetzner)
 	default:
@@ -437,7 +467,7 @@ func (j *MachineJig) enrichProviderSpec(provider providerconfig.CloudProvider, d
 	}
 }
 
-func (j *MachineJig) enrichAWSProviderSpec(datacenter *kubermaticv1.DatacenterSpecAWS) (interface{}, error) {
+func (j *MachineJig) enrichAWSProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAWS) (interface{}, error) {
 	awsConfig, ok := j.providerSpec.(awstypes.RawConfig)
 	if !ok {
 		return nil, fmt.Errorf("cluster uses AWS, but given provider spec was %T", j.providerSpec)
@@ -456,11 +486,11 @@ func (j *MachineJig) enrichAWSProviderSpec(datacenter *kubermaticv1.DatacenterSp
 	}
 
 	if awsConfig.VpcID.Value == "" {
-		awsConfig.VpcID.Value = j.cluster.Spec.Cloud.AWS.VPCID
+		awsConfig.VpcID.Value = cluster.Spec.Cloud.AWS.VPCID
 	}
 
 	if awsConfig.InstanceProfile.Value == "" {
-		awsConfig.InstanceProfile.Value = j.cluster.Spec.Cloud.AWS.InstanceProfileName
+		awsConfig.InstanceProfile.Value = cluster.Spec.Cloud.AWS.InstanceProfileName
 	}
 
 	if awsConfig.Region.Value == "" {
@@ -473,11 +503,11 @@ func (j *MachineJig) enrichAWSProviderSpec(datacenter *kubermaticv1.DatacenterSp
 
 	if len(awsConfig.SecurityGroupIDs) == 0 {
 		awsConfig.SecurityGroupIDs = []providerconfig.ConfigVarString{{
-			Value: j.cluster.Spec.Cloud.AWS.SecurityGroupID,
+			Value: cluster.Spec.Cloud.AWS.SecurityGroupID,
 		}}
 	}
 
-	awsConfig.Tags = j.clusterTags()
+	awsConfig.Tags = j.clusterTags(cluster)
 
 	return awsConfig, nil
 }

@@ -20,13 +20,8 @@ package exposestrategy
 
 import (
 	"context"
-	"errors"
 	"flag"
-	"fmt"
 	"testing"
-	"time"
-
-	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -35,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/utils/pointer"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Options holds the e2e test options.
@@ -50,77 +44,6 @@ func init() {
 	logOptions.AddFlags(flag.CommandLine)
 }
 
-type testJig struct {
-	client ctrlruntimeclient.Client
-	log    *zap.SugaredLogger
-
-	projectJig *jig.ProjectJig
-	clusterJig *jig.ClusterJig
-}
-
-func newTestJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *testJig {
-	return &testJig{
-		client: client,
-		log:    log,
-	}
-}
-
-func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermaticv1.Cluster, error) {
-	// create dummy project
-	j.projectJig = jig.NewProjectJig(j.client, j.log)
-
-	project, err := j.projectJig.Create(ctx, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create project: %w", err)
-	}
-
-	// create test cluster
-	j.clusterJig = jig.NewClusterJig(j.client, j.log)
-	cluster, err := j.clusterJig.
-		WithProject(project).
-		WithGenerateName("e2e-expose-strategy-").
-		WithHumanReadableName("Expose strategy test cluster").
-		WithSSHKeyAgent(false).
-		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: jig.DatacenterName(),
-			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
-			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
-		}).
-		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
-			return cs
-		}).
-		Create(ctx, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create cluster: %w", err)
-	}
-
-	return project, cluster, nil
-}
-
-func (j *testJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.Duration) error {
-	if j.clusterJig != nil {
-		return j.clusterJig.WaitForHealthyControlPlane(ctx, timeout)
-	}
-
-	return errors.New("no cluster created yet")
-}
-
-func (j *testJig) Cleanup(ctx context.Context, t *testing.T) {
-	if j.clusterJig != nil {
-		if err := j.clusterJig.Delete(ctx, false); err != nil {
-			t.Errorf("Failed to delete cluster: %v", err)
-		}
-	}
-
-	if j.projectJig != nil {
-		if err := j.projectJig.Delete(ctx, false); err != nil {
-			t.Errorf("Failed to delete project: %v", err)
-		}
-	}
-}
-
 func TestExposeKubernetesApiserver(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
@@ -130,15 +53,19 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// setup a dummy project & cluster
-	testJig := newTestJig(seedClient, logger)
-	if !skipCleanup {
-		defer testJig.Cleanup(ctx, t)
-	}
+	// create test environment
+	testJig := jig.NewBYOCluster(seedClient, logger)
+	testJig.ClusterJig.
+		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
+		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
+			return cs
+		})
 
-	_, cluster, err := testJig.Setup(ctx)
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	defer testJig.Cleanup(ctx, t)
 	if err != nil {
-		t.Fatalf("Failed to setup test environment: %v", err)
+		t.Fatalf("failed to setup test environment: %v", err)
 	}
 
 	agentConfig := &AgentConfig{

@@ -441,75 +441,27 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	var teardowns []func()
-	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			teardowns[n-1-i]()
-		}
-	}
-
-	// create the project
-	projectJig := jig.NewProjectJig(masterClient, log)
-	project, err := projectJig.WithHumanReadableName(projectName).Create(ctx, true)
-	if err != nil {
-		return nil, nil, log, err
-	}
-	teardowns = append(teardowns, func() {
-		if err := projectJig.Delete(ctx, false); err != nil {
-			t.Errorf("failed to delete project: %v", err)
-		}
-	})
-
-	// create the cluster
-	clusterJig := jig.NewClusterJig(masterClient, log)
-	cluster, err := clusterJig.
-		WithGenerateName("e2e-cilium-").
-		WithHumanReadableName("Cilium e2e test").
-		WithProject(project).
-		WithSSHKeyAgent(false).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: jig.DatacenterName(),
-			ProviderName:   string(kubermaticv1.AWSCloudProvider),
-			AWS: &kubermaticv1.AWSCloudSpec{
-				SecretAccessKey: secretAccessKey,
-				AccessKeyID:     accessKeyID,
-			},
-		}).
+	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 2)
+	testJig.ProjectJig.WithHumanReadableName(projectName)
+	testJig.ClusterJig.
+		WithAddons("hubble").
 		WithProxyMode(proxyMode).
 		WithKonnectivity(true).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
 			Version: "v1.11",
-		}).
-		Create(ctx, true)
-	teardowns = append(teardowns, func() {
-		// This deletion will happen in the background, i.e. we are not waiting
-		// for its completion. This is fine in e2e tests, where the surrounding
-		// bash script will (as part of its normal cleanup) delete (and wait) all
-		// userclusters anyway.
-		if err := clusterJig.Delete(ctx, false); err != nil {
-			t.Errorf("failed to delete cluster: %v", err)
-		}
-	})
-	if err != nil {
-		return nil, cleanup, log, err
+		})
+
+	cleanup := func() {
+		testJig.Cleanup(ctx, t)
 	}
 
-	// create hubble addon
-	log.Info("Installing hubble addon...")
-	if err = clusterJig.EnsureAddon(ctx, "hubble"); err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
+	// let the magic happen
+	if _, _, err := testJig.Setup(ctx, jig.WaitForReadyPods); err != nil {
+		return nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}
 
-	// create a few test nodes
-	machineJig := jig.NewMachineJig(masterClient, log, cluster)
-	err = machineJig.WithReplicas(2).WithAWS("t3.small").Create(ctx, jig.WaitForReadyPods)
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
-	}
-
-	clusterClient, err := clusterJig.ClusterClient(ctx)
+	clusterClient, err := testJig.ClusterClient(ctx)
 
 	return clusterClient, cleanup, log, err
 }

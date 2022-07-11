@@ -32,9 +32,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,6 +54,7 @@ type ClusterJig struct {
 	ownerEmail   string
 	labels       map[string]string
 	presetSecret string
+	addons       sets.String
 
 	// data about the generated cluster
 	clusterName string
@@ -66,6 +69,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 		labels:       map[string]string{},
 		generateName: "e2e-",
 		ownerEmail:   "e2e@test.kubermatic.com",
+		addons:       sets.NewString(),
 	}
 
 	if version := ClusterVersion(); version != "" {
@@ -96,6 +100,11 @@ func (j *ClusterJig) WithGenerateName(prefix string) *ClusterJig {
 
 func (j *ClusterJig) WithHumanReadableName(name string) *ClusterJig {
 	j.spec.HumanReadableName = name
+	return j
+}
+
+func (j *ClusterJig) WithAddons(addons ...string) *ClusterJig {
+	j.addons.Insert(addons...)
 	return j
 }
 
@@ -290,12 +299,40 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		}
 	}
 
+	if err := j.installAddons(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ensure addons: %w", err)
+	}
+
 	// update our local cluster variable with the newly reconciled address values
 	if err := j.client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
 		return nil, fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
 	return cluster, nil
+}
+
+func (j *ClusterJig) WaitForClusterNamespace(ctx context.Context, timeout time.Duration) error {
+	if j.clusterName == "" {
+		return errors.New("cluster jig has not created a cluster yet")
+	}
+
+	return wait.PollLog(j.log, 5*time.Second, timeout, func() (transient error, terminal error) {
+		curCluster := kubermaticv1.Cluster{}
+		if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, &curCluster); err != nil {
+			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
+		}
+
+		if curCluster.Status.NamespaceName == "" {
+			return errors.New("cluster has no namespace yet"), nil
+		}
+
+		ns := corev1.Namespace{}
+		if err := j.client.Get(ctx, types.NamespacedName{Name: curCluster.Status.NamespaceName}, &ns); err != nil {
+			return fmt.Errorf("cluster namespace does not exist yet: %w", err), nil
+		}
+
+		return nil, nil
+	})
 }
 
 func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.Duration) error {
@@ -366,7 +403,23 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 	return nil
 }
 
+func (j *ClusterJig) installAddons(ctx context.Context) error {
+	if err := j.WaitForClusterNamespace(ctx, 30*time.Second); err != nil {
+		return fmt.Errorf("failed to wait for cluster namespace: %w", err)
+	}
+
+	for _, addon := range j.addons.List() {
+		if err := j.EnsureAddon(ctx, addon); err != nil {
+			return fmt.Errorf("failed to install %q addon: %w", addon, err)
+		}
+	}
+
+	return nil
+}
+
 func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
+	j.log.Info("Installing addon...", "addon", addonName)
+
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get current cluster: %w", err)

@@ -78,80 +78,6 @@ func init() {
 	logOptions.AddFlags(flag.CommandLine)
 }
 
-type testJig struct {
-	client ctrlruntimeclient.Client
-	log    *zap.SugaredLogger
-
-	projectJig *jig.ProjectJig
-	clusterJig *jig.ClusterJig
-}
-
-func newTestJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *testJig {
-	return &testJig{
-		client: client,
-		log:    log,
-	}
-}
-
-func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermaticv1.Cluster, error) {
-	// create dummy project
-	j.projectJig = jig.NewProjectJig(j.client, j.log)
-
-	project, err := j.projectJig.Create(ctx, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create project: %w", err)
-	}
-
-	// create test cluster
-	j.clusterJig = jig.NewClusterJig(j.client, j.log)
-	cluster, err := j.clusterJig.
-		WithProject(project).
-		WithGenerateName("e2e-mla-").
-		WithHumanReadableName("MLA test cluster").
-		WithPreset(preset).
-		WithSSHKeyAgent(false).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: jig.DatacenterName(),
-			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
-			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
-		}).
-		Create(ctx, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create cluster: %w", err)
-	}
-
-	// create a few test nodes
-	machineJig := jig.NewMachineJig(j.client, j.log, cluster)
-	err = machineJig.WithHetzner("cx21").Create(ctx, jig.WaitForReadyPods)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create worker nodes: %w", err)
-	}
-
-	return project, cluster, nil
-}
-
-func (j *testJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.Duration) error {
-	if j.clusterJig != nil {
-		return j.clusterJig.WaitForHealthyControlPlane(ctx, timeout)
-	}
-
-	return errors.New("no cluster created yet")
-}
-
-func (j *testJig) Cleanup(ctx context.Context, t *testing.T) {
-	if j.clusterJig != nil {
-		if err := j.clusterJig.Delete(ctx, false); err != nil {
-			t.Errorf("Failed to delete cluster: %v", err)
-		}
-	}
-
-	if j.projectJig != nil {
-		if err := j.projectJig.Delete(ctx, false); err != nil {
-			t.Errorf("Failed to delete project: %v", err)
-		}
-	}
-}
-
 func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
@@ -161,13 +87,14 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// setup a dummy project & cluster
-	testJig := newTestJig(seedClient, logger)
-	defer testJig.Cleanup(ctx, t)
+	// create test environment
+	testJig := jig.NewHetznerCluster(seedClient, logger, 1)
+	testJig.ClusterJig.WithPreset(preset)
 
-	project, cluster, err := testJig.Setup(ctx)
+	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	defer testJig.Cleanup(ctx, t)
 	if err != nil {
-		t.Fatalf("Failed to setup test environment: %v", err)
+		t.Fatalf("failed to setup test environment: %v", err)
 	}
 
 	logger.Info("Enabling MLA...")

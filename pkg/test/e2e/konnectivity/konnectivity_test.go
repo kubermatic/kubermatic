@@ -337,69 +337,25 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
-	var teardowns []func()
+	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 1)
+	testJig.ProjectJig.WithHumanReadableName(projectName)
+	testJig.ClusterJig.WithKonnectivity(true)
+
 	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			teardowns[n-1-i]()
-		}
+		testJig.Cleanup(ctx, t)
 	}
 
-	// create the project
-	projectJig := jig.NewProjectJig(masterClient, log)
-	project, err := projectJig.WithHumanReadableName(projectName).Create(ctx, true)
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
-		return nil, nil, nil, nil, log, err
-	}
-	teardowns = append(teardowns, func() {
-		if err := projectJig.Delete(ctx, false); err != nil {
-			t.Errorf("failed to delete project: %v", err)
-		}
-	})
-
-	// create the cluster
-	clusterJig := jig.NewClusterJig(masterClient, log)
-	cluster, err := clusterJig.
-		WithGenerateName("e2e-konnectivity-").
-		WithHumanReadableName("Konnectivity e2e test").
-		WithProject(project).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: jig.DatacenterName(),
-			ProviderName:   string(kubermaticv1.AWSCloudProvider),
-			AWS: &kubermaticv1.AWSCloudSpec{
-				SecretAccessKey: secretAccessKey,
-				AccessKeyID:     accessKeyID,
-			},
-		}).
-		WithSSHKeyAgent(false).
-		WithKonnectivity(true).
-		Create(ctx, true)
-	teardowns = append(teardowns, func() {
-		// This deletion will happen in the background, i.e. we are not waiting
-		// for its completion. This is fine in e2e tests, where the surrounding
-		// bash script will (as part of its normal cleanup) delete (and wait) all
-		// userclusters anyway.
-		if err := clusterJig.Delete(ctx, false); err != nil {
-			t.Errorf("failed to delete cluster: %v", err)
-		}
-	})
-	if err != nil {
-		return nil, nil, nil, cleanup, log, err
+		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}
 
-	// create a few test nodes
-	machineJig := jig.NewMachineJig(masterClient, log, cluster)
-	err = machineJig.WithAWS("t3.small").Create(ctx, jig.WaitForReadyPods)
-	if err != nil {
-		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
-	}
-
-	clusterClient, err := clusterJig.ClusterClient(ctx)
+	clusterClient, err := testJig.ClusterClient(ctx)
 	if err != nil {
 		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to create cluster client: %w", err)
 	}
 
-	clusterConfig, err := clusterJig.ClusterRESTConfig(ctx)
+	clusterConfig, err := testJig.ClusterRESTConfig(ctx)
 
 	return cluster, clusterClient, clusterConfig, cleanup, log, err
 }
