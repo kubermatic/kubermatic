@@ -20,6 +20,7 @@ import (
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -722,7 +723,7 @@ type GKEClusterList []GKECluster
 // swagger:model GKEImage
 type GKEImage struct {
 	Name      string `json:"name"`
-	IsDefault bool   `json:"default"`
+	IsDefault bool   `json:"default,omitempty"`
 }
 
 // GKEImageList represents an array of GKE images.
@@ -733,7 +734,7 @@ type GKEImageList []GKEImage
 // swagger:model GKEZone
 type GKEZone struct {
 	Name      string `json:"name"`
-	IsDefault bool   `json:"default"`
+	IsDefault bool   `json:"default,omitempty"`
 }
 
 // GKEZoneList represents an array of GKE zones.
@@ -1422,4 +1423,28 @@ type GroupProjectBinding struct {
 	Group     string `json:"group"`
 	ProjectID string `json:"projectID"`
 	Role      string `json:"role"`
+}
+
+// ApplicationInstallation is the object representing an ApplicationInstallation.
+// swagger:model ApplicationInstallation
+type ApplicationInstallation struct {
+	apiv1.ObjectMeta
+
+	Namespace string `json:"namespace,omitempty"`
+
+	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+}
+
+// swagger:model IPAMPool
+type IPAMPool struct {
+	Name        string                                `json:"name"`
+	Datacenters map[string]IPAMPoolDatacenterSettings `json:"datacenters"`
+}
+
+// swagger:model IPAMPoolDatacenterSettings
+type IPAMPoolDatacenterSettings struct {
+	Type             kubermaticv1.IPAMPoolAllocationType `json:"type"`
+	PoolCIDR         kubermaticv1.SubnetCIDR             `json:"poolCidr"`
+	AllocationPrefix int                                 `json:"allocationPrefix,omitempty"`
+	AllocationRange  int                                 `json:"allocationRange,omitempty"`
 }

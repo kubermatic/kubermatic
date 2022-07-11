@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	allowedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
+	applicationinstallation "k8c.io/kubermatic/v2/pkg/handler/v2/application_installation"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupdestinations"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
@@ -42,6 +43,7 @@ import (
 	featuregates "k8c.io/kubermatic/v2/pkg/handler/v2/feature_gates"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/handler/v2/group-project-binding"
+	ipampool "k8c.io/kubermatic/v2/pkg/handler/v2/ipampool"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
@@ -71,6 +73,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/images").
 		Handler(r.listGKEImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/zones").
+		Handler(r.listGKEZones())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/gke/validatecredentials").
@@ -396,6 +402,27 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getExternalClusterKubeconfig())
+
+	// Defines a set of HTTP endpoint for ApplicationInstallations that belong to a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations").
+		Handler(r.listApplicationInstallations())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations").
+		Handler(r.createApplicationInstallation())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
+		Handler(r.deleteApplicationInstallation())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
+		Handler(r.getApplicationInstallation())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
+		Handler(r.updateApplicationInstallation())
 
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
@@ -1051,6 +1078,27 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.patchGroupProjectBinding())
+
+	// Defines endpoints to manage IPAM pools
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/ipampools").
+		Handler(r.listIPAMPools())
+
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.getIPAMPool())
+
+	mux.Methods(http.MethodPost).
+		Path("/seeds/{seed_name}/ipampools").
+		Handler(r.createIPAMPool())
+
+	mux.Methods(http.MethodPatch).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.patchIPAMPool())
+
+	mux.Methods(http.MethodDelete).
+		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
+		Handler(r.deleteIPAMPool())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -5778,6 +5826,28 @@ func (r Routing) listGKEImages() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/gke/zones gke listGKEZones
+//
+// Lists GKE zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEZoneList
+func (r Routing) listGKEZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeGKECommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/gke/validatecredentials gke validateGKECredentials
 //
 // Validates GKE credentials
@@ -7063,6 +7133,262 @@ func (r Routing) patchGroupProjectBinding() http.Handler {
 			r.groupProjectBindingProvider,
 		)),
 		groupprojectbinding.DecodePatchGroupProjectBindingReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations applications listApplicationInstallations
+//
+//     List ApplicationInstallations which belong to the given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) listApplicationInstallations() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.ListApplicationInstallations(r.userInfoGetter)),
+		applicationinstallation.DecodeListApplicationInstallations,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations applications createApplicationInstallation
+//
+//     Creates ApplicationInstallation into the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) createApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.CreateApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeCreateApplicationInstallation,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications deleteApplicationInstallation
+//
+//    Deletes the given ApplicationInstallation
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.DeleteApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeDeleteApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications getApplicationInstallation
+//
+//    Gets the given ApplicationInstallation
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) getApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeGetApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name} applications updateApplicationInstallation
+//
+//    Updates the given ApplicationInstallation
+//
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ApplicationInstallation
+//       401: empty
+//       403: empty
+func (r Routing) updateApplicationInstallation() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
+		applicationinstallation.DecodeUpdateApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools ipampool listIPAMPools
+//
+//    Lists IPAM pools.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) listIPAMPools() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.ListIPAMPoolsEndpoint(r.userInfoGetter)),
+		ipampool.DecodeSeedReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool getIPAMPool
+//
+//    Gets a specific IPAM pool.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: IPAMPool
+//      401: empty
+//      403: empty
+func (r Routing) getIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.GetIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route POST /api/v2/seeds/{seed_name}/ipampools ipampool createIPAMPool
+//
+//    Creates a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: empty
+//      401: empty
+//      403: empty
+func (r Routing) createIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.CreateIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeCreateIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool patchIPAMPool
+//
+//    Patches a IPAM pool.
+//
+//    Consumes:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) patchIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.PatchIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodePatchIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool deleteIPAMPool
+//
+//    Removes an existing IPAM pool.
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteIPAMPool() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
+		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter)),
+		ipampool.DecodeIPAMPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

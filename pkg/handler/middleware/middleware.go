@@ -117,6 +117,9 @@ const (
 	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx.
 	PrivilegedMLAAdminSettingProviderContextKey kubermaticcontext.Key = "privileged-mla-admin-setting-provider"
 
+	// PrivilegedIPAMPoolProviderContextKey key under which the current PrivilegedIPAMPoolProvider is kept in the ctx.
+	PrivilegedIPAMPoolProviderContextKey kubermaticcontext.Key = "privileged-ipampool-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -882,4 +885,31 @@ func getPrivilegedMLAAdminSettingProvider(ctx context.Context, clusterProviderGe
 	}
 
 	return mlaAdminSettingProviderGetter(seed)
+}
+
+// PrivilegedIPAMPool is a middleware that injects the current PrivilegedIPAMPoolProvider into the ctx.
+func PrivilegedIPAMPool(ipamPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, err
+			}
+
+			seed, found := seeds[seedCluster.SeedName]
+			if !found {
+				return nil, utilerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
+			}
+
+			privilegedIPAMPoolProvider, err := ipamPoolProviderGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+
+			ctx = context.WithValue(ctx, PrivilegedIPAMPoolProviderContextKey, privilegedIPAMPoolProvider)
+			return next(ctx, request)
+		}
+	}
 }

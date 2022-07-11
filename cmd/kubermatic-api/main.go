@@ -348,6 +348,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	privilegedMLAAdminSettingProviderGetter := kubernetesprovider.PrivilegedMLAAdminSettingProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
+	privilegedIPAMPoolProviderGetter := kubernetesprovider.PrivilegedIPAMPoolProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
@@ -421,6 +423,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		seedProvider:                            seedProvider,
 		resourceQuotaProvider:                   resourceQuotaProvider,
 		groupProjectBindingProvider:             groupProjectBindingProvider,
+		privilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
 	}, nil
 }
 
@@ -542,6 +545,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		SeedProvider:                            prov.seedProvider,
 		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
 		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
+		PrivilegedIPAMPoolProviderGetter:        prov.privilegedIPAMPoolProviderGetter,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,

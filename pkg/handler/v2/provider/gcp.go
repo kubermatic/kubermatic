@@ -211,17 +211,11 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GKEClusterListReq)
 		sa := req.ServiceAccount
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+		var err error
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
 			if err != nil {
-				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credentials := preset.Spec.GKE; credentials != nil {
-				sa = credentials.ServiceAccount
+				return nil, err
 			}
 		}
 		return gke.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
@@ -231,22 +225,38 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GKEImagesReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
 
 		sa := req.ServiceAccount
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+		var err error
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
 			if err != nil {
-				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credentials := preset.Spec.GKE; credentials != nil {
-				sa = credentials.ServiceAccount
+				return nil, err
 			}
 		}
 		return gke.ListGKEImages(ctx, sa, req.Zone)
+	}
+}
+
+func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GKECommonReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gke.ListGKEZones(ctx, sa)
 	}
 }
 
@@ -254,22 +264,36 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GKETypesReq)
 
+		var err error
 		sa := req.ServiceAccount
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
 			if err != nil {
-				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credentials := preset.Spec.GKE; credentials != nil {
-				sa = credentials.ServiceAccount
+				return nil, err
 			}
 		}
 		return nil, gke.ValidateGKECredentials(ctx, sa)
 	}
+}
+
+func getSAFromPreset(ctx context.Context,
+	userInfoGetter provider.UserInfoGetter,
+	presetProvider provider.PresetProvider,
+	presetName string,
+) (string, error) {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return "", common.KubernetesErrorToHTTPError(err)
+	}
+	preset, err := presetProvider.GetPreset(ctx, userInfo, presetName)
+	if err != nil {
+		return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
+	}
+	credentials := preset.Spec.GKE
+	if credentials == nil {
+		return "", fmt.Errorf("gke credentials not present in the preset %s", presetName)
+	}
+	return credentials.ServiceAccount, nil
 }
 
 // GKEImagesReq represent a request for GKE images.
@@ -280,6 +304,25 @@ type GKEImagesReq struct {
 	// in: header
 	// name: Zone
 	Zone string
+}
+
+// Validate validates GKECommonReq request.
+func (req GKECommonReq) Validate() error {
+	if len(req.ServiceAccount) == 0 && len(req.Credential) == 0 {
+		return fmt.Errorf("GKE credentials cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates GKEImagesReq request.
+func (req GKEImagesReq) Validate() error {
+	if err := req.GKECommonReq.Validate(); err != nil {
+		return err
+	}
+	if len(req.Zone) == 0 {
+		return fmt.Errorf("GKE Zone cannot be empty")
+	}
+	return nil
 }
 
 func DecodeGKEImagesReq(c context.Context, r *http.Request) (interface{}, error) {

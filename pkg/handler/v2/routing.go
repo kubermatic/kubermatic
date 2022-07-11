@@ -96,6 +96,7 @@ type Routing struct {
 	seedProvider                            provider.SeedProvider
 	resourceQuotaProvider                   provider.ResourceQuotaProvider
 	groupProjectBindingProvider             provider.GroupProjectBindingProvider
+	privilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 	features                                features.FeatureGate
@@ -159,6 +160,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		seedProvider:                            routingParams.SeedProvider,
 		resourceQuotaProvider:                   routingParams.ResourceQuotaProvider,
 		groupProjectBindingProvider:             routingParams.GroupProjectBindingProvider,
+		privilegedIPAMPoolProviderGetter:        routingParams.PrivilegedIPAMPoolProviderGetter,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 		features:                                routingParams.Features,
