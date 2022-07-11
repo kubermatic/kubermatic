@@ -415,6 +415,33 @@ type DatacenterSpec struct {
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 }
 
+var (
+	// cloudProvidersWithIPv6Enabled configures which providers have IPv6 enabled for all datacenters.
+	cloudProvidersWithIPv6Enabled = map[ProviderType]struct{}{
+		AWSCloudProvider:     {},
+		AzureCloudProvider:   {},
+		GCPCloudProvider:     {},
+		HetznerCloudProvider: {},
+	}
+)
+
+// IsIPv6Enabled returns true if ipv6 is enabled for the datacenter.
+func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
+	_, isIPv6EnabledForProvider := cloudProvidersWithIPv6Enabled[cloudProvider]
+	if isIPv6EnabledForProvider {
+		return true
+	}
+
+	switch cloudProvider {
+	case OpenstackCloudProvider:
+		if d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
