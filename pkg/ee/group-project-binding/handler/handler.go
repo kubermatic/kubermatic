@@ -40,6 +40,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -219,7 +220,7 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 
 	if err := bindingProvider.Create(ctx, userInfo, &kubermaticv1.GroupProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s", kubermaticProject.Name, req.Body.Group),
+			Name: fmt.Sprintf("%s-%s", kubermaticProject.Name, rand.String(10)),
 		},
 		Spec: kubermaticv1.GroupProjectBindingSpec{
 			ProjectID: req.ProjectID,
