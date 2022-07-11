@@ -79,7 +79,7 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 	}
 
 	j.log.Infow("Creating project...", "humanname", j.humanReadableName)
-	project, err := projectProvider.New(ctx, j.projectName, nil)
+	project, err := projectProvider.New(ctx, j.humanReadableName, nil)
 	if err != nil {
 		return nil, err
 	}

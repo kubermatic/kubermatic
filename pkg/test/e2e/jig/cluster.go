@@ -36,6 +36,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -195,6 +196,29 @@ func (j *ClusterJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Clien
 	var clusterClient ctrlruntimeclient.Client
 	err = wait.Poll(1*time.Second, 30*time.Second, func() (transient error, terminal error) {
 		clusterClient, transient = clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
+		return transient, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("cluster did not become available: %w", err)
+	}
+
+	return clusterClient, nil
+}
+
+func (j *ClusterJig) ClusterRESTConfig(ctx context.Context) (*rest.Config, error) {
+	clusterProvider, err := j.getClusterProvider()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cluster provider: %w", err)
+	}
+
+	cluster, err := j.Cluster(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current cluster: %w", err)
+	}
+
+	var clusterClient *rest.Config
+	err = wait.Poll(1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+		clusterClient, transient = clusterProvider.GetAdminClientConfigForUserCluster(ctx, cluster)
 		return transient, nil
 	})
 	if err != nil {

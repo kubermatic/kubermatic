@@ -97,7 +97,7 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatal("AWS_SECRET_ACCESS_KEY not set")
 	}
 
-	cluster, userClusterClient, cleanup, logger, err := createUserCluster(ctx, t, logger, seedClient)
+	cluster, userClusterClient, restConfig, cleanup, logger, err := createUserCluster(ctx, t, logger, seedClient)
 	if cleanup != nil {
 		defer cleanup()
 	}
@@ -105,12 +105,12 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("Failed to setup usercluster: %v", err)
 	}
 
-	userClient, err := kubernetes.NewForConfig(config)
+	userClient, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		t.Fatalf("Failed to create client: %s", err)
 	}
 
-	metricsClient, err := metrics.NewForConfig(config)
+	metricsClient, err := metrics.NewForConfig(restConfig)
 	if err != nil {
 		t.Fatalf("Failed to create metrics client: %s", err)
 	}
@@ -141,7 +141,7 @@ func TestKonnectivity(t *testing.T) {
 		t.Fatalf("Failed to get logs: %v", err)
 	}
 
-	if err := verifyCopyingFiles(ctx, userClusterClient, logger, config, userClient, sleeperPod); err != nil {
+	if err := verifyCopyingFiles(ctx, logger, restConfig, userClient, sleeperPod); err != nil {
 		t.Fatalf("Failed to verify copy operations: %v", err)
 	}
 
@@ -239,11 +239,11 @@ func verifyPodLogs(ctx context.Context, userClient ctrlruntimeclient.Client, log
 	})
 }
 
-func verifyCopyingFiles(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, config *rest.Config, clientset *kubernetes.Clientset, sleeperPod *corev1.Pod) error {
+func verifyCopyingFiles(ctx context.Context, log *zap.SugaredLogger, config *rest.Config, clientset *kubernetes.Clientset, sleeperPod *corev1.Pod) error {
 	log.Info("Verifying that we can copy files to Pods...")
 
 	podExec := NewPodExec(config, clientset)
-	target := fmt.Sprintf("%s/%s:/", "kube-system", sleeperPod.Name)
+	target := fmt.Sprintf("%s/%s:/", metav1.NamespaceSystem, sleeperPod.Name)
 
 	if err := podExec.PodCopyFile("./testdata/copyMe.txt", target, sleeperPod.Spec.Containers[0].Name); err != nil {
 		return fmt.Errorf("failed to copy: %w", err)
@@ -316,14 +316,14 @@ func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod, 
 	req := cli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
-		return "", fmt.Errorf("error in opening stream: %w", err)
+		return "", fmt.Errorf("error opening stream: %w", err)
 	}
 	defer podLogs.Close()
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
 	if err != nil {
-		return "", fmt.Errorf("error in copy information from podLogs to buf: %w", err)
+		return "", fmt.Errorf("error while reading logs stream: %w", err)
 	}
 	str := buf.String()
 
@@ -336,7 +336,7 @@ func createUserCluster(
 	t *testing.T,
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
-) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
+) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
 	var teardowns []func()
 	cleanup := func() {
 		n := len(teardowns)
@@ -349,7 +349,7 @@ func createUserCluster(
 	projectJig := jig.NewProjectJig(masterClient, log)
 	project, err := projectJig.WithHumanReadableName(projectName).Create(ctx, true)
 	if err != nil {
-		return nil, nil, nil, log, err
+		return nil, nil, nil, nil, log, err
 	}
 	teardowns = append(teardowns, func() {
 		if err := projectJig.Delete(ctx, false); err != nil {
@@ -384,17 +384,22 @@ func createUserCluster(
 		}
 	})
 	if err != nil {
-		return nil, nil, cleanup, log, err
+		return nil, nil, nil, cleanup, log, err
 	}
 
 	// create a few test nodes
 	machineJig := jig.NewMachineJig(masterClient, log, cluster)
 	err = machineJig.WithAWS("t3.small").Create(ctx, jig.WaitForReadyPods)
 	if err != nil {
-		return nil, nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
+		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to create nodes: %w", err)
 	}
 
 	clusterClient, err := clusterJig.ClusterClient(ctx)
+	if err != nil {
+		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to create cluster client: %w", err)
+	}
 
-	return cluster, clusterClient, cleanup, log, err
+	clusterConfig, err := clusterJig.ClusterRESTConfig(ctx)
+
+	return cluster, clusterClient, clusterConfig, cleanup, log, err
 }

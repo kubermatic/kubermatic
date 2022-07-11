@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,7 +50,7 @@ func Seed(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.S
 		return nil, nil, errors.New("no -datacenter given, cannot determine Seed")
 	}
 
-	seedsGetter, err := provider.SeedsGetterFactory(ctx, client, kkpNamespace)
+	seedsGetter, err := seedsGetterFactory(ctx, client, kkpNamespace)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create Seeds getter: %w", err)
 	}
