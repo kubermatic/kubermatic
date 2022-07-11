@@ -20,102 +20,167 @@ package exposestrategy
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"testing"
+	"time"
 
+	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Options holds the e2e test options.
-type testOptions struct {
-	skipCleanup       bool
-	logOptions        log.Options
-	datacenter        string
-	kubernetesVersion semver.Semver
-}
-
 var (
-	options = testOptions{
-		kubernetesVersion: semver.Semver(e2eutils.KubernetesVersion()),
-		logOptions:        e2eutils.DefaultLogOptions,
-	}
+	logOptions  = log.NewDefaultOptions()
+	skipCleanup = false
 )
 
 func init() {
-	flag.StringVar(&options.datacenter, "datacenter", "byo-kubernetes", "Name of the datacenter used by the user clusters created for the test.")
-	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
-	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+	jig.AddFlags(flag.CommandLine)
+	logOptions.AddFlags(flag.CommandLine)
+}
 
-	options.logOptions.AddFlags(flag.CommandLine)
+type testJig struct {
+	client ctrlruntimeclient.Client
+	log    *zap.SugaredLogger
+
+	projectJig *jig.ProjectJig
+	clusterJig *jig.ClusterJig
+}
+
+func newTestJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *testJig {
+	return &testJig{
+		client: client,
+		log:    log,
+	}
+}
+
+func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermaticv1.Cluster, error) {
+	// create dummy project
+	j.projectJig = jig.NewProjectJig(j.client, j.log)
+
+	project, err := j.projectJig.Create(ctx, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	// create test cluster
+	j.clusterJig = jig.NewClusterJig(j.client, j.log)
+	cluster, err := j.clusterJig.
+		WithProject(project).
+		WithGenerateName("e2e-expose-strategy-").
+		WithHumanReadableName("Expose strategy test cluster").
+		WithSSHKeyAgent(false).
+		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: jig.DatacenterName(),
+			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
+			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
+		}).
+		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
+			return cs
+		}).
+		Create(ctx, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create cluster: %w", err)
+	}
+
+	return project, cluster, nil
+}
+
+func (j *testJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.Duration) error {
+	if j.clusterJig != nil {
+		return j.clusterJig.WaitForHealthyControlPlane(ctx, timeout)
+	}
+
+	return errors.New("no cluster created yet")
+}
+
+func (j *testJig) Cleanup(ctx context.Context, t *testing.T) {
+	if j.clusterJig != nil {
+		if err := j.clusterJig.Delete(ctx, false); err != nil {
+			t.Errorf("Failed to delete cluster: %v", err)
+		}
+	}
+
+	if j.projectJig != nil {
+		if err := j.projectJig.Delete(ctx, false); err != nil {
+			t.Errorf("Failed to delete project: %v", err)
+		}
+	}
 }
 
 func TestExposeKubernetesApiserver(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewFromOptions(options.logOptions).Sugar()
-	k8scli, restCli, restConf := e2eutils.GetClientsOrDie()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
-	clusterJig := &ClusterJig{
-		Log:            logger,
-		Client:         k8scli,
-		Name:           "c" + rand.String(9),
-		DatacenterName: options.datacenter,
-		Version:        options.kubernetesVersion,
+	seedClient, restConfig, seedConfig, err := e2eutils.GetClients()
+	if err != nil {
+		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
-	if err := clusterJig.SetUp(ctx); err != nil {
-		t.Errorf("Failed to setup usercluster: %v", err)
-		return
+
+	// setup a dummy project & cluster
+	testJig := newTestJig(seedClient, logger)
+	if !skipCleanup {
+		defer testJig.Cleanup(ctx, t)
+	}
+
+	_, cluster, err := testJig.Setup(ctx)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
 	agentConfig := &AgentConfig{
 		Log:       logger,
-		Client:    k8scli,
-		Namespace: clusterJig.Cluster.Status.NamespaceName,
+		Client:    seedClient,
+		Namespace: cluster.Status.NamespaceName,
 		Versions:  kubermatic.NewDefaultVersions(),
 	}
 	if err := agentConfig.DeployAgentPod(ctx); err != nil {
-		t.Errorf("Failed to deploy agent: %v", err)
-		return
+		t.Fatalf("Failed to deploy agent: %v", err)
 	}
 
 	client := &clientJig{e2eutils.TestPodConfig{
 		Log:           logger,
-		Namespace:     clusterJig.Cluster.Status.NamespaceName,
-		Client:        k8scli,
-		PodRestClient: restCli,
-		Config:        restConf,
+		Namespace:     cluster.Status.NamespaceName,
+		Client:        seedClient,
+		PodRestClient: restConfig,
+		Config:        seedConfig,
 		CreatePodFunc: newClientPod,
 	}}
 	if err := client.DeployTestPod(ctx, logger); err != nil {
-		t.Errorf("Failed to deploy Pod: %v", err)
-		return
+		t.Fatalf("Failed to deploy Pod: %v", err)
 	}
 
 	t.Run("Testing SNI when Kubeconfig is used e.g. Kubelet", func(t *testing.T) {
-		if !client.QueryApiserverVersion("", false, options.kubernetesVersion, 5, 4) {
+		if !client.QueryApiserverVersion("", false, jig.ClusterSemver(), 5, 4) {
 			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
 		}
 	})
 
 	t.Run("Tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace", func(t *testing.T) {
-		if !client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, options.kubernetesVersion, 5, 4) {
+		if !client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, jig.ClusterSemver(), 5, 4) {
 			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
 		}
 	})
 
-	if !options.skipCleanup {
+	if !skipCleanup {
 		defer func() {
 			if err := client.CleanUp(ctx); err != nil {
 				t.Errorf("Failed to cleanup: %v", err)
 			}
 			if err := agentConfig.CleanUp(ctx); err != nil {
-				t.Errorf("Failed to cleanup: %v", err)
-			}
-			if err := clusterJig.CleanUp(ctx); err != nil {
 				t.Errorf("Failed to cleanup: %v", err)
 			}
 		}()

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -69,7 +68,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 		ownerEmail:   "e2e@test.kubermatic.com",
 	}
 
-	if version := os.Getenv("VERSION_TO_TEST"); version != "" {
+	if version := ClusterVersion(); version != "" {
 		jig.WithVersion(version)
 	}
 
@@ -127,6 +126,11 @@ func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
 
 func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
 	j.spec.EnableOperatingSystemManager = enabled
+	return j
+}
+
+func (j *ClusterJig) WithExposeStrategy(strat kubermaticv1.ExposeStrategy) *ClusterJig {
+	j.spec.ExposeStrategy = strat
 	return j
 }
 
