@@ -17,6 +17,7 @@ limitations under the License.
 package kubectl
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -52,4 +53,26 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	}
 
 	return filepath.Join("/usr/local/bin/", binary), nil
+}
+
+func VerifyVersionSkew(clusterVersion, kubectlVersion semver.Semver) error {
+	clusterMajor := clusterVersion.Semver().Major()
+	kubectlMajor := kubectlVersion.Semver().Major()
+
+	if clusterMajor != kubectlMajor {
+		return errors.New("major versions are different between cluster and kubectl")
+	}
+
+	clusterMinor := clusterVersion.Semver().Minor()
+	kubectlMinor := kubectlVersion.Semver().Minor()
+
+	if kubectlMinor < (clusterMinor - 1) {
+		return fmt.Errorf("kubectl would support down to v%d.%d, but cluster is %v", kubectlMajor, kubectlMinor-1, clusterVersion.Semver())
+	}
+
+	if kubectlMinor > (clusterMinor + 1) {
+		return fmt.Errorf("kubectl would support up to v%d.%d, but cluster is %v", kubectlMajor, kubectlMinor+1, clusterVersion.Semver())
+	}
+
+	return nil
 }

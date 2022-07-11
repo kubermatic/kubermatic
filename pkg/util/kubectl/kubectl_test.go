@@ -17,9 +17,11 @@ limitations under the License.
 package kubectl
 
 import (
+	"fmt"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
 func TestKubectlForAllSupportedVersions(t *testing.T) {
@@ -28,5 +30,42 @@ func TestKubectlForAllSupportedVersions(t *testing.T) {
 		if err != nil {
 			t.Errorf("No kubectl binary found for cluster version %q: %v", v, err)
 		}
+	}
+}
+
+func TestVerifyVersionSkew(t *testing.T) {
+	testcases := []struct {
+		cluster string
+		kubectl string
+		valid   bool
+	}{
+		// different major versions are never compatible
+		{cluster: "1.5", kubectl: "2.5", valid: false},
+		{cluster: "2.5", kubectl: "1.5", valid: false},
+
+		// patch releases do not matter
+		{cluster: "1.5.100", kubectl: "1.5.999", valid: true},
+		{cluster: "1.5.999", kubectl: "1.5.100", valid: true},
+
+		// check actual skew policy
+		{cluster: "1.5", kubectl: "1.3", valid: false},
+		{cluster: "1.5", kubectl: "1.4", valid: true},
+		{cluster: "1.5", kubectl: "1.5", valid: true},
+		{cluster: "1.5", kubectl: "1.6", valid: true},
+		{cluster: "1.5", kubectl: "1.7", valid: false},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(fmt.Sprintf("%s vs. %s", testcase.cluster, testcase.kubectl), func(t *testing.T) {
+			err := VerifyVersionSkew(*semver.NewSemverOrDie(testcase.cluster), *semver.NewSemverOrDie(testcase.kubectl))
+
+			if testcase.valid && err != nil {
+				t.Fatalf("kubectl %s should have been compatible to cluster %s, but got error: %v", testcase.kubectl, testcase.cluster, err)
+			}
+
+			if !testcase.valid && err == nil {
+				t.Fatalf("kubectl %s should not have been compatible to cluster %s, but got no error", testcase.kubectl, testcase.cluster)
+			}
+		})
 	}
 }
