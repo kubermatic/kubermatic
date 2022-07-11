@@ -19200,6 +19200,32 @@
         }
       }
     },
+    "/api/v2/providers/gke/zones": {
+      "get": {
+        "description": "Lists GKE zones",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "listGKEZones",
+        "responses": {
+          "200": {
+            "description": "GKEZoneList",
+            "schema": {
+              "$ref": "#/definitions/GKEZoneList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/kubevirt/storageclasses": {
       "get": {
         "produces": [
