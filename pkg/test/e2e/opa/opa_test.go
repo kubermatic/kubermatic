@@ -22,18 +22,25 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
+	"flag"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -42,20 +49,106 @@ import (
 )
 
 var (
-	datacenter            = "kubermatic"
-	location              = "hetzner-hel1"
-	version               = utils.KubernetesVersion()
-	credential            = "e2e-hetzner"
+	logOptions            = log.NewDefaultOptions()
+	preset                = "e2e-hetzner"
 	ctKind                = "RequiredLabels"
-	masterNamespace       = "kubermatic"
 	defaultConstraintName = "testconstraint"
 
 	//go:embed constraint_template.yaml
 	testCT string
 )
 
+func init() {
+	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
+	jig.AddFlags(flag.CommandLine)
+	logOptions.AddFlags(flag.CommandLine)
+}
+
+type testJig struct {
+	client ctrlruntimeclient.Client
+	log    *zap.SugaredLogger
+
+	projectJig *jig.ProjectJig
+	clusterJig *jig.ClusterJig
+}
+
+func newTestJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *testJig {
+	return &testJig{
+		client: client,
+		log:    log,
+	}
+}
+
+func (j *testJig) Setup(ctx context.Context) (*kubermaticv1.Project, *kubermaticv1.Cluster, error) {
+	// create dummy project
+	j.projectJig = jig.NewProjectJig(j.client, j.log)
+
+	project, err := j.projectJig.Create(ctx, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	// create test cluster
+	j.clusterJig = jig.NewClusterJig(j.client, j.log)
+	cluster, err := j.clusterJig.
+		WithProject(project).
+		WithGenerateName("e2e-opa-").
+		WithHumanReadableName("OPA test cluster").
+		WithPreset(preset).
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: jig.DatacenterName(),
+			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+		}).
+		Create(ctx, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create cluster: %w", err)
+	}
+
+	// create a few test nodes
+	machineJig := jig.NewMachineJig(j.client, j.log, cluster)
+	err = machineJig.WithHetzner("cx21").Create(ctx, jig.WaitForReadyPods)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create worker nodes: %w", err)
+	}
+
+	return project, cluster, nil
+}
+
+func (j *testJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.Duration) error {
+	if j.clusterJig != nil {
+		return j.clusterJig.WaitForHealthyControlPlane(ctx, timeout)
+	}
+
+	return errors.New("no cluster created yet")
+}
+
+func (j *testJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
+	if j.clusterJig != nil {
+		return j.clusterJig.ClusterClient(ctx)
+	}
+
+	return nil, errors.New("no cluster created yet")
+}
+
+func (j *testJig) Cleanup(ctx context.Context, t *testing.T) {
+	if j.clusterJig != nil {
+		if err := j.clusterJig.Delete(ctx, false); err != nil {
+			t.Errorf("Failed to delete cluster: %v", err)
+		}
+	}
+
+	if j.projectJig != nil {
+		if err := j.projectJig.Delete(ctx, false); err != nil {
+			t.Errorf("Failed to delete project: %v", err)
+		}
+	}
+}
+
 func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
 	if err := constrainttemplatev1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("failed to register gatekeeper scheme: %v", err)
@@ -66,169 +159,125 @@ func TestOPAIntegration(t *testing.T) {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// login
-	masterToken, err := utils.RetrieveMasterToken(ctx)
+	// setup a dummy project & cluster
+	testJig := newTestJig(seedClient, logger)
+	defer testJig.Cleanup(ctx, t)
+
+	_, cluster, err := testJig.Setup(ctx)
 	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-	masterClient := utils.NewTestClient(masterToken, t)
-
-	masterAdminToken, err := utils.RetrieveAdminMasterToken(ctx)
-	if err != nil {
-		t.Fatalf("failed to get master admin token: %v", err)
-	}
-	masterAdminClient := utils.NewTestClient(masterAdminToken, t)
-
-	// create dummy project
-	t.Log("creating project...")
-	project, err := masterClient.CreateProject(rand.String(10))
-	if err != nil {
-		t.Fatalf("failed to create project: %v", getErrorResponse(err))
-	}
-	defer cleanupProject(t, project.ID)
-
-	t.Log("creating cluster...")
-	apiCluster, err := masterClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
-	if err != nil {
-		t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
-	}
-
-	// wait for the cluster to become healthy
-	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster did not become healthy: %v", err)
-	}
-
-	if err := masterClient.WaitForClusterNodeDeploymentsToByReady(project.ID, datacenter, apiCluster.ID, 1); err != nil {
-		t.Fatalf("cluster nodes not ready: %v", err)
-	}
-
-	// get the cluster object (the CRD, not the API's representation)
-	cluster := &kubermaticv1.Cluster{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-		t.Fatalf("failed to get cluster: %v", err)
+		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
 	// enable OPA
-	t.Log("enabling OPA...")
+	logger.Info("Enabling OPA...")
 	if err := setOPAIntegration(ctx, seedClient, cluster, true); err != nil {
-		t.Fatalf("failed to set OPA integration to true: %v", err)
+		t.Fatalf("Failed to enable OPA integration: %v", err)
 	}
 
-	t.Log("waiting for cluster to healthy after enabling OPA...")
-	if err := masterClient.WaitForOPAEnabledClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster not ready: %v", err)
+	logger.Info("Waiting for cluster to healthy after enabling OPA...")
+	if err := testJig.WaitForHealthyControlPlane(ctx, 2*time.Minute); err != nil {
+		t.Fatalf("Cluster did not get healthy: %v", err)
 	}
 
 	// Create CT
-	t.Log("creating Constraint Template...")
+	logger.Info("Creating Constraint Template (CT)...")
 	ct, err := createTestConstraintTemplate(ctx, seedClient)
 	if err != nil {
-		t.Fatalf("error creating Constraint Template: %v", getErrorResponse(err))
+		t.Fatalf("error creating Constraint Template: %v", err)
 	}
-	t.Logf("created Constraint Template %v", *ct)
+	logger = logger.With("template", ct.Name)
+	logger.Info("Created Constraint Template")
 
-	t.Log("creating client for user cluster...")
-	userClient, err := masterClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
+	logger.Info("Creating client for user cluster...")
+	userClient, err := testJig.ClusterClient(ctx)
 	if err != nil {
 		t.Fatalf("error creating user cluster client: %v", err)
 	}
 
-	if err := waitForCTSync(ctx, userClient, ct.Name, false); err != nil {
+	logger.Info("Waiting for CT to be synced...")
+	if err := waitForCTSync(ctx, userClient, logger, ct.Name, false); err != nil {
 		t.Fatal(err)
 	}
-
-	t.Log("constraint template synced to user cluster...")
+	logger.Info("Constraint template synced to user cluster.")
 
 	// Create Default Constraint
-	t.Log("creating Default Constraint...")
-	defaultConstraint, err := masterAdminClient.CreateConstraint(defaultConstraintName, ctKind)
+	logger.Info("Creating Default Constraint...")
+	defaultConstraint, err := createConstraint(ctx, userClient, defaultConstraintName, ctKind)
 	if err != nil {
-		t.Fatalf("error creating Default Constraint: %v", getErrorResponse(err))
+		t.Fatalf("error creating Default Constraint: %v", err)
 	}
 
-	t.Log("waiting for Default Constraint sync...")
-	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, masterNamespace, false); err != nil {
+	logger.Info("Waiting for Default Constraint sync...")
+	if err := waitForConstraintSync(ctx, seedClient, logger, defaultConstraint.Name, defaultConstraint.Namespace, false); err != nil {
 		t.Fatal(err)
 	}
-	t.Log("synced to Default Constraint kubermatic namespace...")
+	logger.Info("Synced Default Constraint to KKP namespace.")
 
-	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, cluster.Status.NamespaceName, false); err != nil {
+	if err := waitForConstraintSync(ctx, seedClient, logger, defaultConstraint.Name, cluster.Status.NamespaceName, false); err != nil {
 		t.Fatal(err)
 	}
-	t.Log("synced to Default Constraint user cluster namespace...")
+	logger.Info("Synced Default Constraint to user cluster namespace.")
 
 	// Test if constraint works
-	t.Log("testing if Constraint works by creating policy-breaking configmap...")
-	if err := testConstraintForConfigMap(ctx, userClient); err != nil {
+	logger.Info("Testing if Constraint works by creating policy-breaking ConfigMap...")
+	if err := testConstraintForConfigMap(ctx, userClient, logger); err != nil {
 		t.Fatal(err)
 	}
 
-	t.Log("testing if Constraint lets through policy-aligned namespace...")
+	logger.Info("Testing if Constraint lets policy-aligned ConfigMap through...")
 	cm := genTestConfigMap()
 	cm.Labels = map[string]string{"gatekeeper": "true"}
 	if err := userClient.Create(ctx, cm); err != nil {
-		t.Fatalf("error creating policy-aligned configmap on user cluster: %v", getErrorResponse(err))
+		t.Fatalf("error creating policy-aligned ConfigMap on user cluster: %v", err)
 	}
 
 	// Delete constraint
-	t.Log("Deleting Constraint...")
-	if err := masterAdminClient.DeleteConstraint(defaultConstraint.Name); err != nil {
+	logger.Info("Deleting Constraint...")
+	if err := seedClient.Delete(ctx, defaultConstraint); err != nil {
 		t.Fatalf("error deleting Constraint: %v", err)
 	}
-	t.Log("waiting for Constraint sync delete...")
 
-	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, masterNamespace, true); err != nil {
+	logger.Info("Waiting for Constraint sync delete...")
+	if err := waitForConstraintSync(ctx, seedClient, logger, defaultConstraint.Name, defaultConstraint.Namespace, true); err != nil {
 		t.Fatal(err)
 	}
-	t.Log("synced to Default Constraint kubermatic namespace...")
+	logger.Info("Synced Default Constraint to KKP namespace.")
 
-	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, cluster.Status.NamespaceName, true); err != nil {
+	if err := waitForConstraintSync(ctx, seedClient, logger, defaultConstraint.Name, cluster.Status.NamespaceName, true); err != nil {
 		t.Fatal(err)
 	}
-	t.Log("synced to Default Constraint user cluster namespace...")
+	logger.Info("Synced Default Constraint to user cluster namespace.")
 
 	// Check that constraint does not work
-	t.Log("testing if policy breaking configmap can be created...")
+	logger.Info("Testing if policy breaking ConfigMap can now be created...")
 	cmBreaking := genTestConfigMap()
 	if err := userClient.Create(ctx, cmBreaking); err != nil {
 		t.Fatalf("error creating policy-breaking configmap on user cluster after deleting constraint: %v", err)
 	}
 
 	// Delete CT
-	t.Log("deleting Constraint Template...")
-	if err := masterAdminClient.DeleteConstraintTemplate(ct.Name); err != nil {
+	logger.Info("Deleting Constraint Template...")
+	if err := seedClient.Delete(ctx, ct); err != nil {
 		t.Fatalf("error deleting Constraint Template: %v", err)
 	}
 
 	// Check that CT is removed
-	t.Log("waiting for Constraint Template delete sync...")
-	if err := waitForCTSync(ctx, userClient, ct.Name, true); err != nil {
+	logger.Info("Waiting for Constraint Template delete sync...")
+	if err := waitForCTSync(ctx, userClient, logger, ct.Name, true); err != nil {
 		t.Fatal(err)
 	}
 
 	// Disable OPA Integration
-	t.Log("disabling OPA...")
+	logger.Info("Disabling OPA...")
 	if err := setOPAIntegration(ctx, seedClient, cluster, false); err != nil {
-		t.Fatalf("failed to set OPA integration to false: %v", err)
+		t.Fatalf("failed to disable OPA integration: %v", err)
 	}
 
 	// Check that cluster is healthy
-	t.Log("waiting for cluster to healthy after disabling OPA...")
-	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster not healthy: %v", err)
+	logger.Info("Waiting for cluster to healthy after disabling OPA...")
+	if err := testJig.WaitForHealthyControlPlane(ctx, 2*time.Minute); err != nil {
+		t.Fatalf("Cluster did not get healthy: %v", err)
 	}
-
-	// Test that cluster deletes cleanly
-	masterClient.CleanupCluster(t, project.ID, datacenter, apiCluster.ID)
-}
-
-// getErrorResponse converts the client error response to string.
-func getErrorResponse(err error) string {
-	rawData, newErr := json.Marshal(err)
-	if newErr != nil {
-		return err.Error()
-	}
-	return string(rawData)
 }
 
 func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, enabled bool) error {
@@ -240,46 +289,6 @@ func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if !utils.WaitFor(1*time.Second, 2*time.Minute, func() bool {
-		cm := genTestConfigMap()
-		err := userClient.Create(ctx, cm)
-		return err != nil && strings.Contains(err.Error(), "you must provide labels")
-	}) {
-		return fmt.Errorf("timeout waiting for Constraint policy to be enforced")
-	}
-	return nil
-}
-
-func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, ctName string, deleted bool) error {
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
-		gatekeeperCT := &constrainttemplatev1.ConstraintTemplate{}
-		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
-
-		if deleted {
-			return apierrors.IsNotFound(err)
-		}
-		return err == nil
-	}) {
-		return fmt.Errorf("timeout waiting for Constraint Template to be synced to user cluster")
-	}
-	return nil
-}
-
-func waitForConstraintSync(ctx context.Context, client ctrlruntimeclient.Client, cName, namespace string, deleted bool) error {
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
-		constraint := &kubermaticv1.Constraint{}
-		err := client.Get(ctx, types.NamespacedName{Name: cName, Namespace: namespace}, constraint)
-		if deleted {
-			return apierrors.IsNotFound(err)
-		}
-		return err == nil
-	}) {
-		return fmt.Errorf("timeout waiting for Constraint to be synced")
-	}
-	return nil
-}
-
 func genTestConfigMap() *corev1.ConfigMap {
 	cm := &corev1.ConfigMap{}
 	cm.Namespace = corev1.NamespaceDefault
@@ -287,17 +296,62 @@ func genTestConfigMap() *corev1.ConfigMap {
 	return cm
 }
 
-func cleanupProject(t *testing.T, id string) {
-	t.Log("cleaning up project and cluster...")
+func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	return wait.PollLog(log, 3*time.Second, 2*time.Minute, func() (error, error) {
+		cm := genTestConfigMap()
+		err := userClient.Create(ctx, cm)
+		if err == nil {
+			return errors.New("successfully created ConfigMap, but should have been prevented"), nil
+		}
 
-	// use a dedicated context so that cleanups always run, even
-	// if the context inside a test was already cancelled
-	token, err := utils.RetrieveAdminMasterToken(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
+		if !strings.Contains(err.Error(), "you must provide labels") {
+			return fmt.Errorf("expected error regarding labels, but got: %w", err), nil
+		}
 
-	utils.NewTestClient(token, t).CleanupProject(t, id)
+		return nil, nil
+	})
+}
+
+func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, ctName string, deleted bool) error {
+	return wait.PollLog(log, 3*time.Second, 1*time.Minute, func() (error, error) {
+		gatekeeperCT := &constrainttemplatev1.ConstraintTemplate{}
+		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
+
+		if deleted {
+			if apierrors.IsNotFound(err) {
+				return nil, nil
+			}
+
+			return fmt.Errorf("expected NotFound error, but got: %w", err), nil
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to get Constraint Template: %w", err), nil
+		}
+
+		return nil, nil
+	})
+}
+
+func waitForConstraintSync(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, cName, namespace string, deleted bool) error {
+	return wait.PollLog(log, 3*time.Second, 2*time.Minute, func() (error, error) {
+		constraint := &kubermaticv1.Constraint{}
+		err := client.Get(ctx, types.NamespacedName{Name: cName, Namespace: namespace}, constraint)
+
+		if deleted {
+			if apierrors.IsNotFound(err) {
+				return nil, nil
+			}
+
+			return fmt.Errorf("expected NotFound error, but got: %w", err), nil
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to get Constraint: %w", err), nil
+		}
+
+		return nil, nil
+	})
 }
 
 func createTestConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.ConstraintTemplate, error) {
@@ -308,4 +362,27 @@ func createTestConstraintTemplate(ctx context.Context, client ctrlruntimeclient.
 	}
 
 	return ct, client.Create(ctx, ct)
+}
+
+func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, name, ctKind string) (*kubermaticv1.Constraint, error) {
+	constraint := &kubermaticv1.Constraint{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: jig.KubermaticNamepace(),
+		},
+		Spec: kubermaticv1.ConstraintSpec{
+			ConstraintType: ctKind,
+			Match: kubermaticv1.Match{
+				Kinds: []kubermaticv1.Kind{{
+					APIGroups: []string{""},
+					Kinds:     []string{"ConfigMap"},
+				}},
+			},
+			Parameters: kubermaticv1.Parameters{
+				"labels": json.RawMessage(`["gatekeeper"]`),
+			},
+		},
+	}
+
+	return constraint, client.Create(ctx, constraint)
 }
