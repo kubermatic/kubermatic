@@ -115,7 +115,7 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, acce
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithHetzner("t3.small")
+		WithAWS("t3.small")
 
 	return &TestJig{
 		ProjectJig: projectJig,
