@@ -25,7 +25,7 @@ ADD https://storage.googleapis.com/kubernetes-release/release/v1.22.11/bin/linux
 
 RUN wget -O- https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
-# We need the ca-certs so they api doesn't crash because it can't verify the certificate of Dex
+# We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
 
 # Do not needless copy all binaries into the image.
