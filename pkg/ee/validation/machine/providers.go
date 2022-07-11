@@ -28,6 +28,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
@@ -35,6 +36,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	packetypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
@@ -76,6 +78,10 @@ const (
 	// Alibaba credential env.
 	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
 	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
+	// Packet credential env.
+	envPacketToken           = "PACKET_API_KEY"
+	envPacketProjectID       = "PACKET_PROJECT_ID"
+	packetCustomInstanctType = "storage.custom"
 )
 
 func GetMachineResourceUsage(ctx context.Context,
@@ -117,6 +123,8 @@ func GetMachineResourceUsage(ctx context.Context,
 		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderPacket:
+		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
@@ -721,6 +729,71 @@ func getAnexiaResourceRequirements(ctx context.Context,
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
+	}
+
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+}
+
+func getPacketResourceRequirements(ctx context.Context,
+	client ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	rawConfig, err := packetypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get packet raw config, error: %w", err)
+	}
+
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envPacketToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of packet \"apiKey\", error: %w", err)
+	}
+
+	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envPacketProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of packet \"projectID\", error: %w", err)
+	}
+
+	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of packet \"instanceType\", error: %w", err)
+	}
+
+	plan, err := provider.DescribePacketSize(token, projectID, instanceType)
+	if err != nil {
+		return nil, err
+	}
+
+	if plan.Slug == packetCustomInstanctType {
+		return nil, nil
+	}
+
+	var totalCPUs int
+	for _, cpu := range plan.Specs.Cpus {
+		totalCPUs += cpu.Count
+	}
+	cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", totalCPUs))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+	}
+
+	var storageReq resource.Quantity
+	for _, drive := range plan.Specs.Drives {
+		storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
+		if err != nil {
+			fmt.Println("error parsing machine storage request to quantity: %w", err)
+		}
+		strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
+		totalStorage, err := resource.ParseQuantity(strDrive)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+		}
+		storageReq.Add(totalStorage)
+	}
+
+	memReq, err := resource.ParseQuantity(plan.Specs.Memory.Total)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
