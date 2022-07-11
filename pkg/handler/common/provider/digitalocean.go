@@ -39,7 +39,7 @@ import (
 var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
-func DigitaloceanSizes(ctx context.Context, token string) ([]godo.Size, error) {
+func ListDigitaloceanSizes(ctx context.Context, token string) ([]godo.Size, error) {
 	client, err := getDigitalOceanClient(ctx, token)
 	if err != nil {
 		return nil, err
@@ -49,11 +49,26 @@ func DigitaloceanSizes(ctx context.Context, token string) ([]godo.Size, error) {
 		Page:    1,
 		PerPage: 1000,
 	}
-	sizes, _, err := client.Sizes.List(ctx, listOptions)
+	godoSizes, _, err := client.Sizes.List(ctx, listOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list digital ocean sizes: %w", err)
 	}
-	return sizes, nil
+	return godoSizes, nil
+}
+
+func DescribeDigitaloceanSize(ctx context.Context, token, sizeName string) (godo.Size, error) {
+	godoSize := godo.Size{}
+	godoSizes, err := ListDigitaloceanSizes(ctx, token)
+	if err != nil {
+		return godoSize, err
+	}
+
+	for _, godosize := range godoSizes {
+		if godosize.Slug == sizeName {
+			return godosize, nil
+		}
+	}
+	return godoSize, fmt.Errorf("digital ocean size:%s not found", sizeName)
 }
 
 func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
@@ -87,7 +102,7 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 }
 
 func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
-	sizes, err := DigitaloceanSizes(ctx, token)
+	sizes, err := ListDigitaloceanSizes(ctx, token)
 	if err != nil {
 		return apiv1.DigitaloceanSizeList{}, err
 	}

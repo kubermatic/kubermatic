@@ -292,7 +292,7 @@ func getAlibabaClient(accessKeyID, accessKeySecret, region string) (*ecs.Client,
 	return client, err
 }
 
-func AlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType string) (*ecs.DescribeInstanceTypesResponse, error) {
+func DescribeAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType string) (*ecs.DescribeInstanceTypesResponse, error) {
 	client, err := getAlibabaClient(accessKeyID, accessKeySecret, region)
 	if err != nil {
 		return nil, err

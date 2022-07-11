@@ -523,29 +523,27 @@ func getAlibabaResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of alibaba \"disk\" from machine config, error: %w", err)
 	}
 
-	instTypes, err := provider.AlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType)
+	instTypes, err := provider.DescribeAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, instType := range instTypes.InstanceTypes.InstanceType {
-		if instType.InstanceTypeId == instanceType {
-			// parse the Alibaba resource requests
-			// memory is in GB and storage is in GB
-			cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
-			}
-			memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", instType.MemorySize))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
-			}
-			storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
-			}
-			return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	ecsInstanceType := instTypes.InstanceTypes.InstanceType
+	if len(ecsInstanceType) > 0 {
+		// parse the Alibaba resource requests
+		// memory is in GB and storage is in GB
+		cpuReq, err := resource.ParseQuantity(strconv.Itoa(ecsInstanceType[0].CpuCoreCount))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 		}
+		memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", ecsInstanceType[0].MemorySize))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
+		}
+		storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
+		}
+		return NewResourceDetails(cpuReq, memReq, storageReq), nil
 	}
 
 	return nil, nil
@@ -642,37 +640,31 @@ func getDigitalOceanResourceRequirements(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of digitalOcean \"token\" field, error: %w", err)
 	}
-	size, err := configVarResolver.GetConfigVarStringValue(rawConfig.Size)
+	sizeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.Size)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field, error: %w", err)
 	}
 
-	sizes, err := provider.DigitaloceanSizes(ctx, token)
+	godosize, err := provider.DescribeDigitaloceanSize(ctx, token, sizeName)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, godosize := range sizes {
-		if godosize.Slug == size {
-			// parse the DigitalOcean resource requests
-			// memory is in MB and storage is in GB
-			cpuReq, err := resource.ParseQuantity(strconv.Itoa(godosize.Vcpus))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
-			}
-			memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", godosize.Memory))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
-			}
-			storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", godosize.Disk))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
-			}
-			return NewResourceDetails(cpuReq, memReq, storageReq), nil
-		}
+	// parse the DigitalOcean resource requests
+	// memory is in MB and storage is in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(godosize.Vcpus))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
 	}
-
-	return nil, nil
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", godosize.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", godosize.Disk))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
+	}
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
 func getVMwareCloudDirectorResourceRequirements(ctx context.Context,

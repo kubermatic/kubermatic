@@ -155,7 +155,7 @@ func GetHetznerServerType(ctx context.Context, token string, serverTypeName stri
 	hClient := hcloud.NewClient(hcloud.WithToken(token))
 	serverType, _, err := hClient.ServerType.Get(ctx, serverTypeName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list hetzner server type, error: %w", err)
+		return nil, fmt.Errorf("failed to get hetzner server type, error: %w", err)
 	}
 	return serverType, nil
 }
