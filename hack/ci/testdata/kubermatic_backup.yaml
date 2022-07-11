@@ -24,17 +24,7 @@ spec:
   ingress:
     domain: '__KUBERMATIC_DOMAIN__'
     disable: true
-  imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 1
-  seedController:
-    debugLog: true
-  api:
-    replicas: 1
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    tokenIssuer: "http://dex.oauth:5556/dex"
-    issuerRedirectURL: "http://localhost:8000"
-    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
+  featureGates:
+    HeadlessInstallation: true

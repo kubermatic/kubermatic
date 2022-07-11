@@ -32,36 +32,15 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic / cluster namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/usercluster" --namespace 'cluster-*' > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-backups-in-kind.sh
-
-echodate "Creating Hetzner preset..."
-cat << EOF > preset-hetzner.yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: Preset
-metadata:
-  name: e2e-hetzner
-  namespace: kubermatic
-spec:
-  hetzner:
-    token: ${HZ_E2E_TOKEN}
-EOF
-retry 2 kubectl apply -f preset-hetzner.yaml
-
-echodate "Creating roxy-admin user..."
-cat << EOF > user.yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: User
-metadata:
-  name: roxy-admin
-spec:
-  admin: true
-  email: roxy-admin@kubermatic.com
-  name: roxy-admin
-EOF
-retry 2 kubectl apply -f user.yaml
 
 echodate "Running etcd-launcher tests..."
 
-go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
+go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -datacenter byo-kubernetes
 
 echodate "Tests completed successfully!"
