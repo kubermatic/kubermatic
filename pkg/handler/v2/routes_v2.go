@@ -1047,6 +1047,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.deleteGroupProjectBinding())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/groupbindings/{binding_name}").
+		Handler(r.patchGroupProjectBinding())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -7030,6 +7034,35 @@ func (r Routing) deleteGroupProjectBinding() http.Handler {
 			r.groupProjectBindingProvider,
 		)),
 		groupprojectbinding.DecodeGroupProjectBindingReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project createGroupProjectBinding
+//
+//    Patch project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) patchGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.PatchGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodePatchGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

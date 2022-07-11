@@ -101,3 +101,24 @@ func DeleteGroupProjectBindingEndpoint(
 		return nil, nil
 	}
 }
+
+func PatchGroupProjectBindingEndpoint(
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		if err := patchGroupProjectBinding(
+			ctx,
+			req,
+			userInfoGetter,
+			projectProvider,
+			privilegedProjectProvider,
+			bindingProvider,
+		); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+}

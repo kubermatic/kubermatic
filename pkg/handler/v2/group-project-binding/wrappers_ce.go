@@ -75,3 +75,14 @@ func deleteGroupProjectBinding(
 ) error {
 	return nil
 }
+
+func patchGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) error {
+	return nil
+}

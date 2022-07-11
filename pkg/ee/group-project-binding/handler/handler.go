@@ -50,6 +50,11 @@ const (
 	OwnersRole  = "owners"
 )
 
+type groupProjectBindingBody struct {
+	Role  string `json:"role"`
+	Group string `json:"group"`
+}
+
 func ListGroupProjectBindings(ctx context.Context, request interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,
@@ -102,18 +107,21 @@ type groupProjectBindingReq struct {
 	BindingName string `json:"binding_name"`
 }
 
-func DecodeGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+func DecodeGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req groupProjectBindingReq
 
-	req.ProjectID = mux.Vars(r)["project_id"]
-	if req.ProjectID == "" {
-		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 	}
 
-	req.BindingName = mux.Vars(r)["binding_name"]
-	if req.BindingName == "" {
-		return nil, utilerrors.NewBadRequest("`binding_name` cannot be empty")
+	bindingName, err := decodeBindingName(c, r)
+	if err != nil {
+		return nil, err
 	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.BindingName = bindingName
 
 	return req, nil
 }
@@ -157,16 +165,17 @@ type createGroupProjectBindingReq struct {
 
 	// in: body
 	// required: true
-	Body createGroupProjectBindingBody
+	Body groupProjectBindingBody
 }
 
-func DecodeCreateGroupProjectBindingReq(r *http.Request) (interface{}, error) {
+func DecodeCreateGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createGroupProjectBindingReq
 
-	req.ProjectID = mux.Vars(r)["project_id"]
-	if req.ProjectID == "" {
-		return nil, utilerrors.NewBadRequest("`project_id` cannot be empty")
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -174,19 +183,13 @@ func DecodeCreateGroupProjectBindingReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-type createGroupProjectBindingBody struct {
-	Role  string `json:"role"`
-	Group string `json:"group"`
-}
-
 func (r createGroupProjectBindingReq) Validate() error {
 	if r.Body.Group == "" {
 		return utilerrors.NewBadRequest("`group` cannot be empty")
 	}
 
-	allowedRoles := sets.NewString(ViewersRole, EditorsRole, OwnersRole)
-	if !allowedRoles.Has(r.Body.Role) {
-		return utilerrors.NewBadRequest("allowed roles are: %v", strings.Join(allowedRoles.List(), ", "))
+	if err := validateRole(r.Body.Role); err != nil {
+		return err
 	}
 
 	return nil
@@ -255,6 +258,93 @@ func DeleteGroupProjectBinding(ctx context.Context, request interface{},
 
 	if err := bindingProvider.Delete(ctx, userInfo, req.BindingName); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
+}
+
+// swagger:parameters patchGroupProjectBindingReq
+type patchGroupProjectBindingReq struct {
+	groupProjectBindingReq
+
+	// in: body
+	// required: true
+	Body struct {
+		Role string `json:"role"`
+	}
+}
+
+func DecodePatchGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchGroupProjectBindingReq
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	bindingName, err := decodeBindingName(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.BindingName = bindingName
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func (r patchGroupProjectBindingReq) Validate() error {
+	return validateRole(r.Body.Role)
+}
+
+func PatchGroupProjectBinding(ctx context.Context, request interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) error {
+	req, ok := request.(patchGroupProjectBindingReq)
+	if !ok {
+		return utilerrors.NewBadRequest("invalid request")
+	}
+
+	kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	originalBinding, err := bindingProvider.Get(ctx, userInfo, req.BindingName)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	newBinding := originalBinding.DeepCopy()
+	newBinding.Spec.Role = req.Body.Role
+
+	if err := bindingProvider.Patch(ctx, userInfo, originalBinding, newBinding); err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
+}
+
+func decodeBindingName(_ context.Context, r *http.Request) (string, error) {
+	bindingName := mux.Vars(r)["binding_name"]
+	if bindingName == "" {
+		return "", utilerrors.NewBadRequest("`binding_name` cannot be empty")
+	}
+	return bindingName, nil
+}
+
+func validateRole(role string) error {
+	allowedRoles := sets.NewString(ViewersRole, EditorsRole, OwnersRole)
+	if !allowedRoles.Has(role) {
+		return utilerrors.NewBadRequest("allowed roles are: %v", strings.Join(allowedRoles.List(), ", "))
 	}
 	return nil
 }
