@@ -45,10 +45,15 @@ type ProjectJig struct {
 }
 
 func NewProjectJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ProjectJig {
+	if project != "" {
+		log.Infow("-project given, will not create a new project", "project", project)
+	}
+
 	return &ProjectJig{
 		client:            client,
 		log:               log,
 		humanReadableName: "e2e test project",
+		projectName:       project,
 	}
 }
 
@@ -62,6 +67,10 @@ func (j *ProjectJig) ProjectName() string {
 }
 
 func (j *ProjectJig) Project(ctx context.Context) (*kubermaticv1.Project, error) {
+	if j.projectName == "" {
+		return nil, errors.New("no project created yet")
+	}
+
 	projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project provider: %w", err)
@@ -73,6 +82,10 @@ func (j *ProjectJig) Project(ctx context.Context) (*kubermaticv1.Project, error)
 }
 
 func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermaticv1.Project, error) {
+	if j.projectName != "" {
+		return j.Project(ctx)
+	}
+
 	projectProvider, err := kubernetes.NewProjectProvider(nil, j.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project provider: %w", err)

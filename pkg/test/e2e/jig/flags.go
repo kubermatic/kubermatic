@@ -30,11 +30,13 @@ import (
 var (
 	kkpNamespace = "kubermatic"
 	datacenter   string
+	project      string
 )
 
 func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
 	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must match whatever is used in the tests to run)")
+	flag.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
 }
 
 func KubermaticNamepace() string {
