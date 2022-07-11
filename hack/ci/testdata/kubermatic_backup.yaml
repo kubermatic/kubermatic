@@ -21,6 +21,7 @@ spec:
   caBundle:
     kind: ConfigMap
     name: custom-ca-bundle
+  imagePullSecret: '__IMAGE_PULL_SECRET__'
   ingress:
     domain: '__KUBERMATIC_DOMAIN__'
     disable: true

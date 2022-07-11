@@ -76,6 +76,15 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
+  echodate "Building kubeletdnat-controller image"
+  TEST_NAME="Build kubeletdnat-controller Docker image"
+  cd cmd/kubeletdnat-controller
+  make build
+  IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
+  time retry 5 docker build -t "${IMAGE_NAME}" .
+  time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
+)
+(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"
@@ -87,7 +96,14 @@ pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
 echodate "Successfully built and loaded all images"
 
 # prepare to run kubermatic-installer
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_backup.yaml
+KUBERMATIC_CONFIG="$(mktemp)"
+IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
+KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
+
+cp hack/ci/testdata/kubermatic_backup.yaml $KUBERMATIC_CONFIG
+
+sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
+sed -i "s;__KUBERMATIC_DOMAIN__;$KUBERMATIC_DOMAIN;g" $KUBERMATIC_CONFIG
 
 HELM_VALUES_FILE="$(mktemp)"
 cat << EOF > $HELM_VALUES_FILE
@@ -179,7 +195,6 @@ SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.c
 cp hack/ci/testdata/seed_backup.yaml $SEED_MANIFEST
 
 sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
-sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
 retry 8 kubectl apply -f $SEED_MANIFEST
