@@ -6975,7 +6975,7 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 			r.privilegedProjectProvider,
 			r.groupProjectBindingProvider,
 		)),
-		groupprojectbinding.DecodeGroupProjectBindingReq,
+		groupprojectbinding.DecodeGetGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -7010,7 +7010,7 @@ func (r Routing) createGroupProjectBinding() http.Handler {
 	)
 }
 
-//swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project createGroupProjectBinding
+//swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project deleteGroupProjectBinding
 //
 //    Delete project group binding.
 //
@@ -7033,13 +7033,13 @@ func (r Routing) deleteGroupProjectBinding() http.Handler {
 			r.privilegedProjectProvider,
 			r.groupProjectBindingProvider,
 		)),
-		groupprojectbinding.DecodeGroupProjectBindingReq,
+		groupprojectbinding.DecodeDeleteGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-//swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project createGroupProjectBinding
+//swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project patchGroupProjectBinding
 //
 //    Patch project group binding.
 //

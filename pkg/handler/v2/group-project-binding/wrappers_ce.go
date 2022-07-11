@@ -35,7 +35,7 @@ func listGroupProjectBindings(
 	return nil, nil
 }
 
-func DecodeGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+func DecodeGetGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
@@ -63,6 +63,10 @@ func createGroupProjectBinding(
 	_ provider.GroupProjectBindingProvider,
 ) error {
 	return nil
+}
+
+func DecodeDeleteGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
 }
 
 func deleteGroupProjectBinding(

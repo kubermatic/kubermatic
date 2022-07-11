@@ -98,7 +98,6 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 	return bindingAPIObjList, nil
 }
 
-// swagger:parameters getGroupProjectBinding
 type groupProjectBindingReq struct {
 	common.ProjectReq
 
@@ -126,13 +125,26 @@ func DecodeGroupProjectBindingReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
+// swagger:parameters getGroupProjectBinding
+type getGroupProjectBindingReq struct {
+	groupProjectBindingReq
+}
+
+func DecodeGetGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	req, err := DecodeGroupProjectBindingReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	return getGroupProjectBindingReq{req.(groupProjectBindingReq)}, nil
+}
+
 func GetGroupProjectBinding(ctx context.Context, request interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
 ) (*apiv2.GroupProjectBinding, error) {
-	req, ok := request.(groupProjectBindingReq)
+	req, ok := request.(getGroupProjectBindingReq)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
 	}
@@ -236,13 +248,26 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 	return nil
 }
 
+// swagger:parameters deleteGroupProjectBinding
+type deleteGroupProjectBindingReq struct {
+	groupProjectBindingReq
+}
+
+func DecodeDeleteGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	req, err := DecodeGroupProjectBindingReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	return deleteGroupProjectBindingReq{req.(groupProjectBindingReq)}, nil
+}
+
 func DeleteGroupProjectBinding(ctx context.Context, request interface{},
 	userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
 ) error {
-	req, ok := request.(groupProjectBindingReq)
+	req, ok := request.(deleteGroupProjectBindingReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
 	}
@@ -262,7 +287,7 @@ func DeleteGroupProjectBinding(ctx context.Context, request interface{},
 	return nil
 }
 
-// swagger:parameters patchGroupProjectBindingReq
+// swagger:parameters patchGroupProjectBinding
 type patchGroupProjectBindingReq struct {
 	groupProjectBindingReq
 
