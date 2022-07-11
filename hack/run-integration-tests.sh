@@ -82,7 +82,7 @@ if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
     _build/master-controller-manager \
     _build/seed-controller-manager \
     _build/user-cluster-controller-manager \
-    _build/user-cluster-webhook \
+    _build/user-cluster-webhook
 
   # the existence of this env var enables the integration tests
   export KUBECTL_TEST_IMAGE=kkpkubectltest

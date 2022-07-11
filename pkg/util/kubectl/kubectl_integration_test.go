@@ -31,9 +31,9 @@ import (
 )
 
 type kubectlVersionOutput struct {
-	Major      int    `json:"major"`
-	Minor      int    `json:"minor"`
-	GitVersion string `json:"gitVersion"`
+	ClientVersion struct {
+		GitVersion string `json:"gitVersion"`
+	} `json:"clientVersion"`
 }
 
 func TestVersionSkewIsRespected(t *testing.T) {
@@ -80,9 +80,9 @@ func testVersionSkew(clusterVersison semver.Semver, dockerImage string) error {
 		return fmt.Errorf("failed to decode kubectl output: %w", err)
 	}
 
-	kubectlVersion, err := semver.NewSemver(data.GitVersion)
+	kubectlVersion, err := semver.NewSemver(data.ClientVersion.GitVersion)
 	if err != nil {
-		return fmt.Errorf("failed to parse %q as a semver: %w", data.GitVersion, err)
+		return fmt.Errorf("failed to parse %q as a semver: %w", data.ClientVersion.GitVersion, err)
 	}
 
 	if err := VerifyVersionSkew(clusterVersison, *kubectlVersion); err != nil {
