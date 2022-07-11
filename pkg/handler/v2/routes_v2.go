@@ -7186,7 +7186,7 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 //      200: []IPAMPool
 //      401: empty
 //      403: empty
-func (r Routing) listIPAMPools() http.Handler { 
+func (r Routing) listIPAMPools() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
