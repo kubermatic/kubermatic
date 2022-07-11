@@ -20,6 +20,7 @@ package groupprojectbinding
 
 import (
 	"context"
+	"net/http"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -78,6 +79,10 @@ func deleteGroupProjectBinding(
 	_ provider.GroupProjectBindingProvider,
 ) error {
 	return nil
+}
+
+func DecodePatchGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
 }
 
 func patchGroupProjectBinding(
