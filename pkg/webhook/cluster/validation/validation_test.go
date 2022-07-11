@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -1555,6 +1556,69 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Allow upgrade to Canal v3.22 necessary for k8s >= v1.23",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.22",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+							Version: semver.NewSemverOrDie("1.23.8"),
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+							Version: semver.NewSemverOrDie("1.22.11"),
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+		},
+		{
 			name: "Reject remove CNIPlugin settings",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -1712,9 +1776,15 @@ type rawClusterGen struct {
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
 	CNIPlugin             *kubermaticv1.CNIPluginSettings
+	Version               *semver.Semver
 }
 
 func (r rawClusterGen) Do() []byte {
+	version := r.Version
+	if version == nil {
+		version = defaults.DefaultKubernetesVersioning.Default
+	}
+
 	c := kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8c.io/v1",
@@ -1727,7 +1797,7 @@ func (r rawClusterGen) Do() []byte {
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: "a test cluster",
-			Version:           *semver.NewSemverOrDie("1.22.0"),
+			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{

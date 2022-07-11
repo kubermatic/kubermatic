@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -30,6 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -201,7 +202,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by
 	// stringifying them. A field.Error that is nil will panic when doing so, so one cannot simply
 	// append a nil *field.Error to allErrs.
-	if err := validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels); err != nil {
+	if err := validateCNIUpdate(newCluster.Spec.CNIPlugin, oldCluster.Spec.CNIPlugin, newCluster.Labels, newCluster.Spec.Version); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
@@ -701,7 +702,7 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 	}
 
 	// Docker is supported until 1.24.0, excluding 1.24.0
-	gteKube124Condition, _ := semver.NewConstraint(">= 1.24")
+	gteKube124Condition, _ := semverlib.NewConstraint(">= 1.24")
 	if spec.ContainerRuntime == "docker" && gteKube124Condition.Check(spec.Version.Semver()) {
 		return fmt.Errorf("docker not supported from version 1.24: %s", spec.ContainerRuntime)
 	}
@@ -794,7 +795,7 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	return allErrs
 }
 
-func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string) *field.Error {
+func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string, k8sVersion semver.Semver) *field.Error {
 	basePath := field.NewPath("spec", "cniPlugin")
 
 	// if there was no CNI setting, we allow the mutation to happen
@@ -820,21 +821,26 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 	}
 
 	if newCni.Version != oldCni.Version {
-		if !cni.IsSupportedCNIPluginTypeAndVersion(oldCni) {
-			return nil // allowed for automated migration from deprecated CNI
-		}
-
-		newV, err := semver.NewVersion(newCni.Version)
+		newV, err := semverlib.NewVersion(newCni.Version)
 		if err != nil {
 			return field.Invalid(basePath.Child("version"), newCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", newCni.Version, err))
 		}
 
-		oldV, err := semver.NewVersion(oldCni.Version)
+		oldV, err := semverlib.NewVersion(oldCni.Version)
 		if err != nil {
 			return field.Invalid(basePath.Child("version"), oldCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))
 		}
 
 		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
+			// allow explicitly defined version transitions
+			allowedTransitions := cni.GetAllowedCNIVersionTransitions(newCni.Type)
+			for _, t := range allowedTransitions {
+				if checkVersionConstraint(k8sVersion.Semver(), t.K8sVersion) &&
+					checkVersionConstraint(oldV, t.OldCNIVersion) &&
+					checkVersionConstraint(newV, t.NewCNIVersion) {
+					return nil
+				}
+			}
 			if _, ok := labels[UnsafeCNIUpgradeLabel]; !ok {
 				return field.Forbidden(basePath.Child("version"), fmt.Sprintf("cannot upgrade CNI from %s to %s, only one minor version difference is allowed unless %s label is present", oldCni.Version, newCni.Version, UnsafeCNIUpgradeLabel))
 			}
@@ -842,4 +848,15 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 	}
 
 	return nil
+}
+
+func checkVersionConstraint(version *semverlib.Version, constraint string) bool {
+	if constraint == "" {
+		return true // if constraint is not set, assume it is satisfied
+	}
+	c, err := semverlib.NewConstraint(constraint)
+	if err != nil {
+		return false
+	}
+	return c.Check(version)
 }
