@@ -67,17 +67,14 @@ func CreateGroupProjectBindingEndpoint(
 	bindingProvider provider.GroupProjectBindingProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		if err := createGroupProjectBinding(
+		return createGroupProjectBinding(
 			ctx,
 			req,
 			userInfoGetter,
 			projectProvider,
 			privilegedProjectProvider,
 			bindingProvider,
-		); err != nil {
-			return nil, err
-		}
-		return nil, nil
+		)
 	}
 }
 
@@ -109,16 +106,13 @@ func PatchGroupProjectBindingEndpoint(
 	bindingProvider provider.GroupProjectBindingProvider,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		if err := patchGroupProjectBinding(
+		return patchGroupProjectBinding(
 			ctx,
 			req,
 			userInfoGetter,
 			projectProvider,
 			privilegedProjectProvider,
 			bindingProvider,
-		); err != nil {
-			return nil, err
-		}
-		return nil, nil
+		)
 	}
 }

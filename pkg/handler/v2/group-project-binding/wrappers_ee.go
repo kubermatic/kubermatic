@@ -60,7 +60,7 @@ func createGroupProjectBinding(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) error {
+) (interface{}, error) {
 	return groupprojectbinding.CreateGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }
 
@@ -88,6 +88,6 @@ func patchGroupProjectBinding(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) error {
+) (interface{}, error) {
 	return groupprojectbinding.PatchGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }

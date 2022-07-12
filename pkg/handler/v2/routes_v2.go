@@ -7060,7 +7060,7 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 //
 //    Responses:
 //      default: errorResponse
-//      201: empty
+//      201: GroupProjectBinding
 //      401: empty
 //      403: empty
 func (r Routing) createGroupProjectBinding() http.Handler {
@@ -7118,7 +7118,7 @@ func (r Routing) deleteGroupProjectBinding() http.Handler {
 //
 //    Responses:
 //      default: errorResponse
-//      200: empty
+//      200: GroupProjectBinding
 //      401: empty
 //      403: empty
 func (r Routing) patchGroupProjectBinding() http.Handler {

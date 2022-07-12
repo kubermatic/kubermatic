@@ -212,7 +212,7 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) error {
+) (*apiv2.GroupProjectBinding, error){
 	req, ok := request.(createGroupProjectBindingReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -233,9 +233,10 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 		return err
 	}
 
+	bindingName := fmt.Sprintf("%s-%s", kubermaticProject.Name, rand.String(10)),
 	if err := bindingProvider.Create(ctx, userInfo, &kubermaticv1.GroupProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s", kubermaticProject.Name, rand.String(10)),
+			Name: bindingName,
 		},
 		Spec: kubermaticv1.GroupProjectBindingSpec{
 			ProjectID: req.ProjectID,
@@ -245,7 +246,13 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 	}); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
-	return nil
+
+	return &apiv2.GroupProjectBinding{
+		Name: bindingName,
+		ProjectID: req.ProjectID,
+		Group: req.Body.Group,
+		Role: req.Body.Role,
+	}, nil
 }
 
 // swagger:parameters deleteGroupProjectBinding
@@ -294,6 +301,7 @@ type patchGroupProjectBindingReq struct {
 	// in: body
 	// required: true
 	Body struct {
+		Group string `json:"group"`
 		Role string `json:"role"`
 	}
 }
@@ -321,6 +329,9 @@ func DecodePatchGroupProjectBindingReq(c context.Context, r *http.Request) (inte
 }
 
 func (r patchGroupProjectBindingReq) Validate() error {
+	if r.Body.Group == "" {
+		return utilerrors.NewBadRequest("`group` cannot be empty")
+	}
 	return validateRole(r.Body.Role)
 }
 
@@ -329,7 +340,7 @@ func PatchGroupProjectBinding(ctx context.Context, request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	bindingProvider provider.GroupProjectBindingProvider,
-) error {
+) (*apiv2.GroupProjectBinding, error) {
 	req, ok := request.(patchGroupProjectBindingReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -355,12 +366,19 @@ func PatchGroupProjectBinding(ctx context.Context, request interface{},
 		return common.KubernetesErrorToHTTPError(err)
 	}
 	newBinding := originalBinding.DeepCopy()
+	newBinding.Spec.Group = req.Body.Group
 	newBinding.Spec.Role = req.Body.Role
 
 	if err := bindingProvider.Patch(ctx, userInfo, originalBinding, newBinding); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
-	return nil
+
+	return &apiv2.GroupProjectBinding{
+		Name: originalBinding.Name,
+		ProjectID: kubermaticProject.Name,
+		Group: newBinding.Spec.Group,
+		Role: newBinding.Spec.Role,
+	}, nil
 }
 
 func decodeBindingName(_ context.Context, r *http.Request) (string, error) {

@@ -62,8 +62,8 @@ func createGroupProjectBinding(
 	_ provider.ProjectProvider,
 	_ provider.PrivilegedProjectProvider,
 	_ provider.GroupProjectBindingProvider,
-) error {
-	return nil
+) (interface{}, error) {
+	return nil, nil
 }
 
 func DecodeDeleteGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
@@ -92,6 +92,6 @@ func patchGroupProjectBinding(
 	_ provider.ProjectProvider,
 	_ provider.PrivilegedProjectProvider,
 	_ provider.GroupProjectBindingProvider,
-) error {
-	return nil
+) (interface{}, error) {
+	return nil, nil
 }
