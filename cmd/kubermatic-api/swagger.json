@@ -16561,7 +16561,10 @@
         ],
         "responses": {
           "201": {
-            "$ref": "#/responses/empty"
+            "description": "GroupProjectBinding",
+            "schema": {
+              "$ref": "#/definitions/GroupProjectBinding"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -16699,6 +16702,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "group": {
+                  "type": "string",
+                  "x-go-name": "Group"
+                },
                 "role": {
                   "type": "string",
                   "x-go-name": "Role"
@@ -16709,7 +16716,10 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/empty"
+            "description": "GroupProjectBinding",
+            "schema": {
+              "$ref": "#/definitions/GroupProjectBinding"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"

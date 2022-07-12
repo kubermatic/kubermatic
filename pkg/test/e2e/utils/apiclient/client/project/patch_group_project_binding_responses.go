@@ -62,16 +62,27 @@ func NewPatchGroupProjectBindingOK() *PatchGroupProjectBindingOK {
 
 /* PatchGroupProjectBindingOK describes a response with status code 200, with default header values.
 
-EmptyResponse is a empty response
+GroupProjectBinding
 */
 type PatchGroupProjectBindingOK struct {
+	Payload *models.GroupProjectBinding
 }
 
 func (o *PatchGroupProjectBindingOK) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingOK ", 200)
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingOK  %+v", 200, o.Payload)
+}
+func (o *PatchGroupProjectBindingOK) GetPayload() *models.GroupProjectBinding {
+	return o.Payload
 }
 
 func (o *PatchGroupProjectBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.GroupProjectBinding)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
@@ -163,6 +174,9 @@ func (o *PatchGroupProjectBindingDefault) readResponse(response runtime.ClientRe
 swagger:model PatchGroupProjectBindingBody
 */
 type PatchGroupProjectBindingBody struct {
+
+	// group
+	Group string `json:"group,omitempty"`
 
 	// role
 	Role string `json:"role,omitempty"`

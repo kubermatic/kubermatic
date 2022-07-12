@@ -60,16 +60,27 @@ func NewCreateGroupProjectBindingCreated() *CreateGroupProjectBindingCreated {
 
 /* CreateGroupProjectBindingCreated describes a response with status code 201, with default header values.
 
-EmptyResponse is a empty response
+GroupProjectBinding
 */
 type CreateGroupProjectBindingCreated struct {
+	Payload *models.GroupProjectBinding
 }
 
 func (o *CreateGroupProjectBindingCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/groupbindings][%d] createGroupProjectBindingCreated ", 201)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/groupbindings][%d] createGroupProjectBindingCreated  %+v", 201, o.Payload)
+}
+func (o *CreateGroupProjectBindingCreated) GetPayload() *models.GroupProjectBinding {
+	return o.Payload
 }
 
 func (o *CreateGroupProjectBindingCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.GroupProjectBinding)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
