@@ -204,7 +204,7 @@ func ResourceQuotaValidatingWebhookConfigurationCreator(ctx context.Context,
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.NamespacedScope
+			scope := admissionregistrationv1.ClusterScope
 
 			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
@@ -259,7 +259,7 @@ func ResourceQuotaMutatingWebhookConfigurationCreator(ctx context.Context, cfg *
 			failurePolicy := admissionregistrationv1.Fail
 			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.NamespacedScope
+			scope := admissionregistrationv1.ClusterScope
 
 			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
