@@ -18,6 +18,8 @@ package template
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -33,6 +35,7 @@ import (
 // HelmTemplate install upgrade or uninstall helm chart into cluster.
 type HelmTemplate struct {
 	Ctx context.Context
+
 	// Kubeconfig of the user-cluster.
 	Kubeconfig string
 
@@ -75,7 +78,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 	}
 
 	// TODO handle release info
-	_, err = helmClient.InstallOrUpgrade(chartLoc, applicationInstallation.Name, values)
+	_, err = helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values)
 
 	return err
 }
@@ -105,6 +108,29 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 	}
 
 	// TODO handle release info
-	_, err = helmClient.Uninstall(applicationInstallation.Name)
+	_, err = helmClient.Uninstall(getReleaseName(applicationInstallation))
 	return err
+}
+
+// getReleaseName computes the release name from the applicationInstallation.
+// The releaseName length must be less or equal to 53. So we first start to compute this release Name:
+// 		releaseName := applicationInstallation.Namespace + "-" + applicationInstallation.Name
+// If the length is more 53 characters then we fall back to:
+//		releaseName := applicationInstallation.Name[:43] + "-" + sha1Sum(applicationInstallation.Namespace )[:9]
+func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstallation) string {
+	// tech note: in fact releaseName must respect more constrainst to be valid cf https://github.com/helm/helm/blob/v3.9.0/pkg/chartutil/validate_name.go#L66
+	namespacedName := applicationInstallation.Namespace + "-" + applicationInstallation.Name
+	if len(namespacedName) > 53 {
+		hash := sha1.New()
+		hash.Write([]byte(applicationInstallation.Namespace))
+
+		namespaceSha1 := hex.EncodeToString(hash.Sum(nil))
+		appName := applicationInstallation.Name
+
+		if len(appName) > 43 { // 43 = 53 - len( "-" + namespaceSha1[:9])
+			appName = appName[:43]
+		}
+		return appName + "-" + namespaceSha1[:9]
+	}
+	return namespacedName
 }
