@@ -35,6 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const MinimumVMCores = 2
+
 func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred resources.AKSCredentials, projectID string) (apiv2.AKSClusterList, error) {
 	clusters := apiv2.AKSClusterList{}
 
@@ -83,11 +85,11 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 			result = append(result, *nextResult.Value[i])
 		}
 	}
-
 	for _, cluster := range result {
 		if cluster.ID == nil || cluster.Name == nil {
 			continue
 		}
+
 		var imported bool
 		resourceGroup := strings.Split(strings.SplitAfter(*cluster.ID, "resourcegroups/")[1], "/")[0]
 		if clusterSet, ok := aksExternalCluster[resourceGroup]; ok {
@@ -223,11 +225,14 @@ func AKSAzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, t
 
 	var sizeList apiv2.AKSVMSizeList
 	for _, v := range listVMSize {
-		if v.Name != nil {
-			vmName := *v.Name
-			_, okSKU := validSKUSet[vmName]
-			if okSKU {
-				sizeList = append(sizeList, apiv2.AKSVMSize(vmName))
+		// VM sizes with less than 2 CPUs may not be used with AKS.
+		if v.Name != nil && v.NumberOfCores != nil {
+			if *v.NumberOfCores >= MinimumVMCores {
+				vmName := *v.Name
+				_, okSKU := validSKUSet[vmName]
+				if okSKU {
+					sizeList = append(sizeList, apiv2.AKSVMSize(vmName))
+				}
 			}
 		}
 	}
