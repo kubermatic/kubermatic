@@ -16,26 +16,6 @@
 # Run `make hubble` instead.
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
-
----
-# Source: cilium/templates/hubble/peer-service.yaml
-# NOTE: missing if chart rendered with "agent: false"
-apiVersion: v1
-kind: Service
-metadata:
-  name: hubble-peer
-  namespace: kube-system
-  labels:
-    k8s-app: cilium
-spec:
-  selector:
-    k8s-app: cilium
-  ports:
-  - name: peer-service
-    port: 443
-    protocol: TCP
-    targetPort: 4244
-  internalTrafficPolicy: Local
 ---
 # Source: cilium/templates/hubble-relay/serviceaccount.yaml
 apiVersion: v1
@@ -444,4 +424,23 @@ spec:
           serviceAccountName: "hubble-generate-certs"
           restartPolicy: OnFailure
       ttlSecondsAfterFinished: 1800
+---
+# Source: cilium/templates/hubble/peer-service.yaml
+# NOTE: missing if chart rendered with "agent: false"
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-peer
+  namespace: kube-system
+  labels:
+    k8s-app: cilium
+spec:
+  selector:
+    k8s-app: cilium
+  ports:
+  - name: peer-service
+    port: 443
+    protocol: TCP
+    targetPort: 4244
+  internalTrafficPolicy: Local
 {{ end }}

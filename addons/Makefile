@@ -29,6 +29,7 @@ hubble:
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
+	cat hubble/_extras.txt >> $(OUTPUT_FILE)
 	cat hubble/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)
 
