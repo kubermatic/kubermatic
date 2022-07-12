@@ -26,10 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func DecodeGetGroupProjectBindingReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return groupprojectbinding.DecodeGetGroupProjectBindingReq(r)
-}
-
 func listGroupProjectBindings(
 	ctx context.Context, req interface{},
 	userInfoGetter provider.UserInfoGetter,
@@ -40,6 +36,10 @@ func listGroupProjectBindings(
 	return groupprojectbinding.ListGroupProjectBindings(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }
 
+func DecodeGetGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodeGetGroupProjectBindingReq(c, r)
+}
+
 func getGroupProjectBinding(
 	ctx context.Context, req interface{},
 	userInfoGetter provider.UserInfoGetter,
@@ -48,4 +48,46 @@ func getGroupProjectBinding(
 	bindingProvider provider.GroupProjectBindingProvider,
 ) (interface{}, error) {
 	return groupprojectbinding.GetGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
+}
+
+func DecodeCreateGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodeCreateGroupProjectBindingReq(c, r)
+}
+
+func createGroupProjectBinding(
+	ctx context.Context, req interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return groupprojectbinding.CreateGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
+}
+
+func DecodeDeleteGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodeDeleteGroupProjectBindingReq(c, r)
+}
+
+func deleteGroupProjectBinding(
+	ctx context.Context, req interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) error {
+	return groupprojectbinding.DeleteGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
+}
+
+func DecodePatchGroupProjectBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	return groupprojectbinding.DecodePatchGroupProjectBindingReq(c, r)
+}
+
+func patchGroupProjectBinding(
+	ctx context.Context, req interface{},
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	bindingProvider provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return groupprojectbinding.PatchGroupProjectBinding(ctx, req, userInfoGetter, projectProvider, privilegedProjectProvider, bindingProvider)
 }

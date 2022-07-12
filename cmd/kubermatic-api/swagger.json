@@ -16532,6 +16532,53 @@
             }
           }
         }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Create project group binding.",
+        "operationId": "createGroupProjectBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/groupProjectBindingBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "GroupProjectBinding",
+            "schema": {
+              "$ref": "#/definitions/GroupProjectBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/groupbindings/{binding_name}": {
@@ -16558,6 +16605,113 @@
             "name": "binding_name",
             "in": "path",
             "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GroupProjectBinding",
+            "schema": {
+              "$ref": "#/definitions/GroupProjectBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Delete project group binding.",
+        "operationId": "deleteGroupProjectBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "BindingName",
+            "name": "binding_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Patch project group binding.",
+        "operationId": "patchGroupProjectBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "BindingName",
+            "name": "binding_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "group": {
+                  "type": "string",
+                  "x-go-name": "Group"
+                },
+                "role": {
+                  "type": "string",
+                  "x-go-name": "Role"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -32016,6 +32170,20 @@
       },
       "x-go-name": "ErrorResponse",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler"
+    },
+    "groupProjectBindingBody": {
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "Group"
+        },
+        "role": {
+          "type": "string",
+          "x-go-name": "Role"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/handler"
     },
     "wrBody": {
       "type": "object",

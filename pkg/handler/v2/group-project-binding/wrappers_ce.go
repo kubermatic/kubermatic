@@ -25,10 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func DecodeGetGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
 func listGroupProjectBindings(
 	_ context.Context,
 	_ interface{},
@@ -40,7 +36,56 @@ func listGroupProjectBindings(
 	return nil, nil
 }
 
+func DecodeGetGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
 func getGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeCreateGroupProjectBindingReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func createGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeDeleteGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func deleteGroupProjectBinding(
+	_ context.Context,
+	_ interface{},
+	_ provider.UserInfoGetter,
+	_ provider.ProjectProvider,
+	_ provider.PrivilegedProjectProvider,
+	_ provider.GroupProjectBindingProvider,
+) error {
+	return nil
+}
+
+func DecodePatchGroupProjectBindingReq(_ context.Context, _ *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func patchGroupProjectBinding(
 	_ context.Context,
 	_ interface{},
 	_ provider.UserInfoGetter,

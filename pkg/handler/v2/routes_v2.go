@@ -1058,7 +1058,7 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
 
-	// Defines endpoints to interact with project group bindings
+	// Defines endpoints to interact with group project bindings
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/groupbindings").
 		Handler(r.listGroupProjectBindings())
@@ -1067,8 +1067,19 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/groupbindings/{binding_name}").
 		Handler(r.getGroupProjectBinding())
 
-	// Defines endpoints to manage IPAM pools
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/groupbindings").
+		Handler(r.createGroupProjectBinding())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/groupbindings/{binding_name}").
+		Handler(r.deleteGroupProjectBinding())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/groupbindings/{binding_name}").
+		Handler(r.patchGroupProjectBinding())
+
+	// Defines endpoints to manage IPAM pools
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/ipampools").
 		Handler(r.listIPAMPools())
@@ -7035,6 +7046,93 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 			r.groupProjectBindingProvider,
 		)),
 		groupprojectbinding.DecodeGetGroupProjectBindingReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route post /api/v2/projects/{project_id}/groupbindings project createGroupProjectBinding
+//
+//    Create project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      201: GroupProjectBinding
+//      401: empty
+//      403: empty
+func (r Routing) createGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.CreateGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodeCreateGroupProjectBindingReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project deleteGroupProjectBinding
+//
+//    Delete project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.DeleteGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodeDeleteGroupProjectBindingReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project patchGroupProjectBinding
+//
+//    Patch project group binding.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: GroupProjectBinding
+//      401: empty
+//      403: empty
+func (r Routing) patchGroupProjectBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(groupprojectbinding.PatchGroupProjectBindingEndpoint(
+			r.userInfoGetter,
+			r.projectProvider,
+			r.privilegedProjectProvider,
+			r.groupProjectBindingProvider,
+		)),
+		groupprojectbinding.DecodePatchGroupProjectBindingReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
