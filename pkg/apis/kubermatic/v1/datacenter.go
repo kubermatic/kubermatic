@@ -434,7 +434,7 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 
 	switch cloudProvider {
 	case OpenstackCloudProvider:
-		if d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
+		if d.Spec.Openstack != nil && d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
 			return true
 		}
 	}
