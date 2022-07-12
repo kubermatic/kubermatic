@@ -64,7 +64,7 @@ func (p *ClusterTemplateProvider) New(ctx context.Context, userInfo *provider.Us
 		return nil, errors.New("the global scope is reserved only for admins")
 	}
 
-	if strings.Contains(userInfo.Group, "viewers") && scope != kubermaticv1.UserClusterTemplateScope {
+	if userInfo.Roles.Has("viewers") && userInfo.Roles.Len() == 1 && scope != kubermaticv1.UserClusterTemplateScope {
 		return nil, fmt.Errorf("viewer is not allowed to create cluster template for the %s scope", scope)
 	}
 

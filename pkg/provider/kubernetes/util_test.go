@@ -279,3 +279,14 @@ func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 
 	return ct
 }
+
+func genGroupProjectBinding(name, projectID, group, role string) *kubermaticv1.GroupProjectBinding {
+	gbp := &kubermaticv1.GroupProjectBinding{}
+	gbp.Name = name
+	gbp.Spec.Role = role
+	gbp.Spec.Group = group
+	gbp.Labels = map[string]string{
+		kubermaticv1.ProjectIDLabelKey: projectID,
+	}
+	return gbp
+}

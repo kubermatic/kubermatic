@@ -549,6 +549,9 @@ type User struct {
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
+	// Groups holds the list of groups that the user belongs to
+	Groups []string `json:"groups,omitempty"`
+
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 
 	// LastSeen holds a time in UTC format when the user has been using the API last time

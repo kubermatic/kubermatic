@@ -190,7 +190,7 @@ func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, set
 	var errorList []string
 	var projectsCounter int64
 	for _, mapping := range userMappings {
-		userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+		userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Groups: []string{mapping.Spec.Group}}
 		projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
@@ -249,7 +249,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		}
 		var errorList []string
 		for _, mapping := range userMappings {
-			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Groups: append(userInfo.Groups, mapping.Spec.Group)}
 			projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
 				if isStatus(err, http.StatusNotFound) {

@@ -168,7 +168,7 @@ func TestDeleteConstraint(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenConstraint("ct1", testNamespace, testKind),
 			},
-			userInfo:       &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo:       &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			cluster:        genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
 			constraintName: "ct1",
 		},
@@ -210,7 +210,7 @@ func TestCreateConstraint(t *testing.T) {
 		{
 			name:       "scenario 1: create constraint",
 			cluster:    genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
-			userInfo:   &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo:   &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			constraint: test.GenConstraint("ct1", testNamespace, testKind),
 		},
 	}
@@ -263,7 +263,7 @@ func TestUpdateConstraint(t *testing.T) {
 				test.GenConstraint("ct1", testNamespace, testKind),
 			},
 			cluster:  genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 		},
 	}
 

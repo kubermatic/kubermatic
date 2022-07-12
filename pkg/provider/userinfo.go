@@ -22,6 +22,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // UserInfoGetter is a function to retrieve a UserInfo.
@@ -35,15 +37,22 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			return nil, fmt.Errorf("unable to get authenticated user object")
 		}
 
-		var group string
+		groups := user.Spec.Groups
+		roles := sets.NewString()
 		if projectID != "" {
 			var err error
-			group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+			group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+			if err != nil {
+				return nil, err
+			}
+			groups = append(groups, group)
+
+			roles, err = userProjectMapper.MapUserToRoles(ctx, user, projectID)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		return &UserInfo{Email: user.Spec.Email, Group: group, IsAdmin: user.Spec.IsAdmin}, nil
+		return &UserInfo{Email: user.Spec.Email, Groups: groups, IsAdmin: user.Spec.IsAdmin, Roles: roles}, nil
 	}, nil
 }

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -28,8 +29,12 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/kubectl/pkg/util/slice"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -156,8 +161,19 @@ func (p *ProjectMemberProvider) Update(ctx context.Context, userInfo *provider.U
 // MapUserToGroup maps the given user to a specific group of the given project
 // This function is unsafe in a sense that it uses privileged account to list all members in the system.
 func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail string, projectID string) (string, error) {
+	group, err := getUserBindingRole(ctx, userEmail, projectID, p.clientPrivileged)
+	if err != nil {
+		return "", err
+	}
+	if group == "" {
+		return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", userEmail, projectID))
+	}
+	return group, nil
+}
+
+func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
 	allMembers := &kubermaticv1.UserProjectBindingList{}
-	if err := p.clientPrivileged.List(ctx, allMembers); err != nil {
+	if err := client.List(ctx, allMembers); err != nil {
 		return "", err
 	}
 
@@ -166,8 +182,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 			return member.Spec.Group, nil
 		}
 	}
-
-	return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", userEmail, projectID))
+	return "", nil
 }
 
 // MappingsFor returns the list of projects (bindings) for the given user
@@ -186,6 +201,43 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 	}
 
 	return memberMappings, nil
+}
+
+// MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
+// project bindings for the user and returns the role set.
+// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
+func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
+	projectReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{projectID})
+	if err != nil {
+		return sets.String{}, fmt.Errorf("failed to construct project label selector: %w", err)
+	}
+
+	// Get group project bindings
+	groupProjectBindings := &kubermaticv1.GroupProjectBindingList{}
+	if err := p.clientPrivileged.List(ctx, groupProjectBindings, &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectReq)}); err != nil {
+		return sets.String{}, err
+	}
+
+	roles := sets.NewString()
+	for _, gpb := range groupProjectBindings.Items {
+		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) {
+			roles.Insert(gpb.Spec.Role)
+		}
+	}
+
+	// get the userprojectBinding group
+	userBindingRole, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
+	if err != nil {
+		return sets.String{}, err
+	}
+	if userBindingRole == "" {
+		return roles, nil
+	}
+	// extract just the role
+	userBindingRole = apiv1.ExtractGroupPrefix(userBindingRole)
+	roles.Insert(userBindingRole)
+
+	return roles, nil
 }
 
 // CreateUnsecured creates a binding for the given member and the given project

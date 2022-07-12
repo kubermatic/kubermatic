@@ -84,7 +84,7 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 }
 
 func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error) {
-	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
+	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provide
 }
 
 func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.GroupProjectBinding) error {
-	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
+	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *prov
 }
 
 func (p *GroupProjectBindingProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldBinding, newBinding *kubermaticv1.GroupProjectBinding) error {
-	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
+	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (p *GroupProjectBindingProvider) Delete(ctx context.Context, userInfo *prov
 		return err
 	}
 
-	masterImpersonatedClient, err := p.getImpersonatedClinet(userInfo)
+	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
 	if err != nil {
 		return err
 	}
@@ -129,13 +129,13 @@ func (p *GroupProjectBindingProvider) Delete(ctx context.Context, userInfo *prov
 	return masterImpersonatedClient.Delete(ctx, binding)
 }
 
-func (p *GroupProjectBindingProvider) getImpersonatedClinet(userInfo *provider.UserInfo) (ctrlruntimeclient.Client, error) {
+func (p *GroupProjectBindingProvider) getImpersonatedClient(userInfo *provider.UserInfo) (ctrlruntimeclient.Client, error) {
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
+		Groups:   userInfo.Groups,
 	}
 	return p.createMasterImpersonatedClient(impersonationCfg)
 }

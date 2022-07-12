@@ -49,7 +49,6 @@ func TestGetAlertmanager(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		existingObjects      []ctrlruntimeclient.Object
-		userInfo             *provider.UserInfo
 		cluster              *kubermaticv1.Cluster
 		expectedAlertmanager *kubermaticv1.Alertmanager
 		expectedConfigSecret *corev1.Secret
@@ -61,14 +60,12 @@ func TestGetAlertmanager(t *testing.T) {
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 				generateConfigSecret(testAlertmanagerConfigSecretName, testAlertmanagerNamespace, "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			expectedConfigSecret: generateConfigSecret(testAlertmanagerConfigSecretName, testAlertmanagerNamespace, "1"),
 		},
 		{
 			name:          "scenario 2, alertmanager is not found",
-			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedError: "alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
 		},
@@ -77,7 +74,6 @@ func TestGetAlertmanager(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			},
-			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedError: "secrets \"test-secret\" not found",
 		},
@@ -95,7 +91,7 @@ func TestGetAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			alertmanager, configSecret, err := alertmanagerProvider.Get(context.Background(), tc.cluster, tc.userInfo)
+			alertmanager, configSecret, err := alertmanagerProvider.Get(context.Background(), tc.cluster, genUserInfo())
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -140,14 +136,12 @@ func TestUpdateAlertmanager(t *testing.T) {
 					},
 				},
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			expectedConfigSecret: generateConfigSecret(testAlertmanagerConfigSecretName, testAlertmanagerNamespace, "2"),
 		},
 		{
 			name:                 "scenario 2, alertmanager is not found",
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
@@ -157,7 +151,6 @@ func TestUpdateAlertmanager(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			expectedError:        "failed to find alertmanager configuration",
@@ -167,7 +160,6 @@ func TestUpdateAlertmanager(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			expectedError:        "failed to get config secret: secrets \"test-secret\" not found",
@@ -186,7 +178,8 @@ func TestUpdateAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			alertmanager, configSecret, err := alertmanagerProvider.Update(context.Background(), tc.expectedAlertmanager, tc.expectedConfigSecret, tc.userInfo)
+			alertmanager, configSecret, err := alertmanagerProvider.Update(context.Background(), tc.expectedAlertmanager,
+				tc.expectedConfigSecret, genUserInfo())
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -210,7 +203,6 @@ func TestResetAlertmanager(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		existingObjects      []ctrlruntimeclient.Object
-		userInfo             *provider.UserInfo
 		cluster              *kubermaticv1.Cluster
 		expectedAlertmanager *kubermaticv1.Alertmanager
 		expectedConfigSecret *corev1.Secret
@@ -222,14 +214,12 @@ func TestResetAlertmanager(t *testing.T) {
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 				generateConfigSecret(testAlertmanagerConfigSecretName, testAlertmanagerNamespace, "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			expectedConfigSecret: nil,
 		},
 		{
 			name:                 "scenario 2, alertmanager is not found",
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
@@ -239,7 +229,6 @@ func TestResetAlertmanager(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
 			expectedError:        "failed to find alertmanager configuration",
@@ -249,7 +238,6 @@ func TestResetAlertmanager(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			},
-			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 			expectedError:        "secrets \"test-secret\" not found",
@@ -268,7 +256,7 @@ func TestResetAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			err := alertmanagerProvider.Reset(context.Background(), tc.cluster, tc.userInfo)
+			err := alertmanagerProvider.Reset(context.Background(), tc.cluster, genUserInfo())
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -340,4 +328,8 @@ alertmanager_config: |
       email_configs:
       - to: '%s@example.org'
 `, name, name)
+}
+
+func genUserInfo() *provider.UserInfo {
+	return &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}}
 }

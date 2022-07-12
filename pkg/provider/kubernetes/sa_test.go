@@ -45,7 +45,7 @@ func TestCreateProjectServiceAccount(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1, create service account `test` for editors group",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:  genDefaultProject(),
 			saName:   "test",
 			saGroup:  "editors-my-first-project-ID",
@@ -106,7 +106,7 @@ func TestListProjectServiceAccount(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1, get existing service accounts",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:  genDefaultProject(),
 			saName:   "test-1",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -121,7 +121,7 @@ func TestListProjectServiceAccount(t *testing.T) {
 		},
 		{
 			name:     "scenario 2, service accounts not found for the project",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:  genDefaultProject(),
 			saName:   "test",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -179,7 +179,7 @@ func TestGetProjectServiceAccount(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1, get existing service account",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:  genDefaultProject(),
 			saName:   "1",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -238,7 +238,7 @@ func TestUpdateProjectServiceAccount(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1, change name for service account",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:  genDefaultProject(),
 			saName:   "1",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
@@ -302,7 +302,7 @@ func TestDeleteProjectServiceAccount(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1, delete service account",
-			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			saName:   "1",
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),

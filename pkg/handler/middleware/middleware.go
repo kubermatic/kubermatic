@@ -181,7 +181,9 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name, authenticatedUser.Email)
+
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.Name,
+					authenticatedUser.Email, authenticatedUser.Groups)
 				if err != nil {
 					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
@@ -201,6 +203,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			updatedUser := user.DeepCopy()
 			updatedUser.Status.LastSeen = metav1.NewTime(now)
+			updatedUser.Spec.Groups = authenticatedUser.Groups
 			updatedUser, err = userProvider.UpdateUser(ctx, updatedUser)
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
@@ -284,7 +287,8 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				ObjectMeta: apiv1.ObjectMeta{
 					Name: claims.Name,
 				},
-				Email: claims.Email,
+				Email:  claims.Email,
+				Groups: claims.Groups,
 			}
 
 			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
@@ -368,16 +372,23 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 }
 
 func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
-	var group string
+	groups := user.Spec.Groups
+	roles := sets.NewString()
 	if projectID != "" {
 		var err error
-		group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+		group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+		if err != nil {
+			return nil, err
+		}
+		groups = append(groups, group)
+
+		roles, err = userProjectMapper.MapUserToRoles(ctx, user, projectID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
+	return &provider.UserInfo{Email: user.Spec.Email, Groups: groups, Roles: roles}, nil
 }
 
 func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {

@@ -72,7 +72,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
+		Groups:   userInfo.Groups,
 	}
 	masterImpersonatedClient, err := p.createMasterImpersonatedClient(impersonationCfg)
 	if err != nil {
