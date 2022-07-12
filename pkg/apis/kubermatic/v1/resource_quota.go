@@ -31,6 +31,7 @@ const (
 	ProjectSubjectKind = "project"
 )
 
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
