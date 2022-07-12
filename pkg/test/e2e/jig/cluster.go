@@ -138,8 +138,8 @@ func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
 	return j
 }
 
-func (j *ClusterJig) WithExposeStrategy(strat kubermaticv1.ExposeStrategy) *ClusterJig {
-	j.spec.ExposeStrategy = strat
+func (j *ClusterJig) WithExposeStrategy(strategy kubermaticv1.ExposeStrategy) *ClusterJig {
+	j.spec.ExposeStrategy = strategy
 	return j
 }
 
