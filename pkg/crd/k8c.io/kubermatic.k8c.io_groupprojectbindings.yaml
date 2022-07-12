@@ -55,7 +55,10 @@ spec:
                 description: Group is the group name that is bound to the given project.
                 type: string
               projectID:
-                description: ProjectID is the ID of the target project.
+                description: ProjectID is the ID of the target project. Should be
+                  a valid lowercase RFC1123 domain name
+                maxLength: 63
+                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                 type: string
               role:
                 description: 'Role is the user''s role within the project, determining

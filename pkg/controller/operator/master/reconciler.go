@@ -193,6 +193,10 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		return fmt.Errorf("failed to clean up MutatingWebhookConfiguration: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.GroupProjectBindingAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+	}
+
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
 }
 
@@ -415,6 +419,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationCreator(ctx, config, r.Client),
+		kubermatic.GroupProjectBindingValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
