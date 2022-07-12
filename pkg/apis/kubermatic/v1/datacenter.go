@@ -416,19 +416,41 @@ type DatacenterSpec struct {
 }
 
 var (
-	// cloudProvidersWithIPv6Enabled configures which providers have IPv6 enabled for all datacenters.
-	cloudProvidersWithIPv6Enabled = map[ProviderType]struct{}{
-		AWSCloudProvider:     {},
-		AzureCloudProvider:   {},
-		GCPCloudProvider:     {},
-		HetznerCloudProvider: {},
+	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+	knownIPv6CloudProviders = map[ProviderType]struct {
+		ipv6EnabledForAllDatacenters bool
+	}{
+		AWSCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		AzureCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		GCPCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		HetznerCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		OpenstackCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
 	}
 )
 
+func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
+	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	return isIPv6KnownProvider
+}
+
 // IsIPv6Enabled returns true if ipv6 is enabled for the datacenter.
 func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
-	_, isIPv6EnabledForProvider := cloudProvidersWithIPv6Enabled[cloudProvider]
-	if isIPv6EnabledForProvider {
+	cloudProviderCfg, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	if !isIPv6KnownProvider {
+		return false
+	}
+
+	if cloudProviderCfg.ipv6EnabledForAllDatacenters {
 		return true
 	}
 

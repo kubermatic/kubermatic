@@ -565,7 +565,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid dual-stack datacenter config (not enabled for cloud provider and not configurable by datacenter)",
+			name: "valid dual-stack datacenter config (not known ipv6 cloud provider)",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				IPFamily:                 kubermaticv1.IPFamilyDualStack,
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
@@ -579,7 +579,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 					Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, test := range tests {

@@ -342,7 +342,9 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 				fmt.Sprintf("could not determine cloud provider: %v", err)))
 		}
 
-		if !dc.IsIPv6Enabled(kubermaticv1.ProviderType(cloudProvider)) {
+		cloudProviderType := kubermaticv1.ProviderType(cloudProvider)
+
+		if cloudProviderType.IsIPv6KnownProvider() && !dc.IsIPv6Enabled(cloudProviderType) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
 				fmt.Sprintf("IP family %q requires ipv6 to be enabled for the datacenter", n.IPFamily)),
 			)
