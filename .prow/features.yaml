@@ -370,3 +370,41 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+
+  - name: pre-kubermatic-oidc-group-e2e
+    run_if_changed: "(pkg/ee/group-project-binding/|pkg/test/e2e/oidc-group/)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-digitalocean: "true"
+      preset-hetzner: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+          command:
+            - "./hack/ci/run-oidc-group-e2e-tests.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.23.6
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
