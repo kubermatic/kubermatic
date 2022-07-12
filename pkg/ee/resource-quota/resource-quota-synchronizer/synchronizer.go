@@ -33,9 +33,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,8 +82,7 @@ func Add(masterMgr manager.Manager,
 	}
 
 	// Watch for changes to ResourceQuota
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{},
-		predicate.ByNamespace(kubermaticresources.KubermaticNamespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch resource quotas: %w", err)
 	}
 
@@ -155,7 +152,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, rq *kubermaticv1.ResourceQuota) error {
 		// ensure resource quota
-		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, kubermaticresources.KubermaticNamespace, seedClient); err != nil {
+		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, "", seedClient); err != nil {
 			return err
 		}
 

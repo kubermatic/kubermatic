@@ -36,7 +36,6 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/webhook/resourcequota/mutation"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -303,9 +302,8 @@ func (r rawResourceQuotaGen) Do() []byte {
 			Kind:       "ResourceQuota",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.Name,
-			Namespace: resources.KubermaticNamespace,
-			Labels:    r.Labels,
+			Name:   r.Name,
+			Labels: r.Labels,
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{
