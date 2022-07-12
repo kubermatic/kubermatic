@@ -207,6 +207,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:   "scenario 9: patch an existing GroupProjectBinding",
 			method: "PATCH",
 			body: `{
+				"group": "testGroup",
 				"role": "owners"
 			}`,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
@@ -222,9 +223,10 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 9: patch a non-existing GroupProjectBinding",
+			name:   "scenario 10: patch a non-existing GroupProjectBinding",
 			method: "PATCH",
 			body: `{
+				"group": "testGroup",
 				"role": "owners"
 			}`,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-nonexisting",
@@ -240,7 +242,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 10: patch an existing GroupProjectBinding with illicit role",
+			name:   "scenario 11: patch an existing GroupProjectBinding with illicit role",
 			method: "PATCH",
 			body: `{
 				"role": "invalid"
