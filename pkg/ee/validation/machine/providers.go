@@ -95,7 +95,6 @@ func GetMachineResourceUsage(ctx context.Context,
 	}
 
 	var quotaUsage *ResourceDetails
-	// TODO add all providers
 	switch config.CloudProvider {
 	case types.CloudProviderFake:
 		quotaUsage, err = getFakeQuotaRequest(config)
@@ -126,8 +125,7 @@ func GetMachineResourceUsage(ctx context.Context,
 	case types.CloudProviderPacket:
 		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
 	default:
-		// TODO skip for now, when all providers are added, throw error
-		return NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{}), nil
+		return nil, fmt.Errorf("Provider %s not supported", config.CloudProvider)
 	}
 
 	return quotaUsage, err
