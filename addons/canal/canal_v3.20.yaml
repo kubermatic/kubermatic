@@ -3791,7 +3791,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: '{{ Registry "docker.io" }}/calico/cni:v3.20.2'
+          image: '{{ Registry "quay.io" }}/calico/cni:v3.20.2'
           command: ["/opt/cni/bin/install"]
           envFrom:
           - configMapRef:
@@ -3834,7 +3834,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: '{{ Registry "docker.io" }}/calico/node:v3.20.2'
+          image: '{{ Registry "quay.io" }}/calico/node:v3.20.2'
           envFrom:
           - configMapRef:
               # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
@@ -4065,7 +4065,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
-          image: '{{ Registry "docker.io" }}/calico/kube-controllers:v3.20.2'
+          image: '{{ Registry "quay.io" }}/calico/kube-controllers:v3.20.2'
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS
