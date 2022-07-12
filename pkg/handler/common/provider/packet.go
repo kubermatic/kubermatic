@@ -124,9 +124,9 @@ func DescribePacketSize(apiKey, projectID, instanceType string) (packngo.Plan, e
 	}
 
 	plans := root.Plans
-	for _, plan := range plans {
-		if plan.Slug == instanceType {
-			return plan, nil
+	for _, currentPlan := range plans {
+		if currentPlan.Slug == instanceType {
+			return currentPlan, nil
 		}
 	}
 	return plan, fmt.Errorf("packet instanceType:%s not found", instanceType)

@@ -777,15 +777,18 @@ func getPacketResourceRequirements(ctx context.Context,
 
 	var storageReq resource.Quantity
 	for _, drive := range plan.Specs.Drives {
+		// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
 		storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
 		if err != nil {
 			fmt.Println("error parsing machine storage request to quantity: %w", err)
 		}
+		// total storage for each types = drive count *drive Size.
 		strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
 		totalStorage, err := resource.ParseQuantity(strDrive)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 		}
+		// Adding storage value for all storage types like "SSD", "NVME".
 		storageReq.Add(totalStorage)
 	}
 
