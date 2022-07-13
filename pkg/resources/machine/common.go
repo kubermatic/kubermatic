@@ -411,11 +411,20 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 		config.Tags[i].Value = tag
 	}
 
-	facilities := sets.NewString(dc.Spec.Packet.Facilities...)
-	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
-	for i, facility := range facilities.List() {
-		config.Facilities[i].Value = facility
+	var facilities = sets.String{}
+	if dc.Spec.Packet.Facilities != nil {
+		facilities = sets.NewString(dc.Spec.Packet.Facilities...)
+		config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
+		for i, facility := range facilities.List() {
+			config.Facilities[i].Value = facility
+		}
 	}
+
+	if len(facilities) < 1 && dc.Spec.Packet.Metro == "" {
+		return nil, errors.New("equinixmetal metro or facilities must be specified")
+	}
+
+	config.Metro.Value = dc.Spec.Packet.Metro
 
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
