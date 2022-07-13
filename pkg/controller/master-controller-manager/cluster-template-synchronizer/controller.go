@@ -132,7 +132,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Eventf(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
 	}
 	return nil

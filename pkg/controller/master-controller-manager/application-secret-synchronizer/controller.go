@@ -130,7 +130,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, r.namespace, c)
 	})
 	if err != nil {
-		r.recorder.Eventf(secret, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(secret, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciling secret %s failed: %w", seedsecret.Name, err)
 	}
 
@@ -150,7 +150,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		err := c.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, &corev1.Secret{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				log.Info("Secret already deleted")
+				log.Debug("Secret already deleted")
 				return nil
 			}
 			return err

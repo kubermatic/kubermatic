@@ -134,7 +134,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// If cluster is not healthy yet there is nothing to do.
 	// If it gets healthy we'll get notified by the event. No need to requeue.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		r.log.Info("cluster not healthy")
+		r.log.Debug("cluster not healthy")
 		return nil, nil
 	}
 
