@@ -27,7 +27,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eemachinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -43,7 +42,6 @@ func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, 
 	quotaList := &kubermaticv1.ResourceQuotaList{}
 	if err := seedClient.List(ctx, quotaList, &ctrlruntimeclient.ListOptions{
 		LabelSelector: subjectSelector,
-		Namespace:     resources.KubermaticNamespace,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to list resource quotas: %w", err)
 	}

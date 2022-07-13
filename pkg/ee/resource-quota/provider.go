@@ -31,7 +31,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -57,8 +56,7 @@ func NewResourceQuotaProvider(createMasterImpersonatedClient kubernetes.Imperson
 func (p *ResourceQuotaProvider) GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ResourceQuota, error) {
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := p.privilegedClient.Get(ctx, types.NamespacedName{
-		Name:      name,
-		Namespace: resources.KubermaticNamespace,
+		Name: name,
 	}, resourceQuota); err != nil {
 		return nil, err
 	}
@@ -82,8 +80,7 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	subject := kubermaticv1.Subject{Name: name, Kind: kind}
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{
-		Name:      buildNameFromSubject(subject),
-		Namespace: resources.KubermaticNamespace,
+		Name: buildNameFromSubject(subject),
 	}, resourceQuota); err != nil {
 		return nil, err
 	}
@@ -92,7 +89,6 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 
 func (p *ResourceQuotaProvider) ListUnsecured(ctx context.Context, labelSet map[string]string) (*kubermaticv1.ResourceQuotaList, error) {
 	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace:     resources.KubermaticNamespace,
 		LabelSelector: labels.SelectorFromSet(labelSet),
 	}
 	resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
@@ -107,7 +103,6 @@ func (p *ResourceQuotaProvider) CreateUnsecured(ctx context.Context, subject kub
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
 			Labels:      map[string]string{},
-			Namespace:   resources.KubermaticNamespace,
 			Name:        buildNameFromSubject(subject),
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{

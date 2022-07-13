@@ -30,7 +30,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,9 +47,7 @@ func ValidateCreate(ctx context.Context,
 	}
 
 	currentQuotaList := &kubermaticv1.ResourceQuotaList{}
-	if err := client.List(ctx, currentQuotaList, &ctrlruntimeclient.ListOptions{
-		Namespace: resources.KubermaticNamespace,
-	}); err != nil {
+	if err := client.List(ctx, currentQuotaList, &ctrlruntimeclient.ListOptions{}); err != nil {
 		return fmt.Errorf("failed to list resource quotas: %w", err)
 	}
 
