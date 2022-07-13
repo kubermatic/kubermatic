@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-test
-    run_if_changed: "^(cmd|codegen|hack|pkg)/"
+#    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -35,7 +35,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-test-integration
-    run_if_changed: "^(cmd|codegen|hack|pkg)/"
+#    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -63,7 +63,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-verify
-    always_run: true
+    always_run: false
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     path_alias: k8c.io/kubermatic
@@ -83,7 +83,7 @@ presubmits:
               value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
+#    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
