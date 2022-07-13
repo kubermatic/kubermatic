@@ -34,7 +34,7 @@ import (
 
 const (
 	imageName     = "prometheus/prometheus"
-	tag           = "v2.31.1"
+	tag           = "v2.36.2"
 	appName       = "mla-prometheus"
 	containerName = "prometheus"
 
