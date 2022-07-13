@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-api-e2e
-#    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow/)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
