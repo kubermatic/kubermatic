@@ -103,8 +103,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
 		},
 		{
 			cloudName: "azure",
@@ -114,8 +114,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			skipNodes:           false,
+			skipHostNetworkPods: false,
 		},
 		{
 			cloudName: "aws",
