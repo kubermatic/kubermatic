@@ -35,6 +35,7 @@ func TestOidcGroupSupport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get master token: %v", err)
 	}
+	t.Logf("oidc: %s", masterToken)
 
 	testClient := utils.NewTestClient(masterToken, t)
 	project, err := testClient.CreateProject(rand.String(10))
