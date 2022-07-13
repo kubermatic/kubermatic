@@ -505,6 +505,9 @@ func generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(cluster
 // generateVerbsForNamedResource generates a set of verbs for a named resource
 // for example a "cluster" named "beefy-john".
 func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
+	if resourceKind == kubermaticv1.ResourceQuotaKindName {
+		return []string{"get"}, nil
+	}
 	// verbs for owners
 	//
 	// owners of a named resource
@@ -656,8 +659,6 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 			return []string{"get", "update", "delete"}, nil
 		case resourceKind == secretV1Kind:
 			return nil, nil
-		case resourceKind == kubermaticv1.ResourceQuotaKindName:
-			return []string{"get"}, nil
 		}
 	}
 

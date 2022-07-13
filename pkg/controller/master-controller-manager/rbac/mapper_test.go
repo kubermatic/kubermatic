@@ -100,6 +100,12 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "User",
 		},
+		{
+			name:          "scenario 12: the owners can get ResourceQuota resource",
+			groupName:     "owners-projectID",
+			expectedVerbs: []string{"get"},
+			resourceKind:  "ResourceQuota",
+		},
 	}
 
 	for _, test := range tests {
