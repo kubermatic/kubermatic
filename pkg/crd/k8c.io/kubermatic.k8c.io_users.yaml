@@ -20,8 +20,11 @@ spec:
       name: Email
       type: string
     - jsonPath: .spec.name
-      name: Name
+      name: HumanReadableName
       type: string
+    - jsonPath: .spec.admin
+      name: Admin
+      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date

@@ -37,7 +37,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.admin",name="Admin",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // User specifies a user.
