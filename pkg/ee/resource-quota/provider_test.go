@@ -87,6 +87,10 @@ func TestProviderGetResourceQuota(t *testing.T) {
 				&kubermaticv1.ResourceQuota{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: fmt.Sprintf("project-%s", projectName),
+						Labels: map[string]string{
+							kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
+							kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+						},
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
@@ -101,7 +105,7 @@ func TestProviderGetResourceQuota(t *testing.T) {
 			name:          "scenario 2: get non existing resource quota",
 			projectName:   projectName,
 			userInfo:      &provider.UserInfo{Email: "john@acme.com"},
-			expectedError: fmt.Sprintf("resourcequotas.kubermatic.k8c.io \"project-%s\" not found", projectName),
+			expectedError: fmt.Sprintf("resource quota not found for project \"%s\"", projectName),
 		},
 		{
 			name:          "scenario 3: missing user info",
