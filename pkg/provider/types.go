@@ -434,6 +434,34 @@ type ProjectMemberMapper interface {
 	MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 }
 
+// ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.
+func ExternalClusterCloudProviderName(spec *kubermaticv1.ExternalClusterCloudSpec) (string, error) {
+	if spec == nil {
+		return "", errors.New("cloud spec is nil")
+	}
+
+	var clouds []kubermaticv1.ExternalClusterProvider
+	if spec.AKS != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterAKSProvider)
+	}
+	if spec.EKS != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterEKSProvider)
+	}
+	if spec.GKE != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterGKEProvider)
+	}
+	if spec.KubeOne != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterKubeOneProvider)
+	}
+	if len(clouds) == 0 {
+		return "", nil
+	}
+	if len(clouds) != 1 {
+		return "", fmt.Errorf("only one cloud provider can be set in ExternalClusterCloudSpec: %+v", spec)
+	}
+	return string(clouds[0]), nil
+}
+
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	var clouds []kubermaticv1.ProviderType

@@ -46,7 +46,7 @@ type validator struct {
 	caBundle     *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
-	// provide would phone home to validate dummy test credentials
+	// provider would phone home to validate dummy test credentials
 	disableProviderValidation bool
 }
 
