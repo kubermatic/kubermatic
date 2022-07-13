@@ -113,7 +113,7 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 	params.Set("client_id", c.ClientID)
 	params.Set("redirect_uri", c.RedirectURI)
 	params.Set("response_type", "id_token")
-	params.Set("scope", "openid profile email")
+	params.Set("scope", "groups openid profile email")
 	params.Set("nonce", "not-actually-a-nonce")
 	loginURL.RawQuery = params.Encode()
 
