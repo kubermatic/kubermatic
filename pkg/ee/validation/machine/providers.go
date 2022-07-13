@@ -79,9 +79,8 @@ const (
 	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
 	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
 	// Packet credential env.
-	envPacketToken           = "PACKET_API_KEY"
-	envPacketProjectID       = "PACKET_PROJECT_ID"
-	packetCustomInstanctType = "storage.custom"
+	envPacketToken     = "PACKET_API_KEY"
+	envPacketProjectID = "PACKET_PROJECT_ID"
 )
 
 func GetMachineResourceUsage(ctx context.Context,
@@ -762,10 +761,6 @@ func getPacketResourceRequirements(ctx context.Context,
 		return nil, err
 	}
 
-	if plan.Slug == packetCustomInstanctType {
-		return nil, nil
-	}
-
 	var totalCPUs int
 	for _, cpu := range plan.Specs.Cpus {
 		totalCPUs += cpu.Count
@@ -775,26 +770,30 @@ func getPacketResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
 	}
 
-	var storageReq resource.Quantity
+	var storageReq, memReq resource.Quantity
 	for _, drive := range plan.Specs.Drives {
-		// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
-		storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
-		if err != nil {
-			fmt.Println("error parsing machine storage request to quantity: %w", err)
+		if drive.Size != "" && drive.Count != 0 {
+			// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
+			storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
+			if err != nil {
+				fmt.Println("error parsing machine storage request to quantity: %w", err)
+			}
+			// total storage for each types = drive count *drive Size.
+			strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
+			totalStorage, err := resource.ParseQuantity(strDrive)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+			}
+			// Adding storage value for all storage types like "SSD", "NVME".
+			storageReq.Add(totalStorage)
 		}
-		// total storage for each types = drive count *drive Size.
-		strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
-		totalStorage, err := resource.ParseQuantity(strDrive)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
-		}
-		// Adding storage value for all storage types like "SSD", "NVME".
-		storageReq.Add(totalStorage)
 	}
 
-	memReq, err := resource.ParseQuantity(plan.Specs.Memory.Total)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+	if plan.Specs.Memory.Total != "" {
+		memReq, err = resource.ParseQuantity(plan.Specs.Memory.Total)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+		}
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
