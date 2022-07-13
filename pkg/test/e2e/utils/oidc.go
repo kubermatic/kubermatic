@@ -101,7 +101,7 @@ func retrieveToken(ctx context.Context, token *string, login string, password st
 		return "", fmt.Errorf("no Helm values.yaml specified via $%s env variable", DexValuesFileEnvironmentVariable)
 	}
 
-	logger := log.New(false, log.FormatJSON).Sugar()
+	logger := log.New(true, log.FormatJSON).Sugar()
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {
