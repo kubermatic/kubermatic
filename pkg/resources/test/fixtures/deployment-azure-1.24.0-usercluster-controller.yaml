@@ -44,6 +44,14 @@ spec:
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: AZURE_CLIENT_ID
+          value: az-client-id
+        - name: AZURE_CLIENT_SECRET
+          value: az-client-secret
+        - name: AZURE_TENANT_ID
+          value: az-tenant-id
+        - name: AZURE_SUBSCRIPTION_ID
+          value: az-subscription-id
         - name: NAMESPACE
           valueFrom:
             fieldRef:

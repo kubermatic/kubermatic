@@ -44,6 +44,8 @@ spec:
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: DO_TOKEN
+          value: do-token
         - name: NAMESPACE
           valueFrom:
             fieldRef:

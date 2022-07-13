@@ -44,6 +44,12 @@ spec:
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: VSPHERE_ADDRESS
+          value: https://vs-endpoint.io
+        - name: VSPHERE_USERNAME
+          value: vs-username
+        - name: VSPHERE_PASSWORD
+          value: vs-password
         - name: NAMESPACE
           valueFrom:
             fieldRef:
