@@ -20,6 +20,7 @@ package vsphere
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -34,7 +35,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: "/Hamburg/network/VM Network",
+					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
 					RelativePath: "VM Network",
 					Type:         "Network",
 					Name:         "VM Network",
