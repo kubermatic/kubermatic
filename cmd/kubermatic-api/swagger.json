@@ -16816,6 +16816,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Action",
+            "description": "The action is used to check if to delete a externalcluster or a actual cluster",
+            "name": "action",
+            "in": "header"
           }
         ],
         "responses": {

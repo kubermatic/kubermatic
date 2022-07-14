@@ -952,3 +952,22 @@ func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 		return capacityTypes, nil
 	}
 }
+
+func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.EKS.DeleteCluster(&eks.DeleteClusterInput{Name: &cloudSpec.EKS.Name})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
