@@ -44,47 +44,48 @@ import (
 
 // Options represent combination of flags and ENV options.
 type Options struct {
-	Client                       string
-	NamePrefix                   string
-	providersFlag                string
-	Providers                    sets.String
-	ControlPlaneReadyWaitTimeout time.Duration
-	NodeReadyTimeout             time.Duration
-	CustomTestTimeout            time.Duration
-	UserClusterPollInterval      time.Duration
-	DeleteClusterAfterTests      bool
-	NodeCount                    int
-	PublicKeys                   [][]byte
-	ReportsRoot                  string
-	LogDirectory                 string
-	SeedClusterClient            ctrlruntimeclient.Client
-	SeedGeneratedClient          kubernetes.Interface
-	ClusterClientProvider        *clusterclient.Provider
-	RepoRoot                     string
-	Seed                         *kubermaticv1.Seed
-	SeedRestConfig               *rest.Config
-	ClusterParallelCount         int
-	WorkerName                   string
-	HomeDir                      string
-	versionsFlag                 string
-	Versions                     []*kubermativsemver.Semver
-	distributionsFlag            string
-	excludeDistributionsFlag     string
-	Distributions                sets.String
-	ExistingClusterLabel         string
-	OnlyTestCreation             bool
-	PspEnabled                   bool
-	CreateOIDCToken              bool
-	DexHelmValuesFile            string
-	KubermaticNamespace          string
-	KubermaticEndpoint           string
-	KubermaticSeedName           string
-	KubermaticProject            string
-	KubermaticOIDCToken          string
-	KubermaticClient             *apiclient.KubermaticKubernetesPlatformAPI
-	KubermaticAuthenticator      runtime.ClientAuthInfoWriter
-	ScenarioOptions              string
-	PushgatewayEndpoint          string
+	Client                        string
+	NamePrefix                    string
+	providersFlag                 string
+	Providers                     sets.String
+	ControlPlaneReadyWaitTimeout  time.Duration
+	NodeReadyTimeout              time.Duration
+	CustomTestTimeout             time.Duration
+	UserClusterPollInterval       time.Duration
+	DeleteClusterAfterTests       bool
+	NodeCount                     int
+	PublicKeys                    [][]byte
+	ReportsRoot                   string
+	LogDirectory                  string
+	SeedClusterClient             ctrlruntimeclient.Client
+	SeedGeneratedClient           kubernetes.Interface
+	ClusterClientProvider         *clusterclient.Provider
+	RepoRoot                      string
+	Seed                          *kubermaticv1.Seed
+	SeedRestConfig                *rest.Config
+	ClusterParallelCount          int
+	WorkerName                    string
+	HomeDir                       string
+	versionsFlag                  string
+	Versions                      []*kubermativsemver.Semver
+	distributionsFlag             string
+	excludeDistributionsFlag      string
+	Distributions                 sets.String
+	ExistingClusterLabel          string
+	OnlyTestCreation              bool
+	PspEnabled                    bool
+	CreateOIDCToken               bool
+	DexHelmValuesFile             string
+	KubermaticNamespace           string
+	KubermaticEndpoint            string
+	KubermaticSeedName            string
+	KubermaticProject             string
+	KubermaticOIDCToken           string
+	KubermaticClient              *apiclient.KubermaticKubernetesPlatformAPI
+	KubermaticAuthenticator       runtime.ClientAuthInfoWriter
+	ScenarioOptions               string
+	PushgatewayEndpoint           string
+	OperatingSystemManagerEnabled bool
 
 	Secrets Secrets
 }
@@ -146,6 +147,7 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&o.ScenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
+	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", false, "When set, enables Operating System Manager in the user cluster")
 	o.Secrets.AddFlags()
 }
 
