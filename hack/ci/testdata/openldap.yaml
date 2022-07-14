@@ -66,32 +66,31 @@ metadata:
   namespace: ldap
 data:
   config-ldap.ldif: |
-    dn: ou=People,dc=example,dc=org
+    dn: ou=People,dc=kubermatic,dc=com
     objectClass: organizationalUnit
     ou: People
 
-    dn: cn=jane,ou=People,dc=example,dc=org
+    dn: cn=jane,ou=People,dc=kubermatic,dc=com
     objectClass: person
     objectClass: inetOrgPerson
     sn: doe
     cn: jane
-    mail: janedoe@example.com
+    mail: janedoe@kubermatic.com
     userpassword: passw0rd
 
-    dn: ou=Groups,dc=example,dc=org
+    dn: ou=Groups,dc=kubermatic,dc=com
     objectClass: organizationalUnit
     ou: Groups
 
-    dn: cn=admins,ou=Groups,dc=example,dc=org
+    dn: cn=admins,ou=Groups,dc=kubermatic,dc=com
     objectClass: groupOfNames
     cn: admins
-    member: cn=john,ou=People,dc=example,dc=org
-    member: cn=jane,ou=People,dc=example,dc=org
+    member: cn=jane,ou=People,dc=kubermatic,dc=com
 
-    dn: cn=developers,ou=Groups,dc=example,dc=org
+    dn: cn=developers,ou=Groups,dc=kubermatic,dc=com
     objectClass: groupOfNames
     cn: developers
-    member: cn=jane,ou=People,dc=example,dc=org
+    member: cn=jane,ou=People,dc=kubermatic,dc=com
 
 ---
 apiVersion: v1
