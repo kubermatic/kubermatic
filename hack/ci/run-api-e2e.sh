@@ -139,7 +139,7 @@ retry 2 kubectl apply -f user.yaml
 
 # As dex doesn't support groups in static users configuration we configure minimal LDAP server.
 # More details: https://github.com/dexidp/dex/issues/1080
-echodata "Setting up openldap server..."
+echodate "Setting up openldap server..."
 retry 2 kubectl apply -f testdata/openldap.yaml
 
 echodate "Running API E2E tests..."
