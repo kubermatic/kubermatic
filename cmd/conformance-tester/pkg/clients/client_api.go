@@ -256,7 +256,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	return crCluster, nil
 }
 
-func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) error {
+func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	nodeDeploymentGetParams := &project.ListNodeDeploymentsParams{
 		Context:   ctx,
 		ProjectID: c.opts.KubermaticProject,
@@ -289,7 +289,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	var nodeDeployments []models.NodeDeployment
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
 		var err error
-		nodeDeployments, err = scenario.NodeDeployments(ctx, nodeCount, c.opts.Secrets, datacenter)
+		nodeDeployments, err = scenario.NodeDeployments(ctx, nodeCount, c.opts.Secrets)
 		if err != nil {
 			log.Warnw("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil

@@ -176,7 +176,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	return cluster, nil
 }
 
-func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) error {
+func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Getting existing MachineDeployments...")
 
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
@@ -203,7 +203,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 	var mds []clusterv1alpha1.MachineDeployment
 	if err := wait.PollImmediate(3*time.Second, time.Minute, func() (bool, error) {
 		var err error
-		mds, err = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster, datacenter)
+		mds, err = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
 		if err != nil {
 			log.Warnw("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil

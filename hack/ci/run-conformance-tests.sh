@@ -42,42 +42,51 @@ if [[ $provider == "anexia" ]]; then
   EXTRA_ARGS="-anexia-token=${ANEXIA_TOKEN}
     -anexia-template-id=${ANEXIA_TEMPLATE_ID}
     -anexia-vlan-id=${ANEXIA_VLAN_ID}
-    -anexia-location-id=${ANEXIA_LOCATION_ID}"
+    -anexia-kkp-datacenter=anexia-at"
 elif [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
-    -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
+    -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}
+    -aws-kkp-datacenter=aws-eu-central-1a"
 elif [[ $provider == "packet" ]]; then
   maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
-    -packet-project-id=${PACKET_PROJECT_ID}"
+    -packet-project-id=${PACKET_PROJECT_ID}
+    -packet-kkp-datacenter=packet-ewr1"
 elif [[ $provider == "gcp" ]]; then
-  EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+  EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}
+    -gcp-kkp-datacenter=gcp-westeurope"
 elif [[ $provider == "azure" ]]; then
   maxDuration=90
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
     -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
-    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}"
+    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    -azure-kkp-datacenter=azure-westeurope"
 elif [[ $provider == "digitalocean" ]]; then
-  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
+  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}
+    -digitalocean-kkp-datacenter=do-ams3"
 elif [[ $provider == "hetzner" ]]; then
-  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
+  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}
+    -hetzner-kkp-datacenter=hetzner-nbg1"
 elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
-    -openstack-password=${OS_PASSWORD}"
+    -openstack-password=${OS_PASSWORD}
+    -openstack-kkp-datacenter=syseleven-dbl1"
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
-    -vsphere-datastore=alpha1"
+    -vsphere-kkp-datacenter=vsphere-ger"
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
-  EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile"
+  EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile
+    -kubevirt-kkp-datacenter=kubevirt-europe-west3-c"
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
-    -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
+    -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}
+    -alibaba-kkp-datacenter=alibaba-eu-central-1a"
 elif [[ $provider == "nutanix" ]]; then
   EXTRA_ARGS="-nutanix-username=${NUTANIX_E2E_USERNAME}
     -nutanix-password=${NUTANIX_E2E_PASSWORD}
@@ -87,13 +96,15 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-proxy-url=http://${NUTANIX_E2E_PROXY_USERNAME}:${NUTANIX_E2E_PROXY_PASSWORD}@10.240.20.100:${NUTANIX_E2E_PROXY_PORT}/
     -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
-    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
+    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}
+    -nutanix-kkp-datacenter=nutanix-ger"
 elif [[ $provider == "vmwareclouddirector" ]]; then
   EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
     -vmware-cloud-director-password=${VCD_PASSWORD}
     -vmware-cloud-director-organization=${VCD_ORG}
     -vmware-cloud-director-vdc=${VCD_VDC}
-    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}"
+    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}
+    -vmware-cloud-director-kkp-datacenter=vmware-cloud-director-ger"
 fi
 
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),

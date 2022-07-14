@@ -60,25 +60,26 @@ provider="${PROVIDER:-aws}"
 case "$provider" in
 alibaba)
   extraArgs="-alibaba-access-key-id=$ALIBABA_KEY_ID
-      -alibaba-secret-access-key=$ALIBABA_SECRET"
+    -alibaba-secret-access-key=$ALIBABA_SECRET
+    -alibaba-kkp-datacenter=alibaba-eu-central-1a"
   ;;
 
 anexia)
   ANEXIA_TOKEN="${ANEXIA_TOKEN:-$(vault kv get -field=token dev/e2e-anexia)}"
   ANEXIA_TEMPLATE_ID="${ANEXIA_TEMPLATE_ID:-$(vault kv get -field=templateID dev/e2e-anexia)}"
   ANEXIA_VLAN_ID="${ANEXIA_VLAN_ID:-$(vault kv get -field=vlanID dev/e2e-anexia)}"
-  ANEXIA_LOCATION_ID="${ANEXIA_LOCATION_ID:-$(vault kv get -field=locationID dev/e2e-anexia)}"
   extraArgs="-anexia-token=$ANEXIA_TOKEN
-      -anexia-template-id=$ANEXIA_TEMPLATE_ID
-      -anexia-vlan-id=$ANEXIA_VLAN_ID
-      -anexia-location-id=$ANEXIA_LOCATION_ID"
+    -anexia-template-id=$ANEXIA_TEMPLATE_ID
+    -anexia-vlan-id=$ANEXIA_VLAN_ID
+    -anexia-kkp-datacenter=anexia-at"
   ;;
 
 aws)
   AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws)}"
   AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws)}"
   extraArgs="-aws-access-key-id=$AWS_ACCESS_KEY_ID
-      -aws-secret-access-key=$AWS_SECRET_ACCESS_KEY"
+    -aws-secret-access-key=$AWS_SECRET_ACCESS_KEY
+    -aws-kkp-datacenter=aws-eu-central-1a"
   ;;
 
 azure)
@@ -87,29 +88,34 @@ azure)
   AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
   AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
   extraArgs="-azure-client-id=$AZURE_CLIENT_ID
-      -azure-client-secret=$AZURE_CLIENT_SECRET
-      -azure-tenant-id=$AZURE_TENANT_ID
-      -azure-subscription-id=$AZURE_SUBSCRIPTION_ID"
+    -azure-client-secret=$AZURE_CLIENT_SECRET
+    -azure-tenant-id=$AZURE_TENANT_ID
+    -azure-subscription-id=$AZURE_SUBSCRIPTION_ID
+    -azure-kkp-datacenter=azure-westeurope"
   ;;
 
 digitalocean)
   DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
-  extraArgs="-digitalocean-token=$DO_TOKEN"
+  extraArgs="-digitalocean-token=$DO_TOKEN
+    -digitalocean-kkp-datacenter=do-ams3"
   ;;
 
 gcp)
-  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT"
+  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT
+    -gcp-kkp-datacenter=gcp-westeurope"
   ;;
 
 hetzner)
   HZ_TOKEN="${HZ_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
-  extraArgs="-hetzner-token=$HZ_TOKEN"
+  extraArgs="-hetzner-token=$HZ_TOKEN
+    -hetzner-kkp-datacenter=hetzner-nbg1"
   ;;
 
 kubevirt)
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_KUBECONFIG" > "$tmpFile"
-  extraArgs="-kubevirt-kubeconfig=$tmpFile"
+  extraArgs="-kubevirt-kubeconfig=$tmpFile
+    -kubevirt-kkp-datacenter=kubevirt-europe-west3-c"
   ;;
 
 openstack)
@@ -118,22 +124,24 @@ openstack)
   OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
   OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
   extraArgs="-openstack-domain=$OS_DOMAIN
-      -openstack-project=$OS_TENANT_NAME
-      -openstack-username=$OS_USERNAME
-      -openstack-password=$OS_PASSWORD"
+    -openstack-project=$OS_TENANT_NAME
+    -openstack-username=$OS_USERNAME
+    -openstack-password=$OS_PASSWORD
+    -openstack-kkp-datacenter=syseleven-dbl1"
   ;;
 
 packet)
   extraArgs="-packet-api-key=$PACKET_API_KEY
-      -packet-project-id=$PACKET_PROJECT_ID"
+    -packet-project-id=$PACKET_PROJECT_ID
+    -packet-kkp-datacenter=packet-ewr1"
   ;;
 
 vsphere)
   VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/vsphere)}"
   VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
   extraArgs="-vsphere-username=$VSPHERE_USERNAME
-      -vsphere-password=$VSPHERE_PASSWORD
-      -vsphere-datastore=alpha1"
+    -vsphere-password=$VSPHERE_PASSWORD
+    -vsphere-kkp-datacenter=vsphere-ger"
   ;;
 
 *)

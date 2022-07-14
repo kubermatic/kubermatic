@@ -31,12 +31,11 @@ import (
 )
 
 const (
-	hetznerDatacenter = "hetzner-nbg1"
 	hetznerServerType = "cx31"
 )
 
 // GetHetznerScenarios returns a matrix of (version x operating system).
-func GetHetznerScenarios(versions []*semver.Semver) []Scenario {
+func GetHetznerScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
@@ -72,7 +71,7 @@ func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: hetznerDatacenter,
+					DatacenterName: secrets.Hetzner.KKPDatacenter,
 					Hetzner: &apimodels.HetznerCloudSpec{
 						Token: secrets.Hetzner.Token,
 					},
@@ -86,7 +85,7 @@ func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: hetznerDatacenter,
+			DatacenterName: secrets.Hetzner.KKPDatacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
 				Token: secrets.Hetzner.Token,
 			},
@@ -95,7 +94,7 @@ func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	nodeType := hetznerServerType
 
@@ -119,7 +118,7 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 	}, nil
 }
 
-func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

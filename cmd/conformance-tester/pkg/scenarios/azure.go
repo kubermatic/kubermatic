@@ -31,12 +31,11 @@ import (
 )
 
 const (
-	azureVMSize     = "Standard_F2"
-	azureDatacenter = "azure-westeurope"
+	azureVMSize = "Standard_F2"
 )
 
 // GetAzureScenarios returns a matrix of (version x operating system).
-func GetAzureScenarios(versions []*semver.Semver) []Scenario {
+func GetAzureScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
@@ -71,7 +70,7 @@ func (s *azureScenario) APICluster(secrets types.Secrets) *apimodels.CreateClust
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: azureDatacenter,
+					DatacenterName: secrets.Azure.KKPDatacenter,
 					Azure: &apimodels.AzureCloudSpec{
 						ClientID:       secrets.Azure.ClientID,
 						ClientSecret:   secrets.Azure.ClientSecret,
@@ -88,7 +87,7 @@ func (s *azureScenario) APICluster(secrets types.Secrets) *apimodels.CreateClust
 func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: azureDatacenter,
+			DatacenterName: secrets.Azure.KKPDatacenter,
 			Azure: &kubermaticv1.AzureCloudSpec{
 				ClientID:       secrets.Azure.ClientID,
 				ClientSecret:   secrets.Azure.ClientSecret,
@@ -100,7 +99,7 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	}
 }
 
-func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := azureVMSize
 
@@ -124,7 +123,7 @@ func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secr
 	}, nil
 }
 
-func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

@@ -33,19 +33,19 @@ import (
 )
 
 const (
-	datacenterName = "anexia-at"
-	nodeCpu        = 2
-	nodeDiskSize   = 60
-	nodeMemory     = 2048
+	nodeCpu      = 2
+	nodeDiskSize = 60
+	nodeMemory   = 2048
 )
 
 // GetAnexiaScenarios returns a matrix of (version x operating system).
-func GetAnexiaScenarios(versions []*semver.Semver) []Scenario {
+func GetAnexiaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Flatcar
 		scenarios = append(scenarios, &anexiaScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Anexia,
 			osSpec: apimodels.OperatingSystemSpec{
 				Flatcar: &apimodels.FlatcarSpec{},
 			},
@@ -55,8 +55,9 @@ func GetAnexiaScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type anexiaScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecAnexia
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *anexiaScenario) Name() string {
@@ -68,7 +69,7 @@ func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: datacenterName,
+					DatacenterName: secrets.Anexia.KKPDatacenter,
 					Anexia: &apimodels.AnexiaCloudSpec{
 						Token: secrets.Anexia.Token,
 					},
@@ -82,7 +83,7 @@ func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: datacenterName,
+			DatacenterName: secrets.Anexia.KKPDatacenter,
 			Anexia: &kubermaticv1.AnexiaCloudSpec{
 				Token: secrets.Anexia.Token,
 			},
@@ -91,7 +92,7 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 	}
 }
 
-func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -118,7 +119,7 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 	}, nil
 }
 
-func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 
@@ -127,7 +128,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		Token:      providerconfig.ConfigVarString{Value: secrets.Anexia.Token},
 		TemplateID: providerconfig.ConfigVarString{Value: secrets.Anexia.TemplateID},
 		VlanID:     providerconfig.ConfigVarString{Value: secrets.Anexia.VlanID},
-		LocationID: providerconfig.ConfigVarString{Value: secrets.Anexia.LocationID},
+		LocationID: providerconfig.ConfigVarString{Value: s.datacenter.LocationID},
 		DiskSize:   nodeDiskSize,
 		CPUs:       nodeCpu,
 		Memory:     nodeMemory,

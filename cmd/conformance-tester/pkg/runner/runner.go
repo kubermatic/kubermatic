@@ -379,13 +379,8 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
 
-	datacenter, err := r.getClusterDatacenter(ctx, r.opts.SeedClusterClient, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get datacenter: %w", err)
-	}
-
 	if err := util.JUnitWrapper("[KKP] Create NodeDeployments", report, func() error {
-		return r.kkpClient.CreateNodeDeployments(ctx, log, scenario, userClusterClient, cluster, datacenter)
+		return r.kkpClient.CreateNodeDeployments(ctx, log, scenario, userClusterClient, cluster)
 	}); err != nil {
 		return fmt.Errorf("failed to setup nodes: %w", err)
 	}
@@ -609,21 +604,4 @@ func (r *TestRunner) dumpClusterInformation(ctx context.Context, log *zap.Sugare
 	if err := logEventsObject(ctx, log, r.opts.SeedClusterClient, "default", cluster.UID); err != nil {
 		log.Errorw("Failed to log cluster events", zap.Error(err))
 	}
-}
-
-func (r *TestRunner) getClusterDatacenter(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, error) {
-	seeds := &kubermaticv1.SeedList{}
-	if err := client.List(ctx, seeds); err != nil {
-		return nil, fmt.Errorf("failed to list seeds: %w", err)
-	}
-
-	for _, seed := range seeds.Items {
-		for name, dc := range seed.Spec.Datacenters {
-			if name == cluster.Spec.Cloud.DatacenterName {
-				return &dc, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("no Seed contains datacenter %q", cluster.Spec.Cloud.DatacenterName)
 }

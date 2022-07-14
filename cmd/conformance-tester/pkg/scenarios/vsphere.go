@@ -31,12 +31,8 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-const (
-	vSphereDatacenter = "vsphere-ger"
-)
-
 // GetVSphereScenarios returns a matrix of (version x operating system).
-func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []Scenario {
+func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var (
 		customFolder     bool
 		datastoreCluster bool
@@ -56,6 +52,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
+			dc:      datacenter.Spec.VSphere,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
@@ -65,6 +62,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 		// CentOS
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
+			dc:      datacenter.Spec.VSphere,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -78,6 +76,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 
 type vSphereScenario struct {
 	version          *semver.Semver
+	dc               *kubermaticv1.DatacenterSpecVSphere
 	osSpec           apimodels.OperatingSystemSpec
 	customFolder     bool
 	datastoreCluster bool
@@ -92,11 +91,11 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: vSphereDatacenter,
+					DatacenterName: secrets.VSphere.KKPDatacenter,
 					Vsphere: &apimodels.VSphereCloudSpec{
 						Username:  secrets.VSphere.Username,
 						Password:  secrets.VSphere.Password,
-						Datastore: secrets.VSphere.Datastore,
+						Datastore: s.dc.DefaultDatastore,
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -119,11 +118,11 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: vSphereDatacenter,
+			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username:  secrets.VSphere.Username,
 				Password:  secrets.VSphere.Password,
-				Datastore: secrets.VSphere.Datastore,
+				Datastore: s.dc.DefaultDatastore,
 			},
 		},
 		Version: *s.version,
@@ -141,7 +140,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	return spec
 }
 
-func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, datacenter *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
@@ -151,7 +150,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: datacenter.Spec.VSphere.Templates[osName],
+							Template: s.dc.Templates[osName],
 							CPUs:     2,
 							Memory:   4096,
 						},
@@ -166,16 +165,15 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 	}, nil
 }
 
-func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 
 	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
-	template := datacenter.Spec.VSphere.Templates[os]
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVsphere, vspheretypes.RawConfig{
-		TemplateVMName: providerconfig.ConfigVarString{Value: template},
+		TemplateVMName: providerconfig.ConfigVarString{Value: s.dc.Templates[os]},
 		CPUs:           2,
 		MemoryMB:       4096,
 	})

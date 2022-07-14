@@ -19,6 +19,7 @@ package scenarios
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Scenario interface {
@@ -42,65 +44,129 @@ type Scenario interface {
 	OS() apimodels.OperatingSystemSpec
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
-	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error)
-	NodeDeployments(ctx context.Context, num int, secrets types.Secrets, datacenter *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error)
+	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
+	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
 }
 
-func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
+func GetScenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
 	scenarioOptions := strings.Split(opts.ScenarioOptions, ",")
 
 	var scenarios []Scenario
 	if opts.Providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, GetAWSScenarios(opts.Versions, opts.KubermaticClient, opts.KubermaticAuthenticator, opts.Seed)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.AWS.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetAWSScenarios(opts.Versions, opts.KubermaticClient, opts.KubermaticAuthenticator, dc)...)
 	}
+
 	if opts.Providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
-		scenarios = append(scenarios, GetDigitaloceanScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Digitalocean.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetDigitaloceanScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("hetzner") {
 		log.Info("Adding Hetzner scenarios")
-		scenarios = append(scenarios, GetHetznerScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Hetzner.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetHetznerScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("openstack") {
 		log.Info("Adding OpenStack scenarios")
-		scenarios = append(scenarios, GetOpenStackScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.OpenStack.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetOpenStackScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("vsphere") {
 		log.Info("Adding vSphere scenarios")
-		scenarios = append(scenarios, GetVSphereScenarios(scenarioOptions, opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.VSphere.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetVSphereScenarios(scenarioOptions, opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("azure") {
 		log.Info("Adding Azure scenarios")
-		scenarios = append(scenarios, GetAzureScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Azure.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetAzureScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("packet") {
 		log.Info("Adding Packet scenarios")
-		scenarios = append(scenarios, GetPacketScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Packet.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetPacketScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("gcp") {
 		log.Info("Adding GCP scenarios")
-		scenarios = append(scenarios, GetGCPScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.GCP.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetGCPScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("kubevirt") {
 		log.Info("Adding Kubevirt scenarios")
-		scenarios = append(scenarios, GetKubevirtScenarios(opts.Versions, log)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Kubevirt.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetKubevirtScenarios(opts.Versions, log, dc)...)
 	}
+
 	if opts.Providers.Has("alibaba") {
 		log.Info("Adding Alibaba scenarios")
-		scenarios = append(scenarios, GetAlibabaScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Alibaba.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetAlibabaScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("anexia") {
 		log.Info("Adding Anexia scenarios")
-		scenarios = append(scenarios, GetAnexiaScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Anexia.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetAnexiaScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("nutanix") {
 		log.Info("Adding Nutanix scenarios")
-		scenarios = append(scenarios, GetNutanixScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.Nutanix.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetNutanixScenarios(opts.Versions, dc)...)
 	}
+
 	if opts.Providers.Has("vmwareclouddirector") {
 		log.Info("Adding VMware Cloud Director scenarios")
-		scenarios = append(scenarios, GetVMwareCloudDirectorScenarios(opts.Versions)...)
+		dc, err := getDatacenter(ctx, opts.SeedClusterClient, opts.Secrets.VMwareCloudDirector.KKPDatacenter)
+		if err != nil {
+			return nil, err
+		}
+		scenarios = append(scenarios, GetVMwareCloudDirectorScenarios(opts.Versions, dc)...)
 	}
 
 	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
@@ -128,7 +194,7 @@ func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
 	}
 
 	// Shuffle scenarios - avoids timeouts caused by quota issues
-	return shuffle(filteredScenarios)
+	return shuffle(filteredScenarios), nil
 }
 
 func shuffle(vals []Scenario) []Scenario {
@@ -203,4 +269,21 @@ func createMachineDeployment(replicas int, version *semver.Semver, os providerco
 			},
 		},
 	}, nil
+}
+
+func getDatacenter(ctx context.Context, client ctrlruntimeclient.Client, datacenter string) (*kubermaticv1.Datacenter, error) {
+	seeds := &kubermaticv1.SeedList{}
+	if err := client.List(ctx, seeds); err != nil {
+		return nil, fmt.Errorf("failed to list seeds: %w", err)
+	}
+
+	for _, seed := range seeds.Items {
+		for name, dc := range seed.Spec.Datacenters {
+			if name == datacenter {
+				return &dc, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no Seed contains datacenter %q", datacenter)
 }

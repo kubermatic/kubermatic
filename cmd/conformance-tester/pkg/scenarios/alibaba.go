@@ -30,24 +30,22 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-const (
-	alibabaDatacenter = "alibaba-eu-central-1a"
-)
-
 // GetAlibabaScenarios returns a matrix of (version x operating system).
-func GetAlibabaScenarios(versions []*semver.Semver) []Scenario {
+func GetAlibabaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &alibabaScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Alibaba,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &alibabaScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Alibaba,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -57,8 +55,9 @@ func GetAlibabaScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type alibabaScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecAlibaba
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *alibabaScenario) Name() string {
@@ -70,7 +69,7 @@ func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: alibabaDatacenter,
+					DatacenterName: secrets.Alibaba.KKPDatacenter,
 					Alibaba: &apimodels.AlibabaCloudSpec{
 						AccessKeySecret: secrets.Alibaba.AccessKeySecret,
 						AccessKeyID:     secrets.Alibaba.AccessKeyID,
@@ -85,7 +84,7 @@ func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: alibabaDatacenter,
+			DatacenterName: secrets.Alibaba.KKPDatacenter,
 			Alibaba: &kubermaticv1.AlibabaCloudSpec{
 				AccessKeySecret: secrets.Alibaba.AccessKeySecret,
 				AccessKeyID:     secrets.Alibaba.AccessKeyID,
@@ -95,7 +94,7 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -110,7 +109,7 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets ty
 							DiskType:                "cloud_efficiency",
 							VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
 							InternetMaxBandwidthOut: "10",
-							ZoneID:                  alibabaDatacenter,
+							ZoneID:                  s.getZoneID(),
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -123,7 +122,7 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets ty
 	}, nil
 }
 
-func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// It is unfortunately not possible to convert an apimodels.NodeDeployment into anything
 	// useful for GitOps, so this function has to completely reimplement everything (most of
 	// the logic from pkg/resources/machine/common.go); since #9541 focused only on AWS, the
@@ -140,7 +139,7 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets
 		DiskType:                providerconfig.ConfigVarString{Value: "cloud_efficiency"},
 		VSwitchID:               providerconfig.ConfigVarString{Value: "vsw-gw8g8mn4ohmj483hsylmn"},
 		InternetMaxBandwidthOut: providerconfig.ConfigVarString{Value: "10"},
-		ZoneID:                  providerconfig.ConfigVarString{Value: alibabaDatacenter},
+		ZoneID:                  providerconfig.ConfigVarString{Value: s.getZoneID()},
 	})
 	if err != nil {
 		return nil, err
@@ -151,4 +150,8 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets
 
 func (s *alibabaScenario) OS() apimodels.OperatingSystemSpec {
 	return s.osSpec
+}
+
+func (s *alibabaScenario) getZoneID() string {
+	return fmt.Sprintf("%sa", s.datacenter.Region)
 }

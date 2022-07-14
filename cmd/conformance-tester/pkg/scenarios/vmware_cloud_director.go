@@ -34,7 +34,6 @@ import (
 )
 
 const (
-	vmwareCloudDirectorDatacenter       = "vmware-cloud-director-ger"
 	vmwareCloudDirectorIPAllocationMode = "DHCP"
 	vmwareCloudDirectorCPUs             = 2
 	vmwareCloudDirectorCPUCores         = 1
@@ -45,12 +44,13 @@ const (
 )
 
 // GetVMwareCloudDirectorScenarios returns a matrix of (version x operating system).
-func GetVMwareCloudDirectorScenarios(versions []*semver.Semver) []Scenario {
+func GetVMwareCloudDirectorScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &vmwareCloudDirectorScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.VMwareCloudDirector,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
@@ -61,8 +61,9 @@ func GetVMwareCloudDirectorScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type vmwareCloudDirectorScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecVMwareCloudDirector
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *vmwareCloudDirectorScenario) Name() string {
@@ -74,7 +75,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: vmwareCloudDirectorDatacenter,
+					DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
 						Username:     secrets.VMwareCloudDirector.Username,
 						Password:     secrets.VMwareCloudDirector.Password,
@@ -97,7 +98,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: vmwareCloudDirectorDatacenter,
+			DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
 				Username:     secrets.VMwareCloudDirector.Username,
 				Password:     secrets.VMwareCloudDirector.Password,
@@ -115,7 +116,7 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 	return spec
 }
 
-func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
+func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
@@ -125,7 +126,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
-							Template:         fmt.Sprintf("machine-controller-%s", osName),
+							Template:         s.datacenter.Templates[osName],
 							Catalog:          vmwareCloudDirectorCatalog,
 							CPUs:             vmwareCloudDirectorCPUs,
 							CPUCores:         vmwareCloudDirectorCPUCores,
@@ -144,16 +145,15 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 	}, nil
 }
 
-func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 
 	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
-	template := fmt.Sprintf("machine-controller-%s", os)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, vcdtypes.RawConfig{
-		Template:         providerconfig.ConfigVarString{Value: template},
+		Template:         providerconfig.ConfigVarString{Value: s.datacenter.Templates[os]},
 		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
 		CPUs:             vmwareCloudDirectorCPUs,
 		MemoryMB:         vmwareCloudDirectoMemoryMB,
