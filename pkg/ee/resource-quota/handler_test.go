@@ -49,13 +49,13 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			Name: fmt.Sprintf("project-%s", projectName),
 			Labels: map[string]string{
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey:              kubermaticv1.ProjectSubjectKind,
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey:              fmt.Sprintf("%s", projectName),
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey:              projectName,
 				kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "my project",
 			},
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{
-				Name: fmt.Sprintf("%s", projectName),
+				Name: projectName,
 				Kind: kubermaticv1.ProjectSubjectKind,
 			},
 		},
@@ -168,7 +168,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:    "/api/v2/quotas",
 			body: `{
 		      "subjectKind": "project",
-		      "subjectName": "` + fmt.Sprintf("%s", projectName) + `"
+		      "subjectName": "` + projectName + `"
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
