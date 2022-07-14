@@ -3977,6 +3977,11 @@
         "parameters": [
           {
             "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -3995,11 +4000,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "header"
           }
         ],
         "responses": {
@@ -24753,6 +24753,11 @@
         },
         "images": {
           "$ref": "#/definitions/ImageList"
+        },
+        "ipv6Enabled": {
+          "description": "Optional: defines if the IPv6 is enabled for the datacenter",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
         },
         "manageSecurityGroups": {
           "description": "Optional: Gets mapped to the \"manage-security-groups\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer\nThis setting defaults to true.",

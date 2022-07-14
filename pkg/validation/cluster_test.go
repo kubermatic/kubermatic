@@ -314,6 +314,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		networkConfig kubermaticv1.ClusterNetworkingConfig
+		dc            *kubermaticv1.Datacenter
 		wantErr       bool
 	}{
 		{
@@ -508,11 +509,82 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "valid dual-stack datacenter config",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					AWS: &kubermaticv1.DatacenterSpecAWS{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid dual-stack datacenter config (openstack)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						IPv6Enabled: pointer.BoolPtr(true),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid dual-stack datacenter config (IPv6 not enabled for datacenter)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						IPv6Enabled: pointer.BoolPtr(false),
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid dual-stack datacenter config (not known ipv6 cloud provider)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			errs := ValidateClusterNetworkConfig(&test.networkConfig, nil, field.NewPath("spec", "networkConfig"))
-
+			errs := ValidateClusterNetworkConfig(&test.networkConfig, test.dc, nil, field.NewPath("spec", "networkConfig"))
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
 			}

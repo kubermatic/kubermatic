@@ -165,6 +165,8 @@ spec:
             rockylinux: ""
             sles: ""
             ubuntu: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
           # This setting defaults to true.

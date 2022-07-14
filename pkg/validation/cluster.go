@@ -119,7 +119,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, spec.CNIPlugin, parentFieldPath.Child("networkConfig")); len(errs) > 0 {
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, dc, spec.CNIPlugin, parentFieldPath.Child("networkConfig")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -262,7 +262,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	return allErrs
 }
 
-func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {
+func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *kubermaticv1.Datacenter, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// Maximum 2 (one IPv4 + one IPv6) CIDR blocks are allowed
 	if len(n.Pods.CIDRBlocks) > 2 {
@@ -334,6 +334,22 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
 			fmt.Sprintf("%s proxy mode can be used only when Konnectivity is enabled", resources.EBPFProxyMode)))
+	}
+
+	if n.IPFamily == kubermaticv1.IPFamilyDualStack && dc != nil {
+		cloudProvider, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath, nil,
+				fmt.Sprintf("could not determine cloud provider: %v", err)))
+		}
+
+		cloudProviderType := kubermaticv1.ProviderType(cloudProvider)
+
+		if cloudProviderType.IsIPv6KnownProvider() && !dc.IsIPv6Enabled(cloudProviderType) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
+				fmt.Sprintf("IP family %q requires ipv6 to be enabled for the datacenter", n.IPFamily)),
+			)
+		}
 	}
 
 	return allErrs
