@@ -40,6 +40,7 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 # As dex doesn't support groups in static users configuration we configure minimal LDAP server.
 # More details: https://github.com/dexidp/dex/issues/1080
 echodate "Setting up openldap server..."
+retry 2 kubectl create ns oauth
 retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
 
 source hack/ci/setup-kubermatic-in-kind.sh
