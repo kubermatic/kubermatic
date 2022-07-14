@@ -147,6 +147,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
+							Metro:      "",
 						},
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{

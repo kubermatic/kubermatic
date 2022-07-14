@@ -24790,6 +24790,11 @@
             "type": "string"
           },
           "x-go-name": "Facilities"
+        },
+        "metro": {
+          "description": "Metros are facilities that are grouped together geographically and share capacity\nand networking features, see https://metal.equinix.com/developers/docs/locations/metros/",
+          "type": "string",
+          "x-go-name": "Metro"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
