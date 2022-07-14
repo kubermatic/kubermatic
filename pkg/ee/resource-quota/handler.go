@@ -153,7 +153,7 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, err
 	}
 
-	return convertToAPIStruct(resourceQuota, ""), nil
+	return convertToAPIStruct(resourceQuota), nil
 }
 
 func GetResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
@@ -182,7 +182,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return convertToAPIStruct(projectResourceQuota, kubermaticProject.Spec.Name), nil
+	return convertToAPIStruct(projectResourceQuota), nil
 }
 
 func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
@@ -206,7 +206,7 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 
 	resp := make([]*apiv2.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
-		resp[idx] = convertToAPIStruct(&rq, "")
+		resp[idx] = convertToAPIStruct(&rq)
 	}
 
 	return resp, nil
@@ -257,14 +257,14 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 	return nil
 }
 
-func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota, humanReadableName string) *apiv2.ResourceQuota {
+func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv2.ResourceQuota {
 	return &apiv2.ResourceQuota{
 		Name:                     resourceQuota.Name,
 		SubjectName:              resourceQuota.Spec.Subject.Name,
 		SubjectKind:              resourceQuota.Spec.Subject.Kind,
 		Quota:                    resourceQuota.Spec.Quota,
 		Status:                   resourceQuota.Status,
-		SubjectHumanReadableName: humanReadableName,
+		SubjectHumanReadableName: resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey],
 	}
 }
 

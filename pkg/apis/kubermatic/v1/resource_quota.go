@@ -25,8 +25,9 @@ const (
 	// ResourceQuotaKindName represents "Kind" defined in Kubernetes.
 	ResourceQuotaKindName = "ResourceQuota"
 
-	ResourceQuotaSubjectNameLabelKey = "subject-name"
-	ResourceQuotaSubjectKindLabelKey = "subject-kind"
+	ResourceQuotaSubjectNameLabelKey              = "subject-name"
+	ResourceQuotaSubjectKindLabelKey              = "subject-kind"
+	ResourceQuotaSubjectHumanReadableNameLabelKey = "subject-human-readable-name"
 
 	ProjectSubjectKind = "project"
 )

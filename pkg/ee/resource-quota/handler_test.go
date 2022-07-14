@@ -48,8 +48,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("project-%s", projectName),
 			Labels: map[string]string{
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s", projectName),
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey:              kubermaticv1.ProjectSubjectKind,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey:              fmt.Sprintf("%s", projectName),
+				kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "my project",
 			},
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
