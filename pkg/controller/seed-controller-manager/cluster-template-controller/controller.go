@@ -110,7 +110,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, instance, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(instance, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(instance, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err

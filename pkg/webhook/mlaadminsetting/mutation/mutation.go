@@ -77,7 +77,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		// apply defaults to the existing MLAAdminSetting
 		err := h.ensureClusterReference(ctx, adminSetting)
 		if err != nil {
-			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			h.log.Error(err, "MLAAdminSetting mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -94,7 +94,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.validateUpdate(ctx, oldSetting, adminSetting)
 		if err != nil {
-			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			h.log.Error(err, "MLAAdminSetting mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 

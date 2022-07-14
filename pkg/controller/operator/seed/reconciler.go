@@ -105,7 +105,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	// to allow a step-by-step migration of seed clusters, it's possible to
 	// disable the operator's reconciling logic for seeds
 	if _, ok := seed.Annotations[common.SkipReconcilingAnnotation]; ok {
-		log.Info("seed is marked as paused, skipping reconciliation")
+		log.Debug("seed is marked as paused, skipping reconciliation")
 		return nil
 	}
 

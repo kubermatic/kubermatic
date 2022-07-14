@@ -209,15 +209,15 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 		)
 
 		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-			logger.Info("deployment rollout did not complete: not all replicas have been updated")
+			logger.Debug("deployment rollout did not complete: not all replicas have been updated")
 			return false, nil
 		}
 		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-			logger.Infow("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+			logger.Debugw("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-			logger.Info("deployment rollout did not complete: not enough updated replicas available")
+			logger.Debug("deployment rollout did not complete: not enough updated replicas available")
 			return false, nil
 		}
 

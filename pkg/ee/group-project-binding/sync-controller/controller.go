@@ -127,7 +127,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	})
 
 	if err != nil {
-		r.recorder.Eventf(groupProjectBinding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(groupProjectBinding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile groupprojectbinding '%s': %w", groupProjectBinding.Name, err)
 	}
 

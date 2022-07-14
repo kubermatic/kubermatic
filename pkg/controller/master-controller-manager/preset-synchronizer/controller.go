@@ -131,7 +131,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileKubermaticV1Presets(ctx, presetCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Eventf(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciled preset: %s: %w", preset.Name, err)
 	}
 	return nil

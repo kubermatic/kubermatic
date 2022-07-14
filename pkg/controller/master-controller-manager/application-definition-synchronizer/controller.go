@@ -129,8 +129,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Eventf(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return fmt.Errorf("reconciled application definition: %s: %w", applicationDef.Name, err)
+		r.recorder.Event(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		return fmt.Errorf("reconciled application definition %s: %w", applicationDef.Name, err)
 	}
 
 	return nil

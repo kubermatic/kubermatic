@@ -164,7 +164,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	})
 
 	if err != nil {
-		r.recorder.Eventf(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("reconciled project: %s: %w", project.Name, err)
 	}
 

@@ -73,7 +73,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 		if err := h.applyDefaults(ctx, sshKey, nil); err != nil {
-			h.log.Info("usersshkey mutation failed", "error", err)
+			h.log.Error(err, "usersshkey mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -86,7 +86,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 		if err := h.applyDefaults(ctx, sshKey, oldKey); err != nil {
-			h.log.Info("usersshkey mutation failed", "error", err)
+			h.log.Error(err, "usersshkey mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
 		}
 

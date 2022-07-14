@@ -78,7 +78,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		// apply defaults to the existing addon
 		err := h.ensureClusterReference(ctx, addon)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
+			h.log.Error(err, "addon mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -95,7 +95,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.validateUpdate(ctx, oldAddon, addon)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
+			h.log.Error(err, "addon mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
 		}
 

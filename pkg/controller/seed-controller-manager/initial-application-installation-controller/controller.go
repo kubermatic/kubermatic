@@ -139,7 +139,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Info("Application controller not healthy")
+		r.log.Debug("Application controller not healthy")
 		return nil, nil
 	}
 
