@@ -189,6 +189,7 @@ type providers struct {
 	resourceQuotaProvider                   provider.ResourceQuotaProvider
 	groupProjectBindingProvider             provider.GroupProjectBindingProvider
 	privilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
+	applicationDefinitionProvider           provider.ApplicationDefinitionProvider
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {

@@ -352,6 +352,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
+	applicationDefinitionProvider := kubernetesprovider.NewApplicationDefinitionProvider(defaultImpersonationClient.CreateImpersonatedClient)
+
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to setup user-watcher: %w", err)
@@ -424,6 +426,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		resourceQuotaProvider:                   resourceQuotaProvider,
 		groupProjectBindingProvider:             groupProjectBindingProvider,
 		privilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
+		applicationDefinitionProvider:           applicationDefinitionProvider,
 	}, nil
 }
 
@@ -546,6 +549,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
 		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
 		PrivilegedIPAMPoolProviderGetter:        prov.privilegedIPAMPoolProviderGetter,
+		ApplicationDefinitionProvider:           prov.applicationDefinitionProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,
