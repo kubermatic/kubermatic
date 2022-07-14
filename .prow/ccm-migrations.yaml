@@ -60,7 +60,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-vsphere: "true"
+      # preset-vsphere: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -79,6 +79,33 @@ presubmits:
               value: vsphere
             - name: VERSION_TO_TEST
               value: "v1.22.11"
+
+            - name: VSPHERE_E2E_ADDRESS
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-vsphere-test
+                  key: url
+            - name: VSPHERE_E2E_CLUSTER
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-vsphere-test
+                  key: cluster
+            - name: VSPHERE_E2E_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-vsphere-test
+                  key: password
+            - name: VSPHERE_E2E_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-vsphere-test
+                  key: username
+            - name: VSPHERE_E2E_TEST_DATACENTER
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-vsphere-test
+                  key: test_datacenter
+
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
