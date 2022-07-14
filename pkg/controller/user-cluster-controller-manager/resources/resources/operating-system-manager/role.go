@@ -44,6 +44,16 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 				},
 				{
 					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs: []string{
+						"create",
+						"update",
+						"get",
+						"list",
+					},
+				},
+				{
+					APIGroups: []string{""},
 					Resources: []string{"events"},
 					Verbs: []string{
 						"create",
