@@ -112,7 +112,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 	}
 }
 
-func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	flavor := openStackFlavor
 	image := openStackImage(osName)
@@ -141,7 +141,7 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 	}, nil
 }
 
-func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

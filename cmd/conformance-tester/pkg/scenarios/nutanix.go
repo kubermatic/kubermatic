@@ -120,7 +120,7 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
 
@@ -148,7 +148,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 	}, nil
 }
 
-func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

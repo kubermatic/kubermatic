@@ -95,7 +95,7 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.Clus
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := dropletSize
 
@@ -119,7 +119,7 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 	}, nil
 }
 
-func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

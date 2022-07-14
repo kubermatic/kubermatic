@@ -106,7 +106,7 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 	}
 }
 
-func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 	}, nil
 }
 
-func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

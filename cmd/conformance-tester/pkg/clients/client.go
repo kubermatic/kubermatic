@@ -33,6 +33,6 @@ type Client interface {
 	CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error)
 	CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error
 	CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error)
-	CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error
+	CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) error
 	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error
 }

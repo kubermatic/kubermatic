@@ -95,7 +95,7 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -123,7 +123,7 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets ty
 	}, nil
 }
 
-func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// It is unfortunately not possible to convert an apimodels.NodeDeployment into anything
 	// useful for GitOps, so this function has to completely reimplement everything (most of
 	// the logic from pkg/resources/machine/common.go); since #9541 focused only on AWS, the

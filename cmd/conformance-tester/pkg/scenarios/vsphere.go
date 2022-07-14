@@ -105,7 +105,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/Kubermatic-dev/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
@@ -130,7 +130,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 
 	if s.customFolder {
-		spec.Cloud.VSphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+		spec.Cloud.VSphere.Folder = "/dc-1/vm/Kubermatic-dev/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
@@ -141,7 +141,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	return spec
 }
 
-func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, datacenter *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
@@ -151,7 +151,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
+							Template: datacenter.Spec.VSphere.Templates[osName],
 							CPUs:     2,
 							Memory:   4096,
 						},
@@ -166,13 +166,13 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 	}, nil
 }
 
-func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 
 	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
-	template := fmt.Sprintf("machine-controller-e2e-%s", os)
+	template := datacenter.Spec.VSphere.Templates[os]
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVsphere, vspheretypes.RawConfig{
 		TemplateVMName: providerconfig.ConfigVarString{Value: template},

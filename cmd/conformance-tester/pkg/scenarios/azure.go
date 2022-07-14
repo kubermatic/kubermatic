@@ -100,7 +100,7 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	}
 }
 
-func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets, _ *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := azureVMSize
 
@@ -124,7 +124,7 @@ func (s *azureScenario) NodeDeployments(_ context.Context, num int, _ types.Secr
 	}, nil
 }
 
-func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, _ *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error) {
 	// See alibaba provider for more info on this.
 	return nil, errors.New("not implemented for gitops yet")
 

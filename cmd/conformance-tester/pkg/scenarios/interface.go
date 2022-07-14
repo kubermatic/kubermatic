@@ -42,8 +42,8 @@ type Scenario interface {
 	OS() apimodels.OperatingSystemSpec
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
-	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
-	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
+	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) ([]clusterv1alpha1.MachineDeployment, error)
+	NodeDeployments(ctx context.Context, num int, secrets types.Secrets, datacenter *kubermaticv1.Datacenter) ([]apimodels.NodeDeployment, error)
 }
 
 func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
