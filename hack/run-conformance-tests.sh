@@ -133,7 +133,7 @@ vsphere)
   VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
   extraArgs="-vsphere-username=$VSPHERE_USERNAME
       -vsphere-password=$VSPHERE_PASSWORD
-      -vsphere-datastore=HS-FreeNAS"
+      -vsphere-datastore=alpha1"
   ;;
 
 *)

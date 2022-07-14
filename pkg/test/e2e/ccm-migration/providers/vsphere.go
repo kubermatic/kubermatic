@@ -143,7 +143,7 @@ func (vc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
 }
 
 func (vc *VsphereCredentialsType) GenerateProviderSpec(clustername string) []byte {
-	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"%s","datastore":"HS-FreeNAS","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/%s/vm/e2e-tests/%s","templateVMName":"machine-controller-e2e-ubuntu"}`, vc.Cluster, vc.Datacenter, vc.Datacenter, clustername)
+	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"%s","datastore":"alpha1","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/%s/vm/Kubermatic-dev/%s","templateVMName":"ubuntu-20.04"}`, vc.Cluster, vc.Datacenter, vc.Datacenter, clustername)
 	return []byte(fmt.Sprintf(`{"cloudProvider":"vsphere","cloudProviderSpec":%s,"operatingSystem":"ubuntu","operatingSystemSpec":{"distUpgradeOnBoot":false}}`,
 		cloudProviderSpec))
 }
