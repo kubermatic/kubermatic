@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-anexia-flatcar-1.23
+  - name: pre-kubermatic-e2e-anexia-flatcar-1.24
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     always_run: false
@@ -35,7 +35,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.8"
+          value: "v1.24.2"
         - name: PROVIDER
           value: "anexia"
         - name: DISTRIBUTIONS

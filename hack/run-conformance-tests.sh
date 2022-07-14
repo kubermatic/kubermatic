@@ -68,10 +68,10 @@ anexia)
   ANEXIA_TEMPLATE_ID="${ANEXIA_TEMPLATE_ID:-$(vault kv get -field=templateID dev/e2e-anexia)}"
   ANEXIA_VLAN_ID="${ANEXIA_VLAN_ID:-$(vault kv get -field=vlanID dev/e2e-anexia)}"
   ANEXIA_LOCATION_ID="${ANEXIA_LOCATION_ID:-$(vault kv get -field=locationID dev/e2e-anexia)}"
-  extraArgs="-anexia-token=$ANEXIA_TOKEN"
-  extraArgs="-anexia-template-id=$ANEXIA_TEMPLATE_ID"
-  extraArgs="-anexia-vlan-id=$ANEXIA_VLAN_ID"
-  extraArgs="-anexia-location-id=$ANEXIA_LOCATION_ID"
+  extraArgs="-anexia-token=$ANEXIA_TOKEN
+      -anexia-template-id=$ANEXIA_TEMPLATE_ID
+      -anexia-vlan-id=$ANEXIA_VLAN_ID
+      -anexia-location-id=$ANEXIA_LOCATION_ID"
   ;;
 
 aws)
