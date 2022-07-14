@@ -55,7 +55,6 @@ presubmits:
               memory: 4Gi
 
   - name: pre-kubermatic-ccm-migration-vsphere-e2e
-    run_if_changed: "(pkg/|.prow/)"
     run_if_changed: "(pkg/provider/cloud/vsphere/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/|.prow/ccm-migrations.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
