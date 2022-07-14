@@ -56,7 +56,10 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		ensureResourceQuotaLabels(resourceQuota)
+		kubernetes.EnsureLabels(resourceQuota, map[string]string{
+			kubermaticv1.ResourceQuotaSubjectKindLabelKey: resourceQuota.Spec.Subject.Kind,
+			kubermaticv1.ResourceQuotaSubjectNameLabelKey: resourceQuota.Spec.Subject.Name,
+		})
 
 		if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
 			err := ensureProjectOwnershipRefAndLabel(ctx, client, resourceQuota)
@@ -121,19 +124,6 @@ func ensureProjectOwnershipRefAndLabel(ctx context.Context, client ctrlruntimecl
 	kubernetes.EnsureLabels(resourceQuota, map[string]string{kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: project.Spec.Name})
 
 	return nil
-}
-
-func ensureResourceQuotaLabels(resourceQuota *kubermaticv1.ResourceQuota) {
-	labels := resourceQuota.GetLabels()
-
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] = resourceQuota.Spec.Subject.Kind
-	labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = resourceQuota.Spec.Subject.Name
-
-	resourceQuota.SetLabels(labels)
 }
 
 func validateUpdate(oldResourceQuota *kubermaticv1.ResourceQuota, newResourceQuota *kubermaticv1.ResourceQuota) error {

@@ -393,4 +393,5 @@ func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 	for key, value := range toEnsure {
 		labels[key] = value
 	}
+	o.SetLabels(labels)
 }
