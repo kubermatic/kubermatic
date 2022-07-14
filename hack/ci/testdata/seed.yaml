@@ -113,13 +113,12 @@ spec:
           region: europe-west3
           zoneSuffixes:
             - c
-    packet-ewr1:
-      location: "Packet EWR1 (New York)"
-      country: US
+    packet-am:
+      location: "Packet AM (Amsterdam)"
+      country: NL
       spec:
         packet:
-          facilities:
-            - ewr1
+          metro: AM
     do-ams3:
       location: Amsterdam
       country: NL

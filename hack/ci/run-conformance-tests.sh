@@ -51,7 +51,7 @@ elif [[ $provider == "packet" ]]; then
   maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}
-    -packet-kkp-datacenter=packet-ewr1"
+    -packet-kkp-datacenter=packet-am"
 elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}
     -gcp-kkp-datacenter=gcp-westeurope"
