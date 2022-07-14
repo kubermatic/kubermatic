@@ -48,6 +48,7 @@ type Scenario interface {
 	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
 }
 
+//gocyclo:ignore
 func GetScenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
 	scenarioOptions := strings.Split(opts.ScenarioOptions, ",")
 
