@@ -67,8 +67,8 @@ fi
 
 if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
-    -vsphere-datacenter=dc-1
-    -vsphere-cluster=cl-1
+    -vsphere-datacenter=Hamburg
+    -vsphere-cluster=vcenter.dc.k8c.io
     -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
     -vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}

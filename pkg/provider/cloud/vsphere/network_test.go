@@ -34,7 +34,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: "/dc-1/network/VM Network",
+					AbsolutePath: "/Hamburg/network/VM Network",
 					RelativePath: "VM Network",
 					Type:         "Network",
 					Name:         "VM Network",

@@ -105,7 +105,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/Kubermatic-dev/custom_folder_test"
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/Hamburg/vm/Kubermatic-dev/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
@@ -130,7 +130,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 
 	if s.customFolder {
-		spec.Cloud.VSphere.Folder = "/dc-1/vm/Kubermatic-dev/custom_folder_test"
+		spec.Cloud.VSphere.Folder = "/Hamburg/vm/Kubermatic-dev/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
