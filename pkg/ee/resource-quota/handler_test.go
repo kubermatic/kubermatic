@@ -272,7 +272,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			},
 		},
 		{
-			name:            "scenario 12: user bob cant get a project resource quota from a project he doesnt belong to",
+			name:            "scenario 12: user bob can't get a project resource quota from a project he doesn't belong to",
 			method:          "GET",
 			url:             fmt.Sprintf("/api/v2/projects/%s-2/quota", projectName),
 			existingAPIUser: test.GenDefaultAPIUser(),
