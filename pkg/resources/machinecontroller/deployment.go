@@ -53,7 +53,7 @@ var (
 const (
 	Name = "machine-controller"
 	// Ref: https://github.com/kubermatic/machine-controller/commit/32c8ec0998445a664938d2f7783a9d12168adf7b
-	// TODO: Update this to a semver tag before release
+	// TODO: Update this to a semver tag before release.
 	Tag = "32c8ec0998445a664938d2f7783a9d12168adf7b"
 )
 

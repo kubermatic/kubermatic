@@ -53,7 +53,7 @@ var (
 const (
 	Name = "operating-system-manager"
 	// Ref: https://github.com/kubermatic/operating-system-manager/commit/494c47ecb9e0c33be065ab8e6b8f576f3532a972
-	// TODO: Update this to a semver tag before release
+	// TODO: Update this to a semver tag before release.
 	Tag = "494c47ecb9e0c33be065ab8e6b8f576f3532a972"
 )
 
@@ -63,6 +63,7 @@ type operatingSystemManagerData interface {
 	Cluster() *kubermaticv1.Cluster
 	ImageRegistry(string) string
 	NodeLocalDNSCacheEnabled() bool
+	GetCSIMigrationFeatureGates() []string
 	DC() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
 	OperatingSystemManagerImageTag() string
@@ -167,7 +168,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
+					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(), data.Cluster().Spec.ImagePullSecret),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -228,12 +229,10 @@ type clusterSpec struct {
 	podCidr          string
 }
 
-func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool) []string {
+func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool, csiMigrationFeatureGates []string, imagePullSecret *corev1.SecretReference) []string {
 	flags := []string{
 		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
-		"-logtostderr",
-		"-v", "4",
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
@@ -250,7 +249,9 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		if nodeSettings.ContainerdRegistryMirrors != nil {
 			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
 		}
-
+		if len(nodeSettings.RegistryMirrors) > 0 {
+			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
+		}
 		if !nodeSettings.HTTPProxy.Empty() {
 			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 		}
@@ -260,6 +261,14 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
 		}
+	}
+
+	if len(csiMigrationFeatureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+	}
+
+	if imagePullSecret != nil {
+		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
 	}
 
 	if cs.containerRuntime != "" {
