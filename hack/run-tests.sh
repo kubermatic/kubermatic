@@ -21,5 +21,17 @@ source hack/lib.sh
 
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
+TEST_FLAGS=""
+if [ -n "${PROW_JOB_ID:-}" ]; then
+  # Go creates a testlog if caching is enabled. As our unit
+  # tests render addons _very_ often, logging all filesystem I/O
+  # dramatically slows down the tests; disabling caching fixes it.
+  # Also, since it's CI, we don't lose anything by not caching in
+  # a temporary Pod.
+  # Note that setting GOCACHE=off is not supported since Go 1.12:
+  # https://github.com/golang/go/issues/29378#issuecomment-449383809
+  TEST_FLAGS="-v -count=1"
+fi
+
 CGO_ENABLED=1 go_test unit_tests \
-  -tags "unit,${KUBERMATIC_EDITION}" -v -race ./pkg/... ./cmd/... ./codegen/...
+  -tags "unit,${KUBERMATIC_EDITION}" $TEST_FLAGS -race ./pkg/... ./cmd/... ./codegen/...
