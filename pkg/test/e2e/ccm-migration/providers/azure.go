@@ -18,19 +18,23 @@ package providers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
+	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
+	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,7 +78,12 @@ func (c *AzureClusterJig) Setup(ctx context.Context) error {
 	}
 	c.log.Debugw("project created", "name", projectID)
 
-	if err := c.generateAndCreateSecret(ctx, azureSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateSecret(ctx, azureSecretPrefixName, c.Credentials.GenerateSecretData(datacenter.Spec.Azure)); err != nil {
 		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", azureSecretPrefixName, c.name))
@@ -106,7 +115,12 @@ func (c *AzureClusterJig) Setup(ctx context.Context) error {
 }
 
 func (c *AzureClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.cluster.Spec.Cloud.Azure)); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.cluster.Spec.Cloud.Azure, datacenter.Spec.Azure)); err != nil {
 		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
@@ -153,7 +167,7 @@ type AzureCredentialsType struct {
 	resources.AzureCredentials
 }
 
-func (c *AzureCredentialsType) GenerateSecretData() map[string][]byte {
+func (c *AzureCredentialsType) GenerateSecretData(datacenter *kubermaticv1.DatacenterSpecAzure) map[string][]byte {
 	return map[string][]byte{
 		"clientID":       []byte(c.ClientID),
 		"clientSecret":   []byte(c.ClientSecret),
@@ -162,16 +176,46 @@ func (c *AzureCredentialsType) GenerateSecretData() map[string][]byte {
 	}
 }
 
-func (c *AzureCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AzureCloudSpec) []byte {
-	return []byte(fmt.Sprintf(`{"cloudProvider": "azure", "cloudProviderSpec": {"tenantID": "%s", "clientID": "%s", "clientSecret": "%s", "subscriptionID": "%s", "location": "westeurope", "vmSize": "Standard_B1ms", "resourceGroup": "%s", "vnetName": "%s", "subnetName": "%s", "routeTableName": "%s", "securityGroupName": "%s"}, "operatingSystem": "ubuntu", "operatingSystemSpec": {"distUpgradeOnBoot": false, "disableAutoUpdate": true}}`,
-		c.TenantID,
-		c.ClientID,
-		c.ClientSecret,
-		c.SubscriptionID,
-		spec.ResourceGroup,
-		spec.VNetName,
-		spec.SubnetName,
-		spec.RouteTableName,
-		spec.SecurityGroup,
-	))
+func (c *AzureCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AzureCloudSpec, datacenter *kubermaticv1.DatacenterSpecAzure) []byte {
+	os := types.OperatingSystemUbuntu
+
+	providerSpec, err := json.Marshal(azuretypes.RawConfig{
+		TenantID:          types.ConfigVarString{Value: c.TenantID},
+		ClientID:          types.ConfigVarString{Value: c.ClientID},
+		ClientSecret:      types.ConfigVarString{Value: c.ClientSecret},
+		SubscriptionID:    types.ConfigVarString{Value: c.SubscriptionID},
+		Location:          types.ConfigVarString{Value: datacenter.Location},
+		VMSize:            types.ConfigVarString{Value: "Standard_B1ms"},
+		ResourceGroup:     types.ConfigVarString{Value: spec.ResourceGroup},
+		VNetName:          types.ConfigVarString{Value: spec.VNetName},
+		SubnetName:        types.ConfigVarString{Value: spec.SubnetName},
+		RouteTableName:    types.ConfigVarString{Value: spec.RouteTableName},
+		SecurityGroupName: types.ConfigVarString{Value: spec.SecurityGroup},
+	})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	osSpec, err := json.Marshal(ubuntu.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	cfg := types.Config{
+		CloudProvider: types.CloudProviderAzure,
+		CloudProviderSpec: runtime.RawExtension{
+			Raw: providerSpec,
+		},
+		OperatingSystem: os,
+		OperatingSystemSpec: runtime.RawExtension{
+			Raw: osSpec,
+		},
+	}
+
+	encoded, err := json.Marshal(cfg)
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	return encoded
 }

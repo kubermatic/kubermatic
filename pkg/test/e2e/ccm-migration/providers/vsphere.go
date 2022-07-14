@@ -18,19 +18,24 @@ package providers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
+	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,7 +72,12 @@ func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 	}
 	c.log.Debugw("project created", "name", projectID)
 
-	if err := c.generateAndCreateSecret(ctx, vsphereSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateSecret(ctx, vsphereSecretPrefixName, c.Credentials.GenerateSecretData(datacenter.Spec.VSphere)); err != nil {
 		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", vsphereSecretPrefixName, c.name))
@@ -91,7 +101,12 @@ func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 }
 
 func (c *VsphereClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.name)); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.name, datacenter.Spec.VSphere)); err != nil {
 		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
@@ -126,14 +141,11 @@ func (c *VsphereClusterJig) Log() *zap.SugaredLogger {
 }
 
 type VsphereCredentialsType struct {
-	AuthURL    string
-	Username   string
-	Password   string
-	Datacenter string
-	Cluster    string
+	Username string
+	Password string
 }
 
-func (vc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
+func (vc *VsphereCredentialsType) GenerateSecretData(datacenter *kubermaticv1.DatacenterSpecVSphere) map[string][]byte {
 	return map[string][]byte{
 		resources.VsphereUsername:                    []byte(vc.Username),
 		resources.VspherePassword:                    []byte(vc.Password),
@@ -142,8 +154,45 @@ func (vc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
 	}
 }
 
-func (vc *VsphereCredentialsType) GenerateProviderSpec(clustername string) []byte {
-	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"%s","datastore":"alpha1","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/%s/vm/Kubermatic-dev/%s","templateVMName":"ubuntu-20.04"}`, vc.Cluster, vc.Datacenter, vc.Datacenter, clustername)
-	return []byte(fmt.Sprintf(`{"cloudProvider":"vsphere","cloudProviderSpec":%s,"operatingSystem":"ubuntu","operatingSystemSpec":{"distUpgradeOnBoot":false}}`,
-		cloudProviderSpec))
+func (vc *VsphereCredentialsType) GenerateProviderSpec(clustername string, datacenter *kubermaticv1.DatacenterSpecVSphere) []byte {
+	folder := fmt.Sprintf("%s/%s", datacenter.RootPath, clustername)
+	os := types.OperatingSystemUbuntu
+
+	providerSpec, err := json.Marshal(vspheretypes.RawConfig{
+		CPUs:           2,
+		MemoryMB:       4096,
+		DiskSizeGB:     pointer.Int64(10),
+		AllowInsecure:  types.ConfigVarBool{Value: pointer.Bool(false)},
+		Cluster:        types.ConfigVarString{Value: datacenter.Cluster},
+		Datacenter:     types.ConfigVarString{Value: datacenter.Datacenter},
+		Datastore:      types.ConfigVarString{Value: datacenter.DefaultDatastore},
+		Folder:         types.ConfigVarString{Value: folder},
+		TemplateVMName: types.ConfigVarString{Value: datacenter.Templates[os]},
+	})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	osSpec, err := json.Marshal(ubuntu.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	cfg := types.Config{
+		CloudProvider: types.CloudProviderVsphere,
+		CloudProviderSpec: runtime.RawExtension{
+			Raw: providerSpec,
+		},
+		OperatingSystem: os,
+		OperatingSystemSpec: runtime.RawExtension{
+			Raw: osSpec,
+		},
+	}
+
+	encoded, err := json.Marshal(cfg)
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	return encoded
 }
