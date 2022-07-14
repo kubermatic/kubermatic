@@ -37,39 +37,39 @@ dex:
     - http://localhost:8000/projects
   connectors:
   - type: ldap
-      name: OpenLDAP
-      id: ldap
-      config:
-        host: openldap:389
-        insecureNoSSL: true
-        bindDN: cn=admin,dc=example,dc=org
-        bindPW: admin
+    name: OpenLDAP
+    id: ldap
+    config:
+      host: openldap:389
+      insecureNoSSL: true
+      bindDN: cn=admin,dc=example,dc=org
+      bindPW: admin
 
-        usernamePrompt: Email Address
+      usernamePrompt: Email Address
 
-        userSearch:
-          baseDN: ou=People,dc=example,dc=org
-          filter: "(objectClass=person)"
-          username: mail
-          # "DN" (case sensitive) is a special attribute name. It indicates that
-          # this value should be taken from the entity's DN not an attribute on
-          # the entity.
-          idAttr: DN
-          emailAttr: mail
-          nameAttr: cn
+      userSearch:
+        baseDN: ou=People,dc=example,dc=org
+        filter: "(objectClass=person)"
+        username: mail
+        # "DN" (case sensitive) is a special attribute name. It indicates that
+        # this value should be taken from the entity's DN not an attribute on
+        # the entity.
+        idAttr: DN
+        emailAttr: mail
+        nameAttr: cn
 
-        groupSearch:
-          baseDN: ou=Groups,dc=example,dc=org
-          filter: "(objectClass=groupOfNames)"
+      groupSearch:
+        baseDN: ou=Groups,dc=example,dc=org
+        filter: "(objectClass=groupOfNames)"
 
-          userMatchers:
-            # A user is a member of a group when their DN matches
-            # the value of a "member" attribute on the group entity.
-            - userAttr: DN
-              groupAttr: member
+        userMatchers:
+          # A user is a member of a group when their DN matches
+          # the value of a "member" attribute on the group entity.
+          - userAttr: DN
+            groupAttr: member
 
-          # The group name should be the "cn" value.
-          nameAttr: cn
+        # The group name should be the "cn" value.
+        nameAttr: cn
   staticPasswords:
   - email: "roxy@kubermatic.com"
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
