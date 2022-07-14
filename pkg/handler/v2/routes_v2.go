@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	allowedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
+	applicationdefinition "k8c.io/kubermatic/v2/pkg/handler/v2/application_definition"
 	applicationinstallation "k8c.io/kubermatic/v2/pkg/handler/v2/application_installation"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupdestinations"
@@ -423,6 +424,11 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}").
 		Handler(r.updateApplicationInstallation())
+
+	// Defines a set of HTTP endpoint for ApplicationDefinitions which are available in the KKP installation
+	mux.Methods(http.MethodGet).
+		Path("/applicationdefinitions").
+		Handler(r.listApplicationDefinitions())
 
 	// Define a set of endpoints for gatekeeper constraint templates
 	mux.Methods(http.MethodGet).
@@ -7267,6 +7273,30 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
 		applicationinstallation.DecodeUpdateApplicationInstallation,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/applicationdefinitions applications listApplicationDefinitions
+//
+//     List ApplicationDefinitions which are available in the KKP installation
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ApplicationDefinition
+//       401: empty
+//       403: empty
+func (r Routing) listApplicationDefinitions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(applicationdefinition.ListApplicationDefinitions(r.applicationDefinitionProvider)),
+		applicationdefinition.DecodeListApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

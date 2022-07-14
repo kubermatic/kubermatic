@@ -23,6 +23,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ApplicationInstallationResourceName represents "Resource" defined in Kubernetes.
+	ApplicationDefinitionResourceName = "applicationdefinitions"
+
+	// ApplicationDefinitionKindName represents "Kind" defined in Kubernetes.
+	ApplicationDefinitionKindName = "ApplicationDefinitions"
+)
+
 type HelmCredentials struct {
 	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
 	// KKP is installed.
@@ -208,11 +216,6 @@ type ApplicationDefinitionSpec struct {
 	// available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }
-
-const (
-	// ApplicationDefinitionResourceName represents "Resource" defined in Kubernetes.
-	ApplicationDefinitionResourceName = "applicationdefinitions"
-)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
