@@ -217,8 +217,9 @@ func GetOpenstackSubnets(ctx context.Context, userInfo *provider.UserInfo, seeds
 	apiSubnetIDs := []apiv1.OpenstackSubnet{}
 	for _, subnet := range subnets {
 		apiSubnetIDs = append(apiSubnetIDs, apiv1.OpenstackSubnet{
-			ID:   subnet.ID,
-			Name: subnet.Name,
+			ID:        subnet.ID,
+			Name:      subnet.Name,
+			IPVersion: subnet.IPVersion,
 		})
 	}
 

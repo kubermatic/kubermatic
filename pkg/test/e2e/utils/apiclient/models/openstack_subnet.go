@@ -20,6 +20,9 @@ type OpenstackSubnet struct {
 	// Id uniquely identifies the subnet
 	ID string `json:"id,omitempty"`
 
+	// IPversion is the IP protocol version (4 or 6)
+	IPVersion int64 `json:"ipVersion,omitempty"`
+
 	// Name is human-readable name for the subnet
 	Name string `json:"name,omitempty"`
 }

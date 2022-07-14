@@ -714,6 +714,8 @@ type OpenstackSubnet struct {
 	ID string `json:"id"`
 	// Name is human-readable name for the subnet
 	Name string `json:"name"`
+	// IPversion is the IP protocol version (4 or 6)
+	IPVersion int `json:"ipVersion"`
 }
 
 // OpenstackTenant is the object representing a openstack tenant.

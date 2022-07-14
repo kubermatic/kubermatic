@@ -29664,6 +29664,12 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "ipVersion": {
+          "description": "IPversion is the IP protocol version (4 or 6)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "IPVersion"
+        },
         "name": {
           "description": "Name is human-readable name for the subnet",
           "type": "string",
