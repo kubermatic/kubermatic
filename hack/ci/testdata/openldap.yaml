@@ -20,7 +20,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: openldap-deployment
-  namespace: oauth
+  namespace: ldap
   labels:
     app.kubernetes.io/name: openldap
 spec:
@@ -63,17 +63,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: openldap-config
-  namespace: oauth
+  namespace: ldap
 data:
   config-ldap.ldif: |
-    # Already included in default config of Docker image osixia/openldap:1.4.0.
-    #
-    # dn: dc=example,dc=org
-    # objectClass: dcObject
-    # objectClass: organization
-    # o: Example Company
-    # dc: example 
-    
     dn: ou=People,dc=example,dc=org
     objectClass: organizationalUnit
     ou: People
@@ -84,17 +76,7 @@ data:
     sn: doe
     cn: jane
     mail: janedoe@example.com
-    userpassword: foo
-
-    dn: cn=john,ou=People,dc=example,dc=org
-    objectClass: person
-    objectClass: inetOrgPerson
-    sn: doe
-    cn: john
-    mail: johndoe@example.com
-    userpassword: bar
-
-    # Group definitions.
+    userpassword: passw0rd
 
     dn: ou=Groups,dc=example,dc=org
     objectClass: organizationalUnit
@@ -116,7 +98,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: openldap
-  namespace: oauth
+  namespace: ldap
   labels:
     app.kubernetes.io/name: openldap
 spec:

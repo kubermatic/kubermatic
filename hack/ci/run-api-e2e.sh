@@ -40,7 +40,38 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 # As dex doesn't support groups in static users configuration we configure minimal LDAP server.
 # More details: https://github.com/dexidp/dex/issues/1080
 echodate "Setting up openldap server..."
-retry 2 kubectl create ns oauth
+
+LDAP_NAMESPACE="ldap"
+
+# Append Dex configuration with ldap connector
+cat << EOF >> hack/ci/testdata/oauth_values.yaml
+  connectors:
+  - type: ldap
+    name: OpenLDAP
+    id: ldap
+    config:
+      host: openldap.${LDAP_NAMESPACE}.svc.cluster.local:389
+      insecureNoSSL: true
+      bindDN: cn=admin,dc=example,dc=org
+      bindPW: admin
+      usernamePrompt: Email Address
+      userSearch:
+        baseDN: ou=People,dc=example,dc=org
+        filter: "(objectClass=person)"
+        username: mail
+        idAttr: DN
+        emailAttr: mail
+        nameAttr: cn
+      groupSearch:
+        baseDN: ou=Groups,dc=example,dc=org
+        filter: "(objectClass=groupOfNames)"
+        userMatchers:
+          - userAttr: DN
+            groupAttr: member
+        nameAttr: cn
+EOF
+
+retry 2 kubectl create ns ${LDAP_NAMESPACE}
 retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
 
 source hack/ci/setup-kubermatic-in-kind.sh
