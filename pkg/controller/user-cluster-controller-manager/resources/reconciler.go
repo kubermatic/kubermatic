@@ -463,9 +463,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	}
 
 	if r.enableOperatingSystemManager {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator(),
-			operatingsystemmanager.KubePublicRoleBindingCreator(),
-			operatingsystemmanager.DefaultRoleBindingCreator())
+		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -477,6 +475,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.KubePublicRoleBindingCreator(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.KubePublicRoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-public Namespace: %w", err)
 	}
@@ -486,6 +488,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.DefaultRoleBindingCreator(),
 		clusterautoscaler.DefaultRoleBindingCreator(),
 	}
+	if r.enableOperatingSystemManager {
+		creators = append(creators, operatingsystemmanager.DefaultRoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %w", err)
 	}
