@@ -47,6 +47,11 @@ func OIDCCredentials() (string, string, error) {
 	return login, password, nil
 }
 
+// OIDCCredentialsLDAP temporary returns hardcoded dummy LDAP credentials
+func OIDCCredentialsLDAP() (string, string, error) {
+	return "janedoe@example.com", "foo", nil
+}
+
 // OIDCAdminCredentials takes the admin login name and password from environment variables and
 // returns them.
 func OIDCAdminCredentials() (string, string, error) {
@@ -74,6 +79,15 @@ func Logout() {
 
 func RetrieveMasterToken(ctx context.Context) (string, error) {
 	login, password, err := OIDCCredentials()
+	if err != nil {
+		return "", err
+	}
+
+	return retrieveToken(ctx, &masterToken, login, password)
+}
+
+func RetrieveMasterTokenLDAP(ctx context.Context) (string, error) {
+	login, password, err := OIDCCredentialsLDAP()
 	if err != nil {
 		return "", err
 	}

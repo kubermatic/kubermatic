@@ -107,7 +107,8 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 	}
 
 	// make sure we are seeing the email login form immediately
-	loginURL.Path += "/local"
+	loginURL.Path += "/ldap"
+	//loginURL.Path += "/local"
 
 	params := loginURL.Query()
 	params.Set("client_id", c.ClientID)
