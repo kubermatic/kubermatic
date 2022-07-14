@@ -352,7 +352,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
-	applicationDefinitionProvider := kubernetesprovider.NewApplicationDefinitionProvider(defaultImpersonationClient.CreateImpersonatedClient)
+	applicationDefinitionProvider := kubernetesprovider.NewApplicationDefinitionProvider(client)
 
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
 	if err != nil {

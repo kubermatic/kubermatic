@@ -1388,5 +1388,5 @@ type PrivilegedIPAMPoolProvider interface {
 
 type ApplicationDefinitionProvider interface {
 	// List returns a list of ApplicationDefinitions for the KKP installation.
-	List(context.Context, *UserInfo) (*appskubermaticv1.ApplicationDefinitionList, error)
+	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
 }

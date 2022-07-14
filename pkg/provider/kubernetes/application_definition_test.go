@@ -6,10 +6,8 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -42,13 +40,9 @@ func TestListApplicationDefinitions(t *testing.T) {
 				WithObjects(kubermaticObjects...).
 				Build()
 
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-				return fakeClient, nil
-			}
-
 			// act
-			target := kubernetes.NewApplicationDefinitionProvider(fakeImpersonationClient)
-			result, err := target.List(context.Background(), &provider.UserInfo{})
+			target := kubernetes.NewApplicationDefinitionProvider(fakeClient)
+			result, err := target.ListUnsecured(context.Background())
 
 			// validate
 			if err != nil {
