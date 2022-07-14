@@ -1410,11 +1410,13 @@ type OpenstackSubnetPool struct {
 
 // swagger:model ResourceQuota
 type ResourceQuota struct {
-	Name        string                           `json:"name"`
-	SubjectName string                           `json:"subjectName"`
-	SubjectKind string                           `json:"subjectKind"`
-	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
-	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
+	Name        string `json:"name"`
+	SubjectName string `json:"subjectName"`
+	SubjectKind string `json:"subjectKind"`
+	// SubjectHumanReadableName contains the human-readable name for the subject(if applicable). Just filled as information in get/list.
+	SubjectHumanReadableName string                           `json:"subjectHumanReadableName,omitempty"`
+	Quota                    kubermaticv1.ResourceDetails     `json:"quota"`
+	Status                   kubermaticv1.ResourceQuotaStatus `json:"status"`
 }
 
 // swagger:model GroupProjectBinding
