@@ -2168,7 +2168,7 @@ type VMwareCloudDirectorNodeSpec struct {
 	StorageProfile   string               `json:"storageProfile"`
 	IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
 	VApp             string               `json:"vapp,omitempty"`
-	Network          string               `json:"network"`
+	Network          string               `json:"network,omitempty"`
 	// Additional metadata to set
 	// required: false
 	Metadata map[string]string `json:"metadata,omitempty"`
@@ -2205,10 +2205,6 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 		missing = append(missing, "catalog")
 	}
 
-	if len(spec.Network) == 0 {
-		missing = append(missing, "network")
-	}
-
 	if len(missing) > 0 {
 		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
@@ -2224,7 +2220,7 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 		StorageProfile   string               `json:"storageProfile,omitempty"`
 		IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
 		VApp             string               `json:"vapp,omitempty"`
-		Network          string               `json:"network"`
+		Network          string               `json:"network,omitempty"`
 		Metadata         map[string]string    `json:"metadata,omitempty"`
 	}{
 		CPUs:             spec.CPUs,
