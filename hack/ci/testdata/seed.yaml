@@ -93,7 +93,7 @@ spec:
           datacenter: Hamburg
           datastore: alpha1
           endpoint: https://vcenter.dc.k8c.io
-          rootPath: /dc-1/vm/Kubermatic-dev
+          rootPath: /Hamburg/vm/Kubermatic-dev
           templates:
             centos: centos-7
             flatcar: flatcar-stable
