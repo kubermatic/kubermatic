@@ -42,22 +42,19 @@ import (
 )
 
 const (
-	awsDatacenter   = "aws-eu-central-1a"
 	awsInstanceType = "t2.medium"
 	awsVolumeType   = "gp2"
 	awsVolumeSize   = 100
 )
 
 // GetAWSScenarios returns a matrix of (version x operating system).
-func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, seed *kubermaticv1.Seed) []Scenario {
-	datacenter := seed.Spec.Datacenters[awsDatacenter]
-
+func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &awsScenario{
 			version:                 v,
-			datacenter:              datacenter,
+			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
@@ -67,7 +64,7 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 		// Flatcar
 		scenarios = append(scenarios, &awsScenario{
 			version:                 v,
-			datacenter:              datacenter,
+			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
@@ -79,7 +76,7 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 		})
 		scenarios = append(scenarios, &awsScenario{
 			version:                 v,
-			datacenter:              datacenter,
+			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
@@ -92,7 +89,7 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 
 type awsScenario struct {
 	version                 *semver.Semver
-	datacenter              kubermaticv1.Datacenter
+	datacenter              *kubermaticv1.DatacenterSpecAWS
 	osSpec                  apimodels.OperatingSystemSpec
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
@@ -107,7 +104,7 @@ func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: awsDatacenter,
+					DatacenterName: secrets.AWS.KKPDatacenter,
 					Aws: &apimodels.AWSCloudSpec{
 						SecretAccessKey: secrets.AWS.SecretAccessKey,
 						AccessKeyID:     secrets.AWS.AccessKeyID,
@@ -122,7 +119,7 @@ func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: awsDatacenter,
+			DatacenterName: secrets.AWS.KKPDatacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{
 				SecretAccessKey: secrets.AWS.SecretAccessKey,
 				AccessKeyID:     secrets.AWS.AccessKeyID,
@@ -145,7 +142,7 @@ func (s *awsScenario) NodeDeployments(
 		Context:         ctx,
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
-		DC:              awsDatacenter,
+		DC:              secrets.AWS.KKPDatacenter,
 	}
 	utils.SetupParams(nil, listVPCParams, 5*time.Second, 1*time.Minute)
 
@@ -168,7 +165,7 @@ func (s *awsScenario) NodeDeployments(
 		Context:         ctx,
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
-		DC:              awsDatacenter,
+		DC:              secrets.AWS.KKPDatacenter,
 		VPC:             utilpointer.StringPtr(vpcID),
 	}
 	utils.SetupParams(nil, listSubnetParams, 5*time.Second, 1*time.Minute)
@@ -273,7 +270,7 @@ func (s *awsScenario) NodeDeployments(
 }
 
 func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region)
+	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +287,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 		}
 	}
 
-	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region, *vpcID)
+	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region, *vpcID)
 	if err != nil {
 		return nil, err
 	}
@@ -313,10 +310,9 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	}
 
 	result := []clusterv1alpha1.MachineDeployment{}
-	dcSpec := s.datacenter.Spec.AWS
 
 	for _, subnet := range subnets {
-		ami := dcSpec.Images[getOSNameFromSpec(s.osSpec)]
+		ami := s.datacenter.Images[getOSNameFromSpec(s.osSpec)]
 
 		config := awstypes.RawConfig{
 			AMI:              providerconfig.ConfigVarString{Value: ami},
@@ -324,7 +320,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			DiskType:         providerconfig.ConfigVarString{Value: awsVolumeType},
 			DiskSize:         int64(awsVolumeSize),
 			AvailabilityZone: providerconfig.ConfigVarString{Value: *subnet.AvailabilityZone},
-			Region:           providerconfig.ConfigVarString{Value: dcSpec.Region},
+			Region:           providerconfig.ConfigVarString{Value: s.datacenter.Region},
 			VpcID:            providerconfig.ConfigVarString{Value: *vpcID},
 			SubnetID:         providerconfig.ConfigVarString{Value: *subnet.SubnetId},
 			// rely on the KKP's reconciling to have filled these fields in already and

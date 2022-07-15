@@ -32,30 +32,27 @@ import (
 
 const (
 	openStackFlavor                    = "m1.small"
-	openStackDatacenter                = "syseleven-dbl1"
 	openStackFloatingIPPool            = "ext-net"
 	openStackInstanceReadyCheckPeriod  = "5s"
 	openStackInstanceReadyCheckTimeout = "2m"
 )
 
-func openStackImage(os providerconfig.OperatingSystem) string {
-	return fmt.Sprintf("kubermatic-e2e-%s", string(os))
-}
-
 // GetOpenStackScenarios returns a matrix of (version x operating system).
-func GetOpenStackScenarios(versions []*semver.Semver) []Scenario {
+func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &openStackScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Openstack,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &openStackScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Openstack,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -66,8 +63,9 @@ func GetOpenStackScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type openStackScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecOpenstack
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *openStackScenario) Name() string {
@@ -79,7 +77,7 @@ func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateC
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: openStackDatacenter,
+					DatacenterName: secrets.OpenStack.KKPDatacenter,
 					Openstack: &apimodels.OpenstackCloudSpec{
 						Domain:         secrets.OpenStack.Domain,
 						Project:        secrets.OpenStack.Project,
@@ -98,7 +96,7 @@ func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateC
 func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: openStackDatacenter,
+			DatacenterName: secrets.OpenStack.KKPDatacenter,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				Domain:         secrets.OpenStack.Domain,
 				Project:        secrets.OpenStack.Project,
@@ -115,7 +113,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	flavor := openStackFlavor
-	image := openStackImage(osName)
+	image := s.datacenter.Images[osName]
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -147,11 +145,10 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 
 	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
-	image := openStackImage(os)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, openstacktypes.RawConfig{
 		Flavor:                    providerconfig.ConfigVarString{Value: openStackFlavor},
-		Image:                     providerconfig.ConfigVarString{Value: image},
+		Image:                     providerconfig.ConfigVarString{Value: s.datacenter.Images[os]},
 		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckPeriod},
 		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckTimeout},
 	})

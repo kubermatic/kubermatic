@@ -400,7 +400,7 @@ func TestListDCForSeed(t *testing.T) {
 		{
 			name:            "list DCs for seed kubermatic",
 			seed:            "kubermatic",
-			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
+			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-am", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
 
@@ -492,7 +492,7 @@ func TestListDC(t *testing.T) {
 	}{
 		{
 			name:            "list DCs",
-			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
+			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-am", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
 

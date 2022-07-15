@@ -89,15 +89,16 @@ spec:
       country: DE
       spec:
         vsphere:
-          endpoint: "https://vcenter.qa.lab.kubermatic.io"
-          datacenter: "dc-1"
-          datastore: "HS-FreeNAS"
-          cluster: "cl-1"
-          rootPath: "/dc-1/vm/e2e-tests"
+          cluster: vcenter.dc.k8c.io
+          datacenter: Hamburg
+          datastore: alpha1
+          endpoint: https://vcenter.dc.k8c.io
+          rootPath: /Hamburg/vm/Kubermatic-dev
           templates:
-            ubuntu: "machine-controller-e2e-ubuntu"
-            centos: "machine-controller-e2e-centos"
-            coreos: "machine-controller-e2e-coreos"
+            centos: centos-7
+            flatcar: flatcar-stable
+            rhel: rhel-8.6
+            ubuntu: ubuntu-20.04
     azure-westeurope:
       location: "Azure West europe"
       country: NL
@@ -112,13 +113,12 @@ spec:
           region: europe-west3
           zoneSuffixes:
             - c
-    packet-ewr1:
-      location: "Packet EWR1 (New York)"
-      country: US
+    packet-am:
+      location: "Packet AM (Amsterdam)"
+      country: NL
       spec:
         packet:
-          facilities:
-            - ewr1
+          metro: AM
     do-ams3:
       location: Amsterdam
       country: NL

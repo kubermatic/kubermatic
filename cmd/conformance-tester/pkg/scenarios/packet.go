@@ -32,11 +32,10 @@ import (
 
 const (
 	packetInstanceType = "c3.small.x86"
-	packetDatacenter   = "packet-am"
 )
 
 // GetPacketScenarios returns a matrix of (version x operating system).
-func GetPacketScenarios(versions []*semver.Semver) []Scenario {
+func GetPacketScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
@@ -72,7 +71,7 @@ func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: packetDatacenter,
+					DatacenterName: secrets.Packet.KKPDatacenter,
 					Packet: &apimodels.PacketCloudSpec{
 						APIKey:    secrets.Packet.APIKey,
 						ProjectID: secrets.Packet.ProjectID,
@@ -87,7 +86,7 @@ func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: packetDatacenter,
+			DatacenterName: secrets.Packet.KKPDatacenter,
 			Packet: &kubermaticv1.PacketCloudSpec{
 				APIKey:    secrets.Packet.APIKey,
 				ProjectID: secrets.Packet.ProjectID,

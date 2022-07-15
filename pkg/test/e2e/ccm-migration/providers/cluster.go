@@ -60,6 +60,23 @@ type CommonClusterJig struct {
 	SeedClient ctrlruntimeclient.Client
 }
 
+func (ccj *CommonClusterJig) getDatacenter(ctx context.Context, datacenter string) (*kubermaticv1.Datacenter, error) {
+	seeds := &kubermaticv1.SeedList{}
+	if err := ccj.SeedClient.List(ctx, seeds); err != nil {
+		return nil, fmt.Errorf("failed to list seeds: %w", err)
+	}
+
+	for _, seed := range seeds.Items {
+		for name, dc := range seed.Spec.Datacenters {
+			if name == datacenter {
+				return &dc, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no Seed contains datacenter %q", datacenter)
+}
+
 func (ccj *CommonClusterJig) generateAndCreateCluster(ctx context.Context, cloudSpec kubermaticv1.CloudSpec, projectID string) error {
 	cluster := utils.DefaultCluster(ccj.name, ccj.Version, cloudSpec, projectID)
 

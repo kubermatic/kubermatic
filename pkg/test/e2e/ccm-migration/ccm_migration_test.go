@@ -79,20 +79,15 @@ func init() {
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
 	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
 
-	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
 	flag.StringVar(&options.osCredentials.Tenant, "openstack-tenant", "", "openstack tenant")
 	flag.StringVar(&options.osCredentials.Domain, "openstack-domain", "", "openstack domain")
-	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
 	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
 	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
 
-	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth-url")
 	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
-	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
-	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
 
 	flag.StringVar(&options.azureCredentials.TenantID, "azure-tenant-id", "", "azure tenant id")
 	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")

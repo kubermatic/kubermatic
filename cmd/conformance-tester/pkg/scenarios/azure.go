@@ -31,12 +31,11 @@ import (
 )
 
 const (
-	azureVMSize     = "Standard_F2"
-	azureDatacenter = "azure-westeurope"
+	azureVMSize = "Standard_F2"
 )
 
 // GetAzureScenarios returns a matrix of (version x operating system).
-func GetAzureScenarios(versions []*semver.Semver) []Scenario {
+func GetAzureScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
@@ -71,7 +70,7 @@ func (s *azureScenario) APICluster(secrets types.Secrets) *apimodels.CreateClust
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: azureDatacenter,
+					DatacenterName: secrets.Azure.KKPDatacenter,
 					Azure: &apimodels.AzureCloudSpec{
 						ClientID:       secrets.Azure.ClientID,
 						ClientSecret:   secrets.Azure.ClientSecret,
@@ -88,7 +87,7 @@ func (s *azureScenario) APICluster(secrets types.Secrets) *apimodels.CreateClust
 func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: azureDatacenter,
+			DatacenterName: secrets.Azure.KKPDatacenter,
 			Azure: &kubermaticv1.AzureCloudSpec{
 				ClientID:       secrets.Azure.ClientID,
 				ClientSecret:   secrets.Azure.ClientSecret,
