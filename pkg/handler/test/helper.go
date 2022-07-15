@@ -222,8 +222,9 @@ type newRoutingFunc func(
 	seedProvider provider.SeedProvider,
 	resourceQuotaProvider provider.ResourceQuotaProvider,
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
-	features features.FeatureGate,
+	applicationDefinitionProvider provider.ApplicationDefinitionProvider,
 	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter,
+	features features.FeatureGate,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -531,6 +532,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 
+	applicationDefinitionProvider := kubernetes.NewApplicationDefinitionProvider(fakeClient)
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(ctx, zap.NewNop().Sugar())
@@ -616,8 +619,9 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		seedProvider,
 		resourceQuotaProvider,
 		groupProjectBindingProvider,
-		featureGates,
+		applicationDefinitionProvider,
 		privilegedIPAMPoolProviderGetter,
+		featureGates,
 	)
 
 	return mainRouter, &ClientsSets{fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -2151,6 +2155,90 @@ func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *a
 				Name: "sample-app",
 				Version: appskubermaticv1.Version{
 					Version: *semverlib.MustParse("v1.0.0"),
+				},
+			},
+		},
+	}
+}
+
+func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+	return &appskubermaticv1.ApplicationDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       appskubermaticv1.ApplicationDefinitionKindName,
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+		},
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Versions: []appskubermaticv1.ApplicationVersion{
+				{
+					Version: "v1.0.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Method: appskubermaticv1.HelmTemplateMethod,
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "https://charts.example.com",
+								ChartName:    name,
+								ChartVersion: "v1.0.0",
+							},
+						},
+					},
+				},
+				{
+					Version: "v1.1.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Method: appskubermaticv1.HelmTemplateMethod,
+						Source: appskubermaticv1.ApplicationSource{
+							Git: &appskubermaticv1.GitSource{
+								Remote: "https://git.example.com",
+								Ref: appskubermaticv1.GitReference{
+									Branch: "main",
+									Tag:    "v1.1.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func GenApiApplicationDefinition(name string) apiv2.ApplicationDefinition {
+	return apiv2.ApplicationDefinition{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: name,
+		},
+		Spec: &appskubermaticv1.ApplicationDefinitionSpec{
+			Versions: []appskubermaticv1.ApplicationVersion{
+				{
+					Version: "v1.0.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Method: appskubermaticv1.HelmTemplateMethod,
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "https://charts.example.com",
+								ChartName:    name,
+								ChartVersion: "v1.0.0",
+							},
+						},
+					},
+				},
+				{
+					Version: "v1.1.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Method: appskubermaticv1.HelmTemplateMethod,
+						Source: appskubermaticv1.ApplicationSource{
+							Git: &appskubermaticv1.GitSource{
+								Remote: "https://git.example.com",
+								Ref: appskubermaticv1.GitReference{
+									Branch: "main",
+									Tag:    "v1.1.0",
+								},
+							},
+						},
+					},
 				},
 			},
 		},

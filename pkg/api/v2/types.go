@@ -1448,3 +1448,11 @@ type IPAMPoolDatacenterSettings struct {
 	AllocationPrefix int                                 `json:"allocationPrefix,omitempty"`
 	AllocationRange  int                                 `json:"allocationRange,omitempty"`
 }
+
+// ApplicationDefinition is the object representing an ApplicationDefinition.
+// swagger:model ApplicationDefinition
+type ApplicationDefinition struct {
+	apiv1.ObjectMeta
+
+	Spec *appskubermaticv1.ApplicationDefinitionSpec `json:"spec"`
+}

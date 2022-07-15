@@ -24,6 +24,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -1383,4 +1384,9 @@ type PrivilegedIPAMPoolProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
 	PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error
+}
+
+type ApplicationDefinitionProvider interface {
+	// List returns a list of ApplicationDefinitions for the KKP installation.
+	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
 }
