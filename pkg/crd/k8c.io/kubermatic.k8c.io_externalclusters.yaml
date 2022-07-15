@@ -19,7 +19,7 @@ spec:
     - jsonPath: .spec.humanReadableName
       name: HumanReadableName
       type: string
-    - jsonPath: .spec.cloud.providerName
+    - jsonPath: .spec.cloudSpec.providerName
       name: Provider
       type: string
     - jsonPath: .spec.pause
