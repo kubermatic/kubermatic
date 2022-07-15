@@ -391,8 +391,8 @@ func (a equinix) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
 		DatacenterName: "packet-am",
 		Packet: &models.PacketCloudSpec{
-			APIKey:    os.Getenv("PACKET_API_KEY"),
-			ProjectID: os.Getenv("PACKET_PROJECT_ID"),
+			APIKey:    os.Getenv("METAL_AUTH_TOKEN"),
+			ProjectID: os.Getenv("METAL_PROJECT_ID"),
 		},
 	}
 }
