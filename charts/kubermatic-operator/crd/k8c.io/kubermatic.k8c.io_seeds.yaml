@@ -445,11 +445,8 @@ spec:
                                 check against the endpoint.
                               type: boolean
                             cluster:
-                              description: 'Optional: The name of the vSphere cluster
-                                to use. Cluster is deprecated and may be removed in
-                                future releases as it is currently ignored. The cluster
-                                hosting the VMs will be the same VM used as a template
-                                is located.'
+                              description: The cluster hosting the VMs will be the
+                                same VM used as a template is located.
                               type: string
                             datacenter:
                               description: The name of the datacenter to use.
