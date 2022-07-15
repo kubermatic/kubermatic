@@ -18,12 +18,15 @@ package externalcluster
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
@@ -237,17 +240,20 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		Mode:              &mode,
 		OSDiskSizeGB:      pointer.Int32(basicSettings.OsDiskSizeGB),
 		AvailabilityZones: azs,
-		EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
-		MaxCount:          pointer.Int32(basicSettings.ScalingConfig.MaxCount),
-		MinCount:          pointer.Int32(basicSettings.ScalingConfig.MinCount),
 		NodeLabels:        optionalSettings.NodeLabels,
+	}
+
+	if basicSettings.EnableAutoScaling {
+		agentPoolProfilesToBeCreated.EnableAutoScaling = to.BoolPtr(basicSettings.EnableAutoScaling)
+		agentPoolProfilesToBeCreated.MaxCount = pointer.Int32(basicSettings.ScalingConfig.MaxCount)
+		agentPoolProfilesToBeCreated.MinCount = pointer.Int32(basicSettings.ScalingConfig.MinCount)
 	}
 
 	clusterToCreate.Properties.AgentPoolProfiles = []*armcontainerservice.ManagedClusterAgentPoolProfile{
 		agentPoolProfilesToBeCreated,
 	}
 
-	future, err := aksClient.BeginCreateOrUpdate(
+	_, err = aksClient.BeginCreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
 		aksCloudSpec.Name,
@@ -255,14 +261,22 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		nil,
 	)
 	if err != nil {
+		var aerr *azcore.ResponseError
+		if ok := errors.As(err, &aerr); ok {
+			var response struct {
+				Code    string `json:"code,omitempty"`
+				Message string `json:"message,omitempty"`
+				SubCode string `json:"subcode,omitempty"`
+			}
+			if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
+				return err
+			}
+			return errors.New(response.Message)
+		}
 		return err
 	}
 
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-
-	return err
+	return nil
 }
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
