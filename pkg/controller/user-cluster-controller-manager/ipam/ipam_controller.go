@@ -46,7 +46,7 @@ import (
 
 const (
 	// ControllerName is the name of this controller.
-	ControllerName                 = "kubermatic_ipam_controller"
+	ControllerName                 = "kkp-ipam-controller"
 	annotationMachineUninitialized = "machine-controller.kubermatic.io/initializers"
 	annotationValue                = "ipam"
 )
