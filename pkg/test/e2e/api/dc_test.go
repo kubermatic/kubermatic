@@ -91,7 +91,8 @@ func TestGetDCForProvider(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -303,7 +304,8 @@ func TestPatchDC(t *testing.T) {
 					Aws: &models.DatacenterSpecAWS{
 						Region: "fra2",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -361,7 +363,8 @@ func TestGetDCForSeed(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -455,7 +458,8 @@ func TestGetDC(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
