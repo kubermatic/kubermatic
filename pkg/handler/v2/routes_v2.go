@@ -7296,7 +7296,7 @@ func (r Routing) listApplicationDefinitions() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(applicationdefinition.ListApplicationDefinitions(r.applicationDefinitionProvider)),
-		applicationdefinition.DecodeListApplicationInstallation,
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

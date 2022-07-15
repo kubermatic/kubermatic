@@ -18,7 +18,6 @@ package applicationdefinition
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -27,16 +26,10 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func ListApplicationDefinitions(applicationDefinitionProvider provider.ApplicationDefinitionProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		_, ok := request.(listApplicationDefinitionsReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
-		}
-
 		defList, err := applicationDefinitionProvider.ListUnsecured(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -49,10 +42,6 @@ func ListApplicationDefinitions(applicationDefinitionProvider provider.Applicati
 
 		return definitions, nil
 	}
-}
-
-func DecodeListApplicationInstallation(c context.Context, r *http.Request) (interface{}, error) {
-	return listApplicationDefinitionsReq{}, nil
 }
 
 func convertInternalToExternal(appDef *appskubermaticv1.ApplicationDefinition) *apiv2.ApplicationDefinition {

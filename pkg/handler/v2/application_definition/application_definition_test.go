@@ -40,7 +40,7 @@ func TestListApplicationDefinitions(t *testing.T) {
 		ExpectedAppDefs    []apiv2.ApplicationDefinition
 	}{
 		{
-			Name:            "user can list all applicationdefinitions",
+			Name:            "admin can list all applicationdefinitions",
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenApplicationDefinition("appdef1"),
@@ -54,7 +54,7 @@ func TestListApplicationDefinitions(t *testing.T) {
 			},
 		},
 		{
-			Name:            "admin can list all applicationdefinitions",
+			Name:            "user can list all applicationdefinitions",
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenApplicationDefinition("appdef1"),

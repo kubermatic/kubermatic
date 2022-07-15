@@ -26,10 +26,10 @@ import (
 )
 
 // After refactoring the master-rbac controller, this provider can make use of the impersonated
-// master client (see 3ed4d3c3036cf6c4941d8703c2067fa655a20a74 for implementation).
+// master client (see 42a2df1820e06a4eec354ced7f07e4d3833e5b70 for implementation).
 // However at the writing of this, it would require a large overhaul in the master-rbac-controller
-// for it to handle kubernetes cluster-scoped objects, that have no reference to kubermatic cluster
-// and projects. Therefore it was decided for now to make use of the master client directly for now.
+// for it to handle kubernetes cluster-scoped objects, that have no reference to kubermatic clusters
+// and/or projects. Therefore it was decided to make use of the master client directly for now.
 type ApplicationDefinitionProvider struct {
 	priviledgedClient ctrlruntimeclient.Client
 }
