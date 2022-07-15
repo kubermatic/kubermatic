@@ -15,7 +15,3 @@ limitations under the License.
 */
 
 package applicationdefinition
-
-// listApplicationDefinitionsReq defines HTTP request for listApplicationDefinitions
-// swagger:parameters listApplicationDefinitions
-type listApplicationDefinitionsReq struct{}
