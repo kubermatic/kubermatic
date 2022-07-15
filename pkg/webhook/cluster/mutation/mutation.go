@@ -53,7 +53,7 @@ type AdmissionHandler struct {
 	caBundle     *x509.CertPool
 
 	// disableProviderMutation is only for unit tests, to ensure no
-	// provide would phone home to validate dummy test credentials
+	// provider would phone home to validate dummy test credentials
 	disableProviderMutation bool
 }
 

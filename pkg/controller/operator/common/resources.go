@@ -63,6 +63,9 @@ const (
 	// ResourceQuotaAdmissionWebhookName is the name of the validating and mutating webhook for ResourceQuotas.
 	ResourceQuotaAdmissionWebhookName = "kubermatic-resourcequotas"
 
+	// ExternalClusterAdmissionWebhookName is the name of the mutating webhook for ExternalClusters.
+	ExternalClusterAdmissionWebhookName = "kubermatic-externalclusters"
+
 	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
 	ApplicationDefinitionAdmissionWebhookName = "kubermatic-application-definitions"
 
