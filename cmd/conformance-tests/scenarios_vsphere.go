@@ -77,6 +77,14 @@ func (s *vSphereScenario) Name() string {
 	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
 }
 
+func (s *vSphereScenario) getTemplate() string {
+	if s.nodeOsSpec.Centos != nil {
+		return "centos-7"
+	}
+
+	return "ubuntu-20.04"
+}
+
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
@@ -96,7 +104,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/Hamburg/vm/Kubermatic-dev/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
@@ -108,7 +116,6 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 }
 
 func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
 		{
@@ -117,7 +124,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ secrets)
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
+							Template: s.getTemplate(),
 							CPUs:     2,
 							Memory:   4096,
 						},
