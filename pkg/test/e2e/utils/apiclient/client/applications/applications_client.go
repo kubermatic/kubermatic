@@ -158,7 +158,7 @@ func (a *Client) GetApplicationInstallation(params *GetApplicationInstallationPa
 }
 
 /*
-  ListApplicationDefinitions List ApplicationDefinitions which belong to the given cluster
+  ListApplicationDefinitions List ApplicationDefinitions which are available in the KKP installation
 */
 func (a *Client) ListApplicationDefinitions(params *ListApplicationDefinitionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationDefinitionsOK, error) {
 	// TODO: Validate the params before sending

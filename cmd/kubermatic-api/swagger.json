@@ -3977,11 +3977,6 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Region",
-            "in": "header"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -4000,6 +3995,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
           }
         ],
         "responses": {
@@ -9152,7 +9152,7 @@
     },
     "/api/v2/applicationdefinitions": {
       "get": {
-        "description": "List ApplicationDefinitions which belong to the given cluster",
+        "description": "List ApplicationDefinitions which are available in the KKP installation",
         "produces": [
           "application/json"
         ],
