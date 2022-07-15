@@ -21,7 +21,6 @@ package cilium
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -38,34 +37,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +59,6 @@ var (
 	accessKeyID     string
 	secretAccessKey string
 	logOptions      = log.NewDefaultOptions()
-	namespace       = "kubermatic"
 )
 
 const (
@@ -84,7 +68,7 @@ const (
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
-	flag.StringVar(&namespace, "namespace", namespace, "namespace where KKP is installed into")
+	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
 
@@ -172,11 +156,6 @@ func TestCiliumClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	log.Info("Waiting for nodes to come up...")
-	if err := checkNodeReadiness(ctx, t, log, client); err != nil {
-		t.Fatalf("nodes never became ready: %v", err)
-	}
-
 	log.Info("Waiting for pods to get ready...")
 	err := waitForPods(ctx, t, log, client, "kube-system", "k8s-app", []string{
 		"cilium-operator",
@@ -430,37 +409,6 @@ func getAnyNodeIP(ctx context.Context, client ctrlruntimeclient.Client) (string,
 	return "", errors.New("no node has an ExternalIP")
 }
 
-func checkNodeReadiness(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
-	expectedNodes := 2
-
-	return wait.PollLog(log, 10*time.Second, 15*time.Minute, func() (error, error) {
-		nodeList := corev1.NodeList{}
-		err := client.List(ctx, &nodeList)
-		if err != nil {
-			return fmt.Errorf("failed to list nodes: %w", err), nil
-		}
-
-		if len(nodeList.Items) != expectedNodes {
-			return fmt.Errorf("cluster has %d of %d nodes", len(nodeList.Items), expectedNodes), nil
-		}
-
-		readyNodeCount := 0
-		for _, node := range nodeList.Items {
-			for _, c := range node.Status.Conditions {
-				if c.Type == corev1.NodeReady {
-					readyNodeCount++
-				}
-			}
-		}
-
-		if readyNodeCount != expectedNodes {
-			return fmt.Errorf("%d of %d nodes are ready", readyNodeCount, expectedNodes), nil
-		}
-
-		return nil, nil
-	})
-}
-
 func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -493,231 +441,27 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	var teardowns []func()
+	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 2)
+	testJig.ProjectJig.WithHumanReadableName(projectName)
+	testJig.ClusterJig.
+		WithAddons("hubble").
+		WithProxyMode(proxyMode).
+		WithKonnectivity(true).
+		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCilium,
+			Version: "v1.11",
+		})
+
 	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			teardowns[n-1-i]()
-		}
+		testJig.Cleanup(ctx, t)
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(masterClient, namespace)
-	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to create configGetter: %w", err)
+	// let the magic happen
+	if _, _, err := testJig.Setup(ctx, jig.WaitForReadyPods); err != nil {
+		return nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}
 
-	// prepare helpers
-	projectProvider, _ := kubernetes.NewProjectProvider(nil, masterClient)
-	addonProvider := kubernetes.NewAddonProvider(masterClient, nil, configGetter)
+	clusterClient, err := testJig.ClusterClient(ctx)
 
-	userClusterConnectionProvider, err := client.NewExternal(masterClient)
-	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to create userClusterConnectionProvider: %w", err)
-	}
-
-	clusterProvider := kubernetes.NewClusterProvider(
-		nil,
-		nil,
-		userClusterConnectionProvider,
-		"",
-		nil,
-		masterClient,
-		nil,
-		false,
-		kubermatic.Versions{},
-		nil,
-	)
-
-	log.Info("Creating project...")
-	project, err := projectProvider.New(ctx, projectName, nil)
-	if err != nil {
-		return nil, nil, log, err
-	}
-	log = log.With("project", project.Name)
-	teardowns = append(teardowns, func() {
-		log.Info("Deleting project...")
-		if err := masterClient.Delete(ctx, project); err != nil {
-			t.Errorf("failed to delete project: %v", err)
-		}
-	})
-
-	version := utils.KubernetesVersion()
-
-	// create a usercluster on AWS
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("cilium-e2e-%s-", proxyMode),
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: project.Name,
-			},
-		},
-		Spec: kubermaticv1.ClusterSpec{
-			HumanReadableName: fmt.Sprintf("Cilium %s e2e test cluster", proxyMode),
-			Version:           *semver.NewSemverOrDie(version),
-			KubernetesDashboard: kubermaticv1.KubernetesDashboard{
-				Enabled: pointer.Bool(false),
-			},
-			EnableUserSSHKeyAgent: pointer.Bool(false),
-			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "aws-eu-central-1a",
-				AWS: &kubermaticv1.AWSCloudSpec{
-					SecretAccessKey: secretAccessKey,
-					AccessKeyID:     accessKeyID,
-				},
-			},
-			CNIPlugin: &kubermaticv1.CNIPluginSettings{
-				Type:    kubermaticv1.CNIPluginTypeCilium,
-				Version: "v1.11",
-			},
-			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				ProxyMode:           proxyMode,
-				KonnectivityEnabled: pointer.Bool(true),
-			},
-		},
-	}
-
-	log.Info("Creating cluster...")
-	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, "cilium@e2e.test")
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create cluster: %w", err)
-	}
-	log = log.With("cluster", cluster.Name)
-	teardowns = append(teardowns, func() {
-		// This deletion will happen in the background, i.e. we are not waiting
-		// for its completion. This is fine in e2e tests, where the surrounding
-		// bash script will (as part of its normal cleanup) delete (and wait) all
-		// userclusters anyway.
-		log.Info("Deleting cluster...")
-		if err := masterClient.Delete(ctx, cluster); err != nil {
-			t.Errorf("failed to delete cluster: %v", err)
-		}
-	})
-
-	// wait for cluster to be up and running
-	log.Info("Waiting for cluster to become healthy...")
-	err = wait.Poll(2*time.Second, 10*time.Minute, func() (error, error) {
-		curCluster := kubermaticv1.Cluster{}
-		if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), &curCluster); err != nil {
-			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
-		}
-
-		if !curCluster.Status.ExtendedHealth.AllHealthy() {
-			return errors.New("cluster is not all healthy"), nil
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("cluster did not become healthy: %w", err)
-	}
-
-	// update our local cluster variable with the newly reconciled address values
-	if err := masterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to retrieve cluster: %w", err)
-	}
-
-	// create hubble addon
-	log.Info("Installing hubble addon...")
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, "hubble", nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
-		return nil, cleanup, log, fmt.Errorf("failed to create addon: %w", err)
-	}
-
-	// retrieve usercluster kubeconfig, this can fail a couple of times until
-	// the exposing mechanism is ready
-	log.Info("Retrieving cluster client...")
-	var clusterClient ctrlruntimeclient.Client
-	err = wait.Poll(1*time.Second, 30*time.Second, func() (transient error, terminal error) {
-		clusterClient, transient = clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
-		return transient, nil
-	})
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("cluster did not become available: %w", err)
-	}
-
-	utilruntime.Must(clusterv1alpha1.AddToScheme(clusterClient.Scheme()))
-
-	// prepare MachineDeployment
-	encodedOSSpec, err := json.Marshal(ubuntu.Config{})
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to encode osspec: %w", err)
-	}
-
-	encodedCloudProviderSpec, err := json.Marshal(awstypes.RawConfig{
-		InstanceType:     providerconfig.ConfigVarString{Value: "t3.small"},
-		DiskType:         providerconfig.ConfigVarString{Value: "standard"},
-		DiskSize:         int64(25),
-		VpcID:            providerconfig.ConfigVarString{Value: cluster.Spec.Cloud.AWS.VPCID},
-		InstanceProfile:  providerconfig.ConfigVarString{Value: cluster.Spec.Cloud.AWS.InstanceProfileName},
-		Region:           providerconfig.ConfigVarString{Value: "eu-central-1"},
-		AvailabilityZone: providerconfig.ConfigVarString{Value: "eu-central-1a"},
-		SecurityGroupIDs: []providerconfig.ConfigVarString{{
-			Value: cluster.Spec.Cloud.AWS.SecurityGroupID,
-		}},
-		Tags: map[string]string{
-			"kubernetes.io/cluster/" + cluster.Name: "",
-			"system/cluster":                        cluster.Name,
-		},
-	})
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to encode providerspec: %w", err)
-	}
-
-	cfg := providerconfig.Config{
-		CloudProvider: providerconfig.CloudProviderAWS,
-		CloudProviderSpec: runtime.RawExtension{
-			Raw: encodedCloudProviderSpec,
-		},
-		OperatingSystem: providerconfig.OperatingSystemUbuntu,
-		OperatingSystemSpec: runtime.RawExtension{
-			Raw: encodedOSSpec,
-		},
-	}
-
-	encodedConfig, err := json.Marshal(cfg)
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to encode providerconfig: %w", err)
-	}
-
-	labels := map[string]string{
-		"type": "worker",
-	}
-
-	md := clusterv1alpha1.MachineDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "worker-nodes",
-			Namespace: "kube-system",
-		},
-		Spec: clusterv1alpha1.MachineDeploymentSpec{
-			Selector: metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Replicas: pointer.Int32(2),
-			Template: clusterv1alpha1.MachineTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: clusterv1alpha1.MachineSpec{
-					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: version,
-					},
-					ProviderSpec: clusterv1alpha1.ProviderSpec{
-						Value: &runtime.RawExtension{
-							Raw: encodedConfig,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	// create MachineDeployment
-	log.Info("Creating MachineDeployment...")
-	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (error, error) {
-		return clusterClient.Create(ctx, &md), nil
-	})
-	if err != nil {
-		return nil, cleanup, log, fmt.Errorf("failed to create MachineDeployment: %w", err)
-	}
-
-	return clusterClient, cleanup, log, nil
+	return clusterClient, cleanup, log, err
 }

@@ -37,16 +37,11 @@ import (
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraints"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
@@ -1583,114 +1578,6 @@ func (r *TestClient) GetUserClusterClient(dc, projectID, clusterID string) (ctrl
 	return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
 }
 
-// GetConstraint gets the constraint with the given name, project and cluster; it does not perform any
-// retries if the API returns errors.
-func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Constraint, error) {
-	params := &project.GetConstraintParams{
-		ProjectID: projectID,
-		ClusterID: clusterID,
-		Name:      name,
-	}
-
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-
-	project, err := r.client.Project.GetConstraint(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-
-	return convertConstraint(project.Payload)
-}
-
-func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constraint, error) {
-	kind := &models.Kind{
-		Kinds: []string{"ConfigMap"}, APIGroups: []string{""},
-	}
-	spec := &models.ConstraintSpec{
-		ConstraintType: ctKind,
-		Match: &models.Match{
-			Kinds: []*models.Kind{kind},
-		},
-		Parameters: models.Parameters{
-			"labels": json.RawMessage(`["gatekeeper"]`),
-		},
-	}
-
-	params := &constraint.CreateDefaultConstraintParams{
-		Body: &models.ConstraintBody{
-			Name: name,
-			Spec: spec,
-		},
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-
-	constraint, err := r.client.Constraint.CreateDefaultConstraint(params, r.bearerToken)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return convertDefaultConstraint(constraint.Payload)
-}
-
-func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error) {
-	apiConstraint := &apiv2.Constraint{}
-	apiConstraint.Name = constraint.Name
-	apiConstraint.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: constraint.Spec.ConstraintType,
-	}
-
-	return apiConstraint, nil
-}
-
-func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Constraint, error) {
-	Constraint := &kubermaticv1.Constraint{}
-	Constraint.Name = constraint.Name
-	return Constraint, nil
-}
-
-func (r *TestClient) DeleteConstraintTemplate(name string) error {
-	r.test.Log("Deleting constraint template...")
-
-	params := &constrainttemplates.DeleteConstraintTemplateParams{
-		Name: name,
-	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-
-	_, err := r.client.Constrainttemplates.DeleteConstraintTemplate(params, r.bearerToken)
-	if err != nil {
-		return err
-	}
-
-	r.test.Log("Constraint template deleted successfully")
-	return nil
-}
-
-func (r *TestClient) DeleteConstraint(name string) error {
-	r.test.Log("Deleting constraint...")
-
-	params := &constraints.DeleteDefaultConstraintParams{
-		Name: name,
-	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
-
-	_, err := r.client.Constraints.DeleteDefaultConstraint(params, r.bearerToken)
-	if err != nil {
-		return err
-	}
-
-	r.test.Log("Constraint deleted successfully")
-	return nil
-}
-
 // CreateClusterTemplate method creates cluster template object.
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
 	_, err := semverlib.NewVersion(version)
@@ -1844,81 +1731,6 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 	}
 
 	return sizesResponse.Payload, nil
-}
-
-// UpdateAlertmanager updates alertmanager config for specific cluster.
-func (r *TestClient) UpdateAlertmanager(clusterID, projectID, config string) (*models.Alertmanager, error) {
-	params := &project.UpdateAlertmanagerParams{
-		Body: &models.Alertmanager{
-			Spec: &models.AlertmanagerSpec{
-				Config: []byte(config),
-			},
-		},
-		ClusterID: clusterID,
-		ProjectID: projectID,
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-	updateResponse, err := r.client.Project.UpdateAlertmanager(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-	return updateResponse.Payload, nil
-}
-
-// CreateRuleGroup creates rule group with specific type.
-func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType kubermaticv1.RuleGroupType, config []byte) (*models.RuleGroup, error) {
-	params := &rulegroup.CreateRuleGroupParams{
-		Body: &models.RuleGroup{
-			Data: config,
-			Type: models.RuleGroupType(ruleGroupType),
-		},
-		ClusterID: clusterID,
-		ProjectID: projectID,
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-	createResponse, err := r.client.Rulegroup.CreateRuleGroup(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-	return createResponse.Payload, nil
-}
-
-// SetMonitoringMLARateLimits updates monitoring MLA rate limits.
-func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rateLimits kubermaticv1.MonitoringRateLimitSettings) (*models.MLAAdminSetting, error) {
-	params := &mlaadminsetting.CreateMLAAdminSettingParams{
-		Body: &models.MLAAdminSetting{
-			MonitoringRateLimits: &models.MonitoringRateLimitSettings{
-				IngestionBurstSize: rateLimits.IngestionBurstSize,
-				IngestionRate:      rateLimits.IngestionRate,
-				MaxSamplesPerQuery: rateLimits.MaxSamplesPerQuery,
-				MaxSeriesPerMetric: rateLimits.MaxSeriesPerMetric,
-				MaxSeriesPerQuery:  rateLimits.MaxSeriesPerQuery,
-				MaxSeriesTotal:     rateLimits.MaxSeriesTotal,
-				QueryBurstSize:     rateLimits.QueryBurstSize,
-				QueryRate:          rateLimits.QueryRate,
-			},
-		},
-		ClusterID: clusterID,
-		ProjectID: projectID,
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-	updateResponse, err := r.client.Mlaadminsetting.CreateMLAAdminSetting(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-	return updateResponse.Payload, nil
 }
 
 func (r *TestClient) ConnectClusterTerminal(token, clusterID, projectID string) (*websocket.Conn, error) {

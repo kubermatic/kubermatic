@@ -18,7 +18,6 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-digitalocean: "true"
       preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
@@ -211,8 +210,6 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-digitalocean: "true"
-      preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
@@ -273,7 +270,6 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-digitalocean: "true"
       preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
@@ -338,7 +334,6 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-digitalocean: "true"
       preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"

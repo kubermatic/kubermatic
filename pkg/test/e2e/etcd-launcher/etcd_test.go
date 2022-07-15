@@ -21,11 +21,16 @@ package etcdlauncher
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,10 +45,7 @@ import (
 )
 
 var (
-	datacenter = "kubermatic"
-	location   = "hetzner-hel1"
-	version    = utils.KubernetesVersion()
-	credential = "e2e-hetzner"
+	logOptions = log.NewDefaultOptions()
 )
 
 const (
@@ -53,95 +55,74 @@ const (
 	namespaceName          = "backup-test"
 )
 
+func init() {
+	jig.AddFlags(flag.CommandLine)
+	logOptions.AddFlags(flag.CommandLine)
+}
+
 func TestBackup(t *testing.T) {
 	ctx := context.Background()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
 	client, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// login
-	masterToken, err := utils.RetrieveMasterToken(ctx)
+	// create test environment
+	testJig := jig.NewBYOCluster(client, logger)
+
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	defer testJig.Cleanup(ctx, t)
 	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
+		t.Fatalf("failed to setup test environment: %v", err)
 	}
-	testClient := utils.NewTestClient(masterToken, t)
 
-	// create dummy project
-	t.Log("creating project...")
-	project, err := testClient.CreateProject(rand.String(10))
+	userClient, err := testJig.ClusterClient(ctx)
 	if err != nil {
-		t.Fatalf("failed to create project: %v", err)
-	}
-	defer cleanupProject(t, project.ID)
-
-	// create dummy cluster (NB: If these tests fail, the etcd ring can be
-	// _so_ dead that any cleanup attempt is futile; make sure to not create
-	// any cloud resources, as they might be orphaned)
-
-	t.Log("creating cluster...")
-	apiCluster, err := testClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
-	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
-	}
-
-	// wait for the cluster to become healthy
-	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster did not become healthy: %v", err)
-	}
-
-	// get the cluster object (the CRD, not the API's representation)
-	cluster := &kubermaticv1.Cluster{}
-	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-		t.Fatalf("failed to get cluster: %v", err)
-	}
-
-	t.Log("creating client for user cluster...")
-	userClient, err := testClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
-	if err != nil {
-		t.Fatalf("error creating user cluster client: %v", err)
+		t.Fatalf("failed to create user cluster client: %v", err)
 	}
 
 	// Create a resource on the cluster so that we can see that the backup works
+	logger.Info("Creating test namespace...")
 	testNamespace := &corev1.Namespace{}
 	testNamespace.Name = namespaceName
 	err = userClient.Create(ctx, testNamespace)
 	if err != nil {
 		t.Fatalf("failed to create test namespace: %v", err)
 	}
-	t.Log("created test namespace")
+	logger.Info("created test namespace")
 
 	// create etcd backup that will be restored later
-	err, backup := createBackup(ctx, t, client, cluster)
+	err, backup := createBackup(ctx, logger, client, cluster)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
-	t.Log("created etcd backup")
+	logger.Info("created etcd backup")
 
 	// delete the test resource
 	err = userClient.Delete(ctx, testNamespace)
 	if err != nil {
 		t.Fatalf("failed to delete test namespace: %v", err)
 	}
-	t.Log("deleted test namespace")
+	logger.Info("deleted test namespace")
 
 	// enable etcd-launcher feature after creating a backup
-	if err := enableLauncher(ctx, t, client, cluster); err != nil {
+	if err := enableLauncher(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
 	// restore from backup
-	if err := restoreBackup(ctx, t, client, cluster, backup); err != nil {
+	if err := restoreBackup(ctx, logger, client, cluster, backup); err != nil {
 		t.Fatalf("failed to restore etcd backup: %v", err)
 	}
-	t.Log("restored etcd backup")
+	logger.Info("restored etcd backup")
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
@@ -151,158 +132,102 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get restored test namespace: %v", err)
 	}
-	t.Log("deleted namespace was restored by backup")
-
-	t.Log("tests succeeded")
+	logger.Info("deleted namespace was restored by backup")
 }
 
 func TestScaling(t *testing.T) {
 	ctx := context.Background()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
 	client, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// login
-	masterToken, err := utils.RetrieveMasterToken(ctx)
+	// create test environment
+	testJig := jig.NewBYOCluster(client, logger)
+
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	defer testJig.Cleanup(ctx, t)
 	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-	testClient := utils.NewTestClient(masterToken, t)
-
-	// create dummy project
-	t.Log("creating project...")
-	project, err := testClient.CreateProject(rand.String(10))
-	if err != nil {
-		t.Fatalf("failed to create project: %v", err)
-	}
-	defer cleanupProject(t, project.ID)
-
-	// create dummy cluster (NB: If these tests fail, the etcd ring can be
-	// _so_ dead that any cleanup attempt is futile; make sure to not create
-	// any cloud resources, as they might be orphaned)
-
-	t.Log("creating cluster...")
-	apiCluster, err := testClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
-	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
-	}
-
-	// wait for the cluster to become healthy
-	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster did not become healthy: %v", err)
-	}
-
-	// get the cluster object (the CRD, not the API's representation)
-	cluster := &kubermaticv1.Cluster{}
-	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-		t.Fatalf("failed to get cluster: %v", err)
+		t.Fatalf("failed to setup test environment: %v", err)
 	}
 
 	// we run all these tests in the same cluster to speed up the e2e test
-	if err := enableLauncher(ctx, t, client, cluster); err != nil {
+	if err := enableLauncher(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := scaleUp(ctx, t, client, cluster); err != nil {
+	if err := scaleUp(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to scale up: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := scaleDown(ctx, t, client, cluster); err != nil {
+	if err := scaleDown(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to scale down: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := disableLauncher(ctx, t, client, cluster); err != nil {
+	if err := disableLauncher(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("succeeded in disabling immutable feature etcd-launcher: %v", err)
 	}
-
-	t.Log("tests succeeded")
 }
 
 func TestRecovery(t *testing.T) {
 	ctx := context.Background()
+	logger := log.NewFromOptions(logOptions).Sugar()
 
 	client, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	// login
-	masterToken, err := utils.RetrieveMasterToken(ctx)
+	// create test environment
+	testJig := jig.NewBYOCluster(client, logger)
+
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	defer testJig.Cleanup(ctx, t)
 	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-	testClient := utils.NewTestClient(masterToken, t)
-
-	// create dummy project
-	t.Log("creating project...")
-	project, err := testClient.CreateProject(rand.String(10))
-	if err != nil {
-		t.Fatalf("failed to create project: %v", err)
-	}
-	defer cleanupProject(t, project.ID)
-
-	// create dummy cluster (NB: If these tests fail, the etcd ring can be
-	// _so_ dead that any cleanup attempt is futile; make sure to not create
-	// any cloud resources, as they might be orphaned)
-
-	t.Log("creating cluster...")
-	apiCluster, err := testClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
-	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
+		t.Fatalf("failed to setup test environment: %v", err)
 	}
 
-	// wait for the cluster to become healthy
-	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
-		t.Fatalf("cluster did not become healthy: %v", err)
-	}
-
-	// get the cluster object (the CRD, not the API's representation)
-	cluster := &kubermaticv1.Cluster{}
-	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
-		t.Fatalf("failed to get cluster: %v", err)
-	}
-
-	if err := enableLauncher(ctx, t, client, cluster); err != nil {
+	if err := enableLauncher(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := breakAndRecoverPV(ctx, t, client, cluster); err != nil {
+	if err := breakAndRecoverPV(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to test volume recovery: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := breakAndRecoverPVC(ctx, t, client, cluster); err != nil {
+	if err := breakAndRecoverPVC(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("failed to recover from PVC deletion: %v", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 }
 
-func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
-	t.Log("creating backup of etcd data...")
+func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
+	log.Info("creating backup of etcd data...")
 	backup := &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "etcd-e2e-backup",
@@ -325,15 +250,15 @@ func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Cl
 		return fmt.Errorf("failed to create EtcdBackupConfig: %w", err), nil
 	}
 
-	if err := waitForEtcdBackup(ctx, t, client, backup); err != nil {
+	if err := waitForEtcdBackup(ctx, log, client, backup); err != nil {
 		return fmt.Errorf("failed to wait for etcd backup finishing: %w (%v)", err, backup.Status), nil
 	}
 
 	return nil, backup
 }
 
-func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
-	t.Log("restoring etcd cluster from backup...")
+func restoreBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
+	log.Info("restoring etcd cluster from backup...")
 	restore := &kubermaticv1.EtcdRestore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "etcd-e2e-restore",
@@ -357,28 +282,28 @@ func restoreBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.C
 		return fmt.Errorf("failed to create EtcdRestore: %w", err)
 	}
 
-	if err := waitForEtcdRestore(ctx, t, client, restore); err != nil {
+	if err := waitForEtcdRestore(ctx, log, client, restore); err != nil {
 		return fmt.Errorf("failed to wait for etcd restore: %w", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("failed to wait for cluster to become healthy again: %w", err)
 	}
 
 	return nil
 }
 
-func enableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Log("enabling etcd-launcher...")
+func enableLauncher(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	log.Info("enabling etcd-launcher...")
 	if err := enableLauncherForCluster(ctx, client, cluster); err != nil {
 		return fmt.Errorf("failed to enable etcd-launcher: %w", err)
 	}
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("etcd cluster is not healthy: %w", err)
 	}
 
-	if err := waitForStrictTLSMode(ctx, t, client, cluster); err != nil {
+	if err := waitForStrictTLSMode(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("etcd cluster is not running in strict TLS peer mode: %w", err)
 	}
 
@@ -394,8 +319,8 @@ func enableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.
 	return nil
 }
 
-func disableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Log("trying to disable etcd-launcher (not expected to succeed) ...")
+func disableLauncher(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	log.Info("trying to disable etcd-launcher (not expected to succeed) ...")
 	if err := disableEtcdlauncherForCluster(ctx, client, cluster); err == nil {
 		return fmt.Errorf("no error disabling etcd-launcher, expected validation to fail")
 	}
@@ -403,37 +328,37 @@ func disableLauncher(ctx context.Context, t *testing.T, client ctrlruntimeclient
 	return nil
 }
 
-func scaleUp(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Logf("scaling etcd cluster up to %d nodes...", scaleUpCount)
+func scaleUp(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	log.Infof("scaling etcd cluster up to %d nodes...", scaleUpCount)
 	if err := resizeEtcd(ctx, client, cluster, scaleUpCount); err != nil {
 		return fmt.Errorf("failed while trying to scale up the etcd cluster: %w", err)
 	}
 
-	if err := waitForRollout(ctx, t, client, cluster, scaleUpCount); err != nil {
+	if err := waitForRollout(ctx, log, client, cluster, scaleUpCount); err != nil {
 		return fmt.Errorf("rollout got stuck: %w", err)
 	}
-	t.Log("etcd cluster scaled up successfully.")
+	log.Info("etcd cluster scaled up successfully.")
 
 	return nil
 }
 
-func scaleDown(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	t.Logf("scaling etcd cluster down to %d nodes...", scaleDownCount)
+func scaleDown(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	log.Infof("scaling etcd cluster down to %d nodes...", scaleDownCount)
 	if err := resizeEtcd(ctx, client, cluster, scaleDownCount); err != nil {
 		return fmt.Errorf("failed while trying to scale down the etcd cluster: %w", err)
 	}
 
-	if err := waitForRollout(ctx, t, client, cluster, scaleDownCount); err != nil {
+	if err := waitForRollout(ctx, log, client, cluster, scaleDownCount); err != nil {
 		return fmt.Errorf("rollout got stuck: %w", err)
 	}
-	t.Log("etcd cluster scaled down successfully.")
+	log.Info("etcd cluster scaled down successfully.")
 
 	return nil
 }
 
-func breakAndRecoverPV(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func breakAndRecoverPV(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	// delete one of the etcd node PVs
-	t.Log("testing etcd node PV automatic recovery...")
+	log.Info("testing etcd node PV automatic recovery...")
 	if err := forceDeleteEtcdPV(ctx, client, cluster); err != nil {
 		return fmt.Errorf("failed to delete etcd node PV: %w", err)
 	}
@@ -443,28 +368,28 @@ func breakAndRecoverPV(ctx context.Context, t *testing.T, client ctrlruntimeclie
 	time.Sleep(30 * time.Second)
 
 	// auto recovery should kick in. We need to wait for it
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("etcd cluster is not healthy: %w", err)
 	}
-	t.Log("etcd node PV recovered successfully.")
+	log.Info("etcd node PV recovered successfully.")
 
 	return nil
 }
 
-func breakAndRecoverPVC(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func breakAndRecoverPVC(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	// delete one of the etcd node PVCs
-	t.Log("testing etcd-launcher recovery from deleted PVC ...")
+	log.Info("testing etcd-launcher recovery from deleted PVC ...")
 	if err := deleteEtcdPVC(ctx, client, cluster); err != nil {
 		return fmt.Errorf("failed to delete etcd node PVC: %w", err)
 	}
 
 	time.Sleep(30 * time.Second)
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("etcd cluster is not healthy: %w", err)
 	}
 
-	t.Log("etcd node recovered from PVC deletion successfully.")
+	log.Info("etcd node recovered from PVC deletion successfully.")
 
 	return nil
 }
@@ -580,7 +505,7 @@ func resizeEtcd(ctx context.Context, client ctrlruntimeclient.Client, cluster *k
 	})
 }
 
-func waitForEtcdBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, backup *kubermaticv1.EtcdBackupConfig) error {
+func waitForEtcdBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, backup *kubermaticv1.EtcdBackupConfig) error {
 	before := time.Now()
 	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, backup); err != nil {
@@ -592,11 +517,11 @@ func waitForEtcdBackup(ctx context.Context, t *testing.T, client ctrlruntimeclie
 		return err
 	}
 
-	t.Logf("etcd backup finished after %v.", time.Since(before))
+	log.Infof("etcd backup finished after %v.", time.Since(before))
 	return nil
 }
 
-func waitForEtcdRestore(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, restore *kubermaticv1.EtcdRestore) error {
+func waitForEtcdRestore(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, restore *kubermaticv1.EtcdRestore) error {
 	before := time.Now()
 	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: restore.Name, Namespace: restore.Namespace}, restore); err != nil {
@@ -608,11 +533,11 @@ func waitForEtcdRestore(ctx context.Context, t *testing.T, client ctrlruntimecli
 		return fmt.Errorf("failed waiting for restore to complete: %w (%v)", err, restore.Status)
 	}
 
-	t.Logf("etcd restore finished after %v.", time.Since(before))
+	log.Infof("etcd restore finished after %v.", time.Since(before))
 	return nil
 }
 
-func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func waitForClusterHealthy(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	before := time.Now()
 
 	// let's briefly sleep to give controllers a chance to kick in
@@ -626,7 +551,7 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 
 		healthy, err := isClusterEtcdHealthy(ctx, client, cluster)
 		if err != nil {
-			t.Logf("failed to check cluster etcd health status: %v", err)
+			log.Infof("failed to check cluster etcd health status: %v", err)
 			return false, nil
 		}
 		return healthy, nil
@@ -634,12 +559,12 @@ func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntime
 		return fmt.Errorf("failed to check etcd health status: %w", err)
 	}
 
-	t.Logf("etcd cluster became healthy after %v.", time.Since(before))
+	log.Infof("etcd cluster became healthy after %v.", time.Since(before))
 
 	return nil
 }
 
-func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func waitForStrictTLSMode(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	before := time.Now()
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
 		// refresh cluster object for updated health status
@@ -649,7 +574,7 @@ func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimec
 
 		healthy, err := isStrictTLSEnabled(ctx, client, cluster)
 		if err != nil {
-			t.Logf("failed to check cluster etcd health status: %v", err)
+			log.Infof("failed to check cluster etcd health status: %v", err)
 			return false, nil
 		}
 		return healthy, nil
@@ -657,15 +582,15 @@ func waitForStrictTLSMode(ctx context.Context, t *testing.T, client ctrlruntimec
 		return fmt.Errorf("failed to check etcd health status: %w", err)
 	}
 
-	t.Logf("etcd cluster is running in strict TLS mode after %v.", time.Since(before))
+	log.Infof("etcd cluster is running in strict TLS mode after %v.", time.Since(before))
 
 	return nil
 }
 
-func waitForRollout(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, targetSize int) error {
-	t.Log("waiting for rollout...")
+func waitForRollout(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, targetSize int) error {
+	log.Info("waiting for rollout...")
 
-	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+	if err := waitForClusterHealthy(ctx, log, client, cluster); err != nil {
 		return fmt.Errorf("etcd cluster is not healthy: %w", err)
 	}
 
