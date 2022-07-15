@@ -479,10 +479,6 @@ spec:
         operation: UPGRADE
         provider: ""
         version: 1.24.*
-      - condition: externalCloudProvider
-        operation: SUPPORT
-        provider: ""
-        version: 1.24.*
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
     # Each update may optionally be configured to be 'automatic: true', in which case the
