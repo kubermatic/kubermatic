@@ -293,6 +293,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			projectID := group.Spec.ProjectID
 
 			if projectIDSet.Has(projectID) {
+				// The project has been already added either from user or other group bindings.
 				continue
 			}
 
