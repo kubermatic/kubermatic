@@ -67,7 +67,6 @@ func TestGetReleaseName(t *testing.T) {
 			if size > 53 {
 				t.Errorf("getReleaseName() size should be less or equals to 53. got %v", size)
 			}
-
 		})
 	}
 }

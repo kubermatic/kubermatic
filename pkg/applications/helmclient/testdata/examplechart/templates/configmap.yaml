@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Default values for examplechart.
-# This is a YAML-formatted file.
-# Declare name/value pairs to be passed into your templates.
-# name: value
-
-cmData:
-  foo: bar
-
-versionLabel: "1.0"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: testcm
+  labels:
+{{ if .Values.versionLabel }}
+    versionLabel: {{ .Values.versionLabel | quote}}
+{{ end }}
+data:
+{{ if .Values.cmData }}
+{{ toYaml .Values.cmData | nindent 2 }}
+{{ end }}
