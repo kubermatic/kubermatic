@@ -75,15 +75,15 @@ spec:
       country: DE
       spec:
         vsphere:
-          endpoint: "https://vcenter.qa.lab.kubermatic.io"
-          datacenter: "dc-1"
-          datastore: "HS-FreeNAS"
-          cluster: "cl-1"
-          root_path: "/dc-1/vm/e2e-tests"
+          cluster: Kubermatic
+          datacenter: Hamburg
+          datastore: alpha1
+          endpoint: https://vcenter.dc.k8c.io
+          root_path: /Hamburg/vm/Kubermatic-dev
           templates:
-            ubuntu: "machine-controller-e2e-ubuntu"
-            centos: "machine-controller-e2e-centos"
-            coreos: "machine-controller-e2e-coreos"
+            ubuntu: ubuntu-20.04
+            centos: centos-7
+            flatcar: flatcar-stable
     azure-westeurope:
       location: "Azure West europe"
       country: NL
