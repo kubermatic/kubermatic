@@ -1016,6 +1016,247 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "scenario 7: a proper set of RBAC ClusterRole/Binding is generated for a resource quota",
+			expectedActions: []string{"get"},
+
+			dependantToSync: &kubermaticv1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "project-thunderball",
+					UID:  types.UID("abcdID"),
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ProjectKindName,
+							Name:       "thunderball",
+							UID:        "thunderballID",
+						},
+					},
+				},
+				Spec: kubermaticv1.ResourceQuotaSpec{
+					Subject: kubermaticv1.Subject{
+						Name: "thunderball",
+						Kind: "project",
+					},
+				},
+			},
+
+			expectedClusterRoles: []*rbacv1.ClusterRole{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:editors-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"resourcequotas"},
+							ResourceNames: []string{"project-thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:owners-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"resourcequotas"},
+							ResourceNames: []string{"project-thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"resourcequotas"},
+							ResourceNames: []string{"project-thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"resourcequotas"},
+							ResourceNames: []string{"project-thunderball"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
+			},
+
+			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:owners-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:resourcequota-project-thunderball:owners-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:editors-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:resourcequota-project-thunderball:editors-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Name:       "project-thunderball",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -1252,256 +1493,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 		},
 
 		// scenario 2
-		{
-			name:            "scenario 2: a proper set of RBAC Role/Binding is generated for a resource quota",
-			expectedActions: []string{"get"},
 
-			dependantToSync: &kubermaticv1.ResourceQuota{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "project-thunderball",
-					Namespace: "kubermatic",
-					UID:       types.UID("abcdID"),
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
-							Name:       "thunderball",
-							UID:        "thunderballID",
-						},
-					},
-				},
-				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
-						Name: "thunderball",
-						Kind: "project",
-					},
-				},
-			},
-
-			expectedRoles: []*rbacv1.Role{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:editors-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
-						},
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{"resourcequotas"},
-							ResourceNames: []string{"project-thunderball"},
-							Verbs:         []string{"get"},
-						},
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:owners-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
-						},
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{"resourcequotas"},
-							ResourceNames: []string{"project-thunderball"},
-							Verbs:         []string{"get"},
-						},
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
-						},
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{"resourcequotas"},
-							ResourceNames: []string{"project-thunderball"},
-							Verbs:         []string{"get"},
-						},
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
-						},
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{"resourcequotas"},
-							ResourceNames: []string{"project-thunderball"},
-							Verbs:         []string{"get"},
-						},
-					},
-				},
-			},
-
-			expectedRoleBindings: []*rbacv1.RoleBinding{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:owners-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "owners-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:resourcequota-project-thunderball:owners-thunderball",
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:editors-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "editors-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:resourcequota-project-thunderball:editors-thunderball",
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "viewers-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:resourcequota-project-thunderball:viewers-thunderball",
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
-								Name:       "project-thunderball",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "projectmanagers-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:resourcequota-project-thunderball:projectmanagers-thunderball",
-					},
-				},
-			},
-		},
 	}
 
 	for _, test := range tests {
