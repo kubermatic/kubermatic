@@ -281,7 +281,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			groupProjectBindings, err := memberMapper.GroupMappingsFor(ctx, groupName)
 			if err != nil {
 				if isStatus(err, http.StatusNotFound) {
-					// We don't expect each group to have a corresponding GroupProjectMapping.
+					// We don't expect each group to have a corresponding GroupProjectBinding.
 					continue
 				}
 				return nil, common.KubernetesErrorToHTTPError(err)
