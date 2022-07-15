@@ -97,7 +97,8 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string",priority=2
+// +kubebuilder:printcolumn:JSONPath="{.status.resourceUsage.cpu} vCPU / {.status.resourceUsage.memory}",name="ResourceUsage",type="string",priority=1
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"

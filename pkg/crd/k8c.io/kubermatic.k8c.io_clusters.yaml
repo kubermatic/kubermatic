@@ -27,6 +27,11 @@ spec:
       type: string
     - jsonPath: .spec.cloud.providerName
       name: Provider
+      priority: 2
+      type: string
+    - jsonPath: '{.status.resourceUsage.cpu} vCPU / {.status.resourceUsage.memory}'
+      name: ResourceUsage
+      priority: 1
       type: string
     - jsonPath: .spec.cloud.dc
       name: Datacenter
