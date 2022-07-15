@@ -258,18 +258,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	namespace, err := r.ensureNamespaceExists(ctx, cluster)
+	namespace, err := r.reconcileClusterNamespace(ctx, log, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
-	}
-
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-		if c.Status.NamespaceName != namespace.Name {
-			c.Status.NamespaceName = namespace.Name
-		}
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to update cluster namespace status: %w", err)
 	}
 
 	// synchronize cluster.status.health for Kubernetes clusters

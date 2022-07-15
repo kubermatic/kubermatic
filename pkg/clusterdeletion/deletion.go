@@ -88,9 +88,17 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// We might need credentials for cloud provider cleanup. Since different cloud providers use different
 	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned
 	// up, or in other words, all other finalizers have been removed from the cluster, and the
-	// CredentialsSecretsCleanupFinalizer is the only finalizer left.
-	if kuberneteshelper.HasOnlyFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer) {
+	// CredentialsSecretsCleanupFinalizer (and potentially NamespaceCleanupFinalizer) are the only finalizers left.
+	// The namespace finalizer is optional in order to not create a deadlock between the two finalizers.
+	if kuberneteshelper.HasOnlyAnyFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer, apiv1.NamespaceCleanupFinalizer) && kuberneteshelper.HasFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer) {
 		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
+			return err
+		}
+	}
+
+	// Now it's time to finally remove the cluster namespace.
+	if kuberneteshelper.HasOnlyFinalizer(cluster, apiv1.NamespaceCleanupFinalizer) {
+		if err := d.cleanUpNamespace(ctx, log, cluster); err != nil {
 			return err
 		}
 	}

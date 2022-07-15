@@ -25,7 +25,12 @@ import (
 	"sort"
 	"time"
 
+	"go.uber.org/zap"
+
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -237,8 +242,41 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		Build(), nil
 }
 
+// reconcileClusterNamespace will ensure that the cluster namespace is
+// correctly initialized and created. If the cluster is in deletion,
+// a missing namespace will *not* be created and in that case the function
+// will return nil, nil.
+func (r *Reconciler) reconcileClusterNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+	if cluster.DeletionTimestamp != nil {
+		// Even just trying to .Get() the namespace is ultimately
+		// pointless as this controller will, when the cluster is
+		// deleted, not use the return value anyway.
+		return nil, nil
+	}
+
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, apiv1.NamespaceCleanupFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to set %q finalizer: %w", apiv1.NamespaceCleanupFinalizer, err)
+	}
+
+	namespace, err := r.ensureNamespaceExists(ctx, log, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
+	}
+
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.NamespaceName != namespace.Name {
+			c.Status.NamespaceName = namespace.Name
+		}
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update cluster namespace status: %w", err)
+	}
+
+	return namespace, nil
+}
+
 // ensureNamespaceExists will create the cluster namespace.
-func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
 	namespace := cluster.Status.NamespaceName
 	if namespace == "" {
 		namespace = kubernetesprovider.NamespaceName(cluster.Name)
