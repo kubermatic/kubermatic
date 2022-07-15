@@ -426,6 +426,9 @@ var (
 		AzureCloudProvider: {
 			ipv6EnabledForAllDatacenters: true,
 		},
+		BringYourOwnCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
 		DigitaloceanCloudProvider: {
 			ipv6EnabledForAllDatacenters: true,
 		},
