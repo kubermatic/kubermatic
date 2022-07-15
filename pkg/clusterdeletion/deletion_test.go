@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -167,6 +168,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			ctx := context.Background()
 			deletion := &Deletion{
 				seedClient:              seedClient,
+				recorder:                &record.FakeRecorder{},
 				userClusterClientGetter: userClusterClientGetter,
 			}
 
