@@ -441,6 +441,9 @@ var (
 		OpenstackCloudProvider: {
 			ipv6EnabledForAllDatacenters: false,
 		},
+		PacketCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
 	}
 )
 
