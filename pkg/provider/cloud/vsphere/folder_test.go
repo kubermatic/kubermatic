@@ -70,8 +70,8 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			dc:   getTestDC(),
 			expectedFolders: sets.NewString(
 				path.Join("/", vSphereDatacenter, "vm"),
-				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
+				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
+				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
 			),
 		},
 		{
@@ -82,8 +82,8 @@ func TestProvider_GetVMFolders(t *testing.T) {
 				RootPath:   path.Join("/", vSphereDatacenter, "vm"),
 			},
 			expectedFolders: sets.NewString(
-				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
+				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
+				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
 			),
 		},
 	}
