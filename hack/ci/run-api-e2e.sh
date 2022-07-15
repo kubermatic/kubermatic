@@ -52,18 +52,18 @@ cat << EOF >> hack/ci/testdata/oauth_values.yaml
     config:
       host: openldap.${LDAP_NAMESPACE}.svc.cluster.local:389
       insecureNoSSL: true
-      bindDN: cn=admin,dc=example,dc=org
+      bindDN: cn=admin,dc=kubermatic,dc=com
       bindPW: admin
       usernamePrompt: Email Address
       userSearch:
-        baseDN: ou=People,dc=example,dc=org
+        baseDN: ou=People,dc=kubermatic,dc=com
         filter: "(objectClass=person)"
         username: mail
         idAttr: DN
         emailAttr: mail
         nameAttr: cn
       groupSearch:
-        baseDN: ou=Groups,dc=example,dc=org
+        baseDN: ou=Groups,dc=kubermatic,dc=com
         filter: "(objectClass=groupOfNames)"
         userMatchers:
           - userAttr: DN
