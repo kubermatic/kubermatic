@@ -44,38 +44,40 @@ import (
 func TestHandlerResourceQuotas(t *testing.T) {
 	t.Parallel()
 
-	existingResourceQuotas := []ctrlruntimeclient.Object{
-		&kubermaticv1.ResourceQuota{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("project-%s-1", projectName),
-				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
-					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-1", projectName),
-				},
-			},
-			Spec: kubermaticv1.ResourceQuotaSpec{
-				Subject: kubermaticv1.Subject{
-					Name: fmt.Sprintf("%s-1", projectName),
-					Kind: kubermaticv1.ProjectSubjectKind,
-				},
+	rq1 := &kubermaticv1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("project-%s", projectName),
+			Labels: map[string]string{
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey:              kubermaticv1.ProjectSubjectKind,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey:              projectName,
+				kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "my project",
 			},
 		},
-		&kubermaticv1.ResourceQuota{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("project-%s-2", projectName),
-				Labels: map[string]string{
-					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
-					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
-				},
-			},
-			Spec: kubermaticv1.ResourceQuotaSpec{
-				Subject: kubermaticv1.Subject{
-					Name: fmt.Sprintf("%s-2", projectName),
-					Kind: kubermaticv1.ProjectSubjectKind,
-				},
+		Spec: kubermaticv1.ResourceQuotaSpec{
+			Subject: kubermaticv1.Subject{
+				Name: projectName,
+				Kind: kubermaticv1.ProjectSubjectKind,
 			},
 		},
 	}
+	rq2 := &kubermaticv1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("project-%s-2", projectName),
+			Labels: map[string]string{
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
+			},
+		},
+		Spec: kubermaticv1.ResourceQuotaSpec{
+			Subject: kubermaticv1.Subject{
+				Name: fmt.Sprintf("%s-2", projectName),
+				Kind: kubermaticv1.ProjectSubjectKind,
+			},
+		},
+	}
+
+	admin := test.GenAdminUser("John", "john@acme.com", true)
+	existingObjects := test.GenDefaultKubermaticObjects(rq1, rq2, admin)
 
 	testcases := []struct {
 		name             string
@@ -92,8 +94,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			name:            "scenario 1: list all resource quotas",
 			method:          "GET",
 			url:             "/api/v2/quotas",
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
@@ -102,9 +104,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 					return err
 				}
 				listLen := len(*resourceQuotaList)
-				expectedListLen := len(existingResourceQuotas)
-				if listLen != expectedListLen {
-					return fmt.Errorf("expected list length %d, got %d", expectedListLen, listLen)
+				if listLen != 2 {
+					return fmt.Errorf("expected list length %d, got %d", 2, listLen)
 				}
 				return nil
 			},
@@ -112,9 +113,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 2: list filtered resource quotas",
 			method:          "GET",
-			url:             fmt.Sprintf("/api/v2/quotas?subjectName=%s-1", projectName),
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			url:             fmt.Sprintf("/api/v2/quotas?subjectName=%s", projectName),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
@@ -133,9 +134,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 3: get a single resource quota",
 			method:          "GET",
-			url:             fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuota := &apiv2.ResourceQuota{}
@@ -143,7 +144,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				expectedName := fmt.Sprintf("project-%s-1", projectName)
+				expectedName := fmt.Sprintf("project-%s", projectName)
 				if resourceQuota.Name != expectedName {
 					return fmt.Errorf("expected name %s, got %s", expectedName, resourceQuota.Name)
 				}
@@ -154,8 +155,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			name:            "scenario 4: get a non-existing single resource quota",
 			method:          "GET",
 			url:             "/api/v2/quotas/project-non-existing",
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      404,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -166,11 +167,11 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "POST",
 			url:    "/api/v2/quotas",
 			body: `{
-                "subjectKind": "project",
-                "subjectName": "` + fmt.Sprintf("%s-1", projectName) + `"
+		      "subjectKind": "project",
+		      "subjectName": "` + projectName + `"
 			}`,
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      409,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -181,16 +182,16 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			method: "POST",
 			url:    "/api/v2/quotas",
 			body: `{
-                "subjectKind": "project",
-                "subjectName": "testproject",
+		      "subjectKind": "project",
+		      "subjectName": "testproject",
 				"quota": {
 					"cpu": 10,
 					"memory": "64Gi",
 					"storage": "256Gi"
 				}
 			}`,
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      201,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -199,14 +200,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:   "scenario 7: update an existing resource quota",
 			method: "PATCH",
-			url:    fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
+			url:    fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			body: `{
 				"cpu": 10,
 				"memory": "64Gi",
 				"storage": "256Gi"
 			}`,
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -221,8 +222,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				"memory": "64Gi",
 				"storage": "256Gi"
 			}`,
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      404,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -231,9 +232,9 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		{
 			name:            "scenario 9: delete an existing resource quota",
 			method:          "DELETE",
-			url:             fmt.Sprintf("/api/v2/quotas/project-%s-1", projectName),
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      200,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
@@ -243,9 +244,44 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			name:            "scenario 10: delete a non-existing resource quota",
 			method:          "DELETE",
 			url:             "/api/v2/quotas/project-non-existing",
-			existingAPIUser: test.GenDefaultAdminAPIUser(),
-			existingObjects: existingResourceQuotas,
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			existingObjects: existingObjects,
 			httpStatus:      404,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				return nil
+			},
+		},
+		{
+			name:            "scenario 11: get a project resource quota",
+			method:          "GET",
+			url:             fmt.Sprintf("/api/v2/projects/%s/quota", projectName),
+			existingAPIUser: test.GenDefaultAPIUser(),
+			existingObjects: existingObjects,
+			httpStatus:      200,
+			validateResp: func(resp *httptest.ResponseRecorder) error {
+				resourceQuota := &apiv2.ResourceQuota{}
+				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
+				if err != nil {
+					return err
+				}
+				expectedName := fmt.Sprintf("project-%s", projectName)
+				if resourceQuota.Name != expectedName {
+					return fmt.Errorf("expected name %s, got %s", expectedName, resourceQuota.Name)
+				}
+				return nil
+			},
+		},
+		{
+			name:            "scenario 12: user bob can't get a project resource quota from a project he doesn't belong to",
+			method:          "GET",
+			url:             fmt.Sprintf("/api/v2/projects/%s-2/quota", projectName),
+			existingAPIUser: test.GenDefaultAPIUser(),
+			existingObjects: append(existingObjects, func() *kubermaticv1.Project {
+				p := test.GenDefaultProject()
+				p.Name = fmt.Sprintf("%s-2", projectName)
+				return p
+			}()),
+			httpStatus: 403,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},

@@ -28,6 +28,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -176,7 +177,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, err
 	}
 
-	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, kubermaticProject.Kind)
+	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, strings.ToLower(kubermaticProject.Kind))
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -258,11 +259,12 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 
 func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv2.ResourceQuota {
 	return &apiv2.ResourceQuota{
-		Name:        resourceQuota.Name,
-		SubjectName: resourceQuota.Spec.Subject.Name,
-		SubjectKind: resourceQuota.Spec.Subject.Kind,
-		Quota:       resourceQuota.Spec.Quota,
-		Status:      resourceQuota.Status,
+		Name:                     resourceQuota.Name,
+		SubjectName:              resourceQuota.Spec.Subject.Name,
+		SubjectKind:              resourceQuota.Spec.Subject.Kind,
+		Quota:                    resourceQuota.Spec.Quota,
+		Status:                   resourceQuota.Status,
+		SubjectHumanReadableName: resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey],
 	}
 }
 

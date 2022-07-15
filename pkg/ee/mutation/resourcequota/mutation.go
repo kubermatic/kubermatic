@@ -35,6 +35,7 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -55,10 +56,13 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		ensureResourceQuotaLabels(resourceQuota)
+		kubernetes.EnsureLabels(resourceQuota, map[string]string{
+			kubermaticv1.ResourceQuotaSubjectKindLabelKey: resourceQuota.Spec.Subject.Kind,
+			kubermaticv1.ResourceQuotaSubjectNameLabelKey: resourceQuota.Spec.Subject.Name,
+		})
 
 		if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
-			err := ensureProjectOwnershipRef(ctx, client, resourceQuota)
+			err := ensureProjectOwnershipRefAndLabel(ctx, client, resourceQuota)
 			if err != nil {
 				logger.Info("ResourceQuota mutation failed", "error", err)
 				return admission.Errored(http.StatusBadRequest, err)
@@ -95,7 +99,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedResourceQuota)
 }
 
-func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+func ensureProjectOwnershipRefAndLabel(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
 	subjectName := resourceQuota.Spec.Subject.Name
 	ownRefs := resourceQuota.OwnerReferences
 
@@ -117,20 +121,9 @@ func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Cli
 	ownRefs = append(ownRefs, projectRef)
 	resourceQuota.SetOwnerReferences(ownRefs)
 
+	kubernetes.EnsureLabels(resourceQuota, map[string]string{kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: project.Spec.Name})
+
 	return nil
-}
-
-func ensureResourceQuotaLabels(resourceQuota *kubermaticv1.ResourceQuota) {
-	labels := resourceQuota.GetLabels()
-
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	labels[kubermaticv1.ResourceQuotaSubjectKindLabelKey] = resourceQuota.Spec.Subject.Kind
-	labels[kubermaticv1.ResourceQuotaSubjectNameLabelKey] = resourceQuota.Spec.Subject.Name
-
-	resourceQuota.SetLabels(labels)
 }
 
 func validateUpdate(oldResourceQuota *kubermaticv1.ResourceQuota, newResourceQuota *kubermaticv1.ResourceQuota) error {
