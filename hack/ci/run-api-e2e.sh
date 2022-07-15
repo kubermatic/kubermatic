@@ -52,18 +52,18 @@ cat << EOF >> hack/ci/testdata/oauth_values.yaml
     config:
       host: openldap.${LDAP_NAMESPACE}.svc.cluster.local:389
       insecureNoSSL: true
-      bindDN: cn=admin,dc=kubermatic,dc=com
+      bindDN: cn=admin,dc=example,dc=org
       bindPW: admin
       usernamePrompt: Email Address
       userSearch:
-        baseDN: ou=People,dc=kubermatic,dc=com
+        baseDN: ou=People,dc=example,dc=org
         filter: "(objectClass=person)"
         username: mail
         idAttr: DN
         emailAttr: mail
         nameAttr: cn
       groupSearch:
-        baseDN: ou=Groups,dc=kubermatic,dc=com
+        baseDN: ou=Groups,dc=example,dc=org
         filter: "(objectClass=groupOfNames)"
         userMatchers:
           - userAttr: DN
@@ -75,6 +75,10 @@ retry 2 kubectl create ns ${LDAP_NAMESPACE}
 retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
 
 source hack/ci/setup-kubermatic-in-kind.sh
+
+# TODO: remove
+echodate "Debug"
+cat hack/ci/testdata/oauth_values.yaml
 
 echodate "Creating Azure preset..."
 cat << EOF > preset-azure.yaml

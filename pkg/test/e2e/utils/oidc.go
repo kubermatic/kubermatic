@@ -49,7 +49,7 @@ func OIDCCredentials() (string, string, error) {
 
 // OIDCCredentialsLDAP temporary returns hardcoded dummy LDAP credentials
 func OIDCCredentialsLDAP() (string, string, error) {
-	return "janedoe@kubermatic.com", "passw0rd", nil
+	return "janedoe@example.com", "foo", nil
 }
 
 // OIDCAdminCredentials takes the admin login name and password from environment variables and
