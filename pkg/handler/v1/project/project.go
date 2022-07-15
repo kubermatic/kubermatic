@@ -37,6 +37,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system.
@@ -242,7 +243,10 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		if req.DisplayAll && userInfo.IsAdmin {
 			return getAllProjectsForAdmin(ctx, userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
-		projects := []*apiv1.Project{}
+
+		var projects []*kubermaticv1.Project
+		projectIDSet := sets.NewString()
+
 		userMappings, err := memberMapper.MappingsFor(ctx, userInfo.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -268,22 +272,59 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 				}
 				continue
 			}
+			projects = append(projects, projectInternal)
+			projectIDSet.Insert(projectInternal.Name)
+		}
 
-			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
+		var groupMappings []*kubermaticv1.GroupProjectBinding
+		for _, groupName := range userInfo.Groups {
+			groupProjectBindings, err := memberMapper.GroupMappingsFor(ctx, groupName)
+			if err != nil {
+				if isStatus(err, http.StatusNotFound) {
+					// We don't expect each group to have a corresponding GroupProjectMapping.
+					continue
+				}
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			groupMappings = append(groupMappings, groupProjectBindings...)
+		}
+
+		for _, group := range groupMappings {
+			projectID := group.Spec.ProjectID
+
+			if projectIDSet.Has(projectID) {
+				continue
+			}
+
+			project, err := projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			if err != nil {
+				if isStatus(err, http.StatusNotFound) {
+					continue
+				}
+				errorList = append(errorList, err.Error())
+				continue
+			}
+			projects = append(projects, project)
+			projectIDSet.Insert(project.Name)
+		}
+
+		var apiProjects []*apiv1.Project
+		for _, project := range projects {
+			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, project, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, projectInternal)
+			clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, project)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners, clustersNumber))
+			apiProjects = append(apiProjects, common.ConvertInternalProjectToExternal(project, projectOwners, clustersNumber))
 		}
 
 		if len(errorList) > 0 {
 			return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 		}
-		return projects, nil
+		return apiProjects, nil
 	}
 }
 
