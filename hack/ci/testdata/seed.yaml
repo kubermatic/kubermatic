@@ -89,6 +89,7 @@ spec:
       country: DE
       spec:
         vsphere:
+          cluster: ''
           datacenter: Hamburg
           datastore: alpha1
           endpoint: https://vcenter.dc.k8c.io
