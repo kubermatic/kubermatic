@@ -28,28 +28,28 @@ import (
 )
 
 func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if cluster.Status.NamespaceName == "" {
-		return nil
-	}
+	if ns := cluster.Status.NamespaceName; ns != "" {
+		if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.Constraint{}, ctrlruntimeclient.InNamespace(ns)); err != nil {
+			return err
+		}
 
-	if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.Constraint{}, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
-		return err
-	}
+		// `apiv1.GatekeeperConstraintCleanupFinalizer` is added by user-cluster-controller-manager/constraints-syncer.
+		// It could be the case that during cluster deletion, user-cluster-controller-manager is deleted before it removes
+		// the finalizer from constraints object, in this case, the user-cluster namespace will get stuck on deletion
+		// (because the kubernetes controller in KKP will not re-create the user-cluster-controller-manager Deployment,
+		// for example).
+		// So here we just remove the finalizer from constraints so that user-cluster namespace can be garbage-collected.
+		// Ref:https://github.com/kubermatic/kubermatic/issues/6934
+		constraintList := &kubermaticv1.ConstraintList{}
+		if err := d.seedClient.List(ctx, constraintList, ctrlruntimeclient.InNamespace(ns)); err != nil {
+			return err
+		}
 
-	// `apiv1.GatekeeperConstraintCleanupFinalizer` is added by user-cluster-controller-manager/constraints-syncer.
-	// It could be the case that during cluster deletion, user-cluster-controller-manager is deleted before it removes
-	// the finalizer from constraints object, in this case, the user-cluster namespace will get stuck on deletion.
-	// So here we just remove the finalizer from constraints so that user-cluster namespace can be garbage-collected.
-	// Ref:https://github.com/kubermatic/kubermatic/issues/6934
-	constraintList := &kubermaticv1.ConstraintList{}
-	if err := d.seedClient.List(ctx, constraintList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
-		return err
-	}
-
-	for _, constraint := range constraintList.Items {
-		err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, apiv1.GatekeeperConstraintCleanupFinalizer)
-		if err != nil {
-			return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
+		for _, constraint := range constraintList.Items {
+			err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, apiv1.GatekeeperConstraintCleanupFinalizer)
+			if err != nil {
+				return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
+			}
 		}
 	}
 

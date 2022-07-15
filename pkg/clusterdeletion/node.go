@@ -37,6 +37,10 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		return nil
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NodeDeletionFinalizer)
+	}
+
 	userClusterClient, err := d.userClusterClientGetter()
 	if err != nil {
 		return err
@@ -76,6 +80,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			}
 		}
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d MachineDeployments waiting for deletion.", len(machineDeploymentList.Items))
 		return nil
 	}
 
@@ -91,6 +96,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			}
 		}
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d MachineSets waiting for deletion.", len(machineSetList.Items))
 		return nil
 	}
 
@@ -106,6 +112,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			}
 		}
 
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d Machines waiting for deletion.", len(machineList.Items))
 		return nil
 	}
 
