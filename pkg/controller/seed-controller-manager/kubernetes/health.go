@@ -120,11 +120,6 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// if a cluster is quickly created and deleted, the namespace might have never been created
-	if cluster.Status.NamespaceName == "" {
-		return nil
-	}
-
 	extendedHealth, err := r.clusterHealth(ctx, cluster)
 	if err != nil {
 		return err

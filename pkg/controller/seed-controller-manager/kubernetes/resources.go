@@ -243,17 +243,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 }
 
 // reconcileClusterNamespace will ensure that the cluster namespace is
-// correctly initialized and created. If the cluster is in deletion,
-// a missing namespace will *not* be created and in that case the function
-// will return nil, nil.
+// correctly initialized and created.
 func (r *Reconciler) reconcileClusterNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
-	if cluster.DeletionTimestamp != nil {
-		// Even just trying to .Get() the namespace is ultimately
-		// pointless as this controller will, when the cluster is
-		// deleted, not use the return value anyway.
-		return nil, nil
-	}
-
 	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, apiv1.NamespaceCleanupFinalizer); err != nil {
 		return nil, fmt.Errorf("failed to set %q finalizer: %w", apiv1.NamespaceCleanupFinalizer, err)
 	}
@@ -291,6 +282,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 		return nil, err // something bad happened when trying to get the namespace
 	}
 
+	log.Info("Creating cluster namespace", "namespace", namespace)
 	ns = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            namespace,

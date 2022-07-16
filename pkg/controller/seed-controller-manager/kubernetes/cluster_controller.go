@@ -258,16 +258,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	namespace, err := r.reconcileClusterNamespace(ctx, log, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
-	}
-
-	// synchronize cluster.status.health for Kubernetes clusters
-	if err := r.syncHealth(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to sync health: %w", err)
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Cleaning up cluster")
 
@@ -282,6 +272,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		// Always requeue a cluster after we executed the cleanup.
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+	}
+
+	namespace, err := r.reconcileClusterNamespace(ctx, log, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
+	}
+
+	// synchronize cluster.status.health for Kubernetes clusters
+	if err := r.syncHealth(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to sync health: %w", err)
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster, namespace)
