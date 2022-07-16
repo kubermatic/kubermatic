@@ -68,7 +68,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	if kuberneteshelper.HasAnyFinalizer(cluster,
 		apiv1.InClusterLBCleanupFinalizer,
 		apiv1.InClusterPVCleanupFinalizer) {
-		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cloud-provider resources have been deleted, waiting for them to be destroyed.")
+		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "LoadBalancers / PersistentVolumeClaims have been deleted, waiting for them to be destroyed.")
 		return nil
 	}
 
