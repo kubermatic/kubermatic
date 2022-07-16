@@ -75,7 +75,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if len(machineDeploymentList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machineDeployment := range machineDeploymentList.Items {
-			if err := userClusterClient.Delete(ctx, &machineDeployment); err != nil {
+			if err := userClusterClient.Delete(ctx, &machineDeployment); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 				return fmt.Errorf("failed to delete MachineDeployment %q: %w", machineDeployment.Name, err)
 			}
 		}
@@ -91,7 +91,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if len(machineSetList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machineSet := range machineSetList.Items {
-			if err := userClusterClient.Delete(ctx, &machineSet); err != nil {
+			if err := userClusterClient.Delete(ctx, &machineSet); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 				return fmt.Errorf("failed to delete MachineSet %q: %w", machineSet.Name, err)
 			}
 		}
@@ -107,7 +107,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if len(machineList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machine := range machineList.Items {
-			if err := userClusterClient.Delete(ctx, &machine); err != nil {
+			if err := userClusterClient.Delete(ctx, &machine); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 				return fmt.Errorf("failed to delete Machine %q: %w", machine.Name, err)
 			}
 		}
