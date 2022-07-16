@@ -51,16 +51,14 @@ func (d *Deletion) cleanUpNamespace(ctx context.Context, log *zap.SugaredLogger,
 
 	// namespace could still be retrieved
 	if err == nil {
-		log = log.With("namespace", ns.Name)
-
 		if ns.DeletionTimestamp == nil {
-			log.Info("deleting cluster namespace")
+			log.Infow("deleting cluster namespace", "namespace", ns.Name)
 			if err := d.seedClient.Delete(ctx, ns); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 				return fmt.Errorf("failed to delete cluster namespace: %w", err)
 			}
 		}
 
-		log.Debug("waiting for cluster namespace to be gone")
+		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterNamespaceCleanup", "Cluster namespace is still terminating, some resources might be blocked by finalizers.")
 		return nil
 	}
 

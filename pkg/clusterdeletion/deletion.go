@@ -92,28 +92,27 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	}
 
 	// We might need credentials for cloud provider cleanup. Since different cloud providers use different
-	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned
-	// up, or in other words, all other finalizers have been removed from the cluster, and the
-	// CredentialsSecretsCleanupFinalizer (and potentially NamespaceCleanupFinalizer) are the only finalizers left.
-	// The namespace finalizer is optional in order to not create a deadlock between the two finalizers.
+	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned up.
+	// Cleanup for resources inside the cluster namespace is triggered by the namespace getting deleted, so this
+	// must happen (and finish) before the credential secret can ultimately be deleted.
 	cred := apiv1.CredentialsSecretsCleanupFinalizer
 	ns := apiv1.NamespaceCleanupFinalizer
-	if kuberneteshelper.HasFinalizer(cluster, cred) && kuberneteshelper.HasOnlyAnyFinalizer(cluster, cred, ns) {
-		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
-			return err
-		}
-	} else {
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing credential Secret.", cred, ns)
-		return nil
-	}
-
-	// Now it's time to finally remove the cluster namespace.
-	if kuberneteshelper.HasOnlyFinalizer(cluster, ns) {
+	if kuberneteshelper.HasFinalizer(cluster, ns) && kuberneteshelper.HasFinalizerSuperset(cluster, cred, ns) {
 		if err := d.cleanUpNamespace(ctx, log, cluster); err != nil {
 			return err
 		}
 	} else {
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q to be removed before removing cluster namespace.", ns)
+		return nil
+	}
+
+	// Now the cluster namespace is gone and we can remove the Secret.
+	if kuberneteshelper.HasOnlyFinalizer(cluster, cred) {
+		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
+			return err
+		}
+	} else {
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing credential Secret.", cred, ns)
 	}
 
 	return nil
@@ -125,7 +124,6 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
-		d.recorder.Event(cluster, corev1.EventTypeNormal, "InClusterCleanup", "Skipping in-cluster-resources deletion. None of the in-cluster cleanup finalizers is set.")
 		return nil
 	}
 

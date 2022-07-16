@@ -88,7 +88,7 @@ func TestHasOnlyFinalizer(t *testing.T) {
 	}
 }
 
-func TestHasOnlyAnyFinalizer(t *testing.T) {
+func TestHasFinalizerSuperset(t *testing.T) {
 	testcases := []struct {
 		finalizers []string
 		query      []string
@@ -141,9 +141,9 @@ func TestHasOnlyAnyFinalizer(t *testing.T) {
 			pod := corev1.Pod{}
 			pod.SetFinalizers(testcase.finalizers)
 
-			result := HasOnlyAnyFinalizer(&pod, testcase.query...)
+			result := HasFinalizerSuperset(&pod, testcase.query...)
 			if result != testcase.expected {
-				t.Fatalf("Expected hasOnlyAnyFinalizer(%v, %v) to be %v, but got the opposite", testcase.finalizers, testcase.query, testcase.expected)
+				t.Fatalf("Expected hasFinalizerSuperset(%v, %v) to be %v, but got the opposite", testcase.finalizers, testcase.query, testcase.expected)
 			}
 		})
 	}
