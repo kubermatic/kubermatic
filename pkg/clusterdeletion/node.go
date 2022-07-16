@@ -116,7 +116,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		return nil
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "NodeCleanup", "Cleanup has been completed.")
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "NodeCleanup", "Cleanup has been completed, all machines have been destroyed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NodeDeletionFinalizer)
 }

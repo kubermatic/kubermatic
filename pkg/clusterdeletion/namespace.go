@@ -32,6 +32,10 @@ import (
 )
 
 func (d *Deletion) cleanUpNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	if !kuberneteshelper.HasFinalizer(cluster, apiv1.NamespaceCleanupFinalizer) {
+		return nil
+	}
+
 	// It can happen that the namespace is correctly created, but the status update failed.
 	// In this case we replicate the cluster controller's defaulting behaviour to catch the
 	// default namespace name.
