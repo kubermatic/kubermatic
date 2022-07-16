@@ -191,7 +191,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		// Remove the cleanup finalizer if the cluster is gone, as we can not delete the addons manifests
-		// from the cluster anymore
+		// from the cluster anymore. This should never happen as the Cluster waits for its namespace
+		// to be completely removed.
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %w", err)
 		}
@@ -237,8 +238,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		log.Debug("API server is not running, trying again in 10 seconds")
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		log.Debug("API server is not running, trying again in 3 seconds")
+		return &reconcile.Result{RequeueAfter: 3 * time.Second}, nil
+	}
+
+	// If the cluster is deleted, propagate this immediately to the Addons;
+	// otherwise Addons will be marked for deletion much later when the
+	// cluster namespace is deleted.
+	if cluster.DeletionTimestamp != nil && addon.DeletionTimestamp == nil {
+		log.Info("Cluster is being deleted, marking Addon for deletion.")
+		return nil, r.Delete(ctx, addon) // will automatically lead to a retrigger
 	}
 
 	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
@@ -254,10 +263,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 			return nil, fmt.Errorf("failed to delete manifests from cluster: %w", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %w", err)
+			return nil, fmt.Errorf("failed to remove cleanup finalizer from addon: %w", err)
 		}
 		return nil, nil
 	}
+
 	// This is true when the addon: 1) is fully deployed, 2) doesn't have a `addonEnsureLabelKey` set to true.
 	// we do this to allow users to "edit/delete" resources deployed by unlabeled addons,
 	// while we enfornce the labeled ones
@@ -266,11 +276,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	// Reconciling
-	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
-	}
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer exists on the addon: %w", err)
+	}
+	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
+		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
 	}
 	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %w", err)
