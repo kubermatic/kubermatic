@@ -81,7 +81,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, log *zap.SugaredLogger, c
 
 	// Delete PVC's
 	for _, pvc := range pvcList.Items {
-		if pvc.DeletionTimestamp != nil {
+		if pvc.DeletionTimestamp == nil {
 			identifier := fmt.Sprintf("%s/%s", pvc.Namespace, pvc.Name)
 			log.Infow("Deleting PVC...", "pvc", identifier)
 
@@ -128,7 +128,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, log *zap.SugaredLogg
 	}
 
 	for _, pod := range pvUsingPods {
-		if pod.DeletionTimestamp != nil {
+		if pod.DeletionTimestamp == nil {
 			identifier := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
 			log.Infow("Deleting Pod...", "pod", identifier)
 
