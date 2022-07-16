@@ -72,11 +72,6 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return nil
 	}
 
-	// addons include the CSI and so must be removed *after* the volumes have been removed
-	if err := d.cleanupAddons(ctx, log, cluster); err != nil {
-		return err
-	}
-
 	if err := d.cleanupEtcdBackupConfigs(ctx, cluster); err != nil {
 		return err
 	}

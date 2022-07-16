@@ -2736,14 +2736,6 @@ const (
 	PresetSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
 	// ResourceQuotaSeedCleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
 	ResourceQuotaSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
-	// AddonCleanupFinalizer is put on Cluster objects to indicate that addons still need
-	// to be cleaned up. Addons themselves have a finalizer, so deleting one in the
-	// cluster namespace triggers cleanup for that Addon, but when a Cluster is deleted,
-	// we must prevent the clusterdeletion to GC everything before the addon controller
-	// has a chance to clean up. Without this finalizer, Addons would only get deleted
-	// once the cluster namespace is deleted, which is the last step in the deletion
-	// procedure, after machines, nodes and cloud provider infrastructure has been removed.
-	AddonCleanupFinalizer = "kubermatic.k8c.io/cleanup-addons"
 )
 
 const (

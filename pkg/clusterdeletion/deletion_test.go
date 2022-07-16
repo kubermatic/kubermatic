@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"go.uber.org/zap"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -89,6 +90,8 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 		},
 	}
 
+	log := zap.NewNop().Sugar()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.
@@ -100,7 +103,7 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 			d := &Deletion{}
 			ctx := context.Background()
 
-			if err := d.cleanupPVCUsingPods(ctx, client); (err != nil) != tc.errExpected {
+			if err := d.cleanupPVCUsingPods(ctx, log, client); (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err=%v, got err=%v", tc.errExpected, err)
 			}
 			if tc.errExpected {

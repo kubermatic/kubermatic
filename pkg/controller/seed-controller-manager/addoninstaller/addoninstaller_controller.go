@@ -26,11 +26,9 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -180,10 +178,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	addons, err := r.getAddons(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine addons to install: %w", err)
-	}
-
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, apiv1.AddonCleanupFinalizer); err != nil {
-		return nil, fmt.Errorf("failed to add %q finalizer to Cluster: %w", apiv1.AddonCleanupFinalizer, err)
 	}
 
 	return nil, r.ensureAddons(ctx, log, cluster, *addons)
