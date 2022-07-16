@@ -47,7 +47,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloudSpec.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".status.condition.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
