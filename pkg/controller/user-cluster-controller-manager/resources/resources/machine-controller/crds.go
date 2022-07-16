@@ -55,31 +55,6 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 					},
 					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
 						{
-							Name:     "Age",
-							Type:     "date",
-							JSONPath: ".metadata.creationTimestamp",
-						},
-						{
-							Name:     "Deleted",
-							Type:     "date",
-							JSONPath: ".metadata.deletionTimestamp",
-						},
-						{
-							Name:     "MachineSet",
-							Type:     "string",
-							JSONPath: ".metadata.ownerReferences[0].name",
-						},
-						{
-							Name:     "Address",
-							Type:     "string",
-							JSONPath: ".status.addresses[0].address",
-						},
-						{
-							Name:     "Node",
-							Type:     "string",
-							JSONPath: ".status.nodeRef.name",
-						},
-						{
 							Name:     "Provider",
 							Type:     "string",
 							JSONPath: ".spec.providerSpec.value.cloudProvider",
@@ -90,9 +65,30 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 							JSONPath: ".spec.providerSpec.value.operatingSystem",
 						},
 						{
-							Name:     "Version",
+							Name:     "Node",
+							Type:     "string",
+							JSONPath: ".status.nodeRef.name",
+						},
+						{
+							Name:     "Kubelet",
 							Type:     "string",
 							JSONPath: ".spec.versions.kubelet",
+						},
+						{
+							Name:     "Address",
+							Type:     "string",
+							JSONPath: ".status.addresses[0].address",
+						},
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+							Priority: 1,
 						},
 					},
 				},
@@ -136,29 +132,14 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 					},
 					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
 						{
-							Name:     "Age",
-							Type:     "date",
-							JSONPath: ".metadata.creationTimestamp",
-						},
-						{
-							Name:     "Deleted",
-							Type:     "date",
-							JSONPath: ".metadata.deletionTimestamp",
-						},
-						{
 							Name:     "Replicas",
-							Type:     "string",
+							Type:     "integer",
 							JSONPath: ".spec.replicas",
 						},
 						{
-							Name:     "AvailableReplicas",
-							Type:     "string",
+							Name:     "Available-Replicas",
+							Type:     "integer",
 							JSONPath: ".status.availableReplicas",
-						},
-						{
-							Name:     "MachineDeployment",
-							Type:     "string",
-							JSONPath: ".metadata.ownerReferences[0].name",
 						},
 						{
 							Name:     "Provider",
@@ -171,9 +152,25 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 							JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
 						},
 						{
-							Name:     "Version",
+							Name:     "MachineDeployment",
+							Type:     "string",
+							JSONPath: ".metadata.ownerReferences[0].name",
+						},
+						{
+							Name:     "Kubelet",
 							Type:     "string",
 							JSONPath: ".spec.template.spec.versions.kubelet",
+						},
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+							Priority: 1,
 						},
 					},
 				},
@@ -217,23 +214,13 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 					},
 					AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{
 						{
-							Name:     "Age",
-							Type:     "date",
-							JSONPath: ".metadata.creationTimestamp",
-						},
-						{
-							Name:     "Deleted",
-							Type:     "date",
-							JSONPath: ".metadata.deletionTimestamp",
-						},
-						{
 							Name:     "Replicas",
-							Type:     "string",
+							Type:     "integer",
 							JSONPath: ".spec.replicas",
 						},
 						{
-							Name:     "AvailableReplicas",
-							Type:     "string",
+							Name:     "Available-Replicas",
+							Type:     "integer",
 							JSONPath: ".status.availableReplicas",
 						},
 						{
@@ -247,9 +234,20 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 							JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
 						},
 						{
-							Name:     "Version",
+							Name:     "Kubelet",
 							Type:     "string",
 							JSONPath: ".spec.template.spec.versions.kubelet",
+						},
+						{
+							Name:     "Age",
+							Type:     "date",
+							JSONPath: ".metadata.creationTimestamp",
+						},
+						{
+							Name:     "Deleted",
+							Type:     "date",
+							JSONPath: ".metadata.deletionTimestamp",
+							Priority: 1,
 						},
 					},
 				},
