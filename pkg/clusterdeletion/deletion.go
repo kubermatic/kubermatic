@@ -54,7 +54,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	log = log.Named("cleanup")
 
 	// Delete OPA constraints first to make sure some rules dont block deletion
-	if err := d.cleanupConstraints(ctx, cluster); err != nil {
+	if err := d.cleanupConstraints(ctx, log, cluster); err != nil {
 		return err
 	}
 
@@ -73,7 +73,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	}
 
 	// addons include the CSI and so must be removed *after* the volumes have been removed
-	if err := d.cleanupAddons(ctx, cluster); err != nil {
+	if err := d.cleanupAddons(ctx, log, cluster); err != nil {
 		return err
 	}
 
@@ -149,7 +149,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		}
 
 		if shouldDeletePVs {
-			deletedSomeVolumes, err := d.cleanupVolumes(ctx, cluster)
+			deletedSomeVolumes, err := d.cleanupVolumes(ctx, log, cluster)
 			if err != nil {
 				return fmt.Errorf("failed to cleanup PVs: %w", err)
 			}
@@ -175,6 +175,8 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 			return nil
 		}
 	}
+
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cleanup of volumes/LoadBalancers has been completed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer)
 }

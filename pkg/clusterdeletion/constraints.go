@@ -20,14 +20,21 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
+	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupConstraints(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	if !kuberneteshelper.HasFinalizer(cluster, apiv1.KubermaticConstraintCleanupFinalizer) {
+		return nil
+	}
+
 	if ns := cluster.Status.NamespaceName; ns != "" {
 		if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.Constraint{}, ctrlruntimeclient.InNamespace(ns)); err != nil {
 			return err
@@ -46,12 +53,17 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 		}
 
 		for _, constraint := range constraintList.Items {
-			err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, apiv1.GatekeeperConstraintCleanupFinalizer)
-			if err != nil {
-				return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
+			if finalizer := apiv1.GatekeeperConstraintCleanupFinalizer; kuberneteshelper.HasFinalizer(&constraint, finalizer) {
+				log.Infow("Garbage-collecting Constraint", "constraint", constraint.Name)
+
+				if err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, finalizer); err != nil {
+					return fmt.Errorf("failed to remove constraint finalizer: %w", err)
+				}
 			}
 		}
 	}
+
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "ConstraintCleanup", "Cleanup has been completed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.KubermaticConstraintCleanupFinalizer)
 }

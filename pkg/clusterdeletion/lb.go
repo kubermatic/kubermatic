@@ -53,10 +53,15 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 	}
 
 	for _, service := range serviceList.Items {
+		// This service is already in deletion, nothing further needs to happen.
+		if service.DeletionTimestamp != nil {
+			continue
+		}
+
 		serviceName := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 		slog := log.With("service", serviceName)
 
-		// Only LoadBalancer services create cost on cloud providers
+		// Only LoadBalancer services incur charges on cloud providers
 		if service.Spec.Type != corev1.ServiceTypeLoadBalancer {
 			slog.Debug("Skipping cleanup of service as it's not a LoadBalancer")
 			continue
@@ -72,11 +77,10 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 }
 
 func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
-	log.Debug("Deleting service...")
+	log.Info("Deleting service...")
 	if err := userClusterClient.Delete(ctx, service); err != nil {
 		return fmt.Errorf("failed to delete service: %w", err)
 	}
-	log.Info("Deleted service")
 
 	// We store the deleted service UID's on the cluster so we can check on the next iteration if they are really gone.
 	// We only really know if a LoadBalancer(The cloud provider LB) is gone, until there has been an event stating that.

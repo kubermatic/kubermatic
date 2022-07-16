@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -28,7 +30,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (d *Deletion) cleanupAddons(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(cluster, apiv1.AddonCleanupFinalizer) {
 		return nil
 	}
@@ -41,6 +43,7 @@ func (d *Deletion) cleanupAddons(ctx context.Context, cluster *kubermaticv1.Clus
 
 		for _, addon := range addons.Items {
 			if addon.DeletionTimestamp != nil {
+				log.Infow("Deleting Addon", "addon", addon.Name)
 				if err := d.seedClient.Delete(ctx, &addon); err != nil {
 					return fmt.Errorf("failed to delete Addon %q: %w", addon.Name, err)
 				}
@@ -52,6 +55,8 @@ func (d *Deletion) cleanupAddons(ctx context.Context, cluster *kubermaticv1.Clus
 			return nil
 		}
 	}
+
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "AddonCleanup", "Cleanup has been completed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.AddonCleanupFinalizer)
 }
