@@ -45,6 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -119,6 +120,10 @@ func main() {
 
 			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
 		},
+		EventBroadcaster: record.NewBroadcasterWithCorrelatorOptions(record.CorrelatorOptions{
+			BurstSize: 100,
+			QPS:       5,
+		}),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
