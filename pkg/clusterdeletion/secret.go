@@ -30,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if err := d.deleteSecret(ctx, cluster); err != nil {
 		return err
 	}

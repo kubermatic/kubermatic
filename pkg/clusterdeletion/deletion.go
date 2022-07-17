@@ -49,33 +49,19 @@ type Deletion struct {
 	userClusterClientGetter func() (ctrlruntimeclient.Client, error)
 }
 
-var eventID = 0
-
-func (d *Deletion) testEvent(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, text string) {
-	eventID++
-	log.Infow(fmt.Sprintf("Test event: %s", text), "id", eventID)
-	d.recorder.Event(cluster, corev1.EventTypeNormal, fmt.Sprintf("test%d", eventID), text)
-}
-
 // CleanupCluster is responsible for cleaning up a cluster.
 func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log = log.Named("cleanup")
-
-	d.testEvent(log, cluster, "CleanupCluster begins")
 
 	// Delete OPA constraints first to make sure some rules dont block deletion
 	if err := d.cleanupConstraints(ctx, log, cluster); err != nil {
 		return err
 	}
 
-	d.testEvent(log, cluster, "cleanupConstraints done")
-
 	// Delete Volumes and LB's inside the user cluster
 	if err := d.cleanupInClusterResources(ctx, log, cluster); err != nil {
 		return err
 	}
-
-	d.testEvent(log, cluster, "cleanupInClusterResources done")
 
 	// If cleanup didn't finish we have to go back, because if there are controllers running
 	// inside the cluster and we delete the nodes, we get stuck.
@@ -86,34 +72,23 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return nil
 	}
 
-	d.testEvent(log, cluster, "HasAnyFinalizer(LB,PVC) done")
-
 	if err := d.cleanupEtcdBackupConfigs(ctx, cluster); err != nil {
 		return err
 	}
 
-	d.testEvent(log, cluster, "cleanupEtcdBackupConfigs done")
-
 	if err := d.cleanupNodes(ctx, cluster); err != nil {
 		return err
 	}
-
-	d.testEvent(log, cluster, "cleanupNodes done")
 
 	// Delete ClusterRoleBindings on for the cluster on the seed cluster
 	if err := d.cleanupClusterRoleBindings(ctx, cluster); err != nil {
 		return err
 	}
 
-	d.testEvent(log, cluster, "cleanupClusterRoleBindings done")
-
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
-		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all nodes to be gone.")
-		return nil
+		return nil // an event was already emitted in cleanupNodes
 	}
-
-	d.testEvent(log, cluster, "HasFinalizer(nodes) done")
 
 	// We might need credentials for cloud provider cleanup. Since different cloud providers use different
 	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned up.
@@ -121,27 +96,24 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// must happen (and finish) before the credential secret can ultimately be deleted.
 	cred := apiv1.CredentialsSecretsCleanupFinalizer
 	ns := apiv1.NamespaceCleanupFinalizer
-	if kuberneteshelper.HasFinalizer(cluster, ns) && kuberneteshelper.HasFinalizerSuperset(cluster, cred, ns) {
-		if err := d.cleanUpNamespace(ctx, log, cluster); err != nil {
-			return err
-		}
-	} else {
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q to be removed before removing cluster namespace.", ns)
+
+	if !kuberneteshelper.HasFinalizerSuperset(cluster, cred, ns) {
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing cluster namespace.", cred, ns)
 		return nil
 	}
 
-	d.testEvent(log, cluster, "cleanUpNamespace done")
-
-	// Now the cluster namespace is gone and we can remove the Secret.
-	if kuberneteshelper.HasOnlyFinalizer(cluster, cred) {
-		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
-			return err
-		}
-	} else {
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing credential Secret.", cred, ns)
+	// This does not block until the namespace is gone.
+	if err := d.cleanupNamespace(ctx, log, cluster); err != nil {
+		return err
 	}
 
-	d.testEvent(log, cluster, "cleanUpCredentialsSecrets done")
+	if kuberneteshelper.HasFinalizer(cluster, ns) {
+		return nil // an event was already emitted in cleanupNamespace
+	}
+
+	if err := d.cleanupCredentialsSecrets(ctx, cluster); err != nil {
+		return err
+	}
 
 	return nil
 }

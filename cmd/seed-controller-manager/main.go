@@ -120,8 +120,10 @@ func main() {
 
 			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
 		},
+		// inject a custom broadcaster because during cluster deletion we emit more than
+		// usual events and the default configuration would consider this spam.
 		EventBroadcaster: record.NewBroadcasterWithCorrelatorOptions(record.CorrelatorOptions{
-			BurstSize: 100,
+			BurstSize: 20,
 			QPS:       5,
 		}),
 	})

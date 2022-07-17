@@ -72,7 +72,7 @@ func getPod(ownerRefKind, ownerRefName string, hasPV bool) *corev1.Pod {
 	return p
 }
 
-func TestCleanUpPVUsingWorkloads(t *testing.T) {
+func TestCleanupPVUsingWorkloads(t *testing.T) {
 	testCases := []struct {
 		name                string
 		objects             []ctrlruntimeclient.Object

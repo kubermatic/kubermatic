@@ -67,18 +67,18 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 	}
 
+	listOpts := ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)
+
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
 	if err := userClusterClient.List(ctx, machineDeploymentList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineDeployments: %w", err)
 	}
+
 	if len(machineDeploymentList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machineDeployment := range machineDeploymentList.Items {
-			if err := userClusterClient.Delete(ctx, &machineDeployment); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-				return fmt.Errorf("failed to delete MachineDeployment %q: %w", machineDeployment.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineDeployment{}, listOpts); err != nil {
+			return fmt.Errorf("failed to list MachineDeployments: %w", err)
 		}
+
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d MachineDeployments waiting for deletion.", len(machineDeploymentList.Items))
 		return nil
@@ -88,13 +88,12 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if err := userClusterClient.List(ctx, machineSetList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineSets: %w", err)
 	}
+
 	if len(machineSetList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machineSet := range machineSetList.Items {
-			if err := userClusterClient.Delete(ctx, &machineSet); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-				return fmt.Errorf("failed to delete MachineSet %q: %w", machineSet.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineSet{}, listOpts); err != nil {
+			return fmt.Errorf("failed to list MachineSets: %w", err)
 		}
+
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d MachineSets waiting for deletion.", len(machineSetList.Items))
 		return nil
@@ -104,12 +103,10 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if err := userClusterClient.List(ctx, machineList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Machines: %w", err)
 	}
+
 	if len(machineList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machine := range machineList.Items {
-			if err := userClusterClient.Delete(ctx, &machine); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-				return fmt.Errorf("failed to delete Machine %q: %w", machine.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.Machine{}, listOpts); err != nil {
+			return fmt.Errorf("failed to list Machines: %w", err)
 		}
 
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "There are %d Machines waiting for deletion.", len(machineList.Items))

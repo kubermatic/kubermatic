@@ -31,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (d *Deletion) cleanUpNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(cluster, apiv1.NamespaceCleanupFinalizer) {
 		return nil
 	}
