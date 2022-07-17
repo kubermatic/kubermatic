@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"go.uber.org/zap"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -399,4 +400,19 @@ func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 		labels[key] = value
 	}
 	o.SetLabels(labels)
+}
+
+type SeedClientMap map[string]ctrlruntimeclient.Client
+
+type SeedVisitorFunc func(seedName string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error
+
+func (m SeedClientMap) Each(ctx context.Context, log *zap.SugaredLogger, visitor SeedVisitorFunc) error {
+	for seedName, seedClient := range m {
+		err := visitor(seedName, seedClient, log.With("seed", seedName))
+		if err != nil {
+			return fmt.Errorf("failed processing Seed %s: %w", seedName, err)
+		}
+	}
+
+	return nil
 }

@@ -164,7 +164,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
-		r.log.Debugw("Updating iptables chain in kernel", "rules-count", len(desiredRules))
+		r.log.Infow("Updating iptables chain in kernel", "rules-count", len(desiredRules))
 		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %w", err)
 		}
