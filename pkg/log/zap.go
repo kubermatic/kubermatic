@@ -25,8 +25,6 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	ctrlruntimelzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func init() {
@@ -157,7 +155,7 @@ func New(debug bool, format Format) *zap.Logger {
 		zap.ErrorOutput(sink),
 	}
 
-	coreLog := zapcore.NewCore(&ctrlruntimelzap.KubeAwareEncoder{Encoder: enc}, sink, lvl)
+	coreLog := zapcore.NewCore(&KubeAwareEncoder{Encoder: enc}, sink, lvl)
 	return zap.New(coreLog, opts...)
 }
 
