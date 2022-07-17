@@ -111,7 +111,8 @@ func withEventFilter() predicate.Predicate {
 
 // Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("user", request)
+	log.Debug("Reconciling")
 
 	user := &kubermaticv1.User{}
 	// using the reader here to bypass the cache. It is necessary because we update the same object we are watching

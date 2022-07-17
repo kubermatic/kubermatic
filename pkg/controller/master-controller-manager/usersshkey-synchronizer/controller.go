@@ -127,7 +127,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("seed", request.Namespace, "cluster", request.Name)
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)

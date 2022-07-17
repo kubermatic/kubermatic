@@ -47,7 +47,7 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := r.log.With("seed", request.Name)
+	logger := r.log.With("seed", request)
 	logger.Debug("Reconciling")
 
 	seed := &kubermaticv1.Seed{}

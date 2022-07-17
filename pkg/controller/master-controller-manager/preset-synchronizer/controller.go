@@ -84,7 +84,7 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("resource", request.Name)
+	log := r.log.With("preset", request.Name)
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)

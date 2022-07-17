@@ -69,6 +69,9 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 }
 
 func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("userprojectbinding", request)
+	log.Debug("Reconciling")
+
 	projectBinding := &kubermaticv1.UserProjectBinding{}
 	if err := r.Get(ctx, request.NamespacedName, projectBinding); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -76,9 +79,6 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 		}
 		return reconcile.Result{}, err
 	}
-
-	log := r.log.With("userprojectbinding", projectBinding.Name)
-	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, projectBinding)
 	if err != nil {

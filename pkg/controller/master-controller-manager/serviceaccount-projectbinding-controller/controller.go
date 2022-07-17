@@ -115,6 +115,9 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 }
 
 func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("serviceaccount", request)
+	log.Debug("Reconciling")
+
 	sa := &kubermaticv1.User{}
 	if err := r.Get(ctx, request.NamespacedName, sa); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -122,9 +125,6 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, r
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get user: %w", err)
 	}
-
-	log := r.log.With("serviceaccount", sa.Name)
-	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, sa)
 	if err != nil {

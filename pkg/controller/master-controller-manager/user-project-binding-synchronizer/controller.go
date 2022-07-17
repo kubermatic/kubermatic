@@ -101,7 +101,8 @@ func Add(
 
 // Reconcile reconciles Kubermatic UserProjectBinding objects on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("userprojectbinding", request)
+	log.Debug("Reconciling")
 
 	userProjectBinding := &kubermaticv1.UserProjectBinding{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, userProjectBinding); err != nil {
