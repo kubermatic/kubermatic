@@ -24,8 +24,9 @@ import (
 	"strconv"
 	"strings"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"go.uber.org/zap"
+
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
