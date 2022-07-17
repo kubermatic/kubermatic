@@ -151,7 +151,7 @@ func newRuleGroupReconciler(
 }
 
 func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("rulegroup", request)
 	log.Debug("Processing")
 
 	ruleGroup := &kubermaticv1.RuleGroup{}
@@ -189,7 +189,7 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		},
 	)
 	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {

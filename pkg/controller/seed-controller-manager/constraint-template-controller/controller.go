@@ -111,7 +111,7 @@ func Add(ctx context.Context,
 // Reconcile reconciles the kubermatic constraint template on the seed cluster to all user clusters
 // which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("template", request)
 	log.Debug("Reconciling")
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}

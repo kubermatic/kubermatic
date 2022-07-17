@@ -104,7 +104,7 @@ func newOrgUserGrafanaReconciler(
 }
 
 func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("userprojectbinding", request)
 	log.Debug("Processing")
 
 	userProjectBinding := &kubermaticv1.UserProjectBinding{}

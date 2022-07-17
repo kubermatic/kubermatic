@@ -88,6 +88,9 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request)
+	log.Debug("Processing")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.client.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -99,9 +102,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here so we can emit an event on error
 	err := r.reconcile(ctx, cluster)
 	if err != nil {
-		r.log.With("cluster", request.Name).Errorw("Failed to reconcile cluster", zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 

@@ -36,7 +36,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -58,6 +57,9 @@ type Reconciler struct {
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	logger := r.log.With("config", request)
+	logger.Debug("Reconciling")
+
 	// find the requested configuration
 	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
@@ -68,14 +70,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %w", request, err)
 	}
 
-	identifier, err := cache.MetaNamespaceKeyFunc(config)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to determine string key for KubermaticConfiguration: %w", err)
-	}
-
-	logger := r.log.With("config", identifier)
-
-	err = r.reconcile(ctx, config, logger)
+	err := r.reconcile(ctx, config, logger)
 	if err != nil {
 		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}

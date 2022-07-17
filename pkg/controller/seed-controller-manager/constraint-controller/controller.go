@@ -167,7 +167,7 @@ func ByLabel(key string) predicate.Funcs {
 // Reconcile reconciles the kubermatic constraints in the seed cluster and syncs them to all user clusters namespace
 // which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("constraint", request)
 	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}

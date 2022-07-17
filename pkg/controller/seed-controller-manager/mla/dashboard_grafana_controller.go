@@ -102,7 +102,7 @@ func newDashboardGrafanaReconciler(
 }
 
 func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("configmap", request)
 	log.Debug("Processing")
 
 	configMap := &corev1.ConfigMap{}

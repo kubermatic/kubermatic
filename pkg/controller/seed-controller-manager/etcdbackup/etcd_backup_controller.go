@@ -183,6 +183,9 @@ func Add(
 
 // Reconcile handle etcd backups reconciliation.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("backupconfig", request)
+	log.Debug("Processing")
+
 	seed, err := r.seedGetter()
 	if err != nil {
 		return reconcile.Result{}, err
@@ -197,9 +200,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("request", request)
-	log.Debug("Processing")
 
 	backupConfig := &kubermaticv1.EtcdBackupConfig{}
 	if err := r.Get(ctx, request.NamespacedName, backupConfig); err != nil {

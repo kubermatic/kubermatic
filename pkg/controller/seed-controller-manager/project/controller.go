@@ -79,7 +79,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger, workerCount int) error {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
-	log := r.log.With("project", req.Name)
+	log := r.log.With("project", req)
 	log.Debug("Reconciling")
 
 	project := &kubermaticv1.Project{}

@@ -94,6 +94,9 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request)
+	log.Debug("Processing")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -104,7 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster is queued for deletion; no action required
-		r.log.Debugw("Cluster is queued for deletion; no action required", "cluster", cluster.Name)
+		log.Debugw("Cluster is queued for deletion; no action required")
 		return reconcile.Result{}, nil
 	}
 
@@ -117,11 +120,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster)
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
@@ -130,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
 	request := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]
 	if request == "" {
@@ -139,7 +142,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Debug("Application controller not healthy")
+		log.Debug("Application controller not healthy")
 		return nil, nil
 	}
 

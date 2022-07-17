@@ -94,6 +94,9 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request)
+	log.Debug("Processing")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -111,11 +114,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster)
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
@@ -124,7 +127,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
 	request := cluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 	if request == "" {
@@ -134,7 +137,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// If cluster is not healthy yet there is nothing to do.
 	// If it gets healthy we'll get notified by the event. No need to requeue.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		r.log.Debug("cluster not healthy")
+		log.Debug("cluster not healthy")
 		return nil, nil
 	}
 

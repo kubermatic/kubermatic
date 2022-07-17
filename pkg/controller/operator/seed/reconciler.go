@@ -72,7 +72,8 @@ type Reconciler struct {
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("seed", request.Name)
+	log := r.log.With("seed", request)
+	log.Debug("reconciling")
 
 	err := r.reconcile(ctx, log, request.Name)
 	if err != nil {
@@ -83,8 +84,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seedName string) error {
-	log.Debug("reconciling")
-
 	// find requested seed
 	seeds, err := r.seedsGetter()
 	if err != nil {

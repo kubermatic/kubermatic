@@ -204,7 +204,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
+	log = r.log.With("cluster", cluster, "addon", addon.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(

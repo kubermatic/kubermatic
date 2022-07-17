@@ -128,7 +128,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("cluster", request)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}

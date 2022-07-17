@@ -95,7 +95,7 @@ func Add(
 
 // Reconcile reconciles the kubermatic cluster template instance in the seed cluster.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("template", request)
 	log.Debug("Reconciling")
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}

@@ -118,6 +118,9 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("restore", request)
+	log.Debug("Processing")
+
 	seed, err := r.seedGetter()
 	if err != nil {
 		return reconcile.Result{}, err
@@ -127,9 +130,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("request", request)
-	log.Debug("Processing")
 
 	restore := &kubermaticv1.EtcdRestore{}
 	if err := r.Get(ctx, request.NamespacedName, restore); err != nil {

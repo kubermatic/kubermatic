@@ -101,7 +101,7 @@ func newRuleGroupSyncReconciler(
 }
 
 func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("rulegroup", request)
 	log.Debug("Processing")
 
 	ruleGroup := &kubermaticv1.RuleGroup{}

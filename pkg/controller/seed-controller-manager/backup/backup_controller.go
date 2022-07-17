@@ -179,6 +179,9 @@ func (w *runnableWrapper) Start(ctx context.Context) error {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request)
+	log.Debug("Processing")
+
 	config, err := r.configGetter(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -188,9 +191,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
-	log := r.log.With("request", request)
-	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {

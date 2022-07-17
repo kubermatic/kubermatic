@@ -103,7 +103,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter pr
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("cluster", request.Name)
+	log := r.log.With("cluster", request)
 	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}

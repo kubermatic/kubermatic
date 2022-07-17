@@ -151,8 +151,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -161,8 +161,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
-
-	log = log.With("cluster", cluster.Name)
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster got deleted - all monitoring components will be automatically garbage collected (Due to the ownerRef)
