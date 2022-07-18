@@ -30,7 +30,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -49,6 +48,9 @@ import (
 const (
 	// This controller syncs the ResourceQuotas from the master cluster to the seed clusters.
 	ControllerName = "kkp-resource-quota-synchronizer"
+
+	// cleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
 )
 
 type reconciler struct {
@@ -142,7 +144,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, resourceQuota, apiv1.ResourceQuotaSeedCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, resourceQuota, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -166,7 +168,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota) error {
 	// if finalizer not set to master ResourceQuota then return
-	if !kuberneteshelper.HasFinalizer(resourceQuota, apiv1.ResourceQuotaSeedCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(resourceQuota, cleanupFinalizer) {
 		return nil
 	}
 
@@ -184,5 +186,5 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, resourceQuota, apiv1.ResourceQuotaSeedCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, resourceQuota, cleanupFinalizer)
 }

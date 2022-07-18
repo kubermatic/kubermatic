@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -42,6 +41,9 @@ import (
 const (
 	// This controller syncs the kubermatic constraints on the master cluster to the seed clusters.
 	ControllerName = "kkp-master-constraint-synchronizer"
+
+	// cleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-seed-constraint"
 )
 
 type reconciler struct {
@@ -139,7 +141,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraint, apiv1.GatekeeperSeedConstraintCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraint, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -164,7 +166,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint) error {
 	// if finalizer not set to master Constraint then return
-	if !kuberneteshelper.HasFinalizer(constraint, apiv1.GatekeeperSeedConstraintCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(constraint, cleanupFinalizer) {
 		return nil
 	}
 
@@ -182,5 +184,5 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraint, apiv1.GatekeeperSeedConstraintCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraint, cleanupFinalizer)
 }

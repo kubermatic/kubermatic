@@ -32,7 +32,6 @@ import (
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -237,7 +236,7 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		wr.DeletionTimestamp = &deleteTime
-		wr.Finalizers = append(wr.Finalizers, apiv1.AllowedRegistryCleanupFinalizer)
+		wr.Finalizers = append(wr.Finalizers, cleanupFinalizer)
 	}
 
 	return wr

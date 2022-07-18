@@ -40,6 +40,9 @@ import (
 const (
 	// This controller creates corresponding OPA Constraint Templates and Default Constraints based on AllowedRegistry data.
 	ControllerName = "kkp-allowed-registry-controller"
+
+	// cleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
 )
 
 func Add(mgr manager.Manager,

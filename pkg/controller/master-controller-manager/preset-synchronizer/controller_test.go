@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -133,7 +132,7 @@ func generatePreset(name string, deleted bool) *kubermaticv1.Preset {
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		pr.DeletionTimestamp = &deleteTime
-		pr.Finalizers = append(pr.Finalizers, apiv1.PresetSeedCleanupFinalizer)
+		pr.Finalizers = append(pr.Finalizers, cleanupFinalizer)
 	}
 	return pr
 }
