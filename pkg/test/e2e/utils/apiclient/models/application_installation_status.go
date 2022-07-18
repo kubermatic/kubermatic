@@ -26,7 +26,6 @@ type ApplicationInstallationStatus struct {
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
 
 	// last updated
-	// Format: date-time
 	LastUpdated Time `json:"lastUpdated,omitempty"`
 }
 
@@ -39,10 +38,6 @@ func (m *ApplicationInstallationStatus) Validate(formats strfmt.Registry) error 
 	}
 
 	if err := m.validateApplicationVersion(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastUpdated(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -97,23 +92,6 @@ func (m *ApplicationInstallationStatus) validateApplicationVersion(formats strfm
 	return nil
 }
 
-func (m *ApplicationInstallationStatus) validateLastUpdated(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastUpdated) { // not required
-		return nil
-	}
-
-	if err := m.LastUpdated.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastUpdated")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastUpdated")
-		}
-		return err
-	}
-
-	return nil
-}
-
 // ContextValidate validate this application installation status based on the context it is used
 func (m *ApplicationInstallationStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -123,10 +101,6 @@ func (m *ApplicationInstallationStatus) ContextValidate(ctx context.Context, for
 	}
 
 	if err := m.contextValidateApplicationVersion(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLastUpdated(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -167,20 +141,6 @@ func (m *ApplicationInstallationStatus) contextValidateApplicationVersion(ctx co
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *ApplicationInstallationStatus) contextValidateLastUpdated(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastUpdated.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastUpdated")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastUpdated")
-		}
-		return err
 	}
 
 	return nil
