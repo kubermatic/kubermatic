@@ -70,6 +70,12 @@ const (
 	// Setting this feature flag will make KKP ignore any UI/API/Ingress configuration.
 	// This feature is in preview and not yet ready for production.
 	HeadlessInstallation = "HeadlessInstallation"
+
+	// DevelopmentEnvironment feature enables additional controllers only useful in shared development clusters.
+	// Currently this includes the kkp-worker-namecontroller, but additional tweaks might be added to this feature
+	// gate in the future.
+	// This feature perpetually in preview and never ready for production.
+	DevelopmentEnvironment = "DevelopmentEnvironment"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

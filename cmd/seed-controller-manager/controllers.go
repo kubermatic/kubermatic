@@ -45,6 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
+	workername "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/worker-name"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -75,6 +76,7 @@ var AllControllers = map[string]controllerCreator{
 	presetcontroller.ControllerName:                         createPresetController,
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 	ipam.ControllerName:                                     createIPAMController,
+	workername.ControllerName:                               createWorkerNameController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -422,5 +424,18 @@ func createIPAMController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
 		ctrlCtx.versions,
+	)
+}
+
+func createWorkerNameController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.DevelopmentEnvironment) {
+		return nil
+	}
+
+	return workername.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.log,
 	)
 }
