@@ -177,6 +177,7 @@ spec:
             minimumMemory: 0
             minimumVCPUs: 0
           region: fes # ipv6 is only available in this zone
+          ipv6Enabled: true
     nutanix-ger:
       country: DE
       location: Hamburg
