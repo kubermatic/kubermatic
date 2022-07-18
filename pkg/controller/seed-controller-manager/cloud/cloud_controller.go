@@ -106,8 +106,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -116,7 +116,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-	log = log.With("cluster", cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -183,7 +182,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
-			r.log.Infow("failed to run cloud provider", zap.Error(err))
+			log.Infow("failed to run cloud provider", zap.Error(err))
 			return &reconcile.Result{Requeue: true}, nil
 		}
 
@@ -263,7 +262,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
 		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
+		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {

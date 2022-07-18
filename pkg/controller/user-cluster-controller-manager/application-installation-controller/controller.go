@@ -105,6 +105,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 
 // Reconcile ApplicationInstallation (ie install / update or uninstall applicationinto the user-cluster).
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("applicationinstallation", request)
+	log.Debug("Processing")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -112,9 +115,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("resource", request.Name)
-	log.Debug("Processing")
 
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
 

@@ -135,8 +135,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -146,8 +146,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-
-	log = r.log.With("cluster", cluster.Name)
 
 	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
 	// do not run unexpected reconciles.

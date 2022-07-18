@@ -120,7 +120,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to get cluster %q: %w", r.clusterName, err)
 	}
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(cluster *kubermaticv1.Cluster) {
-		cluster.Status.Versions.OldestNodeVersion = oldestVersion
-	})
+	if cluster.Status.Versions.OldestNodeVersion != oldestVersion {
+		r.log.Infow("Determined new oldest node version", "version", oldestVersion)
+
+		return kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(cluster *kubermaticv1.Cluster) {
+			cluster.Status.Versions.OldestNodeVersion = oldestVersion
+		})
+	}
+
+	return nil
 }
