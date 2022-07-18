@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 /*
-Package workername contains a controller that is only useful during
-development. The controller will watch deleted Cluster objects and
-issue an event if the cluster still has a working name. Forgotten
-worker names are the most common reason of clusters seemingly stuck
-in deletion.
+Package clusterstuckcontroller contains a controller that is only useful
+during development. The controller will watch deleted Cluster objects and
+issue an event if the cluster still has a working name or is paused.
+Forgotten worker names are the most common reason of clusters seemingly
+stuck in deletion.
 
 This controller is not started by default, only when the dev environment
 feature flag is set in the KubermaticConfiguration.
 */
-package workername
+package clusterstuckcontroller

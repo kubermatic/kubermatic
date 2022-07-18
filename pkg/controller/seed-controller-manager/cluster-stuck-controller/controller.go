@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workername
+package clusterstuckcontroller
 
 import (
 	"context"
@@ -87,16 +87,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	// not deleted or no worker name
-	if cluster.DeletionTimestamp == nil || cluster.Labels[kubermaticv1.WorkerNameLabelKey] == "" {
+	// not deleted
+	if cluster.DeletionTimestamp == nil {
 		return reconcile.Result{}, nil
 	}
 
-	// cluster seems stuck
-	if time.Since(cluster.DeletionTimestamp.Time) > 10*time.Minute {
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
+	// paused clusters will not be removed
+	if cluster.Spec.Pause {
+		reason := cluster.Spec.PauseReason
+		if reason == "" {
+			reason = "no reason given"
+		}
+
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ClusterPaused", "Cluster is paused: %s", reason)
+
+		// renew the event to keep it visible
+		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
-	// renew the event to keep it visible
-	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+	// no worker name
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != "" {
+		// cluster seems stuck (we wait for a bit because we cannot easily
+		// tell if a seed-ctrl-mgr with the given worker-name is actually
+		// up and running right now)
+		if time.Since(cluster.DeletionTimestamp.Time) > 10*time.Minute {
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
+		}
+
+		// renew the event to keep it visible
+		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+	}
+
+	return reconcile.Result{}, nil
 }

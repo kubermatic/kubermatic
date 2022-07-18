@@ -28,6 +28,7 @@ import (
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
+	clusterstuckcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-stuck-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
@@ -45,7 +46,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
-	workername "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/worker-name"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -76,7 +76,7 @@ var AllControllers = map[string]controllerCreator{
 	presetcontroller.ControllerName:                         createPresetController,
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 	ipam.ControllerName:                                     createIPAMController,
-	workername.ControllerName:                               createWorkerNameController,
+	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -427,12 +427,12 @@ func createIPAMController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createWorkerNameController(ctrlCtx *controllerContext) error {
+func createClusterStuckController(ctrlCtx *controllerContext) error {
 	if !ctrlCtx.runOptions.featureGates.Enabled(features.DevelopmentEnvironment) {
 		return nil
 	}
 
-	return workername.Add(
+	return clusterstuckcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
