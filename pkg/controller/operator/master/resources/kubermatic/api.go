@@ -59,7 +59,7 @@ func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{"kubermatic.k8c.io"},
+					APIGroups: []string{"kubermatic.k8c.io", "apps.kubermatic.k8c.io"},
 					Resources: []string{"*"},
 					Verbs:     []string{"*"},
 				},
