@@ -345,10 +345,14 @@ type deleteClusterReq struct {
 	// in: path
 	// required: true
 	ClusterID string `json:"cluster_id"`
-	// The action is used to check if to delete a externalcluster or a actual cluster
+	// The Action is used to check if to `Delete` the cluster:
+	// both the actual cluter from the provider
+	// and the respective KKP cluster object
+	// By default the cluster will `Disconnect` which means the KKP cluster object will be deleted,
+	// cluster still exists on the provider, but is no longer connected/imported in KKP
 	// in: header
 	// name: Action
-	// Possible values: DeleteExternalCluster, DeleteProviderCluster
+	// Possible values: Delete, Disconnect
 	Action string `json:"action"`
 }
 
@@ -384,9 +388,8 @@ func (req deleteClusterReq) Validate() error {
 			return nil
 		}
 		return fmt.Errorf("wrong action parameter, unsupported action: %s", req.Action)
-	} else {
-		return fmt.Errorf("the \"Action\" cannot be empty")
 	}
+	return nil
 }
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
