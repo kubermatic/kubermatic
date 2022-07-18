@@ -58,6 +58,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				Name: projectName,
 				Kind: kubermaticv1.ProjectSubjectKind,
 			},
+			Quota: createNewQuotaHelper(10),
 		},
 	}
 	rq2 := &kubermaticv1.ResourceQuota{
@@ -186,8 +187,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		      "subjectName": "testproject",
 				"quota": {
 					"cpu": 10,
-					"memory": "64Gi",
-					"storage": "256Gi"
+					"memory": 64,
+					"storage": 256.5
 				}
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -203,8 +204,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:    fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			body: `{
 				"cpu": 10,
-				"memory": "64Gi",
-				"storage": "256Gi"
+				"memory": 64,
+				"storage": 256.5
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
@@ -219,8 +220,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
 				"cpu": 10,
-				"memory": "64Gi",
-				"storage": "256Gi"
+				"memory": 64,
+				"storage": 256.5
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
