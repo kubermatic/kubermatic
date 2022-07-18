@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	packetInstanceType = "c3.small.x86"
+	packetInstanceType = "m3.small.x86"
 )
 
 // GetPacketScenarios returns a matrix of (version x operating system).
