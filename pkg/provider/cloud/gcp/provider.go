@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
@@ -30,6 +31,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -220,4 +222,48 @@ func isHTTPError(err error, status int) bool {
 	var gerr *googleapi.Error
 
 	return errors.As(err, &gerr) && gerr.Code == status
+}
+
+func GetGCPSubnetwork(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error) {
+	computeService, project, err := ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return apiv1.GCPSubnetwork{}, err
+	}
+
+	req := computeService.Subnetworks.Get(project, region, subnetworkName)
+	subnetwork, err := req.Do()
+	if err != nil {
+		return apiv1.GCPSubnetwork{}, err
+	}
+
+	return ToGCPSubnetworkAPIModel(subnetwork), nil
+}
+
+var subnetworkRegex = regexp.MustCompile(`(projects\/.+)$`)
+
+func ToGCPSubnetworkAPIModel(subnetwork *compute.Subnetwork) apiv1.GCPSubnetwork {
+	subnetworkPath := subnetworkRegex.FindString(subnetwork.SelfLink)
+	net := apiv1.GCPSubnetwork{
+		ID:                    subnetwork.Id,
+		Name:                  subnetwork.Name,
+		Network:               subnetwork.Network,
+		IPCidrRange:           subnetwork.IpCidrRange,
+		GatewayAddress:        subnetwork.GatewayAddress,
+		Region:                subnetwork.Region,
+		SelfLink:              subnetwork.SelfLink,
+		PrivateIPGoogleAccess: subnetwork.PrivateIpGoogleAccess,
+		Kind:                  subnetwork.Kind,
+		Path:                  subnetworkPath,
+	}
+
+	switch subnetwork.StackType {
+	case "IPV4_ONLY":
+		net.IPFamily = kubermaticv1.IPFamilyIPv4
+	case "IPV4_IPV6":
+		net.IPFamily = kubermaticv1.IPFamilyDualStack
+	default:
+		net.IPFamily = kubermaticv1.IPFamilyUnspecified
+	}
+
+	return net
 }

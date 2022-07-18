@@ -291,16 +291,17 @@ type GCPSubnetworkList []GCPSubnetwork
 // GCPSubnetwork represents a object of GCP subnetworks.
 // swagger:model GCPSubnetwork
 type GCPSubnetwork struct {
-	ID                    uint64 `json:"id"`
-	Name                  string `json:"name"`
-	Network               string `json:"network"`
-	IPCidrRange           string `json:"ipCidrRange"`
-	GatewayAddress        string `json:"gatewayAddress"`
-	Region                string `json:"region"`
-	SelfLink              string `json:"selfLink"`
-	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
-	Kind                  string `json:"kind"`
-	Path                  string `json:"path"`
+	ID                    uint64                `json:"id"`
+	Name                  string                `json:"name"`
+	Network               string                `json:"network"`
+	IPCidrRange           string                `json:"ipCidrRange"`
+	GatewayAddress        string                `json:"gatewayAddress"`
+	Region                string                `json:"region"`
+	SelfLink              string                `json:"selfLink"`
+	PrivateIPGoogleAccess bool                  `json:"privateIpGoogleAccess"`
+	Kind                  string                `json:"kind"`
+	Path                  string                `json:"path"`
+	IPFamily              kubermaticv1.IPFamily `json:"ipFamily"`
 }
 
 // DigitaloceanSizeList represents a object of digitalocean sizes.
