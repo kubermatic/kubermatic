@@ -370,7 +370,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if !isBYO {
-		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
+		kuberneteshelper.AddFinalizer(newClusterTemplate, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	}
 
 	// copy preset annotations
@@ -378,7 +378,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		newClusterTemplate.Annotations = partialCluster.Annotations
 	}
 
-	newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
+	newClusterTemplate.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation]
 
 	newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
@@ -632,7 +632,7 @@ func DecodeExportReq(c context.Context, r *http.Request) (interface{}, error) {
 
 func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemplate) (*apiv2.ClusterTemplate, error) {
 	md := &apiv1.NodeDeployment{}
-	rawMachineDeployment, ok := template.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
+	rawMachineDeployment, ok := template.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation]
 	if ok && rawMachineDeployment != "" {
 		err := json.Unmarshal([]byte(rawMachineDeployment), md)
 		if err != nil {
@@ -641,7 +641,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 	}
 
 	var apps []apiv1.Application
-	rawApplicationsRequest, ok := template.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]
+	rawApplicationsRequest, ok := template.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]
 	if ok && rawApplicationsRequest != "" {
 		err := json.Unmarshal([]byte(rawApplicationsRequest), &apps)
 		if err != nil {

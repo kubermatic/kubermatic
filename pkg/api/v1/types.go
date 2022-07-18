@@ -2699,32 +2699,3 @@ type MeteringReportConfiguration struct {
 // ReportURL represent an S3 pre signed URL to download a report
 // swagger:model MeteringReportURL
 type ReportURL string
-
-const (
-	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
-	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"
-	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
-	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
-	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
-	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
-	// NamespaceCleanupFinalizer indicates that the cluster namespace still exists and the owning Cluster object
-	// must not yet be deleted.
-	NamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-namespace"
-	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
-	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
-	// ExternalClusterKubeOneNamespaceCleanupFinalizer indicates that kubeone cluster namespace still need cleanup.
-	ExternalClusterKubeOneNamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeone-namespace"
-	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
-	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeconfig-secret"
-	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
-	EtcdBackupConfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-etcdbackupconfigs"
-	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
-	GatekeeperConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraints"
-	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
-	KubermaticConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-constraints"
-)
-
-const (
-	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
-	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
-)

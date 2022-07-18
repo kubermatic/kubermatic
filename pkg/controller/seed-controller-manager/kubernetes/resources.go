@@ -27,7 +27,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -245,8 +244,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 // reconcileClusterNamespace will ensure that the cluster namespace is
 // correctly initialized and created.
 func (r *Reconciler) reconcileClusterNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, apiv1.NamespaceCleanupFinalizer); err != nil {
-		return nil, fmt.Errorf("failed to set %q finalizer: %w", apiv1.NamespaceCleanupFinalizer, err)
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.NamespaceCleanupFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to set %q finalizer: %w", kubermaticv1.NamespaceCleanupFinalizer, err)
 	}
 
 	namespace, err := r.ensureNamespaceExists(ctx, log, cluster)

@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -160,7 +159,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(template, apiv1.CredentialsSecretsCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(template, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
 		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
 			err := seedClient.Delete(ctx, &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -173,7 +172,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, apiv1.CredentialsSecretsCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove credential secret finalizer %s: %w", template.Name, err)
 		}
 	}

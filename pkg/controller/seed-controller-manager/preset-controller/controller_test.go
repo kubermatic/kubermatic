@@ -20,7 +20,6 @@ import (
 	"context"
 	"testing"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -131,7 +130,7 @@ func genCluster(name, userEmail, preset string) *kubermaticv1.Cluster {
 			Name:            name,
 			Labels:          map[string]string{kubermaticv1.IsCredentialPresetLabelKey: "true"},
 			ResourceVersion: "1",
-			Finalizers:      []string{apiv1.CredentialsSecretsCleanupFinalizer},
+			Finalizers:      []string{kubermaticv1.CredentialsSecretsCleanupFinalizer},
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail, kubermaticv1.PresetNameAnnotation: preset},
 		},
 		Spec: kubermaticv1.ClusterSpec{

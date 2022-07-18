@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -33,7 +32,7 @@ import (
 )
 
 func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.NamespaceCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.NamespaceCleanupFinalizer) {
 		return nil
 	}
 
@@ -78,5 +77,5 @@ func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NamespaceCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NamespaceCleanupFinalizer)
 }
