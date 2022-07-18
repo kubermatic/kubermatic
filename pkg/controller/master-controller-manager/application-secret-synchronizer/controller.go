@@ -101,6 +101,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 			return reconcile.Result{}, err
 		}
+
+		return reconcile.Result{}, nil
 	}
 
 	err := r.reconcile(ctx, log, secret)
