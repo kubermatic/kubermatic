@@ -184,20 +184,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, project, cleanupFinalizer)
 }
 
-func (r *reconciler) syncAllSeeds(
-	log *zap.SugaredLogger,
-	project *kubermaticv1.Project,
-	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error,
-) error {
-	for seedName, seedClient := range r.seedClients {
-		if err := action(seedClient, project); err != nil {
-			return fmt.Errorf("failed syncing project for seed %s: %w", seedName, err)
-		}
-		log.Debugw("Reconciled project with seed", "seed", seedName)
-	}
-	return nil
-}
-
 func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
