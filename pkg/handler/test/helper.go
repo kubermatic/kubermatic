@@ -865,6 +865,14 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
+// GenUserWithGroups generates a User resource
+// note if the id is empty then it will be auto generated.
+func GenUserWithGroups(id, name, email string, groups []string) *kubermaticv1.User {
+	user := GenUser(id, name, email)
+	user.Spec.Groups = groups
+	return user
+}
+
 // GenInactiveProjectServiceAccount generates a Service Account resource.
 func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	userName := kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
