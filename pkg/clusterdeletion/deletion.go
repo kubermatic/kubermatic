@@ -171,7 +171,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cleanup of volumes/LoadBalancers has been completed.")
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cleanup of LoadBalancers / PersistentVolumeClaims has been completed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer)
 }

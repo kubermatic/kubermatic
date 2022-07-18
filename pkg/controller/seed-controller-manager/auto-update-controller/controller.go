@@ -106,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	// auto-updates should be be applied during cluster deletion
+	// auto-updates should not be applied during cluster deletion
 	if cluster.DeletionTimestamp != nil {
 		return reconcile.Result{}, nil
 	}

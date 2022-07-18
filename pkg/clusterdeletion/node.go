@@ -76,7 +76,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	if len(machineDeploymentList.Items) > 0 {
 		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineDeployment{}, listOpts); err != nil {
-			return fmt.Errorf("failed to list MachineDeployments: %w", err)
+			return fmt.Errorf("failed to delete MachineDeployments: %w", err)
 		}
 
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
@@ -91,7 +91,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	if len(machineSetList.Items) > 0 {
 		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineSet{}, listOpts); err != nil {
-			return fmt.Errorf("failed to list MachineSets: %w", err)
+			return fmt.Errorf("failed to delete MachineSets: %w", err)
 		}
 
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
@@ -106,7 +106,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	if len(machineList.Items) > 0 {
 		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.Machine{}, listOpts); err != nil {
-			return fmt.Errorf("failed to list Machines: %w", err)
+			return fmt.Errorf("failed to delete Machines: %w", err)
 		}
 
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d Machine(s) to be destroyed.", len(machineList.Items))
