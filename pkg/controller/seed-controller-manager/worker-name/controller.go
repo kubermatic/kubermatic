@@ -94,7 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// cluster seems stuck
 	if time.Since(cluster.DeletionTimestamp.Time) > 10*time.Minute {
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up this cluster.", kubermaticv1.WorkerNameLabelKey)
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
 	}
 
 	// renew the event to keep it visible
