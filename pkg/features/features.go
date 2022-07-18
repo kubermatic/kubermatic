@@ -72,7 +72,7 @@ const (
 	HeadlessInstallation = "HeadlessInstallation"
 
 	// DevelopmentEnvironment feature enables additional controllers only useful in shared development clusters.
-	// Currently this includes the kkp-worker-namecontroller, but additional tweaks might be added to this feature
+	// Currently this includes the kkp-cluster-stuck-controller, but additional tweaks might be added to this feature
 	// gate in the future.
 	// This feature perpetually in preview and never ready for production.
 	DevelopmentEnvironment = "DevelopmentEnvironment"

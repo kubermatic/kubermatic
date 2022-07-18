@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	ControllerName = "kkp-worker-name-controller"
+	ControllerName = "kkp-cluster-stuck-controller"
 )
 
 type Reconciler struct {
@@ -47,7 +47,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 }
 
-// Add creates a new worker-name controller.
+// Add creates a new cluster-stuck controller.
 func Add(mgr manager.Manager, numWorkers int, workerName string, log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
