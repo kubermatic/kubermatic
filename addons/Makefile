@@ -25,10 +25,11 @@ hubble:
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.11.0 \
+	  --version 1.11.6 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
+	cat hubble/_extras.txt >> $(OUTPUT_FILE)
 	cat hubble/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)
 
