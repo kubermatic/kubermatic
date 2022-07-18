@@ -22,6 +22,7 @@ import (
 	"net"
 	"strings"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -71,6 +72,9 @@ type userclusterControllerData interface {
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
 	IsKonnectivityEnabled() bool
+	DC() *kubermaticv1.Datacenter
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -243,6 +247,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-node-labels", labelArgsValue)
 			}
 
+			envVars, err := data.GetEnvVars()
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -250,17 +259,15 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
-					Env: []corev1.EnvVar{
-						{
-							Name: "NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath:  "metadata.namespace",
-									APIVersion: "v1",
-								},
+					Env: append(envVars, corev1.EnvVar{
+						Name: "NAMESPACE",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath:  "metadata.namespace",
+								APIVersion: "v1",
 							},
 						},
-					},
+					}),
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
