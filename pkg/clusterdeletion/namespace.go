@@ -24,6 +24,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -64,6 +65,17 @@ func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger,
 
 		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterNamespaceCleanup", "Cluster namespace is still terminating, some resources might be blocked by finalizers.")
 		return nil
+	}
+
+	// Removing the NamespaceName from the Cluster will make all other controllers
+	// instantly stop reconciling this one, without even checking its DeletionTimestamp.
+	if cluster.Status.NamespaceName != "" {
+		err = kubermaticv1helper.UpdateClusterStatus(ctx, d.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+			c.Status.NamespaceName = ""
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update cluster namespace status: %w", err)
+		}
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NamespaceCleanupFinalizer)
