@@ -2688,6 +2688,9 @@ const (
 	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
 	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
+	// NamespaceCleanupFinalizer indicates that the cluster namespace still exists and the owning Cluster object
+	// must not yet be deleted.
+	NamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-namespace"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
 	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
 	// ExternalClusterKubeOneManifestSecretCleanupFinalizer indicates that secrets for manifest secret still need cleanup.

@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,7 +38,7 @@ const (
 	AnnDynamicallyProvisioned = "pv.kubernetes.io/provisioned-by"
 )
 
-func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeResource bool, err error) {
+func (d *Deletion) cleanupVolumes(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (deletedSomeResource bool, err error) {
 	userClusterClient, err := d.userClusterClientGetter()
 	if err != nil {
 		return false, err
@@ -57,6 +58,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 	if err := userClusterClient.List(ctx, allPVList); err != nil {
 		return false, fmt.Errorf("failed to list PVs from user cluster: %w", err)
 	}
+
 	pvList := &corev1.PersistentVolumeList{}
 	for _, pv := range allPVList.Items {
 		// Check only dynamically provisioned PVs with delete reclaim policy to verify provisioner has done the cleanup
@@ -73,16 +75,21 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 
 	// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
 	// we end up in a deadlock when CSI is used
-	if err := d.cleanupPVCUsingPods(ctx, userClusterClient); err != nil {
+	if err := d.cleanupPVCUsingPods(ctx, log, userClusterClient); err != nil {
 		return false, fmt.Errorf("failed to clean up PV using pod from user cluster: %w", err)
 	}
 
 	// Delete PVC's
 	for _, pvc := range pvcList.Items {
-		if err := userClusterClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
-			return deletedSomeResource, fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %w", pvc.Namespace, pvc.Name, err)
+		if pvc.DeletionTimestamp == nil {
+			identifier := fmt.Sprintf("%s/%s", pvc.Namespace, pvc.Name)
+			log.Infow("Deleting PVC...", "pvc", identifier)
+
+			if err := userClusterClient.Delete(ctx, &pvc); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+				return deletedSomeResource, fmt.Errorf("failed to delete PVC from user cluster: %w", err)
+			}
+			deletedSomeResource = true
 		}
-		deletedSomeResource = true
 	}
 
 	if len(pvList.Items) > 0 {
@@ -106,7 +113,7 @@ func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient ctrl
 	return nil
 }
 
-func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client) error {
 	podList := &corev1.PodList{}
 	if err := userClusterClient.List(ctx, podList); err != nil {
 		return fmt.Errorf("failed to list Pods from user cluster: %w", err)
@@ -121,8 +128,13 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient ct
 	}
 
 	for _, pod := range pvUsingPods {
-		if err := userClusterClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete pod %s/%s: %w", pod.Namespace, pod.Name, err)
+		if pod.DeletionTimestamp == nil {
+			identifier := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+			log.Infow("Deleting Pod...", "pod", identifier)
+
+			if err := userClusterClient.Delete(ctx, pod); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+				return fmt.Errorf("failed to delete Pod: %w", err)
+			}
 		}
 	}
 

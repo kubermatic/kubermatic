@@ -60,10 +60,15 @@ func HasAnyFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
 }
 
-// HasOnlyFinalizer tells if an object has only the given finalizer.
-func HasOnlyFinalizer(o metav1.Object, name string) bool {
-	set := sets.NewString(o.GetFinalizers()...)
-	return set.Has(name) && set.Len() == 1
+// HasOnlyFinalizer tells if an object has only the given finalizer(s).
+func HasOnlyFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).Equal(sets.NewString(names...))
+}
+
+// HasFinalizerSuperset tells if the given finalizer(s) are a superset
+// of the actual finalizers.
+func HasFinalizerSuperset(o metav1.Object, names ...string) bool {
+	return sets.NewString(names...).IsSuperset(sets.NewString(o.GetFinalizers()...))
 }
 
 // RemoveFinalizer removes the given finalizers from the object.
