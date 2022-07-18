@@ -327,17 +327,17 @@ func convertToCRDQuota(quota apiv2.Quota) (kubermaticv1.ResourceDetails, error) 
 	var cpu, mem, storage resource.Quantity
 	cpu, err := resource.ParseQuantity(fmt.Sprintf("%d", quota.CPU))
 	if err != nil {
-		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota CPU %v", err)
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota CPU %w", err)
 	}
 
 	mem, err = resource.ParseQuantity(fmt.Sprintf("%fG", quota.Memory))
 	if err != nil {
-		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Memory %v", err)
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Memory %w", err)
 	}
 
 	storage, err = resource.ParseQuantity(fmt.Sprintf("%fG", quota.Storage))
 	if err != nil {
-		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Storage %v", err)
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Storage %w", err)
 	}
 
 	return *kubermaticv1.NewResourceDetails(cpu, mem, storage), nil
