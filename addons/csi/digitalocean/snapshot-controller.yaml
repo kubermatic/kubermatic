@@ -1,0 +1,101 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sourced from:
+# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.2.0/snapshot-controller.yaml
+# Modifications:
+# - image source includes registry templating
+# - add a securityContext
+
+## TODO: Uncomment this constraint after adding external CCM for DigitalOcean
+## {{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "digitalocean" }}
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: snapshot-controller
+  namespace: kube-system
+spec:
+  serviceName: "snapshot-controller"
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-controller
+  template:
+    metadata:
+      labels:
+        app: snapshot-controller
+    spec:
+      serviceAccountName: snapshot-controller
+      containers:
+        - name: snapshot-controller
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:v6.0.1'
+          args:
+            - "--v=5"
+          imagePullPolicy: IfNotPresent
+---
+kind: ServiceAccount
+metadata:
+  name: snapshot-controller
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-controller-role
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["create", "get", "list", "watch", "update", "delete", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents/status"]
+    verbs: ["patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots/status"]
+    verbs: ["update", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-controller-binding
+subjects:
+  - kind: ServiceAccount
+    name: snapshot-controller
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: snapshot-controller-role
+  apiGroup: rbac.authorization.k8s.io
+
+{{ end }}
