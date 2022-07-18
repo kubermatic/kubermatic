@@ -180,6 +180,8 @@ type ApplicationInstallationCondition struct {
 }
 
 // +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
+
+// swagger:enum ApplicationInstallationConditionType
 type ApplicationInstallationConditionType string
 
 const (

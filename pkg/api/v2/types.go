@@ -1494,6 +1494,8 @@ type ApplicationInstallation struct {
 	Namespace string `json:"namespace,omitempty"`
 
 	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+
+	Status *appskubermaticv1.ApplicationInstallationStatus `json:"status"`
 }
 
 // swagger:model IPAMPool

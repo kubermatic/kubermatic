@@ -41,6 +41,9 @@ type ApplicationInstallation struct {
 
 	// spec
 	Spec *ApplicationInstallationSpec `json:"spec,omitempty"`
+
+	// status
+	Status *ApplicationInstallationStatus `json:"status,omitempty"`
 }
 
 // Validate validates this application installation
@@ -56,6 +59,10 @@ func (m *ApplicationInstallation) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -108,11 +115,34 @@ func (m *ApplicationInstallation) validateSpec(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ApplicationInstallation) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if m.Status != nil {
+		if err := m.Status.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this application installation based on the context it is used
 func (m *ApplicationInstallation) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -130,6 +160,22 @@ func (m *ApplicationInstallation) contextValidateSpec(ctx context.Context, forma
 				return ve.ValidateName("spec")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallation) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Status != nil {
+		if err := m.Status.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}
