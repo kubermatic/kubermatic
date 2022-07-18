@@ -372,7 +372,6 @@ presubmits:
 
   - name: pre-kubermatic-osm-e2e
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
