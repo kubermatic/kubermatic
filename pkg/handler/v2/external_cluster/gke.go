@@ -766,3 +766,22 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 
 	return apiCluster, nil
 }
+
+func deletGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
+	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return err
+	}
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	if err != nil {
+		return err
+	}
+
+	req := svc.Projects.Zones.Clusters.Delete(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	_, err = req.Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

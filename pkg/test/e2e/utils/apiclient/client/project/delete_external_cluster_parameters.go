@@ -59,6 +59,16 @@ func NewDeleteExternalClusterParamsWithHTTPClient(client *http.Client) *DeleteEx
 */
 type DeleteExternalClusterParams struct {
 
+	/* Action.
+
+	     The Action is used to check if to `Delete` the cluster:
+	both the actual cluter from the provider
+	and the respective KKP cluster object
+	By default the cluster will `Disconnect` which means the KKP cluster object will be deleted,
+	cluster still exists on the provider, but is no longer connected/imported in KKP
+	*/
+	Action *string
+
 	// ClusterID.
 	ClusterID string
 
@@ -118,6 +128,17 @@ func (o *DeleteExternalClusterParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAction adds the action to the delete external cluster params
+func (o *DeleteExternalClusterParams) WithAction(action *string) *DeleteExternalClusterParams {
+	o.SetAction(action)
+	return o
+}
+
+// SetAction adds the action to the delete external cluster params
+func (o *DeleteExternalClusterParams) SetAction(action *string) {
+	o.Action = action
+}
+
 // WithClusterID adds the clusterID to the delete external cluster params
 func (o *DeleteExternalClusterParams) WithClusterID(clusterID string) *DeleteExternalClusterParams {
 	o.SetClusterID(clusterID)
@@ -147,6 +168,14 @@ func (o *DeleteExternalClusterParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
+
+	if o.Action != nil {
+
+		// header param action
+		if err := r.SetHeaderParam("action", *o.Action); err != nil {
+			return err
+		}
+	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {

@@ -17005,6 +17005,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Action",
+            "description": "The Action is used to check if to `Delete` the cluster:\nboth the actual cluter from the provider\nand the respective KKP cluster object\nBy default the cluster will `Disconnect` which means the KKP cluster object will be deleted,\ncluster still exists on the provider, but is no longer connected/imported in KKP",
+            "name": "action",
+            "in": "header"
           }
         ],
         "responses": {

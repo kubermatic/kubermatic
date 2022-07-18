@@ -889,3 +889,20 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 
 	return apiCluster, nil
 }
+
+func deleteAKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) error {
+	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	aksClient, err := aks.GetAKSClusterClient(cred)
+	if err != nil {
+		return err
+	}
+	err = aks.DeleteAKSCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

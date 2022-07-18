@@ -184,3 +184,14 @@ func convertAKSStatus(provisioningState string, powerState armcontainerservice.C
 		return apiv2.UNKNOWN
 	}
 }
+
+func DeleteAKSCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) error {
+	resourceGroup := cloud.AKS.ResourceGroup
+	clusterName := cloud.AKS.Name
+
+	_, err := aksClient.BeginDelete(ctx, resourceGroup, clusterName, &armcontainerservice.ManagedClustersClientBeginDeleteOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
