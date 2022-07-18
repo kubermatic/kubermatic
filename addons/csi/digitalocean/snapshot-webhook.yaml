@@ -20,8 +20,6 @@
 # - remove ValidatingWebhookConfiguration (handled in code)
 # - change webhook-certs secret name
 
-## TODO: Uncomment this constraint after adding external CCM for DigitalOcean
-## {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
 ---

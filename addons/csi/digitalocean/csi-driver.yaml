@@ -17,11 +17,18 @@
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
+# - add a dedicated secret for csi driver
 
-## TODO: Uncomment this constraint after adding external CCM for DigitalOcean
-## {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: digitalocean-csi
+  namespace: kube-system
+data:
+  token: {{ .Credentials.Digitalocean.Token | b64enc }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
@@ -30,51 +37,6 @@ metadata:
 spec:
   attachRequired: true
   podInfoOnMount: true
----
-kind: VolumeSnapshotClass
-apiVersion: snapshot.storage.k8s.io/v1
-metadata:
-  name: do-block-storage
-  annotations:
-    snapshot.storage.kubernetes.io/is-default-class: "true"
-driver: dobs.csi.digitalocean.com
-deletionPolicy: Delete
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: do-block-storage
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: dobs.csi.digitalocean.com
-allowVolumeExpansion: true
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: do-block-storage-retain
-provisioner: dobs.csi.digitalocean.com
-reclaimPolicy: Retain
-allowVolumeExpansion: true
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: do-block-storage-xfs
-provisioner: dobs.csi.digitalocean.com
-parameters:
-  fstype: xfs
-allowVolumeExpansion: true
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: do-block-storage-xfs-retain
-provisioner: dobs.csi.digitalocean.com
-parameters:
-  fstype: xfs
-reclaimPolicy: Retain
-allowVolumeExpansion: true
 ---
 kind: StatefulSet
 apiVersion: apps/v1
@@ -170,8 +132,8 @@ spec:
             - name: DIGITALOCEAN_ACCESS_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: digitalocean
-                  key: access-token
+                  name: digitalocean-csi
+                  key: token
           imagePullPolicy: "Always"
           volumeMounts:
             - name: socket-dir

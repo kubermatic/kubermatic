@@ -18,8 +18,6 @@
 # - image source includes registry templating
 # - add a securityContext
 
-## TODO: Uncomment this constraint after adding external CCM for DigitalOcean
-## {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
 ---
@@ -30,9 +28,6 @@ metadata:
   namespace: kube-system
 spec:
   serviceName: "snapshot-controller"
-  securityContext:
-    seccompProfile:
-      type: RuntimeDefault
   replicas: 1
   selector:
     matchLabels:
@@ -43,6 +38,9 @@ spec:
         app: snapshot-controller
     spec:
       serviceAccountName: snapshot-controller
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: snapshot-controller
           image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:v6.0.1'
@@ -50,6 +48,7 @@ spec:
             - "--v=5"
           imagePullPolicy: IfNotPresent
 ---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: snapshot-controller
