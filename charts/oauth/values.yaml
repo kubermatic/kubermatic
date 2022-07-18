@@ -90,6 +90,11 @@ dex:
         weight: 10
   tolerations: []
 
+  # mount additional volumes into the dex Pod to provide data from outside the chart
+  # (for example a service account file for Google provider group support).
+  extraVolumes: []
+  extraVolumeMounts: []
+
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
   # If you want to deploy your own certificate without relying on cert-manager
   # uncomment the next line and remove subsequent certIssuer configuration.

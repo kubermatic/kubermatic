@@ -53,6 +53,9 @@ spec:
         - name: themes
           mountPath: /srv/dex/web/themes/light
           readOnly: true
+{{- if .Values.dex.extraVolumeMounts }}
+{{ toYaml .Values.dex.extraVolumeMounts | indent 8 }}
+{{- end -}}
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certMount | trim | indent 8 }}
 {{- end }}
         resources:
@@ -67,6 +70,9 @@ spec:
       - name: themes
         secret:
           secretName: themes
+{{- if .Values.dex.extraVolumes }}
+{{ toYaml .Values.dex.extraVolumes | indent 6 }}
+{{- end -}}
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certVolume | trim | indent 6 }}
 {{- end }}
       nodeSelector:
