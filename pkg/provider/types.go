@@ -429,9 +429,9 @@ type ProjectMemberMapper interface {
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
 	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 
-	// GroupMappingsFor returns the list of projects (bindings) for the given group
+	// GroupMappingsFor returns the list of projects (bindings) for the given set of groups
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system.
-	GroupMappingsFor(ctx context.Context, groupName string) ([]*kubermaticv1.GroupProjectBinding, error)
+	GroupMappingsFor(ctx context.Context, userGroups []string) ([]*kubermaticv1.GroupProjectBinding, error)
 
 	// MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
 	// project bindings for the user and returns the roles.

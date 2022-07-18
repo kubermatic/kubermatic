@@ -205,20 +205,22 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 
 // GroupMappingsFor returns the list of projects (bindings) for the given group
 // This function is unsafe in a sense that it uses privileged account to list all members in the system.
-func (p *ProjectMemberProvider) GroupMappingsFor(ctx context.Context, groupName string) ([]*kubermaticv1.GroupProjectBinding, error) {
+func (p *ProjectMemberProvider) GroupMappingsFor(ctx context.Context, groups []string) ([]*kubermaticv1.GroupProjectBinding, error) {
+	groupSet := sets.NewString(groups...)
+
 	allBindings := &kubermaticv1.GroupProjectBindingList{}
 	if err := p.clientPrivileged.List(ctx, allBindings); err != nil {
 		return nil, err
 	}
 
-	var bindingsForGroup []*kubermaticv1.GroupProjectBinding
+	var bindingsForGivenGroups []*kubermaticv1.GroupProjectBinding
 	for _, binding := range allBindings.Items {
-		if binding.Spec.Group == groupName {
-			bindingsForGroup = append(bindingsForGroup, binding.DeepCopy())
+		if groupSet.Has(binding.Spec.Group) {
+			bindingsForGivenGroups = append(bindingsForGivenGroups, binding.DeepCopy())
 		}
 	}
 
-	return bindingsForGroup, nil
+	return bindingsForGivenGroups, nil
 }
 
 // MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
