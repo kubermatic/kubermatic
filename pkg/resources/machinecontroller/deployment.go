@@ -66,6 +66,7 @@ type machinecontrollerData interface {
 	GetCSIMigrationFeatureGates() []string
 	MachineControllerImageTag() string
 	MachineControllerImageRepository() string
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment.
@@ -127,7 +128,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				}
 			}
 
-			envVars, err := resources.GetEnvVars(data.(*resources.TemplateData))
+			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
 			}

@@ -51,6 +51,7 @@ type webhookData interface {
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 func webhookPodLabels() map[string]string {
@@ -98,7 +99,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				args = append(args, "-v=2")
 			}
 
-			envVars, err := resources.GetEnvVars(data.(*resources.TemplateData))
+			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
 			}

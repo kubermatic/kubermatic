@@ -74,6 +74,7 @@ type userclusterControllerData interface {
 	IsKonnectivityEnabled() bool
 	DC() *kubermaticv1.Datacenter
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -246,7 +247,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-node-labels", labelArgsValue)
 			}
 
-			envVars, err := resources.GetEnvVars(data.(*resources.TemplateData))
+			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
 			}

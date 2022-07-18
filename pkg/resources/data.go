@@ -696,7 +696,7 @@ func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfigu
 	return d.config
 }
 
-func GetEnvVars(data *TemplateData) ([]corev1.EnvVar, error) {
+func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	credentials, err := GetCredentials(data)
 	if err != nil {
 		return nil, err
