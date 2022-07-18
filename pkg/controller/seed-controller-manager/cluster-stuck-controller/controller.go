@@ -99,10 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			reason = "no reason given"
 		}
 
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ClusterPaused", "Cluster is paused: %s", reason)
-
-		// renew the event to keep it visible
-		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ClusterPaused", "Cluster cannot be cleaned up because it is paused: %s", reason)
 	}
 
 	// no worker name
@@ -110,13 +107,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		// cluster seems stuck (we wait for a bit because we cannot easily
 		// tell if a seed-ctrl-mgr with the given worker-name is actually
 		// up and running right now)
-		if time.Since(cluster.DeletionTimestamp.Time) > 10*time.Minute {
+		if time.Since(cluster.DeletionTimestamp.Time) > 5*time.Minute {
 			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
 		}
-
-		// renew the event to keep it visible
-		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
-	return reconcile.Result{}, nil
+	// renew the event to keep it visible
+	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
