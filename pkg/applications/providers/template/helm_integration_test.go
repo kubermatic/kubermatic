@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	. "k8c.io/kubermatic/v2/pkg/test/gomegautil"
 
@@ -101,7 +102,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err := template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			cm := &corev1.ConfigMap{}
@@ -115,6 +116,9 @@ var _ = Describe("helm template", func() {
 
 			By("creating the config map with default version label defined in values.yaml")
 			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
 		})
 	})
 
@@ -133,7 +137,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err := template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			cm := &corev1.ConfigMap{}
@@ -148,6 +152,9 @@ var _ = Describe("helm template", func() {
 
 			By("creating the configmap with default version label defined in values.yaml")
 			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
 		})
 	})
 
@@ -166,7 +173,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err := template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			cm := &corev1.ConfigMap{}
@@ -180,6 +187,9 @@ var _ = Describe("helm template", func() {
 
 			By("creating the configmap with label versionLabel equal to custom versionLabel")
 			Expect(cm.Labels[versionLabelKey]).To(Equal(customVersionLabel))
+
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
 		})
 	})
 
@@ -197,7 +207,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err := template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			cm := &corev1.ConfigMap{}
@@ -213,6 +223,9 @@ var _ = Describe("helm template", func() {
 			By("creating the configmap with default version label defined in values.yaml")
 			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
 
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
+
 			By("updating application")
 			newCustomCmData := map[string]string{"c": "d", "e": "f"}
 			app.Spec.Values.Raw = toHelmRawValues(cmDataKey, newCustomCmData)
@@ -225,7 +238,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err = template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err = template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("configmap should be updated with new data")
@@ -237,6 +250,9 @@ var _ = Describe("helm template", func() {
 				}
 				return cm.Data
 			}, timeout, interval).Should(SemanticallyEqual(newCustomCmData))
+
+			By("status should be update with new version")
+			assertStatusIsUpdated(app, statusUpdater, 2)
 		})
 	})
 
@@ -254,7 +270,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err := template.InstallOrUpgrade(chartLoc, app)
+			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
 			Expect(err).NotTo(HaveOccurred())
 
 			cm := &corev1.ConfigMap{}
@@ -270,6 +286,9 @@ var _ = Describe("helm template", func() {
 			By("creating the configmap with default version label defined in values.yaml")
 			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
 
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
+
 			By("unsintalling chart")
 
 			template = HelmTemplate{
@@ -280,7 +299,7 @@ var _ = Describe("helm template", func() {
 				ApplicationInstallation: app,
 			}
 
-			err = template.Uninstall(app)
+			statusUpdater, err = template.Uninstall(app)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("configmap should be removed")
@@ -288,9 +307,20 @@ var _ = Describe("helm template", func() {
 				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
+
+			By("status should be updated")
+			assertStatusIsUpdated(app, statusUpdater, 1)
 		})
 	})
 })
+
+func assertStatusIsUpdated(app *appskubermaticv1.ApplicationInstallation, statusUpdater util.StatusUpdater, expectedVersion int) {
+	statusUpdater(&app.Status)
+	ExpectWithOffset(1, app.Status.HelmRelease).NotTo(BeNil())
+	ExpectWithOffset(1, app.Status.HelmRelease.Name).To(Equal(getReleaseName(app)), "app.Status.HelmRelease.Name is invalid")
+	ExpectWithOffset(1, app.Status.HelmRelease.Version).To(Equal(expectedVersion), "app.Status.HelmRelease.Version is invalid")
+	ExpectWithOffset(1, app.Status.HelmRelease.Info).NotTo(BeNil())
+}
 
 // appendDefaultValues merges the source with the defaultValues by simply copy key, values of defaultValues into source.
 func appendDefaultValues(source map[string]string, defaultValues map[string]string) {

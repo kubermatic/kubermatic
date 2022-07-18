@@ -26,6 +26,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/source"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,10 +55,10 @@ func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 type TemplateProvider interface {
 
 	// InstallOrUpgrade the application from the source.
-	InstallOrUpgrade(source string, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+	InstallOrUpgrade(source string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 
 	// Uninstall the application.
-	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 }
 
 // NewTemplateProvider return the concrete implementation of TemplateProvider according to the templateMethod.

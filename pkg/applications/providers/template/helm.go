@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -47,10 +48,10 @@ type HelmTemplate struct {
 }
 
 // InstallOrUpgrade the chart located at chartLoc with parameters (releaseName, values) defined applicationInstallation into cluster.
-func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir, h.ApplicationInstallation)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
@@ -67,27 +68,42 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		h.Log)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	values := make(map[string]interface{})
 	if len(applicationInstallation.Spec.Values.Raw) > 0 {
 		if err := json.Unmarshal(applicationInstallation.Spec.Values.Raw, &values); err != nil {
-			return fmt.Errorf("failed to unmarshall values: %w", err)
+			return nil, fmt.Errorf("failed to unmarshall values: %w", err)
 		}
 	}
 
-	// TODO handle release info
-	_, err = helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values)
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	return func(status *appskubermaticv1.ApplicationInstallationStatus) {
+		status.HelmRelease = &appskubermaticv1.HelmRelease{
+			Name:    helmRelease.Name,
+			Version: helmRelease.Version,
+			Info: &appskubermaticv1.HelmReleaseInfo{
+				FirstDeployed: metav1.Time(helmRelease.Info.FirstDeployed),
+				LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
+				Deleted:       metav1.Time(helmRelease.Info.Deleted),
+				Description:   helmRelease.Info.Description,
+				Status:        helmRelease.Info.Status,
+				Notes:         helmRelease.Info.Notes,
+			},
+		}
+	}, nil
 }
 
 // Uninstall the chart from the user cluster.
-func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir, h.ApplicationInstallation)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
@@ -104,12 +120,28 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 		h.Log)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// TODO handle release info
-	_, err = helmClient.Uninstall(getReleaseName(applicationInstallation))
-	return err
+	uninstallReleaseResponse, err := helmClient.Uninstall(getReleaseName(applicationInstallation))
+	if err != nil {
+		return nil, err
+	}
+
+	return func(status *appskubermaticv1.ApplicationInstallationStatus) {
+		status.HelmRelease = &appskubermaticv1.HelmRelease{
+			Name:    uninstallReleaseResponse.Release.Name,
+			Version: uninstallReleaseResponse.Release.Version,
+			Info: &appskubermaticv1.HelmReleaseInfo{
+				FirstDeployed: metav1.Time(uninstallReleaseResponse.Release.Info.FirstDeployed),
+				LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
+				Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
+				Description:   uninstallReleaseResponse.Release.Info.Description,
+				Status:        uninstallReleaseResponse.Release.Info.Status,
+				Notes:         uninstallReleaseResponse.Release.Info.Notes,
+			},
+		}
+	}, nil
 }
 
 // getReleaseName computes the release name from the applicationInstallation.

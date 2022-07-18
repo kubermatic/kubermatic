@@ -25,6 +25,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -217,21 +218,43 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 
 // handleInstallation installs or updates the application in the user cluster.
 func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
-	return r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation)
+	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation)
+	if updateStatusErr := r.updateStatus(ctx, appInstallation, statusUpdater, "failed to update status with installation information"); updateStatusErr != nil {
+		return updateStatusErr
+	}
+	return installErr
 }
 
 // handleDeletion uninstalls the application in the user cluster.
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if kuberneteshelper.HasFinalizer(appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer) {
-		if err := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
-			return fmt.Errorf("failed to uninstall application: %w", err)
+		statusUpdater, uninstallErr := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation)
+		if updateStatusErr := r.updateStatus(ctx, appInstallation, statusUpdater, "failed to update status with uninstall information"); updateStatusErr != nil {
+			return updateStatusErr
+		}
+
+		if uninstallErr != nil {
+			return fmt.Errorf("failed to uninstall application: %w", uninstallErr)
 		}
 
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.userClient, appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove application installation finalizer %s: %w", appInstallation.Name, err)
 		}
 	}
+	return nil
+}
 
+// updateStatus update the status of appInstallation with the statusUpdater. If the update of the status failed and error with errorMsg is returned.
+func (r *reconciler) updateStatus(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation, statusUpdater util.StatusUpdater, errorMsg string) error {
+	if statusUpdater != nil {
+		oldAppInstallation := appInstallation.DeepCopy()
+		statusUpdater(&appInstallation.Status)
+		if !equality.Semantic.DeepEqual(oldAppInstallation.Status, appInstallation.Status) { // avoid to send empty patch
+			if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+				return fmt.Errorf("%s: %w", errorMsg, err)
+			}
+		}
+	}
 	return nil
 }
 

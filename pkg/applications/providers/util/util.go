@@ -40,3 +40,6 @@ func CleanUpHelmTempDir(cacheDir string, logger *zap.SugaredLogger) {
 		logger.Error("failed to remove temporary directory where helm caches have been downloaded: %s", err)
 	}
 }
+
+// StatusUpdater is a function that postpone the update of the applicationInstallation.
+type StatusUpdater func(status *appskubermaticv1.ApplicationInstallationStatus)

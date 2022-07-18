@@ -25,6 +25,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -36,10 +37,10 @@ import (
 // ApplicationInstaller handles the installation / uninstallation of an Application on the user cluster.
 type ApplicationInstaller interface {
 	// Apply function installs the application on the user-cluster and returns an error if the installation has failed; this is idempotent.
-	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 
 	// Delete function uninstalls the application on the user-cluster and returns an error if the uninstallation has failed; this is idempotent.
-	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
+	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 }
 
 // ApplicationManager handles the installation / uninstallation of an Application on the user-cluster.
@@ -55,16 +56,16 @@ type ApplicationManager struct {
 }
 
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
-func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	// initialize tools
 	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, applicationInstallation, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
 	if err != nil {
-		return fmt.Errorf("failed to initialize source provider: %w", err)
+		return nil, fmt.Errorf("failed to initialize source provider: %w", err)
 	}
 
 	downloadDest, err := os.MkdirTemp(a.ApplicationCache, applicationInstallation.Namespace+"-"+applicationInstallation.Name)
 	if err != nil {
-		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
+		return nil, fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
 	}
 	defer func() {
 		if err := os.RemoveAll(downloadDest); err != nil {
@@ -74,34 +75,35 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 
 	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
 	if err != nil {
-		return fmt.Errorf("failed to initialize template provider: %w", err)
+		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
 
 	// start reconciliation
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
-		return err
+		return nil, err
 	}
 
 	appSourcePath, err := sourceProvider.DownloadSource(downloadDest)
 	if err != nil {
-		return fmt.Errorf("failed to download application source: %w", err)
+		return nil, fmt.Errorf("failed to download application source: %w", err)
 	}
 
 	return templateProvider.InstallOrUpgrade(appSourcePath, applicationInstallation)
 }
 
 // Delete uninstalls the application and deletes the namespace where the application was installed if necessary.
-func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
 	if err != nil {
-		return fmt.Errorf("failed to initialize template provider: %w", err)
+		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
 
-	if err := templateProvider.Uninstall(applicationInstallation); err != nil {
-		return err
+	statuUpdater, err := templateProvider.Uninstall(applicationInstallation)
+	if err != nil {
+		return nil, err
 	}
 
-	return a.deleteNamespace(ctx, log, applicationInstallation, userClient)
+	return statuUpdater, a.deleteNamespace(ctx, log, applicationInstallation, userClient)
 }
 
 // reconcileNamespace ensures namespace is created and has desired labels and annotations if applicationInstallation.Spec.Namespace.Create flag is set.
