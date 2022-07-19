@@ -48,7 +48,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, userProvider provider.
 
 		result := make([]apiv1.User, 0)
 		for _, crdUser := range list {
-			apiUser := apiv1.ConvertInternalUserToExternal(&crdUser, false)
+			apiUser := apiv1.ConvertInternalUserToExternal(&crdUser, false, nil, nil)
 			result = append(result, *apiUser)
 		}
 

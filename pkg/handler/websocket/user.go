@@ -37,12 +37,17 @@ func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.C
 		return
 	}
 
-	bindings, err := providers.MemberMapper.MappingsFor(ctx, initialUser.Spec.Email)
+	userBindings, err := providers.MemberMapper.MappingsFor(ctx, initialUser.Spec.Email)
 	if err != nil {
 		log.Logger.Debug("cannot get project mappings for user %s: %v", initialUser.Name, err)
 		return
 	}
-	initialExtUser := apiv1.ConvertInternalUserToExternal(initialUser, true, bindings...)
+	groupBindings, err := providers.MemberMapper.GroupMappingsFor(ctx, initialUser.Spec.Groups)
+	if err != nil {
+		log.Logger.Debug("cannot get project mappings for groups %q+: %v", initialUser.Spec.Groups, err)
+		return
+	}
+	initialExtUser := apiv1.ConvertInternalUserToExternal(initialUser, true, userBindings, groupBindings)
 
 	initialResponse, err := json.Marshal(initialExtUser)
 	if err != nil {
@@ -70,12 +75,19 @@ func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.C
 				return
 			}
 
-			bindings, err := providers.MemberMapper.MappingsFor(ctx, user.Spec.Email)
+			userBindings, err := providers.MemberMapper.MappingsFor(ctx, user.Spec.Email)
 			if err != nil {
 				log.Logger.Debug("cannot get project mappings for user %s: %v", user.Name, err)
 				return
 			}
-			externalUser := apiv1.ConvertInternalUserToExternal(user, true, bindings...)
+
+			groupBindings, err := providers.MemberMapper.GroupMappingsFor(ctx, initialUser.Spec.Groups)
+			if err != nil {
+				log.Logger.Debug("cannot get project mappings for groups %q+: %v", initialUser.Spec.Groups, err)
+				return
+			}
+
+			externalUser := apiv1.ConvertInternalUserToExternal(user, true, userBindings, groupBindings)
 
 			response, err = json.Marshal(externalUser)
 			if err != nil {

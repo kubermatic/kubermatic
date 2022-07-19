@@ -276,17 +276,9 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			projectIDSet.Insert(projectInternal.Name)
 		}
 
-		var groupMappings []*kubermaticv1.GroupProjectBinding
-		for _, groupName := range userInfo.Groups {
-			groupProjectBindings, err := memberMapper.GroupMappingsFor(ctx, groupName)
-			if err != nil {
-				if isStatus(err, http.StatusNotFound) {
-					// We don't expect each group to have a corresponding GroupProjectBinding.
-					continue
-				}
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			groupMappings = append(groupMappings, groupProjectBindings...)
+		groupMappings, err := memberMapper.GroupMappingsFor(ctx, userInfo.Groups)
+		if err != nil {
+			return nil, err
 		}
 
 		for _, group := range groupMappings {

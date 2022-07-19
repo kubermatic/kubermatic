@@ -558,7 +558,9 @@ type User struct {
 	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 
-func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool, bindings ...*kubermaticv1.UserProjectBinding) *User {
+func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool,
+	userBindings []*kubermaticv1.UserProjectBinding, groupBindings []*kubermaticv1.GroupProjectBinding,
+) *User {
 	apiUser := &User{
 		ObjectMeta: ObjectMeta{
 			ID:                internalUser.Name,
@@ -573,6 +575,7 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 			}(),
 		},
 		Email:   internalUser.Spec.Email,
+		Groups:  internalUser.Spec.Groups,
 		IsAdmin: internalUser.Spec.IsAdmin,
 	}
 
@@ -585,7 +588,7 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		apiUser.Settings = internalUser.Spec.Settings
 	}
 
-	for _, binding := range bindings {
+	for _, binding := range userBindings {
 		bindingAlreadyExists := false
 		for _, pg := range apiUser.Projects {
 			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
@@ -596,6 +599,22 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		if !bindingAlreadyExists {
 			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
+		}
+	}
+
+	for _, binding := range groupBindings {
+		bindingAlreadyExists := false
+		for _, p := range apiUser.Projects {
+			if p.ID == binding.Spec.ProjectID {
+				bindingAlreadyExists = true
+				break
+			}
+		}
+		if !bindingAlreadyExists {
+			apiUser.Projects = append(apiUser.Projects, ProjectGroup{
+				ID:          binding.Spec.ProjectID,
+				GroupPrefix: binding.Spec.Role,
+			})
 		}
 	}
 

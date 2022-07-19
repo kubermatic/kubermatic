@@ -255,7 +255,7 @@ func GetOwnersForProject(ctx context.Context, userInfo *provider.UserInfo, proje
 	if err != nil {
 		return nil, err
 	}
-	projectOwners := []apiv1.User{}
+	var projectOwners []apiv1.User
 	for _, projectMember := range allProjectMembers {
 		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
 			user, err := userProvider.UserByEmail(ctx, projectMember.Spec.UserEmail)
