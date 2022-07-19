@@ -58,11 +58,6 @@ import (
 
 const (
 	ControllerName = "kkp-kubernetes-controller"
-
-	// namespaceMarker is injected in reconcile.Request namespaces to signal
-	// that something in the cluster namespace changed (compared to the Cluster
-	// object itself).
-	namespaceMarker = "dummy-marker"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
@@ -204,9 +199,8 @@ func Add(
 	// During cluster deletions, we do not care about changes that happen inside the cluster namespace.
 	// We would not be reconciling anything and we also do not want to re-trigger the cleanup every time
 	// a Secret or Pod is deleted (instead we want to wait 10 seconds between deletion checks).
-	// Instead of splitting this controller into 2 reconcilers, we cheat a bit and inject a marker into
-	// the reconcile.Request that lets the Reconcile() know that not the Cluster has changed, but something
-	// in its namespace.
+	// Instead of splitting this controller into 2 reconcilers, we simply do not return any requests if
+	// the cluster is in deletion.
 	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := reconciler.Client.List(context.Background(), clusterList); err != nil {
@@ -216,9 +210,14 @@ func Add(
 
 		for _, cluster := range clusterList.Items {
 			if cluster.Status.NamespaceName == a.GetNamespace() {
+				// if the cluster is already being deleted,
+				// we do not care about the resources inside its namespace
+				if cluster.DeletionTimestamp != nil {
+					break
+				}
+
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{
-					Name:      cluster.Name,
-					Namespace: namespaceMarker,
+					Name: cluster.Name,
 				}}}
 			}
 		}
@@ -237,11 +236,11 @@ func Add(
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("cluster", request.Name)
-	log.Debug("Processing")
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	// do not use the request itself, as it might contain the namespace marker
-	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
+	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return reconcile.Result{}, nil
@@ -253,13 +252,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// before we can reconcile anything
 	if cluster.Status.Versions.ControlPlane == "" {
 		log.Debug("Cluster not yet ready for reconciling")
-
-		return reconcile.Result{}, nil
-	}
-
-	// ignore changes during deletion
-	if request.Namespace == namespaceMarker && cluster.DeletionTimestamp != nil {
-		log.Debug("Cluster is in deletion, ignoring any changes to its namespace contents")
 
 		return reconcile.Result{}, nil
 	}
