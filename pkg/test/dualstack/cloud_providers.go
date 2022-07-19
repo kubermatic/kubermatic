@@ -375,6 +375,28 @@ func (a do) CloudSpec() models.CloudSpec {
 	}
 }
 
+type equinix struct{}
+
+var _ clusterSpec = equinix{}
+
+func (a equinix) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Packet: &models.PacketNodeSpec{
+			InstanceType: pointer.String("c3.small.x86"),
+		},
+	}
+}
+
+func (a equinix) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "packet-am",
+		Packet: &models.PacketCloudSpec{
+			APIKey:    os.Getenv("METAL_AUTH_TOKEN"),
+			ProjectID: os.Getenv("METAL_PROJECT_ID"),
+		},
+	}
+}
+
 // operating systems
 
 func ubuntu() models.OperatingSystemSpec {

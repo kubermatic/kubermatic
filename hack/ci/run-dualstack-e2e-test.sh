@@ -64,6 +64,9 @@ export HETZNER_TOKEN="${HETZNER_TOKEN:-$(vault kv get -field=token dev/e2e-hetzn
 
 export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 
+export METAL_AUTH_TOKEN="${METAL_AUTH_TOKEN:-$(vault kv get -field=METAL_AUTH_TOKEN dev/e2e-equinix-metal)}"
+export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT_ID dev/e2e-equinix-metal)}"
+
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
