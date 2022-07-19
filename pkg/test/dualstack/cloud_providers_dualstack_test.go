@@ -210,20 +210,16 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "canal",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "equinix",
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 	}
 
