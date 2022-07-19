@@ -317,6 +317,8 @@ func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
 }
 
 func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	isImported := resources.ExternalClusterIsImportedTrue
+
 	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -333,8 +335,9 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
 			return nil, err
 		}
+		isImported = resources.ExternalClusterIsImportedFalse
 	}
-	newCluster := genExternalCluster(name, project.Name)
+	newCluster := genExternalCluster(name, project.Name, isImported)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,

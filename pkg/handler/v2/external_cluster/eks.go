@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -371,6 +372,8 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 }
 
 func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	isImported := resources.ExternalClusterIsImportedTrue
+
 	fields := reflect.ValueOf(cloud.EKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
@@ -383,9 +386,10 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 		if err := createNewEKSCluster(ctx, spec.EKSClusterSpec, cloud.EKS); err != nil {
 			return nil, err
 		}
+		isImported = resources.ExternalClusterIsImportedFalse
 	}
 
-	newCluster := genExternalCluster(name, project.Name)
+	newCluster := genExternalCluster(name, project.Name, isImported)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		EKS: &kubermaticv1.ExternalClusterEKSCloudSpec{
 			Name:   cloud.EKS.Name,
