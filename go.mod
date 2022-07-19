@@ -94,7 +94,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apimachinery v0.24.2
 	k8s.io/apiserver v0.24.2
-	k8s.io/autoscaler/vertical-pod-autoscaler v0.10.0
+	k8s.io/autoscaler/vertical-pod-autoscaler v0.11.0
 	k8s.io/cli-runtime v0.24.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.24.2
