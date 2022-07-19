@@ -115,6 +115,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if cluster.DeletionTimestamp != nil {
+		log.Debug("Cluster is in deletion, no further reconciling.")
+		return reconcile.Result{}, nil
+	}
+
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Cluster has no namespace yet, cannot reconcile.")
 		return reconcile.Result{}, nil
 	}
 
