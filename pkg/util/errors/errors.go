@@ -98,7 +98,7 @@ func NewAlreadyExists(kind, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q already exists", kind, name), nil}
 }
 
-// IsStatus verifies if api error is of a given status
+// IsStatus verifies if api error is of a given status.
 func IsStatus(err error, status int32) bool {
 	var statusErr *apierrors.StatusError
 
