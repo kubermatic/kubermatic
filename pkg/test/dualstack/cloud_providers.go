@@ -359,7 +359,6 @@ func (a do) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Digitalocean: &models.DigitaloceanNodeSpec{
 			Backups:    false,
-			IPV6:       true, // TODO: Could be set to false once MC is fixed.
 			Monitoring: false,
 			Size:       pointer.String("c-2"),
 		},
