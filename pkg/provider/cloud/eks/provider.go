@@ -174,11 +174,11 @@ func GetEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, 
 	}
 
 	return &apiv2.ExternalClusterStatus{
-		State: convertEKSStatus(*eksCluster.Cluster.Status),
+		State: ConvertEKSStatus(*eksCluster.Cluster.Status),
 	}, nil
 }
 
-func convertEKSStatus(status string) apiv2.ExternalClusterState {
+func ConvertEKSStatus(status string) apiv2.ExternalClusterState {
 	switch status {
 	case "CREATING":
 		return apiv2.PROVISIONING

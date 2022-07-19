@@ -123,7 +123,7 @@ func GetGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		return nil, err
 	}
 	return &apiv2.ExternalClusterStatus{
-		State:         convertGKEStatus(gkeCluster.Status),
+		State:         ConvertGKEStatus(gkeCluster.Status),
 		StatusMessage: gkeCluster.StatusMessage,
 	}, nil
 }
@@ -348,7 +348,7 @@ func ValidateGKECredentials(ctx context.Context, sa string) error {
 	return err
 }
 
-func convertGKEStatus(status string) apiv2.ExternalClusterState {
+func ConvertGKEStatus(status string) apiv2.ExternalClusterState {
 	switch status {
 	case "PROVISIONING":
 		return apiv2.PROVISIONING

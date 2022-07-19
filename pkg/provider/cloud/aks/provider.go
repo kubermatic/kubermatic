@@ -154,7 +154,7 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		if aksCluster.Properties.ProvisioningState != nil {
 			provisioningState = *aksCluster.Properties.ProvisioningState
 		}
-		state = convertAKSStatus(provisioningState, powerState)
+		state = ConvertAKSStatus(provisioningState, powerState)
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -162,7 +162,7 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	}, nil
 }
 
-func convertAKSStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
+func ConvertAKSStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
 	switch {
 	case provisioningState == "Creating":
 		return apiv2.PROVISIONING

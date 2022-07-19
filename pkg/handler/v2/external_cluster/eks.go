@@ -552,6 +552,7 @@ func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyRepli
 		},
 		Cloud: &apiv2.ExternalClusterMachineDeploymentCloudSpec{},
 	}
+
 	md.Cloud.EKS = &apiv2.EKSMachineDeploymentCloudSpec{
 		Subnets:       nodeGroup.Subnets,
 		NodeRole:      aws.StringValue(nodeGroup.NodeRole),
@@ -562,14 +563,21 @@ func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyRepli
 		Labels:        nodeGroup.Labels,
 		Version:       aws.StringValue(nodeGroup.Version),
 	}
+
 	scalingConfig := nodeGroup.ScalingConfig
 	if scalingConfig != nil {
+		md.NodeDeployment.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
 		md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
-		md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
 		md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
 			DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
 			MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
 			MinSize:     aws.Int64Value(scalingConfig.MinSize),
+		}
+	}
+
+	if nodeGroup.Status != nil {
+		md.Status = apiv2.ExternalClusterMDStatus{
+			State: eksprovider.ConvertEKSStatus(*nodeGroup.Status),
 		}
 	}
 
@@ -859,14 +867,22 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 
 	clusterSpec := &apiv2.EKSClusterSpec{
-		RoleArn: aws.StringValue(eksCluster.RoleArn),
-		Version: aws.StringValue(eksCluster.Version),
+		Version:   aws.StringValue(eksCluster.Version),
+		CreatedAt: eksCluster.CreatedAt,
+	}
+
+	if eksCluster.KubernetesNetworkConfig != nil {
+		clusterSpec.KubernetesNetworkConfig = &apiv2.KubernetesNetworkConfigResponse{
+			IpFamily:        eksCluster.KubernetesNetworkConfig.IpFamily,
+			ServiceIpv4Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv4Cidr,
+			ServiceIpv6Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv6Cidr,
+		}
 	}
 
 	if eksCluster.ResourcesVpcConfig != nil {
 		clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
-			SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
-			SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
+			SubnetIds: eksCluster.ResourcesVpcConfig.SubnetIds,
+			VpcId:     eksCluster.ResourcesVpcConfig.VpcId,
 		}
 	}
 
@@ -921,6 +937,8 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machine
 	if err != nil {
 		return nil, err
 	}
+
+	machineDeployment.Status = apiv2.ExternalClusterMDStatus{State: apiv2.PROVISIONING}
 
 	return &machineDeployment, nil
 }
