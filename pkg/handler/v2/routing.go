@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/go-kit/log"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -177,9 +176,7 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(transport.ErrorHandlerFunc(func(ctx context.Context, err error) {
-			r.log.Errorw(err.Error(), "request", req.URL.String())
-		})),
+		httptransport.ServerErrorHandler(handler.NewRequestErrorHandler(r.log, req)),
 		httptransport.ServerErrorEncoder(handler.ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 		httptransport.ServerBefore(middleware.SetSeedsGetter(r.seedsGetter)),

@@ -61,13 +61,22 @@ type ErrorDetails struct {
 // swagger:response empty
 type EmptyResponse struct{}
 
+func AsHTTPError(err error) *utilerrors.HTTPError {
+	var httpErr utilerrors.HTTPError
+	if errors.As(err, &httpErr) {
+		return &httpErr
+	}
+
+	return nil
+}
+
 func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
+
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
 
-	var httpErr utilerrors.HTTPError
-	if errors.As(err, &httpErr) {
+	if httpErr := AsHTTPError(err); httpErr != nil {
 		errorCode = httpErr.StatusCode()
 		msg = httpErr.Error()
 		additional = httpErr.Details()

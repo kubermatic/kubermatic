@@ -19,6 +19,7 @@ package handler
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"net/http"
 	"os"
 
@@ -134,6 +135,23 @@ func NewRouting(routingParams RoutingParams, masterClient ctrlruntimeclient.Clie
 	}
 }
 
+func NewRequestErrorHandler(log *zap.SugaredLogger, req *http.Request) transport.ErrorHandlerFunc {
+	return func(ctx context.Context, err error) {
+		// When the client cancels the request, the context is canceled.
+		// In this case we do not want to log the error.
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return
+		}
+
+		// client-side errors should also not be logged
+		if httpErr := AsHTTPError(err); httpErr != nil && httpErr.StatusCode() < http.StatusInternalServerError {
+			return
+		}
+
+		log.Errorw(err.Error(), "request", req.URL.String())
+	}
+}
+
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	var req *http.Request
 
@@ -142,9 +160,7 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(transport.ErrorHandlerFunc(func(ctx context.Context, err error) {
-			r.log.Errorw(err.Error(), "request", req.URL.String())
-		})),
+		httptransport.ServerErrorHandler(NewRequestErrorHandler(r.log, req)),
 		httptransport.ServerErrorEncoder(ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 	}
