@@ -19,9 +19,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -41,11 +43,13 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 		roles := sets.NewString()
 		if projectID != "" {
 			var err error
-			group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
-			if err != nil {
+			groupFromUserBinding, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+			// We can ignore 403 (forbidden) as user can still get permission through a group binding.
+			if err == nil {
+				groups = append(groups, groupFromUserBinding)
+			} else if !errors.IsStatus(err, http.StatusForbidden) {
 				return nil, err
 			}
-			groups = append(groups, group)
 
 			roles, err = userProjectMapper.MapUserToRoles(ctx, user, projectID)
 			if err != nil {

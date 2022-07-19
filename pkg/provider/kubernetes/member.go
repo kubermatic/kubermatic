@@ -166,7 +166,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 		return "", err
 	}
 	if group == "" {
-		return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", userEmail, projectID))
+		return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("there is no user binding between %q user and %s project", userEmail, projectID))
 	}
 	return group, nil
 }
