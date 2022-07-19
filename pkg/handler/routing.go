@@ -135,7 +135,9 @@ func NewRouting(routingParams RoutingParams, masterClient ctrlruntimeclient.Clie
 	}
 }
 
-func NewRequestErrorHandler(log *zap.SugaredLogger, req *http.Request) transport.ErrorHandlerFunc {
+type RequestProvider func() *http.Request
+
+func NewRequestErrorHandler(log *zap.SugaredLogger, reqProvider RequestProvider) transport.ErrorHandlerFunc {
 	return func(ctx context.Context, err error) {
 		// When the client cancels the request, the context is canceled.
 		// In this case we do not want to log the error.
@@ -148,19 +150,25 @@ func NewRequestErrorHandler(log *zap.SugaredLogger, req *http.Request) transport
 			return
 		}
 
-		log.Errorw(err.Error(), "request", req.URL.String())
+		log.Errorw(err.Error(), "request", reqProvider().URL.String())
 	}
 }
 
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	var req *http.Request
 
+	// wrap the request variable so that we do not hand a stable
+	// "req" variable to NewRequestErrorHandler()
+	provider := func() *http.Request {
+		return req
+	}
+
 	return []httptransport.ServerOption{
 		httptransport.ServerBefore(func(c context.Context, r *http.Request) context.Context {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(NewRequestErrorHandler(r.log, req)),
+		httptransport.ServerErrorHandler(NewRequestErrorHandler(r.log, provider)),
 		httptransport.ServerErrorEncoder(ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 	}

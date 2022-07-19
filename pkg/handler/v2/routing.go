@@ -171,12 +171,18 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	var req *http.Request
 
+	// wrap the request variable so that we do not hand a stable
+	// "req" variable to NewRequestErrorHandler()
+	provider := func() *http.Request {
+		return req
+	}
+
 	return []httptransport.ServerOption{
 		httptransport.ServerBefore(func(c context.Context, r *http.Request) context.Context {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(handler.NewRequestErrorHandler(r.log, req)),
+		httptransport.ServerErrorHandler(handler.NewRequestErrorHandler(r.log, provider)),
 		httptransport.ServerErrorEncoder(handler.ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 		httptransport.ServerBefore(middleware.SetSeedsGetter(r.seedsGetter)),
