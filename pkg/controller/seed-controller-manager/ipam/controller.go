@@ -135,6 +135,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		log.Debug("Cluster is in deletion, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
