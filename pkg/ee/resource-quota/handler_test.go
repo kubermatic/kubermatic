@@ -36,7 +36,9 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -58,7 +60,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				Name: projectName,
 				Kind: kubermaticv1.ProjectSubjectKind,
 			},
-			Quota: createNewQuotaHelper(10),
+			Quota: genQuota(resource.MustParse("5"), resource.MustParse("1235M"), resource.MustParse("125Gi")),
 		},
 	}
 	rq2 := &kubermaticv1.ResourceQuota{
@@ -74,6 +76,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				Name: fmt.Sprintf("%s-2", projectName),
 				Kind: kubermaticv1.ProjectSubjectKind,
 			},
+			Quota: genQuota(resource.MustParse("0"), resource.MustParse("1234M"), resource.MustParse("0")),
 		},
 	}
 
@@ -92,7 +95,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		validateResp     func(resp *httptest.ResponseRecorder) error
 	}{
 		{
-			name:            "scenario 1: list all resource quotas",
+			name:            "scenario 1: list all resource quotas with proper quota conversion",
 			method:          "GET",
 			url:             "/api/v2/quotas",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -107,6 +110,17 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				listLen := len(*resourceQuotaList)
 				if listLen != 2 {
 					return fmt.Errorf("expected list length %d, got %d", 2, listLen)
+				}
+				for _, rq := range *resourceQuotaList {
+					var expectedQuota apiv2.Quota
+					if rq.Name == rq1.Name {
+						expectedQuota = genAPIQuota(5, 1.24, 134.22)
+					} else {
+						expectedQuota = genAPIQuota(0, 1.23, 0)
+					}
+					if !diff.DeepEqual(expectedQuota, rq.Quota) {
+						return fmt.Errorf("Objects differ:\n%v", diff.ObjectDiff(expectedQuota, rq.Quota))
+					}
 				}
 				return nil
 			},
@@ -309,5 +323,21 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func genQuota(cpu resource.Quantity, mem resource.Quantity, storage resource.Quantity) kubermaticv1.ResourceDetails {
+	return kubermaticv1.ResourceDetails{
+		CPU:     &cpu,
+		Memory:  &mem,
+		Storage: &storage,
+	}
+}
+
+func genAPIQuota(cpu int64, mem float64, storage float64) apiv2.Quota {
+	return apiv2.Quota{
+		CPU:     cpu,
+		Memory:  mem,
+		Storage: storage,
 	}
 }
