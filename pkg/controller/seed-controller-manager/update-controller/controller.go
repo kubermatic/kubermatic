@@ -115,8 +115,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if cluster.DeletionTimestamp != nil {
+		log.Debug("Cluster is in deletion, no further reconciling.")
 		return reconcile.Result{}, nil
 	}
+
+	// Clusters need to be reconciled regardless of their NamespaceName,
+	// as the kubernetes controller will wait for the target version to
+	// be determined before beginning its reconciling (i.e. before creating
+	// the cluster namespace).
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -372,6 +378,12 @@ func getCurrentControlPlaneVersions(ctx context.Context, client ctrlruntimeclien
 		// we rely on the node-version-controller (uccm) to update this field in the cluster status for us,
 		// so that we do not have to connect to the usercluster
 		nodes: cluster.Status.Versions.OldestNodeVersion,
+	}
+
+	// If no namespace is given yet, there is no point in trying to find the
+	// current ReplicaSets and deduce their versions.
+	if cluster.Status.NamespaceName == "" {
+		return result, nil
 	}
 
 	tasks := []struct {
