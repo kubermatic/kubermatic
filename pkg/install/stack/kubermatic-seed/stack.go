@@ -191,8 +191,8 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MinioNamespace, MinioReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MinioNamespace, MinioReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -218,8 +218,8 @@ func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, S3ExporterNamespace, S3ExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, S3ExporterNamespace, S3ExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")

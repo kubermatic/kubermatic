@@ -64,6 +64,7 @@ type DeployOptions struct {
 	EnableOpenstackCSIDriverMigration  bool
 	EnableLogrotateMigration           bool
 	DisableTelemetry                   bool
+	DisableDependencyUpdate            bool
 }
 
 type Stack interface {

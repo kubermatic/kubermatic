@@ -111,6 +111,10 @@ var (
 		Name:  "disable-telemetry",
 		Usage: "disable telemetry agents",
 	}
+	skipDependenciesFlag = cli.BoolFlag{
+		Name:  "skip-dependencies",
+		Usage: "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)",
+	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
@@ -134,6 +138,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
 			disableTelemetryFlag,
+			skipDependenciesFlag,
 		},
 	}
 }
@@ -217,6 +222,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			EnableOpenstackCSIDriverMigration:  ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
 			EnableLogrotateMigration:           ctx.Bool(migrateLogrotateFlag.Name),
 			DisableTelemetry:                   ctx.Bool(disableTelemetryFlag.Name),
+			DisableDependencyUpdate:            ctx.Bool(skipDependenciesFlag.Name),
 		}
 
 		// validate the configuration

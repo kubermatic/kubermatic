@@ -87,7 +87,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	// get an IP and this can require manual intervention based on the target environment
 	sublogger.Info("Deploying Helm chart…")
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		if isUpgrading {
 			return fmt.Errorf("failed to deploy Helm release: %v\n\nuse backup file to restore the deployment or re-try the installation after fixing any errors.", err)
 		}

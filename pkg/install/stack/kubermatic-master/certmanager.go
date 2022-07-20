@@ -119,8 +119,8 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	if err := waitForCertManagerWebhook(ctx, sublogger, kubeClient); err != nil {

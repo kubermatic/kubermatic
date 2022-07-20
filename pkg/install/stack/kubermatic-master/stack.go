@@ -148,7 +148,7 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %v", err)
 	}
 
@@ -226,8 +226,8 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -259,8 +259,8 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to check to Helm release: %v", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
