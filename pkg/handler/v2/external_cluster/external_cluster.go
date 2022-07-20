@@ -1042,7 +1042,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
 	kubeOneCondtion := internalCluster.Status.Condition
-	if cloud == nil || cloud.ProviderName == "" {
+	if cloud.ProviderName == "" {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
