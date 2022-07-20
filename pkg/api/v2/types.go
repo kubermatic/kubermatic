@@ -743,11 +743,11 @@ type ExternalClusterNode struct {
 type ExternalClusterMachineDeployment struct {
 	apiv1.NodeDeployment `json:",inline"`
 	Cloud                *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
-	Status               ExternalClusterMDStatus                    `json:"status"`
+	Phase                ExternalClusterMDPhase                     `json:"phase"`
 }
 
-// ExternalClusterMDStatus defines the external cluster machinedeployment status.
-type ExternalClusterMDStatus struct {
+// ExternalClusterMDPhase defines the external cluster machinedeployment phase.
+type ExternalClusterMDPhase struct {
 	State         ExternalClusterState `json:"state"`
 	StatusMessage string               `json:"statusMessage,omitempty"`
 }

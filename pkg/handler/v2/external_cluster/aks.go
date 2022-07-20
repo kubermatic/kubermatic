@@ -557,7 +557,7 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
 	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
-		md.Status = apiv2.ExternalClusterMDStatus{
+		md.Phase = apiv2.ExternalClusterMDPhase{
 			State: aks.ConvertAKSStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
 		}
 	}
@@ -760,7 +760,7 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, err
 	}
 
-	machineDeployment.Status = apiv2.ExternalClusterMDStatus{State: apiv2.PROVISIONING}
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
 
 	return &machineDeployment, nil
 }
