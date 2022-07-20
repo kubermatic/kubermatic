@@ -508,6 +508,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 		}
 	}
 	md := createMachineDeploymentFromGKENodePoll(np, readyReplicas)
+	md.NodeDeployment.Status.ReadyReplicas = readyReplicas
 	return &md, nil
 }
 
