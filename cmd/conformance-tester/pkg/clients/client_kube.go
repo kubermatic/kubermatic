@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -129,7 +130,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
 	cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
-	cluster.Spec.EnableOperatingSystemManager = c.opts.OperatingSystemManagerEnabled
+	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
 
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)

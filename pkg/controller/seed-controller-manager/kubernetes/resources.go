@@ -178,7 +178,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Ensure that OSM is completely removed, when disabled
-	if !cluster.Spec.EnableOperatingSystemManager {
+	if !cluster.Spec.IsOperatingSystemManagerEnabled() {
 		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -389,7 +389,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 
-	if data.Cluster().Spec.EnableOperatingSystemManager {
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
 		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
 	}
 
@@ -501,7 +501,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		userclusterwebhook.ServiceAccountCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
 	}
 
@@ -522,7 +522,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		machinecontroller.WebhookRoleCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
 	}
 
@@ -543,7 +543,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 		machinecontroller.WebhookRoleBindingCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
 	}
 

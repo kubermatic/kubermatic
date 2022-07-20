@@ -196,7 +196,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 	}
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager bool, features map[string]bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager *bool, features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-cluster-dns", clusterDNSIP,
@@ -238,7 +238,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 	}
 
 	// Machine Controller will use OSM for managing machine's provisioning and bootstrapping configurations
-	if enableOperatingSystemManager {
+	if enableOperatingSystemManager == nil || *enableOperatingSystemManager {
 		flags = append(flags, "-use-osm")
 	}
 

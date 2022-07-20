@@ -234,8 +234,8 @@ type ClusterSpec struct {
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration.
-	// This is an experimental feature.
-	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
+	// This field is immutable and enabled(true) by default.
+	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
 	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
@@ -272,6 +272,10 @@ type ClusterSpec struct {
 
 	// Enables more verbose logging in KKP's user-cluster-controller-manager.
 	DebugLog bool `json:"debugLog,omitempty"`
+}
+
+func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
+	return c.EnableOperatingSystemManager == nil || *c.EnableOperatingSystemManager
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.

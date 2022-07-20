@@ -365,7 +365,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-osm-e2e
+  - name: pre-kubermatic-legacy-machine-controller-user-data-e2e
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -390,7 +390,7 @@ presubmits:
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: KUBERMATIC_OSM_ENABLED
-              value: "true"
+              value: "false"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

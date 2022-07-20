@@ -134,7 +134,7 @@ func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
 }
 
 func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
-	j.spec.EnableOperatingSystemManager = enabled
+	j.spec.EnableOperatingSystemManager = pointer.Bool(enabled)
 	return j
 }
 

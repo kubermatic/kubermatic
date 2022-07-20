@@ -667,14 +667,8 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationCreator(ctx, cfg, client),
-	}
-
-	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
-		validatingWebhookCreators = append(
-			validatingWebhookCreators,
-			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx, cfg, client),
-			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx, cfg, client),
-		)
+		kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx, cfg, client),
+		kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {

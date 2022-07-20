@@ -1841,7 +1841,7 @@ spec:
               enableOperatingSystemManager:
                 description: 'Optional: Enables operating-system-manager (OSM), which
                   is responsible for creating and managing worker node configuration.
-                  This is an experimental feature.'
+                  This field is immutable and enabled(true) by default.'
                 type: boolean
               enableUserSSHKeyAgent:
                 description: 'Optional: Deploys the UserSSHKeyAgent to the user cluster.

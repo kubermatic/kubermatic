@@ -932,8 +932,8 @@ type ClusterSpec struct {
 	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
-	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
-	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration.
+	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubernetesDashboard holds the configuration for kubernetes-dashboard component
 	KubernetesDashboard *kubermaticv1.KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
@@ -993,7 +993,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UsePodNodeSelectorAdmissionPlugin    bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 		UseEventRateLimitAdmissionPlugin     bool                                   `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 		EnableUserSSHKeyAgent                *bool                                  `json:"enableUserSSHKeyAgent,omitempty"`
-		EnableOperatingSystemManager         bool                                   `json:"enableOperatingSystemManager,omitempty"`
+		EnableOperatingSystemManager         *bool                                  `json:"enableOperatingSystemManager,omitempty"`
 		KubernetesDashboard                  *kubermaticv1.KubernetesDashboard      `json:"kubernetesDashboard,omitempty"`
 		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
