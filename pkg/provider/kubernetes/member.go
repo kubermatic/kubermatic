@@ -171,6 +171,26 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 	return group, nil
 }
 
+// MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
+// group from UserProjectBinding (if exists).
+// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
+func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
+	groups := sets.NewString()
+
+	idpGroups := user.Spec.Groups
+	groups.Insert(idpGroups...)
+
+	userBindingGroup, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
+	if err != nil {
+		return nil, err
+	}
+	if userBindingGroup != "" {
+		groups.Insert(userBindingGroup)
+	}
+
+	return groups, nil
+}
+
 func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
 	allMembers := &kubermaticv1.UserProjectBindingList{}
 	if err := client.List(ctx, allMembers); err != nil {

@@ -19,12 +19,8 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -39,15 +35,13 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			return nil, fmt.Errorf("unable to get authenticated user object")
 		}
 
-		groups := user.Spec.Groups
+		groups := sets.NewString()
 		roles := sets.NewString()
+
 		if projectID != "" {
 			var err error
-			groupFromUserBinding, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
-			// We can ignore 403 (forbidden) as user can still get permission through a group binding.
-			if err == nil {
-				groups = append(groups, groupFromUserBinding)
-			} else if !errors.IsStatus(err, http.StatusForbidden) {
+			groups, err = userProjectMapper.MapUserToGroups(ctx, user, projectID)
+			if err != nil {
 				return nil, err
 			}
 
@@ -55,8 +49,10 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			if err != nil {
 				return nil, err
 			}
+		} else {
+			groups.Insert(user.Spec.Groups...)
 		}
 
-		return &UserInfo{Email: user.Spec.Email, Groups: groups, IsAdmin: user.Spec.IsAdmin, Roles: roles}, nil
+		return &UserInfo{Email: user.Spec.Email, Groups: groups.List(), IsAdmin: user.Spec.IsAdmin, Roles: roles}, nil
 	}, nil
 }
