@@ -51,7 +51,7 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Cleanup has been completed.")
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Cleanup has been completed, all EtcdBackupConfigs have been deleted.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 }
