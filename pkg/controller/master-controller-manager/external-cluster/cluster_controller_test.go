@@ -115,6 +115,7 @@ func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
+			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 
