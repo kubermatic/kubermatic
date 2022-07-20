@@ -66,7 +66,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to setup first test cluster: %v", err)
 	}
-	defer testJig1.Cleanup(ctx, t)
+	defer testJig1.Cleanup(ctx, t, false)
 
 	log.Info("Creating first IPAM Pool...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
@@ -106,7 +106,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to setup second test cluster: %v", err)
 	}
-	defer testJig2.Cleanup(ctx, t)
+	defer testJig2.Cleanup(ctx, t, false)
 
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
 	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
@@ -160,7 +160,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to setup second test cluster: %v", err)
 	}
-	defer testJig3.Cleanup(ctx, t)
+	defer testJig3.Cleanup(ctx, t, false)
 
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
 	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{

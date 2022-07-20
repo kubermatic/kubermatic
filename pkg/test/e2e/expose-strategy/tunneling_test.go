@@ -63,7 +63,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		})
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}

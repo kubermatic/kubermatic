@@ -355,6 +355,10 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 }
 
 func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
+	if j.clusterName == "" {
+		return nil
+	}
+
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get current cluster: %w", err)
