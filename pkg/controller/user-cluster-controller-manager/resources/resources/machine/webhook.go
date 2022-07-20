@@ -57,7 +57,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 			validatingWebhookConfiguration.Webhooks[0].FailurePolicy = &failurePolicy
 			validatingWebhookConfiguration.Webhooks[0].AdmissionReviewVersions = reviewVersions
 			validatingWebhookConfiguration.Webhooks[0].Rules = []admissionregistrationv1.RuleWithOperations{{
-				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create},
 				Rule: admissionregistrationv1.Rule{
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
