@@ -17,11 +17,8 @@ limitations under the License.
 package errors
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // HTTPError represents an HTTP server error.
@@ -96,11 +93,4 @@ func NewNotImplemented() error {
 // NewAlreadyExists creates a HTTP 409 already exists error.
 func NewAlreadyExists(kind, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q already exists", kind, name), nil}
-}
-
-// IsStatus verifies if api error is of a given status.
-func IsStatus(err error, status int32) bool {
-	var statusErr *apierrors.StatusError
-
-	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
