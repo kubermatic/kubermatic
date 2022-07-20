@@ -13916,13 +13916,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13934,6 +13927,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -20521,7 +20521,7 @@
               "type": "object",
               "properties": {
                 "quota": {
-                  "$ref": "#/definitions/ResourceDetails"
+                  "$ref": "#/definitions/Quota"
                 },
                 "subjectKind": {
                   "type": "string",
@@ -20655,7 +20655,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ResourceDetails"
+              "$ref": "#/definitions/Quota"
             }
           }
         ],
@@ -30836,6 +30836,30 @@
       "title": "Quantity is a fixed-point representation of a number.\nIt provides convenient marshaling/unmarshaling in JSON and YAML,\nin addition to String() and AsInt64() accessors.",
       "x-go-package": "k8s.io/apimachinery/pkg/api/resource"
     },
+    "Quota": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "description": "CPU holds the quantity of CPU.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPU"
+        },
+        "memory": {
+          "description": "Memory represents the RAM amount. Denoted in GB, rounded to 2 decimal places.",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Memory"
+        },
+        "storage": {
+          "description": "Storage represents the disk size. Denoted in GB, rounded to 2 decimal places.",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Storage"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "RHELSpec": {
       "description": "RHELSpec contains rhel specific settings",
       "type": "object",
@@ -30917,7 +30941,7 @@
           "x-go-name": "Name"
         },
         "quota": {
-          "$ref": "#/definitions/ResourceDetails"
+          "$ref": "#/definitions/Quota"
         },
         "status": {
           "$ref": "#/definitions/ResourceQuotaStatus"
