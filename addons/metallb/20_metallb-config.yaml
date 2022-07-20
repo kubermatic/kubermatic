@@ -1,0 +1,19 @@
+{{- range $ipamPool, $allocation := .Cluster.Network.IPAMAllocations }}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ $ipamPool }}
+  namespace: metallb-system
+spec: 
+  {{- if eq $allocation.Type "prefix" }}
+  addresses: 
+    - {{ $allocation.CIDR }}
+  {{- end }}
+  {{- if eq $allocation.Type "range" }}
+  addresses:
+    {{- range $allocation.Addresses }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
