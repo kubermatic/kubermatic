@@ -224,6 +224,9 @@ func isHTTPError(err error, status int) bool {
 	return errors.As(err, &gerr) && gerr.Code == status
 }
 
+// GCPSubnetworkGetter is a function to retrieve a single subnetwork.
+type GCPSubnetworkGetter = func(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error)
+
 func GetGCPSubnetwork(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error) {
 	computeService, project, err := ConnectToComputeService(ctx, sa)
 	if err != nil {

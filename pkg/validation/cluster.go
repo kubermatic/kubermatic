@@ -26,7 +26,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/coreos/locksmith/pkg/timeutil"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -699,8 +698,7 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 	return nil
 }
 
-func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily,
-	getGCPSubnetwork func(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error)) error {
+func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily, gcpSubnetworkGetter gcp.GCPSubnetworkGetter) error {
 	if spec.ServiceAccount == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.GCPServiceAccount); err != nil {
 			return err
@@ -730,7 +728,7 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Data
 			return errors.New("GCP subnetwork should belong to same cluster region")
 		}
 
-		gcpSubnetwork, err := getGCPSubnetwork(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
+		gcpSubnetwork, err := gcpSubnetworkGetter(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
 		if err != nil {
 			return err
 		}
