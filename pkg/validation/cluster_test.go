@@ -546,7 +546,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid dual-stack datacenter config (IPv6 not enabled for datacenter)",
+			name: "invalid dual-stack datacenter config (IPv6 not enabled for openstack datacenter)",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				IPFamily:                 kubermaticv1.IPFamilyDualStack,
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
@@ -558,6 +558,44 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						IPv6Enabled: pointer.BoolPtr(false),
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid dual-stack datacenter config (vsphere)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{
+						IPv6Enabled: pointer.BoolPtr(true),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid dual-stack datacenter config (IPv6 not enabled for vsphere datacenter)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{
 						IPv6Enabled: pointer.BoolPtr(false),
 					},
 				},

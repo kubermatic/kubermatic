@@ -243,6 +243,8 @@ spec:
           infraManagementUser:
             password: ""
             username: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
           # Optional: The root path for cluster specific VM folders. Each cluster gets its own
           # folder below the root folder. Must be the FQDN (for example
           # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM

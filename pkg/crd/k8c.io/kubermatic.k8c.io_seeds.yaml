@@ -517,6 +517,10 @@ spec:
                                 username:
                                   type: string
                               type: object
+                            ipv6Enabled:
+                              description: 'Optional: defines if the IPv6 is enabled
+                                for the datacenter'
+                              type: boolean
                             rootPath:
                               description: 'Optional: The root path for cluster specific
                                 VM folders. Each cluster gets its own folder below

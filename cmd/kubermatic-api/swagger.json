@@ -25037,6 +25037,11 @@
         "infraManagementUser": {
           "$ref": "#/definitions/VSphereCredentials"
         },
+        "ipv6Enabled": {
+          "description": "Optional: defines if the IPv6 is enabled for the datacenter",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
+        },
         "rootPath": {
           "description": "Optional: The root path for cluster specific VM folders. Each cluster gets its own\nfolder below the root folder. Must be the FQDN (for example\n\"/datacenter-1/vm/all-kubermatic-vms-in-here\") and defaults to the root VM\nfolder: \"/datacenter-1/vm\"",
           "type": "string",

@@ -444,6 +444,9 @@ var (
 		PacketCloudProvider: {
 			ipv6EnabledForAllDatacenters: true,
 		},
+		VSphereCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
 	}
 )
 
@@ -466,6 +469,10 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 	switch cloudProvider {
 	case OpenstackCloudProvider:
 		if d.Spec.Openstack != nil && d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
+			return true
+		}
+	case VSphereCloudProvider:
+		if d.Spec.VSphere != nil && d.Spec.VSphere.IPv6Enabled != nil && *d.Spec.VSphere.IPv6Enabled {
 			return true
 		}
 	}
@@ -572,6 +579,8 @@ type DatacenterSpecVSphere struct {
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type DatacenterSpecVMwareCloudDirector struct {
