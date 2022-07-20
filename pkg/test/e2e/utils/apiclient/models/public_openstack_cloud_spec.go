@@ -21,7 +21,7 @@ type PublicOpenstackCloudSpec struct {
 	Domain string `json:"domain,omitempty"`
 
 	// floating IP pool
-	FloatingIPPool string `json:"floatingIpPool,omitempty"`
+	FloatingIPPool string `json:"floatingIPPool,omitempty"`
 
 	// network
 	Network string `json:"network,omitempty"`
