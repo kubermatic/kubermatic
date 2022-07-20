@@ -1,5 +1,25 @@
 # Kubermatic 2.20
 
+## [v2.20.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.5)
+
+### Updates
+
+- Update Canal 3.21 to v3.21.5 ([#10271](https://github.com/kubermatic/kubermatic/issues/10271))
+- Update Canal 3.22 to v3.22.3 ([#10272](https://github.com/kubermatic/kubermatic/issues/10272))
+- Update Konnectivity to v0.0.31 ([#10112](https://github.com/kubermatic/kubermatic/issues/10112))
+- Update OSM to v0.4.5 ([#10273](https://github.com/kubermatic/kubermatic/issues/10273))
+- Update machine-controller to v1.45.2 ([#10399](https://github.com/kubermatic/kubermatic/issues/10399))
+
+### Misc
+
+- Add `--skip-dependencies` flag to kubermatic-installer that skips downloading Helm chart dependencies (requires chart dependencies to be downloaded already) ([#10348](https://github.com/kubermatic/kubermatic/issues/10348))
+- Fix automatic Canal version upgrade for clusters with k8s 1.23+ ([#10308](https://github.com/kubermatic/kubermatic/issues/10308))
+- Making telemetry UUID field optional ([#9900](https://github.com/kubermatic/kubermatic/issues/9900))
+- OSM deployment image repo and tag override ([#10123](https://github.com/kubermatic/kubermatic/issues/10123))
+- Use quay.io as the default registry for Canal CNI images, bump Canal v3.20 version to v3.20.5 ([#10305](https://github.com/kubermatic/kubermatic/issues/10305))
+- etcd backup files are named differently (`foo-YYYY-MM-DDThh:mm:ss` to `foo-YYYY-MM-DDThhmmss.db`) to improve compatibility with different storage solutions ([#10143](https://github.com/kubermatic/kubermatic/issues/10143))
+
+
 ## [v2.20.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.4)
 
 ### Bugfixes
@@ -129,6 +149,21 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.19
+
+## [v2.19.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.7)
+
+### Updates
+
+- Update Canal 3.21 to v3.21.5 ([#10271](https://github.com/kubermatic/kubermatic/issues/10271))
+- Update Konnectivity to v0.0.31 ([#10112](https://github.com/kubermatic/kubermatic/issues/10112))
+- Update machine-controller to v1.42.6 ([#10401](https://github.com/kubermatic/kubermatic/issues/10401))
+
+### Misc
+
+- Add `--skip-dependencies` flag to kubermatic-installer that skips downloading Helm chart dependencies (requires chart dependencies to be downloaded already) ([#10348](https://github.com/kubermatic/kubermatic/issues/10348))
+- Use quay.io as the default registry for Canal CNI images, bump Canal v3.20 version to v3.20.5 ([#10305](https://github.com/kubermatic/kubermatic/issues/10305))
+- etcd backup files are named differently (`foo-YYYY-MM-DDThh:mm:ss` to `foo-YYYY-MM-DDThhmmss.db`) to improve compatibility with different storage solutions ([#10143](https://github.com/kubermatic/kubermatic/issues/10143))
+
 
 ## [v2.19.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.6)
 
