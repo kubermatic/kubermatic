@@ -120,7 +120,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			return upgrades, nil
 		}
 
-		if cloud != nil {
+		if cloud != nil && cloud.ProviderName != "" {
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.GKE != nil {
