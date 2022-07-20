@@ -184,11 +184,28 @@ func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kuber
 	if err != nil {
 		return nil, err
 	}
+
 	if userBindingGroup != "" {
 		groups.Insert(userBindingGroup)
+		return groups, nil
+	} else {
+		// Check if one of idp groups is associated with a project
+		groupBindings, err := p.GroupMappingsFor(ctx, idpGroups)
+		if err != nil {
+			return nil, err
+		}
+		for _, binding := range groupBindings {
+			if binding.Spec.ProjectID == projectID {
+				return groups, nil
+			}
+		}
 	}
 
-	return groups, nil
+	return nil, apierrors.NewForbidden(
+		schema.GroupResource{},
+		projectID,
+		fmt.Errorf("there is no binding between %q user and %s project", user.Spec.Email, projectID),
+	)
 }
 
 func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
