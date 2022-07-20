@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -46,6 +45,9 @@ import (
 const (
 	// This controller duplicate roles with label component=userClusterRole for all namespaces.
 	controllerName = "kkp-role-cloner-controller"
+
+	// cleanupFinalizer indicates that user cluster role still need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 )
 
 type reconciler struct {
@@ -151,10 +153,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 }
 
 func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
-	finalizer := apiv1.UserClusterRoleCleanupFinalizer
-
 	if oldRole.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(oldRole, finalizer) {
+		if kuberneteshelper.HasFinalizer(oldRole, cleanupFinalizer) {
 			for _, namespace := range namespaces {
 				if err := r.client.Delete(ctx, &rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
@@ -170,10 +170,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 			}
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.client, oldRole, finalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.client, oldRole, cleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.client, oldRole, finalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.client, oldRole, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 

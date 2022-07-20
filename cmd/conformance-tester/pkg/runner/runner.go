@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/tests"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -337,8 +336,8 @@ func (r *TestRunner) executeTests(
 				return err
 			}
 			cluster.Finalizers = append(cluster.Finalizers,
-				apiv1.InClusterPVCleanupFinalizer,
-				apiv1.InClusterLBCleanupFinalizer,
+				kubermaticv1.InClusterPVCleanupFinalizer,
+				kubermaticv1.InClusterLBCleanupFinalizer,
 			)
 			return r.opts.SeedClusterClient.Update(ctx, cluster)
 		})

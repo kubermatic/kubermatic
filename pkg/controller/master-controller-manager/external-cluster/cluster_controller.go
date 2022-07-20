@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -94,13 +93,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if icl.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(icl, apiv1.ExternalClusterKubeconfigCleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(icl, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer) {
 			if err := r.cleanUpKubeconfigSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete kubeconfig secret, %v", err)
 				return reconcile.Result{}, err
 			}
 		}
-		if kuberneteshelper.HasFinalizer(icl, apiv1.CredentialsSecretsCleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(icl, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
 			if err := r.cleanUpCredentialsSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete credentials secret, %v", err)
 				return reconcile.Result{}, err
@@ -194,7 +193,7 @@ func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 }
 
 func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -202,7 +201,7 @@ func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kube
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error {
@@ -330,7 +329,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 		return err
 	}
 	cluster.Spec.KubeconfigReference = keyRef
-	kuberneteshelper.AddFinalizer(cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	return r.Update(ctx, cluster)
 }

@@ -29,7 +29,6 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -158,7 +157,7 @@ func generateGroupProjectBinding(name string, deleted bool) *kubermaticv1.GroupP
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		groupProjectBinding.DeletionTimestamp = &deleteTime
-		groupProjectBinding.Finalizers = append(groupProjectBinding.Finalizers, apiv1.SeedGroupProjectBindingCleanupFinalizer)
+		groupProjectBinding.Finalizers = append(groupProjectBinding.Finalizers, cleanupFinalizer)
 	}
 	return groupProjectBinding
 }

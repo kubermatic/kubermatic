@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -43,6 +42,9 @@ import (
 const (
 	// This controller syncs the kubermatic cluster templates on the master cluster to the seed clusters.
 	ControllerName = "kkp-cluster-template-synchronizer"
+
+	// cleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
 )
 
 type reconciler struct {
@@ -110,7 +112,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, clusterTemplate, apiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, clusterTemplate, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -139,7 +141,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
-	if kuberneteshelper.HasFinalizer(template, apiv1.ClusterTemplateSeedCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(template, cleanupFinalizer) {
 		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
 				ObjectMeta: metav1.ObjectMeta{
@@ -152,12 +154,12 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, apiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, cleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove cluster template finalizer %s: %w", template.Name, err)
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(template, apiv1.CredentialsSecretsCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(template, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
 		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
 			err := seedClient.Delete(ctx, &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -170,7 +172,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, apiv1.CredentialsSecretsCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove credential secret finalizer %s: %w", template.Name, err)
 		}
 	}

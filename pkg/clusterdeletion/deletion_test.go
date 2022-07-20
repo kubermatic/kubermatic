@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -138,14 +137,14 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 	}{
 		{
 			name:    "Nodes remain because LB finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterLBCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, kubermaticv1.InClusterLBCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.Service{
 				Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer},
 			}},
 		},
 		{
 			name:    "Nodes remain because PV finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterPVCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, kubermaticv1.InClusterPVCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.PersistentVolume{}},
 		},
 	}

@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package allowedregistrycontroller_test
+package allowedregistrycontroller
 
 import (
 	"context"
@@ -32,9 +32,7 @@ import (
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -122,7 +120,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			r := allowedregistrycontroller.NewReconciler(
+			r := NewReconciler(
 				kubermaticlog.Logger,
 				&record.FakeRecorder{},
 				tc.masterClient,
@@ -193,17 +191,17 @@ func TestReconcile(t *testing.T) {
 func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 
-	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
+	ct.Name = AllowedRegistryCTName
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
 		CRD: constrainttemplatev1.CRD{
 			Spec: constrainttemplatev1.CRDSpec{
 				Names: constrainttemplatev1.Names{
-					Kind: allowedregistrycontroller.AllowedRegistryCTName,
+					Kind: AllowedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
-							allowedregistrycontroller.AllowedRegistryField: {
+							AllowedRegistryField: {
 								Type: "array",
 								Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 									Schema: &apiextensionsv1.JSONSchemaProps{
@@ -237,7 +235,7 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		wr.DeletionTimestamp = &deleteTime
-		wr.Finalizers = append(wr.Finalizers, apiv1.AllowedRegistryCleanupFinalizer)
+		wr.Finalizers = append(wr.Finalizers, cleanupFinalizer)
 	}
 
 	return wr
@@ -245,13 +243,13 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 
 func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
-	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
+	ct.Name = AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
 	jsonRegSet, _ := json.Marshal(registrySet.List())
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
+		ConstraintType: AllowedRegistryCTName,
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
 				{
@@ -261,7 +259,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 			},
 		},
 		Parameters: map[string]json.RawMessage{
-			allowedregistrycontroller.AllowedRegistryField: jsonRegSet,
+			AllowedRegistryField: jsonRegSet,
 		},
 		Disabled: registrySet.Len() == 0,
 	}
