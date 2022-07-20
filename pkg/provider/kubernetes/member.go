@@ -204,7 +204,7 @@ func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kuber
 	return nil, apierrors.NewForbidden(
 		schema.GroupResource{},
 		projectID,
-		fmt.Errorf("there is no binding between %q user and %s project", user.Spec.Email, projectID),
+		fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
 	)
 }
 
