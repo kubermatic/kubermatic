@@ -368,11 +368,6 @@ spec:
                     - sshReference
                     type: object
                   providerName:
-                    enum:
-                    - gke
-                    - aks
-                    - eks
-                    - kubeone
                     type: string
                 required:
                 - providerName

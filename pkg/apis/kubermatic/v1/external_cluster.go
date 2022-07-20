@@ -32,8 +32,6 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
-// +kubebuilder:validation:Enum=gke;aks;eks;kubeone
-
 type ExternalClusterProvider string
 
 const (
