@@ -186,7 +186,7 @@ func withEventFilter() predicate.Predicate {
 			if !ok {
 				return false
 			}
-			if externalCluster.Spec.CloudSpec == nil {
+			if externalCluster.Spec.CloudSpec.ProviderName == "" {
 				return false
 			}
 			return externalCluster.Spec.CloudSpec.KubeOne != nil

@@ -114,7 +114,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
 	cloud := cluster.Spec.CloudSpec
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
-	if cloud == nil {
+	if cloud.ProviderName == "" {
 		return reconcile.Result{}, nil
 	}
 	if cloud.GKE != nil {
