@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -127,14 +128,34 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 				if err != nil {
 					return nil, err
 				}
-				return gke.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
+				return gke.ListGKEMachineDeploymentUpgrades(ctx,
+					sa,
+					cloud.GKE.Zone,
+					cloud.GKE.Name,
+					req.MachineDeploymentID)
 			}
 			if cloud.AKS != nil {
 				cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 				if err != nil {
 					return nil, err
 				}
-				return providercommon.ListAKSMachineDeploymentUpgrades(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup, req.MachineDeploymentID)
+				return aks.ListAKSMachineDeploymentUpgrades(ctx,
+					cred,
+					cloud.AKS.Name,
+					cloud.AKS.ResourceGroup,
+					req.MachineDeploymentID)
+			}
+			if cloud.EKS != nil {
+				accessKeyID, secretAccessKey, err := eks.GetCredentialsForCluster(*cloud, secretKeySelector)
+				if err != nil {
+					return nil, err
+				}
+				return eks.ListEKSMachineDeploymentUpgrades(ctx,
+					accessKeyID,
+					secretAccessKey,
+					cloud.EKS.Region,
+					cloud.EKS.Name,
+					req.MachineDeploymentID)
 			}
 		}
 

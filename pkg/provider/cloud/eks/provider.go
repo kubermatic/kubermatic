@@ -22,11 +22,13 @@ import (
 	"errors"
 	"fmt"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	awsprovider "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -197,4 +199,57 @@ func convertEKSStatus(status string) apiv2.ExternalClusterState {
 	default:
 		return apiv2.UNKNOWN
 	}
+}
+
+func ListEKSMachineDeploymentUpgrades(ctx context.Context,
+	accessKeyID, secretAccessKey, region, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	client, err := aws.GetClientSet(accessKeyID, secretAccessKey, "", "", region)
+	if err != nil {
+		return nil, err
+	}
+	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &clusterName})
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterOutput == nil || clusterOutput.Cluster == nil {
+		return nil, fmt.Errorf("unable to get EKS cluster %s details", clusterName)
+	}
+
+	eksCluster := clusterOutput.Cluster
+	if eksCluster.Version == nil {
+		return nil, fmt.Errorf("unable to get EKS cluster %s version", clusterName)
+	}
+	currentClusterVer, err := semverlib.NewVersion(*eksCluster.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeGroupInput := &eks.DescribeNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &machineDeployment,
+	}
+
+	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
+	if err != nil {
+		return nil, err
+	}
+	nodeGroup := nodeGroupOutput.Nodegroup
+
+	if nodeGroup.Version == nil {
+		return nil, fmt.Errorf("unable to get EKS cluster %s nodegroup %s version", clusterName, machineDeployment)
+	}
+	currentMachineDeploymentVer, err := semverlib.NewVersion(*nodeGroup.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	// return control plane version
+	if currentClusterVer.GreaterThan(currentMachineDeploymentVer) {
+		upgrades = append(upgrades, &apiv1.MasterVersion{Version: currentClusterVer})
+	}
+
+	return upgrades, nil
 }
