@@ -281,7 +281,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		}
 	}
 
-	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName)
+	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName, "version", cluster.Spec.Version)
 	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, j.ownerEmail)
 	if err != nil {
 		return nil, err
