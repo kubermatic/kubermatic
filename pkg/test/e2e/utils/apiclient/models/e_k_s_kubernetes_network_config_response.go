@@ -12,11 +12,11 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// KubernetesNetworkConfigResponse The Kubernetes network configuration for the cluster. The response contains
+// EKSKubernetesNetworkConfigResponse The Kubernetes network configuration for the cluster. The response contains
 // a value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.
 //
-// swagger:model KubernetesNetworkConfigResponse
-type KubernetesNetworkConfigResponse struct {
+// swagger:model EKSKubernetesNetworkConfigResponse
+type EKSKubernetesNetworkConfigResponse struct {
 
 	// The IP family used to assign Kubernetes pod and service IP addresses. The
 	// IP family is always ipv4, unless you have a 1.21 or later cluster running
@@ -41,18 +41,18 @@ type KubernetesNetworkConfigResponse struct {
 	ServiceIPV6Cidr string `json:"serviceIpv6Cidr,omitempty"`
 }
 
-// Validate validates this kubernetes network config response
-func (m *KubernetesNetworkConfigResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this e k s kubernetes network config response
+func (m *EKSKubernetesNetworkConfigResponse) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this kubernetes network config response based on context it is used
-func (m *KubernetesNetworkConfigResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this e k s kubernetes network config response based on context it is used
+func (m *EKSKubernetesNetworkConfigResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *KubernetesNetworkConfigResponse) MarshalBinary() ([]byte, error) {
+func (m *EKSKubernetesNetworkConfigResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -60,8 +60,8 @@ func (m *KubernetesNetworkConfigResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *KubernetesNetworkConfigResponse) UnmarshalBinary(b []byte) error {
-	var res KubernetesNetworkConfigResponse
+func (m *EKSKubernetesNetworkConfigResponse) UnmarshalBinary(b []byte) error {
+	var res EKSKubernetesNetworkConfigResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

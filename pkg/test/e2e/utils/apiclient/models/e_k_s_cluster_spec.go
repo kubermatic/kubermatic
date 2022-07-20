@@ -42,7 +42,7 @@ type EKSClusterSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// kubernetes network config
-	KubernetesNetworkConfig *KubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
+	KubernetesNetworkConfig *EKSKubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
 
 	// vpc config request
 	VpcConfigRequest *VpcConfigRequest `json:"vpcConfigRequest,omitempty"`

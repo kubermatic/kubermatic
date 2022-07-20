@@ -876,7 +876,7 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 
 	if eksCluster.KubernetesNetworkConfig != nil {
-		clusterSpec.KubernetesNetworkConfig = &apiv2.KubernetesNetworkConfigResponse{
+		clusterSpec.KubernetesNetworkConfig = &apiv2.EKSKubernetesNetworkConfigResponse{
 			IpFamily:        eksCluster.KubernetesNetworkConfig.IpFamily,
 			ServiceIpv4Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv4Cidr,
 			ServiceIpv6Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv6Cidr,
@@ -885,8 +885,9 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 
 	if eksCluster.ResourcesVpcConfig != nil {
 		clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
-			SubnetIds: eksCluster.ResourcesVpcConfig.SubnetIds,
-			VpcId:     eksCluster.ResourcesVpcConfig.VpcId,
+			SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
+			VpcId:            eksCluster.ResourcesVpcConfig.VpcId,
 		}
 	}
 

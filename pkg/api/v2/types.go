@@ -606,7 +606,7 @@ type EKSClusterSpec struct {
 	ResourcesVpcConfig VpcConfigRequest `json:"vpcConfigRequest" required:"true"`
 
 	// The Kubernetes network configuration for the cluster.
-	KubernetesNetworkConfig *KubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
+	KubernetesNetworkConfig *EKSKubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
 
 	// The desired Kubernetes version for your cluster. If you don't specify a value
 	// here, the latest version available in Amazon EKS is used.
@@ -632,7 +632,7 @@ type EKSClusterSpec struct {
 
 // The Kubernetes network configuration for the cluster. The response contains
 // a value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.
-type KubernetesNetworkConfigResponse struct {
+type EKSKubernetesNetworkConfigResponse struct {
 	// The IP family used to assign Kubernetes pod and service IP addresses. The
 	// IP family is always ipv4, unless you have a 1.21 or later cluster running
 	// version 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when
@@ -724,7 +724,7 @@ type VpcConfigRequest struct {
 	// your nodes and the Kubernetes control plane.
 	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
 	// in the Amazon EKS User Guide .
-	SecurityGroupIds []*string `json:"securityGroupIds,omitempty" required:"true"`
+	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
 
 	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
 	// elastic network interfaces in these subnets to allow communication between

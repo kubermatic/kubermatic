@@ -25298,7 +25298,7 @@
           "x-go-name": "CreatedAt"
         },
         "kubernetesNetworkConfig": {
-          "$ref": "#/definitions/KubernetesNetworkConfigResponse"
+          "$ref": "#/definitions/EKSKubernetesNetworkConfigResponse"
         },
         "roleArn": {
           "description": "The Amazon Resource Name (ARN) of the IAM role that provides permissions\nfor the Kubernetes control plane to make calls to AWS API operations on your\nbehalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)\nin the Amazon EKS User Guide .\n\nRoleArn is a required field",
@@ -25329,6 +25329,28 @@
       "title": "EKSInstanceTypes represents a list of EKS Instance Types for node group.",
       "items": {
         "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSKubernetesNetworkConfigResponse": {
+      "description": "The Kubernetes network configuration for the cluster. The response contains\na value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.",
+      "type": "object",
+      "properties": {
+        "ipFamily": {
+          "description": "The IP family used to assign Kubernetes pod and service IP addresses. The\nIP family is always ipv4, unless you have a 1.21 or later cluster running\nversion 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when\nyou created the cluster.",
+          "type": "string",
+          "x-go-name": "IpFamily"
+        },
+        "serviceIpv4Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a\nsubnet that the node is in. If you didn't specify a CIDR block when you created\nthe cluster, then Kubernetes assigns addresses from either the 10.100.0.0/16\nor 172.20.0.0/16 CIDR blocks. If this was specified, then it was specified\nwhen the cluster was created and it can't be changed.",
+          "type": "string",
+          "x-go-name": "ServiceIpv4Cidr"
+        },
+        "serviceIpv6Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom if you created a 1.21 or later cluster with version 1.10.1 or later\nof the Amazon VPC CNI add-on and specified ipv6 for ipFamily when you created\nthe cluster. Kubernetes assigns service addresses from the unique local address\nrange (fc00::/7) because you can't specify a custom IPv6 CIDR block when\nyou create the cluster.",
+          "type": "string",
+          "x-go-name": "ServiceIpv6Cidr"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -27989,28 +28011,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "KubernetesNetworkConfigResponse": {
-      "description": "The Kubernetes network configuration for the cluster. The response contains\na value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.",
-      "type": "object",
-      "properties": {
-        "ipFamily": {
-          "description": "The IP family used to assign Kubernetes pod and service IP addresses. The\nIP family is always ipv4, unless you have a 1.21 or later cluster running\nversion 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when\nyou created the cluster.",
-          "type": "string",
-          "x-go-name": "IpFamily"
-        },
-        "serviceIpv4Cidr": {
-          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a\nsubnet that the node is in. If you didn't specify a CIDR block when you created\nthe cluster, then Kubernetes assigns addresses from either the 10.100.0.0/16\nor 172.20.0.0/16 CIDR blocks. If this was specified, then it was specified\nwhen the cluster was created and it can't be changed.",
-          "type": "string",
-          "x-go-name": "ServiceIpv4Cidr"
-        },
-        "serviceIpv6Cidr": {
-          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom if you created a 1.21 or later cluster with version 1.10.1 or later\nof the Amazon VPC CNI add-on and specified ipv6 for ipFamily when you created\nthe cluster. Kubernetes assigns service addresses from the unique local address\nrange (fc00::/7) because you can't specify a custom IPv6 CIDR block when\nyou create the cluster.",
-          "type": "string",
-          "x-go-name": "ServiceIpv6Cidr"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Kubevirt": {
       "type": "object",
