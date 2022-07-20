@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -101,7 +100,7 @@ func TestReconcile(t *testing.T) {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),
@@ -129,7 +128,7 @@ func TestReconcile(t *testing.T) {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),

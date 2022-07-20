@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -138,7 +137,7 @@ func generateUserProjectBinding(name string, deleted bool) *kubermaticv1.UserPro
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		userProjectBinding.DeletionTimestamp = &deleteTime
-		userProjectBinding.Finalizers = append(userProjectBinding.Finalizers, apiv1.SeedUserProjectBindingCleanupFinalizer)
+		userProjectBinding.Finalizers = append(userProjectBinding.Finalizers, cleanupFinalizer)
 	}
 	return userProjectBinding
 }

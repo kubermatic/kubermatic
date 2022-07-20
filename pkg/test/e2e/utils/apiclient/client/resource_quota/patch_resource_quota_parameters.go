@@ -62,7 +62,7 @@ func NewPatchResourceQuotaParamsWithHTTPClient(client *http.Client) *PatchResour
 type PatchResourceQuotaParams struct {
 
 	// Body.
-	Body *models.ResourceDetails
+	Body *models.Quota
 
 	// QuotaName.
 	Name string
@@ -121,13 +121,13 @@ func (o *PatchResourceQuotaParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the patch resource quota params
-func (o *PatchResourceQuotaParams) WithBody(body *models.ResourceDetails) *PatchResourceQuotaParams {
+func (o *PatchResourceQuotaParams) WithBody(body *models.Quota) *PatchResourceQuotaParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the patch resource quota params
-func (o *PatchResourceQuotaParams) SetBody(body *models.ResourceDetails) {
+func (o *PatchResourceQuotaParams) SetBody(body *models.Quota) {
 	o.Body = body
 }
 

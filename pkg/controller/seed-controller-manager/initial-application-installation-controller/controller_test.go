@@ -76,7 +76,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 			Annotations: map[string]string{
-				apiv1.InitialApplicationInstallationsRequestAnnotation: annotation,
+				kubermaticv1.InitialApplicationInstallationsRequestAnnotation: annotation,
 			},
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
@@ -138,7 +138,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -172,7 +172,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -196,7 +196,7 @@ func TestReconcile(t *testing.T) {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("bad annotation should be have been removed, but found %q on the cluster", ann)
 				}
 

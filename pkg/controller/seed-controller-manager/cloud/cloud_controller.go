@@ -27,7 +27,6 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -158,7 +157,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Cleaning up cloud provider")
 
 		// in-cluster resources, like nodes, are still being cleaned up
-		if kuberneteshelper.HasAnyFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer, apiv1.NodeDeletionFinalizer) {
+		if kuberneteshelper.HasAnyFinalizer(cluster, kubermaticv1.InClusterLBCleanupFinalizer, kubermaticv1.InClusterPVCleanupFinalizer, kubermaticv1.NodeDeletionFinalizer) {
 			log.Debug("Cluster still has in-cluster cleanup finalizers, retrying later")
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}

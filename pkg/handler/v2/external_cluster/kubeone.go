@@ -62,7 +62,7 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneNamespaceCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer)
 
 	err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)
 	if err != nil {

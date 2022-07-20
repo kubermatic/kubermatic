@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -31,7 +30,7 @@ import (
 )
 
 func (d *Deletion) cleanupConstraints(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.KubermaticConstraintCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.KubermaticConstraintCleanupFinalizer) {
 		return nil
 	}
 
@@ -53,7 +52,7 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, log *zap.SugaredLogge
 		}
 
 		for _, constraint := range constraintList.Items {
-			if finalizer := apiv1.GatekeeperConstraintCleanupFinalizer; kuberneteshelper.HasFinalizer(&constraint, finalizer) {
+			if finalizer := kubermaticv1.GatekeeperConstraintCleanupFinalizer; kuberneteshelper.HasFinalizer(&constraint, finalizer) {
 				log.Infow("Garbage-collecting Constraint", "constraint", constraint.Name)
 
 				if err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, finalizer); err != nil {
@@ -65,5 +64,5 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, log *zap.SugaredLogge
 
 	d.recorder.Event(cluster, corev1.EventTypeNormal, "ConstraintCleanup", "Cleanup has been completed.")
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.KubermaticConstraintCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.KubermaticConstraintCleanupFinalizer)
 }
