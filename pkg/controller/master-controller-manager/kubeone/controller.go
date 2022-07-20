@@ -203,56 +203,71 @@ func withEventFilter() predicate.Predicate {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("cluster", request.Name)
+	log := r.log.With("externalcluster", request.Name)
 	log.Info("Processing...")
 
-	externalCluster := &kubermaticv1.ExternalCluster{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: request.Name}, externalCluster); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return reconcile.Result{}, err
-		}
-	}
+	return reconcile.Result{}, r.reconcile(ctx, request.Name, log)
+}
 
-	if externalCluster.DeletionTimestamp != nil {
-		log.Info("Deleting KubeOne Namespace...")
+func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) error {
+	if kuberneteshelper.HasFinalizer(externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer) {
 		ns := &corev1.Namespace{}
 		name := types.NamespacedName{Name: kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)}
 		if err := r.Get(ctx, name, ns); err != nil {
 			if !apierrors.IsNotFound(err) {
-				return reconcile.Result{}, err
+				return err
 			}
 		}
 		if err := r.Delete(ctx, ns); err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
-
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
 			log.Errorw("failed to remove kubeone namespace finalizer", zap.Error(err))
-			return reconcile.Result{}, err
+			return err
 		}
 	}
-	return r.reconcile(ctx, log, externalCluster)
+
+	return nil
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
+func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, log *zap.SugaredLogger) error {
+	externalCluster := &kubermaticv1.ExternalCluster{}
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: externalClusterName}, externalCluster); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if !externalCluster.DeletionTimestamp.IsZero() {
+		log.Info("Deleting KubeOne Namespace...")
+		if err := r.handleDeletion(ctx, log, externalCluster); err != nil {
+			return fmt.Errorf("failed deleting kubeone externalcluster: %w", err)
+		}
+		return nil
+	}
+
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
+	}
+
 	cloud := externalCluster.Spec.CloudSpec
 	if cloud == nil || cloud.KubeOne == nil {
-		return reconcile.Result{}, nil
+		return nil
 	}
 	clusterPhase := externalCluster.Status.Condition.Phase
 
 	// return if cluster in Error phase
 	if strings.HasSuffix(string(clusterPhase), "Error") {
-		return reconcile.Result{}, nil
+		return nil
 	}
 
 	if err := r.initiateImportAction(ctx, log, externalCluster); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
 	if err != nil {
-		return reconcile.Result{}, nil
+		return nil
 	}
 
 	manifestRef := cloud.KubeOne.ManifestReference
@@ -260,27 +275,27 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	manifestSecret := &corev1.Secret{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: kubeOneNamespace, Name: manifestRef.Name}, manifestSecret); err != nil {
 		log.Errorw("can not retrieve kubeone manifest secret", zap.Error(err))
-		return reconcile.Result{}, nil
+		return nil
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
 	if _, err = r.initiateUpgradeAction(ctx, log, externalCluster, externalClusterProvider, currentManifest, clusterPhase); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err = r.checkPodStatusIfExists(ctx, log, externalCluster, UpgradeControlPlaneAction, KubeOneUpgradePod); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to upgrade kubeone cluster: %w", err)
+		return fmt.Errorf("failed to upgrade kubeone cluster: %w", err)
 	}
 
 	if _, err = r.initiateMigrateAction(ctx, log, externalCluster, externalClusterProvider, currentManifest, clusterPhase); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err = r.checkPodStatusIfExists(ctx, log, externalCluster, MigrateContainerRuntimeAction, KubeOneMigratePod); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to migrate kubeone cluster: %w", err)
+		return fmt.Errorf("failed to migrate kubeone cluster: %w", err)
 	}
 
-	return reconcile.Result{}, nil
+	return nil
 }
 
 func (r *reconciler) initiateImportAction(
