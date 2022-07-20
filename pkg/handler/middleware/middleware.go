@@ -372,23 +372,25 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 }
 
 func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
-	groups := user.Spec.Groups
+	groups := sets.NewString()
 	roles := sets.NewString()
+
 	if projectID != "" {
 		var err error
-		group, err := userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
+		groups, err = userProjectMapper.MapUserToGroups(ctx, user, projectID)
 		if err != nil {
 			return nil, err
 		}
-		groups = append(groups, group)
 
 		roles, err = userProjectMapper.MapUserToRoles(ctx, user, projectID)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		groups.Insert(user.Spec.Groups...)
 	}
 
-	return &provider.UserInfo{Email: user.Spec.Email, Groups: groups, Roles: roles}, nil
+	return &provider.UserInfo{Email: user.Spec.Email, Groups: groups.List(), Roles: roles}, nil
 }
 
 func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {

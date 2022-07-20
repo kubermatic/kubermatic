@@ -23,7 +23,9 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
+	semverlib "github.com/Masterminds/semver/v3"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -194,4 +196,40 @@ func DeleteAKSCluster(ctx context.Context, aksClient *armcontainerservice.Manage
 		return err
 	}
 	return nil
+}
+
+func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	profile, err := agentPoolClient.GetUpgradeProfile(ctx, resourceGroupName, clusterName, machineDeployment, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	poolUpgradeProperties := profile.Properties
+	if poolUpgradeProperties == nil || poolUpgradeProperties.Upgrades == nil {
+		return upgrades, nil
+	}
+
+	for _, poolUpgrade := range poolUpgradeProperties.Upgrades {
+		if poolUpgrade.KubernetesVersion != nil {
+			upgradeMachineDeploymentVer, err := semverlib.NewVersion(*poolUpgrade.KubernetesVersion)
+			if err != nil {
+				return nil, err
+			}
+			upgrades = append(upgrades, &apiv1.MasterVersion{Version: upgradeMachineDeploymentVer})
+		}
+	}
+
+	return upgrades, nil
 }

@@ -28,6 +28,15 @@ import (
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically).
 func DefaultExternalClusterSpec(ctx context.Context, spec *kubermaticv1.ExternalClusterSpec) error {
+	// The import cluster feature doesn't expect any cloud spec as this imported cluster could be any type of
+	// Kubernetes cluster, thus there are no specs in regard of cloud nor infrastructure. Setting the cluster spec
+	// to nil would lead rejecting the cluster so we need to initialize it here.
+	if spec == nil {
+		spec = &kubermaticv1.ExternalClusterSpec{
+			CloudSpec: &kubermaticv1.ExternalClusterCloudSpec{},
+		}
+	}
+
 	// Ensure provider name matches the given spec
 	providerName, err := provider.ExternalClusterCloudProviderName(spec.CloudSpec)
 	if err != nil {

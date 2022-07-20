@@ -316,7 +316,7 @@ func deleteProviderCluster(ctx context.Context,
 	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
 ) error {
 	cloud := cluster.Spec.CloudSpec
-	if cloud != nil {
+	if cloud != nil && cloud.ProviderName != "" {
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 		if cloud.AKS != nil {
 			err := deleteAKSCluster(ctx, secretKeySelector, cloud)
@@ -968,6 +968,7 @@ func genExternalCluster(name, projectID, isImported string) *kubermaticv1.Extern
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
+			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }
@@ -1041,7 +1042,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
 	kubeOneCondtion := internalCluster.Status.Condition
-	if cloud == nil {
+	if cloud == nil || cloud.ProviderName == "" {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
