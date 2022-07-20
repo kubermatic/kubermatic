@@ -239,7 +239,7 @@ func ListEKSMachineDeploymentUpgrades(ctx context.Context,
 	nodeGroup := nodeGroupOutput.Nodegroup
 
 	if nodeGroup.Version == nil {
-		return nil, fmt.Errorf("unable to get EKS cluster %s nodegroup %s  version", clusterName, machineDeployment)
+		return nil, fmt.Errorf("unable to get EKS cluster %s nodegroup %s version", clusterName, machineDeployment)
 	}
 	currentMachineDeploymentVer, err := semverlib.NewVersion(*nodeGroup.Version)
 	if err != nil {
