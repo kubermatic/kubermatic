@@ -72,7 +72,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 		addons:       sets.NewString(),
 	}
 
-	if version := ClusterVersion(); version != "" {
+	if version := ClusterVersion(log); version != "" {
 		jig.WithVersion(version)
 	}
 
