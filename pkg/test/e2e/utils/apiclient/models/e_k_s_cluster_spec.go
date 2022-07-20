@@ -11,12 +11,17 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // EKSClusterSpec e k s cluster spec
 //
 // swagger:model EKSClusterSpec
 type EKSClusterSpec struct {
+
+	// The Unix epoch timestamp in seconds for when the cluster was created.
+	// Format: date-time
+	CreatedAt strfmt.DateTime `json:"createdAt,omitempty"`
 
 	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
 	// for the Kubernetes control plane to make calls to AWS API operations on your
@@ -26,9 +31,18 @@ type EKSClusterSpec struct {
 	// RoleArn is a required field
 	RoleArn string `json:"roleArn,omitempty"`
 
+	// The metadata that you apply to the cluster to assist with categorization
+	// and organization. Each tag consists of a key and an optional value. You define
+	// both. Cluster tags do not propagate to any other resources associated with
+	// the cluster.
+	Tags map[string]string `json:"tags,omitempty"`
+
 	// The desired Kubernetes version for your cluster. If you don't specify a value
 	// here, the latest version available in Amazon EKS is used.
 	Version string `json:"version,omitempty"`
+
+	// kubernetes network config
+	KubernetesNetworkConfig *EKSKubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
 
 	// vpc config request
 	VpcConfigRequest *VpcConfigRequest `json:"vpcConfigRequest,omitempty"`
@@ -38,6 +52,14 @@ type EKSClusterSpec struct {
 func (m *EKSClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubernetesNetworkConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateVpcConfigRequest(formats); err != nil {
 		res = append(res, err)
 	}
@@ -45,6 +67,37 @@ func (m *EKSClusterSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *EKSClusterSpec) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("createdAt", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *EKSClusterSpec) validateKubernetesNetworkConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesNetworkConfig) { // not required
+		return nil
+	}
+
+	if m.KubernetesNetworkConfig != nil {
+		if err := m.KubernetesNetworkConfig.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubernetesNetworkConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubernetesNetworkConfig")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -71,6 +124,10 @@ func (m *EKSClusterSpec) validateVpcConfigRequest(formats strfmt.Registry) error
 func (m *EKSClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateKubernetesNetworkConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateVpcConfigRequest(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -78,6 +135,22 @@ func (m *EKSClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *EKSClusterSpec) contextValidateKubernetesNetworkConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubernetesNetworkConfig != nil {
+		if err := m.KubernetesNetworkConfig.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubernetesNetworkConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubernetesNetworkConfig")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

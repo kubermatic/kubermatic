@@ -705,6 +705,9 @@ const (
 )
 
 const (
+	ExternalClusterIsImported         = "isImported"
+	ExternalClusterIsImportedTrue     = "true"
+	ExternalClusterIsImportedFalse    = "false"
 	ExternalClusterKubeconfig         = "kubeconfig"
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"

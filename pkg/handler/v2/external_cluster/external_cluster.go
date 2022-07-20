@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -180,7 +181,8 @@ func CreateEndpoint(
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
-			newCluster := genExternalCluster(req.Body.Name, project.Name)
+			isImported := resources.ExternalClusterIsImportedTrue
+			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
 			kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
@@ -957,11 +959,12 @@ func (req listEventsReq) Validate() error {
 	return nil
 }
 
-func genExternalCluster(name, projectID string) *kubermaticv1.ExternalCluster {
+func genExternalCluster(name, projectID, isImported string) *kubermaticv1.ExternalCluster {
 	return &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   rand.String(10),
-			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+			Name: rand.String(10),
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID,
+				resources.ExternalClusterIsImported: isImported},
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,

@@ -43,7 +43,7 @@ type ExternalClusterMachineDeployment struct {
 	Spec *NodeDeploymentSpec `json:"spec,omitempty"`
 
 	// status
-	Status *MachineDeploymentStatus `json:"status,omitempty"`
+	Status *ExternalClusterMDStatus `json:"status,omitempty"`
 }
 
 // Validate validates this external cluster machine deployment

@@ -356,6 +356,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments").
 		Handler(r.createExternalClusterMachineDeployment())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
+		Handler(r.getExternalClusterMachineDeployment())
+
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
 		Handler(r.deleteExternalClusterMachineDeployment())
@@ -367,10 +371,6 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes").
 		Handler(r.listExternalClusterNodes())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
-		Handler(r.getExternalClusterMachineDeployment())
 
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
