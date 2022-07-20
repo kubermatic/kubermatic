@@ -21418,6 +21418,17 @@
       "type": "object",
       "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
       "properties": {
+        "createdAt": {
+          "description": "The timestamp of resource creation (UTC).",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "createdBy": {
+          "description": "The identity that created the resource.",
+          "type": "string",
+          "x-go-name": "CreatedBy"
+        },
         "dnsPrefix": {
           "description": "DNSPrefix - This cannot be updated once the Managed Cluster has been created.",
           "type": "string",
@@ -21451,23 +21462,21 @@
         "machineDeploymentSpec": {
           "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
         },
-        "managedAAD": {
-          "description": "ManagedAAD - Whether The Azure Active Directory configuration Enabled.",
-          "type": "boolean",
-          "x-go-name": "ManagedAAD"
-        },
         "networkProfile": {
           "$ref": "#/definitions/AKSNetworkProfile"
-        },
-        "nodeResourceGroup": {
-          "description": "NodeResourceGroup - The name of the resource group containing agent pool nodes.",
-          "type": "string",
-          "x-go-name": "NodeResourceGroup"
         },
         "privateFQDN": {
           "description": "PrivateFQDN - READ-ONLY; The FQDN of private cluster.",
           "type": "string",
           "x-go-name": "PrivateFQDN"
+        },
+        "tags": {
+          "description": "Resource tags.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -25282,10 +25291,27 @@
     "EKSClusterSpec": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "description": "The Unix epoch timestamp in seconds for when the cluster was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "kubernetesNetworkConfig": {
+          "$ref": "#/definitions/EKSKubernetesNetworkConfigResponse"
+        },
         "roleArn": {
           "description": "The Amazon Resource Name (ARN) of the IAM role that provides permissions\nfor the Kubernetes control plane to make calls to AWS API operations on your\nbehalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)\nin the Amazon EKS User Guide .\n\nRoleArn is a required field",
           "type": "string",
           "x-go-name": "RoleArn"
+        },
+        "tags": {
+          "description": "The metadata that you apply to the cluster to assist with categorization\nand organization. Each tag consists of a key and an optional value. You define\nboth. Cluster tags do not propagate to any other resources associated with\nthe cluster.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         },
         "version": {
           "description": "The desired Kubernetes version for your cluster. If you don't specify a value\nhere, the latest version available in Amazon EKS is used.",
@@ -25303,6 +25329,28 @@
       "title": "EKSInstanceTypes represents a list of EKS Instance Types for node group.",
       "items": {
         "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSKubernetesNetworkConfigResponse": {
+      "description": "The Kubernetes network configuration for the cluster. The response contains\na value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.",
+      "type": "object",
+      "properties": {
+        "ipFamily": {
+          "description": "The IP family used to assign Kubernetes pod and service IP addresses. The\nIP family is always ipv4, unless you have a 1.21 or later cluster running\nversion 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when\nyou created the cluster.",
+          "type": "string",
+          "x-go-name": "IpFamily"
+        },
+        "serviceIpv4Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a\nsubnet that the node is in. If you didn't specify a CIDR block when you created\nthe cluster, then Kubernetes assigns addresses from either the 10.100.0.0/16\nor 172.20.0.0/16 CIDR blocks. If this was specified, then it was specified\nwhen the cluster was created and it can't be changed.",
+          "type": "string",
+          "x-go-name": "ServiceIpv4Cidr"
+        },
+        "serviceIpv6Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom if you created a 1.21 or later cluster with version 1.10.1 or later\nof the Amazon VPC CNI add-on and specified ipv6 for ipFamily when you created\nthe cluster. Kubernetes assigns service addresses from the unique local address\nrange (fc00::/7) because you can't specify a custom IPv6 CIDR block when\nyou create the cluster.",
+          "type": "string",
+          "x-go-name": "ServiceIpv6Cidr"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -25899,6 +25947,20 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ExternalClusterMDStatus": {
+      "type": "object",
+      "title": "ExternalClusterMDStatus defines the external cluster machinedeployment status.",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/ExternalClusterState"
+        },
+        "statusMessage": {
+          "type": "string",
+          "x-go-name": "StatusMessage"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ExternalClusterMachineDeployment": {
       "description": "ExternalClusterMachineDeployment represents an object holding external cluster machine deployment",
       "type": "object",
@@ -25940,7 +26002,7 @@
           "$ref": "#/definitions/NodeDeploymentSpec"
         },
         "status": {
-          "$ref": "#/definitions/MachineDeploymentStatus"
+          "$ref": "#/definitions/ExternalClusterMDStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -26586,6 +26648,11 @@
           "description": "ClusterIpv4Cidr: The IP address range of the container pods in this\ncluster, in CIDR\n(http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `10.96.0.0/14`). Leave blank to have one automatically\nchosen or specify a `/14` block in `10.0.0.0/8`.",
           "type": "string",
           "x-go-name": "ClusterIpv4Cidr"
+        },
+        "createTime": {
+          "description": "CreateTime: [Output only] The time the cluster was created, in\nRFC3339 (https://www.ietf.org/rfc/rfc3339.txt) text format.",
+          "type": "string",
+          "x-go-name": "CreateTime"
         },
         "defaultMaxPodsConstraint": {
           "description": "DefaultMaxPodsConstraint: The default constraint on the maximum\nnumber of pods that can be run simultaneously on a node in the node\npool of this cluster. Only honored if cluster created with IP Alias\nsupport.",
@@ -32455,7 +32522,7 @@
       "type": "object",
       "properties": {
         "securityGroupIds": {
-          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane. If you don't specify any security\ngroups, then familiarize yourself with the difference between Amazon EKS\ndefaults for clusters deployed with Kubernetes:\n\n1.14 Amazon EKS platform version eks.2 and earlier\n\n1.14 Amazon EKS platform version eks.3 and later\n\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
+          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane.\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
           "type": "array",
           "items": {
             "type": "string"
@@ -32469,6 +32536,11 @@
             "type": "string"
           },
           "x-go-name": "SubnetIds"
+        },
+        "vpcId": {
+          "description": "The VPC associated with your cluster.",
+          "type": "string",
+          "x-go-name": "VpcId"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

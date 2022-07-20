@@ -317,6 +317,8 @@ func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
 }
 
 func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	isImported := resources.ExternalClusterIsImportedTrue
+
 	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -333,8 +335,9 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
 			return nil, err
 		}
+		isImported = resources.ExternalClusterIsImportedFalse
 	}
-	newCluster := genExternalCluster(name, project.Name)
+	newCluster := genExternalCluster(name, project.Name, isImported)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,
@@ -553,6 +556,12 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
+	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
+		md.Status = apiv2.ExternalClusterMDStatus{
+			State: aks.ConvertAKSStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+		}
+	}
+
 	return md
 }
 
@@ -751,6 +760,8 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, err
 	}
 
+	machineDeployment.Status = apiv2.ExternalClusterMDStatus{State: apiv2.PROVISIONING}
+
 	return &machineDeployment, nil
 }
 
@@ -861,30 +872,37 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 	clusterSpec := &apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
+		Tags:              aksCluster.Tags,
 		DNSPrefix:         to.String(aksClusterProperties.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
 		EnableRBAC:        to.Bool(aksClusterProperties.EnableRBAC),
-		NodeResourceGroup: to.String(aksClusterProperties.NodeResourceGroup),
 		FqdnSubdomain:     to.String(aksClusterProperties.FqdnSubdomain),
 		Fqdn:              to.String(aksClusterProperties.Fqdn),
 		PrivateFQDN:       to.String(aksClusterProperties.PrivateFQDN),
 	}
+
+	if aksCluster.SystemData != nil {
+		clusterSpec.CreatedAt = aksCluster.SystemData.CreatedAt
+		clusterSpec.CreatedBy = aksCluster.SystemData.CreatedBy
+	}
 	networkProfile := aksClusterProperties.NetworkProfile
 	if networkProfile != nil {
 		clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
-			NetworkPlugin:    string(*networkProfile.NetworkPlugin),
-			NetworkPolicy:    string(*networkProfile.NetworkPolicy),
-			NetworkMode:      string(*networkProfile.NetworkMode),
 			PodCidr:          to.String(networkProfile.PodCidr),
 			ServiceCidr:      to.String(networkProfile.ServiceCidr),
 			DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
 			DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
 		}
 	}
-	if aksCluster.Properties.AADProfile != nil {
-		clusterSpec.ManagedAAD = to.Bool(aksCluster.Properties.AADProfile.Managed)
+	if networkProfile.NetworkPlugin != nil {
+		clusterSpec.NetworkProfile.NetworkPlugin = string(*networkProfile.NetworkPlugin)
 	}
-
+	if networkProfile.NetworkPolicy != nil {
+		clusterSpec.NetworkProfile.NetworkPolicy = string(*networkProfile.NetworkPolicy)
+	}
+	if networkProfile.NetworkMode != nil {
+		clusterSpec.NetworkProfile.NetworkMode = string(*networkProfile.NetworkMode)
+	}
 	apiCluster.Spec.AKSClusterSpec = clusterSpec
 
 	return apiCluster, nil

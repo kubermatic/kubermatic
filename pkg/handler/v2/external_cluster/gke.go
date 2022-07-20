@@ -35,8 +35,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	gcpprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	gkeprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -74,7 +74,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 		}
 
 		images := apiv2.GKEImageList{}
-		svc, gcpProject, err := gke.ConnectToContainerService(ctx, sa)
+		svc, gcpProject, err := gkeprovider.ConnectToContainerService(ctx, sa)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 		if err != nil {
 			return nil, err
 		}
-		computeService, gcpProject, err := gcp.ConnectToComputeService(ctx, sa)
+		computeService, gcpProject, err := gcpprovider.ConnectToComputeService(ctx, sa)
 		if err != nil {
 			return nil, err
 		}
@@ -221,7 +221,7 @@ func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	diskTypes := apiv1.GCPDiskTypeList{}
 	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
 	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
-	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
+	computeService, project, err := gcpprovider.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return diskTypes, err
 	}
@@ -244,6 +244,8 @@ func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 }
 
 func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	isImported := resources.ExternalClusterIsImportedTrue
+
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
 		return nil, utilerrors.NewBadRequest("the GKE cluster name, zone or service account can not be empty")
 	}
@@ -252,9 +254,10 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 		if err := createNewGKECluster(ctx, spec.GKEClusterSpec, cloud.GKE); err != nil {
 			return nil, err
 		}
+		isImported = resources.ExternalClusterIsImportedFalse
 	}
 
-	newCluster := genExternalCluster(name, project.Name)
+	newCluster := genExternalCluster(name, project.Name, isImported)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		GKE: &kubermaticv1.ExternalClusterGKECloudSpec{
 			Name: cloud.GKE.Name,
@@ -276,7 +279,7 @@ func patchGKECluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +303,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -358,6 +361,7 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 			GKE: &apiv2.GKEMachineDeploymentCloudSpec{},
 		},
 	}
+
 	if np.Autoscaling != nil {
 		md.Cloud.GKE.Autoscaling = &apiv2.GKENodePoolAutoscaling{
 			Autoprovisioned: np.Autoscaling.Autoprovisioned,
@@ -381,6 +385,10 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 			AutoUpgrade: np.Management.AutoUpgrade,
 		}
 	}
+	md.Status = apiv2.ExternalClusterMDStatus{
+		State: gkeprovider.ConvertGKEStatus(np.Status),
+	}
+
 	return md
 }
 
@@ -389,7 +397,7 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +416,7 @@ func getGKENodes(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +447,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	if err != nil {
 		return err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return err
 	}
@@ -454,7 +462,7 @@ func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.External
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +525,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -572,11 +580,13 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	if err != nil {
 		return nil, err
 	}
+
+	machineDeployment.Status = apiv2.ExternalClusterMDStatus{State: apiv2.PROVISIONING}
 	return &machineDeployment, nil
 }
 
 func createNewGKECluster(ctx context.Context, gkeClusterSpec *apiv2.GKEClusterSpec, gkeCloudSpec *apiv2.GKECloudSpec) error {
-	svc, project, err := gke.ConnectToContainerService(ctx, gkeCloudSpec.ServiceAccount)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, gkeCloudSpec.ServiceAccount)
 	if err != nil {
 		return err
 	}
@@ -674,7 +684,7 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -697,6 +707,8 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		TpuIpv4CidrBlock:      resp.TpuIpv4CidrBlock,
 	}
 
+	clusterSpec.CreateTime = resp.CreateTime
+
 	if resp.DefaultMaxPodsConstraint != nil {
 		clusterSpec.DefaultMaxPodsConstraint = &resp.DefaultMaxPodsConstraint.MaxPodsPerNode
 	}
@@ -705,17 +717,6 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 	if resp.VerticalPodAutoscaling != nil {
 		clusterSpec.VerticalPodAutoscaling = resp.VerticalPodAutoscaling.Enabled
-	}
-	if resp.NodeConfig != nil {
-		clusterSpec.NodeConfig = &apiv2.GKENodeConfig{
-			DiskSizeGb:    resp.NodeConfig.DiskSizeGb,
-			DiskType:      resp.NodeConfig.DiskType,
-			ImageType:     resp.NodeConfig.ImageType,
-			Labels:        resp.NodeConfig.Labels,
-			LocalSsdCount: resp.NodeConfig.LocalSsdCount,
-			MachineType:   resp.NodeConfig.MachineType,
-			Preemptible:   resp.NodeConfig.Preemptible,
-		}
 	}
 	if resp.Autoscaling != nil {
 		clusterSpec.Autoscaling = &apiv2.GKEClusterAutoscaling{
@@ -773,7 +774,7 @@ func deletGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySe
 	if err != nil {
 		return err
 	}
-	svc, project, err := gke.ConnectToContainerService(ctx, sa)
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return err
 	}
