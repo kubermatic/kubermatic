@@ -25952,9 +25952,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "ExternalClusterMDStatus": {
+    "ExternalClusterMDPhase": {
       "type": "object",
-      "title": "ExternalClusterMDStatus defines the external cluster machinedeployment status.",
+      "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
       "properties": {
         "state": {
           "$ref": "#/definitions/ExternalClusterState"
@@ -26003,11 +26003,14 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "phase": {
+          "$ref": "#/definitions/ExternalClusterMDPhase"
+        },
         "spec": {
           "$ref": "#/definitions/NodeDeploymentSpec"
         },
         "status": {
-          "$ref": "#/definitions/ExternalClusterMDStatus"
+          "$ref": "#/definitions/MachineDeploymentStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

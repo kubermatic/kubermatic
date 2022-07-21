@@ -443,9 +443,6 @@ const (
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 
-	// MachineValidatingWebhookConfigurationName is the name for the machine validating webhook.
-	MachineValidatingWebhookConfigurationName = "machine.kubermatic.k8c.io"
-
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"

@@ -393,7 +393,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}{
 		{
 			Name:                   "scenario 1: get external cluster",
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"Running"}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -402,7 +402,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster",
-			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"Running"}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -465,7 +465,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 1: update external cluster",
 			Body:                   `{"name":"test"}`,
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":""}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":""}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -475,7 +475,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin John can update Bob's cluster",
 			Body:             `{"name":"test"}`,
-			ExpectedResponse: `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":""}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":""}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -849,6 +849,7 @@ func genExternalCluster(projectName, clusterName string) *kubermaticv1.ExternalC
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName:   clusterName,
 			KubeconfigReference: &providerconfig.GlobalSecretKeySelector{},
+			CloudSpec:           &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }

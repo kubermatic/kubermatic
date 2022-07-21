@@ -43,6 +43,7 @@ import (
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
@@ -667,6 +668,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		applications.ApplicationInstallationValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+		machine.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
