@@ -274,7 +274,7 @@ func (r *TestClient) CleanupCluster(t *testing.T, projectID, dc, clusterID strin
 		t.Fatalf("Failed to delete cluster: %v", err)
 	}
 
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	t.Logf("Waiting %v for cluster to be gone...", timeout)
 
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
