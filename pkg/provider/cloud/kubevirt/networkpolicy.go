@@ -42,6 +42,9 @@ func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreato
 						},
 					},
 				},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+				},
 			}
 			return np, nil
 		}
