@@ -27,7 +27,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,6 +65,14 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
+		}
+
+		// check if namespace for CR already exists and create it if not
+		creators := []reconciling.NamedNamespaceCreatorGetter{
+			genericNamespaceCreator(req.Body.Namespace),
+		}
+		if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		internalAppInstall := convertExternalToInternal(&req.Body)
@@ -190,4 +200,12 @@ func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.U
 	}
 
 	return client, nil
+}
+
+func genericNamespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
+	return func() (string, reconciling.NamespaceCreator) {
+		return name, func(n *corev1.Namespace) (*corev1.Namespace, error) {
+			return n, nil
+		}
+	}
 }
