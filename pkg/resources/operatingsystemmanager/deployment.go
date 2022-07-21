@@ -52,9 +52,9 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	// Ref: https://github.com/kubermatic/operating-system-manager/commit/494c47ecb9e0c33be065ab8e6b8f576f3532a972
+	// Ref: https://github.com/kubermatic/operating-system-manager/commit/45600227d69e6a105c34ba70ba641e5cd071887e
 	// TODO: Update this to a semver tag before release.
-	Tag = "494c47ecb9e0c33be065ab8e6b8f576f3532a972"
+	Tag = "45600227d69e6a105c34ba70ba641e5cd071887e"
 )
 
 type operatingSystemManagerData interface {
