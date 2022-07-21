@@ -127,7 +127,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to setup Machine validator", zap.Error(err))
 	}
-	if err := builder.WebhookManagedBy(seedMgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(userMgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
 	}
 
