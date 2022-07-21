@@ -79,6 +79,7 @@ var (
 		"kube-state-metrics",
 		"multus",
 		"hubble",
+		"metallb",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{
