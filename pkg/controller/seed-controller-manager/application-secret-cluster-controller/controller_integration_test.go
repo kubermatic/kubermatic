@@ -24,14 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onsi/gomega"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,10 +66,8 @@ var clusterWithoutWorkerName *kubermaticv1.Cluster
 var kubermaticNS *corev1.Namespace
 
 func Test_reconciler_reconcile(t *testing.T) {
-	g := gomega.NewWithT(t)
-
-	startTestEnvWithClusters(g)
-	defer stopTestEnv(g)
+	startTestEnvWithClusters(t)
+	defer stopTestEnv(t)
 
 	tests := []struct {
 		name     string
@@ -81,11 +78,11 @@ func Test_reconciler_reconcile(t *testing.T) {
 			testFunc: secretCreationTest,
 		},
 		{
-			name:     "when an application secret is update it should be updated into cluster namespace",
+			name:     "when an application secret is updated it should be updated into cluster namespace",
 			testFunc: secretUpdatedTest,
 		},
 		{
-			name:     "when an application secret is deleted it should be delete into cluster namespace and kubermatic namespace",
+			name:     "when an application secret is deleted it should be deleted into cluster namespace and kubermatic namespace",
 			testFunc: secretIsDeletedTest,
 		},
 		{
@@ -107,7 +104,6 @@ func Test_reconciler_reconcile(t *testing.T) {
 }
 
 func secretCreationTest(t *testing.T) {
-	g := gomega.NewWithT(t)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -117,20 +113,20 @@ func secretCreationTest(t *testing.T) {
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
 	}
 
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
 
-	// Secret should be synced on running cluster with same workername.
-	expectSecretSync(g, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretHasFinalizer(g, secret)
+	// Secret should be synced on running cluster with same workername than controller.
+	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretHasFinalizer(t, secret)
 
-	// Secret should not be synced on paused cluster and cluster with different workerName.
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
 func secretUpdatedTest(t *testing.T) {
-	g := gomega.NewWithT(t)
-
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -142,28 +138,30 @@ func secretUpdatedTest(t *testing.T) {
 	}
 
 	// Create secret and wait for secret to be synced for the first time.
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
-	expectSecretSync(g, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
+	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
 
-	// Update the secret
+	// Update the secret.
 	original := secret.DeepCopy()
 	secret.Data = map[string][]byte{"pass": []byte("bG9vZHNlCg==")}
 	secret.Labels["new"] = "val"
-	g.Expect(client.Patch(ctx, secret, ctrlruntimeclient.MergeFrom(original))).To(gomega.Succeed())
+	if err := client.Patch(ctx, secret, ctrlruntimeclient.MergeFrom(original)); err != nil {
+		t.Fatalf("failed to update secret")
+	}
 
-	// Secret should be synced on running cluster with same workername.
-	expectSecretSync(g, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretHasFinalizer(g, secret)
+	// Secret should be synced on running cluster with same workername than controller.
+	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretHasFinalizer(t, secret)
 
-	// Secret should not be synced on paused cluster and cluster with different workerName.
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
 func secretIsDeletedTest(t *testing.T) {
-	g := gomega.NewWithT(t)
-
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -175,46 +173,56 @@ func secretIsDeletedTest(t *testing.T) {
 	}
 
 	// Create secret and wait for secret to be synced for the first time.
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
-	expectSecretSync(g, clusterWithWorkerName.Status.NamespaceName, secret)
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
+	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
 
-	// Secret should not be synced on paused cluster and cluster with different workerName.
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 
 	// deleting Secret
-	g.Expect(client.Delete(ctx, secret)).To(gomega.Succeed())
+	if err := client.Delete(ctx, secret); err != nil {
+		t.Fatalf("failed to delete secrer: %s", err)
+	}
 
-	// secret is deleted from cluster namespace and kubermatic namespaces (i.e. finalizer has been removed)
-	expectSecretIsDeleted(g, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretIsDeleted(g, secret.Namespace, secret.Name)
+	// Secret should be deleted from cluster's namespace and kubermatic namespaces (i.e. finalizer has been removed).
+	expectSecretIsDeleted(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretIsDeleted(t, secret.Namespace, secret.Name)
 }
 
 func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
-	g := gomega.NewWithT(t)
-
-	// create a cluster
-	cluster := createCluster(g, ctx, client, "deleting-cluster", workerLabel, false, []string{"something-to-keep-object"})
+	// Create a cluster.
+	cluster := createCluster(t, ctx, client, "deleting-cluster", workerLabel, false, []string{"something-to-keep-object"})
 	defer func() {
 		original := cluster.DeepCopy()
 		cluster.Finalizers = []string{}
-		g.Expect(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))).To(gomega.Succeed())
+		if err := client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original)); err != nil {
+			t.Fatalf("failed to delete cluster: %s", err)
+		}
 	}()
 
-	g.Expect(client.Delete(ctx, cluster)).To(gomega.Succeed())
+	if err := client.Delete(ctx, cluster); err != nil {
+		t.Fatalf("failed to delete secret: %s", err)
+	}
 
-	// wait for cluster to be in deleting state
-	g.Eventually(func() error {
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
-			return err
+	// Wait for cluster to be in deleting state.
+	var err error
+	if !utils.WaitFor(interval, timeout, func() bool {
+		if err = client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
+			return false
 		}
 		if cluster.DeletionTimestamp.IsZero() {
-			return fmt.Errorf("cluster is not in deleting state")
+			err = fmt.Errorf("DeletionTimestamp of cluster is 0")
+			return false
 		}
-		return nil
-	}, timeout, interval).Should(gomega.Succeed())
+		return true
+	}) {
+		t.Fatalf("cluster not in deleting state: %s", err)
+	}
 
-	// create secret and expect it not sync
+	// Create secret and expect it not synced.
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -224,12 +232,13 @@ func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
 		},
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
 	}
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
-	expectSecretNevertExist(g, cluster.Status.NamespaceName, secret.Name)
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
+	expectSecretNevertExist(t, cluster.Status.NamespaceName, secret.Name)
 }
 
 func nonApplicationSecretShouldNotBeSyncedTest(t *testing.T) {
-	g := gomega.NewWithT(t)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "a-secret",
@@ -238,15 +247,16 @@ func nonApplicationSecretShouldNotBeSyncedTest(t *testing.T) {
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
 	}
 
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
 
-	expectSecretNevertExist(g, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
 func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
-	g := gomega.NewWithT(t)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "a-secret",
@@ -256,86 +266,111 @@ func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
 	}
 
-	g.Expect(client.Create(ctx, secret)).To(gomega.Succeed())
+	if err := client.Create(ctx, secret); err != nil {
+		t.Fatalf("failed to create secret: %s", err)
+	}
 
-	expectSecretNevertExist(g, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(g, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func expectSecretSync(g *gomega.WithT, clusterNamespace string, expectedSecert *corev1.Secret) {
+func expectSecretSync(t *testing.T, clusterNamespace string, expectedSecert *corev1.Secret) {
 	syncedSecret := &corev1.Secret{}
-	g.EventuallyWithOffset(1, func() error {
-		if err := client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: expectedSecert.Name}, syncedSecret); err != nil {
-			return err
+	var err error
+	if !utils.WaitFor(interval, timeout, func() bool {
+		if err = client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: expectedSecert.Name}, syncedSecret); err != nil {
+			return false
 		}
 		if !diff.DeepEqual(expectedSecert.Data, syncedSecret.Data) {
-			return fmt.Errorf("secret data differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Data, syncedSecret.Data))
+			err = fmt.Errorf("secret data differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Data, syncedSecret.Data))
+			return false
 		}
 		if !diff.DeepEqual(expectedSecert.Labels, syncedSecret.Labels) {
-			return fmt.Errorf("secret Labels differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Labels, syncedSecret.Labels))
+			err = fmt.Errorf("secret Labels differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Labels, syncedSecret.Labels))
+			return false
 		}
 		if !diff.DeepEqual(expectedSecert.Annotations, syncedSecret.Annotations) {
-			return fmt.Errorf("secret Annotations differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Annotations, syncedSecret.Annotations))
+			err = fmt.Errorf("secret Annotations differs from expected:\n%s", diff.ObjectDiff(expectedSecert.Annotations, syncedSecret.Annotations))
+			return false
 		}
-		return nil
-	}, timeout, interval).Should(gomega.Succeed())
+		return true
+	}) {
+		t.Fatalf("secret has not been synced: %s", err)
+	}
 }
 
-func expectSecretNevertExist(g *gomega.WithT, clusterNamespace string, name string) {
+func expectSecretNevertExist(t *testing.T, clusterNamespace string, name string) {
 	syncedSecret := &corev1.Secret{}
-	g.ConsistentlyWithOffset(1, func() error {
-		return client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret)
-	}, timeout, interval).ShouldNot(gomega.Succeed())
+	// Consistently check secret does not exist.
+	if utils.WaitFor(interval, timeout, func() bool {
+		return client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret) == nil
+	}) {
+		t.Fatalf("secret should not have been created %v", syncedSecret)
+	}
 }
 
-func expectSecretIsDeleted(g *gomega.WithT, clusterNamespace string, name string) {
+func expectSecretIsDeleted(t *testing.T, clusterNamespace string, name string) {
+	t.Helper()
 	syncedSecret := &corev1.Secret{}
-	g.EventuallyWithOffset(1, func() error {
-		return client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret)
-	}, timeout, interval).ShouldNot(gomega.Succeed())
+	if !utils.WaitFor(interval, timeout, func() bool {
+		err := client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret)
+		return err != nil && apierrors.IsNotFound(err)
+	}) {
+		t.Fatalf("secret has not been removed")
+	}
 }
 
-func expectSecretHasFinalizer(g *gomega.WithT, secret *corev1.Secret) {
+func expectSecretHasFinalizer(t *testing.T, secret *corev1.Secret) {
+	t.Helper()
 	currentSecret := &corev1.Secret{}
-	g.EventuallyWithOffset(1, func() error {
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(secret), currentSecret); err != nil {
-			return err
+	var err error
+	if !utils.WaitFor(interval, timeout, func() bool {
+		if err = client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(secret), currentSecret); err != nil {
+			return false
 		}
 		expectedFinalizers := []string{applicationSecretCleanupFinalizer}
 		if !diff.DeepEqual(expectedFinalizers, currentSecret.Finalizers) {
-			return fmt.Errorf("secret finalizers differs from expected:\n%s", diff.ObjectDiff(expectedFinalizers, currentSecret.Finalizers))
+			err = fmt.Errorf("finalizers differs from expected:\n%s", diff.ObjectDiff(expectedFinalizers, currentSecret.Finalizers))
+			return false
 		}
-		return nil
-	}, timeout, interval).Should(gomega.Succeed())
+		return true
+	}) {
+		t.Fatalf("secret has not expected finalizers: %s", err)
+	}
 }
 
-func startTestEnvWithClusters(g *gomega.WithT) {
+func startTestEnvWithClusters(t *testing.T) {
 	ctx, cancel = context.WithCancel(context.Background())
 
 	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
 
-	// bbootstrapping test environment
+	// Bootstrapping test environment.
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{"../../../crd/k8c.io"},
 		ErrorIfCRDPathMissing: true,
 	}
 
 	cfg, err := testEnv.Start()
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	g.Expect(cfg).NotTo(gomega.BeNil())
+	if err != nil {
+		t.Fatalf("failed to start envTest: %s", err)
+	}
 
-	err = kubermaticv1.AddToScheme(scheme.Scheme)
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatalf("failed to add kubermaticv1 scheme: %s", err)
+	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 	})
-	g.Expect(err).ToNot(gomega.HaveOccurred())
+	if err != nil {
+		t.Fatalf("failed to create manager: %s", err)
+	}
 
 	client, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
-	g.Expect(err).ToNot(gomega.HaveOccurred())
-	g.Expect(client).ToNot(gomega.BeNil())
+	if err != nil {
+		t.Fatalf("failed to create client: %s", err)
+	}
 
 	// Create kubermatic namespace.
 	// Intentionally using another name than kubermatic to be sure code don't use 'kubermatic' hardcoded value.
@@ -344,66 +379,73 @@ func startTestEnvWithClusters(g *gomega.WithT) {
 			Name: "abc",
 		},
 	}
-	g.Expect(client.Create(ctx, kubermaticNS)).To(gomega.Succeed())
+	if err := client.Create(ctx, kubermaticNS); err != nil {
+		t.Fatalf("failed to create namespace: %s", err)
+	}
 
-	clusterWithWorkerName = createCluster(g, ctx, client, "with-worker-name", workerLabel, false, []string{})
-	pauseClusterWithWorkerName = createCluster(g, ctx, client, "paused-with-worker-name", workerLabel, true, []string{})
-	clusterWithoutWorkerName = createCluster(g, ctx, client, "without-worker-name", "", false, []string{})
+	clusterWithWorkerName = createCluster(t, ctx, client, "with-worker-name", workerLabel, false, []string{})
+	pauseClusterWithWorkerName = createCluster(t, ctx, client, "paused-with-worker-name", workerLabel, true, []string{})
+	clusterWithoutWorkerName = createCluster(t, ctx, client, "without-worker-name", "", false, []string{})
 
-	err = Add(ctx, mgr, kubermaticlog.Logger, 2, workerLabel, kubermaticNS.Name)
-	g.Expect(err).ToNot(gomega.HaveOccurred())
+	if err := Add(ctx, mgr, kubermaticlog.Logger, 2, workerLabel, kubermaticNS.Name); err != nil {
+		t.Fatalf("failed to add controller to manager: %s", err)
+	}
 
 	go func() {
-		err = mgr.Start(ctx)
-		g.Expect(err).ToNot(gomega.HaveOccurred())
+		if err := mgr.Start(ctx); err != nil {
+			t.Errorf("failed to start manager: %s", err)
+			return
+		}
 	}()
 }
 
-func stopTestEnv(g *gomega.WithT) {
-	// clean up and stop controller
-	cleanupClusterAndNs(g, clusterWithWorkerName)
-	cleanupClusterAndNs(g, pauseClusterWithWorkerName)
-	cleanupClusterAndNs(g, clusterWithoutWorkerName)
+func stopTestEnv(t *testing.T) {
+	// Clean up and stop controller.
+	cleanupClusterAndNs(t, clusterWithWorkerName)
+	cleanupClusterAndNs(t, pauseClusterWithWorkerName)
+	cleanupClusterAndNs(t, clusterWithoutWorkerName)
 	cancel()
 
-	// tearing down the test environment")
-	err := testEnv.Stop()
-	g.Expect(err).NotTo(gomega.HaveOccurred())
+	// Tearing down the test environment.
+	if err := testEnv.Stop(); err != nil {
+		t.Fatalf("failed to stop testEnv: %s", err)
+	}
 }
 
-func cleanupClusterAndNs(g *gomega.WithT, cluster *kubermaticv1.Cluster) {
+func cleanupClusterAndNs(t *testing.T, cluster *kubermaticv1.Cluster) {
 	if cluster != nil {
-		cleanupNamespace(g, cluster.Status.NamespaceName)
+		cleanupNamespace(t, cluster.Status.NamespaceName)
 
 		currentCluster := &kubermaticv1.Cluster{}
 		err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), currentCluster)
 		if err != nil && !apierrors.IsNotFound(err) {
-			g.Fail(err.Error())
+			t.Fatalf("failed to get cluster: %s", err)
 		}
 
-		// Delete cluster if it exists
+		// Delete cluster if it exists.
 		err = client.Delete(ctx, currentCluster)
 		if err != nil && !apierrors.IsNotFound(err) {
-			g.Fail(err.Error())
+			t.Fatalf("failed to delete cluster: %s", err)
 		}
 	}
 }
 
-func cleanupNamespace(g *gomega.WithT, name string) {
+func cleanupNamespace(t *testing.T, name string) {
 	ns := &corev1.Namespace{}
 	err := client.Get(ctx, types.NamespacedName{Name: name}, ns)
 	if err != nil && !apierrors.IsNotFound(err) {
-		g.Fail(err.Error())
+		t.Fatalf("failed to get namespace: %s", err)
 	}
 
-	// Delete ns if it exists
+	// Delete ns if it exists.
 	err = client.Delete(ctx, ns)
 	if err != nil && !apierrors.IsNotFound(err) {
-		g.Fail(err.Error())
+		t.Fatalf("failed to delete cluster: %s", err)
 	}
 }
 
-func createCluster(g *gomega.WithT, ctx context.Context, client ctrlruntimeclient.Client, clusterName string, workerLabel string, isPause bool, finalizers []string) *kubermaticv1.Cluster {
+func createCluster(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterName string, workerLabel string, isPause bool, finalizers []string) *kubermaticv1.Cluster {
+	t.Helper()
 	cluster := test.GenCluster(clusterName, clusterName, "projectName", time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
 		cluster.Namespace = kubermaticNS.Name
 		if workerLabel != "" {
@@ -413,21 +455,28 @@ func createCluster(g *gomega.WithT, ctx context.Context, client ctrlruntimeclien
 		cluster.Spec.Pause = isPause
 		cluster.Finalizers = finalizers
 	})
+
+	// Create cluster.
+	if err := client.Create(ctx, cluster); err != nil {
+		t.Fatalf("failed to create cluster %s: %s", clusterName, err)
+	}
+
+	// Create operation wipe out status, so we update with needed fields.
+	original := cluster.DeepCopy()
+	cluster.Status.NamespaceName = kubernetes.NamespaceName(clusterName)
+	if err := client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original)); err != nil {
+		t.Fatalf("failed to update cluster status: %s", err)
+	}
+
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cluster.Status.NamespaceName,
 		},
 	}
 
-	g.ExpectWithOffset(1, client.Create(ctx, ns)).To(gomega.Succeed())
-
-	// create cluster
-	g.ExpectWithOffset(1, client.Create(ctx, cluster)).To(gomega.Succeed())
-
-	// create wipe out status, so we update with needed field
-	original := cluster.DeepCopy()
-	cluster.Status.NamespaceName = kubernetes.NamespaceName(clusterName)
-	g.ExpectWithOffset(1, client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original)))
+	if err := client.Create(ctx, ns); err != nil {
+		t.Fatalf("failed to create cluster namespace %s: %s", cluster.Status.NamespaceName, err)
+	}
 
 	return cluster
 }
