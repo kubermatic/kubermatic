@@ -22,7 +22,6 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	eviction "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -33,12 +32,12 @@ import (
 )
 
 func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.NodeDeletionFinalizer) {
 		return nil
 	}
 
 	if cluster.Status.NamespaceName == "" {
-		return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NodeDeletionFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NodeDeletionFinalizer)
 	}
 
 	userClusterClient, err := d.userClusterClientGetter()
@@ -115,5 +114,5 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	d.recorder.Event(cluster, corev1.EventTypeNormal, "NodeCleanup", "Cleanup has been completed, all machines have been destroyed.")
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NodeDeletionFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NodeDeletionFinalizer)
 }

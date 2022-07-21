@@ -11,12 +11,20 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // AKSClusterSpec AKSClusterSpec Azure Kubernetes Service cluster.
 //
 // swagger:model AKSClusterSpec
 type AKSClusterSpec struct {
+
+	// The timestamp of resource creation (UTC).
+	// Format: date-time
+	CreatedAt strfmt.DateTime `json:"createdAt,omitempty"`
+
+	// The identity that created the resource.
+	CreatedBy string `json:"createdBy,omitempty"`
 
 	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
 	DNSPrefix string `json:"dnsPrefix,omitempty"`
@@ -36,14 +44,11 @@ type AKSClusterSpec struct {
 	// Location - Resource location
 	Location string `json:"location,omitempty"`
 
-	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
-	ManagedAAD bool `json:"managedAAD,omitempty"`
-
-	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
-	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
-
 	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
 	PrivateFQDN string `json:"privateFQDN,omitempty"`
+
+	// Resource tags.
+	Tags map[string]string `json:"tags,omitempty"`
 
 	// machine deployment spec
 	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
@@ -56,6 +61,10 @@ type AKSClusterSpec struct {
 func (m *AKSClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMachineDeploymentSpec(formats); err != nil {
 		res = append(res, err)
 	}
@@ -67,6 +76,18 @@ func (m *AKSClusterSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AKSClusterSpec) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("createdAt", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

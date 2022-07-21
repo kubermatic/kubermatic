@@ -157,6 +157,12 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 		),
 		Resources: vsphereCPIResourceRequirements,
 	}
+	if data.Cluster().IsDualStack() {
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:  "ENABLE_ALPHA_DUAL_STACK",
+			Value: "true",
+		})
+	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
 		c.Args = append(c.Args, "--cluster-name", data.Cluster().Name)
 	}

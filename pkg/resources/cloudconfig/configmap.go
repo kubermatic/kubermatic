@@ -360,7 +360,7 @@ func getVsphereCloudConfig(
 		clusterID = cluster.Name
 	}
 
-	return &vsphere.CloudConfig{
+	cc := &vsphere.CloudConfig{
 		Global: vsphere.GlobalOpts{
 			User:             credentials.VSphere.Username,
 			Password:         credentials.VSphere.Password,
@@ -395,7 +395,11 @@ func getVsphereCloudConfig(
 				Datacenters: dc.Spec.VSphere.Datacenter,
 			},
 		},
-	}, nil
+	}
+	if cluster.IsDualStack() && resources.ExternalCloudProviderEnabled(cluster) {
+		cc.Global.IPFamily = "ipv4,ipv6"
+	}
+	return cc, nil
 }
 
 const (

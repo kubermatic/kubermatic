@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -35,7 +34,7 @@ func (d *Deletion) cleanupCredentialsSecrets(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {

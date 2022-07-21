@@ -43,6 +43,7 @@ import (
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
@@ -668,6 +669,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		applications.ApplicationInstallationValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+		machine.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
@@ -677,7 +679,8 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
+		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
@@ -860,7 +863,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 	}
 

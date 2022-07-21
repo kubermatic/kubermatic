@@ -24,13 +24,12 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 )
 
 func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-	finalizer := apiv1.GatekeeperConstraintCleanupFinalizer
+	finalizer := kubermaticv1.GatekeeperConstraintCleanupFinalizer
 
 	// constraint deletion
 	if constraint.Spec.Disabled {

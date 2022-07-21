@@ -21,7 +21,6 @@ import (
 	"sort"
 	"testing"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -118,7 +117,7 @@ func TestReconcile(t *testing.T) {
 				// ignore clusters that only have a deletion timestampa and
 				// the CredentialsSecretsCleanupFinalizer finalizer, as those
 				// would be cleaned up by another controller
-				if kuberneteshelper.HasOnlyFinalizer(&cluster, apiv1.CredentialsSecretsCleanupFinalizer) && !cluster.DeletionTimestamp.IsZero() {
+				if kuberneteshelper.HasOnlyFinalizer(&cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer) && !cluster.DeletionTimestamp.IsZero() {
 					continue
 				}
 
@@ -161,7 +160,7 @@ func genCluster(name, userEmail string, instance kubermaticv1.ClusterTemplateIns
 			Name:            name,
 			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubernetes.ClusterTemplateInstanceLabelKey: instance.Name},
 			ResourceVersion: "1",
-			Finalizers:      []string{apiv1.CredentialsSecretsCleanupFinalizer},
+			Finalizers:      []string{kubermaticv1.CredentialsSecretsCleanupFinalizer},
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
 		Spec: kubermaticv1.ClusterSpec{

@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -135,7 +134,7 @@ func genConstraint(name, namespace, kind string, deleted bool) *kubermaticv1.Con
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		constraint.DeletionTimestamp = &deleteTime
-		constraint.Finalizers = append(constraint.Finalizers, apiv1.GatekeeperSeedConstraintCleanupFinalizer)
+		constraint.Finalizers = append(constraint.Finalizers, cleanupFinalizer)
 	}
 
 	return constraint

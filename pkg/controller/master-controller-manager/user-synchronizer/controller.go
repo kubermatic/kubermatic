@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -44,6 +43,9 @@ import (
 
 const (
 	ControllerName = "kkp-user-synchronizer"
+
+	// cleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
 )
 
 type reconciler struct {
@@ -128,7 +130,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, apiv1.SeedUserCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, cleanupFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -183,7 +185,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, apiv1.SeedUserCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, cleanupFinalizer)
 }
 
 func (r *reconciler) syncAllSeeds(

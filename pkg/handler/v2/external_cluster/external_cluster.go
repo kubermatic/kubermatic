@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -180,8 +181,9 @@ func CreateEndpoint(
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
-			newCluster := genExternalCluster(req.Body.Name, project.Name)
-			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
+			isImported := resources.ExternalClusterIsImportedTrue
+			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
+			kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, utilerrors.NewBadRequest(err.Error())
@@ -314,7 +316,7 @@ func deleteProviderCluster(ctx context.Context,
 	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
 ) error {
 	cloud := cluster.Spec.CloudSpec
-	if cloud != nil {
+	if cloud != nil && cloud.ProviderName != "" {
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 		if cloud.AKS != nil {
 			err := deleteAKSCluster(ctx, secretKeySelector, cloud)
@@ -957,14 +959,16 @@ func (req listEventsReq) Validate() error {
 	return nil
 }
 
-func genExternalCluster(name, projectID string) *kubermaticv1.ExternalCluster {
+func genExternalCluster(name, projectID, isImported string) *kubermaticv1.ExternalCluster {
 	return &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   rand.String(10),
-			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+			Name: rand.String(10),
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID,
+				resources.ExternalClusterIsImported: isImported},
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
+			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }
@@ -1038,7 +1042,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
 	kubeOneCondtion := internalCluster.Status.Condition
-	if cloud == nil {
+	if cloud.ProviderName == "" {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {

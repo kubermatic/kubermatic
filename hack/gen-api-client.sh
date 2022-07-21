@@ -22,7 +22,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.18.3 containerize ./hack/gen-api-client.sh
+CONTAINERIZE_IMAGE=golang:1.18.4 containerize ./hack/gen-api-client.sh
 
 cd cmd/kubermatic-api/
 SWAGGER_FILE="swagger.json"

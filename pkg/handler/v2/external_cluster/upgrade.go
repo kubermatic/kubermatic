@@ -18,7 +18,6 @@ package externalcluster
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -30,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -59,7 +59,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, us
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
-		if cloud == nil {
+		if cloud.ProviderName == "" {
 			return upgrades, nil
 		}
 		if apiCluster.Status.State != apiv2.RUNNING {
@@ -89,7 +89,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, us
 			return handlercommon.GetKubeOneUpgradesEndpoint(ctx, cluster, version, configGetter)
 		}
 
-		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
+		return nil, nil
 	}
 }
 
@@ -112,32 +112,50 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
-		if cloud == nil {
+		if cloud.ProviderName == "" {
 			return upgrades, nil
 		}
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return upgrades, nil
 		}
 
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-			if cloud.GKE != nil {
-				sa, err := secretKeySelector(cloud.GKE.CredentialsReference, resources.GCPServiceAccount)
-				if err != nil {
-					return nil, err
-				}
-				return gke.ListGKEMachineDeploymentUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name, req.MachineDeploymentID)
+		if cloud.GKE != nil {
+			sa, err := secretKeySelector(cloud.GKE.CredentialsReference, resources.GCPServiceAccount)
+			if err != nil {
+				return nil, err
 			}
-			if cloud.AKS != nil {
-				cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
-				if err != nil {
-					return nil, err
-				}
-				return providercommon.ListAKSMachineDeploymentUpgrades(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup, req.MachineDeploymentID)
+			return gke.ListGKEMachineDeploymentUpgrades(ctx,
+				sa,
+				cloud.GKE.Zone,
+				cloud.GKE.Name,
+				req.MachineDeploymentID)
+		}
+		if cloud.AKS != nil {
+			cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+			if err != nil {
+				return nil, err
 			}
+			return aks.ListAKSMachineDeploymentUpgrades(ctx,
+				cred,
+				cloud.AKS.Name,
+				cloud.AKS.ResourceGroup,
+				req.MachineDeploymentID)
+		}
+		if cloud.EKS != nil {
+			accessKeyID, secretAccessKey, err := eks.GetCredentialsForCluster(*cloud, secretKeySelector)
+			if err != nil {
+				return nil, err
+			}
+			return eks.ListEKSMachineDeploymentUpgrades(ctx,
+				accessKeyID,
+				secretAccessKey,
+				cloud.EKS.Region,
+				cloud.EKS.Name,
+				req.MachineDeploymentID)
 		}
 
-		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")
+		return nil, nil
 	}
 }

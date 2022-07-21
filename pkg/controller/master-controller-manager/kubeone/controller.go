@@ -30,7 +30,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	"k8c.io/kubeone/pkg/fail"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -186,7 +185,7 @@ func withEventFilter() predicate.Predicate {
 			if !ok {
 				return false
 			}
-			if externalCluster.Spec.CloudSpec == nil {
+			if externalCluster.Spec.CloudSpec.ProviderName == "" {
 				return false
 			}
 			return externalCluster.Spec.CloudSpec.KubeOne != nil
@@ -227,7 +226,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, externalCluster, apiv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
 			log.Errorw("failed to remove kubeone namespace finalizer", zap.Error(err))
 			return reconcile.Result{}, err
 		}

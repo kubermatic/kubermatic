@@ -28,6 +28,10 @@ type GKEClusterSpec struct {
 	// chosen or specify a `/14` block in `10.0.0.0/8`.
 	ClusterIPV4Cidr string `json:"clusterIpv4Cidr,omitempty"`
 
+	// CreateTime: [Output only] The time the cluster was created, in
+	// RFC3339 (https://www.ietf.org/rfc/rfc3339.txt) text format.
+	CreateTime string `json:"createTime,omitempty"`
+
 	// DefaultMaxPodsConstraint: The default constraint on the maximum
 	// number of pods that can be run simultaneously on a node in the node
 	// pool of this cluster. Only honored if cluster created with IP Alias

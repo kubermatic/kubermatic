@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -66,8 +65,8 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// If cleanup didn't finish we have to go back, because if there are controllers running
 	// inside the cluster and we delete the nodes, we get stuck.
 	if kuberneteshelper.HasAnyFinalizer(cluster,
-		apiv1.InClusterLBCleanupFinalizer,
-		apiv1.InClusterPVCleanupFinalizer) {
+		kubermaticv1.InClusterLBCleanupFinalizer,
+		kubermaticv1.InClusterPVCleanupFinalizer) {
 		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "LoadBalancers / PersistentVolumeClaims have been deleted, waiting for them to be destroyed.")
 		return nil
 	}
@@ -86,7 +85,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	}
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
-	if kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
+	if kuberneteshelper.HasFinalizer(cluster, kubermaticv1.NodeDeletionFinalizer) {
 		return nil // an event was already emitted in cleanupNodes
 	}
 
@@ -94,8 +93,8 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned up.
 	// Cleanup for resources inside the cluster namespace is triggered by the namespace getting deleted, so this
 	// must happen (and finish) before the credential secret can ultimately be deleted.
-	cred := apiv1.CredentialsSecretsCleanupFinalizer
-	ns := apiv1.NamespaceCleanupFinalizer
+	cred := kubermaticv1.CredentialsSecretsCleanupFinalizer
+	ns := kubermaticv1.NamespaceCleanupFinalizer
 
 	if !kuberneteshelper.HasFinalizerSuperset(cluster, cred, ns) {
 		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing cluster namespace.", cred, ns)
@@ -119,8 +118,8 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 }
 
 func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer)
-	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterPVCleanupFinalizer)
+	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticv1.InClusterLBCleanupFinalizer)
+	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticv1.InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
@@ -173,5 +172,5 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cleanup of LoadBalancers / PersistentVolumeClaims has been completed.")
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.InClusterLBCleanupFinalizer, kubermaticv1.InClusterPVCleanupFinalizer)
 }

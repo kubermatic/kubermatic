@@ -437,6 +437,11 @@ type ProjectMemberMapper interface {
 	// project bindings for the user and returns the roles.
 	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
 	MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
+
+	// MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
+	// group from UserProjectBinding (if exists).
+	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
+	MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 }
 
 // ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.

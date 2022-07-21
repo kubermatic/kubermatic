@@ -31,7 +31,7 @@ type ResourceQuota struct {
 	SubjectName string `json:"subjectName,omitempty"`
 
 	// quota
-	Quota *ResourceDetails `json:"quota,omitempty"`
+	Quota *Quota `json:"quota,omitempty"`
 
 	// status
 	Status *ResourceQuotaStatus `json:"status,omitempty"`

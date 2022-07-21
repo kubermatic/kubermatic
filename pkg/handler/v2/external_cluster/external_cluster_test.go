@@ -55,7 +55,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 1: cluster is created",
 			Body:                   `{"name":"test","kubeconfig":"YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"}`,
-			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":"Provisioning"}}`,
+			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"isImported":"true","project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":"Provisioning"}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -97,7 +97,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 4: the admin user can create cluster for any project",
 			Body:             `{"name":"test","kubeconfig":"YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"}`,
-			ExpectedResponse: `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":"Provisioning"}}`,
+			ExpectedResponse: `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"isImported":"true","project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":"Provisioning"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -111,7 +111,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 5: create GKE cluster",
 			Body:                   `{"name":"test","spec":{}, "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc","zone":"abc"}}}`,
-			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{"gke":{"name":"gke-cluster","zone":"abc"}},"status":{"state":"Provisioning"}}`,
+			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"isImported":"true","project-id":"my-first-project-ID"},"spec":{},"cloud":{"gke":{"name":"gke-cluster","zone":"abc"}},"status":{"state":"Provisioning"}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -139,7 +139,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 8: create EKS cluster",
 			Body:                   `{"name":"test","spec":{}, "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc", "region":"abc"}}}`,
-			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{"eks":{"name":"eks-cluster","region":"abc"}},"status":{"state":"Provisioning"}}`,
+			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"isImported":"true","project-id":"my-first-project-ID"},"spec":{},"cloud":{"eks":{"name":"eks-cluster","region":"abc"}},"status":{"state":"Provisioning"}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -393,7 +393,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}{
 		{
 			Name:                   "scenario 1: get external cluster",
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"Running"}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -402,7 +402,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster",
-			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"status":{"state":"Running"}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -465,7 +465,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 1: update external cluster",
 			Body:                   `{"name":"test"}`,
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":""}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":""}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -475,7 +475,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin John can update Bob's cluster",
 			Body:             `{"name":"test"}`,
-			ExpectedResponse: `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"status":{"state":""}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{},"status":{"state":""}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -849,6 +849,7 @@ func genExternalCluster(projectName, clusterName string) *kubermaticv1.ExternalC
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName:   clusterName,
 			KubeconfigReference: &providerconfig.GlobalSecretKeySelector{},
+			CloudSpec:           &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }

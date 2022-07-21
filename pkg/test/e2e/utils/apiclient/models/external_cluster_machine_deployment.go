@@ -39,6 +39,9 @@ type ExternalClusterMachineDeployment struct {
 	// cloud
 	Cloud *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
 
+	// phase
+	Phase *ExternalClusterMDPhase `json:"phase,omitempty"`
+
 	// spec
 	Spec *NodeDeploymentSpec `json:"spec,omitempty"`
 
@@ -59,6 +62,10 @@ func (m *ExternalClusterMachineDeployment) Validate(formats strfmt.Registry) err
 	}
 
 	if err := m.validateCloud(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePhase(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -119,6 +126,25 @@ func (m *ExternalClusterMachineDeployment) validateCloud(formats strfmt.Registry
 	return nil
 }
 
+func (m *ExternalClusterMachineDeployment) validatePhase(formats strfmt.Registry) error {
+	if swag.IsZero(m.Phase) { // not required
+		return nil
+	}
+
+	if m.Phase != nil {
+		if err := m.Phase.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("phase")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("phase")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ExternalClusterMachineDeployment) validateSpec(formats strfmt.Registry) error {
 	if swag.IsZero(m.Spec) { // not required
 		return nil
@@ -165,6 +191,10 @@ func (m *ExternalClusterMachineDeployment) ContextValidate(ctx context.Context, 
 		res = append(res, err)
 	}
 
+	if err := m.contextValidatePhase(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSpec(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -187,6 +217,22 @@ func (m *ExternalClusterMachineDeployment) contextValidateCloud(ctx context.Cont
 				return ve.ValidateName("cloud")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterMachineDeployment) contextValidatePhase(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Phase != nil {
+		if err := m.Phase.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("phase")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("phase")
 			}
 			return err
 		}

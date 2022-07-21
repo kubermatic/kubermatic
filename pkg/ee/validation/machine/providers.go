@@ -425,7 +425,6 @@ func getOpenstackResourceRequirements(ctx context.Context,
 		if err != nil {
 			return nil, fmt.Errorf("failed to get the value of openstack \"applicationCredentialSecret\" field, error: %w", err)
 		}
-		return nil, nil
 	}
 	creds.Domain, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, envOSDomain)
 	if err != nil {

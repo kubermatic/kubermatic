@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -29,7 +28,7 @@ import (
 )
 
 func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.EtcdBackupConfigCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
 		return nil
 	}
 
@@ -52,7 +51,7 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Cleanup has been completed.")
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "EtcdBackupConfigCleanup", "Cleanup has been completed, all EtcdBackupConfigs have been deleted.")
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.EtcdBackupConfigCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 }
