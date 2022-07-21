@@ -176,11 +176,6 @@ func TestHandle(t *testing.T) {
 					"/metadata/labels/subject-kind",
 					"project",
 				),
-				jsonpatch.NewOperation(
-					"replace",
-					"/metadata/labels/subject-human-readable-name",
-					"boo",
-				),
 			},
 		},
 		{
