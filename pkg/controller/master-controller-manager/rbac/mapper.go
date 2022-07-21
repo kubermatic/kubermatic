@@ -54,6 +54,13 @@ const (
 	secretV1Kind = "Secret"
 )
 
+var RolePriority = map[string]int{
+	OwnerGroupNamePrefix:          1000,
+	ProjectManagerGroupNamePrefix: 100,
+	EditorGroupNamePrefix:         10,
+	ViewerGroupNamePrefix:         1,
+}
+
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
 //
 // Note:

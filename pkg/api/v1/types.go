@@ -29,6 +29,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -574,9 +575,10 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 				return nil
 			}(),
 		},
-		Email:   internalUser.Spec.Email,
-		Groups:  internalUser.Spec.Groups,
-		IsAdmin: internalUser.Spec.IsAdmin,
+		Email:    internalUser.Spec.Email,
+		Groups:   internalUser.Spec.Groups,
+		IsAdmin:  internalUser.Spec.IsAdmin,
+		Projects: []ProjectGroup{},
 	}
 
 	if !internalUser.Status.LastSeen.IsZero() {
@@ -589,28 +591,23 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 	}
 
 	for _, binding := range userBindings {
-		bindingAlreadyExists := false
-		for _, pg := range apiUser.Projects {
-			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
-				bindingAlreadyExists = true
-				break
-			}
-		}
-		if !bindingAlreadyExists {
-			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
-			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
-		}
+		groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
+		pg := ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix}
+		apiUser.Projects = append(apiUser.Projects, pg)
 	}
 
 	for _, binding := range groupBindings {
-		bindingAlreadyExists := false
-		for _, p := range apiUser.Projects {
-			if p.ID == binding.Spec.ProjectID {
-				bindingAlreadyExists = true
+		overwriteRole := false
+		for _, pg := range apiUser.Projects {
+			if pg.ID == binding.Spec.ProjectID {
+				// Check if role from group binding is more permissive.
+				if rbac.RolePriority[binding.Spec.Role] > rbac.RolePriority[pg.GroupPrefix] {
+					overwriteRole = true
+				}
 				break
 			}
 		}
-		if !bindingAlreadyExists {
+		if overwriteRole {
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{
 				ID:          binding.Spec.ProjectID,
 				GroupPrefix: binding.Spec.Role,
