@@ -17,3 +17,8 @@ spec:
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- if .Variables.addressPoolYaml }}
+---
+{{ .Variables.addressPoolYaml }}
+{{- end }}
