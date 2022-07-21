@@ -29,7 +29,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -559,6 +558,13 @@ type User struct {
 	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 
+var RolePriority = map[string]int{
+	"owners":          1000,
+	"projectmanagers": 100,
+	"editors":         10,
+	"viewers":         1,
+}
+
 func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool,
 	userBindings []*kubermaticv1.UserProjectBinding, groupBindings []*kubermaticv1.GroupProjectBinding,
 ) *User {
@@ -601,7 +607,7 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		for _, pg := range apiUser.Projects {
 			if pg.ID == binding.Spec.ProjectID {
 				// Check if role from group binding is more permissive.
-				if rbac.RolePriority[binding.Spec.Role] > rbac.RolePriority[pg.GroupPrefix] {
+				if RolePriority[binding.Spec.Role] > RolePriority[pg.GroupPrefix] {
 					overwriteRole = true
 				}
 				break
