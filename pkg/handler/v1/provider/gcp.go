@@ -20,13 +20,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -285,6 +288,19 @@ func GCPNetworkEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
+
+				if credentials.Network != "" {
+					networkParts := strings.Split(credentials.Network, "/")
+					if len(networkParts) != 3 {
+						return nil, utilerrors.New(http.StatusBadRequest, "invalid GCP network path for preset in credential header")
+					}
+					networkName := networkParts[2]
+					presetNetwork, err := gcp.GetGCPNetwork(ctx, sa, networkName)
+					if err != nil {
+						return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot get network %s", credentials.Network))
+					}
+					return apiv1.GCPNetworkList{presetNetwork}, nil
+				}
 			}
 		}
 
@@ -315,6 +331,20 @@ func GCPSubnetworkEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
+
+				if credentials.Subnetwork != "" {
+					subnetworkParts := strings.Split(credentials.Subnetwork, "/")
+					if len(subnetworkParts) != 6 {
+						return nil, utilerrors.New(http.StatusBadRequest, "invalid GCP subnetwork path for preset in credential header")
+					}
+					subnetworkRegion := subnetworkParts[3]
+					subnetworkName := subnetworkParts[5]
+					presetSubnetwork, err := gcp.GetGCPSubnetwork(ctx, sa, subnetworkRegion, subnetworkName)
+					if err != nil {
+						return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot get subnetwork %s", credentials.Subnetwork))
+					}
+					return apiv1.GCPSubnetworkList{presetSubnetwork}, nil
+				}
 			}
 		}
 

@@ -224,6 +224,35 @@ func isHTTPError(err error, status int) bool {
 	return errors.As(err, &gerr) && gerr.Code == status
 }
 
+func GetGCPNetwork(ctx context.Context, sa, networkName string) (apiv1.GCPNetwork, error) {
+	computeService, project, err := ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return apiv1.GCPNetwork{}, err
+	}
+
+	req := computeService.Networks.Get(project, networkName)
+	network, err := req.Do()
+	if err != nil {
+		return apiv1.GCPNetwork{}, err
+	}
+
+	return ToGCPNetworkAPIModel(network), nil
+}
+
+var networkRegex = regexp.MustCompile(`(global\/.+)$`)
+
+func ToGCPNetworkAPIModel(network *compute.Network) apiv1.GCPNetwork {
+	networkPath := networkRegex.FindString(network.SelfLink)
+	return apiv1.GCPNetwork{
+		ID:                    network.Id,
+		Name:                  network.Name,
+		AutoCreateSubnetworks: network.AutoCreateSubnetworks,
+		Subnetworks:           network.Subnetworks,
+		Kind:                  network.Kind,
+		Path:                  networkPath,
+	}
+}
+
 // GCPSubnetworkGetter is a function to retrieve a single subnetwork.
 type GCPSubnetworkGetter = func(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error)
 

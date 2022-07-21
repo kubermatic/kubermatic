@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"google.golang.org/api/compute/v1"
@@ -239,20 +238,8 @@ func ListGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 
 	req := computeService.Networks.List(project)
 	err = req.Pages(ctx, func(page *compute.NetworkList) error {
-		networkRegex := regexp.MustCompile(`(global\/.+)$`)
 		for _, network := range page.Items {
-			networkPath := networkRegex.FindString(network.SelfLink)
-
-			net := apiv1.GCPNetwork{
-				ID:                    network.Id,
-				Name:                  network.Name,
-				AutoCreateSubnetworks: network.AutoCreateSubnetworks,
-				Subnetworks:           network.Subnetworks,
-				Kind:                  network.Kind,
-				Path:                  networkPath,
-			}
-
-			networks = append(networks, net)
+			networks = append(networks, gcp.ToGCPNetworkAPIModel(network))
 		}
 		return nil
 	})
