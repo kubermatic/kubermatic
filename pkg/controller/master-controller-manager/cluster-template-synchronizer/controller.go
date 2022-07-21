@@ -50,7 +50,7 @@ const (
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 	recorder     record.EventRecorder
 }
 
@@ -63,7 +63,7 @@ func Add(
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
@@ -87,23 +87,24 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("resource", request.Name)
+	log := r.log.With("template", request.Name)
 	log.Debug("Processing")
 
-	err := r.reconcile(ctx, log, request)
+	clusterTemplate := &kubermaticv1.ClusterTemplate{}
+	if err := r.masterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: request.Name}, clusterTemplate); err != nil {
+		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	err := r.reconcile(ctx, log, clusterTemplate)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
+		r.recorder.Event(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-	clusterTemplate := &kubermaticv1.ClusterTemplate{}
-	if err := r.masterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: request.Name}, clusterTemplate); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterTemplate *kubermaticv1.ClusterTemplate) error {
 	// handling deletion
 	if !clusterTemplate.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, clusterTemplate); err != nil {
@@ -120,21 +121,20 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		clusterTemplateCreatorGetter(clusterTemplate),
 	}
 
-	err := r.syncAllSeeds(log, clusterTemplate, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedTpl := &kubermaticv1.ClusterTemplate{}
-		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(template), seedTpl); err != nil && !apierrors.IsNotFound(err) {
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(clusterTemplate), seedTpl); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch ClusterTemplate on seed cluster: %w", err)
 		}
 
 		// see project-synchronizer's syncAllSeeds comment
-		if seedTpl.UID != "" && seedTpl.UID == template.UID {
+		if seedTpl.UID != "" && seedTpl.UID == clusterTemplate.UID {
 			return nil
 		}
 
 		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Event(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
 	}
 	return nil
@@ -142,7 +142,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
 	if kuberneteshelper.HasFinalizer(template, cleanupFinalizer) {
-		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, _ *zap.SugaredLogger) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: template.Name,
@@ -159,8 +159,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(template, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
-		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+	if kuberneteshelper.HasFinalizer(template, cleanupFinalizer) {
+		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, _ *zap.SugaredLogger) error {
 			err := seedClient.Delete(ctx, &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      template.Credential,
@@ -177,21 +177,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 
-	return nil
-}
-
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate, action func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error) error {
-	for seedName, seedClient := range r.seedClients {
-		log := log.With("seed", seedName)
-
-		log.Debug("Reconciling cluster template with seed")
-
-		err := action(seedClient, template)
-		if err != nil {
-			return fmt.Errorf("failed syncing cluster template %s for seed %s: %w", template.Name, seedName, err)
-		}
-		log.Debug("Reconciled cluster template with seed")
-	}
 	return nil
 }
 
