@@ -31,21 +31,23 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
+
 // ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine CRD.
 func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return resources.MachineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+		return machineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			// TODO - change to Fail when the resource quotas are fully implemented and tested
 			failurePolicy := admissionregistrationv1.Ignore
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
 
-			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1-machine", resources.UserClusterWebhookServiceName, namespace)
+			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1alpha1-machine", resources.UserClusterWebhookServiceName, namespace)
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
-					Name:                    resources.MachineValidatingWebhookConfigurationName, // this should be a FQDN
+					Name:                    "machines.cluster.k8c.io", // this should be a FQDN
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
