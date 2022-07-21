@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.11.6 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
+#   helm template cilium cilium/cilium --version 1.12.0 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
 #     --set hubble.tls.auto.method=cronJob --set hubble.relay.enabled=true --set hubble.ui.enabled=true \
 #     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 #

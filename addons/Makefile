@@ -19,13 +19,13 @@ docker:
 	docker build -t $(DOCKER_REPO)/addons:$(TAG) .
 
 .PHONY: hubble
-hubble: OUTPUT_FILE=hubble/hubble.yaml
+hubble: OUTPUT_FILE=hubble/hubble_v1.12.yaml
 hubble:
 	helm repo add cilium https://helm.cilium.io/ || true
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.11.6 \
+	  --version 1.12.0 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
