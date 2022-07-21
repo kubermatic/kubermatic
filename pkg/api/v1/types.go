@@ -604,8 +604,10 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 
 	for _, binding := range groupBindings {
 		overwriteRole := false
+		bindingAlreadyExists := false
 		for _, pg := range apiUser.Projects {
 			if pg.ID == binding.Spec.ProjectID {
+				bindingAlreadyExists = true
 				// Check if role from group binding is more permissive.
 				if RolePriority[binding.Spec.Role] > RolePriority[pg.GroupPrefix] {
 					overwriteRole = true
@@ -613,7 +615,7 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 				break
 			}
 		}
-		if overwriteRole {
+		if overwriteRole || !bindingAlreadyExists {
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{
 				ID:          binding.Spec.ProjectID,
 				GroupPrefix: binding.Spec.Role,
