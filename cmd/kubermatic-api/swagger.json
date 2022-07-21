@@ -30811,7 +30811,7 @@
           "type": "string",
           "x-go-name": "Domain"
         },
-        "floatingIpPool": {
+        "floatingIPPool": {
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
