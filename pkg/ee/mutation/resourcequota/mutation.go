@@ -62,7 +62,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 		})
 
 		if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
-			err := ensureProjectOwnershipRefAndLabel(ctx, client, resourceQuota)
+			err := ensureProjectOwnershipRef(ctx, client, resourceQuota)
 			if err != nil {
 				logger.Info("ResourceQuota mutation failed", "error", err)
 				return admission.Errored(http.StatusBadRequest, err)
@@ -99,7 +99,7 @@ func Handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admissio
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedResourceQuota)
 }
 
-func ensureProjectOwnershipRefAndLabel(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
 	subjectName := resourceQuota.Spec.Subject.Name
 	ownRefs := resourceQuota.OwnerReferences
 
@@ -120,8 +120,6 @@ func ensureProjectOwnershipRefAndLabel(ctx context.Context, client ctrlruntimecl
 	projectRef := resources.GetProjectRef(project)
 	ownRefs = append(ownRefs, projectRef)
 	resourceQuota.SetOwnerReferences(ownRefs)
-
-	kubernetes.EnsureLabels(resourceQuota, map[string]string{kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: project.Spec.Name})
 
 	return nil
 }

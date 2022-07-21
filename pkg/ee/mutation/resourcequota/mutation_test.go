@@ -112,9 +112,8 @@ func TestHandle(t *testing.T) {
 					"add",
 					"/metadata/labels",
 					map[string]interface{}{
-						kubermaticv1.ResourceQuotaSubjectKindLabelKey:              kubermaticv1.ProjectSubjectKind,
-						kubermaticv1.ResourceQuotaSubjectNameLabelKey:              "xxtestxx",
-						kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "boo",
+						kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+						kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
 					},
 				),
 			},
@@ -135,9 +134,8 @@ func TestHandle(t *testing.T) {
 							Name:        "project-xxtestxx",
 							ProjectName: "xxtestxx",
 							Labels: map[string]string{
-								kubermaticv1.ResourceQuotaSubjectKindLabelKey:              "NOT-project",
-								kubermaticv1.ResourceQuotaSubjectNameLabelKey:              "WRONG-name",
-								kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "ROBOT-name",
+								kubermaticv1.ResourceQuotaSubjectKindLabelKey: "NOT-project",
+								kubermaticv1.ResourceQuotaSubjectNameLabelKey: "WRONG-name",
 							},
 						}.Do(),
 					},

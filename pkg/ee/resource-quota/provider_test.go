@@ -43,7 +43,8 @@ import (
 )
 
 const (
-	projectName = "my-first-project-ID"
+	projectName        = "my-first-project-ID"
+	anotherProjectName = "my-second-project-ID"
 )
 
 func createResourceProviderHelper(existingObjects []ctrlruntimeclient.Object) *resourcequotas.ResourceQuotaProvider {
