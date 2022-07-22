@@ -62,7 +62,7 @@ func NewCreateApplicationInstallationParamsWithHTTPClient(client *http.Client) *
 type CreateApplicationInstallationParams struct {
 
 	// Body.
-	Body *models.ApplicationInstallation
+	Body *models.ApplicationInstallationStatus
 
 	// ClusterID.
 	ClusterID string
@@ -124,13 +124,13 @@ func (o *CreateApplicationInstallationParams) SetHTTPClient(client *http.Client)
 }
 
 // WithBody adds the body to the create application installation params
-func (o *CreateApplicationInstallationParams) WithBody(body *models.ApplicationInstallation) *CreateApplicationInstallationParams {
+func (o *CreateApplicationInstallationParams) WithBody(body *models.ApplicationInstallationStatus) *CreateApplicationInstallationParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the create application installation params
-func (o *CreateApplicationInstallationParams) SetBody(body *models.ApplicationInstallation) {
+func (o *CreateApplicationInstallationParams) SetBody(body *models.ApplicationInstallationStatus) {
 	o.Body = body
 }
 

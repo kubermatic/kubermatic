@@ -1495,7 +1495,20 @@ type ApplicationInstallation struct {
 
 	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
 
-	Status *appskubermaticv1.ApplicationInstallationStatus `json:"status"`
+	Status *ApplicationInstallationStatus `json:"status"`
+}
+
+// ApplicationInstallationStatus is the object representing the status of an Application.
+// swagger:model ApplicationInstallation
+// it is needed because metav1.Time used by appsv1 confuses swaggers with apiv1.Time.
+type ApplicationInstallationStatus struct {
+	LastUpdated apiv1.Time `json:"lastUpdated,omitempty"`
+
+	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
+	Conditions []appskubermaticv1.ApplicationInstallationCondition `json:"conditions,omitempty"`
+
+	// ApplicationVersion contains information installing / removing application
+	ApplicationVersion *appskubermaticv1.ApplicationVersion `json:"applicationVersion,omitempty"`
 }
 
 // swagger:model IPAMPool
