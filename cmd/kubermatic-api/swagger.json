@@ -26438,6 +26438,9 @@
           "type": "string",
           "x-go-name": "IPCidrRange"
         },
+        "ipFamily": {
+          "$ref": "#/definitions/IPFamily"
+        },
         "kind": {
           "type": "string",
           "x-go-name": "Kind"

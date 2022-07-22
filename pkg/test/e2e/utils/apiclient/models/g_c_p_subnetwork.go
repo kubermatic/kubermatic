@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -46,15 +47,67 @@ type GCPSubnetwork struct {
 
 	// self link
 	SelfLink string `json:"selfLink,omitempty"`
+
+	// ip family
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
 }
 
 // Validate validates this g c p subnetwork
 func (m *GCPSubnetwork) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateIPFamily(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this g c p subnetwork based on context it is used
+func (m *GCPSubnetwork) validateIPFamily(formats strfmt.Registry) error {
+	if swag.IsZero(m.IPFamily) { // not required
+		return nil
+	}
+
+	if err := m.IPFamily.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this g c p subnetwork based on the context it is used
 func (m *GCPSubnetwork) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIPFamily(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *GCPSubnetwork) contextValidateIPFamily(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.IPFamily.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
 	return nil
 }
 
