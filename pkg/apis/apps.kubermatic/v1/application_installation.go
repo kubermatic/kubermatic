@@ -18,6 +18,7 @@ package v1
 
 import (
 	semverlib "github.com/Masterminds/semver/v3"
+	"helm.sh/helm/v3/pkg/release"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,6 +130,42 @@ type ApplicationInstallationStatus struct {
 
 	// ApplicationVersion contains information installing / removing application
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
+
+	// HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
+	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
+}
+
+type HelmRelease struct {
+	// Name is the name of the release.
+	Name string `json:"name,omitempty"`
+
+	// Version is an int which represents the revision of the release.
+	Version int `json:"version,omitempty"`
+
+	// Info provides information about a release.
+	Info *HelmReleaseInfo `json:"info,omitempty"`
+}
+
+// HelmReleaseInfo describes release information.
+// tech note: we can not use release.Info from Helm because the underlying type used for time has no json tag.
+type HelmReleaseInfo struct {
+	// FirstDeployed is when the release was first deployed.
+	FirstDeployed metav1.Time `json:"firstDeployed,omitempty"`
+
+	// LastDeployed is when the release was last deployed.
+	LastDeployed metav1.Time `json:"lastDeployed,omitempty"`
+
+	// Deleted tracks when this object was deleted.
+	Deleted metav1.Time `json:"deleted"`
+
+	// Description is human-friendly "log entry" about this release.
+	Description string `json:"description,omitempty"`
+
+	// Status is the current state of the release.
+	Status release.Status `json:"status,omitempty"`
+
+	// Notes is  the rendered templates/NOTES.txt if available.
+	Notes string `json:"notes,omitempty"`
 }
 
 type ApplicationInstallationCondition struct {
