@@ -45,7 +45,7 @@ for file in */*.yaml; do
   echo "$file => $newfile"
 
   echo -e "# This file has been generated, DO NOT EDIT.\n" > "../$newfile"
-  yq d "$file" 'groups.*.rules.*.runbook' >> "../$newfile"
+  yq4 'del(.groups.[].rules.[].runbook)' "$file" >> "../$newfile"
 done
 
 cd ..

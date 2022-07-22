@@ -119,7 +119,7 @@ logging)
 
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
-    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $IMAGE_PULL_SECRET)"
+    yq4 --inplace ".kubermaticOperator.imagePullSecret = \"$(cat $IMAGE_PULL_SECRET)\"" charts/kubermatic-operator/values.yaml
   fi
 
   # Kubermatic
@@ -138,7 +138,7 @@ kubermatic)
   if [[ "$clusterType" = "master" ]]; then
     # We might have not configured IAP, which results in nothing being deployed. This triggers
     # https://github.com/helm/helm/issues/4295 and marks this as failed.
-    if [ $(yq read "$VALUES_FILE" --length 'iap.deployments') -gt 0 ]; then
+    if [ $(yq4 '.iap.deployments | length' "$VALUES_FILE") -gt 0 ]; then
       deploy "iap" "iap" charts/iap/
     else
       echodate "Skipping IAP chart because no deployments are defined in Helm values file."
