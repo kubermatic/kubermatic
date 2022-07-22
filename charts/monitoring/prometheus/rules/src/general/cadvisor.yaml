@@ -41,18 +41,3 @@ groups:
       sum by (namespace, pod, container) (
         rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])
       )
-
-  # triggered by kernel bug, see issue kubermatic#2367
-
-  # - alert: CPUThrottlingHigh
-  #   annotations:
-  #     message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace }} for {{ $labels.container }}.'
-  #     runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cputhrottlinghigh
-  #   expr: |
-  #     100 * sum(increase(container_cpu_cfs_throttled_periods_total[5m])) by (container, pod, namespace)
-  #       /
-  #     sum(increase(container_cpu_cfs_periods_total[5m])) by (container, pod, namespace)
-  #       > 25
-  #   for: 15m
-  #   labels:
-  #     severity: warning

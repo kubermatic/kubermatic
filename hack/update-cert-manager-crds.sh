@@ -23,7 +23,7 @@ containerize ./hack/update-cert-manager-crds.sh
 
 cd charts/cert-manager/
 
-version=$(yq r Chart.yaml appVersion)
+version=$(yq4 '.appVersion' Chart.yaml)
 source=https://github.com/cert-manager/cert-manager/releases/download/$version/cert-manager.crds.yaml
 # do not use "crds/" or else Helm will try to install the
 # CRDs and then never ever touch them again
@@ -34,7 +34,3 @@ echo "" >> $file
 
 set -x
 curl -sLo - $source >> $file
-
-# remove misleading labels
-yq delete -i -d'*' $file 'metadata.labels."helm.sh/chart"'
-yq delete -i -d'*' $file 'metadata.labels."app.kubernetes.io/managed-by"'
