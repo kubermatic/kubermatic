@@ -119,7 +119,8 @@ logging)
 
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
-    yq4 --inplace ".kubermaticOperator.imagePullSecret = \"$(cat $IMAGE_PULL_SECRET)\"" charts/kubermatic-operator/values.yaml
+    export IMAGE_PULL_SECRET_CONTENT="$(cat $IMAGE_PULL_SECRET)"
+    yq4 --inplace ".kubermaticOperator.imagePullSecret = env(IMAGE_PULL_SECRET_CONTENT)" charts/kubermatic-operator/values.yaml
   fi
 
   # Kubermatic
