@@ -32,31 +32,32 @@ import (
 type HelmSource struct {
 	Ctx context.Context
 	// Kubeconfig of the user-cluster.
-	Kubeconfig              string
-	CacheDir                string
-	Log                     *zap.SugaredLogger
-	ApplicationInstallation *appskubermaticv1.ApplicationInstallation
-	Source                  *appskubermaticv1.HelmSource
+	Kubeconfig string
+	CacheDir   string
+	Log        *zap.SugaredLogger
+	Source     *appskubermaticv1.HelmSource
 }
 
 // DownloadSource downloads the chart into destination folder and return the full path to the chart.
 // The destination folder must exist.
 func (h HelmSource) DownloadSource(destination string) (string, error) {
-	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir, h.ApplicationInstallation)
+	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
 		return "", err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
+	// Namespace does not matter to downloading chart.
+	ns := "default"
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
-		Namespace:  &h.ApplicationInstallation.Spec.Namespace.Name,
+		Namespace:  &ns,
 	}
 
 	helmClient, err := helmclient.NewClient(h.Ctx,
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
-		h.ApplicationInstallation.Spec.Namespace.Name,
+		ns,
 		h.Log)
 
 	if err != nil {

@@ -26,8 +26,9 @@ import (
 )
 
 // CreateHelmTempDir creates a temporary directory inside cacheDir where helm caches will be download.
-func CreateHelmTempDir(cacheDir string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (string, error) {
-	downloadDest, err := os.MkdirTemp(cacheDir, "helm-"+applicationInstallation.Namespace+"-"+applicationInstallation.Name+"-")
+func CreateHelmTempDir(cacheDir string) (string, error) {
+	// This will generate a directory like cacheDir-helm-<rand_number> (e.g. /cache/helm-/3012513704)
+	downloadDest, err := os.MkdirTemp(cacheDir, "helm-")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory where helm caches will be downloaded: %w", err)
 	}
