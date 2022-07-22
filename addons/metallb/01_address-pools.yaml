@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
----
 {{- range $ipamPool, $allocation := .Cluster.Network.IPAMAllocations }}
 ---
 apiVersion: metallb.io/v1beta1
@@ -37,3 +36,9 @@ spec:
 ---
 {{ .Variables.addressPoolYaml }}
 {{- end }}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: advertise-all
+  namespace: metallb-system
