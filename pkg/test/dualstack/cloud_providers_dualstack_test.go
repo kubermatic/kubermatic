@@ -89,12 +89,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	apicli := utils.NewTestClient(token, t)
 
 	type testCase struct {
-		cloudName           string
-		osNames             []string
-		cni                 string
-		ipFamily            util.IPFamily
-		skipNodes           bool
-		skipHostNetworkPods bool
+		cloudName              string
+		osNames                []string
+		cni                    string
+		ipFamily               util.IPFamily
+		skipNodes              bool
+		skipHostNetworkPods    bool
+		skipEgressConnectivity bool
 	}
 
 	tests := []testCase{
@@ -227,16 +228,18 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			cni:                    "canal",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
 			cloudName: "vsphere",
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			cni:                    "cilium",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 	}
 
@@ -362,7 +365,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				t.Fatalf("pods never became ready: %v", err)
 			}
 
-			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
+			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods, test.skipEgressConnectivity)
 		})
 	}
 }
