@@ -6896,7 +6896,7 @@ func (r Routing) getResourceQuota() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(resourcequota.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		)(resourcequota.GetResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider, r.privilegedProjectProvider)),
 		resourcequota.DecodeResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6920,7 +6920,7 @@ func (r Routing) listResourceQuotas() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(resourcequota.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		)(resourcequota.ListResourceQuotasEndpoint(r.userInfoGetter, r.resourceQuotaProvider, r.projectProvider)),
 		resourcequota.DecodeListResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
