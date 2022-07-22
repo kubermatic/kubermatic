@@ -104,6 +104,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			Name: name,
 		},
 		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "1.0.0",
@@ -120,7 +121,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 								Credentials:  nil,
 							},
 						},
-						Method:   "helm",
 						FormSpec: nil,
 					},
 				},
@@ -139,7 +139,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 								Credentials: nil,
 							},
 						},
-						Method:   "helm",
 						FormSpec: nil,
 					},
 				},

@@ -172,9 +172,6 @@ type ApplicationTemplate struct {
 	// Defined how the source of the application (e.g Helm chart) is retrieved
 	Source ApplicationSource `json:"source"`
 
-	// Method used to install the application
-	Method TemplateMethod `json:"method"`
-
 	// Define the valued that can be override for the installation
 	FormSpec []FormField `json:"formSpec,omitempty"`
 }
@@ -212,6 +209,9 @@ type ApplicationVersion struct {
 type ApplicationDefinitionSpec struct {
 	// Description of the application. what is its purpose
 	Description string `json:"description"`
+
+	// Method used to install the application
+	Method TemplateMethod `json:"method"`
 
 	// available version for this application
 	Versions []ApplicationVersion `json:"versions"`

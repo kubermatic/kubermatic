@@ -22810,6 +22810,9 @@
           "type": "string",
           "x-go-name": "Description"
         },
+        "method": {
+          "$ref": "#/definitions/TemplateMethod"
+        },
         "versions": {
           "description": "available version for this application",
           "type": "array",
@@ -22936,9 +22939,6 @@
             "$ref": "#/definitions/FormField"
           },
           "x-go-name": "FormSpec"
-        },
-        "method": {
-          "$ref": "#/definitions/TemplateMethod"
         },
         "source": {
           "$ref": "#/definitions/ApplicationSource"

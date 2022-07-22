@@ -154,11 +154,6 @@ spec:
                           - type
                           type: object
                         type: array
-                      method:
-                        description: Method used to install the application
-                        enum:
-                        - helm
-                        type: string
                       source:
                         description: Defined how the source of the application (e.g
                           Helm chart) is retrieved
@@ -384,7 +379,6 @@ spec:
                             type: object
                         type: object
                     required:
-                    - method
                     - source
                     type: object
                   version:
@@ -467,6 +461,13 @@ spec:
               lastUpdated:
                 format: date-time
                 type: string
+              method:
+                description: Method used to install the application
+                enum:
+                - helm
+                type: string
+            required:
+            - method
             type: object
         type: object
     served: true

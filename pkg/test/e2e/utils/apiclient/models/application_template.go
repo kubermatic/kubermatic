@@ -22,9 +22,6 @@ type ApplicationTemplate struct {
 	// Define the valued that can be override for the installation
 	FormSpec []*FormField `json:"formSpec"`
 
-	// method
-	Method TemplateMethod `json:"method,omitempty"`
-
 	// source
 	Source *ApplicationSource `json:"source,omitempty"`
 }
@@ -34,10 +31,6 @@ func (m *ApplicationTemplate) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFormSpec(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateMethod(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -77,23 +70,6 @@ func (m *ApplicationTemplate) validateFormSpec(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ApplicationTemplate) validateMethod(formats strfmt.Registry) error {
-	if swag.IsZero(m.Method) { // not required
-		return nil
-	}
-
-	if err := m.Method.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("method")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("method")
-		}
-		return err
-	}
-
-	return nil
-}
-
 func (m *ApplicationTemplate) validateSource(formats strfmt.Registry) error {
 	if swag.IsZero(m.Source) { // not required
 		return nil
@@ -118,10 +94,6 @@ func (m *ApplicationTemplate) ContextValidate(ctx context.Context, formats strfm
 	var res []error
 
 	if err := m.contextValidateFormSpec(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateMethod(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -150,20 +122,6 @@ func (m *ApplicationTemplate) contextValidateFormSpec(ctx context.Context, forma
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *ApplicationTemplate) contextValidateMethod(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.Method.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("method")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("method")
-		}
-		return err
 	}
 
 	return nil

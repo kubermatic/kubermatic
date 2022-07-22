@@ -186,9 +186,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		}
 	}
 
-	if !equality.Semantic.DeepEqual(appVersion, appInstallation.Status.ApplicationVersion) {
+	if !equality.Semantic.DeepEqual(appVersion, appInstallation.Status.ApplicationVersion) || appInstallation.Status.Method != applicationDef.Spec.Method {
 		oldAppInstallation := appInstallation.DeepCopy()
 		appInstallation.Status.ApplicationVersion = appVersion
+		appInstallation.Status.Method = applicationDef.Spec.Method
 
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status with applicationVersion: %w", err)
