@@ -27,12 +27,12 @@ import (
 	"sync"
 	"testing"
 	"time"
-
+	
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-
+	
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -62,6 +62,7 @@ var cloudProviders = map[string]clusterSpec{
 	"hetzner":   hetzner{},
 	"do":        do{},
 	"equinix":   equinix{},
+	"alibaba":   alibaba{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -74,7 +75,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
 	// export KKP_API_TOKEN=<steal token>
 	token := os.Getenv("KKP_API_TOKEN")
-
+	
 	if token == "" {
 		var err error
 		token, err = utils.RetrieveMasterToken(context.Background())
@@ -84,9 +85,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	} else {
 		t.Logf("token found in env")
 	}
-
+	
 	apicli := utils.NewTestClient(token, t)
-
+	
 	type testCase struct {
 		cloudName           string
 		osNames             []string
@@ -95,7 +96,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		skipNodes           bool
 		skipHostNetworkPods bool
 	}
-
+	
 	tests := []testCase{
 		{
 			cloudName: "azure",
@@ -189,7 +190,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
-		}, {
+		},
+		{
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
@@ -215,6 +217,22 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "cilium",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "alibaba",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "canal",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "alibaba",
 			osNames: []string{
 				"ubuntu",
 			},
@@ -222,7 +240,27 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily: util.DualStack,
 		},
 	}
-
+	
+	cni = "canal"
+	tests = []testCase{
+		{
+			cloudName: "alibaba",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "canal",
+			ipFamily: util.DualStack,
+		},
+		//{
+		//	cloudName: "alibaba",
+		//	osNames: []string{
+		//		"ubuntu",
+		//	},
+		//	cni:      "cilium",
+		//	ipFamily: util.DualStack,
+		//},
+	}
+	
 	retestBudget := 2
 	ch := make(chan int, retestBudget)
 	for i := 0; i < retestBudget; i++ {
@@ -231,16 +269,16 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	close(ch)
 	var retested sync.Map
 	var mu sync.Mutex
-
+	
 	for _, test := range tests {
 		test := test
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
-
+		
 		if cni != test.cni {
 			t.Logf("skipping %s due to different cni setting (%s != %s)...", name, test.cni, cni)
 			continue
 		}
-
+		
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		cniSpec := cnis[test.cni]
@@ -251,17 +289,17 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		case "cilium":
 			netConfig = netConfig.WithProxyMode("ebpf")
 		}
-
+		
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-
+		
 		retest:
 			clusterSpec := defaultClusterRequest().WithName(name).
 				WithCloud(cloudSpec).
 				WithCNI(cniSpec).
 				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
 			spec := models.CreateClusterSpec(clusterSpec)
-
+			
 			mu.Lock()
 			name := fmt.Sprintf("%s-%s", name, rand.String(4))
 			config, projectID, clusterID, cleanup, err := createUsercluster(t, apicli, name, spec)
@@ -282,16 +320,16 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				cleanup()
 				mu.Unlock()
 			}()
-
+			
 			nodeSpec := cloud.NodeSpec()
-
+			
 			for _, osName := range test.osNames {
 				// TODO: why don't we need to do this for other clouds?
 				if test.cloudName == "openstack" {
 					img := openstack{}.getImage(osName)
 					nodeSpec.Openstack.Image = &img
 				}
-
+				
 				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
@@ -303,12 +341,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 					t.Fatalf("failed to create machine deployment: %v", err)
 				}
 			}
-
+			
 			userclusterClient, err := kubernetes.NewForConfig(config)
 			if err != nil {
 				t.Fatalf("failed to create usercluster client: %s", err)
 			}
-
+			
 			t.Logf("waiting for nodes to come up")
 			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
 			if err != nil {
@@ -317,7 +355,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 					cleanup()
 					mu.Unlock()
 				}()
-
+				
 				_, ok := retested.Load(name)
 				if !ok {
 					retested.Store(name, true)
@@ -331,20 +369,20 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				}
 				t.Fatalf("nodes never became ready: %v", err)
 			}
-
+			
 			t.Logf("nodes ready")
 			t.Logf("sleeping for 4m...")
 			time.Sleep(time.Minute * 4)
-
+			
 			err = waitForPods(t, userclusterClient, kubeSystem, "app", []string{
 				"coredns", "konnectivity-agent", "kube-proxy", "metrics-server",
 				"node-local-dns", "user-ssh-keys-agent",
 			})
-
+			
 			if err != nil {
 				t.Fatalf("pods never became ready: %v", err)
 			}
-
+			
 			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
 		})
 	}
@@ -352,7 +390,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 func waitForPods(t *testing.T, client *kubernetes.Clientset, namespace string, key string, names []string) error {
 	t.Log("checking pod readiness...", namespace, key, names)
-
+	
 	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
 		r, err := labels.NewRequirement(key, selection.In, names)
 		if err != nil {
@@ -367,19 +405,19 @@ func waitForPods(t *testing.T, client *kubernetes.Clientset, namespace string, k
 			t.Logf("failed to get pod list: %s", err)
 			return false, nil
 		}
-
+		
 		if len(pods.Items) == 0 {
 			t.Logf("no pods found")
 			return false, nil
 		}
-
+		
 		if !allPodsHealthy(t, pods) {
 			t.Logf("not all pods healthy yet...")
 			return false, nil
 		}
-
+		
 		t.Logf("all pods healthy")
-
+		
 		return true, nil
 	})
 }
@@ -405,14 +443,14 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 				}
 			}
 		}
-
+		
 		if !podHealthy {
 			t.Logf("%q not healthy", pod.Name)
 		}
-
+		
 		allHealthy = allHealthy && podHealthy
 	}
-
+	
 	return allHealthy
 }
 
@@ -427,9 +465,9 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expected
 			t.Logf("node count: %d, expected: %d", len(nodes.Items), expectedNodes)
 			return false, nil
 		}
-
+		
 		readyNodeCount := 0
-
+		
 		for _, node := range nodes.Items {
 			for _, c := range node.Status.Conditions {
 				if c.Type == corev1.NodeReady {
@@ -437,12 +475,12 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expected
 				}
 			}
 		}
-
+		
 		if readyNodeCount != expectedNodes {
 			t.Logf("%d out of %d nodes are ready", readyNodeCount, expectedNodes)
 			return false, nil
 		}
-
+		
 		return true, nil
 	})
 }
@@ -455,7 +493,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			teardowns[n-1-i]()
 		}
 	}
-
+	
 	// create a project
 	proj, err := apicli.CreateProject(projectName)
 	if err != nil {
@@ -467,7 +505,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			t.Errorf("failed to delete project %s: %s", proj.ID, err)
 		}
 	})
-
+	
 	// create a usercluster on aws
 	resp, err := apicli.GetKKPAPIClient().Project.CreateClusterV2(&project.CreateClusterV2Params{
 		Body:       &clusterSpec,
@@ -478,7 +516,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	if err != nil {
 		return nil, "", "", nil, err
 	}
-
+	
 	cluster := resp.Payload
 	teardowns = append(teardowns, func() {
 		_, err := apicli.GetKKPAPIClient().Project.DeleteClusterV2(&project.DeleteClusterV2Params{
@@ -493,7 +531,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			t.Errorf("failed to delete cluster %s/%s: %s", proj.ID, cluster.ID, err)
 		}
 	})
-
+	
 	// try to get kubeconfig
 	var userconfig string
 	err = wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
@@ -509,20 +547,20 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			t.Logf("error trying to get kubeconfig: %s", err)
 			return false, nil
 		}
-
+		
 		userconfig = string(resp.Payload)
-
+		
 		return true, nil
 	})
 	if err != nil {
 		return nil, "", "", nil, err
 	}
-
+	
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userconfig))
 	if err != nil {
 		t.Fatalf("failed to build config: %s", err)
 	}
-
+	
 	return config, proj.ID, cluster.ID, cleanup, nil
 }
 

@@ -396,6 +396,33 @@ func (a equinix) CloudSpec() models.CloudSpec {
 	}
 }
 
+type alibaba struct{}
+
+var _ clusterSpec = alibaba{}
+
+func (a alibaba) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Alibaba: &models.AlibabaNodeSpec{
+			DiskSize:                "40",
+			DiskType:                "cloud",
+			InstanceType:            "ecs.ic5.large",
+			InternetMaxBandwidthOut: "10",
+			VSwitchID:               "vsw-gw876svgsv52bk0c95krn",
+			ZoneID:                  "eu-central-1a",
+		},
+	}
+}
+
+func (a alibaba) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "alibaba-eu-central-1a",
+		Alibaba: &models.AlibabaCloudSpec{
+			AccessKeyID:          os.Getenv("ALIBABA_ACCESS_KEY_ID"),
+			AccessKeySecret:      os.Getenv("ALIBABA_ACCESS_KEY_SECRET"),
+		},
+	}
+}
+
 // operating systems
 
 func ubuntu() models.OperatingSystemSpec {

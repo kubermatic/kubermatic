@@ -48,6 +48,9 @@ retry 5 vault_ci_login
 export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
 export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
 
+export ALIBABA_ACCESS_KEY_ID=$(vault kv get -field=AccessKeyId dev/e2e-alibaba)
+export ALIBABA_ACCESS_KEY_SECRET=$(vault kv get -field=AccessKeySecret dev/e2e-alibaba)
+
 export AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
 export AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
 export AZURE_CLIENT_ID="${AZURE_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
