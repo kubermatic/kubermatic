@@ -416,11 +416,11 @@ func (a vsphere) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
 		DatacenterName: "vsphere-ger",
 		Vsphere: &models.VSphereCloudSpec{
-			Username: "VSPHERE_USERNAME",
-			Password: "VSPHERE_PASSWORD",
+			Username: os.Getenv("VSPHERE_USERNAME"),
+			Password: os.Getenv("VSPHERE_PASSWORD"),
 			InfraManagementUser: &models.VSphereCredentials{
-				Username: "VSPHERE_USERNAME",
-				Password: "VSPHERE_PASSWORD",
+				Username: os.Getenv("VSPHERE_USERNAME"),
+				Password: os.Getenv("VSPHERE_PASSWORD"),
 			},
 		},
 	}
