@@ -32,7 +32,7 @@ charts=$(find charts/ -name Chart.yaml | sort)
   echodate "Fetching dependencies for ${chartname}..."
 
   i=0
-  for url in $(yq4 '.dependencies.[].repository' Chart.yaml); do
+  for url in $(yq4 '.dependencies.[].repository' "$chartYAML"); do
     i=$((i + 1))
     helm repo add ${chartname}-dep-${i} ${url}
   done
