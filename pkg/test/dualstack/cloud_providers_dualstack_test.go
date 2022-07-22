@@ -99,57 +99,43 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	tests := []testCase{
 		{
 			cloudName: "azure",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "cilium",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "azure",
-			osNames: []string{
-				"centos",
-				"ubuntu",
-			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "canal",
+			ipFamily:  util.DualStack,
 		},
 		{
-			cloudName: "aws",
-			osNames: []string{
-				"rhel",
-				"ubuntu",
-			},
+			cloudName:           "aws",
+			osNames:             []string{"rockylinux"},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "aws",
-			osNames: []string{
-				"ubuntu",
-			},
+			cloudName:           "aws",
+			osNames:             []string{"rockylinux"},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
-			osNames: []string{
-				"ubuntu",
-			},
+			cloudName:           "gcp",
+			osNames:             []string{"rockylinux"},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
-			osNames: []string{
-				"ubuntu",
-			},
+			cloudName:           "gcp",
+			osNames:             []string{"rockylinux"},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
@@ -157,69 +143,50 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName: "openstack",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "cilium",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "openstack",
-			osNames: []string{
-				"centos",
-				"ubuntu",
-			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "canal",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
-			osNames: []string{
-				"ubuntu",
-				"rockylinux",
-			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "cilium",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
-			osNames: []string{
-				"ubuntu",
-				"rockylinux",
-			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "canal",
+			ipFamily:  util.DualStack,
 		}, {
 			cloudName: "do",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "cilium",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "do",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "canal",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "equinix",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "canal",
+			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "equinix",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			osNames:   []string{"rockylinux"},
+			cni:       "cilium",
+			ipFamily:  util.DualStack,
 		},
 	}
 
