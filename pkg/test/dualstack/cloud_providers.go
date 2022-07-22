@@ -414,7 +414,7 @@ func (a vsphere) NodeSpec() models.NodeCloudSpec {
 
 func (a vsphere) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
-		DatacenterName: "vsphere-hamburg",
+		DatacenterName: "vsphere-ger",
 		Vsphere: &models.VSphereCloudSpec{
 			Username: "VSPHERE_USERNAME",
 			Password: "VSPHERE_PASSWORD",
