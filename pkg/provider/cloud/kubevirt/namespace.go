@@ -40,6 +40,13 @@ func NamespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
 
 // reconcileNamespace reconciles a dedicated namespace in the underlying KubeVirt cluster.
 func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, client ctrlruntimeclient.Client) (*kubermaticv1.Cluster, error) {
+	cluster, err := update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerNamespace)
+	})
+	if err != nil {
+		return cluster, err
+	}
+
 	creators := []reconciling.NamedNamespaceCreatorGetter{
 		NamespaceCreator(name),
 	}
@@ -48,9 +55,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 		return cluster, fmt.Errorf("failed to reconcile Namespace: %w", err)
 	}
 
-	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerNamespace)
-	})
+	return cluster, nil
 }
 
 // deleteNamespace deletes the dedicated namespace.
