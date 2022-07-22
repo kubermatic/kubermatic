@@ -106,7 +106,7 @@ func Add(
 		cluster := rawObj.(*kubermaticv1.Cluster)
 		return []string{strconv.FormatBool(cluster.Spec.Pause)}
 	}); err != nil {
-		log.Fatalw("failed to add index on cluster.Spec.Pause: %w", err)
+		return fmt.Errorf("failed to add index on cluster.Spec.Pause: %w", err)
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Secret{}, isAppSecretKey, func(rawObj ctrlruntimeclient.Object) []string {
@@ -117,7 +117,7 @@ func Add(
 		_, isAppSecret := secret.Annotations[applicationsecretsynchronizer.SecretTypeAnnotation]
 		return []string{strconv.FormatBool(isAppSecret)}
 	}); err != nil {
-		log.Fatalw("failed to add index on Secret.metadata.annotation: %w", err)
+		return fmt.Errorf("failed to add index on Secret.metadata.annotation: %w", err)
 	}
 
 	return nil
