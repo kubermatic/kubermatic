@@ -397,6 +397,35 @@ func (a equinix) CloudSpec() models.CloudSpec {
 	}
 }
 
+type vsphere struct{}
+
+var _ clusterSpec = vsphere{}
+
+func (a vsphere) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Vsphere: &models.VSphereNodeSpec{
+			Template:   "ubuntu-20.04",
+			CPUs:       2,
+			Memory:     4096,
+			DiskSizeGB: 10,
+		},
+	}
+}
+
+func (a vsphere) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "vsphere-hamburg",
+		Vsphere: &models.VSphereCloudSpec{
+			Username: "VSPHERE_USERNAME",
+			Password: "VSPHERE_PASSWORD",
+			InfraManagementUser: &models.VSphereCredentials{
+				Username: "VSPHERE_USERNAME",
+				Password: "VSPHERE_PASSWORD",
+			},
+		},
+	}
+}
+
 // operating systems
 
 func ubuntu() models.OperatingSystemSpec {

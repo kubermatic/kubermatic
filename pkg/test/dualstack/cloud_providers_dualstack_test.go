@@ -62,6 +62,7 @@ var cloudProviders = map[string]clusterSpec{
 	"hetzner":   hetzner{},
 	"do":        do{},
 	"equinix":   equinix{},
+	"vsphere":   vsphere{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -215,6 +216,22 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "cilium",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "vsphere",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "canal",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "vsphere",
 			osNames: []string{
 				"ubuntu",
 			},
