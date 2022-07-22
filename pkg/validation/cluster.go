@@ -728,12 +728,14 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Data
 			return errors.New("GCP subnetwork should belong to same cluster region")
 		}
 
-		gcpSubnetwork, err := gcpSubnetworkGetter(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
-		if err != nil {
-			return err
-		}
-		if ipFamily != gcpSubnetwork.IPFamily {
-			return errors.New("GCP subnetwork should belong to same cluster network stack type")
+		if spec.ServiceAccount != "" {
+			gcpSubnetwork, err := gcpSubnetworkGetter(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
+			if err != nil {
+				return err
+			}
+			if ipFamily != gcpSubnetwork.IPFamily {
+				return errors.New("GCP subnetwork should belong to same cluster network stack type")
+			}
 		}
 	}
 	return nil
