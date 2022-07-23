@@ -74,7 +74,7 @@ func (s HelmSettings) GetterProviders() getter.Providers {
 
 // HelmClient is a client that allows interacting with Helm.
 // If you want to use it in a concurrency context, you must create several clients with different HelmSettings. Otherwise
-// writing reposity.xml or download index file may fails as it will be written by several threads.
+// writing repository.xml or download index file may fails as it will be written by several threads.
 type HelmClient struct {
 	ctx context.Context
 

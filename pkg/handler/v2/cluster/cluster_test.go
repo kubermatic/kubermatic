@@ -1790,30 +1790,30 @@ func TestListNamespace(t *testing.T) {
 func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                            string
-		Body                            string
-		KeyToDelete                     string
-		ProjectToSync                   string
-		ClusterToSync                   string
-		ExpectedDeleteResponse          string
-		ExpectedDeleteHTTPStatus        int
-		ExistingAPIUser                 *apiv1.User
-		ExistingSSHKeys                 []*kubermaticv1.UserSSHKey
-		ExistingKubermaticObjs          []ctrlruntimeclient.Object
-		ExpectedResponseOnGetAfterDelte string
-		ExpectedGetHTTPStatus           int
+		Name                             string
+		Body                             string
+		KeyToDelete                      string
+		ProjectToSync                    string
+		ClusterToSync                    string
+		ExpectedDeleteResponse           string
+		ExpectedDeleteHTTPStatus         int
+		ExistingAPIUser                  *apiv1.User
+		ExistingSSHKeys                  []*kubermaticv1.UserSSHKey
+		ExistingKubermaticObjs           []ctrlruntimeclient.Object
+		ExpectedResponseOnGetAfterDelete string
+		ExpectedGetHTTPStatus            int
 	}{
 		// scenario 1
 		{
-			Name:                            "scenario 1: detaches one key from the cluster",
-			Body:                            ``,
-			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:          `{}`,
-			ExpectedDeleteHTTPStatus:        http.StatusOK,
-			ExpectedGetHTTPStatus:           http.StatusOK,
-			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
-			ProjectToSync:                   test.GenDefaultProject().Name,
-			ExistingAPIUser:                 test.GenDefaultAPIUser(),
+			Name:                             "scenario 1: detaches one key from the cluster",
+			Body:                             ``,
+			KeyToDelete:                      "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:           `{}`,
+			ExpectedDeleteHTTPStatus:         http.StatusOK,
+			ExpectedGetHTTPStatus:            http.StatusOK,
+			ExpectedResponseOnGetAfterDelete: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
+			ProjectToSync:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:                  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				// add a cluster
@@ -1843,15 +1843,15 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:                            "scenario 2: the admin John detaches one key from the Bob cluster",
-			Body:                            ``,
-			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:          `{}`,
-			ExpectedDeleteHTTPStatus:        http.StatusOK,
-			ExpectedGetHTTPStatus:           http.StatusOK,
-			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
-			ProjectToSync:                   test.GenDefaultProject().Name,
-			ExistingAPIUser:                 test.GenAPIUser("John", "john@acme.com"),
+			Name:                             "scenario 2: the admin John detaches one key from the Bob cluster",
+			Body:                             ``,
+			KeyToDelete:                      "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:           `{}`,
+			ExpectedDeleteHTTPStatus:         http.StatusOK,
+			ExpectedGetHTTPStatus:            http.StatusOK,
+			ExpectedResponseOnGetAfterDelete: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
+			ProjectToSync:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:                  test.GenAPIUser("John", "john@acme.com"),
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				genUser("John", "john@acme.com", true),
@@ -1882,15 +1882,15 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 		},
 		// scenario 3
 		{
-			Name:                            "scenario 3: the user John can not detach any key from the Bob cluster",
-			Body:                            ``,
-			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedDeleteResponse:          `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
-			ExpectedDeleteHTTPStatus:        http.StatusForbidden,
-			ExpectedGetHTTPStatus:           http.StatusForbidden,
-			ExpectedResponseOnGetAfterDelte: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
-			ProjectToSync:                   test.GenDefaultProject().Name,
-			ExistingAPIUser:                 test.GenAPIUser("John", "john@acme.com"),
+			Name:                             "scenario 3: the user John can not detach any key from the Bob cluster",
+			Body:                             ``,
+			KeyToDelete:                      "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:           `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
+			ExpectedDeleteHTTPStatus:         http.StatusForbidden,
+			ExpectedGetHTTPStatus:            http.StatusForbidden,
+			ExpectedResponseOnGetAfterDelete: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
+			ProjectToSync:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:                  test.GenAPIUser("John", "john@acme.com"),
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				genUser("John", "john@acme.com", false),

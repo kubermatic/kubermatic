@@ -38,4 +38,4 @@ Kubermatic:
 * collecting all images and writing a script for downloading, retagging and uploading: 0.5d
 * Proving a convenient way to set just the repo for all images: 0.25d
 * Make certificates for dex configurable: 2h
-* Write an e2e testing script, verify it, fixup reamining issues: 4d
+* Write an e2e testing script, verify it, fixup remaining issues: 4d

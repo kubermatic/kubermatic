@@ -44,7 +44,7 @@ func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
 }
 
-func KubermaticNamepace() string {
+func KubermaticNamespace() string {
 	return kkpNamespace
 }
 

@@ -195,7 +195,7 @@ func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
-// EncodeCertPEM returns PEM-endcoded certificate data.
+// EncodeCertPEM returns PEM-encoded certificate data.
 func EncodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{
 		Type:  certificateBlockType,

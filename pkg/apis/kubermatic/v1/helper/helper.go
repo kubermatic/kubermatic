@@ -154,7 +154,7 @@ func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, versions kub
 			continue
 		}
 
-		if !clusterHasCurrentSuccessfullConditionType(cluster, versions, conditionType, ignoreKubermaticVersion) {
+		if !clusterHasCurrentSuccessfulConditionType(cluster, versions, conditionType, ignoreKubermaticVersion) {
 			missingConditions = append(missingConditions, conditionType)
 		}
 	}
@@ -174,7 +174,7 @@ func conditionTypeListHasConditionType(
 	return false
 }
 
-func clusterHasCurrentSuccessfullConditionType(
+func clusterHasCurrentSuccessfulConditionType(
 	cluster *kubermaticv1.Cluster,
 	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,

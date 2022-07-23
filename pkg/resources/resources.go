@@ -718,7 +718,7 @@ const (
 const (
 	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
 	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"
-	EtcdKetFile       = "/etc/etcd/pki/tls/etcd-tls.key"
+	EtcdKeyFile       = "/etc/etcd/pki/tls/etcd-tls.key"
 
 	EtcdPeerCertFile = "/etc/etcd/pki/tls/etcd-tls.crt"
 	EtcdPeerKeyFile  = "/etc/etcd/pki/tls/etcd-tls.key"
