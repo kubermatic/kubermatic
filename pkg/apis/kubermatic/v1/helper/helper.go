@@ -93,6 +93,13 @@ func ClusterReconcileWrapper(
 	if conditionType != kubermaticv1.ClusterConditionNone {
 		err = UpdateClusterStatus(ctx, client, cluster, func(c *kubermaticv1.Cluster) {
 			SetClusterCondition(c, versions, conditionType, reconcilingStatus, "", "")
+
+			// In KKP 2.21, the ClusterConditionCloudControllerReconcilingSuccess was renamed
+			// due to a typo; this code ensures that we remove the old condition so that in
+			// KKP 2.22, we can removed the misspelling from the ENUM in the CRD.
+			if conditionType == kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess {
+				delete(c.Status.Conditions, "CloudControllerReconcilledSuccessfully")
+			}
 		})
 		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			errs = append(errs, err)
