@@ -61,7 +61,7 @@ var defaultOperatingSystemProfiles = []apiv2.OperatingSystemProfile{
 }
 
 // seedReq represents a request for referencing a seed
-// swagger:parameters listIPAMPools
+// swagger:parameters listOperatingSystemProfiles
 type seedReq struct {
 	// in: path
 	// required: true

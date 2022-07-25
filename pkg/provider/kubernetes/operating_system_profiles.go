@@ -46,7 +46,7 @@ func NewPrivilegedOperatingSystemProfileProvider(privilegedClient ctrlruntimecli
 // ListUnsecured lists available OSPs from seed namespace.
 func (p *PrivilegedOperatingSystemProfileProvider) ListUnsecured(ctx context.Context) (*osmv1alpha1.OperatingSystemProfileList, error) {
 	res := &osmv1alpha1.OperatingSystemProfileList{}
-	if err := p.privilegedClient.List(ctx, res); err != nil {
+	if err := p.privilegedClient.List(ctx, res, &ctrlruntimeclient.ListOptions{Namespace: p.namespace}); err != nil {
 		return nil, err
 	}
 	return res, nil
