@@ -32,8 +32,6 @@ presubmits:
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -69,8 +67,6 @@ presubmits:
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -106,8 +102,6 @@ presubmits:
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -222,8 +216,6 @@ presubmits:
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -283,8 +275,6 @@ presubmits:
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -347,8 +337,6 @@ presubmits:
           command:
             - "./hack/ci/run-ipam-e2e-tests.sh"
           env:
-            - name: VERSION_TO_TEST
-              value: v1.23.6
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY

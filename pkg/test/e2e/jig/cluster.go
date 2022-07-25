@@ -72,7 +72,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 		addons:       sets.NewString(),
 	}
 
-	if version := ClusterVersion(); version != "" {
+	if version := ClusterVersion(log); version != "" {
 		jig.WithVersion(version)
 	}
 
@@ -281,7 +281,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		}
 	}
 
-	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName)
+	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName, "version", cluster.Spec.Version)
 	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, j.ownerEmail)
 	if err != nil {
 		return nil, err
@@ -355,6 +355,10 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 }
 
 func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
+	if j.clusterName == "" {
+		return nil
+	}
+
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get current cluster: %w", err)
