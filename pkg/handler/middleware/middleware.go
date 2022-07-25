@@ -120,6 +120,9 @@ const (
 	// PrivilegedIPAMPoolProviderContextKey key under which the current PrivilegedIPAMPoolProvider is kept in the ctx.
 	PrivilegedIPAMPoolProviderContextKey kubermaticcontext.Key = "privileged-ipampool-provider"
 
+	// PrivilegedOperatingSystemProfileProviderContextKey key under which the current PrivilegedOperatingSystemProfileProvider is kept in the ctx.
+	PrivilegedOperatingSystemProfileProviderContextKey kubermaticcontext.Key = "privileged-operatingsystemprofile-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -922,6 +925,33 @@ func PrivilegedIPAMPool(ipamPoolProviderGetter provider.PrivilegedIPAMPoolProvid
 			}
 
 			ctx = context.WithValue(ctx, PrivilegedIPAMPoolProviderContextKey, privilegedIPAMPoolProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedOperatingSystemProfile is a middleware that injects the current PrivilegedOperatingSystemProfileProvider into the ctx.
+func PrivilegedOperatingSystemProfile(providerGetter provider.PrivilegedOperatingSystemProfileProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, err
+			}
+
+			seed, found := seeds[seedCluster.SeedName]
+			if !found {
+				return nil, utilerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
+			}
+
+			provider, err := providerGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+
+			ctx = context.WithValue(ctx, PrivilegedOperatingSystemProfileProviderContextKey, provider)
 			return next(ctx, request)
 		}
 	}

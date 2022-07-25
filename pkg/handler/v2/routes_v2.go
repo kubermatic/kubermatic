@@ -49,6 +49,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/networkdefaults"
+	operatingsystemprofile "k8c.io/kubermatic/v2/pkg/handler/v2/operatingsystemprofile"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	resourcequota "k8c.io/kubermatic/v2/pkg/handler/v2/resource_quota"
@@ -1105,6 +1106,11 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodDelete).
 		Path("/seeds/{seed_name}/ipampools/{ipampool_name}").
 		Handler(r.deleteIPAMPool())
+
+	// Define endpoints to manage operating system profiles.
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/operatingsystemprofiles").
+		Handler(r.listOperatingSystemProfiles())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -7419,6 +7425,31 @@ func (r Routing) deleteIPAMPool() http.Handler {
 			middleware.PrivilegedIPAMPool(r.privilegedIPAMPoolProviderGetter, r.seedsGetter),
 		)(ipampool.DeleteIPAMPoolEndpoint(r.userInfoGetter)),
 		ipampool.DecodeIPAMPoolReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route GET /api/v2/seeds/{seed_name}/operatingsystemprofiles operatingsystemprofile listOperatingSystemProfiles
+//
+//    Lists Operating System Profiles.
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: []OperatingSystemProfile
+//      401: empty
+//      403: empty
+func (r Routing) listOperatingSystemProfiles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.PrivilegedOperatingSystemProfile(r.privilegedOperatingSystemProfileProviderGetter, r.seedsGetter),
+		)(operatingsystemprofile.ListOperatingSystemProfilesEndpoint(r.userInfoGetter)),
+		operatingsystemprofile.DecodeSeedReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

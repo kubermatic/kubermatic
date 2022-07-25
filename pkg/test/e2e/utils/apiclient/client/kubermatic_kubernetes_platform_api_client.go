@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/networkdefaults"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/nutanix"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operatingsystemprofile"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/preset"
@@ -136,6 +137,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Networkdefaults = networkdefaults.New(transport, formats)
 	cli.Nutanix = nutanix.New(transport, formats)
 	cli.Openstack = openstack.New(transport, formats)
+	cli.Operatingsystemprofile = operatingsystemprofile.New(transport, formats)
 	cli.Operations = operations.New(transport, formats)
 	cli.Packet = packet.New(transport, formats)
 	cli.Preset = preset.New(transport, formats)
@@ -262,6 +264,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Openstack openstack.ClientService
 
+	Operatingsystemprofile operatingsystemprofile.ClientService
+
 	Operations operations.ClientService
 
 	Packet packet.ClientService
@@ -333,6 +337,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Networkdefaults.SetTransport(transport)
 	c.Nutanix.SetTransport(transport)
 	c.Openstack.SetTransport(transport)
+	c.Operatingsystemprofile.SetTransport(transport)
 	c.Operations.SetTransport(transport)
 	c.Packet.SetTransport(transport)
 	c.Preset.SetTransport(transport)

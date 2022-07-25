@@ -76,6 +76,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -122,6 +123,10 @@ func main() {
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalw("failed to register scheme", zap.Stringer("api", v1beta1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := osmv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalw("failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+
 	if err := gatekeeperconfigv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
 	}
@@ -350,6 +355,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	privilegedIPAMPoolProviderGetter := kubernetesprovider.PrivilegedIPAMPoolProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
+	operatingSystemProfileProviderGetter := kubernetesprovider.PrivilegedOperatingSystemProfileProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
 	seedProvider := kubernetesprovider.NewSeedProvider(mgr.GetClient())
 
 	applicationDefinitionProvider := kubernetesprovider.NewApplicationDefinitionProvider(client)
@@ -426,6 +433,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		resourceQuotaProvider:                   resourceQuotaProvider,
 		groupProjectBindingProvider:             groupProjectBindingProvider,
 		privilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
+		operatingSystemProfileProviderGetter:    operatingSystemProfileProviderGetter,
 		applicationDefinitionProvider:           applicationDefinitionProvider,
 	}, nil
 }
@@ -494,65 +502,66 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	routingParams := handler.RoutingParams{
-		Log:                                     kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
-		PresetProvider:                          prov.presetProvider,
-		SeedsGetter:                             prov.seedsGetter,
-		SeedsClientGetter:                       prov.seedClientGetter,
-		KubermaticConfigurationGetter:           prov.configGetter,
-		SSHKeyProvider:                          prov.sshKey,
-		PrivilegedSSHKeyProvider:                prov.privilegedSSHKeyProvider,
-		UserProvider:                            prov.user,
-		ServiceAccountProvider:                  prov.serviceAccountProvider,
-		PrivilegedServiceAccountProvider:        prov.privilegedServiceAccountProvider,
-		ServiceAccountTokenProvider:             prov.serviceAccountTokenProvider,
-		PrivilegedServiceAccountTokenProvider:   prov.privilegedServiceAccountTokenProvider,
-		ProjectProvider:                         prov.project,
-		PrivilegedProjectProvider:               prov.privilegedProject,
-		OIDCIssuerVerifier:                      oidcIssuerVerifier,
-		TokenVerifiers:                          tokenVerifiers,
-		TokenExtractors:                         tokenExtractors,
-		ClusterProviderGetter:                   prov.clusterProviderGetter,
-		AddonProviderGetter:                     prov.addons,
-		AddonConfigProvider:                     prov.addonConfigProvider,
-		PrometheusClient:                        prometheusClient,
-		ProjectMemberProvider:                   prov.projectMember,
-		PrivilegedProjectMemberProvider:         prov.privilegedProjectMemberProvider,
-		UserProjectMapper:                       prov.memberMapper,
-		SATokenAuthenticator:                    serviceAccountTokenAuth,
-		SATokenGenerator:                        serviceAccountTokenGenerator,
-		EventRecorderProvider:                   prov.eventRecorderProvider,
-		ExposeStrategy:                          options.exposeStrategy,
-		UserInfoGetter:                          prov.userInfoGetter,
-		SettingsProvider:                        prov.settingsProvider,
-		AdminProvider:                           prov.adminProvider,
-		AdmissionPluginProvider:                 prov.admissionPluginProvider,
-		SettingsWatcher:                         prov.settingsWatcher,
-		UserWatcher:                             prov.userWatcher,
-		ExternalClusterProvider:                 prov.externalClusterProvider,
-		PrivilegedExternalClusterProvider:       prov.privilegedExternalClusterProvider,
-		FeatureGatesProvider:                    prov.featureGatesProvider,
-		DefaultConstraintProvider:               prov.defaultConstraintProvider,
-		ConstraintTemplateProvider:              prov.constraintTemplateProvider,
-		ConstraintProviderGetter:                prov.constraintProviderGetter,
-		AlertmanagerProviderGetter:              prov.alertmanagerProviderGetter,
-		ClusterTemplateProvider:                 prov.clusterTemplateProvider,
-		ClusterTemplateInstanceProviderGetter:   prov.clusterTemplateInstanceProviderGetter,
-		RuleGroupProviderGetter:                 prov.ruleGroupProviderGetter,
-		PrivilegedAllowedRegistryProvider:       prov.privilegedAllowedRegistryProvider,
-		EtcdBackupConfigProviderGetter:          prov.etcdBackupConfigProviderGetter,
-		EtcdRestoreProviderGetter:               prov.etcdRestoreProviderGetter,
-		EtcdBackupConfigProjectProviderGetter:   prov.etcdBackupConfigProjectProviderGetter,
-		EtcdRestoreProjectProviderGetter:        prov.etcdRestoreProjectProviderGetter,
-		BackupCredentialsProviderGetter:         prov.backupCredentialsProviderGetter,
-		PrivilegedMLAAdminSettingProviderGetter: prov.privilegedMLAAdminSettingProviderGetter,
-		SeedProvider:                            prov.seedProvider,
-		ResourceQuotaProvider:                   prov.resourceQuotaProvider,
-		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
-		PrivilegedIPAMPoolProviderGetter:        prov.privilegedIPAMPoolProviderGetter,
-		ApplicationDefinitionProvider:           prov.applicationDefinitionProvider,
-		Versions:                                options.versions,
-		CABundle:                                options.caBundle.CertPool(),
-		Features:                                options.featureGates,
+		Log:                                            kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
+		PresetProvider:                                 prov.presetProvider,
+		SeedsGetter:                                    prov.seedsGetter,
+		SeedsClientGetter:                              prov.seedClientGetter,
+		KubermaticConfigurationGetter:                  prov.configGetter,
+		SSHKeyProvider:                                 prov.sshKey,
+		PrivilegedSSHKeyProvider:                       prov.privilegedSSHKeyProvider,
+		UserProvider:                                   prov.user,
+		ServiceAccountProvider:                         prov.serviceAccountProvider,
+		PrivilegedServiceAccountProvider:               prov.privilegedServiceAccountProvider,
+		ServiceAccountTokenProvider:                    prov.serviceAccountTokenProvider,
+		PrivilegedServiceAccountTokenProvider:          prov.privilegedServiceAccountTokenProvider,
+		ProjectProvider:                                prov.project,
+		PrivilegedProjectProvider:                      prov.privilegedProject,
+		OIDCIssuerVerifier:                             oidcIssuerVerifier,
+		TokenVerifiers:                                 tokenVerifiers,
+		TokenExtractors:                                tokenExtractors,
+		ClusterProviderGetter:                          prov.clusterProviderGetter,
+		AddonProviderGetter:                            prov.addons,
+		AddonConfigProvider:                            prov.addonConfigProvider,
+		PrometheusClient:                               prometheusClient,
+		ProjectMemberProvider:                          prov.projectMember,
+		PrivilegedProjectMemberProvider:                prov.privilegedProjectMemberProvider,
+		UserProjectMapper:                              prov.memberMapper,
+		SATokenAuthenticator:                           serviceAccountTokenAuth,
+		SATokenGenerator:                               serviceAccountTokenGenerator,
+		EventRecorderProvider:                          prov.eventRecorderProvider,
+		ExposeStrategy:                                 options.exposeStrategy,
+		UserInfoGetter:                                 prov.userInfoGetter,
+		SettingsProvider:                               prov.settingsProvider,
+		AdminProvider:                                  prov.adminProvider,
+		AdmissionPluginProvider:                        prov.admissionPluginProvider,
+		SettingsWatcher:                                prov.settingsWatcher,
+		UserWatcher:                                    prov.userWatcher,
+		ExternalClusterProvider:                        prov.externalClusterProvider,
+		PrivilegedExternalClusterProvider:              prov.privilegedExternalClusterProvider,
+		FeatureGatesProvider:                           prov.featureGatesProvider,
+		DefaultConstraintProvider:                      prov.defaultConstraintProvider,
+		ConstraintTemplateProvider:                     prov.constraintTemplateProvider,
+		ConstraintProviderGetter:                       prov.constraintProviderGetter,
+		AlertmanagerProviderGetter:                     prov.alertmanagerProviderGetter,
+		ClusterTemplateProvider:                        prov.clusterTemplateProvider,
+		ClusterTemplateInstanceProviderGetter:          prov.clusterTemplateInstanceProviderGetter,
+		RuleGroupProviderGetter:                        prov.ruleGroupProviderGetter,
+		PrivilegedAllowedRegistryProvider:              prov.privilegedAllowedRegistryProvider,
+		EtcdBackupConfigProviderGetter:                 prov.etcdBackupConfigProviderGetter,
+		EtcdRestoreProviderGetter:                      prov.etcdRestoreProviderGetter,
+		EtcdBackupConfigProjectProviderGetter:          prov.etcdBackupConfigProjectProviderGetter,
+		EtcdRestoreProjectProviderGetter:               prov.etcdRestoreProjectProviderGetter,
+		BackupCredentialsProviderGetter:                prov.backupCredentialsProviderGetter,
+		PrivilegedMLAAdminSettingProviderGetter:        prov.privilegedMLAAdminSettingProviderGetter,
+		SeedProvider:                                   prov.seedProvider,
+		ResourceQuotaProvider:                          prov.resourceQuotaProvider,
+		GroupProjectBindingProvider:                    prov.groupProjectBindingProvider,
+		PrivilegedIPAMPoolProviderGetter:               prov.privilegedIPAMPoolProviderGetter,
+		PrivilegedOperatingSystemProfileProviderGetter: prov.operatingSystemProfileProviderGetter,
+		ApplicationDefinitionProvider:                  prov.applicationDefinitionProvider,
+		Versions:                                       options.versions,
+		CABundle:                                       options.caBundle.CertPool(),
+		Features:                                       options.featureGates,
 	}
 
 	r := handler.NewRouting(routingParams, mgr.GetClient())

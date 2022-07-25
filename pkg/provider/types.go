@@ -27,6 +27,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -1426,4 +1427,9 @@ type PrivilegedIPAMPoolProvider interface {
 type ApplicationDefinitionProvider interface {
 	// List returns a list of ApplicationDefinitions for the KKP installation.
 	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
+}
+
+type PrivilegedOperatingSystemProfileProvider interface {
+	// List returns a list of OperatingSystemProfiles for the KKP installation.
+	ListUnsecured(context.Context) (*osmv1alpha1.OperatingSystemProfileList, error)
 }
