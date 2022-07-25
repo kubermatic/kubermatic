@@ -37,6 +37,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system.
@@ -190,7 +191,7 @@ func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, set
 	var errorList []string
 	var projectsCounter int64
 	for _, mapping := range userMappings {
-		userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+		userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Groups: []string{mapping.Spec.Group}}
 		projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
@@ -242,14 +243,17 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		if req.DisplayAll && userInfo.IsAdmin {
 			return getAllProjectsForAdmin(ctx, userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
-		projects := []*apiv1.Project{}
+
+		var projects []*kubermaticv1.Project
+		projectIDSet := sets.NewString()
+
 		userMappings, err := memberMapper.MappingsFor(ctx, userInfo.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		var errorList []string
 		for _, mapping := range userMappings {
-			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Groups: append(userInfo.Groups, mapping.Spec.Group)}
 			projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
 				if isStatus(err, http.StatusNotFound) {
@@ -268,22 +272,52 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 				}
 				continue
 			}
+			projects = append(projects, projectInternal)
+			projectIDSet.Insert(projectInternal.Name)
+		}
 
-			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
+		groupMappings, err := memberMapper.GroupMappingsFor(ctx, userInfo.Groups)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, group := range groupMappings {
+			projectID := group.Spec.ProjectID
+
+			if projectIDSet.Has(projectID) {
+				// The project has been already added either from user or other group bindings.
+				continue
+			}
+
+			project, err := projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			if err != nil {
+				if isStatus(err, http.StatusNotFound) {
+					continue
+				}
+				errorList = append(errorList, err.Error())
+				continue
+			}
+			projects = append(projects, project)
+			projectIDSet.Insert(project.Name)
+		}
+
+		var apiProjects []*apiv1.Project
+		for _, project := range projects {
+			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, project, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, projectInternal)
+			clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, project)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners, clustersNumber))
+			apiProjects = append(apiProjects, common.ConvertInternalProjectToExternal(project, projectOwners, clustersNumber))
 		}
 
 		if len(errorList) > 0 {
 			return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 		}
-		return projects, nil
+		return apiProjects, nil
 	}
 }
 

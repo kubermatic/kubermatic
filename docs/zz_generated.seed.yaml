@@ -165,6 +165,8 @@ spec:
             rockylinux: ""
             sles: ""
             ubuntu: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
           # This setting defaults to true.
@@ -187,6 +189,9 @@ spec:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://support.packet.com/kb/articles/data-centers
           facilities: []
+          # Metros are facilities that are grouped together geographically and share capacity
+          # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
+          metro: ""
         # ProviderReconciliationInterval is the time that must have passed since a
         # Cluster's status.lastProviderReconciliation to make the cliuster controller
         # perform an in-depth provider reconciliation, where for example missing security
@@ -238,6 +243,8 @@ spec:
           infraManagementUser:
             password: ""
             username: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
           # Optional: The root path for cluster specific VM folders. Each cluster gets its own
           # folder below the root folder. Must be the FQDN (for example
           # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM

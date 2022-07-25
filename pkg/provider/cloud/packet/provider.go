@@ -71,10 +71,9 @@ func (p *packet) InitializeCloudProvider(ctx context.Context, cluster *kubermati
 	return cluster, nil
 }
 
-// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Packet? Would be really cool :)
-// func (p *packet) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-// 	return cluster, nil
-// }
+func (p *packet) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return p.InitializeCloudProvider(ctx, cluster, update)
+}
 
 // CleanUpCloudProvider.
 func (p *packet) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

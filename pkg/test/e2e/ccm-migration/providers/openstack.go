@@ -18,18 +18,22 @@ package providers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
-	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
+	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -67,7 +71,12 @@ func (c *OpenstackClusterJig) Setup(ctx context.Context) error {
 	}
 	c.log.Debugw("project created", "name", projectID)
 
-	if err := c.generateAndCreateSecret(ctx, osSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateSecret(ctx, osSecretPrefixName, c.Credentials.GenerateSecretData(datacenter.Spec.Openstack)); err != nil {
 		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", osSecretPrefixName, c.name))
@@ -76,7 +85,7 @@ func (c *OpenstackClusterJig) Setup(ctx context.Context) error {
 		DatacenterName: c.DatacenterName,
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			FloatingIPPool: c.Credentials.FloatingIPPool,
-			CredentialsReference: &types2.GlobalSecretKeySelector{
+			CredentialsReference: &types.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Name:      fmt.Sprintf("%s-%s", osSecretPrefixName, c.name),
 					Namespace: resources.KubermaticNamespace,
@@ -92,7 +101,12 @@ func (c *OpenstackClusterJig) Setup(ctx context.Context) error {
 }
 
 func (c *OpenstackClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec()); err != nil {
+	datacenter, err := c.getDatacenter(ctx, c.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("failed to find the specified datacenter: %w", err)
+	}
+
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(datacenter.Spec.Openstack)); err != nil {
 		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
@@ -127,18 +141,15 @@ func (c *OpenstackClusterJig) Log() *zap.SugaredLogger {
 }
 
 type OpenstackCredentialsType struct {
-	AuthURL        string
 	Username       string
 	Password       string
 	Tenant         string
 	Domain         string
-	Region         string
 	FloatingIPPool string
 	Network        string
-	Datacenter     string
 }
 
-func (osc *OpenstackCredentialsType) GenerateSecretData() map[string][]byte {
+func (osc *OpenstackCredentialsType) GenerateSecretData(datacenter *kubermaticv1.DatacenterSpecOpenstack) map[string][]byte {
 	return map[string][]byte{
 		resources.OpenstackUsername:                    []byte(osc.Username),
 		resources.OpenstackPassword:                    []byte(osc.Password),
@@ -151,14 +162,45 @@ func (osc *OpenstackCredentialsType) GenerateSecretData() map[string][]byte {
 	}
 }
 
-func (osc *OpenstackCredentialsType) GenerateProviderSpec() []byte {
-	return []byte(fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","Username": "%s","Password": "%s", "tenantName": "%s", "Region": "%s", "domainName": "%s", "FloatingIPPool": "%s", "Network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
-		osc.AuthURL,
-		osc.Username,
-		osc.Password,
-		osc.Tenant,
-		osc.Region,
-		osc.Domain,
-		osc.FloatingIPPool,
-		osc.Network))
+func (osc *OpenstackCredentialsType) GenerateProviderSpec(datacenter *kubermaticv1.DatacenterSpecOpenstack) []byte {
+	os := types.OperatingSystemUbuntu
+
+	providerSpec, err := json.Marshal(openstacktypes.RawConfig{
+		IdentityEndpoint: types.ConfigVarString{Value: datacenter.AuthURL},
+		Username:         types.ConfigVarString{Value: osc.Username},
+		Password:         types.ConfigVarString{Value: osc.Password},
+		TenantName:       types.ConfigVarString{Value: osc.Tenant},
+		Region:           types.ConfigVarString{Value: datacenter.Region},
+		DomainName:       types.ConfigVarString{Value: osc.Domain},
+		FloatingIPPool:   types.ConfigVarString{Value: osc.FloatingIPPool},
+		Network:          types.ConfigVarString{Value: osc.Network},
+		Image:            types.ConfigVarString{Value: datacenter.Images[os]},
+		Flavor:           types.ConfigVarString{Value: "m1.small"},
+	})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	osSpec, err := json.Marshal(ubuntu.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	cfg := types.Config{
+		CloudProvider: types.CloudProviderOpenstack,
+		CloudProviderSpec: runtime.RawExtension{
+			Raw: providerSpec,
+		},
+		OperatingSystem: os,
+		OperatingSystemSpec: runtime.RawExtension{
+			Raw: osSpec,
+		},
+	}
+
+	encoded, err := json.Marshal(cfg)
+	if err != nil {
+		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
+	}
+
+	return encoded
 }

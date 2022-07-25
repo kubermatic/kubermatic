@@ -46,7 +46,7 @@ func init() {
 }
 
 // TestHandle tests the admission handler, but with the cloud provider validation
-// disabled (i.e. we do not check if the digitalocean token is valid, which would
+// disabled (i.e. we do not check if the hetzner token is valid, which would
 // be done by issuing a HTTP call).
 //
 // ***************** IMPORTANT ***************
@@ -64,7 +64,7 @@ func TestHandle(t *testing.T) {
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				datacenterName: {
 					Spec: kubermaticv1.DatacenterSpec{
-						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 					},
 				},
 			},
@@ -760,7 +760,7 @@ func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
-				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Hetzner: &kubermaticv1.HetznerCloudSpec{
 					Token: "thisis.reallyreallyfake",
 				},
 			},

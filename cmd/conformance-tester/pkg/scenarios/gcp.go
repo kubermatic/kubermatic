@@ -34,19 +34,21 @@ import (
 )
 
 // GetGCPScenarios returns a matrix of (version x operating system).
-func GetGCPScenarios(versions []*semver.Semver) []Scenario {
+func GetGCPScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &gcpScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.GCP,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &gcpScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.GCP,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -56,8 +58,9 @@ func GetGCPScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type gcpScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecGCP
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *gcpScenario) Name() string {
@@ -70,7 +73,7 @@ func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "gcp-westeurope",
+					DatacenterName: secrets.GCP.KKPDatacenter,
 					Gcp: &apimodels.GCPCloudSpec{
 						ServiceAccount: secrets.GCP.ServiceAccount,
 						Network:        secrets.GCP.Network,
@@ -86,7 +89,7 @@ func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 func (s *gcpScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: "gcp-westeurope",
+			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{
 				ServiceAccount: secrets.GCP.ServiceAccount,
 				Network:        secrets.GCP.Network,
@@ -107,7 +110,7 @@ func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Gcp: &apimodels.GCPNodeSpec{
-							Zone:        secrets.GCP.Zone,
+							Zone:        s.getZone(),
 							MachineType: "n1-standard-2",
 							DiskType:    "pd-standard",
 							DiskSize:    50,
@@ -133,7 +136,7 @@ func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets typ
 
 	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderGoogle, gcetypes.RawConfig{
-		Zone:        providerconfig.ConfigVarString{Value: secrets.GCP.Zone},
+		Zone:        providerconfig.ConfigVarString{Value: s.getZone()},
 		MachineType: providerconfig.ConfigVarString{Value: "n1-standard-2"},
 		DiskType:    providerconfig.ConfigVarString{Value: "pd-standard"},
 		DiskSize:    50,
@@ -151,4 +154,8 @@ func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets typ
 
 func (s *gcpScenario) OS() apimodels.OperatingSystemSpec {
 	return s.osSpec
+}
+
+func (s *gcpScenario) getZone() string {
+	return fmt.Sprintf("%s%s", s.datacenter.Region, s.datacenter.ZoneSuffixes[0])
 }

@@ -44,6 +44,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -194,8 +196,37 @@ func Add(
 		&networkingv1.NetworkPolicy{},
 	}
 
+	// During cluster deletions, we do not care about changes that happen inside the cluster namespace.
+	// We would not be reconciling anything and we also do not want to re-trigger the cleanup every time
+	// a Secret or Pod is deleted (instead we want to wait 10 seconds between deletion checks).
+	// Instead of splitting this controller into 2 reconcilers, we simply do not return any requests if
+	// the cluster is in deletion.
+	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		clusterList := &kubermaticv1.ClusterList{}
+		if err := reconciler.Client.List(context.Background(), clusterList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+			return []reconcile.Request{}
+		}
+
+		for _, cluster := range clusterList.Items {
+			if cluster.Status.NamespaceName == a.GetNamespace() {
+				// if the cluster is already being deleted,
+				// we do not care about the resources inside its namespace
+				if cluster.DeletionTimestamp != nil {
+					break
+				}
+
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{
+					Name: cluster.Name,
+				}}}
+			}
+		}
+
+		return []reconcile.Request{}
+	})
+
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, inNamespaceHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -204,10 +235,11 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
+	// do not use the request itself, as it might contain the namespace marker
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
@@ -215,7 +247,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-	log = log.With("cluster", cluster.Name)
 
 	// the update controller needs to determine the target version based on the spec
 	// before we can reconcile anything
@@ -258,25 +289,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	namespace, err := r.ensureNamespaceExists(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
-	}
-
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-		if c.Status.NamespaceName != namespace.Name {
-			c.Status.NamespaceName = namespace.Name
-		}
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to update cluster namespace status: %w", err)
-	}
-
-	// synchronize cluster.status.health for Kubernetes clusters
-	if err := r.syncHealth(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to sync health: %w", err)
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Cleaning up cluster")
 
@@ -290,7 +302,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+	}
+
+	namespace, err := r.reconcileClusterNamespace(ctx, log, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
+	}
+
+	// synchronize cluster.status.health for Kubernetes clusters
+	if err := r.syncHealth(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to sync health: %w", err)
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster, namespace)

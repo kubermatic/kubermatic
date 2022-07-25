@@ -40,14 +40,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// providersWithIPv6Enabled configures which providers have IPv6 enabled for all datacenters.
-var providersWithIPv6Enabled = map[kubermaticv1.ProviderType]struct{}{
-	kubermaticv1.AWSCloudProvider:     {},
-	kubermaticv1.AzureCloudProvider:   {},
-	kubermaticv1.GCPCloudProvider:     {},
-	kubermaticv1.HetznerCloudProvider: {},
-}
-
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter.
 func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -621,14 +613,6 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		nodeSettings = *dc.Node
 	}
 
-	var isIPv6Enabled bool
-	_, isIPv6EnabledForProvider := providersWithIPv6Enabled[kubermaticv1.ProviderType(p)]
-	if isIPv6EnabledForProvider {
-		isIPv6Enabled = true
-	}
-	// TODO: if "isIPv6EnabledForProvider" is false, we should check if it's configured specifically
-	// for the provider datacenter (e.g. for openstack)
-
 	return &apiv1.DatacenterSpec{
 		Seed:                     seedName,
 		Location:                 dc.Location,
@@ -653,7 +637,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		RequiredEmails:           dc.Spec.RequiredEmails,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
 		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
-		IPv6Enabled:              isIPv6Enabled,
+		IPv6Enabled:              dc.IsIPv6Enabled(kubermaticv1.ProviderType(p)),
 	}, nil
 }
 

@@ -57,8 +57,6 @@ if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
-    -openstack-auth-url=${OS_AUTH_URL}
-    -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
     -openstack-seed-datacenter=syseleven-dbl1
@@ -67,9 +65,6 @@ fi
 
 if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
-    -vsphere-datacenter=dc-1
-    -vsphere-cluster=cl-1
-    -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
     -vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
     "

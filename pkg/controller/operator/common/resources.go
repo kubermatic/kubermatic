@@ -63,8 +63,14 @@ const (
 	// ResourceQuotaAdmissionWebhookName is the name of the validating and mutating webhook for ResourceQuotas.
 	ResourceQuotaAdmissionWebhookName = "kubermatic-resourcequotas"
 
+	// ExternalClusterAdmissionWebhookName is the name of the mutating webhook for ExternalClusters.
+	ExternalClusterAdmissionWebhookName = "kubermatic-externalclusters"
+
 	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
 	ApplicationDefinitionAdmissionWebhookName = "kubermatic-application-definitions"
+
+	// GroupProjectBindingAdmissionWebhookName is the name of the validating webhook for GroupProjectBindings.
+	GroupProjectBindingAdmissionWebhookName = "kubermatic-groupprojectbindings"
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the

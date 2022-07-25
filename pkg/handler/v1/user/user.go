@@ -177,7 +177,11 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := apiv1.ConvertInternalUserToExternal(memberToUpdate, false, updatedMemberBinding)
+		externalUser := apiv1.ConvertInternalUserToExternal(
+			memberToUpdate,
+			false,
+			[]*kubermaticv1.UserProjectBinding{updatedMemberBinding},
+			nil)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -215,18 +219,22 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		membersOfProjectBindings, err := getMemberList(ctx, userInfoGetter, memberProvider, project, "")
+		membersOfUserProjectBindings, err := getMemberList(ctx, userInfoGetter, memberProvider, project, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUsers := []*apiv1.User{}
-		for _, memberOfProjectBinding := range membersOfProjectBindings {
+		var externalUsers []*apiv1.User
+		for _, memberOfProjectBinding := range membersOfUserProjectBindings {
 			user, err := userProvider.UserByEmail(ctx, memberOfProjectBinding.Spec.UserEmail)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			externalUser := apiv1.ConvertInternalUserToExternal(user, false, memberOfProjectBinding)
+			externalUser := apiv1.ConvertInternalUserToExternal(
+				user,
+				false,
+				[]*kubermaticv1.UserProjectBinding{memberOfProjectBinding},
+				nil)
 			externalUser = filterExternalUser(externalUser, project.Name)
 			externalUsers = append(externalUsers, externalUser)
 		}
@@ -275,7 +283,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := apiv1.ConvertInternalUserToExternal(userToInvite, false, generatedBinding)
+		externalUser := apiv1.ConvertInternalUserToExternal(userToInvite, false, []*kubermaticv1.UserProjectBinding{generatedBinding}, nil)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -321,12 +329,16 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
-		bindings, err := memberMapper.MappingsFor(ctx, authenticatedUser.Spec.Email)
+		userBindings, err := memberMapper.MappingsFor(ctx, authenticatedUser.Spec.Email)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		groupBindings, err := memberMapper.GroupMappingsFor(ctx, authenticatedUser.Spec.Groups)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return apiv1.ConvertInternalUserToExternal(authenticatedUser, true, bindings...), nil
+		return apiv1.ConvertInternalUserToExternal(authenticatedUser, true, userBindings, groupBindings), nil
 	}
 }
 

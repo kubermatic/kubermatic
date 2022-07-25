@@ -37,7 +37,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.admin",name="Admin",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // User specifies a user.
@@ -69,6 +70,9 @@ type UserSpec struct {
 	// Admins can for example see all projects and clusters in the KKP dashboard.
 	// +kubebuilder:default=false
 	IsAdmin bool `json:"admin"`
+	// Groups holds the information to which groups the user belongs to. Set automatically when logging in to the
+	// KKP API, and used by the KKP API.
+	Groups []string `json:"groups,omitempty"`
 
 	// Project is the name of the project that this service account user is tied to. This
 	// field is only applicable to service accounts and regular users must not set this field.

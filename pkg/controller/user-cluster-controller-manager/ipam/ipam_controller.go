@@ -46,7 +46,7 @@ import (
 
 const (
 	// ControllerName is the name of this controller.
-	ControllerName                 = "kubermatic_ipam_controller"
+	ControllerName                 = "kkp-ipam-controller"
 	annotationMachineUninitialized = "machine-controller.kubermatic.io/initializers"
 	annotationValue                = "ipam"
 )
@@ -91,7 +91,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, machine)
 	if err != nil {
-		r.recorder.Eventf(machine, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Event(machine, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }

@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	controllerName       = "constraint_controller"
+	controllerName       = "kkp-constraint-synchronizer"
 	constraintAPIVersion = "constraints.gatekeeper.sh/v1beta1"
 	spec                 = "spec"
 	parametersField      = "parameters"

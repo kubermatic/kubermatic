@@ -1,5 +1,7 @@
+//go:build !ee
+
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,24 +16,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package etcdlauncher
+package jig
 
 import (
 	"context"
-	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/provider"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func cleanupProject(t *testing.T, id string) {
-	t.Log("cleaning up project and cluster...")
-
-	// use a dedicated context so that cleanups always run, even
-	// if the context inside a test was already cancelled
-	token, err := utils.RetrieveAdminMasterToken(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get master token: %v", err)
-	}
-
-	utils.NewTestClient(token, t).CleanupProject(t, id)
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
+	return provider.SeedsGetterFactory(ctx, client, namespace)
 }

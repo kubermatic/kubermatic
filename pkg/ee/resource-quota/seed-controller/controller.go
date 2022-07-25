@@ -33,8 +33,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -97,7 +95,6 @@ func Add(mgr manager.Manager,
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.ResourceQuota{}},
 		&handler.EnqueueRequestForObject{},
-		kubermaticpred.ByNamespace(kubermaticresources.KubermaticNamespace),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seed resource quotas: %w", err)
 	}
@@ -118,7 +115,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, resourceQuota, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(resourceQuota, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(resourceQuota, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -227,8 +224,8 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
 
 		if err := client.List(context.Background(), resourceQuotaList,
-			&ctrlruntimeclient.ListOptions{Namespace: kubermaticresources.KubermaticNamespace,
-				LabelSelector: labels.NewSelector().Add(*subjectNameReq)}); err != nil {
+			&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*subjectNameReq)},
+		); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list resourceQuotas: %w", err))
 		}
 

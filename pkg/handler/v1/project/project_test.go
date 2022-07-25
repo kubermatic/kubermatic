@@ -367,6 +367,46 @@ func TestListProjectEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:       "scenario 4: group member can list projects with group bindings",
+			Body:       ``,
+			DisplayAll: false,
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John the owner
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				// add Bob assigned to "developers" team
+				test.GenUserWithGroups("", "Bob", "bob@acme.com", []string{"developers"}),
+				// make John the owner
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-second-project-ID", "john@acme.com", "owners"),
+				// add group binding for developers to second project
+				test.GenGroupBinding("my-second-project-ID", "developers", "viewers"),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExpectedResponse: []apiv1.Project{
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "my-second-project-ID",
+						Name:              "my-second-project",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{
+						{
+							ObjectMeta: apiv1.ObjectMeta{
+								Name: "John",
+							},
+							Email: "john@acme.com",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {

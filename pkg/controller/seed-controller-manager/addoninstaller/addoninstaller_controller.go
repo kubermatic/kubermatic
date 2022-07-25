@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	ControllerName  = "kubermatic_addoninstaller_controller"
+	ControllerName  = "kkp-addoninstaller-controller"
 	addonDefaultKey = ".spec.isDefault"
 
 	kubeProxyAddonName = "kube-proxy"
@@ -128,7 +128,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("cluster", request.Name)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
@@ -138,6 +138,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
+	}
+
+	if cluster.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -255,7 +259,7 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 		}
 		ensuredAddonsMap[addon.Name] = struct{}{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
-		addonLog := log.With("addon", name)
+		addonLog := log.With("addon", addon.Name)
 		existingAddon := &kubermaticv1.Addon{}
 		err := r.Get(ctx, name, existingAddon)
 		if err != nil {

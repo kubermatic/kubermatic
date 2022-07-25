@@ -238,6 +238,12 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 }
 
 func (a *AmazonEC2) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	// prevent excessive requests to AWS when a cluster is re-reconciled often
+	// during its deletion phase
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		return cluster, nil
+	}
+
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %w", err)

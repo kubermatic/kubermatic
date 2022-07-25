@@ -190,6 +190,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	cluster.Cluster.Name += rand.String(8)
 
 	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
+	cluster.Cluster.Spec.EnableOperatingSystemManager = c.opts.OperatingSystemManagerEnabled
 
 	params := &project.CreateClusterParams{
 		Context:   ctx,

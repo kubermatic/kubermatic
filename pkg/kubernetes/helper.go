@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	"go.uber.org/zap"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -60,10 +62,15 @@ func HasAnyFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
 }
 
-// HasOnlyFinalizer tells if an object has only the given finalizer.
-func HasOnlyFinalizer(o metav1.Object, name string) bool {
-	set := sets.NewString(o.GetFinalizers()...)
-	return set.Has(name) && set.Len() == 1
+// HasOnlyFinalizer tells if an object has only the given finalizer(s).
+func HasOnlyFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).Equal(sets.NewString(names...))
+}
+
+// HasFinalizerSuperset tells if the given finalizer(s) are a superset
+// of the actual finalizers.
+func HasFinalizerSuperset(o metav1.Object, names ...string) bool {
+	return sets.NewString(names...).IsSuperset(sets.NewString(o.GetFinalizers()...))
 }
 
 // RemoveFinalizer removes the given finalizers from the object.
@@ -209,15 +216,15 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 		)
 
 		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-			logger.Info("deployment rollout did not complete: not all replicas have been updated")
+			logger.Debug("deployment rollout did not complete: not all replicas have been updated")
 			return false, nil
 		}
 		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-			logger.Infow("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+			logger.Debugw("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-			logger.Info("deployment rollout did not complete: not enough updated replicas available")
+			logger.Debug("deployment rollout did not complete: not enough updated replicas available")
 			return false, nil
 		}
 
@@ -393,4 +400,20 @@ func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 	for key, value := range toEnsure {
 		labels[key] = value
 	}
+	o.SetLabels(labels)
+}
+
+type SeedClientMap map[string]ctrlruntimeclient.Client
+
+type SeedVisitorFunc func(seedName string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error
+
+func (m SeedClientMap) Each(ctx context.Context, log *zap.SugaredLogger, visitor SeedVisitorFunc) error {
+	for seedName, seedClient := range m {
+		err := visitor(seedName, seedClient, log.With("seed", seedName))
+		if err != nil {
+			return fmt.Errorf("failed processing Seed %s: %w", seedName, err)
+		}
+	}
+
+	return nil
 }

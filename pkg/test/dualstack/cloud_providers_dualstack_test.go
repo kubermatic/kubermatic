@@ -61,6 +61,7 @@ var cloudProviders = map[string]clusterSpec{
 	"openstack": openstack{},
 	"hetzner":   hetzner{},
 	"do":        do{},
+	"equinix":   equinix{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -101,10 +102,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "azure",
@@ -112,10 +111,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				"centos",
 				"ubuntu",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "canal",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "aws",
@@ -163,10 +160,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "openstack",
@@ -174,10 +169,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				"centos",
 				"ubuntu",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "canal",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
@@ -185,10 +178,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				"ubuntu",
 				"rockylinux",
 			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           false,
-			skipHostNetworkPods: false,
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
@@ -196,29 +187,39 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				"ubuntu",
 				"rockylinux",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           false,
-			skipHostNetworkPods: false,
+			cni:      "canal",
+			ipFamily: util.DualStack,
 		}, {
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:      "canal",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "canal",
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudName: "equinix",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:      "cilium",
+			ipFamily: util.DualStack,
 		},
 	}
 

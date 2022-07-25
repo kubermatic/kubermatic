@@ -91,7 +91,8 @@ func TestGetDCForProvider(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -303,7 +304,8 @@ func TestPatchDC(t *testing.T) {
 					Aws: &models.DatacenterSpecAWS{
 						Region: "fra2",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -361,7 +363,8 @@ func TestGetDCForSeed(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -400,7 +403,7 @@ func TestListDCForSeed(t *testing.T) {
 		{
 			name:            "list DCs for seed kubermatic",
 			seed:            "kubermatic",
-			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
+			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-am", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
 
@@ -455,7 +458,8 @@ func TestGetDC(t *testing.T) {
 					Digitalocean: &models.DatacenterSpecDigitalocean{
 						Region: "ams3",
 					},
-					Node: &models.NodeSettings{},
+					Node:        &models.NodeSettings{},
+					IPV6Enabled: true,
 				},
 			},
 		},
@@ -492,7 +496,7 @@ func TestListDC(t *testing.T) {
 	}{
 		{
 			name:            "list DCs",
-			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
+			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-hel1", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-am", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
 

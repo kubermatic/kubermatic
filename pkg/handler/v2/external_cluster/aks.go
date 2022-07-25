@@ -18,12 +18,15 @@ package externalcluster
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
@@ -237,17 +240,20 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		Mode:              &mode,
 		OSDiskSizeGB:      pointer.Int32(basicSettings.OsDiskSizeGB),
 		AvailabilityZones: azs,
-		EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
-		MaxCount:          pointer.Int32(basicSettings.ScalingConfig.MaxCount),
-		MinCount:          pointer.Int32(basicSettings.ScalingConfig.MinCount),
 		NodeLabels:        optionalSettings.NodeLabels,
+	}
+
+	if basicSettings.EnableAutoScaling {
+		agentPoolProfilesToBeCreated.EnableAutoScaling = to.BoolPtr(basicSettings.EnableAutoScaling)
+		agentPoolProfilesToBeCreated.MaxCount = pointer.Int32(basicSettings.ScalingConfig.MaxCount)
+		agentPoolProfilesToBeCreated.MinCount = pointer.Int32(basicSettings.ScalingConfig.MinCount)
 	}
 
 	clusterToCreate.Properties.AgentPoolProfiles = []*armcontainerservice.ManagedClusterAgentPoolProfile{
 		agentPoolProfilesToBeCreated,
 	}
 
-	future, err := aksClient.BeginCreateOrUpdate(
+	_, err = aksClient.BeginCreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
 		aksCloudSpec.Name,
@@ -255,14 +261,22 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		nil,
 	)
 	if err != nil {
+		var aerr *azcore.ResponseError
+		if ok := errors.As(err, &aerr); ok {
+			var response struct {
+				Code    string `json:"code,omitempty"`
+				Message string `json:"message,omitempty"`
+				SubCode string `json:"subcode,omitempty"`
+			}
+			if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
+				return err
+			}
+			return errors.New(response.Message)
+		}
 		return err
 	}
 
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-
-	return err
+	return nil
 }
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
@@ -303,6 +317,8 @@ func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
 }
 
 func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	isImported := resources.ExternalClusterIsImportedTrue
+
 	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -319,8 +335,9 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
 			return nil, err
 		}
+		isImported = resources.ExternalClusterIsImportedFalse
 	}
-	newCluster := genExternalCluster(name, project.Name)
+	newCluster := genExternalCluster(name, project.Name, isImported)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,
@@ -331,7 +348,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.AKS.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -539,6 +556,12 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
+	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
+		md.Phase = apiv2.ExternalClusterMDPhase{
+			State: aks.ConvertAKSStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+		}
+	}
+
 	return md
 }
 
@@ -737,6 +760,8 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, err
 	}
 
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
+
 	return &machineDeployment, nil
 }
 
@@ -847,31 +872,55 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 	clusterSpec := &apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
+		Tags:              aksCluster.Tags,
 		DNSPrefix:         to.String(aksClusterProperties.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
 		EnableRBAC:        to.Bool(aksClusterProperties.EnableRBAC),
-		NodeResourceGroup: to.String(aksClusterProperties.NodeResourceGroup),
 		FqdnSubdomain:     to.String(aksClusterProperties.FqdnSubdomain),
 		Fqdn:              to.String(aksClusterProperties.Fqdn),
 		PrivateFQDN:       to.String(aksClusterProperties.PrivateFQDN),
 	}
+
+	if aksCluster.SystemData != nil {
+		clusterSpec.CreatedAt = aksCluster.SystemData.CreatedAt
+		clusterSpec.CreatedBy = aksCluster.SystemData.CreatedBy
+	}
 	networkProfile := aksClusterProperties.NetworkProfile
 	if networkProfile != nil {
 		clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
-			NetworkPlugin:    string(*networkProfile.NetworkPlugin),
-			NetworkPolicy:    string(*networkProfile.NetworkPolicy),
-			NetworkMode:      string(*networkProfile.NetworkMode),
 			PodCidr:          to.String(networkProfile.PodCidr),
 			ServiceCidr:      to.String(networkProfile.ServiceCidr),
 			DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
 			DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
 		}
 	}
-	if aksCluster.Properties.AADProfile != nil {
-		clusterSpec.ManagedAAD = to.Bool(aksCluster.Properties.AADProfile.Managed)
+	if networkProfile.NetworkPlugin != nil {
+		clusterSpec.NetworkProfile.NetworkPlugin = string(*networkProfile.NetworkPlugin)
 	}
-
+	if networkProfile.NetworkPolicy != nil {
+		clusterSpec.NetworkProfile.NetworkPolicy = string(*networkProfile.NetworkPolicy)
+	}
+	if networkProfile.NetworkMode != nil {
+		clusterSpec.NetworkProfile.NetworkMode = string(*networkProfile.NetworkMode)
+	}
 	apiCluster.Spec.AKSClusterSpec = clusterSpec
 
 	return apiCluster, nil
+}
+
+func deleteAKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) error {
+	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	aksClient, err := aks.GetAKSClusterClient(cred)
+	if err != nil {
+		return err
+	}
+	err = aks.DeleteAKSCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

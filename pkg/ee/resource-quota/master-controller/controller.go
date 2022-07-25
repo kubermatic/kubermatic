@@ -33,8 +33,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -82,12 +80,12 @@ func Add(mgr manager.Manager,
 		if err := resourceQuotaSource.InjectCache(mgr.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache into resourceQuotaSource for seed %q: %w", seedName, err)
 		}
-		if err := c.Watch(resourceQuotaSource, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(resources.KubermaticNamespace)); err != nil {
+		if err := c.Watch(resourceQuotaSource, &handler.EnqueueRequestForObject{}); err != nil {
 			return fmt.Errorf("failed to establish watch for resource quotas in seed %q: %w", seedName, err)
 		}
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(resources.KubermaticNamespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for resource quota: %w", err)
 	}
 
@@ -107,7 +105,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, resourceQuota, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(resourceQuota, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(resourceQuota, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err

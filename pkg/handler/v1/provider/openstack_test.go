@@ -218,8 +218,8 @@ func TestOpenstackEndpoints(t *testing.T) {
 			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
 			ExpectedResponse: `[
-				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
-				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet"}
+				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet", "ipVersion": 4},
+				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet", "ipVersion": 4}
 			]`,
 		},
 		{
@@ -231,8 +231,8 @@ func TestOpenstackEndpoints(t *testing.T) {
 				test.GenDefaultPreset(),
 			},
 			ExpectedResponse: `[
-				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
-				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet"}
+				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet", "ipVersion": 4},
+				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet", "ipVersion": 4}
 			]`,
 		},
 		{

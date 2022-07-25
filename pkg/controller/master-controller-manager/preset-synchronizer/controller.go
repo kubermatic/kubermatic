@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -42,12 +41,15 @@ import (
 const (
 	// This controller syncs the kubermatic preset on the master cluster to the seed clusters.
 	ControllerName = "kkp-preset-synchronizer"
+
+	// cleanupFinalizer indicates that synced preset on seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
 )
 
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 	recorder     record.EventRecorder
 }
 
@@ -60,7 +62,7 @@ func Add(
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
@@ -109,7 +111,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, preset, apiv1.PresetSeedCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, preset, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -117,7 +119,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		presetCreatorGetter(preset),
 	}
 
-	err := r.syncAllSeeds(log, preset, func(seedClient ctrlruntimeclient.Client, preset *kubermaticv1.Preset) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedPreset := &kubermaticv1.Preset{}
 		if err := seedClient.Get(ctx, request.NamespacedName, seedPreset); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch preset on seed cluster: %w", err)
@@ -131,15 +133,15 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileKubermaticV1Presets(ctx, presetCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Eventf(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciled preset: %s: %w", preset.Name, err)
 	}
 	return nil
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, preset *kubermaticv1.Preset) error {
-	if kuberneteshelper.HasFinalizer(preset, apiv1.PresetSeedCleanupFinalizer) {
-		if err := r.syncAllSeeds(log, preset, func(seedClient ctrlruntimeclient.Client, preset *kubermaticv1.Preset) error {
+	if kuberneteshelper.HasFinalizer(preset, cleanupFinalizer) {
+		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.Preset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: preset.Name,
@@ -151,26 +153,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, preset, apiv1.PresetSeedCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, preset, cleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove preset finalizer %s: %w", preset.Name, err)
 		}
 	}
 
-	return nil
-}
-
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, preset *kubermaticv1.Preset, action func(seedClient ctrlruntimeclient.Client, preset *kubermaticv1.Preset) error) error {
-	for seedName, seedClient := range r.seedClients {
-		log := log.With("seed", seedName)
-
-		log.Debug("Reconciling preset with seed")
-
-		err := action(seedClient, preset)
-		if err != nil {
-			return fmt.Errorf("failed syncing preset %s for seed %s: %w", preset.Name, seedName, err)
-		}
-		log.Debug("Reconciled preset with seed")
-	}
 	return nil
 }
 

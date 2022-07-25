@@ -30,8 +30,13 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
 echodate "Creating Hetzner preset..."
@@ -60,8 +65,11 @@ spec:
 EOF
 retry 2 kubectl apply -f user.yaml
 
-echodate "Running mla tests..."
+echodate "Running MLA tests..."
 
-go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla -kubeconfig "$KUBECONFIG"
+go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
+  -kubeconfig "$KUBECONFIG" \
+  -datacenter hetzner-hel1 \
+  -preset e2e-hetzner
 
 echodate "Tests completed successfully!"

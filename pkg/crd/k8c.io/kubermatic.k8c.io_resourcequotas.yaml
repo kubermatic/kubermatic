@@ -13,7 +13,7 @@ spec:
     listKind: ResourceQuotaList
     plural: resourcequotas
     singular: resourcequota
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp

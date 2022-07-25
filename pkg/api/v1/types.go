@@ -291,16 +291,17 @@ type GCPSubnetworkList []GCPSubnetwork
 // GCPSubnetwork represents a object of GCP subnetworks.
 // swagger:model GCPSubnetwork
 type GCPSubnetwork struct {
-	ID                    uint64 `json:"id"`
-	Name                  string `json:"name"`
-	Network               string `json:"network"`
-	IPCidrRange           string `json:"ipCidrRange"`
-	GatewayAddress        string `json:"gatewayAddress"`
-	Region                string `json:"region"`
-	SelfLink              string `json:"selfLink"`
-	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
-	Kind                  string `json:"kind"`
-	Path                  string `json:"path"`
+	ID                    uint64                `json:"id"`
+	Name                  string                `json:"name"`
+	Network               string                `json:"network"`
+	IPCidrRange           string                `json:"ipCidrRange"`
+	GatewayAddress        string                `json:"gatewayAddress"`
+	Region                string                `json:"region"`
+	SelfLink              string                `json:"selfLink"`
+	PrivateIPGoogleAccess bool                  `json:"privateIpGoogleAccess"`
+	Kind                  string                `json:"kind"`
+	Path                  string                `json:"path"`
+	IPFamily              kubermaticv1.IPFamily `json:"ipFamily"`
 }
 
 // DigitaloceanSizeList represents a object of digitalocean sizes.
@@ -549,13 +550,25 @@ type User struct {
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
+	// Groups holds the list of groups that the user belongs to
+	Groups []string `json:"groups,omitempty"`
+
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 
 	// LastSeen holds a time in UTC format when the user has been using the API last time
 	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 
-func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool, bindings ...*kubermaticv1.UserProjectBinding) *User {
+var RolePriority = map[string]int{
+	"owners":          1000,
+	"projectmanagers": 100,
+	"editors":         10,
+	"viewers":         1,
+}
+
+func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool,
+	userBindings []*kubermaticv1.UserProjectBinding, groupBindings []*kubermaticv1.GroupProjectBinding,
+) *User {
 	apiUser := &User{
 		ObjectMeta: ObjectMeta{
 			ID:                internalUser.Name,
@@ -569,8 +582,10 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 				return nil
 			}(),
 		},
-		Email:   internalUser.Spec.Email,
-		IsAdmin: internalUser.Spec.IsAdmin,
+		Email:    internalUser.Spec.Email,
+		Groups:   internalUser.Spec.Groups,
+		IsAdmin:  internalUser.Spec.IsAdmin,
+		Projects: []ProjectGroup{},
 	}
 
 	if !internalUser.Status.LastSeen.IsZero() {
@@ -582,17 +597,30 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		apiUser.Settings = internalUser.Spec.Settings
 	}
 
-	for _, binding := range bindings {
+	for _, binding := range userBindings {
+		groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
+		pg := ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix}
+		apiUser.Projects = append(apiUser.Projects, pg)
+	}
+
+	for _, binding := range groupBindings {
+		overwriteRole := false
 		bindingAlreadyExists := false
 		for _, pg := range apiUser.Projects {
-			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
+			if pg.ID == binding.Spec.ProjectID {
 				bindingAlreadyExists = true
+				// Check if role from group binding is more permissive.
+				if RolePriority[binding.Spec.Role] > RolePriority[pg.GroupPrefix] {
+					overwriteRole = true
+				}
 				break
 			}
 		}
-		if !bindingAlreadyExists {
-			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
-			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
+		if overwriteRole || !bindingAlreadyExists {
+			apiUser.Projects = append(apiUser.Projects, ProjectGroup{
+				ID:          binding.Spec.ProjectID,
+				GroupPrefix: binding.Spec.Role,
+			})
 		}
 	}
 
@@ -711,6 +739,8 @@ type OpenstackSubnet struct {
 	ID string `json:"id"`
 	// Name is human-readable name for the subnet
 	Name string `json:"name"`
+	// IPversion is the IP protocol version (4 or 6)
+	IPVersion int `json:"ipVersion"`
 }
 
 // OpenstackTenant is the object representing a openstack tenant.
@@ -1129,7 +1159,7 @@ func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicA
 
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
 type PublicOpenstackCloudSpec struct {
-	FloatingIPPool string `json:"floatingIpPool"`
+	FloatingIPPool string `json:"floatingIPPool"`
 	Project        string `json:"project,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
 	Domain         string `json:"domain,omitempty"`
@@ -2165,7 +2195,7 @@ type VMwareCloudDirectorNodeSpec struct {
 	StorageProfile   string               `json:"storageProfile"`
 	IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
 	VApp             string               `json:"vapp,omitempty"`
-	Network          string               `json:"network"`
+	Network          string               `json:"network,omitempty"`
 	// Additional metadata to set
 	// required: false
 	Metadata map[string]string `json:"metadata,omitempty"`
@@ -2202,10 +2232,6 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 		missing = append(missing, "catalog")
 	}
 
-	if len(spec.Network) == 0 {
-		missing = append(missing, "network")
-	}
-
 	if len(missing) > 0 {
 		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
@@ -2221,7 +2247,7 @@ func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
 		StorageProfile   string               `json:"storageProfile,omitempty"`
 		IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
 		VApp             string               `json:"vapp,omitempty"`
-		Network          string               `json:"network"`
+		Network          string               `json:"network,omitempty"`
 		Metadata         map[string]string    `json:"metadata,omitempty"`
 	}{
 		CPUs:             spec.CPUs,
@@ -2679,62 +2705,3 @@ type MeteringReportConfiguration struct {
 // ReportURL represent an S3 pre signed URL to download a report
 // swagger:model MeteringReportURL
 type ReportURL string
-
-const (
-	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
-	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"
-	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
-	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
-	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
-	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
-	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
-	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
-	// ExternalClusterKubeOneManifestSecretCleanupFinalizer indicates that secrets for manifest secret still need cleanup.
-	ExternalClusterKubeOneManifestSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-manifest-secret"
-	// ExternalClusterKubeOneSSHSecretCleanupFinalizer indicates that secrets for ssh secret still need cleanup.
-	ExternalClusterKubeOneSSHSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-ssh-secret"
-	// ExternalClusterKubeOneNamespaceCleanupFinalizer indicates that kubeone cluster namespace still need cleanup.
-	ExternalClusterKubeOneNamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeone-namespace"
-	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
-	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
-	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
-	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeconfig-secret"
-	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
-	EtcdBackupConfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-etcdbackupconfigs"
-	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
-	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraint-templates"
-	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
-	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-master-constraint-templates"
-	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
-	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-seed-constraint"
-	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
-	GatekeeperConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraints"
-	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
-	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
-	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
-	KubermaticConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-constraints"
-	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
-	SeedProjectCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
-	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
-	SeedUserProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-user-project-bindings"
-	// SeedGroupProjectBindingCleanupFinalizer indicates that Kubermatic GroupProjectBindings on the seed clusters need cleanup.
-	SeedGroupProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-group-project-bindings"
-	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
-	SeedUserCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
-	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
-	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
-	ClusterRoleBindingsCleanupFinalizer = "kubermatic.k8c.io/cleanup-cluster-role-bindings"
-	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
-	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
-	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
-	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
-	// PresetSeedCleanupFinalizer indicates that synced preset on seed clusters need cleanup.
-	PresetSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
-	// ResourceQuotaSeedCleanupFinalizer indicates that synced resource quota on seed clusters needs cleanup.
-	ResourceQuotaSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-resource-quota"
-)
-
-const (
-	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
-	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
-)

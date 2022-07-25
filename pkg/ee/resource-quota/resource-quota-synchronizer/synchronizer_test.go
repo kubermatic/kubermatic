@@ -29,11 +29,9 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -102,7 +100,7 @@ func TestReconcile(t *testing.T) {
 				seedClients:  map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
 			}
 
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName, Namespace: kubermaticresources.KubermaticNamespace}}
+			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
 			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
@@ -150,7 +148,6 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
-	rq.Namespace = kubermaticresources.KubermaticNamespace
 	rq.Labels = map[string]string{
 		kubermaticv1.ResourceQuotaSubjectNameLabelKey: "project1",
 		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
@@ -182,7 +179,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		rq.DeletionTimestamp = &deleteTime
-		rq.Finalizers = append(rq.Finalizers, apiv1.ResourceQuotaSeedCleanupFinalizer)
+		rq.Finalizers = append(rq.Finalizers, cleanupFinalizer)
 	}
 
 	return rq

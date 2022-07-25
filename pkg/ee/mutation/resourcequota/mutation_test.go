@@ -36,7 +36,6 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/webhook/resourcequota/mutation"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -113,8 +112,8 @@ func TestHandle(t *testing.T) {
 					"add",
 					"/metadata/labels",
 					map[string]interface{}{
-						"subject-kind": kubermaticv1.ProjectSubjectKind,
-						"subject-name": "xxtestxx",
+						kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+						kubermaticv1.ResourceQuotaSubjectNameLabelKey: "xxtestxx",
 					},
 				),
 			},
@@ -303,9 +302,8 @@ func (r rawResourceQuotaGen) Do() []byte {
 			Kind:       "ResourceQuota",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.Name,
-			Namespace: resources.KubermaticNamespace,
-			Labels:    r.Labels,
+			Name:   r.Name,
+			Labels: r.Labels,
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{

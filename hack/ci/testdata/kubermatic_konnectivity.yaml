@@ -19,20 +19,14 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
+    # Even though no ingress will be created (due to the HeadlessInstallation
+    # feature gate), we still need the base domain to construct the URLs to
+    # the usercluster kube-apiserver. This traffic however is never routed
+    # through nginx.
     domain: '__KUBERMATIC_DOMAIN__'
-    disable: true
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 1
-  api:
-    replicas: 1
-    debugLog: true
   featureGates:
     KonnectivityService: true
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    tokenIssuer: "http://dex.oauth:5556/dex"
-    issuerRedirectURL: "http://localhost:8000"
-    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
+    HeadlessInstallation: true

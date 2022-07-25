@@ -583,3 +583,33 @@ func (k NewApplicationInstallationWrapper) EqualOrDie(expected NewApplicationIns
 		t.Errorf("actual slice is different that the expected one. Diff: %v", d)
 	}
 }
+
+// NewApplicationDefinitionWrapper wraps []apiv2.ApplicationDefinition
+// to provide convenient methods for tests.
+type NewApplicationDefinitionWrapper []apiv2.ApplicationDefinition
+
+// DecodeOrDie reads and decodes json data from the reader.
+func (k *NewApplicationDefinitionWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewApplicationDefinitionWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// Sort sorts the collection by Name.
+func (k NewApplicationDefinitionWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < (k[j].Name)
+	})
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one.
+func (k NewApplicationDefinitionWrapper) EqualOrDie(expected NewApplicationDefinitionWrapper, t *testing.T) {
+	t.Helper()
+	if d := diff.ObjectDiff(expected, k); d != "" {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", d)
+	}
+}

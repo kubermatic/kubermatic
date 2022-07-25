@@ -33,6 +33,9 @@ type DatacenterSpecOpenstack struct {
 	// Optional
 	EnforceFloatingIP bool `json:"enforceFloatingIP,omitempty"`
 
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPV6Enabled bool `json:"ipv6Enabled,omitempty"`
+
 	// Optional
 	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"`
 

@@ -32,10 +32,22 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
+type ExternalClusterProvider string
+
+const (
+	ExternalClusterGKEProvider     ExternalClusterProvider = "gke"
+	ExternalClusterEKSProvider     ExternalClusterProvider = "eks"
+	ExternalClusterAKSProvider     ExternalClusterProvider = "aks"
+	ExternalClusterKubeOneProvider ExternalClusterProvider = "kubeone"
+)
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloudSpec.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
+// +kubebuilder:printcolumn:JSONPath=".status.condition.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ExternalCluster is the object representing an external kubernetes cluster.
@@ -99,10 +111,11 @@ type ExternalClusterSpec struct {
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	GKE     *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
-	EKS     *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
-	AKS     *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
-	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+	ProviderName ExternalClusterProvider          `json:"providerName"`
+	GKE          *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
+	EKS          *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
+	AKS          *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne      *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
 type ExternalClusterPhase string

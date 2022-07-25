@@ -27,7 +27,10 @@ package resourcequota
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -38,6 +41,8 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // swagger:parameters getResourceQuota deleteResourceQuota
@@ -63,9 +68,9 @@ type createResourceQuota struct {
 	// in: body
 	// required: true
 	Body struct {
-		SubjectName string                       `json:"subjectName"`
-		SubjectKind string                       `json:"subjectKind"`
-		Quota       kubermaticv1.ResourceDetails `json:"quota"`
+		SubjectName string      `json:"subjectName"`
+		SubjectKind string      `json:"subjectKind"`
+		Quota       apiv2.Quota `json:"quota"`
 	}
 }
 
@@ -77,7 +82,7 @@ type patchResourceQuota struct {
 
 	// in: body
 	// required: true
-	Body kubermaticv1.ResourceDetails
+	Body apiv2.Quota
 }
 
 func (m createResourceQuota) Validate() error {
@@ -138,7 +143,7 @@ func DecodePatchResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
+func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.PrivilegedProjectProvider) (*apiv2.ResourceQuota, error) {
 	req, ok := request.(getResourceQuota)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -152,7 +157,16 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, err
 	}
 
-	return convertToAPIStruct(resourceQuota), nil
+	var humanReadableName string
+	if resourceQuota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
+		project, err := projectProvider.GetUnsecured(ctx, resourceQuota.Spec.Subject.Name, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		humanReadableName = project.Spec.Name
+	}
+
+	return convertToAPIStruct(resourceQuota, humanReadableName), nil
 }
 
 func GetResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
@@ -176,15 +190,15 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, err
 	}
 
-	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, kubermaticProject.Kind)
+	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, strings.ToLower(kubermaticProject.Kind))
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return convertToAPIStruct(projectResourceQuota), nil
+	return convertToAPIStruct(projectResourceQuota, kubermaticProject.Spec.Name), nil
 }
 
-func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.ProjectProvider) ([]*apiv2.ResourceQuota, error) {
 	req, ok := request.(listResourceQuotas)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -203,9 +217,26 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		return nil, err
 	}
 
+	// Fetching projects to get their human-readable names.
+	projectMap := make(map[string]*kubermaticv1.Project)
+	projects, err := projectProvider.List(ctx, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, project := range projects {
+		projectMap[project.Name] = project
+	}
+	projectSet := sets.StringKeySet(projectMap)
+
 	resp := make([]*apiv2.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
-		resp[idx] = convertToAPIStruct(&rq)
+		var humanReadableName string
+		if rq.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
+			if projectSet.Has(rq.Spec.Subject.Name) {
+				humanReadableName = projectMap[rq.Spec.Subject.Name].Spec.Name
+			}
+		}
+		resp[idx] = convertToAPIStruct(&rq, humanReadableName)
 	}
 
 	return resp, nil
@@ -221,7 +252,12 @@ func CreateResourceQuota(ctx context.Context, request interface{}, provider prov
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	if err := provider.CreateUnsecured(ctx, kubermaticv1.Subject{Name: req.Body.SubjectName, Kind: req.Body.SubjectKind}, req.Body.Quota); err != nil {
+	crdQuota, err := convertToCRDQuota(req.Body.Quota)
+	if err != nil {
+		return utilerrors.NewBadRequest(err.Error())
+	}
+
+	if err := provider.CreateUnsecured(ctx, kubermaticv1.Subject{Name: req.Body.SubjectName, Kind: req.Body.SubjectKind}, crdQuota); err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			name := buildNameFromSubject(kubermaticv1.Subject{Name: req.Body.SubjectName, Kind: req.Body.SubjectKind})
 			return utilerrors.NewAlreadyExists("ResourceQuota", name)
@@ -245,7 +281,12 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 		return err
 	}
 	newResourceQuota := originalResourceQuota.DeepCopy()
-	newResourceQuota.Spec.Quota = req.Body
+
+	crdQuota, err := convertToCRDQuota(req.Body)
+	if err != nil {
+		return utilerrors.NewBadRequest(err.Error())
+	}
+	newResourceQuota.Spec.Quota = crdQuota
 
 	if err := provider.PatchUnsecured(ctx, originalResourceQuota, newResourceQuota); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -256,13 +297,14 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 	return nil
 }
 
-func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv2.ResourceQuota {
+func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota, humanReadableSubjectName string) *apiv2.ResourceQuota {
 	return &apiv2.ResourceQuota{
-		Name:        resourceQuota.Name,
-		SubjectName: resourceQuota.Spec.Subject.Name,
-		SubjectKind: resourceQuota.Spec.Subject.Kind,
-		Quota:       resourceQuota.Spec.Quota,
-		Status:      resourceQuota.Status,
+		Name:                     resourceQuota.Name,
+		SubjectName:              resourceQuota.Spec.Subject.Name,
+		SubjectKind:              resourceQuota.Spec.Subject.Kind,
+		Quota:                    convertToAPIQuota(resourceQuota.Spec.Quota),
+		Status:                   resourceQuota.Status,
+		SubjectHumanReadableName: humanReadableSubjectName,
 	}
 }
 
@@ -279,4 +321,51 @@ func DeleteResourceQuota(ctx context.Context, request interface{}, provider prov
 		return err
 	}
 	return nil
+}
+
+func convertToAPIQuota(resourceDetails kubermaticv1.ResourceDetails) apiv2.Quota {
+	var cpu int64
+	if resourceDetails.CPU != nil {
+		cpu = resourceDetails.CPU.Value()
+	}
+
+	// Get memory and storage denoted in GB
+	var memory, storage float64
+	if resourceDetails.Memory != nil && resourceDetails.Memory.Value() != 0 {
+		memory = float64(resourceDetails.Memory.Value()) / math.Pow10(int(resource.Giga))
+		// round to 2 decimal places
+		memory = math.Round(memory*100) / 100
+	}
+
+	if resourceDetails.Storage != nil && resourceDetails.Storage.Value() != 0 {
+		storage = float64(resourceDetails.Storage.Value()) / math.Pow10(int(resource.Giga))
+		// round to 2 decimal places
+		storage = math.Round(storage*100) / 100
+	}
+
+	return apiv2.Quota{
+		CPU:     cpu,
+		Memory:  memory,
+		Storage: storage,
+	}
+}
+
+func convertToCRDQuota(quota apiv2.Quota) (kubermaticv1.ResourceDetails, error) {
+	var cpu, mem, storage resource.Quantity
+	cpu, err := resource.ParseQuantity(fmt.Sprintf("%d", quota.CPU))
+	if err != nil {
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota CPU %w", err)
+	}
+
+	mem, err = resource.ParseQuantity(fmt.Sprintf("%fG", quota.Memory))
+	if err != nil {
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Memory %w", err)
+	}
+
+	storage, err = resource.ParseQuantity(fmt.Sprintf("%fG", quota.Storage))
+	if err != nil {
+		return kubermaticv1.ResourceDetails{}, fmt.Errorf("error parsing quota Storage %w", err)
+	}
+
+	return *kubermaticv1.NewResourceDetails(cpu, mem, storage), nil
 }

@@ -36,6 +36,8 @@ import (
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 	clustertemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/clustertemplate/validation"
+	externalclustermutation "k8c.io/kubermatic/v2/pkg/webhook/externalcluster/mutation"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/webhook/groupprojectbinding/validation"
 	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
@@ -161,6 +163,11 @@ func main() {
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
+	// setup ExternalCluster webhooks
+
+	externalclustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
 	// setup ClusterTemplate webhooks
 
 	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, seedClientGetter, configGetter, options.featureGates, caPool)
@@ -223,6 +230,14 @@ func main() {
 	ipamPoolValidator := ipampoolvalidation.NewValidator(seedGetter, seedClientGetter)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup GroupProjectBinding webhook
+
+	groupProjectBindingValidator := groupprojectbinding.NewValidator()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

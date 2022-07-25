@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +50,10 @@ import (
 )
 
 const (
-	warningType = "warning"
-	normalType  = "normal"
+	warningType      = "warning"
+	normalType       = "normal"
+	DeleteAction     = "delete"
+	DisconnectAction = "disconnect"
 )
 
 // createClusterReq defines HTTP request for createExternalCluster
@@ -178,8 +181,9 @@ func CreateEndpoint(
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
-			newCluster := genExternalCluster(req.Body.Name, project.Name)
-			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
+			isImported := resources.ExternalClusterIsImportedTrue
+			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
+			kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, utilerrors.NewBadRequest(err.Error())
@@ -271,7 +275,13 @@ func CreateEndpoint(
 	}
 }
 
-func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	clusterProvider provider.ExternalClusterProvider,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+	settingsProvider provider.SettingsProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -292,8 +302,42 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return nil, deleteCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, cluster)
+		if req.Action == DeleteAction {
+			err := deleteProviderCluster(ctx, cluster, privilegedClusterProvider)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, deleteExternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, cluster)
 	}
+}
+func deleteProviderCluster(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+) error {
+	cloud := cluster.Spec.CloudSpec
+	if cloud != nil && cloud.ProviderName != "" {
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		if cloud.AKS != nil {
+			err := deleteAKSCluster(ctx, secretKeySelector, cloud)
+			if err != nil {
+				return err
+			}
+		}
+		if cloud.EKS != nil {
+			err := deleteEKSCluster(ctx, secretKeySelector, cloud)
+			if err != nil {
+				return err
+			}
+		}
+		if cloud.GKE != nil {
+			err := deletGKECluster(ctx, secretKeySelector, cloud)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // deleteClusterReq defines HTTP request for deleteExternalCluster
@@ -303,6 +347,15 @@ type deleteClusterReq struct {
 	// in: path
 	// required: true
 	ClusterID string `json:"cluster_id"`
+	// The Action is used to check if to `Delete` the cluster:
+	// both the actual cluter from the provider
+	// and the respective KKP cluster object
+	// By default the cluster will `Disconnect` which means the KKP cluster object will be deleted,
+	// cluster still exists on the provider, but is no longer connected/imported in KKP
+	// in: header
+	// name: Action
+	// Possible values: Delete, Disconnect
+	Action string `json:"action"`
 }
 
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -320,16 +373,23 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.ClusterID = clusterID
 
+	req.Action = r.Header.Get("Action")
 	return req, nil
 }
 
 // Validate validates DeleteEndpoint request.
 func (req deleteClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
-		return fmt.Errorf("the project ID cannot be empty")
+		return fmt.Errorf("the \"ProjectID\" cannot be empty")
 	}
 	if len(req.ClusterID) == 0 {
-		return fmt.Errorf("the cluster ID cannot be empty")
+		return fmt.Errorf("the \"ClusterID\" cannot be empty")
+	}
+	if len(req.Action) > 0 {
+		if req.Action == DeleteAction || req.Action == DisconnectAction {
+			return nil
+		}
+		return fmt.Errorf("wrong action parameter, unsupported action: %s", req.Action)
 	}
 	return nil
 }
@@ -475,7 +535,7 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates DeleteEndpoint request.
+// Validate validates GetEndpoint request.
 func (req GetClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -899,14 +959,16 @@ func (req listEventsReq) Validate() error {
 	return nil
 }
 
-func genExternalCluster(name, projectID string) *kubermaticv1.ExternalCluster {
+func genExternalCluster(name, projectID, isImported string) *kubermaticv1.ExternalCluster {
 	return &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   rand.String(10),
-			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
+			Name: rand.String(10),
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectID,
+				resources.ExternalClusterIsImported: isImported},
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
+			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }
@@ -980,7 +1042,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
 	kubeOneCondtion := internalCluster.Status.Condition
-	if cloud == nil {
+	if cloud.ProviderName == "" {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
@@ -1052,7 +1114,7 @@ func getCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clu
 	return clusterProvider.Get(ctx, userInfo, clusterName)
 }
 
-func deleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticv1.ExternalCluster) error {
+func deleteExternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticv1.ExternalCluster) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err

@@ -415,6 +415,71 @@ type DatacenterSpec struct {
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 }
 
+var (
+	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+	knownIPv6CloudProviders = map[ProviderType]struct {
+		ipv6EnabledForAllDatacenters bool
+	}{
+		AWSCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		AzureCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		BringYourOwnCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		DigitaloceanCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		GCPCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		HetznerCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		OpenstackCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
+		PacketCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		VSphereCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
+	}
+)
+
+func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
+	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	return isIPv6KnownProvider
+}
+
+// IsIPv6Enabled returns true if ipv6 is enabled for the datacenter.
+func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
+	cloudProviderCfg, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	if !isIPv6KnownProvider {
+		return false
+	}
+
+	if cloudProviderCfg.ipv6EnabledForAllDatacenters {
+		return true
+	}
+
+	switch cloudProvider {
+	case OpenstackCloudProvider:
+		if d.Spec.Openstack != nil && d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
+			return true
+		}
+	case VSphereCloudProvider:
+		if d.Spec.VSphere != nil && d.Spec.VSphere.IPv6Enabled != nil && *d.Spec.VSphere.IPv6Enabled {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
@@ -467,6 +532,8 @@ type DatacenterSpecOpenstack struct {
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
 	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -512,6 +579,8 @@ type DatacenterSpecVSphere struct {
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type DatacenterSpecVMwareCloudDirector struct {
@@ -549,7 +618,10 @@ type DatacenterSpecBringYourOwn struct {
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://support.packet.com/kb/articles/data-centers
-	Facilities []string `json:"facilities"`
+	Facilities []string `json:"facilities,omitempty"`
+	// Metros are facilities that are grouped together geographically and share capacity
+	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
+	Metro string `json:"metro,omitempty"`
 }
 
 // DatacenterSpecGCP describes a GCP datacenter.

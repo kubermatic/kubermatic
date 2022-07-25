@@ -128,7 +128,7 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, r
 
 	err := r.reconcile(ctx, log, sa)
 	if err != nil {
-		r.recorder.Eventf(sa, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(sa, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		log.Errorw("failed to reconcile", zap.Error(err))
 	}
 

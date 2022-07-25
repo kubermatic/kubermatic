@@ -51,7 +51,7 @@ func TestCreateCluster(t *testing.T) {
 			name:            "scenario 1, create kubernetes cluster",
 			shareKubeconfig: false,
 			workerName:      "test-kubernetes",
-			userInfo:        &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo:        &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:         genDefaultProject(),
 			spec:            genClusterSpec("test-k8s"),
 			clusterType:     "kubernetes",
@@ -69,7 +69,7 @@ func TestCreateCluster(t *testing.T) {
 			name:            "scenario 3, create kubernetes cluster when share kubeconfig is enabled and OIDC is set",
 			shareKubeconfig: true,
 			workerName:      "test-kubernetes",
-			userInfo:        &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			userInfo:        &provider.UserInfo{Email: "john@acme.com", Groups: []string{"owners-abcd"}},
 			project:         genDefaultProject(),
 			spec: func() *kubermaticv1.ClusterSpec {
 				spec := genClusterSpec("test-k8s")

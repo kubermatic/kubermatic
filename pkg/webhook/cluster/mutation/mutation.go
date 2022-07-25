@@ -53,7 +53,7 @@ type AdmissionHandler struct {
 	caBundle     *x509.CertPool
 
 	// disableProviderMutation is only for unit tests, to ensure no
-	// provide would phone home to validate dummy test credentials
+	// provider would phone home to validate dummy test credentials
 	disableProviderMutation bool
 }
 
@@ -93,12 +93,12 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
-			h.log.Info("cluster mutation failed", "error", err)
+			h.log.Error(err, "cluster mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
 		if err := h.mutateCreate(cluster); err != nil {
-			h.log.Info("cluster mutation failed", "error", err)
+			h.log.Error(err, "cluster mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -114,12 +114,12 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			// apply defaults to the existing clusters
 			err := h.applyDefaults(ctx, cluster)
 			if err != nil {
-				h.log.Info("cluster mutation failed", "error", err)
+				h.log.Error(err, "cluster mutation failed")
 				return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 			}
 
 			if err := h.mutateUpdate(oldCluster, cluster); err != nil {
-				h.log.Info("cluster mutation failed", "error", err)
+				h.log.Error(err, "cluster mutation failed")
 				return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 			}
 		}

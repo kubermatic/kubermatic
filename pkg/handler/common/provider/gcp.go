@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"google.golang.org/api/compute/v1"
@@ -215,27 +214,12 @@ func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 
 	req := computeService.Subnetworks.List(project, datacenter.Spec.GCP.Region)
 	err = req.Pages(ctx, func(page *compute.SubnetworkList) error {
-		subnetworkRegex := regexp.MustCompile(`(projects\/.+)$`)
 		for _, subnetwork := range page.Items {
 			// subnetworks.Network are a url e.g. https://www.googleapis.com/compute/v1/[...]/networks/default"
 			// we just get the path of the network, instead of the url
 			// therefore we can't use regular Filter function and need to check on our own
 			if strings.Contains(subnetwork.Network, networkName) {
-				subnetworkPath := subnetworkRegex.FindString(subnetwork.SelfLink)
-				net := apiv1.GCPSubnetwork{
-					ID:                    subnetwork.Id,
-					Name:                  subnetwork.Name,
-					Network:               subnetwork.Network,
-					IPCidrRange:           subnetwork.IpCidrRange,
-					GatewayAddress:        subnetwork.GatewayAddress,
-					Region:                subnetwork.Region,
-					SelfLink:              subnetwork.SelfLink,
-					PrivateIPGoogleAccess: subnetwork.PrivateIpGoogleAccess,
-					Kind:                  subnetwork.Kind,
-					Path:                  subnetworkPath,
-				}
-
-				subnetworks = append(subnetworks, net)
+				subnetworks = append(subnetworks, gcp.ToGCPSubnetworkAPIModel(subnetwork))
 			}
 		}
 		return nil
@@ -254,20 +238,8 @@ func ListGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 
 	req := computeService.Networks.List(project)
 	err = req.Pages(ctx, func(page *compute.NetworkList) error {
-		networkRegex := regexp.MustCompile(`(global\/.+)$`)
 		for _, network := range page.Items {
-			networkPath := networkRegex.FindString(network.SelfLink)
-
-			net := apiv1.GCPNetwork{
-				ID:                    network.Id,
-				Name:                  network.Name,
-				AutoCreateSubnetworks: network.AutoCreateSubnetworks,
-				Subnetworks:           network.Subnetworks,
-				Kind:                  network.Kind,
-				Path:                  networkPath,
-			}
-
-			networks = append(networks, net)
+			networks = append(networks, gcp.ToGCPNetworkAPIModel(network))
 		}
 		return nil
 	})

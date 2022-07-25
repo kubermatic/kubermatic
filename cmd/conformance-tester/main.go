@@ -119,10 +119,15 @@ func main() {
 
 	log.Infow("Using project", "project", opts.KubermaticProject)
 
+	scenarios, err := scenarios.GetScenarios(rootCtx, opts, log)
+	if err != nil {
+		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
+	}
+
 	// let the magic happen!
 	log.Info("Running E2E tests...")
 	start := time.Now()
-	if err := testRunner.Run(rootCtx, scenarios.GetScenarios(opts, log)); err != nil {
+	if err := testRunner.Run(rootCtx, scenarios); err != nil {
 		log.Fatalw("Test failed", zap.Error(err))
 	}
 

@@ -31,12 +31,8 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-const (
-	vSphereDatacenter = "vsphere-ger"
-)
-
 // GetVSphereScenarios returns a matrix of (version x operating system).
-func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []Scenario {
+func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var (
 		customFolder     bool
 		datastoreCluster bool
@@ -56,6 +52,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
+			dc:      datacenter.Spec.VSphere,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
@@ -65,6 +62,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 		// CentOS
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
+			dc:      datacenter.Spec.VSphere,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -78,6 +76,7 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 
 type vSphereScenario struct {
 	version          *semver.Semver
+	dc               *kubermaticv1.DatacenterSpecVSphere
 	osSpec           apimodels.OperatingSystemSpec
 	customFolder     bool
 	datastoreCluster bool
@@ -92,11 +91,11 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: vSphereDatacenter,
+					DatacenterName: secrets.VSphere.KKPDatacenter,
 					Vsphere: &apimodels.VSphereCloudSpec{
 						Username:  secrets.VSphere.Username,
 						Password:  secrets.VSphere.Password,
-						Datastore: secrets.VSphere.Datastore,
+						Datastore: s.dc.DefaultDatastore,
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -105,7 +104,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.dc.RootPath)
 	}
 
 	if s.datastoreCluster {
@@ -119,18 +118,18 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: vSphereDatacenter,
+			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username:  secrets.VSphere.Username,
 				Password:  secrets.VSphere.Password,
-				Datastore: secrets.VSphere.Datastore,
+				Datastore: s.dc.DefaultDatastore,
 			},
 		},
 		Version: *s.version,
 	}
 
 	if s.customFolder {
-		spec.Cloud.VSphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.dc.RootPath)
 	}
 
 	if s.datastoreCluster {
@@ -151,7 +150,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
+							Template: s.dc.Templates[osName],
 							CPUs:     2,
 							Memory:   4096,
 						},
@@ -172,10 +171,9 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 
 	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
-	template := fmt.Sprintf("machine-controller-e2e-%s", os)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVsphere, vspheretypes.RawConfig{
-		TemplateVMName: providerconfig.ConfigVarString{Value: template},
+		TemplateVMName: providerconfig.ConfigVarString{Value: s.dc.Templates[os]},
 		CPUs:           2,
 		MemoryMB:       4096,
 	})

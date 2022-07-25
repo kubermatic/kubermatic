@@ -157,6 +157,12 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 		),
 		Resources: vsphereCPIResourceRequirements,
 	}
+	if data.Cluster().IsDualStack() {
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:  "ENABLE_ALPHA_DUAL_STACK",
+			Value: "true",
+		})
+	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
 		c.Args = append(c.Args, "--cluster-name", data.Cluster().Name)
 	}
@@ -171,11 +177,11 @@ func getVsphereCPIVersion(version semver.Semver) string {
 	case v122:
 		return "1.22.6"
 	case v123:
-		fallthrough
+		return "1.23.1"
 	case v124:
 		fallthrough
 	//	By default return latest version
 	default:
-		return "1.23.0"
+		return v1240
 	}
 }

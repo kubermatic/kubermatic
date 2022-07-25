@@ -17,6 +17,8 @@ limitations under the License.
 package v2
 
 import (
+	"time"
+
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -603,9 +605,21 @@ type EKSClusterSpec struct {
 
 	ResourcesVpcConfig VpcConfigRequest `json:"vpcConfigRequest" required:"true"`
 
+	// The Kubernetes network configuration for the cluster.
+	KubernetesNetworkConfig *EKSKubernetesNetworkConfigResponse `json:"kubernetesNetworkConfig,omitempty"`
+
 	// The desired Kubernetes version for your cluster. If you don't specify a value
 	// here, the latest version available in Amazon EKS is used.
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
+
+	// The Unix epoch timestamp in seconds for when the cluster was created.
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+
+	// The metadata that you apply to the cluster to assist with categorization
+	// and organization. Each tag consists of a key and an optional value. You define
+	// both. Cluster tags do not propagate to any other resources associated with
+	// the cluster.
+	Tags map[string]*string `json:"tags,omitempty"`
 
 	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
 	// for the Kubernetes control plane to make calls to AWS API operations on your
@@ -613,7 +627,33 @@ type EKSClusterSpec struct {
 	// in the Amazon EKS User Guide .
 	//
 	// RoleArn is a required field
-	RoleArn string `json:"roleArn" required:"true"`
+	RoleArn string `json:"roleArn,omitempty" required:"true"`
+}
+
+// The Kubernetes network configuration for the cluster. The response contains
+// a value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.
+type EKSKubernetesNetworkConfigResponse struct {
+	// The IP family used to assign Kubernetes pod and service IP addresses. The
+	// IP family is always ipv4, unless you have a 1.21 or later cluster running
+	// version 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when
+	// you created the cluster.
+	IpFamily *string `json:"ipFamily,omitempty"`
+
+	// The CIDR block that Kubernetes pod and service IP addresses are assigned
+	// from. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a
+	// subnet that the node is in. If you didn't specify a CIDR block when you created
+	// the cluster, then Kubernetes assigns addresses from either the 10.100.0.0/16
+	// or 172.20.0.0/16 CIDR blocks. If this was specified, then it was specified
+	// when the cluster was created and it can't be changed.
+	ServiceIpv4Cidr *string `json:"serviceIpv4Cidr,omitempty"`
+
+	// The CIDR block that Kubernetes pod and service IP addresses are assigned
+	// from if you created a 1.21 or later cluster with version 1.10.1 or later
+	// of the Amazon VPC CNI add-on and specified ipv6 for ipFamily when you created
+	// the cluster. Kubernetes assigns service addresses from the unique local address
+	// range (fc00::/7) because you can't specify a custom IPv6 CIDR block when
+	// you create the cluster.
+	ServiceIpv6Cidr *string `json:"serviceIpv6Cidr,omitempty"`
 }
 
 type AKSCloudSpec struct {
@@ -629,14 +669,14 @@ type AKSCloudSpec struct {
 type AKSClusterSpec struct {
 	// Location - Resource location
 	Location string `json:"location" required:"true"`
+	// The timestamp of resource creation (UTC).
+	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	// The identity that created the resource.
+	CreatedBy *string `json:"createdBy,omitempty"`
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion"`
-	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
-	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
 	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
 	EnableRBAC bool `json:"enableRBAC,omitempty"`
-	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
-	ManagedAAD bool `json:"managedAAD,omitempty"`
 	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
 	DNSPrefix string `json:"dnsPrefix,omitempty"`
 	// FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.
@@ -649,6 +689,8 @@ type AKSClusterSpec struct {
 	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
 	// NetworkProfile - The network configuration profile.
 	NetworkProfile AKSNetworkProfile `json:"networkProfile,omitempty"`
+	// Resource tags.
+	Tags map[string]*string `json:"tags,omitempty"`
 }
 
 // AKS NetworkProfile profile of network configuration.
@@ -674,16 +716,12 @@ type AKSNetworkProfile struct {
 }
 
 type VpcConfigRequest struct {
+	// The VPC associated with your cluster.
+	VpcId *string `json:"vpcId,omitempty"`
+
 	// Specify one or more security groups for the cross-account elastic network
 	// interfaces that Amazon EKS creates to use to allow communication between
-	// your nodes and the Kubernetes control plane. If you don't specify any security
-	// groups, then familiarize yourself with the difference between Amazon EKS
-	// defaults for clusters deployed with Kubernetes:
-	//
-	//    * 1.14 Amazon EKS platform version eks.2 and earlier
-	//
-	//    * 1.14 Amazon EKS platform version eks.3 and later
-	//
+	// your nodes and the Kubernetes control plane.
 	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
 	// in the Amazon EKS User Guide .
 	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
@@ -705,6 +743,13 @@ type ExternalClusterNode struct {
 type ExternalClusterMachineDeployment struct {
 	apiv1.NodeDeployment `json:",inline"`
 	Cloud                *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
+	Phase                ExternalClusterMDPhase                     `json:"phase"`
+}
+
+// ExternalClusterMDPhase defines the external cluster machinedeployment phase.
+type ExternalClusterMDPhase struct {
+	State         ExternalClusterState `json:"state"`
+	StatusMessage string               `json:"statusMessage,omitempty"`
 }
 
 // GKECluster represents a object of GKE cluster.
@@ -1108,6 +1153,10 @@ type GKEClusterSpec struct {
 	// Autopilot: Autopilot configuration for the cluster.
 	Autopilot bool `json:"autopilot,omitempty"`
 
+	// CreateTime: [Output only] The time the cluster was created, in
+	// RFC3339 (https://www.ietf.org/rfc/rfc3339.txt) text format.
+	CreateTime string `json:"createTime,omitempty"`
+
 	// GKEClusterAutoscaling: Cluster-level autoscaling configuration.
 	Autoscaling *GKEClusterAutoscaling `json:"autoscaling,omitempty"`
 
@@ -1410,11 +1459,23 @@ type OpenstackSubnetPool struct {
 
 // swagger:model ResourceQuota
 type ResourceQuota struct {
-	Name        string                           `json:"name"`
-	SubjectName string                           `json:"subjectName"`
-	SubjectKind string                           `json:"subjectKind"`
-	Quota       kubermaticv1.ResourceDetails     `json:"quota"`
-	Status      kubermaticv1.ResourceQuotaStatus `json:"status"`
+	Name        string `json:"name"`
+	SubjectName string `json:"subjectName"`
+	SubjectKind string `json:"subjectKind"`
+	// SubjectHumanReadableName contains the human-readable name for the subject(if applicable). Just filled as information in get/list.
+	SubjectHumanReadableName string                           `json:"subjectHumanReadableName,omitempty"`
+	Quota                    Quota                            `json:"quota"`
+	Status                   kubermaticv1.ResourceQuotaStatus `json:"status"`
+}
+
+// swagger:model Quota
+type Quota struct {
+	// CPU holds the quantity of CPU.
+	CPU int64 `json:"cpu,omitempty"`
+	// Memory represents the RAM amount. Denoted in GB, rounded to 2 decimal places.
+	Memory float64 `json:"memory,omitempty"`
+	// Storage represents the disk size. Denoted in GB, rounded to 2 decimal places.
+	Storage float64 `json:"storage,omitempty"`
 }
 
 // swagger:model GroupProjectBinding
@@ -1447,4 +1508,12 @@ type IPAMPoolDatacenterSettings struct {
 	PoolCIDR         kubermaticv1.SubnetCIDR             `json:"poolCidr"`
 	AllocationPrefix int                                 `json:"allocationPrefix,omitempty"`
 	AllocationRange  int                                 `json:"allocationRange,omitempty"`
+}
+
+// ApplicationDefinition is the object representing an ApplicationDefinition.
+// swagger:model ApplicationDefinition
+type ApplicationDefinition struct {
+	apiv1.ObjectMeta
+
+	Spec *appskubermaticv1.ApplicationDefinitionSpec `json:"spec"`
 }

@@ -21,6 +21,9 @@ type ResourceQuota struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// SubjectHumanReadableName contains the human-readable name for the subject(if applicable). Just filled as information in get/list.
+	SubjectHumanReadableName string `json:"subjectHumanReadableName,omitempty"`
+
 	// subject kind
 	SubjectKind string `json:"subjectKind,omitempty"`
 
@@ -28,7 +31,7 @@ type ResourceQuota struct {
 	SubjectName string `json:"subjectName,omitempty"`
 
 	// quota
-	Quota *ResourceDetails `json:"quota,omitempty"`
+	Quota *Quota `json:"quota,omitempty"`
 
 	// status
 	Status *ResourceQuotaStatus `json:"status,omitempty"`

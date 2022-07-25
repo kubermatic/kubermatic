@@ -88,11 +88,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.reconcile(ctx, config, seed, client, logger); err != nil {
-		r.recorder.Eventf(seed, corev1.EventTypeWarning, "ReconcilingFailed", "%v", err)
+		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %w", err)
 	}
 
-	logger.Info("Successfully reconciled")
+	logger.Debug("Successfully reconciled")
 	return reconcile.Result{}, nil
 }
 

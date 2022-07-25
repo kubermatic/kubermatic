@@ -34,26 +34,27 @@ import (
 )
 
 const (
-	nutanixDatacenter = "nutanix-ger"
-	nutanixCPUs       = 2
-	nutanixMemoryMB   = 4096
-	nutanixDiskSize   = 40
+	nutanixCPUs     = 2
+	nutanixMemoryMB = 4096
+	nutanixDiskSize = 40
 )
 
 // GetNutanixScenarios returns a matrix of (version x operating system).
-func GetNutanixScenarios(versions []*semver.Semver) []Scenario {
+func GetNutanixScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &nutanixScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Nutanix,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &nutanixScenario{
-			version: v,
+			version:    v,
+			datacenter: datacenter.Spec.Nutanix,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -64,8 +65,9 @@ func GetNutanixScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type nutanixScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version    *semver.Semver
+	datacenter *kubermaticv1.DatacenterSpecNutanix
+	osSpec     apimodels.OperatingSystemSpec
 }
 
 func (s *nutanixScenario) Name() string {
@@ -77,7 +79,7 @@ func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: nutanixDatacenter,
+					DatacenterName: secrets.Nutanix.KKPDatacenter,
 					Nutanix: &apimodels.NutanixCloudSpec{
 						Username: secrets.Nutanix.Username,
 						Password: secrets.Nutanix.Password,
@@ -102,7 +104,7 @@ func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: nutanixDatacenter,
+			DatacenterName: secrets.Nutanix.KKPDatacenter,
 			Nutanix: &kubermaticv1.NutanixCloudSpec{
 				Username: secrets.Nutanix.Username,
 				Password: secrets.Nutanix.Password,
@@ -132,7 +134,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 					Cloud: &apimodels.NodeCloudSpec{
 						Nutanix: &apimodels.NutanixNodeSpec{
 							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  fmt.Sprintf("machine-controller-e2e-%s", osName),
+							ImageName:  s.datacenter.Images[osName],
 							CPUs:       nutanixCPUs,
 							MemoryMB:   nutanixMemoryMB,
 							DiskSize:   nutanixDiskSize,
@@ -157,7 +159,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderNutanix, nutanixtypes.RawConfig{
 		SubnetName: providerconfig.ConfigVarString{Value: secrets.Nutanix.SubnetName},
-		ImageName:  providerconfig.ConfigVarString{Value: fmt.Sprintf("machine-controller-e2e-%s", os)},
+		ImageName:  providerconfig.ConfigVarString{Value: s.datacenter.Images[os]},
 		CPUs:       nutanixCPUs,
 		MemoryMB:   nutanixMemoryMB,
 		DiskSize:   pointer.Int64(nutanixDiskSize),

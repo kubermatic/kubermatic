@@ -124,7 +124,7 @@ func CreateEndpoint(
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
 		return nil, err
 	}
-	kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(partialCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 
 	newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
 	if err != nil {
@@ -251,7 +251,7 @@ func GenerateCluster(
 			if err != nil {
 				return nil, fmt.Errorf("cannot marshal initial machine deployment: %w", err)
 			}
-			partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = string(data)
+			partialCluster.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation] = string(data)
 		}
 	}
 
@@ -273,7 +273,7 @@ func GenerateCluster(
 		if err != nil {
 			return nil, fmt.Errorf("cannot marshal initial applications: %w", err)
 		}
-		partialCluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation] = string(data)
+		partialCluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation] = string(data)
 	}
 
 	// Owning project ID must be set early, because it will be inherited by some child objects,
@@ -433,13 +433,13 @@ func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 
 	// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
 	// will prevent cluster deletion if the APIserver was never created
-	wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, apiv1.NodeDeletionFinalizer)
+	wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, kubermaticv1.NodeDeletionFinalizer)
 	if wasUpOnce && (deleteVolumes || deleteLoadBalancers) {
 		if deleteLoadBalancers {
-			kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(existingCluster, kubermaticv1.InClusterLBCleanupFinalizer)
 		}
 		if deleteVolumes {
-			kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(existingCluster, kubermaticv1.InClusterPVCleanupFinalizer)
 		}
 	}
 

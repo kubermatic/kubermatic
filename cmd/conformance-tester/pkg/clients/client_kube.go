@@ -129,6 +129,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
 	cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
+	cluster.Spec.EnableOperatingSystemManager = c.opts.OperatingSystemManagerEnabled
 
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)

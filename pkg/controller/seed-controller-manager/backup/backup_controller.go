@@ -214,7 +214,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }

@@ -24,6 +24,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -313,7 +315,7 @@ type PrivilegedSSHKeyProvider interface {
 // UserProvider declares the set of methods for interacting with kubermatic users.
 type UserProvider interface {
 	UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error)
-	CreateUser(ctx context.Context, name, email string) (*kubermaticv1.User, error)
+	CreateUser(ctx context.Context, name, email string, groups []string) (*kubermaticv1.User, error)
 	UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(ctx context.Context, id string) (*kubermaticv1.User, error)
 	InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error
@@ -364,7 +366,8 @@ type ProjectProvider interface {
 // UserInfo represent authenticated user.
 type UserInfo struct {
 	Email   string
-	Group   string
+	Groups  []string
+	Roles   sets.String
 	IsAdmin bool
 }
 
@@ -425,6 +428,48 @@ type ProjectMemberMapper interface {
 	// MappingsFor returns the list of projects (bindings) for the given user
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
 	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
+
+	// GroupMappingsFor returns the list of projects (bindings) for the given set of groups
+	// This function is unsafe in a sense that it uses privileged account to list all members in the system.
+	GroupMappingsFor(ctx context.Context, userGroups []string) ([]*kubermaticv1.GroupProjectBinding, error)
+
+	// MapUserToRoles returns the roles of the user in the project. It searches across the user project bindings and the group
+	// project bindings for the user and returns the roles.
+	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings and groupProjectBindings in the system.
+	MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
+
+	// MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
+	// group from UserProjectBinding (if exists).
+	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
+	MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
+}
+
+// ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.
+func ExternalClusterCloudProviderName(spec *kubermaticv1.ExternalClusterCloudSpec) (string, error) {
+	if spec == nil {
+		return "", errors.New("cloud spec is nil")
+	}
+
+	var clouds []kubermaticv1.ExternalClusterProvider
+	if spec.AKS != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterAKSProvider)
+	}
+	if spec.EKS != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterEKSProvider)
+	}
+	if spec.GKE != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterGKEProvider)
+	}
+	if spec.KubeOne != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterKubeOneProvider)
+	}
+	if len(clouds) == 0 {
+		return "", nil
+	}
+	if len(clouds) != 1 {
+		return "", fmt.Errorf("only one cloud provider can be set in ExternalClusterCloudSpec: %+v", spec)
+	}
+	return string(clouds[0]), nil
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
@@ -1376,4 +1421,9 @@ type PrivilegedIPAMPoolProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
 	PatchUnsecured(ctx context.Context, oldIPAMPool *kubermaticv1.IPAMPool, newIPAMPool *kubermaticv1.IPAMPool) error
+}
+
+type ApplicationDefinitionProvider interface {
+	// List returns a list of ApplicationDefinitions for the KKP installation.
+	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
 }

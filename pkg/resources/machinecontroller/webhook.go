@@ -86,7 +86,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
 			}

@@ -41,7 +41,7 @@ import (
 const (
 	// This controller is responsible for ensuring that the flatcar-linux-update-operator is installed when we have a healthy(running) flatcar
 	// node in our cluster.
-	ControllerName = "kkp-flatcar-update-operator-controller"
+	ControllerName = "kkp-flatcar-controller"
 )
 
 type Reconciler struct {

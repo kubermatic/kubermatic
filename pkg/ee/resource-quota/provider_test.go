@@ -33,7 +33,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	resourcequotas "k8c.io/kubermatic/v2/pkg/ee/resource-quota"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +43,8 @@ import (
 )
 
 const (
-	projectName = "xxxt3stxxx"
+	projectName        = "my-first-project-ID"
+	anotherProjectName = "my-second-project-ID"
 )
 
 func createResourceProviderHelper(existingObjects []ctrlruntimeclient.Object) *resourcequotas.ResourceQuotaProvider {
@@ -87,8 +87,11 @@ func TestProviderGetResourceQuota(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ResourceQuota{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      fmt.Sprintf("project-%s", projectName),
-						Namespace: resources.KubermaticNamespace,
+						Name: fmt.Sprintf("project-%s", projectName),
+						Labels: map[string]string{
+							kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
+							kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+						},
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
 						Subject: kubermaticv1.Subject{
@@ -103,7 +106,7 @@ func TestProviderGetResourceQuota(t *testing.T) {
 			name:          "scenario 2: get non existing resource quota",
 			projectName:   projectName,
 			userInfo:      &provider.UserInfo{Email: "john@acme.com"},
-			expectedError: fmt.Sprintf("resourcequotas.kubermatic.k8c.io \"project-%s\" not found", projectName),
+			expectedError: fmt.Sprintf("resource quota not found for project \"%s\"", projectName),
 		},
 		{
 			name:          "scenario 3: missing user info",
@@ -143,8 +146,7 @@ func TestProviderListResourceQuotas(t *testing.T) {
 	existingResourceQuotas := []ctrlruntimeclient.Object{
 		&kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("project-%s-1", projectName),
-				Namespace: resources.KubermaticNamespace,
+				Name: fmt.Sprintf("project-%s-1", projectName),
 				Labels: map[string]string{
 					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-1", projectName),
@@ -159,8 +161,7 @@ func TestProviderListResourceQuotas(t *testing.T) {
 		},
 		&kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("project-%s-2", projectName),
-				Namespace: resources.KubermaticNamespace,
+				Name: fmt.Sprintf("project-%s-2", projectName),
 				Labels: map[string]string{
 					kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 					kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),

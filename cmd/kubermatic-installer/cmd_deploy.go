@@ -57,10 +57,11 @@ type DeployOptions struct {
 	Kubeconfig  string
 	KubeContext string
 
-	HelmBinary  string
-	HelmValues  string
-	HelmTimeout time.Duration
-	Force       bool
+	HelmBinary       string
+	HelmValues       string
+	HelmTimeout      time.Duration
+	SkipDependencies bool
+	Force            bool
 
 	StorageClass     string
 	DisableTelemetry bool
@@ -112,6 +113,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
+	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
 	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()))
@@ -202,6 +204,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableOpenstackCSIDriverMigration:  opt.MigrateOpenstackCSI,
 			EnableLogrotateMigration:           opt.MigrateLogrotate,
 			DisableTelemetry:                   opt.DisableTelemetry,
+			DisableDependencyUpdate:            opt.SkipDependencies,
 			Versions:                           versions,
 		}
 

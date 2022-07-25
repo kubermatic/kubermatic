@@ -46,7 +46,7 @@ type reconciler struct {
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 }
 
 func Add(
@@ -59,7 +59,7 @@ func Add(
 		log:          log.Named(ControllerName),
 		recorder:     masterManager.GetEventRecorderFor(ControllerName),
 		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -81,24 +81,24 @@ func Add(
 
 // Reconcile reconciles ApplicationDefinition objects from master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("resource", request.Name)
+	log := r.log.With("appdefinition", request.Name)
 	log.Debug("Processing")
 
-	err := r.reconcile(ctx, log, request)
+	applicationDef := &appskubermaticv1.ApplicationDefinition{}
+	if err := r.masterClient.Get(ctx, request.NamespacedName, applicationDef); err != nil {
+		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	err := r.reconcile(ctx, log, applicationDef)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
+		r.recorder.Event(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-	applicationDef := &appskubermaticv1.ApplicationDefinition{}
-
-	if err := r.masterClient.Get(ctx, request.NamespacedName, applicationDef); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition) error {
 	// handling deletion
 	if !applicationDef.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, applicationDef); err != nil {
@@ -115,22 +115,23 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		applicationDefCreatorGetter(applicationDef),
 	}
 
-	err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, appDef *appskubermaticv1.ApplicationDefinition) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		log.Debug("Reconciling application definition with seed")
+
 		seedDef := &appskubermaticv1.ApplicationDefinition{}
-		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(appDef), seedDef); err != nil && !apierrors.IsNotFound(err) {
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(applicationDef), seedDef); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch ApplicationDefinition on seed cluster: %w", err)
 		}
 
 		// see project-synchronizer's syncAllSeeds comment
-		if seedDef.UID != "" && seedDef.UID == appDef.UID {
+		if seedDef.UID != "" && seedDef.UID == applicationDef.UID {
 			return nil
 		}
 
 		return reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
 	})
 	if err != nil {
-		r.recorder.Eventf(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return fmt.Errorf("reconciled application definition: %s: %w", applicationDef.Name, err)
+		return fmt.Errorf("reconciled application definition %s: %w", applicationDef.Name, err)
 	}
 
 	return nil
@@ -138,7 +139,9 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition) error {
 	if kuberneteshelper.HasFinalizer(applicationDef, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer) {
-		if err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, applicationDef *appskubermaticv1.ApplicationDefinition) error {
+		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+			log.Debug("Deleting application definition on seed")
+
 			err := seedClient.Delete(ctx, &appskubermaticv1.ApplicationDefinition{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: applicationDef.Name,
@@ -153,21 +156,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, applicationDef, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove application definition finalizer %s: %w", applicationDef.Name, err)
 		}
-	}
-	return nil
-}
-
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition, action func(seedClient ctrlruntimeclient.Client, applicationDef *appskubermaticv1.ApplicationDefinition) error) error {
-	for seedName, seedClient := range r.seedClients {
-		log := log.With("seed", seedName)
-
-		log.Debug("Reconciling application definition with seed")
-
-		err := action(seedClient, applicationDef)
-		if err != nil {
-			return fmt.Errorf("failed syncing application definition %s for seed %s: %w", applicationDef.Name, seedName, err)
-		}
-		log.Debug("Reconciled application definition with seed")
 	}
 	return nil
 }

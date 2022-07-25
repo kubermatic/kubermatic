@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"testing"
 
+	"go.uber.org/zap"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -70,7 +72,7 @@ func getPod(ownerRefKind, ownerRefName string, hasPV bool) *corev1.Pod {
 	return p
 }
 
-func TestCleanUpPVUsingWorkloads(t *testing.T) {
+func TestCleanupPVUsingWorkloads(t *testing.T) {
 	testCases := []struct {
 		name                string
 		objects             []ctrlruntimeclient.Object
@@ -88,6 +90,8 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 		},
 	}
 
+	log := zap.NewNop().Sugar()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.
@@ -99,7 +103,7 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 			d := &Deletion{}
 			ctx := context.Background()
 
-			if err := d.cleanupPVCUsingPods(ctx, client); (err != nil) != tc.errExpected {
+			if err := d.cleanupPVCUsingPods(ctx, log, client); (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err=%v, got err=%v", tc.errExpected, err)
 			}
 			if tc.errExpected {
@@ -133,14 +137,14 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 	}{
 		{
 			name:    "Nodes remain because LB finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterLBCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, kubermaticv1.InClusterLBCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.Service{
 				Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer},
 			}},
 		},
 		{
 			name:    "Nodes remain because PV finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterPVCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, kubermaticv1.InClusterPVCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.PersistentVolume{}},
 		},
 	}
@@ -167,6 +171,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			ctx := context.Background()
 			deletion := &Deletion{
 				seedClient:              seedClient,
+				recorder:                &record.FakeRecorder{},
 				userClusterClientGetter: userClusterClientGetter,
 			}
 

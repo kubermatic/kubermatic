@@ -172,7 +172,7 @@ type CreateResourceQuotaBody struct {
 	SubjectName string `json:"subjectName,omitempty"`
 
 	// quota
-	Quota *models.ResourceDetails `json:"quota,omitempty"`
+	Quota *models.Quota `json:"quota,omitempty"`
 }
 
 // Validate validates this create resource quota body

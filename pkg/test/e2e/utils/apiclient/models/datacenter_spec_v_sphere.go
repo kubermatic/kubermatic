@@ -38,6 +38,9 @@ type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint,omitempty"`
 
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPV6Enabled bool `json:"ipv6Enabled,omitempty"`
+
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM

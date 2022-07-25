@@ -31,12 +31,11 @@ import (
 )
 
 const (
-	dropletSize            = "4gb"
-	digitaloceanDatacenter = "do-ams3"
+	dropletSize = "4gb"
 )
 
 // GetDigitaloceanScenarios returns a matrix of (version x operating system).
-func GetDigitaloceanScenarios(versions []*semver.Semver) []Scenario {
+func GetDigitaloceanScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
 	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
@@ -72,7 +71,7 @@ func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.Crea
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: digitaloceanDatacenter,
+					DatacenterName: secrets.Digitalocean.KKPDatacenter,
 					Digitalocean: &apimodels.DigitaloceanCloudSpec{
 						Token: secrets.Digitalocean.Token,
 					},
@@ -86,7 +85,7 @@ func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.Crea
 func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: digitaloceanDatacenter,
+			DatacenterName: secrets.Digitalocean.KKPDatacenter,
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: secrets.Digitalocean.Token,
 			},

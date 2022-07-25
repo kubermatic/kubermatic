@@ -23,7 +23,6 @@ import (
 	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -47,7 +46,10 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates to gatekeeper constraint templates on the user cluster.
-	ControllerName = "kkp-gatekeeper-constraint-template-synchronizer"
+	ControllerName = "kkp-constraint-template-controller"
+
+	// cleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraint-templates"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -127,14 +129,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, log, constraintTemplate)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, cleanupFinalizer) {
 			return nil
 		}
 
@@ -151,10 +153,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return err
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, constraintTemplate, cleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, constraintTemplate, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 

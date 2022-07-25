@@ -86,7 +86,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(apiv1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(kubermaticv1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -126,7 +126,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
-	request := cluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
+	request := cluster.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation]
 	if request == "" {
 		return nil, nil
 	}
@@ -134,7 +134,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// If cluster is not healthy yet there is nothing to do.
 	// If it gets healthy we'll get notified by the event. No need to requeue.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		r.log.Info("cluster not healthy")
+		r.log.Debug("cluster not healthy")
 		return nil, nil
 	}
 
@@ -255,6 +255,6 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
-	delete(cluster.Annotations, apiv1.InitialMachineDeploymentRequestAnnotation)
+	delete(cluster.Annotations, kubermaticv1.InitialMachineDeploymentRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

@@ -375,6 +375,10 @@ spec:
                               description: Images to use for each supported operating
                                 system.
                               type: object
+                            ipv6Enabled:
+                              description: 'Optional: defines if the IPv6 is enabled
+                                for the datacenter'
+                              type: boolean
                             manageSecurityGroups:
                               description: 'Optional: Gets mapped to the "manage-security-groups"
                                 setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
@@ -425,8 +429,11 @@ spec:
                               items:
                                 type: string
                               type: array
-                          required:
-                          - facilities
+                            metro:
+                              description: Metros are facilities that are grouped
+                                together geographically and share capacity and networking
+                                features, see https://metal.equinix.com/developers/docs/locations/metros/
+                              type: string
                           type: object
                         providerReconciliationInterval:
                           description: ProviderReconciliationInterval is the time
@@ -510,6 +517,10 @@ spec:
                                 username:
                                   type: string
                               type: object
+                            ipv6Enabled:
+                              description: 'Optional: defines if the IPv6 is enabled
+                                for the datacenter'
+                              type: boolean
                             rootPath:
                               description: 'Optional: The root path for cluster specific
                                 VM folders. Each cluster gets its own folder below

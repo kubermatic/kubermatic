@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/go-kit/log"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -97,6 +96,7 @@ type Routing struct {
 	resourceQuotaProvider                   provider.ResourceQuotaProvider
 	groupProjectBindingProvider             provider.GroupProjectBindingProvider
 	privilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
+	applicationDefinitionProvider           provider.ApplicationDefinitionProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 	features                                features.FeatureGate
@@ -161,6 +161,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		resourceQuotaProvider:                   routingParams.ResourceQuotaProvider,
 		groupProjectBindingProvider:             routingParams.GroupProjectBindingProvider,
 		privilegedIPAMPoolProviderGetter:        routingParams.PrivilegedIPAMPoolProviderGetter,
+		applicationDefinitionProvider:           routingParams.ApplicationDefinitionProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 		features:                                routingParams.Features,
@@ -170,14 +171,18 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	var req *http.Request
 
+	// wrap the request variable so that we do not hand a stable
+	// "req" variable to NewRequestErrorHandler()
+	provider := func() *http.Request {
+		return req
+	}
+
 	return []httptransport.ServerOption{
 		httptransport.ServerBefore(func(c context.Context, r *http.Request) context.Context {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(transport.ErrorHandlerFunc(func(ctx context.Context, err error) {
-			r.log.Errorw(err.Error(), "request", req.URL.String())
-		})),
+		httptransport.ServerErrorHandler(handler.NewRequestErrorHandler(r.log, provider)),
 		httptransport.ServerErrorEncoder(handler.ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 		httptransport.ServerBefore(middleware.SetSeedsGetter(r.seedsGetter)),

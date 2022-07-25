@@ -31,7 +31,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.23",
-		kubermaticv1.CNIPluginTypeCilium: "v1.11",
+		kubermaticv1.CNIPluginTypeCilium: "v1.12",
 	}
 )
 
@@ -46,7 +46,7 @@ var (
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
 		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.20", "v3.21", "v3.22", "v3.23"),
-		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11"),
+		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11", "v1.12"),
 		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
 	}
 	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.

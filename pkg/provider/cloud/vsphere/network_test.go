@@ -20,6 +20,7 @@ package vsphere
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -34,10 +35,28 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: "/dc-1/network/VM Network",
+					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
 					RelativePath: "VM Network",
 					Type:         "Network",
 					Name:         "VM Network",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/Management", vSphereDatacenter),
+					RelativePath: "Management",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Management",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
+					RelativePath: "Default Network",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Default Network",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
+					RelativePath: "DSwitchAlpha-DVUplinks-2001",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "DSwitchAlpha-DVUplinks-2001",
 				},
 			},
 		},

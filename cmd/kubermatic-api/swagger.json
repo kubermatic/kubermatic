@@ -9150,6 +9150,41 @@
         }
       }
     },
+    "/api/v2/applicationdefinitions": {
+      "get": {
+        "description": "List ApplicationDefinitions which are available in the KKP installation",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "listApplicationDefinitions",
+        "responses": {
+          "200": {
+            "description": "ApplicationDefinition",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ApplicationDefinition"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/cni/{cni_plugin_type}/versions": {
       "get": {
         "description": "Lists all CNI Plugin versions that are supported for a given CNI plugin type",
@@ -16970,6 +17005,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Action",
+            "description": "The Action is used to check if to `Delete` the cluster:\nboth the actual cluter from the provider\nand the respective KKP cluster object\nBy default the cluster will `Disconnect` which means the KKP cluster object will be deleted,\ncluster still exists on the provider, but is no longer connected/imported in KKP",
+            "name": "action",
+            "in": "header"
           }
         ],
         "responses": {
@@ -20479,7 +20521,7 @@
               "type": "object",
               "properties": {
                 "quota": {
-                  "$ref": "#/definitions/ResourceDetails"
+                  "$ref": "#/definitions/Quota"
                 },
                 "subjectKind": {
                   "type": "string",
@@ -20613,7 +20655,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ResourceDetails"
+              "$ref": "#/definitions/Quota"
             }
           }
         ],
@@ -21376,6 +21418,17 @@
       "type": "object",
       "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
       "properties": {
+        "createdAt": {
+          "description": "The timestamp of resource creation (UTC).",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "createdBy": {
+          "description": "The identity that created the resource.",
+          "type": "string",
+          "x-go-name": "CreatedBy"
+        },
         "dnsPrefix": {
           "description": "DNSPrefix - This cannot be updated once the Managed Cluster has been created.",
           "type": "string",
@@ -21409,23 +21462,21 @@
         "machineDeploymentSpec": {
           "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
         },
-        "managedAAD": {
-          "description": "ManagedAAD - Whether The Azure Active Directory configuration Enabled.",
-          "type": "boolean",
-          "x-go-name": "ManagedAAD"
-        },
         "networkProfile": {
           "$ref": "#/definitions/AKSNetworkProfile"
-        },
-        "nodeResourceGroup": {
-          "description": "NodeResourceGroup - The name of the resource group containing agent pool nodes.",
-          "type": "string",
-          "x-go-name": "NodeResourceGroup"
         },
         "privateFQDN": {
           "description": "PrivateFQDN - READ-ONLY; The FQDN of private cluster.",
           "type": "string",
           "x-go-name": "PrivateFQDN"
+        },
+        "tags": {
+          "description": "Resource tags.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -22698,6 +22749,78 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "ApplicationConstraints": {
+      "type": "object",
+      "properties": {
+        "k8sVersion": {
+          "$ref": "#/definitions/VersionConstraints"
+        },
+        "kkpVersion": {
+          "$ref": "#/definitions/VersionConstraints"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "ApplicationDefinition": {
+      "type": "object",
+      "title": "ApplicationDefinition is the object representing an ApplicationDefinition.",
+      "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ApplicationDefinitionSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationDefinitionSpec": {
+      "type": "object",
+      "title": "ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.",
+      "properties": {
+        "description": {
+          "description": "Description of the application. what is its purpose",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "versions": {
+          "description": "available version for this application",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApplicationVersion"
+          },
+          "x-go-name": "Versions"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
     "ApplicationInstallation": {
       "type": "object",
       "title": "ApplicationInstallation is the object representing an ApplicationInstallation.",
@@ -22773,6 +22896,18 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
+    "ApplicationSource": {
+      "type": "object",
+      "properties": {
+        "git": {
+          "$ref": "#/definitions/GitSource"
+        },
+        "helm": {
+          "$ref": "#/definitions/HelmSource"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
     "ApplicationSpec": {
       "description": "ApplicationSpec represents the specification for an application",
       "type": "object",
@@ -22790,6 +22925,43 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ApplicationTemplate": {
+      "type": "object",
+      "properties": {
+        "formSpec": {
+          "description": "Define the valued that can be override for the installation",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FormField"
+          },
+          "x-go-name": "FormSpec"
+        },
+        "method": {
+          "$ref": "#/definitions/TemplateMethod"
+        },
+        "source": {
+          "$ref": "#/definitions/ApplicationSource"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "ApplicationVersion": {
+      "type": "object",
+      "properties": {
+        "constraints": {
+          "$ref": "#/definitions/ApplicationConstraints"
+        },
+        "template": {
+          "$ref": "#/definitions/ApplicationTemplate"
+        },
+        "version": {
+          "description": "Version of the application (eg v1.2.3)",
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "AuditLoggingSettings": {
       "type": "object",
@@ -24754,6 +24926,11 @@
         "images": {
           "$ref": "#/definitions/ImageList"
         },
+        "ipv6Enabled": {
+          "description": "Optional: defines if the IPv6 is enabled for the datacenter",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
+        },
         "manageSecurityGroups": {
           "description": "Optional: Gets mapped to the \"manage-security-groups\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer\nThis setting defaults to true.",
           "type": "boolean",
@@ -24790,6 +24967,11 @@
             "type": "string"
           },
           "x-go-name": "Facilities"
+        },
+        "metro": {
+          "description": "Metros are facilities that are grouped together geographically and share capacity\nand networking features, see https://metal.equinix.com/developers/docs/locations/metros/",
+          "type": "string",
+          "x-go-name": "Metro"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -24854,6 +25036,11 @@
         },
         "infraManagementUser": {
           "$ref": "#/definitions/VSphereCredentials"
+        },
+        "ipv6Enabled": {
+          "description": "Optional: defines if the IPv6 is enabled for the datacenter",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
         },
         "rootPath": {
           "description": "Optional: The root path for cluster specific VM folders. Each cluster gets its own\nfolder below the root folder. Must be the FQDN (for example\n\"/datacenter-1/vm/all-kubermatic-vms-in-here\") and defaults to the root VM\nfolder: \"/datacenter-1/vm\"",
@@ -25109,10 +25296,27 @@
     "EKSClusterSpec": {
       "type": "object",
       "properties": {
+        "createdAt": {
+          "description": "The Unix epoch timestamp in seconds for when the cluster was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "kubernetesNetworkConfig": {
+          "$ref": "#/definitions/EKSKubernetesNetworkConfigResponse"
+        },
         "roleArn": {
           "description": "The Amazon Resource Name (ARN) of the IAM role that provides permissions\nfor the Kubernetes control plane to make calls to AWS API operations on your\nbehalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)\nin the Amazon EKS User Guide .\n\nRoleArn is a required field",
           "type": "string",
           "x-go-name": "RoleArn"
+        },
+        "tags": {
+          "description": "The metadata that you apply to the cluster to assist with categorization\nand organization. Each tag consists of a key and an optional value. You define\nboth. Cluster tags do not propagate to any other resources associated with\nthe cluster.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         },
         "version": {
           "description": "The desired Kubernetes version for your cluster. If you don't specify a value\nhere, the latest version available in Amazon EKS is used.",
@@ -25130,6 +25334,28 @@
       "title": "EKSInstanceTypes represents a list of EKS Instance Types for node group.",
       "items": {
         "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSKubernetesNetworkConfigResponse": {
+      "description": "The Kubernetes network configuration for the cluster. The response contains\na value for serviceIpv6Cidr or serviceIpv4Cidr, but not both.",
+      "type": "object",
+      "properties": {
+        "ipFamily": {
+          "description": "The IP family used to assign Kubernetes pod and service IP addresses. The\nIP family is always ipv4, unless you have a 1.21 or later cluster running\nversion 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when\nyou created the cluster.",
+          "type": "string",
+          "x-go-name": "IpFamily"
+        },
+        "serviceIpv4Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a\nsubnet that the node is in. If you didn't specify a CIDR block when you created\nthe cluster, then Kubernetes assigns addresses from either the 10.100.0.0/16\nor 172.20.0.0/16 CIDR blocks. If this was specified, then it was specified\nwhen the cluster was created and it can't be changed.",
+          "type": "string",
+          "x-go-name": "ServiceIpv4Cidr"
+        },
+        "serviceIpv6Cidr": {
+          "description": "The CIDR block that Kubernetes pod and service IP addresses are assigned\nfrom if you created a 1.21 or later cluster with version 1.10.1 or later\nof the Amazon VPC CNI add-on and specified ipv6 for ipFamily when you created\nthe cluster. Kubernetes assigns service addresses from the unique local address\nrange (fc00::/7) because you can't specify a custom IPv6 CIDR block when\nyou create the cluster.",
+          "type": "string",
+          "x-go-name": "ServiceIpv6Cidr"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -25726,6 +25952,20 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ExternalClusterMDPhase": {
+      "type": "object",
+      "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/ExternalClusterState"
+        },
+        "statusMessage": {
+          "type": "string",
+          "x-go-name": "StatusMessage"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ExternalClusterMachineDeployment": {
       "description": "ExternalClusterMachineDeployment represents an object holding external cluster machine deployment",
       "type": "object",
@@ -25762,6 +26002,9 @@
           "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "phase": {
+          "$ref": "#/definitions/ExternalClusterMDPhase"
         },
         "spec": {
           "$ref": "#/definitions/NodeDeploymentSpec"
@@ -25942,6 +26185,40 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "FormField": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description": "DisplayName is visible in the UI",
+          "type": "string",
+          "x-go-name": "DisplayName"
+        },
+        "helpText": {
+          "description": "HelpText is visible in the UI next to the field",
+          "type": "string",
+          "x-go-name": "HelpText"
+        },
+        "internalName": {
+          "description": "InternalName is used internally to save in the ApplicationInstallation object",
+          "type": "string",
+          "x-go-name": "InternalName"
+        },
+        "required": {
+          "description": "Required indicates if the control has to be set",
+          "type": "boolean",
+          "x-go-name": "Required"
+        },
+        "type": {
+          "$ref": "#/definitions/FormFieldType"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "FormFieldType": {
+      "description": "+kubebuilder:validation:Enum=number;boolean;text;text-area",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "GCP": {
       "type": "object",
@@ -26161,6 +26438,9 @@
           "type": "string",
           "x-go-name": "IPCidrRange"
         },
+        "ipFamily": {
+          "$ref": "#/definitions/IPFamily"
+        },
         "kind": {
           "type": "string",
           "x-go-name": "Kind"
@@ -26379,6 +26659,11 @@
           "description": "ClusterIpv4Cidr: The IP address range of the container pods in this\ncluster, in CIDR\n(http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)\nnotation (e.g. `10.96.0.0/14`). Leave blank to have one automatically\nchosen or specify a `/14` block in `10.0.0.0/8`.",
           "type": "string",
           "x-go-name": "ClusterIpv4Cidr"
+        },
+        "createTime": {
+          "description": "CreateTime: [Output only] The time the cluster was created, in\nRFC3339 (https://www.ietf.org/rfc/rfc3339.txt) text format.",
+          "type": "string",
+          "x-go-name": "CreateTime"
         },
         "defaultMaxPodsConstraint": {
           "description": "DefaultMaxPodsConstraint: The default constraint on the maximum\nnumber of pods that can be run simultaneously on a node in the node\npool of this cluster. Only honored if cluster created with IP Alias\nsupport.",
@@ -26716,6 +27001,76 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "GitAuthMethod": {
+      "description": "+kubebuilder:validation:Enum=password;token;ssh-key",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "GitCredentials": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "$ref": "#/definitions/GitAuthMethod"
+        },
+        "password": {
+          "$ref": "#/definitions/SecretKeySelector"
+        },
+        "sshKey": {
+          "$ref": "#/definitions/SecretKeySelector"
+        },
+        "token": {
+          "$ref": "#/definitions/SecretKeySelector"
+        },
+        "username": {
+          "$ref": "#/definitions/SecretKeySelector"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "GitReference": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "description": "Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.\n+optional",
+          "type": "string",
+          "x-go-name": "Branch"
+        },
+        "commit": {
+          "description": "Commit SHA to checkout.\n\nIt can be used in conjunction with branch to to avoid to clone the all repository. The commit must belong to this branch.",
+          "type": "string",
+          "pattern": "=`^[a-f0-9]{40}$`",
+          "x-go-name": "Commit"
+        },
+        "tag": {
+          "description": "Tag to check out.\nIt can not be used in conjunction with commit or branch.\n+kubebuilder:validation:Type=string\n+optional",
+          "type": "string",
+          "x-go-name": "Tag"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "GitSource": {
+      "type": "object",
+      "properties": {
+        "credentials": {
+          "$ref": "#/definitions/GitCredentials"
+        },
+        "path": {
+          "description": "Path of the \"source\" in the repository. default is repository root",
+          "type": "string",
+          "x-go-name": "Path"
+        },
+        "ref": {
+          "$ref": "#/definitions/GitReference"
+        },
+        "remote": {
+          "description": "URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)\n+kubebuilder:validation:MinLength=1",
+          "type": "string",
+          "x-go-name": "Remote"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
     "GlobalCustomLinks": {
       "description": "GlobalCustomLinks defines custom links for global settings",
       "type": "array",
@@ -26800,6 +27155,42 @@
     "HealthStatus": {
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "HelmCredentials": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "$ref": "#/definitions/SecretKeySelector"
+        },
+        "username": {
+          "$ref": "#/definitions/SecretKeySelector"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "HelmSource": {
+      "type": "object",
+      "properties": {
+        "chartName": {
+          "description": "Name of the Chart\n+kubebuilder:validation:MinLength=1",
+          "type": "string",
+          "x-go-name": "ChartName"
+        },
+        "chartVersion": {
+          "description": "Version of the Chart\n+kubebuilder:validation:MinLength=1",
+          "type": "string",
+          "x-go-name": "ChartVersion"
+        },
+        "credentials": {
+          "$ref": "#/definitions/HelmCredentials"
+        },
+        "url": {
+          "description": "URl of the helm repository.\nIt can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).\n+kubebuilder:validation:Pattern=\"^(http|https|oci)://.+\"",
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "Hetzner": {
       "type": "object",
@@ -27816,6 +28207,18 @@
         }
       },
       "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "LocalObjectReference": {
+      "description": "LocalObjectReference contains enough information to let you locate the\nreferenced object inside the same namespace.\n+structType=atomic",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "LoggingRateLimitSettings": {
       "type": "object",
@@ -29654,6 +30057,12 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "ipVersion": {
+          "description": "IPversion is the IP protocol version (4 or 6)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "IPVersion"
+        },
         "name": {
           "description": "Name is human-readable name for the subnet",
           "type": "string",
@@ -30405,7 +30814,7 @@
           "type": "string",
           "x-go-name": "Domain"
         },
-        "floatingIpPool": {
+        "floatingIPPool": {
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
@@ -30505,6 +30914,30 @@
       "title": "Quantity is a fixed-point representation of a number.\nIt provides convenient marshaling/unmarshaling in JSON and YAML,\nin addition to String() and AsInt64() accessors.",
       "x-go-package": "k8s.io/apimachinery/pkg/api/resource"
     },
+    "Quota": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "description": "CPU holds the quantity of CPU.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPU"
+        },
+        "memory": {
+          "description": "Memory represents the RAM amount. Denoted in GB, rounded to 2 decimal places.",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Memory"
+        },
+        "storage": {
+          "description": "Storage represents the disk size. Denoted in GB, rounded to 2 decimal places.",
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Storage"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "RHELSpec": {
       "description": "RHELSpec contains rhel specific settings",
       "type": "object",
@@ -30586,10 +31019,15 @@
           "x-go-name": "Name"
         },
         "quota": {
-          "$ref": "#/definitions/ResourceDetails"
+          "$ref": "#/definitions/Quota"
         },
         "status": {
           "$ref": "#/definitions/ResourceQuotaStatus"
+        },
+        "subjectHumanReadableName": {
+          "description": "SubjectHumanReadableName contains the human-readable name for the subject(if applicable). Just filled as information in get/list.",
+          "type": "string",
+          "x-go-name": "SubjectHumanReadableName"
         },
         "subjectKind": {
           "type": "string",
@@ -30880,6 +31318,29 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "SecretKeySelector": {
+      "description": "+structType=atomic",
+      "type": "object",
+      "title": "SecretKeySelector selects a key of a Secret.",
+      "properties": {
+        "key": {
+          "description": "The key of the secret to select from.  Must be a valid secret key.",
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\nTODO: Add other useful fields. apiVersion, kind, uid?\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "optional": {
+          "description": "Specify whether the Secret or its key must be defined\n+optional",
+          "type": "boolean",
+          "x-go-name": "Optional"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "SecretReference": {
       "description": "SecretReference represents a Secret Reference. It has enough information to retrieve secret\nin any namespace\n+structType=atomic",
@@ -31332,6 +31793,11 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
     },
+    "TemplateMethod": {
+      "description": "+kubebuilder:validation:Enum=helm",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
     "Time": {
       "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
       "type": "string",
@@ -31421,6 +31887,14 @@
           "description": "Email an email address of the user",
           "type": "string",
           "x-go-name": "Email"
+        },
+        "groups": {
+          "description": "Groups holds the list of groups that the user belongs to",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Groups"
         },
         "id": {
           "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
@@ -31988,6 +32462,10 @@
       "type": "object",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
+    "VersionConstraints": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
     "VersionList": {
       "description": "VersionList represents a list of versions",
       "type": "array",
@@ -32055,7 +32533,7 @@
       "type": "object",
       "properties": {
         "securityGroupIds": {
-          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane. If you don't specify any security\ngroups, then familiarize yourself with the difference between Amazon EKS\ndefaults for clusters deployed with Kubernetes:\n\n1.14 Amazon EKS platform version eks.2 and earlier\n\n1.14 Amazon EKS platform version eks.3 and later\n\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
+          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane.\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
           "type": "array",
           "items": {
             "type": "string"
@@ -32069,6 +32547,11 @@
             "type": "string"
           },
           "x-go-name": "SubnetIds"
+        },
+        "vpcId": {
+          "description": "The VPC associated with your cluster.",
+          "type": "string",
+          "x-go-name": "VpcId"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

@@ -19,6 +19,7 @@ package handler
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"net/http"
 	"os"
 
@@ -134,17 +135,40 @@ func NewRouting(routingParams RoutingParams, masterClient ctrlruntimeclient.Clie
 	}
 }
 
+type RequestProvider func() *http.Request
+
+func NewRequestErrorHandler(log *zap.SugaredLogger, reqProvider RequestProvider) transport.ErrorHandlerFunc {
+	return func(ctx context.Context, err error) {
+		// When the client cancels the request, the context is canceled.
+		// In this case we do not want to log the error.
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return
+		}
+
+		// client-side errors should also not be logged
+		if httpErr := AsHTTPError(err); httpErr != nil && httpErr.StatusCode() < http.StatusInternalServerError {
+			return
+		}
+
+		log.Errorw(err.Error(), "request", reqProvider().URL.String())
+	}
+}
+
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	var req *http.Request
+
+	// wrap the request variable so that we do not hand a stable
+	// "req" variable to NewRequestErrorHandler()
+	provider := func() *http.Request {
+		return req
+	}
 
 	return []httptransport.ServerOption{
 		httptransport.ServerBefore(func(c context.Context, r *http.Request) context.Context {
 			req = r
 			return c
 		}),
-		httptransport.ServerErrorHandler(transport.ErrorHandlerFunc(func(ctx context.Context, err error) {
-			r.log.Errorw(err.Error(), "request", req.URL.String())
-		})),
+		httptransport.ServerErrorHandler(NewRequestErrorHandler(r.log, provider)),
 		httptransport.ServerErrorEncoder(ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 	}
@@ -206,6 +230,7 @@ type RoutingParams struct {
 	ResourceQuotaProvider                   provider.ResourceQuotaProvider
 	GroupProjectBindingProvider             provider.GroupProjectBindingProvider
 	PrivilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
+	ApplicationDefinitionProvider           provider.ApplicationDefinitionProvider
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 	Features                                features.FeatureGate

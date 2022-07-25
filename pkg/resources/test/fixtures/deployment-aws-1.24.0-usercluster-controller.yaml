@@ -44,6 +44,30 @@ spec:
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: AWS_ACCESS_KEY_ID
+          value: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          value: aws-secret-access-key
+        - name: AWS_ASSUME_ROLE_ARN
+          value: aws-assume-role-arn
+        - name: AWS_ASSUME_ROLE_EXTERNAL_ID
+          value: aws-assume-role-external-id
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: NAMESPACE
           valueFrom:
             fieldRef:

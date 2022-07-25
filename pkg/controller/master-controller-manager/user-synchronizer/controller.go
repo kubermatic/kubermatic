@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -44,6 +43,9 @@ import (
 
 const (
 	ControllerName = "kkp-user-synchronizer"
+
+	// cleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
 )
 
 type reconciler struct {
@@ -51,7 +53,7 @@ type reconciler struct {
 	recorder        record.EventRecorder
 	masterClient    ctrlruntimeclient.Client
 	masterAPIReader ctrlruntimeclient.Reader
-	seedClients     map[string]ctrlruntimeclient.Client
+	seedClients     kuberneteshelper.SeedClientMap
 }
 
 func Add(
@@ -65,7 +67,7 @@ func Add(
 		recorder:        masterManager.GetEventRecorderFor(ControllerName),
 		masterClient:    masterManager.GetClient(),
 		masterAPIReader: masterManager.GetAPIReader(),
-		seedClients:     map[string]ctrlruntimeclient.Client{},
+		seedClients:     kuberneteshelper.SeedClientMap{},
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
@@ -128,16 +130,16 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, apiv1.SeedUserCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, cleanupFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	userCreatorGetters := []reconciling.NamedKubermaticV1UserCreatorGetter{
 		userCreatorGetter(user),
 	}
-	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedUser := &kubermaticv1.User{}
-		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil && !apierrors.IsNotFound(err) {
+		if err := seedClient.Get(ctx, request.NamespacedName, seedUser); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
 		}
 
@@ -146,19 +148,19 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile user: %w", err)
 		}
 
-		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil {
+		if err := seedClient.Get(ctx, request.NamespacedName, seedUser); err != nil {
 			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
 		}
 
 		if !equality.Semantic.DeepEqual(user.Status, seedUser.Status) {
 			oldSeedUser := seedUser.DeepCopy()
 			seedUser.Status = *user.Status.DeepCopy()
-			if err := seedClusterClient.Status().Patch(ctx, seedUser, ctrlruntimeclient.MergeFrom(oldSeedUser)); err != nil {
+			if err := seedClient.Status().Patch(ctx, seedUser, ctrlruntimeclient.MergeFrom(oldSeedUser)); err != nil {
 				return fmt.Errorf("failed to update user status on seed cluster: %w", err)
 			}
 		}
@@ -166,36 +168,19 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return nil
 	})
 	if err != nil {
-		r.recorder.Eventf(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("reconciled user: %s: %w", user.Name, err)
 	}
 	return reconcile.Result{}, nil
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, user *kubermaticv1.User) error {
-	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
-		if err := seedClusterClient.Delete(ctx, user); err != nil {
-			return ctrlruntimeclient.IgnoreNotFound(err)
-		}
-		return nil
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		return ctrlruntimeclient.IgnoreNotFound(seedClient.Delete(ctx, user))
 	})
 	if err != nil {
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, apiv1.SeedUserCleanupFinalizer)
-}
-
-func (r *reconciler) syncAllSeeds(
-	log *zap.SugaredLogger,
-	user *kubermaticv1.User,
-	action func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error) error {
-	for seedName, seedClient := range r.seedClients {
-		err := action(seedClient, user)
-		if err != nil {
-			return fmt.Errorf("failed syncing user for seed %s: %w", seedName, err)
-		}
-		log.Debugw("Reconciled user with seed", "seed", seedName)
-	}
-	return nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, cleanupFinalizer)
 }
