@@ -73,7 +73,7 @@ func TestBackup(t *testing.T) {
 	testJig := jig.NewBYOCluster(client, logger)
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestScaling(t *testing.T) {
 	testJig := jig.NewBYOCluster(client, logger)
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}
@@ -196,7 +196,7 @@ func TestRecovery(t *testing.T) {
 	testJig := jig.NewBYOCluster(client, logger)
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}

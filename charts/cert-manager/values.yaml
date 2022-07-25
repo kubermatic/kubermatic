@@ -21,7 +21,7 @@ cert-manager:
   fullnameOverride: cert-manager
   nameOverride: cert-manager
 
-  startupapicheck: 
+  startupapicheck:
     enabled: false
 
   controller:
@@ -95,11 +95,6 @@ cert-manager:
     nodeSelector: {}
     affinity: {}
     tolerations: []
-
-  securityContext:
-    enabled: false
-    fsGroup: 1001
-    runAsUser: 1001
 
   ingressShim: {}
     # defaultIssuerName: ""

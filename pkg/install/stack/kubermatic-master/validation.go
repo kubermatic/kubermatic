@@ -66,9 +66,9 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
 	}
 
-	upgradeConstraints, contraintErrs := getAutoUpdateConstraints(defaulted)
-	if len(contraintErrs) > 0 {
-		return contraintErrs
+	upgradeConstraints, constraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(constraintErrs) > 0 {
+		return constraintErrs
 	}
 
 	for seedName, seed := range allSeeds {

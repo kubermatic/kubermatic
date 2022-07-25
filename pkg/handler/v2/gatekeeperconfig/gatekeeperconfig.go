@@ -231,13 +231,13 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		origninalAPIConfig, err := convertExternalToAPI(originalConf)
+		originalAPIConfig, err := convertExternalToAPI(originalConf)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		// patch
-		originalJSON, err := json.Marshal(origninalAPIConfig)
+		originalJSON, err := json.Marshal(originalAPIConfig)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current gatkeeper config: %v", err))
 		}

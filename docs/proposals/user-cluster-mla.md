@@ -346,7 +346,7 @@ spec:
 
 In this case, only `UserProjectMapping` objects will be propagated to Seed Cluster, which will reduce duplication of
 `UserProjectBinding` and `Project` in the Seed Cluster. However, in the scenario that Master Cluster and Seed
-Cluster are on the same Kubernetes cluster, `UserProejctMapping` will be redundant.
+Cluster are on the same Kubernetes cluster, `UserProjectMapping` will be redundant.
 
 In KKP, two synchronization controllers (master-constraint-template-controller, and seed-sync-controller) have been
 implemented to synchronize `ConstraintTemplate` and `Seed` Objects from Master Cluster to Seed Cluster. We can also

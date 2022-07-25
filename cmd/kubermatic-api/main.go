@@ -111,7 +111,7 @@ func main() {
 	kubermaticlog.Logger = log
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	ctx := signals.SetupSignalHandler()
 	cli.Hello(log, "API", options.log.Debug, &options.versions)

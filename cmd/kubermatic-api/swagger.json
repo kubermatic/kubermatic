@@ -22810,6 +22810,9 @@
           "type": "string",
           "x-go-name": "Description"
         },
+        "method": {
+          "$ref": "#/definitions/TemplateMethod"
+        },
         "versions": {
           "description": "available version for this application",
           "type": "array",
@@ -22936,9 +22939,6 @@
             "$ref": "#/definitions/FormField"
           },
           "x-go-name": "FormSpec"
-        },
-        "method": {
-          "$ref": "#/definitions/TemplateMethod"
         },
         "source": {
           "$ref": "#/definitions/ApplicationSource"
@@ -25037,6 +25037,11 @@
         "infraManagementUser": {
           "$ref": "#/definitions/VSphereCredentials"
         },
+        "ipv6Enabled": {
+          "description": "Optional: defines if the IPv6 is enabled for the datacenter",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
+        },
         "rootPath": {
           "description": "Optional: The root path for cluster specific VM folders. Each cluster gets its own\nfolder below the root folder. Must be the FQDN (for example\n\"/datacenter-1/vm/all-kubermatic-vms-in-here\") and defaults to the root VM\nfolder: \"/datacenter-1/vm\"",
           "type": "string",
@@ -25947,9 +25952,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "ExternalClusterMDStatus": {
+    "ExternalClusterMDPhase": {
       "type": "object",
-      "title": "ExternalClusterMDStatus defines the external cluster machinedeployment status.",
+      "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
       "properties": {
         "state": {
           "$ref": "#/definitions/ExternalClusterState"
@@ -25998,11 +26003,14 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "phase": {
+          "$ref": "#/definitions/ExternalClusterMDPhase"
+        },
         "spec": {
           "$ref": "#/definitions/NodeDeploymentSpec"
         },
         "status": {
-          "$ref": "#/definitions/ExternalClusterMDStatus"
+          "$ref": "#/definitions/MachineDeploymentStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -26429,6 +26437,9 @@
         "ipCidrRange": {
           "type": "string",
           "x-go-name": "IPCidrRange"
+        },
+        "ipFamily": {
+          "$ref": "#/definitions/IPFamily"
         },
         "kind": {
           "type": "string",
@@ -30803,7 +30814,7 @@
           "type": "string",
           "x-go-name": "Domain"
         },
-        "floatingIpPool": {
+        "floatingIPPool": {
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },

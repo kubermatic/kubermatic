@@ -34,6 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -146,6 +148,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 		ApplicationInstallation   *apiv2.ApplicationInstallation
 		ExpectedResponse          *apiv2.ApplicationInstallation
 		ExpectedHTTPStatusCode    int
+		ExpectedNamespaces        []string
 	}{
 		{
 			Name:      "create ApplicationInstallation that matches spec",
@@ -158,6 +161,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 			ExistingAPIUser:         test.GenDefaultAPIUser(),
 			ApplicationInstallation: test.GenApiApplicationInstallation("app1", test.GenDefaultCluster().Name, app1TargetNamespace),
 			ExpectedHTTPStatusCode:  http.StatusCreated,
+			ExpectedNamespaces:      []string{app1TargetNamespace},
 			ExpectedResponse: &apiv2.ApplicationInstallation{
 				ObjectMeta: apiv1.ObjectMeta{
 					Name: "app1",
@@ -189,7 +193,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			ep, cl, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to: %v", err)
 			}
@@ -201,12 +205,18 @@ func TestCreateApplicationInstallation(t *testing.T) {
 				return
 			}
 
-			if res.Code == http.StatusOK {
+			if res.Code == http.StatusCreated {
 				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshal expected response: %v", err)
 				}
 				test.CompareWithResult(t, res, string(b))
+
+				for _, nsname := range tc.ExpectedNamespaces {
+					if err := cl.FakeClient.Get(context.Background(), types.NamespacedName{Name: nsname}, &corev1.Namespace{}); err != nil {
+						t.Errorf("Could not get expected namespace %q: %v", nsname, err)
+					}
+				}
 			}
 		})
 	}

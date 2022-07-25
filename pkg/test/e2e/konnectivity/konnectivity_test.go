@@ -342,7 +342,7 @@ func createUserCluster(
 	testJig.ClusterJig.WithKonnectivity(true)
 
 	cleanup := func() {
-		testJig.Cleanup(ctx, t)
+		testJig.Cleanup(ctx, t, true)
 	}
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)

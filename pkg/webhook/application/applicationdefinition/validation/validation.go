@@ -61,13 +61,23 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
 	allErrs := field.ErrorList{}
 	ad := &appskubermaticv1.ApplicationDefinition{}
+	oldAD := &appskubermaticv1.ApplicationDefinition{}
 
 	switch req.Operation {
-	case admissionv1.Create, admissionv1.Update:
+	case admissionv1.Create:
 		if err := h.decoder.Decode(req, ad); err != nil {
 			return webhook.Errored(http.StatusBadRequest, err)
 		}
-		allErrs = append(allErrs, validation.ValidateApplicationDefinition(*ad)...)
+		allErrs = append(allErrs, validation.ValidateApplicationDefinitionSpec(*ad)...)
+
+	case admissionv1.Update:
+		if err := h.decoder.Decode(req, ad); err != nil {
+			return webhook.Errored(http.StatusBadRequest, err)
+		}
+		if err := h.decoder.DecodeRaw(req.OldObject, oldAD); err != nil {
+			return webhook.Errored(http.StatusBadRequest, err)
+		}
+		allErrs = append(allErrs, validation.ValidateApplicationDefinitionUpdate(*ad, *oldAD)...)
 
 	case admissionv1.Delete:
 		// NOP we always allow delete operations

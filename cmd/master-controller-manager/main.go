@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -44,7 +45,6 @@ import (
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
-	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -104,13 +104,15 @@ func main() {
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 	kubermaticlog.Logger = log
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
 	ctrlCtx.namespace = runOpts.namespace
+
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
 

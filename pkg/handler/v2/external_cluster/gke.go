@@ -383,7 +383,7 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 			AutoUpgrade: np.Management.AutoUpgrade,
 		}
 	}
-	md.Status = apiv2.ExternalClusterMDStatus{
+	md.Phase = apiv2.ExternalClusterMDPhase{
 		State: gkeprovider.ConvertGKEStatus(np.Status),
 	}
 
@@ -579,7 +579,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 		return nil, err
 	}
 
-	machineDeployment.Status = apiv2.ExternalClusterMDStatus{State: apiv2.PROVISIONING}
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
 	return &machineDeployment, nil
 }
 
@@ -767,7 +767,7 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	return apiCluster, nil
 }
 
-func deletGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
+func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
 	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return err

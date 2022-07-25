@@ -330,7 +330,7 @@ func deleteProviderCluster(ctx context.Context,
 			}
 		}
 		if cloud.GKE != nil {
-			err := deletGKECluster(ctx, secretKeySelector, cloud)
+			err := deleteGKECluster(ctx, secretKeySelector, cloud)
 			if err != nil {
 				return err
 			}
@@ -1040,8 +1040,8 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
-	kubeOneCondtion := internalCluster.Status.Condition
-	if cloud == nil || cloud.ProviderName == "" {
+	kubeOneCondition := internalCluster.Status.Condition
+	if cloud.ProviderName == "" {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
@@ -1079,8 +1079,8 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		}
 		if cloud.KubeOne != nil {
 			kubeoneStatus := &apiv2.ExternalClusterStatus{
-				State:         apiv2.ExternalClusterState(kubeOneCondtion.Phase),
-				StatusMessage: kubeOneCondtion.Message,
+				State:         apiv2.ExternalClusterState(kubeOneCondition.Phase),
+				StatusMessage: kubeOneCondition.Message,
 			}
 			apiCluster.Status = *kubeoneStatus
 		}

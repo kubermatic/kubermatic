@@ -34,7 +34,7 @@ import (
 func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			maxUnvailable := intstr.FromString("10%")
+			maxUnavailable := intstr.FromString("10%")
 
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
 
@@ -43,7 +43,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 			if ds.Spec.UpdateStrategy.RollingUpdate == nil {
 				ds.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{}
 			}
-			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &maxUnvailable
+			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &maxUnavailable
 
 			labels := resources.BaseAppLabels(resources.NodeLocalDNSDaemonSetName,
 				map[string]string{"app.kubernetes.io/name": resources.NodeLocalDNSDaemonSetName})

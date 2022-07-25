@@ -42,6 +42,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // swagger:parameters getResourceQuota deleteResourceQuota
@@ -142,7 +143,7 @@ func DecodePatchResourceQuotaReq(r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
+func GetResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.PrivilegedProjectProvider) (*apiv2.ResourceQuota, error) {
 	req, ok := request.(getResourceQuota)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -156,7 +157,16 @@ func GetResourceQuota(ctx context.Context, request interface{}, provider provide
 		return nil, err
 	}
 
-	return convertToAPIStruct(resourceQuota), nil
+	var humanReadableName string
+	if resourceQuota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
+		project, err := projectProvider.GetUnsecured(ctx, resourceQuota.Spec.Subject.Name, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		humanReadableName = project.Spec.Name
+	}
+
+	return convertToAPIStruct(resourceQuota, humanReadableName), nil
 }
 
 func GetResourceQuotaForProject(ctx context.Context, request interface{}, projectProvider provider.ProjectProvider,
@@ -185,10 +195,10 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return convertToAPIStruct(projectResourceQuota), nil
+	return convertToAPIStruct(projectResourceQuota, kubermaticProject.Spec.Name), nil
 }
 
-func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
+func ListResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.ProjectProvider) ([]*apiv2.ResourceQuota, error) {
 	req, ok := request.(listResourceQuotas)
 	if !ok {
 		return nil, utilerrors.NewBadRequest("invalid request")
@@ -207,9 +217,26 @@ func ListResourceQuotas(ctx context.Context, request interface{}, provider provi
 		return nil, err
 	}
 
+	// Fetching projects to get their human-readable names.
+	projectMap := make(map[string]*kubermaticv1.Project)
+	projects, err := projectProvider.List(ctx, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, project := range projects {
+		projectMap[project.Name] = project
+	}
+	projectSet := sets.StringKeySet(projectMap)
+
 	resp := make([]*apiv2.ResourceQuota, len(resourceQuotaList.Items))
 	for idx, rq := range resourceQuotaList.Items {
-		resp[idx] = convertToAPIStruct(&rq)
+		var humanReadableName string
+		if rq.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
+			if projectSet.Has(rq.Spec.Subject.Name) {
+				humanReadableName = projectMap[rq.Spec.Subject.Name].Spec.Name
+			}
+		}
+		resp[idx] = convertToAPIStruct(&rq, humanReadableName)
 	}
 
 	return resp, nil
@@ -270,14 +297,14 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 	return nil
 }
 
-func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota) *apiv2.ResourceQuota {
+func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota, humanReadableSubjectName string) *apiv2.ResourceQuota {
 	return &apiv2.ResourceQuota{
 		Name:                     resourceQuota.Name,
 		SubjectName:              resourceQuota.Spec.Subject.Name,
 		SubjectKind:              resourceQuota.Spec.Subject.Kind,
 		Quota:                    convertToAPIQuota(resourceQuota.Spec.Quota),
 		Status:                   resourceQuota.Status,
-		SubjectHumanReadableName: resourceQuota.Labels[kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey],
+		SubjectHumanReadableName: humanReadableSubjectName,
 	}
 }
 

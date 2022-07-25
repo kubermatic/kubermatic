@@ -154,6 +154,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Templates:           imageList,
 							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
+							IPv6Enabled:         pointer.BoolPtr(false),
 						},
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},

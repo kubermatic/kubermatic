@@ -25,16 +25,33 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func ValidateApplicationDefinition(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
+func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	var parentFieldPath *field.Path = nil
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
 
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
+
+	return allErrs
+}
+
+func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefinition, oldAd appskubermaticv1.ApplicationDefinition) field.ErrorList {
+	var parentFieldPath *field.Path = nil
+
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateApplicationDefinitionSpec(newAd)...)
+
+	// Validate .Spec.Method for immutability
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAd.Spec.Method,
+		oldAd.Spec.Method,
+		parentFieldPath.Child("spec.method"),
+	)...)
 
 	return allErrs
 }

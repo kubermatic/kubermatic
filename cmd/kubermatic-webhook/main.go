@@ -79,7 +79,7 @@ func main() {
 	log := rawLog.Sugar()
 
 	// set the logger used by controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()

@@ -443,9 +443,6 @@ const (
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 
-	// MachineValidatingWebhookConfigurationName is the name for the machine validating webhook.
-	MachineValidatingWebhookConfigurationName = "machine.kubermatic.k8c.io"
-
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
@@ -721,7 +718,7 @@ const (
 const (
 	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
 	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"
-	EtcdKetFile       = "/etc/etcd/pki/tls/etcd-tls.key"
+	EtcdKeyFile       = "/etc/etcd/pki/tls/etcd-tls.key"
 
 	EtcdPeerCertFile = "/etc/etcd/pki/tls/etcd-tls.crt"
 	EtcdPeerKeyFile  = "/etc/etcd/pki/tls/etcd-tls.key"

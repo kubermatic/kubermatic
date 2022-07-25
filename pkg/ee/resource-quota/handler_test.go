@@ -50,9 +50,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("project-%s", projectName),
 			Labels: map[string]string{
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey:              kubermaticv1.ProjectSubjectKind,
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey:              projectName,
-				kubermaticv1.ResourceQuotaSubjectHumanReadableNameLabelKey: "my project",
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: projectName,
 			},
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
@@ -65,15 +64,15 @@ func TestHandlerResourceQuotas(t *testing.T) {
 	}
 	rq2 := &kubermaticv1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("project-%s-2", projectName),
+			Name: fmt.Sprintf("project-%s", anotherProjectName),
 			Labels: map[string]string{
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey: fmt.Sprintf("%s-2", projectName),
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: anotherProjectName,
 			},
 		},
 		Spec: kubermaticv1.ResourceQuotaSpec{
 			Subject: kubermaticv1.Subject{
-				Name: fmt.Sprintf("%s-2", projectName),
+				Name: anotherProjectName,
 				Kind: kubermaticv1.ProjectSubjectKind,
 			},
 			Quota: genQuota(resource.MustParse("0"), resource.MustParse("1234M"), resource.MustParse("0")),
@@ -81,7 +80,8 @@ func TestHandlerResourceQuotas(t *testing.T) {
 	}
 
 	admin := test.GenAdminUser("John", "john@acme.com", true)
-	existingObjects := test.GenDefaultKubermaticObjects(rq1, rq2, admin)
+	project2 := test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp())
+	existingObjects := test.GenDefaultKubermaticObjects(rq1, rq2, admin, project2)
 
 	testcases := []struct {
 		name             string
@@ -120,6 +120,13 @@ func TestHandlerResourceQuotas(t *testing.T) {
 					}
 					if !diff.DeepEqual(expectedQuota, rq.Quota) {
 						return fmt.Errorf("Objects differ:\n%v", diff.ObjectDiff(expectedQuota, rq.Quota))
+					}
+					if rq.SubjectHumanReadableName != strings.TrimSuffix(rq.SubjectName, "-ID") {
+						return fmt.Errorf(
+							"human-readable name is not correct: expected %s, got %s",
+							projectName,
+							rq.SubjectHumanReadableName,
+						)
 					}
 				}
 				return nil
@@ -162,6 +169,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				expectedName := fmt.Sprintf("project-%s", projectName)
 				if resourceQuota.Name != expectedName {
 					return fmt.Errorf("expected name %s, got %s", expectedName, resourceQuota.Name)
+				}
+				expectedHumanReadableName := strings.TrimSuffix(resourceQuota.SubjectName, "-ID")
+				if resourceQuota.SubjectHumanReadableName != expectedHumanReadableName {
+					return fmt.Errorf(
+						"expected name %s, got %s",
+						expectedHumanReadableName,
+						resourceQuota.SubjectHumanReadableName,
+					)
 				}
 				return nil
 			},
@@ -282,6 +297,10 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				expectedName := fmt.Sprintf("project-%s", projectName)
 				if resourceQuota.Name != expectedName {
 					return fmt.Errorf("expected name %s, got %s", expectedName, resourceQuota.Name)
+				}
+				expectedHumanReadableName := strings.TrimSuffix(resourceQuota.SubjectName, "-ID")
+				if resourceQuota.SubjectHumanReadableName != expectedHumanReadableName {
+					return fmt.Errorf("expected name %s, got %s", expectedHumanReadableName, resourceQuota.Name)
 				}
 				return nil
 			},

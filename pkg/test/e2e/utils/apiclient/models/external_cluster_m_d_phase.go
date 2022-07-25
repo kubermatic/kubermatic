@@ -13,10 +13,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ExternalClusterMDStatus ExternalClusterMDStatus defines the external cluster machinedeployment status.
+// ExternalClusterMDPhase ExternalClusterMDPhase defines the external cluster machinedeployment phase.
 //
-// swagger:model ExternalClusterMDStatus
-type ExternalClusterMDStatus struct {
+// swagger:model ExternalClusterMDPhase
+type ExternalClusterMDPhase struct {
 
 	// status message
 	StatusMessage string `json:"statusMessage,omitempty"`
@@ -25,8 +25,8 @@ type ExternalClusterMDStatus struct {
 	State ExternalClusterState `json:"state,omitempty"`
 }
 
-// Validate validates this external cluster m d status
-func (m *ExternalClusterMDStatus) Validate(formats strfmt.Registry) error {
+// Validate validates this external cluster m d phase
+func (m *ExternalClusterMDPhase) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateState(formats); err != nil {
@@ -39,7 +39,7 @@ func (m *ExternalClusterMDStatus) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ExternalClusterMDStatus) validateState(formats strfmt.Registry) error {
+func (m *ExternalClusterMDPhase) validateState(formats strfmt.Registry) error {
 	if swag.IsZero(m.State) { // not required
 		return nil
 	}
@@ -56,8 +56,8 @@ func (m *ExternalClusterMDStatus) validateState(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this external cluster m d status based on the context it is used
-func (m *ExternalClusterMDStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this external cluster m d phase based on the context it is used
+func (m *ExternalClusterMDPhase) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateState(ctx, formats); err != nil {
@@ -70,7 +70,7 @@ func (m *ExternalClusterMDStatus) ContextValidate(ctx context.Context, formats s
 	return nil
 }
 
-func (m *ExternalClusterMDStatus) contextValidateState(ctx context.Context, formats strfmt.Registry) error {
+func (m *ExternalClusterMDPhase) contextValidateState(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.State.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
@@ -85,7 +85,7 @@ func (m *ExternalClusterMDStatus) contextValidateState(ctx context.Context, form
 }
 
 // MarshalBinary interface implementation
-func (m *ExternalClusterMDStatus) MarshalBinary() ([]byte, error) {
+func (m *ExternalClusterMDPhase) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -93,8 +93,8 @@ func (m *ExternalClusterMDStatus) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ExternalClusterMDStatus) UnmarshalBinary(b []byte) error {
-	var res ExternalClusterMDStatus
+func (m *ExternalClusterMDPhase) UnmarshalBinary(b []byte) error {
+	var res ExternalClusterMDPhase
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

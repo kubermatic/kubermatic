@@ -471,9 +471,9 @@ func etcdCmd(config *etcdCluster) []string {
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
-		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--key-file=%s", resources.EtcdKeyFile),
 		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
-		fmt.Sprintf("--peer-key-file=%s", resources.EtcdKetFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdKeyFile),
 		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		"--auto-compaction-retention=8",
 	}

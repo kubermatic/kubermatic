@@ -154,11 +154,6 @@ spec:
                           - type
                           type: object
                         type: array
-                      method:
-                        description: Method used to install the application
-                        enum:
-                        - helm
-                        type: string
                       source:
                         description: Defined how the source of the application (e.g
                           Helm chart) is retrieved
@@ -384,7 +379,6 @@ spec:
                             type: object
                         type: object
                     required:
-                    - method
                     - source
                     type: object
                   version:
@@ -422,9 +416,58 @@ spec:
                   - type
                   type: object
                 type: array
+              helmRelease:
+                description: HelmRelease holds the information about the helm release
+                  installed by this application. This field is only filled if template
+                  method is 'helm'.
+                properties:
+                  info:
+                    description: Info provides information about a release.
+                    properties:
+                      deleted:
+                        description: Deleted tracks when this object was deleted.
+                        format: date-time
+                        type: string
+                      description:
+                        description: Description is human-friendly "log entry" about
+                          this release.
+                        type: string
+                      firstDeployed:
+                        description: FirstDeployed is when the release was first deployed.
+                        format: date-time
+                        type: string
+                      lastDeployed:
+                        description: LastDeployed is when the release was last deployed.
+                        format: date-time
+                        type: string
+                      notes:
+                        description: Notes is  the rendered templates/NOTES.txt if
+                          available.
+                        type: string
+                      status:
+                        description: Status is the current state of the release.
+                        type: string
+                    required:
+                    - deleted
+                    type: object
+                  name:
+                    description: Name is the name of the release.
+                    type: string
+                  version:
+                    description: Version is an int which represents the revision of
+                      the release.
+                    type: integer
+                type: object
               lastUpdated:
                 format: date-time
                 type: string
+              method:
+                description: Method used to install the application
+                enum:
+                - helm
+                type: string
+            required:
+            - method
             type: object
         type: object
     served: true

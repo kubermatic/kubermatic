@@ -34,20 +34,20 @@ import (
 // projects. Therefore it was decided to make use of the master client directly
 // for now.
 type ApplicationDefinitionProvider struct {
-	priviledgedClient ctrlruntimeclient.Client
+	privilegedClient ctrlruntimeclient.Client
 }
 
 var _ provider.ApplicationDefinitionProvider = &ApplicationDefinitionProvider{}
 
-func NewApplicationDefinitionProvider(priviledgedClient ctrlruntimeclient.Client) *ApplicationDefinitionProvider {
+func NewApplicationDefinitionProvider(privilegedClient ctrlruntimeclient.Client) *ApplicationDefinitionProvider {
 	return &ApplicationDefinitionProvider{
-		priviledgedClient: priviledgedClient,
+		privilegedClient: privilegedClient,
 	}
 }
 
 func (p *ApplicationDefinitionProvider) ListUnsecured(ctx context.Context) (*appskubermaticv1.ApplicationDefinitionList, error) {
 	appDefList := &appskubermaticv1.ApplicationDefinitionList{}
-	if err := p.priviledgedClient.List(ctx, appDefList); err != nil {
+	if err := p.privilegedClient.List(ctx, appDefList); err != nil {
 		return nil, err
 	}
 	return appDefList, nil

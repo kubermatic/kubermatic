@@ -148,7 +148,7 @@ func New(debug bool, format Format) *zap.Logger {
 	var enc zapcore.Encoder
 	if format == FormatJSON {
 		enc = zapcore.NewJSONEncoder(encCfg)
-	} else if format == FormatConsole {
+	} else {
 		enc = zapcore.NewConsoleEncoder(encCfg)
 	}
 

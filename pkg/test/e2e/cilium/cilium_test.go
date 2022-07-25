@@ -453,7 +453,7 @@ func createUserCluster(
 		})
 
 	cleanup := func() {
-		testJig.Cleanup(ctx, t)
+		testJig.Cleanup(ctx, t, true)
 	}
 
 	// let the magic happen

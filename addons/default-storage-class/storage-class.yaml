@@ -180,3 +180,14 @@ parameters:
   storageProfile: {{ .Cluster.CSI.StorageProfile | quote }}
   filesystem: {{ default "ext4" .Cluster.CSI.Filesystem | quote }}
 {{ end }}
+
+{{ if eq .Cluster.CloudProviderName "digitalocean" }}
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: do-block-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: dobs.csi.digitalocean.com
+allowVolumeExpansion: true
+{{ end }}

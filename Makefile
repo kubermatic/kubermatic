@@ -73,7 +73,7 @@ run-tests:
 build-tests:
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
-	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
+	@# **Important:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
 	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
