@@ -22864,9 +22864,42 @@
         },
         "spec": {
           "$ref": "#/definitions/ApplicationInstallationSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ApplicationInstallationStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationInstallationCondition": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "description": "Human readable message indicating details about last transition.",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "reason": {
+          "description": "(brief) reason for the condition's last transition.",
+          "type": "string",
+          "x-go-name": "Reason"
+        },
+        "status": {
+          "$ref": "#/definitions/ConditionStatus"
+        },
+        "type": {
+          "description": "Type of cluster condition.\nManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nManifestsApplied ManifestsApplied  ManifestsApplied indicates that all manifests have been applied in the target user-cluster.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
+          "type": "string",
+          "enum": [
+            "ManifestsRetrieved",
+            "ManifestsApplied",
+            "Ready"
+          ],
+          "x-go-enum-desc": "ManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nManifestsApplied ManifestsApplied  ManifestsApplied indicates that all manifests have been applied in the target user-cluster.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "ApplicationInstallationSpec": {
       "type": "object",
@@ -22882,6 +22915,27 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "ApplicationInstallationStatus": {
+      "type": "object",
+      "title": "ApplicationInstallationStatus is the object representing the status of an Application.",
+      "properties": {
+        "applicationVersion": {
+          "$ref": "#/definitions/ApplicationVersion"
+        },
+        "conditions": {
+          "description": "Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApplicationInstallationCondition"
+          },
+          "x-go-name": "Conditions"
+        },
+        "lastUpdated": {
+          "$ref": "#/definitions/Time"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ApplicationRef": {
       "type": "object",
