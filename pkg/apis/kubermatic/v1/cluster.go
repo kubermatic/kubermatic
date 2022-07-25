@@ -265,7 +265,7 @@ type ClusterSpec struct {
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	// +kubebuilder:default=false
-	Pause bool `json:"pause"`
+	Pause bool `json:"pause,omitempty"`
 	// PauseReason is the reason why the cluster is not being managed. This field is for informational
 	// purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
 	PauseReason string `json:"pauseReason,omitempty"`
