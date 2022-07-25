@@ -94,9 +94,9 @@ type GitReference struct {
 	// +optional
 	Branch string `json:"branch,omitempty"`
 
-	// Commit SHA to checkout.
+	// Commit SHA in a Branch to checkout.
 	//
-	// It can be used in conjunction with branch to to avoid to clone the all repository. The commit must belong to this branch.
+	// It must be used in conjunction with branch field.
 	// +kubebuilder:validation:Pattern:=`^[a-f0-9]{40}$`
 	// +kubebuilder:validation:Type=string
 	// +optional

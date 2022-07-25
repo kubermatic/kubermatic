@@ -145,30 +145,22 @@ func (g GitSource) getCheckoutStrategy() checkoutFunc {
 // checkoutFunc define a function to clone and checkout code from repository defined in gitSource into destination using auth as credentials.
 type checkoutFunc func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error
 
-// checkoutFromCommit clone the repository and checkout the desired commit.
-// If a branch is defined then a shallow clone of the branch is performed. The commit must belongs to this branch.
+// checkoutFromCommit clone the repository and checkout the desired commit. The commit must belongs to this branch.
+// A shallow clone is performed.
 func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	var repo *git.Repository
 	var err error
 
-	cloneOptions := &git.CloneOptions{
-		URL:        gitSource.Remote,
-		Auth:       auth,
-		Progress:   nil,
-		Tags:       git.NoTags,
-		NoCheckout: true,
-	}
-
-	if len(gitSource.Ref.Branch) > 0 {
+	repo, err = git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
+		URL:      gitSource.Remote,
+		Auth:     auth,
+		Progress: nil,
 		// Clone only one branch. The commit must belong to this branch.
-		cloneOptions.SingleBranch = true
-		cloneOptions.ReferenceName = plumbing.NewBranchReferenceName(gitSource.Ref.Branch)
-	} else {
-		// Clone all repository.
-		cloneOptions.SingleBranch = false
-	}
-
-	repo, err = git.PlainCloneContext(ctx, destination, false, cloneOptions)
+		SingleBranch:  true,
+		ReferenceName: plumbing.NewBranchReferenceName(gitSource.Ref.Branch),
+		NoCheckout:    true,
+		Tags:          git.NoTags,
+	})
 	if err != nil {
 		return err
 	}
