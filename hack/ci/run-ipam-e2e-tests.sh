@@ -30,36 +30,16 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
-echodate "Creating Hetzner preset..."
-cat << EOF > preset-hetzner.yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: Preset
-metadata:
-  name: e2e-hetzner
-  namespace: kubermatic
-spec:
-  hetzner:
-    token: ${HZ_E2E_TOKEN}
-EOF
-retry 2 kubectl apply -f preset-hetzner.yaml
-
-echodate "Creating roxy-admin user..."
-cat << EOF > user.yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: User
-metadata:
-  name: roxy-admin
-spec:
-  admin: true
-  email: roxy-admin@kubermatic.com
-  name: roxy-admin
-EOF
-retry 2 kubectl apply -f user.yaml
-
 echodate "Running IPAM tests..."
-go_test ipam_e2e -timeout 30m -tags ipam -v ./pkg/test/e2e/ipam -kubeconfig "$KUBECONFIG"
+go_test ipam_e2e -timeout 30m -tags ipam -v ./pkg/test/e2e/ipam \
+  -datacenter byo-kubernetes
 echodate "Tests completed successfully!"

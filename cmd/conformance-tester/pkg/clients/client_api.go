@@ -359,15 +359,15 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 		// Issue Delete call
 		log.With("cluster", clusterList.Items[0].Name).Info("Deleting user cluster now...")
 
-		deleteParms := &project.DeleteClusterParams{
+		deleteParams := &project.DeleteClusterParams{
 			Context:   ctx,
 			ProjectID: c.opts.KubermaticProject,
 			ClusterID: clusterList.Items[0].Name,
 			DC:        c.opts.Seed.Name,
 		}
-		utils.SetupParams(nil, deleteParms, 3*time.Second, timeout)
+		utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
 
-		if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParms, c.opts.KubermaticAuthenticator); err != nil {
+		if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParams, c.opts.KubermaticAuthenticator); err != nil {
 			log.Warnw("Failed to delete cluster", zap.Error(err))
 		}
 

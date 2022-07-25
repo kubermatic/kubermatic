@@ -41,7 +41,7 @@ The CRD would look something like this:
 apiVersion: kubermatic.k8s.io/v1
 kind: AllowedRegistry
 metadata:
-  name: allowed-registy
+  name: allowed-registry
 spec:
   registries: ["myharborinstance.com/", "quay.com"]
   selector:
@@ -62,13 +62,13 @@ The underlying enforcement of the allowing registries would be done through the 
 Default Constraint. The Constraint Template would be something along the lines of this REGO:
 
 ```
-package kubernetes.admission                                              
+package kubernetes.admission
 
-deny[msg] {                                                                
-  input.request.kind.kind == "Pod"                                        
-  image := input.request.object.spec.containers[_].image                   
-  not startswith(image, "hooli.com/")                                       
-  msg := sprintf("image '%v' comes from untrusted registry", [image])       
+deny[msg] {
+  input.request.kind.kind == "Pod"
+  image := input.request.object.spec.containers[_].image
+  not startswith(image, "hooli.com/")
+  msg := sprintf("image '%v' comes from untrusted registry", [image])
 }
 ```
 
@@ -79,12 +79,12 @@ The allowed registry controller will ensure the Constraint Template and the Defa
 ### Additional options
 
 We could also add Cluster filtering to the allowed registry, which would be done through the Default Constraint filtering, to allow
-admins to fine tune which clusters they want to target. 
+admins to fine tune which clusters they want to target.
 
 
-### API/UI 
+### API/UI
 
-The allowed registry feature will be available for KKP admins through a new endpoint and through the UI. The UI team will need to decide where to 
+The allowed registry feature will be available for KKP admins through a new endpoint and through the UI. The UI team will need to decide where to
 place the new feature.
 
 ## Tasks

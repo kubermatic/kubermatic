@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"os"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -44,19 +46,21 @@ func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
 }
 
-func KubermaticNamepace() string {
+func KubermaticNamespace() string {
 	return kkpNamespace
 }
 
-func ClusterVersion() string {
+func ClusterVersion(log *zap.SugaredLogger) string {
 	var v string
 
 	if version != "" {
 		v = version
 	} else if vv := os.Getenv("VERSION_TO_TEST"); vv != "" {
+		log.Info("Defaulting cluster version to VERSION_TO_TEST", "version", vv)
 		v = vv
 	} else {
 		v = defaults.DefaultKubernetesVersioning.Default.String()
+		log.Info("Defaulting cluster version to DefaultKubernetesVersioning", "version", v)
 	}
 
 	// consistently output a leading "v"
@@ -67,8 +71,8 @@ func ClusterVersion() string {
 	return v
 }
 
-func ClusterSemver() semver.Semver {
-	return *semver.NewSemverOrDie(ClusterVersion())
+func ClusterSemver(log *zap.SugaredLogger) semver.Semver {
+	return *semver.NewSemverOrDie(ClusterVersion(log))
 }
 
 func DatacenterName() string {

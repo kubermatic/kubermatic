@@ -75,6 +75,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("clusterrole", request.Name)
+	log.Debug("Reconciling")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -82,9 +85,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("ClusterRole", request.Name)
-	log.Debug("Reconciling")
 
 	clusterRole := &rbacv1.ClusterRole{}
 	if err := r.client.Get(ctx, request.NamespacedName, clusterRole); err != nil {
@@ -104,19 +104,18 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterRole *rbacv1.ClusterRole) error {
+	if clusterRole.Labels[handlercommon.UserClusterComponentKey] == handlercommon.UserClusterRoleComponentValue {
+		return nil
+	}
+
 	oldClusterRole := clusterRole.DeepCopy()
 	if clusterRole.Labels == nil {
 		clusterRole.Labels = map[string]string{}
 	}
 
-	if value, ok := clusterRole.Labels[handlercommon.UserClusterComponentKey]; ok {
-		if value == handlercommon.UserClusterRoleComponentValue {
-			log.Debug("label ", handlercommon.UserClusterRoleLabelSelector, " exists, not updating cluster role: ", clusterRole.Name)
-			return nil
-		}
-	}
-
 	clusterRole.Labels[handlercommon.UserClusterComponentKey] = handlercommon.UserClusterRoleComponentValue
+
+	log.Infow("Labeling ClusterRole", "label", handlercommon.UserClusterComponentKey, "value", handlercommon.UserClusterRoleComponentValue)
 
 	if err := r.client.Patch(ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole)); err != nil {
 		return fmt.Errorf("failed to update cluster role: %w", err)

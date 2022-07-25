@@ -361,7 +361,7 @@ func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployme
 					Containers: []corev1.Container{
 						{
 							Name:    resources.ControllerManagerDeploymentName,
-							Image:   "my-registy.io/kube-controller-manager:v1.18",
+							Image:   "my-registry.io/kube-controller-manager:v1.18",
 							Command: []string{"/usr/local/bin/kube-controller-manager"},
 							Args:    k.Flags,
 						},

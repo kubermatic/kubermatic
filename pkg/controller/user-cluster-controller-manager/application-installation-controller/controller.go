@@ -106,6 +106,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 
 // Reconcile ApplicationInstallation (ie install / update or uninstall applicationinto the user-cluster).
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("applicationinstallation", request)
+	log.Debug("Processing")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -113,9 +116,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("resource", request.Name)
-	log.Debug("Processing")
 
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
 
@@ -159,7 +159,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: appInstallation.Spec.ApplicationRef.Name}, applicationDef); err != nil {
 		if apierrors.IsNotFound(err) {
 			if appHasBeenInstalled {
-				r.traceWarning(appInstallation, log, applicationDefinitionRemovedEvent, fmt.Sprintf("ApplicationDefinition '%s' has been deleted, removing applictionInstallation", applicationDef.Name))
+				r.traceWarning(appInstallation, log, applicationDefinitionRemovedEvent, fmt.Sprintf("ApplicationDefinition '%s' has been deleted, removing applicationInstallation", applicationDef.Name))
 				return r.userClient.Delete(ctx, appInstallation)
 			} else {
 				return fmt.Errorf("ApplicationDefinition '%s' does not exist. can not install application", applicationDef.Name)
@@ -169,7 +169,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	}
 
 	if !applicationDef.DeletionTimestamp.IsZero() {
-		r.traceWarning(appInstallation, log, applicationDefinitionDeletingEvent, fmt.Sprintf("ApplicationDefinition '%s' is being deleted,  removing applictionInstallation", applicationDef.Name))
+		r.traceWarning(appInstallation, log, applicationDefinitionDeletingEvent, fmt.Sprintf("ApplicationDefinition '%s' is being deleted,  removing applicationInstallation", applicationDef.Name))
 		return r.userClient.Delete(ctx, appInstallation)
 	}
 

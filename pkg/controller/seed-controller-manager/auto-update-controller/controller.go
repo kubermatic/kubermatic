@@ -96,7 +96,7 @@ func Add(
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("cluster", request.Name)
-	log.Debug("Processing")
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		},
 	)
 	if err != nil {
-		log.Errorw("Failed to reconcile", zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
@@ -227,6 +227,7 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, log *zap.SugaredLo
 		return fmt.Errorf("failed to update cluster: %w", err)
 	}
 
+	log.Infow("Applied automatic cluster upgrade", "from", oldCluster.Spec.Version, "to", cluster.Spec.Version)
 	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateApplied", "Cluster was automatically updated from v%s to v%s.", oldCluster.Spec.Version, cluster.Spec.Version)
 
 	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {

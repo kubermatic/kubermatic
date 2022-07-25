@@ -1549,13 +1549,13 @@ func TestPatchMachineDeployment(t *testing.T) {
 				test.GenDefaultProject().Name, test.GenDefaultCluster().Name, tc.NodeDeploymentID), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
-			machineDeploymentObjets := []ctrlruntimeclient.Object{}
+			machineDeploymentObjects := []ctrlruntimeclient.Object{}
 			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
-				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+				machineDeploymentObjects = append(machineDeploymentObjects, existingMachineDeployment)
 			}
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjects, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
@@ -1767,7 +1767,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 		ExistingMachineDeployments  []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs      []ctrlruntimeclient.Object
 		ExpectedHTTPStatusOnGet     int
-		EpxectedNodeDeploymentCount int
+		ExpectedNodeDeploymentCount int
 	}{
 		// scenario 1
 		{
@@ -1793,7 +1793,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 			// When the client GETs the previously deleted "node" it will get a valid response.
 			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
 			ExpectedHTTPStatusOnGet:     http.StatusOK,
-			EpxectedNodeDeploymentCount: 1,
+			ExpectedNodeDeploymentCount: 1,
 		},
 		// scenario 2
 		{
@@ -1820,7 +1820,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 			// When the client GETs the previously deleted "node" it will get a valid response.
 			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
 			ExpectedHTTPStatusOnGet:     http.StatusOK,
-			EpxectedNodeDeploymentCount: 1,
+			ExpectedNodeDeploymentCount: 1,
 		},
 		// scenario 3
 		{
@@ -1844,7 +1844,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
 			},
 			ExpectedHTTPStatusOnGet:     http.StatusForbidden,
-			EpxectedNodeDeploymentCount: 2,
+			ExpectedNodeDeploymentCount: 2,
 		},
 	}
 
@@ -1854,16 +1854,16 @@ func TestDeleteMachineDeployment(t *testing.T) {
 				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
-			machineDeploymentObjets := []ctrlruntimeclient.Object{}
+			machineDeploymentObjects := []ctrlruntimeclient.Object{}
 			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
 			}
 			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
-				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+				machineDeploymentObjects = append(machineDeploymentObjects, existingMachineDeployment)
 			}
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjects, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
@@ -1879,8 +1879,8 @@ func TestDeleteMachineDeployment(t *testing.T) {
 				t.Fatalf("failed to list MachineDeployments: %v", err)
 			}
 
-			if machineDeploymentCount := len(machineDeployments.Items); machineDeploymentCount != tc.EpxectedNodeDeploymentCount {
-				t.Errorf("Expected to find %d  machineDeployments but got %d", tc.EpxectedNodeDeploymentCount, machineDeploymentCount)
+			if machineDeploymentCount := len(machineDeployments.Items); machineDeploymentCount != tc.ExpectedNodeDeploymentCount {
+				t.Errorf("Expected to find %d  machineDeployments but got %d", tc.ExpectedNodeDeploymentCount, machineDeploymentCount)
 			}
 		})
 	}

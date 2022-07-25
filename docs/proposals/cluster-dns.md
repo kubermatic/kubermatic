@@ -5,7 +5,7 @@
 **Status**: Draft proposal; Prototype in progress.
 
 *short description of the topic*
-This change is enabling master cluster components (apiserver, scheduler, contoller-manager) to talk to the DNS servers that are running inside the user-cluster itself. This will allow those master cluster components to talk via service names to services running inside that user-cluster.
+This change is enabling master cluster components (apiserver, scheduler, controller-manager) to talk to the DNS servers that are running inside the user-cluster itself. This will allow those master cluster components to talk via service names to services running inside that user-cluster.
 
 ## Motivation and Background
 

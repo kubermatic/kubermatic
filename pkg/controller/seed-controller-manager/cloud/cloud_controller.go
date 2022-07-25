@@ -55,12 +55,12 @@ const (
 	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
 	// security group was migrated to contain allow rules for ICMP.
 	icmpMigrationRevision = 1
-	// awsHarcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
+	// awsHardcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
 	// hardcoded AZs and Subnets towards multi-AZ support.
-	awsHarcodedAZMigrationRevision = 2
+	awsHardcodedAZMigrationRevision = 2
 	// currentMigrationRevision describes the current migration revision. If this is set on the
 	// cluster, certain migrations won't get executed. This must never be decremented.
-	CurrentMigrationRevision = awsHarcodedAZMigrationRevision
+	CurrentMigrationRevision = awsHardcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fulfills the interface
@@ -105,8 +105,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -115,7 +115,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-	log = log.With("cluster", cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -182,7 +181,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
-			r.log.Infow("failed to run cloud provider", zap.Error(err))
+			log.Infow("failed to run cloud provider", zap.Error(err))
 			return &reconcile.Result{Requeue: true}, nil
 		}
 
@@ -262,7 +261,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
 		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
+		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {

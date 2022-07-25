@@ -161,7 +161,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	for _, app := range applications {
 		if err := r.createInitialApplicationInstallations(ctx, userClusterClient, app, cluster); err != nil {
 			errs = append(errs, err)
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallion %s", app.Name)
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallation %s", app.Name)
 		}
 	}
 
@@ -208,7 +208,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 		return err
 	}
 
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallion %s has been created", applicationInstallation.Name)
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallation %s has been created", applicationInstallation.Name)
 
 	return nil
 }

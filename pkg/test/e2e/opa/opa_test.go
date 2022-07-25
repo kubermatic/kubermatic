@@ -80,7 +80,7 @@ func TestOPAIntegration(t *testing.T) {
 	testJig.ClusterJig.WithPreset(preset)
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}
@@ -287,7 +287,7 @@ func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, name
 	constraint := &kubermaticv1.Constraint{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: jig.KubermaticNamepace(),
+			Namespace: jig.KubermaticNamespace(),
 		},
 		Spec: kubermaticv1.ConstraintSpec{
 			ConstraintType: ctKind,

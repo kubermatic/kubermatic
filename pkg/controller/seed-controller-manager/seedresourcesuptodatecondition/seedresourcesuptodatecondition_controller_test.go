@@ -35,7 +35,7 @@ import (
 )
 
 // There is a good chance someone wants simplify the code
-// and make an if err := r.reconcile(); err != nil {} simplication,
+// and make an if err := r.reconcile(); err != nil {} simplification,
 // accidentally shortcircuiting the workqeue and retrying.
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()

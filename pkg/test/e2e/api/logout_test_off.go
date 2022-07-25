@@ -20,6 +20,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -77,7 +78,7 @@ func TestLogout(t *testing.T) {
 			if err == nil {
 				t.Fatal("create project: expected error")
 			}
-			if _, ok := err.(*project.CreateProjectUnauthorized); !ok {
+			if !errors.Is(err, &project.CreateProjectUnauthorized{}) {
 				t.Fatalf("create project: expected unauthorized error code, but got %#v", err)
 			}
 
@@ -86,8 +87,8 @@ func TestLogout(t *testing.T) {
 			if err == nil {
 				t.Fatal("list datacenter: expected error")
 			}
-			dcErr, ok := err.(*datacenter.ListDatacentersDefault)
-			if !ok {
+			var dcErr *datacenter.ListDatacentersDefault
+			if !errors.As(err, &dcErr) {
 				t.Fatalf("list datacenter: expected error")
 			}
 			if dcErr.Code() != http.StatusUnauthorized {
@@ -99,8 +100,8 @@ func TestLogout(t *testing.T) {
 			if err == nil {
 				t.Fatal("list credentials: expected error")
 			}
-			credentialErr, ok := err.(*credentials.ListCredentialsDefault)
-			if !ok {
+			var credentialErr *credentials.ListCredentialsDefault
+			if !errors.As(err, &credentialErr) {
 				t.Fatalf("list credentials: expected error")
 			}
 			if credentialErr.Code() != http.StatusUnauthorized {

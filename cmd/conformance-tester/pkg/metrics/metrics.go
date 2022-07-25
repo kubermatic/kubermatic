@@ -46,7 +46,7 @@ var (
 	SeedControlplaneDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
 		Name:      "seed_controlplane_duration_seconds",
-		Help:      "Time it took the user-cluser's controlplane pods in the seed cluster to become ready",
+		Help:      "Time it took the user-cluster's controlplane pods in the seed cluster to become ready",
 	}, []string{"prowjob", "scenario"})
 
 	ClusterControlplaneDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{

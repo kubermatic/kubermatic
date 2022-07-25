@@ -52,7 +52,7 @@ const defaultNs = "default"
 
 func TestNewShouldFailWhenRESTClientGetterNamespaceIsDifferentThanTargetNamespace(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-	downloadDest, settings := createHelmConfigutation(t)
+	downloadDest, settings := createHelmConfiguration(t)
 	defer os.RemoveAll(downloadDest)
 
 	tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
@@ -71,10 +71,10 @@ func TestNewShouldFailWhenRESTClientGetterNamespaceIsDifferentThanTargetNamespac
 func TestDownloadChart(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
 
-	chartAchiveDir := t.TempDir()
-	chartArchivePath, chartArchiveSize := packageChart(t, "testdata/examplechart", chartAchiveDir)
+	chartArchiveDir := t.TempDir()
+	chartArchivePath, chartArchiveSize := packageChart(t, "testdata/examplechart", chartArchiveDir)
 
-	srv, err := repotest.NewTempServerWithCleanup(t, path.Join(chartAchiveDir, "*.tgz"))
+	srv, err := repotest.NewTempServerWithCleanup(t, path.Join(chartArchiveDir, "*.tgz"))
 	defer srv.Stop()
 	if err != nil {
 		t.Fatal(err)
@@ -127,7 +127,7 @@ func TestDownloadChart(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			func() {
-				downloadDest, settings := createHelmConfigutation(t)
+				downloadDest, settings := createHelmConfiguration(t)
 				defer os.RemoveAll(downloadDest)
 
 				tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
@@ -173,10 +173,10 @@ func TestDownloadChart(t *testing.T) {
 func TestBuildDependencies(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
 
-	chartAchiveDir := t.TempDir()
-	chartArchivePath, _ := packageChart(t, "testdata/examplechart", chartAchiveDir)
+	chartArchiveDir := t.TempDir()
+	chartArchivePath, _ := packageChart(t, "testdata/examplechart", chartArchiveDir)
 
-	srv, err := repotest.NewTempServerWithCleanup(t, path.Join(chartAchiveDir, "*.tgz"))
+	srv, err := repotest.NewTempServerWithCleanup(t, path.Join(chartArchiveDir, "*.tgz"))
 	defer srv.Stop()
 	if err != nil {
 		t.Fatal(err)
@@ -238,7 +238,7 @@ func TestBuildDependencies(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			func() {
-				tempDir, settings := createHelmConfigutation(t)
+				tempDir, settings := createHelmConfiguration(t)
 				defer os.RemoveAll(tempDir)
 
 				tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
@@ -349,9 +349,9 @@ func assertDependencyLoaded(chartUnderTest *chart.Chart, dep *chart.Dependency, 
 	}
 }
 
-// createHelmConfigutation creates the temporary directory where helm caches and chart will be download and the
+// createHelmConfiguration creates the temporary directory where helm caches and chart will be download and the
 // corresponding HelmSettings.It returns the path to the temporary directory and the HelmSettings.
-func createHelmConfigutation(t *testing.T) (string, HelmSettings) {
+func createHelmConfiguration(t *testing.T) (string, HelmSettings) {
 	t.Helper()
 
 	downloadDest, err := os.MkdirTemp("", "helmClientTest-")

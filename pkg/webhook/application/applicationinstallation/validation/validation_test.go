@@ -48,7 +48,7 @@ func init() {
 	_ = appskubermaticv1.AddToScheme(testScheme)
 }
 
-func TestValidateApplicationInsallation(t *testing.T) {
+func TestValidateApplicationInstallation(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
 	fakeClient := fakectrlruntimeclient.
 		NewClientBuilder().

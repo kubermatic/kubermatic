@@ -92,7 +92,7 @@ func TestMLAIntegration(t *testing.T) {
 	testJig.ClusterJig.WithPreset(preset)
 
 	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
-	defer testJig.Cleanup(ctx, t)
+	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
 	}

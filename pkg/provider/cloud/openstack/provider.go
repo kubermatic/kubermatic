@@ -700,14 +700,14 @@ func (os *Provider) AddICMPRulesIfRequired(ctx context.Context, cluster *kuberma
 	}
 
 	for _, sg := range securityGroups {
-		if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
+		if err := addICMPRulesToSecurityGroupIfNecessary(cluster, sg, netClient); err != nil {
 			return fmt.Errorf("failed to add rules for ICMP to security group %q: %w", sg.ID, err)
 		}
 	}
 	return nil
 }
 
-func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
+func addICMPRulesToSecurityGroupIfNecessary(cluster *kubermaticv1.Cluster, secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
 	var hasIPV4Rule, hasIPV6Rule bool
 	for _, rule := range secGroup.Rules {
 		if rule.Direction == string(osecuritygrouprules.DirIngress) {

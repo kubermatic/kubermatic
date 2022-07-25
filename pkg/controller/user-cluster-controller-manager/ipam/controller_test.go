@@ -55,7 +55,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 	m := createMachine("Malcolm")
 	r := newTestReconciler(nets, m)
 
-	if err := r.reconcile(context.Background(), m); err != nil {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), m); err != nil {
 		t.Fatalf("failed to reconcile machine: %v", err)
 	}
 
@@ -88,7 +88,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 
 	r := newTestReconciler(nets, machineObjects...)
 	for _, tuple := range machines {
-		if err := r.reconcile(context.Background(), tuple.machine); err != nil {
+		if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), tuple.machine); err != nil {
 			t.Errorf("failed to sync machine %q: %v", tuple.machine.Name, err)
 		}
 		reconciledMachine := &clusterv1alpha1.Machine{}
@@ -108,7 +108,7 @@ func TestReuseReleasedIP(t *testing.T) {
 	mShepherd := createMachine("Shepherd")
 
 	r := newTestReconciler(nets, mHoban, mShepherd)
-	if err := r.reconcile(context.Background(), mHoban); err != nil {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), mHoban); err != nil {
 		t.Fatalf("failed to sync machine: %v", err)
 	}
 
@@ -123,7 +123,7 @@ func TestReuseReleasedIP(t *testing.T) {
 		t.Fatalf("failed to delete machine: %v", err)
 	}
 
-	if err := r.reconcile(context.Background(), mShepherd); err != nil {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), mShepherd); err != nil {
 		t.Fatalf("failed to sync machine: %v", err)
 	}
 
@@ -145,13 +145,13 @@ func TestFailWhenCIDRIsExhausted(t *testing.T) {
 	mInara := createMachine("Inara")
 
 	r := newTestReconciler(nets, mSimon, mZoe, mInara)
-	if err := r.reconcile(context.Background(), mSimon); err != nil {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), mSimon); err != nil {
 		t.Fatalf("failed to reconcile machine %q: %v", mSimon.Name, err)
 	}
-	if err := r.reconcile(context.Background(), mZoe); err != nil {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), mZoe); err != nil {
 		t.Fatalf("failed to reconcile machine %q: %v", mZoe.Name, err)
 	}
-	if err := r.reconcile(context.Background(), mInara); err == nil || err.Error() != "cidr exhausted" {
+	if err := r.reconcile(context.Background(), zap.NewNop().Sugar(), mInara); err == nil || err.Error() != "cidr exhausted" {
 		t.Fatalf("Expected err to be 'cidr exhausted' but was %v", err)
 	}
 }
