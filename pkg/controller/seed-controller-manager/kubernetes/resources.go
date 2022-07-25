@@ -536,7 +536,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster, s
 
 	if c.Spec.EnableOperatingSystemManager {
 		namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
-			operatingsystemmanager.KubermaticOperatingSystemProfileRoleCreator,
+			operatingsystemmanager.KubermaticOperatingSystemProfileRoleCreator(c.Status.NamespaceName),
 		}
 
 		if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, seedNamespace, r.Client); err != nil {
@@ -567,7 +567,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 
 	if c.Spec.EnableOperatingSystemManager {
 		namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
-			operatingsystemmanager.KubermaticOperatingSystemProfileRoleBindingCreator,
+			operatingsystemmanager.KubermaticOperatingSystemProfileRoleBindingCreator(c.Status.NamespaceName),
 		}
 
 		if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, seedNamespace, r.Client); err != nil {

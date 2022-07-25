@@ -17,6 +17,8 @@ limitations under the License.
 package operatingsystemmanager
 
 import (
+	"fmt"
+
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -110,32 +112,37 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 }
 
 // KubermaticOperatingSystemProfileRoleCreator allows access to custom OperatingSystemProfiles stored in the seed namespace.
-func KubermaticOperatingSystemProfileRoleCreator() (string, reconciling.RoleCreator) {
-	return kubermaticOperatingSystemProfileroleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-		r.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"operatingsystemmanager.k8c.io"},
-				Resources: []string{"operatingsystemprofiles"},
-				Verbs:     []string{"*"},
-			},
+func KubermaticOperatingSystemProfileRoleCreator(namespace string) reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return fmt.Sprintf("%s-%s", kubermaticOperatingSystemProfileroleName, namespace), func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"operatingsystemmanager.k8c.io"},
+					Resources: []string{"operatingsystemprofiles"},
+					Verbs:     []string{"*"},
+				},
+			}
+			return r, nil
 		}
-		return r, nil
 	}
 }
 
-func KubermaticOperatingSystemProfileRoleBindingCreator() (string, reconciling.RoleBindingCreator) {
-	return kubermaticOperatingSystemProfileroleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-		rb.RoleRef = rbacv1.RoleRef{
-			Name:     kubermaticOperatingSystemProfileroleName,
-			Kind:     "Role",
-			APIGroup: rbacv1.GroupName,
+func KubermaticOperatingSystemProfileRoleBindingCreator(namespace string) reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return fmt.Sprintf("%s-%s", kubermaticOperatingSystemProfileroleBindingName, namespace), func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.RoleRef = rbacv1.RoleRef{
+				Name:     kubermaticOperatingSystemProfileroleName,
+				Kind:     "Role",
+				APIGroup: rbacv1.GroupName,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind: rbacv1.ServiceAccountKind,
+					Name: serviceAccountName,
+					Namespace: namespace,
+				},
+			}
+			return rb, nil
 		}
-		rb.Subjects = []rbacv1.Subject{
-			{
-				Kind: rbacv1.ServiceAccountKind,
-				Name: serviceAccountName,
-			},
-		}
-		return rb, nil
 	}
 }
