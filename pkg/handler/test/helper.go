@@ -2166,6 +2166,7 @@ func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *a
 				},
 			},
 		},
+		Status: &apiv2.ApplicationInstallationStatus{},
 	}
 }
 
