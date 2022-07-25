@@ -343,7 +343,7 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 }
 
 func (r *Reconciler) deleteAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon) error {
-	log.Infof("deleting addon %s from cluster %s", addon.Name, addon.Namespace)
+	log.Infow("Deleting addon", "addon", addon.Name)
 	err := r.Delete(ctx, &addon)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete addon %s from cluster %s: %w", addon.Name, addon.Spec.Cluster.Name, err)

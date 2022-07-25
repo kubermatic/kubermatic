@@ -31,7 +31,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -70,7 +69,8 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 	reconciler := &reconciler{Client: mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		cidrRanges: cidrRanges,
-		log:        log}
+		log:        log,
+	}
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -81,28 +81,30 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("machine", request)
+	log.Debug("Reconciling")
+
 	machine := &clusterv1alpha1.Machine{}
 	if err := r.Get(ctx, request.NamespacedName, machine); err != nil {
-		if apierrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	err := r.reconcile(ctx, machine)
+	err := r.reconcile(ctx, log, machine)
 	if err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(machine, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Machine) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, machine *clusterv1alpha1.Machine) error {
 	if machine.DeletionTimestamp != nil {
 		return nil
 	}
 
 	if !strings.Contains(machine.Annotations[annotationMachineUninitialized], annotationValue) {
-		r.log.Debugw("Machine doesn't need initialization", "machine", machine.Name)
+		log.Debug("Machine doesn't need initialization")
 		return nil
 	}
 
@@ -133,12 +135,10 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: cfgSerialized}
-	newAnnotationVal := strings.ReplaceAll(machine.Annotations[annotationMachineUninitialized],
-		annotationValue,
-		"")
+	newAnnotationVal := strings.ReplaceAll(machine.Annotations[annotationMachineUninitialized], annotationValue, "")
 	machine.Annotations[annotationMachineUninitialized] = newAnnotationVal
 	if err := r.Update(ctx, machine); err != nil {
-		return fmt.Errorf("failed to update machine %q after adding network: %w", machine.Name, err)
+		return fmt.Errorf("failed to update machine after adding network: %w", err)
 	}
 
 	// Block until the change is in the lister to make sure we don't hand out an IP twice
