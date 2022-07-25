@@ -52,21 +52,27 @@ func TestReconcile(t *testing.T) {
 	_ = kubermaticv1.AddToScheme(scheme)
 
 	testCases := []struct {
-		name                 string
-		requestName          string
-		expectedRQ           *kubermaticv1.ResourceQuota
-		expectedGetErrStatus metav1.StatusReason
-		masterClient         ctrlruntimeclient.Client
-		seedClient           ctrlruntimeclient.Client
+		name                   string
+		requestName            string
+		expectedRQ             *kubermaticv1.ResourceQuota
+		expectedReconcileError metav1.StatusReason
+		expectedGetErrStatus   metav1.StatusReason
+		expectedLabels         map[string]string
+		masterClient           ctrlruntimeclient.Client
+		seedClient             ctrlruntimeclient.Client
 	}{
 		{
 			name:        "scenario 1: sync rq to seed cluster",
 			requestName: rqName,
 			expectedRQ:  genResourceQuota(rqName, false),
+			expectedLabels: map[string]string{
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: test.GenDefaultProject().Name,
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
+			},
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName, false), test.GenTestSeed()).
+				WithObjects(genResourceQuota(rqName, false), test.GenTestSeed(), test.GenDefaultProject()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -88,6 +94,21 @@ func TestReconcile(t *testing.T) {
 				WithObjects(genResourceQuota(rqName, false)).
 				Build(),
 		},
+		{
+			name:                   "scenario 3: error when project does not exist",
+			requestName:            rqName,
+			expectedRQ:             genResourceQuota(rqName, false),
+			expectedReconcileError: metav1.StatusReasonNotFound,
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(genResourceQuota(rqName, false), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme).
+				Build(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -101,12 +122,24 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(ctx, request); err != nil {
+			_, err := r.Reconcile(ctx, request)
+			if tc.expectedReconcileError != "" {
+				if err == nil {
+					t.Fatalf("expected reconcile error status %s", tc.expectedReconcileError)
+				}
+
+				if tc.expectedReconcileError != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedReconcileError, apierrors.ReasonForError(err))
+				}
+				return
+			}
+
+			if err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
 			rq := &kubermaticv1.ResourceQuota{}
-			err := tc.seedClient.Get(ctx, request.NamespacedName, rq)
+			err = tc.seedClient.Get(ctx, request.NamespacedName, rq)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
 					t.Fatalf("expected error status %s, instead got rq: %v", tc.expectedGetErrStatus, rq)
@@ -137,6 +170,18 @@ func TestReconcile(t *testing.T) {
 			if !diff.SemanticallyEqual(tc.expectedRQ, rq) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedRQ, rq))
 			}
+
+			masterRQ := &kubermaticv1.ResourceQuota{}
+			err = tc.masterClient.Get(ctx, request.NamespacedName, masterRQ)
+			if err != nil {
+				t.Fatalf("failed to get master resource quota: %v", err)
+			}
+			if !diff.SemanticallyEqual(tc.expectedLabels, masterRQ.Labels) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedLabels, masterRQ.Labels))
+			}
+			if len(masterRQ.OwnerReferences) == 0 {
+				t.Fatal("expected owner reference on master resource quota")
+			}
 		})
 	}
 }
@@ -148,13 +193,9 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
-	rq.Labels = map[string]string{
-		kubermaticv1.ResourceQuotaSubjectNameLabelKey: "project1",
-		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
-	}
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
-			Name: "project1",
+			Name: test.GenDefaultProject().Name,
 			Kind: "project",
 		},
 		Quota: kubermaticv1.ResourceDetails{

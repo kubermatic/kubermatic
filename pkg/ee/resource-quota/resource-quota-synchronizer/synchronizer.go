@@ -27,15 +27,18 @@ package resourcequotasynchronizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -102,6 +105,21 @@ func resourceQuotaCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.Name
 	}
 }
 
+func resourceQuotaLabelOwnerRefCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter {
+	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
+		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
+			// ensure labels and owner ref
+			kuberneteshelper.EnsureLabels(c, map[string]string{
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: rq.Spec.Subject.Kind,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: rq.Spec.Subject.Name,
+			})
+			c.OwnerReferences = rq.OwnerReferences
+
+			return c, nil
+		}
+	}
+}
+
 // Reconcile reconciles the resource quotas in the master cluster and syncs them to all seeds.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request.Name)
@@ -148,13 +166,28 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	resourceQuotaCreatorGetters := []reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter{
+	// set master labels and owner ref
+	if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
+		err := ensureProjectOwnershipRef(ctx, r.masterClient, resourceQuota)
+		if err != nil {
+			return err
+		}
+	}
+	resourceQuotaMasterCreatorGetters := []reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter{
+		resourceQuotaLabelOwnerRefCreatorGetter(resourceQuota),
+	}
+	if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaMasterCreatorGetters, "", r.masterClient); err != nil {
+		return err
+	}
+
+	// sync to seeds
+	resourceQuotaSeedCreatorGetters := []reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter{
 		resourceQuotaCreatorGetter(resourceQuota),
 	}
 
 	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, rq *kubermaticv1.ResourceQuota) error {
 		// ensure resource quota
-		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, "", seedClient); err != nil {
+		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaSeedCreatorGetters, "", seedClient); err != nil {
 			return err
 		}
 
@@ -187,4 +220,29 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, resourceQuota, cleanupFinalizer)
+}
+
+func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+	subjectName := resourceQuota.Spec.Subject.Name
+	ownRefs := resourceQuota.OwnerReferences
+
+	// check if reference already exists
+	for _, owners := range ownRefs {
+		if owners.Kind == kubermaticv1.ProjectKindName && owners.Name == subjectName {
+			return nil
+		}
+	}
+
+	// set project reference
+	project := &kubermaticv1.Project{}
+	key := types.NamespacedName{Name: subjectName}
+	if err := client.Get(ctx, key, project); err != nil {
+		return err
+	}
+
+	projectRef := resources.GetProjectRef(project)
+	ownRefs = append(ownRefs, projectRef)
+	resourceQuota.SetOwnerReferences(ownRefs)
+
+	return nil
 }
