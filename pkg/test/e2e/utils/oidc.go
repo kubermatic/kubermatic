@@ -25,17 +25,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/dex"
 )
 
-type OIDCConnectorType string
-
 const (
 	LoginEnvironmentVariable         = "KUBERMATIC_OIDC_LOGIN"
 	PasswordEnvironmentVariable      = "KUBERMATIC_OIDC_PASSWORD"
 	LDAPLoginEnvironmentVariable     = "KUBERMATIC_LDAP_LOGIN"
 	LDAPPasswordEnvironmentVariable  = "KUBERMATIC_LDAP_PASSWORD"
 	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
-
-	OIDCLocalConnector OIDCConnectorType = "local"
-	OIDCLDAPConnector  OIDCConnectorType = "ldap"
 )
 
 // OIDCCredentials takes the login name and password from environment variables and
@@ -101,7 +96,7 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, OIDCLocalConnector)
+	return retrieveToken(ctx, &masterToken, login, password, dex.OIDCLocalConnector)
 }
 
 func RetrieveLDAPToken(ctx context.Context) (string, error) {
@@ -110,7 +105,7 @@ func RetrieveLDAPToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, OIDCLDAPConnector)
+	return retrieveToken(ctx, &masterToken, login, password, dex.OIDCLDAPConnector)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
@@ -119,10 +114,10 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &adminMasterToken, login, password, OIDCLocalConnector)
+	return retrieveToken(ctx, &adminMasterToken, login, password, dex.OIDCLocalConnector)
 }
 
-func retrieveToken(ctx context.Context, token *string, login, password string, connector OIDCConnectorType) (string, error) {
+func retrieveToken(ctx context.Context, token *string, login, password string, connector dex.OIDCConnectorType) (string, error) {
 	// re-use the previous token
 	if token != nil && *token != "" {
 		return *token, nil
