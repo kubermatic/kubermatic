@@ -25,12 +25,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/dex"
 )
 
+type OIDCConnectorType string
+
 const (
 	LoginEnvironmentVariable         = "KUBERMATIC_OIDC_LOGIN"
 	PasswordEnvironmentVariable      = "KUBERMATIC_OIDC_PASSWORD"
 	LDAPLoginEnvironmentVariable     = "KUBERMATIC_LDAP_LOGIN"
 	LDAPPasswordEnvironmentVariable  = "KUBERMATIC_LDAP_PASSWORD"
 	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
+
+	Local OIDCConnectorType = "local"
+	LDAP  OIDCConnectorType = "ldap"
 )
 
 // OIDCCredentials takes the login name and password from environment variables and
@@ -96,7 +101,7 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password)
+	return retrieveToken(ctx, &masterToken, login, password, Local)
 }
 
 func RetrieveLDAPToken(ctx context.Context) (string, error) {
@@ -105,7 +110,7 @@ func RetrieveLDAPToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password)
+	return retrieveToken(ctx, &masterToken, login, password, LDAP)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
@@ -114,10 +119,10 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &adminMasterToken, login, password)
+	return retrieveToken(ctx, &adminMasterToken, login, password, Local)
 }
 
-func retrieveToken(ctx context.Context, token *string, login string, password string) (string, error) {
+func retrieveToken(ctx context.Context, token *string, login, password string, connector OIDCConnectorType) (string, error) {
 	// re-use the previous token
 	if token != nil && *token != "" {
 		return *token, nil
@@ -135,7 +140,7 @@ func retrieveToken(ctx context.Context, token *string, login string, password st
 		return "", fmt.Errorf("failed to create OIDC client: %w", err)
 	}
 
-	newToken, err := client.Login(ctx, login, password)
+	newToken, err := client.Login(ctx, login, password, connector)
 	if err != nil {
 		return "", err
 	}

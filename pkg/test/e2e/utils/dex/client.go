@@ -27,6 +27,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 )
 
@@ -66,22 +67,22 @@ func NewClient(clientID string, redirectURI string, providerURI string, log *zap
 	}, nil
 }
 
-func (c *Client) Login(ctx context.Context, login string, password string) (string, error) {
+func (c *Client) Login(ctx context.Context, login, password string, connector utils.OIDCConnectorType) (string, error) {
 	var accessToken string
 
 	err := wait.PollImmediate(3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
-		accessToken, transient = c.tryLogin(ctx, login, password)
+		accessToken, transient = c.tryLogin(ctx, login, password, connector)
 		return transient, nil
 	})
 
 	return accessToken, err
 }
 
-func (c *Client) tryLogin(ctx context.Context, login string, password string) (string, error) {
+func (c *Client) tryLogin(ctx context.Context, login, password string, connector utils.OIDCConnectorType) (string, error) {
 	c.log.Debug("Attempting login")
 
 	// fetch login page and acquire the nonce
-	loginURL, err := c.fetchLoginURL(ctx)
+	loginURL, err := c.fetchLoginURL(ctx, connector)
 	if err != nil {
 		return "", fmt.Errorf("failed to determine login URL: %w", err)
 	}
@@ -99,7 +100,7 @@ func (c *Client) tryLogin(ctx context.Context, login string, password string) (s
 	return token, nil
 }
 
-func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
+func (c *Client) fetchLoginURL(ctx context.Context, connector utils.OIDCConnectorType) (*url.URL, error) {
 	// quick&dirty URL clone, so we don't change the u argument
 	loginURL, err := url.Parse(c.ProviderURI)
 	if err != nil {
@@ -107,7 +108,7 @@ func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 	}
 
 	// make sure we are seeing the email login form immediately
-	loginURL.Path += "/ldap"
+	loginURL.Path += "/" + string(connector)
 	//loginURL.Path += "/local"
 
 	params := loginURL.Query()
