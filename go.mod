@@ -136,8 +136,6 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.24.2
 )
 
-require go.universe.tf/metallb v0.13.4
-
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect

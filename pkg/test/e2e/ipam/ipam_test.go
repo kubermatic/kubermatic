@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -35,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -68,6 +68,7 @@ func TestIPAM(t *testing.T) {
 	// prepare jig, create projecta nd the first cluster
 	testJig1 := jig.NewBYOCluster(seedClient, log)
 	testJig1.ProjectJig.WithHumanReadableName("IPAM test")
+	testJig1.ClusterJig.WithAddons("kube-state-metrics") // TODO: change to "metallb" when PR 10426 is merged
 
 	_, cluster1, err := testJig1.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
@@ -113,7 +114,8 @@ func TestIPAM(t *testing.T) {
 
 	log.Info("Creating second cluster...")
 	testJig2 := jig.NewBYOCluster(seedClient, log)
-	testJig2.ProjectJig = testJig1.ProjectJig // stay in the same project
+	testJig2.ProjectJig = testJig1.ProjectJig            // stay in the same project
+	testJig2.ClusterJig.WithAddons("kube-state-metrics") // TODO: change to "metallb" when PR 10426 is merged
 
 	_, cluster2, err := testJig2.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
@@ -173,7 +175,8 @@ func TestIPAM(t *testing.T) {
 
 	log.Info("Creating third cluster...")
 	testJig3 := jig.NewBYOCluster(seedClient, log)
-	testJig3.ProjectJig = testJig1.ProjectJig // stay in the same project
+	testJig3.ProjectJig = testJig1.ProjectJig            // stay in the same project
+	testJig3.ClusterJig.WithAddons("kube-state-metrics") // TODO: change to "metallb" when PR 10426 is merged
 
 	_, cluster3, err := testJig3.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
@@ -283,10 +286,17 @@ func checkIPAMAllocation(t *testing.T, ctx context.Context, log *zap.SugaredLogg
 			}
 		}
 
-		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
+		/*metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
+		} */ // TODO: should work when PR 10426 is merged
+		// TODO: below code is for e2e temporary test purpose {
+		metallbIPAddressPool := &appsv1.Deployment{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "kube-state-metrics", Namespace: "kube-system"}, metallbIPAddressPool); err != nil {
+			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
+		log.Info("%+v", metallbIPAddressPool)
+		// }
 		// TODO: check more things from IPAddressPool
 
 		return nil, nil
