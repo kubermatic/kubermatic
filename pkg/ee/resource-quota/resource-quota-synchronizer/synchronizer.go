@@ -59,7 +59,7 @@ const (
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 	recorder     record.EventRecorder
 }
 
@@ -71,7 +71,7 @@ func Add(masterMgr manager.Manager,
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
@@ -185,7 +185,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		resourceQuotaCreatorGetter(resourceQuota),
 	}
 
-	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, rq *kubermaticv1.ResourceQuota) error {
+	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		// ensure resource quota
 		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaSeedCreatorGetters, "", seedClient); err != nil {
 			return err
@@ -205,7 +205,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return nil
 	}
 
-	err := r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		err := seedClient.Delete(ctx, &kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceQuota.Name,
