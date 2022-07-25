@@ -217,6 +217,16 @@ func TestIPAM(t *testing.T) {
 		t.Fatal("IPAM Allocation 2 wasn't created on cluster 3")
 	}
 
+	log.Info("Deleting IPAM Pool 1...")
+	if err := seedClient.Delete(ctx, ipamPool1); err != nil {
+		t.Fatalf("Failed to delete IPAM Pool 1: %v", err)
+	}
+
+	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name) ||
+		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name) {
+		t.Fatal("Some IPAM Allocation is still persisted after IPAM Pool 1 was deleted")
+	}
+
 	// no cloud provider resources were involved, so we do not need to wait for cleanup
 	if err := testJig2.ClusterJig.Delete(ctx, false); err != nil {
 		t.Fatalf("Failed to delete second cluster: %v", err)
@@ -226,10 +236,8 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("Failed to delete third cluster: %v", err)
 	}
 
-	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name) ||
+	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name) ||
 		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name) ||
 		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name) ||
 		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name) {
 		t.Fatal("Some IPAM Allocation is still persisted")
@@ -287,7 +295,7 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 		}
 
 		if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
-			return fmt.Errorf("metallb IP address pool was not created"), nil
+			return fmt.Errorf("metallb IP address pool was not created properly"), nil
 		}
 
 		return nil, nil
@@ -300,6 +308,7 @@ func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, user
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
+
 		switch ipamAllocation.Spec.Type {
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if len(metallbIPAddressPool.Spec.Addresses) != 1 {
