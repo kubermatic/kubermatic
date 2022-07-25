@@ -63,19 +63,19 @@ func NewUpdateApplicationInstallationOK() *UpdateApplicationInstallationOK {
 ApplicationInstallation
 */
 type UpdateApplicationInstallationOK struct {
-	Payload *models.ApplicationInstallationStatus
+	Payload *models.ApplicationInstallation
 }
 
 func (o *UpdateApplicationInstallationOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationOK  %+v", 200, o.Payload)
 }
-func (o *UpdateApplicationInstallationOK) GetPayload() *models.ApplicationInstallationStatus {
+func (o *UpdateApplicationInstallationOK) GetPayload() *models.ApplicationInstallation {
 	return o.Payload
 }
 
 func (o *UpdateApplicationInstallationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ApplicationInstallationStatus)
+	o.Payload = new(models.ApplicationInstallation)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -63,19 +63,19 @@ func NewCreateApplicationInstallationCreated() *CreateApplicationInstallationCre
 ApplicationInstallation
 */
 type CreateApplicationInstallationCreated struct {
-	Payload *models.ApplicationInstallationStatus
+	Payload *models.ApplicationInstallation
 }
 
 func (o *CreateApplicationInstallationCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] createApplicationInstallationCreated  %+v", 201, o.Payload)
 }
-func (o *CreateApplicationInstallationCreated) GetPayload() *models.ApplicationInstallationStatus {
+func (o *CreateApplicationInstallationCreated) GetPayload() *models.ApplicationInstallation {
 	return o.Payload
 }
 
 func (o *CreateApplicationInstallationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ApplicationInstallationStatus)
+	o.Payload = new(models.ApplicationInstallation)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

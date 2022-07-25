@@ -63,19 +63,19 @@ func NewGetApplicationInstallationOK() *GetApplicationInstallationOK {
 ApplicationInstallation
 */
 type GetApplicationInstallationOK struct {
-	Payload *models.ApplicationInstallationStatus
+	Payload *models.ApplicationInstallation
 }
 
 func (o *GetApplicationInstallationOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationOK  %+v", 200, o.Payload)
 }
-func (o *GetApplicationInstallationOK) GetPayload() *models.ApplicationInstallationStatus {
+func (o *GetApplicationInstallationOK) GetPayload() *models.ApplicationInstallation {
 	return o.Payload
 }
 
 func (o *GetApplicationInstallationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ApplicationInstallationStatus)
+	o.Payload = new(models.ApplicationInstallation)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

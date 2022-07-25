@@ -1499,7 +1499,7 @@ type ApplicationInstallation struct {
 }
 
 // ApplicationInstallationStatus is the object representing the status of an Application.
-// swagger:model ApplicationInstallation
+// swagger:model ApplicationInstallationStatus
 // it is needed because metav1.Time used by appsv1 confuses swaggers with apiv1.Time.
 type ApplicationInstallationStatus struct {
 	LastUpdated apiv1.Time `json:"lastUpdated,omitempty"`

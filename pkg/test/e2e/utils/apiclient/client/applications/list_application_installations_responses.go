@@ -63,13 +63,13 @@ func NewListApplicationInstallationsOK() *ListApplicationInstallationsOK {
 ApplicationInstallation
 */
 type ListApplicationInstallationsOK struct {
-	Payload []*models.ApplicationInstallationStatus
+	Payload []*models.ApplicationInstallation
 }
 
 func (o *ListApplicationInstallationsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsOK  %+v", 200, o.Payload)
 }
-func (o *ListApplicationInstallationsOK) GetPayload() []*models.ApplicationInstallationStatus {
+func (o *ListApplicationInstallationsOK) GetPayload() []*models.ApplicationInstallation {
 	return o.Payload
 }
 

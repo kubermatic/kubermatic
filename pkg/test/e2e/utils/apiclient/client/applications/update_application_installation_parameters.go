@@ -62,7 +62,7 @@ func NewUpdateApplicationInstallationParamsWithHTTPClient(client *http.Client) *
 type UpdateApplicationInstallationParams struct {
 
 	// Body.
-	Body *models.ApplicationInstallationStatus
+	Body *models.ApplicationInstallation
 
 	// AppinstallName.
 	ApplicationInstallationName string
@@ -130,13 +130,13 @@ func (o *UpdateApplicationInstallationParams) SetHTTPClient(client *http.Client)
 }
 
 // WithBody adds the body to the update application installation params
-func (o *UpdateApplicationInstallationParams) WithBody(body *models.ApplicationInstallationStatus) *UpdateApplicationInstallationParams {
+func (o *UpdateApplicationInstallationParams) WithBody(body *models.ApplicationInstallation) *UpdateApplicationInstallationParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the update application installation params
-func (o *UpdateApplicationInstallationParams) SetBody(body *models.ApplicationInstallationStatus) {
+func (o *UpdateApplicationInstallationParams) SetBody(body *models.ApplicationInstallation) {
 	o.Body = body
 }
 
