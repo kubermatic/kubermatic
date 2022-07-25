@@ -287,7 +287,7 @@ func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, name
 	constraint := &kubermaticv1.Constraint{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: jig.KubermaticNamepace(),
+			Namespace: jig.KubermaticNamespace(),
 		},
 		Spec: kubermaticv1.ConstraintSpec{
 			ConstraintType: ctKind,

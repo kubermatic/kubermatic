@@ -47,7 +47,7 @@ func TestGetReleaseName(t *testing.T) {
 		{
 			testName:            "when len(namspaceName) > 53 and len(appName) >43  then appName[:43]-sha1(namespace)[:9] is returned",
 			appNamespace:        "default",
-			appName:             "application-installation-super-long-name-that-should-be-trucated",
+			appName:             "application-installation-super-long-name-that-should-be-truncated",
 			expectedReleaseName: "application-installation-super-long-name-th-7505d64a5",
 		},
 	}

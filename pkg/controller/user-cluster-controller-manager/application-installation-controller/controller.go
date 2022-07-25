@@ -159,7 +159,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: appInstallation.Spec.ApplicationRef.Name}, applicationDef); err != nil {
 		if apierrors.IsNotFound(err) {
 			if appHasBeenInstalled {
-				r.traceWarning(appInstallation, log, applicationDefinitionRemovedEvent, fmt.Sprintf("ApplicationDefinition '%s' has been deleted, removing applictionInstallation", applicationDef.Name))
+				r.traceWarning(appInstallation, log, applicationDefinitionRemovedEvent, fmt.Sprintf("ApplicationDefinition '%s' has been deleted, removing applicationInstallation", applicationDef.Name))
 				return r.userClient.Delete(ctx, appInstallation)
 			} else {
 				return fmt.Errorf("ApplicationDefinition '%s' does not exist. can not install application", applicationDef.Name)
@@ -169,7 +169,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	}
 
 	if !applicationDef.DeletionTimestamp.IsZero() {
-		r.traceWarning(appInstallation, log, applicationDefinitionDeletingEvent, fmt.Sprintf("ApplicationDefinition '%s' is being deleted,  removing applictionInstallation", applicationDef.Name))
+		r.traceWarning(appInstallation, log, applicationDefinitionDeletingEvent, fmt.Sprintf("ApplicationDefinition '%s' is being deleted,  removing applicationInstallation", applicationDef.Name))
 		return r.userClient.Delete(ctx, appInstallation)
 	}
 

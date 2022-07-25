@@ -13,7 +13,7 @@ Recovery will be a documented, manual process. As we now use a StatefulSet with 
 
 The old way via the etcd operator had several downsides:
 
-* etcd's were storing to `emtpyDir`
+* etcd's were storing to `emptyDir`
 * multiple etcd's on the same host caused very high disk-io. Having one noisy etcd affects all others
 * high frequency of restore operations when a host got replaced. Resulted in data loss
 * direct code dependency to the etcd-operator crd

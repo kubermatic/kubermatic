@@ -71,9 +71,9 @@ func (nf *networkFlags) Set(value string) error {
 		return fmt.Errorf("expected valid gateway ip but got %s", gwStr)
 	}
 
-	dnsSplitted := split[2:]
-	dnsServers := make([]net.IP, len(dnsSplitted))
-	for i, d := range dnsSplitted {
+	dnsParts := split[2:]
+	dnsServers := make([]net.IP, len(dnsParts))
+	for i, d := range dnsParts {
 		dnsIP := net.ParseIP(d)
 		if dnsIP == nil {
 			return fmt.Errorf("expected valid dns ip but got %s", d)

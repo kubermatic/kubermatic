@@ -85,7 +85,7 @@ status:
       kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
       lastHeartbeatTime: "2020-04-01T09:58:25Z"
       status: "True"
-    CloudControllerReconcilledSuccessfully:
+    CloudControllerReconciledSuccessfully:
       kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
       lastHeartbeatTime: "2020-04-01T09:58:08Z"
       status: "True"

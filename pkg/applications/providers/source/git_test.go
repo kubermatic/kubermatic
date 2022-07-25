@@ -426,7 +426,7 @@ func TestDownloadGitSource(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			dest, err := os.MkdirTemp("", "testGitSource-donwloadDest")
+			dest, err := os.MkdirTemp("", "testGitSource-downloadDest")
 			fatalOnErr(err, "failed to create temporary directory where sources will be downloaded", t)
 			defer os.RemoveAll(dest)
 
@@ -440,7 +440,7 @@ func TestDownloadGitSource(t *testing.T) {
 			downloadedSource, err := source.DownloadSource(dest)
 			fatalOnErr(err, "failed to download sources: %s", t)
 
-			// check path exist in donwloades sources
+			// check path exist in downloaded sources
 			expectedPath := path.Join(dest, source.Source.Path)
 			if downloadedSource != expectedPath {
 				t.Fatalf("error: path returned by source.DownloadSource() should be '%s', got '%s'", expectedPath, downloadedSource)

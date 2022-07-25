@@ -55,12 +55,12 @@ const (
 	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
 	// security group was migrated to contain allow rules for ICMP.
 	icmpMigrationRevision = 1
-	// awsHarcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
+	// awsHardcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
 	// hardcoded AZs and Subnets towards multi-AZ support.
-	awsHarcodedAZMigrationRevision = 2
+	awsHardcodedAZMigrationRevision = 2
 	// currentMigrationRevision describes the current migration revision. If this is set on the
 	// cluster, certain migrations won't get executed. This must never be decremented.
-	CurrentMigrationRevision = awsHarcodedAZMigrationRevision
+	CurrentMigrationRevision = awsHardcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fulfills the interface

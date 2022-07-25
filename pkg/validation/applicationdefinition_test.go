@@ -28,12 +28,12 @@ import (
 var (
 	cs                = appskubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
 	secretKeySelector = &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "git-cred"}, Key: "thekey"}
-	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}}}
+	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
 	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
 	spec              = appskubermaticv1.ApplicationDefinitionSpec{Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
 )
 
-func validHelmSouce() *appskubermaticv1.HelmSource {
+func validHelmSource() *appskubermaticv1.HelmSource {
 	return &appskubermaticv1.HelmSource{
 		URL:          "http://localhost/charts",
 		ChartName:    "apache",
@@ -115,7 +115,7 @@ func TestValidateApplicationDefinition(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
-					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: validGitSource(), Helm: validHelmSouce()}
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: validGitSource(), Helm: validHelmSource()}
 					return *s
 				}(),
 			},
@@ -698,20 +698,20 @@ func TestValidateApplicationVersions(t *testing.T) {
 	}{
 		"duplicate version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}, Method: appskubermaticv1.HelmTemplateMethod}},
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
 			},
 			1,
 		},
 		"invalid kkp version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
 			},
 			1,
 		},
 		"invalid k8s version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSouce()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
 			},
 			1,
 		},

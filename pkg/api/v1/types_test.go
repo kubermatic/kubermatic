@@ -64,7 +64,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 						ClientID:        valueToBeFiltered,
 						ClientSecret:    valueToBeFiltered,
 						TenantID:        "tenantID",
-						AvailabilitySet: "availablitySet",
+						AvailabilitySet: "availabilitySet",
 						ResourceGroup:   "resourceGroup",
 						RouteTableName:  "routeTableName",
 						SecurityGroup:   "securityGroup",
@@ -123,7 +123,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 					AWS: &kubermaticv1.AWSCloudSpec{
 						AccessKeyID:         valueToBeFiltered,
 						SecretAccessKey:     valueToBeFiltered,
-						SecurityGroupID:     "secuirtyGroupID",
+						SecurityGroupID:     "securityGroupID",
 						InstanceProfileName: "instanceProfileName",
 						RouteTableID:        "routeTableID",
 						VPCID:               "vpcID",
