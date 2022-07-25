@@ -124,7 +124,6 @@ replace (
 	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v0.20.0
 	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v0.20.0
 	go.opentelemetry.io/proto/otlp => go.opentelemetry.io/proto/otlp v0.7.0
-	go.universe.tf/metallb => github.com/cilium/metallb v0.1.1-0.20210831235406-48667b93284d
 	k8s.io/api => k8s.io/api v0.24.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.24.2
@@ -136,6 +135,8 @@ replace (
 	k8s.io/kubelet => k8s.io/kubelet v0.24.2
 	k8s.io/metrics => k8s.io/metrics v0.24.2
 )
+
+require go.universe.tf/metallb v0.13.4
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect

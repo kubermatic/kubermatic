@@ -26,8 +26,10 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -58,6 +60,11 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
+	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
+	if err != nil {
+		t.Fatalf("failed to get user cluster client provider: %v", err)
+	}
+
 	// prepare jig, create projecta nd the first cluster
 	testJig1 := jig.NewBYOCluster(seedClient, log)
 	testJig1.ProjectJig.WithHumanReadableName("IPAM test")
@@ -68,6 +75,12 @@ func TestIPAM(t *testing.T) {
 	}
 	defer testJig1.Cleanup(ctx, t, false)
 
+	// get the user client
+	userClient1, err := clusterClientProvider.GetClient(ctx, cluster1)
+	if err != nil {
+		t.Fatalf("failed to get user cluster client: %v", err)
+	}
+
 	log.Info("Creating first IPAM Pool...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
 	if err != nil {
@@ -75,7 +88,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 1 allocation on first cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
@@ -90,7 +103,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on first cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.0/28",
@@ -108,8 +121,14 @@ func TestIPAM(t *testing.T) {
 	}
 	defer testJig2.Cleanup(ctx, t, false)
 
+	// get the user client
+	userClient2, err := clusterClientProvider.GetClient(ctx, cluster2)
+	if err != nil {
+		t.Fatalf("failed to get user cluster client: %v", err)
+	}
+
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.8-192.168.1.15"},
@@ -118,7 +137,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on second cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.16/28",
@@ -144,7 +163,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 3 allocation on second cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.0/29",
@@ -162,8 +181,14 @@ func TestIPAM(t *testing.T) {
 	}
 	defer testJig3.Cleanup(ctx, t, false)
 
+	// get the user client
+	userClient3, err := clusterClientProvider.GetClient(ctx, cluster3)
+	if err != nil {
+		t.Fatalf("failed to get user cluster client: %v", err)
+	}
+
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.8/29",
@@ -172,7 +197,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 1 allocation on third cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
@@ -181,7 +206,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on third cluster...")
-	if !checkIPAMAllocation(t, ctx, log, seedClient, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if !checkIPAMAllocation(t, ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.0/28",
@@ -238,7 +263,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	return ipamPool, nil
 }
 
-func checkIPAMAllocation(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) bool {
+func checkIPAMAllocation(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) bool {
 	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
@@ -257,6 +282,12 @@ func checkIPAMAllocation(t *testing.T, ctx context.Context, log *zap.SugaredLogg
 				return fmt.Errorf("expected IPAM allocation: %+v\nActual IPAM allocation: %+v", expectedIPAMAllocationSpec, ipamAllocation.Spec), nil
 			}
 		}
+
+		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
+			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
+		}
+		// TODO: check more things from IPAddressPool
 
 		return nil, nil
 	}) == nil
