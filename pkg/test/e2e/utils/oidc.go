@@ -34,8 +34,8 @@ const (
 	LDAPPasswordEnvironmentVariable  = "KUBERMATIC_LDAP_PASSWORD"
 	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
 
-	Local OIDCConnectorType = "local"
-	LDAP  OIDCConnectorType = "ldap"
+	OIDCLocalConnector OIDCConnectorType = "local"
+	OIDCLDAPConnector  OIDCConnectorType = "ldap"
 )
 
 // OIDCCredentials takes the login name and password from environment variables and
@@ -101,7 +101,7 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, Local)
+	return retrieveToken(ctx, &masterToken, login, password, OIDCLocalConnector)
 }
 
 func RetrieveLDAPToken(ctx context.Context) (string, error) {
@@ -110,7 +110,7 @@ func RetrieveLDAPToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, LDAP)
+	return retrieveToken(ctx, &masterToken, login, password, OIDCLDAPConnector)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
@@ -119,7 +119,7 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &adminMasterToken, login, password, Local)
+	return retrieveToken(ctx, &adminMasterToken, login, password, OIDCLocalConnector)
 }
 
 func retrieveToken(ctx context.Context, token *string, login, password string, connector OIDCConnectorType) (string, error) {
