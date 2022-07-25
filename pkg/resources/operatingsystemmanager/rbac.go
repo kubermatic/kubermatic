@@ -24,9 +24,11 @@ import (
 )
 
 const (
-	serviceAccountName = "kubermatic-operating-system-manager"
-	roleName           = "kubermatic:operating-system-manager"
-	roleBindingName    = "kubermatic:operating-system-manager"
+	serviceAccountName                              = "kubermatic-operating-system-manager"
+	roleName                                        = "kubermatic:operating-system-manager"
+	roleBindingName                                 = "kubermatic:operating-system-manager"
+	kubermaticOperatingSystemProfileroleName        = "kubermatic:operating-system-profile-viewer"
+	kubermaticOperatingSystemProfileroleBindingName = "kubermatic:operating-system-profile-viewer"
 )
 
 func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
@@ -94,6 +96,37 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 	return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		rb.RoleRef = rbacv1.RoleRef{
 			Name:     roleName,
+			Kind:     "Role",
+			APIGroup: rbacv1.GroupName,
+		}
+		rb.Subjects = []rbacv1.Subject{
+			{
+				Kind: rbacv1.ServiceAccountKind,
+				Name: serviceAccountName,
+			},
+		}
+		return rb, nil
+	}
+}
+
+// KubermaticOperatingSystemProfileRoleCreator allows access to custom OperatingSystemProfiles stored in the seed namespace.
+func KubermaticOperatingSystemProfileRoleCreator() (string, reconciling.RoleCreator) {
+	return kubermaticOperatingSystemProfileroleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+		r.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"operatingsystemmanager.k8c.io"},
+				Resources: []string{"operatingsystemprofiles"},
+				Verbs:     []string{"*"},
+			},
+		}
+		return r, nil
+	}
+}
+
+func KubermaticOperatingSystemProfileRoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+	return kubermaticOperatingSystemProfileroleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+		rb.RoleRef = rbacv1.RoleRef{
+			Name:     kubermaticOperatingSystemProfileroleName,
 			Kind:     "Role",
 			APIGroup: rbacv1.GroupName,
 		}

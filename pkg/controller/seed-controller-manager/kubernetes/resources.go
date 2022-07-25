@@ -69,6 +69,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	if err != nil {
 		return nil, err
 	}
+
 	config, err := r.configGetter(ctx)
 	if err != nil {
 		return nil, err
@@ -103,7 +104,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
+	if err := r.ensureRBAC(ctx, cluster, namespace, seed.Namespace); err != nil {
 		return nil, err
 	}
 
@@ -515,7 +516,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	return nil
 }
 
-func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster, seedNamespace string) error {
 	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
 		usercluster.RoleCreator,
 		machinecontroller.WebhookRoleCreator,
@@ -533,10 +534,20 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
 
+	if c.Spec.EnableOperatingSystemManager {
+		namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
+			operatingsystemmanager.KubermaticOperatingSystemProfileRoleCreator,
+		}
+
+		if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, seedNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to ensure RoleBindings: %w", err)
+		}
+	}
+
 	return nil
 }
 
-func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, seedNamespace string) error {
 	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
 		usercluster.RoleBindingCreator,
 		machinecontroller.WebhookRoleBindingCreator,
@@ -553,6 +564,17 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
+
+	if c.Spec.EnableOperatingSystemManager {
+		namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
+			operatingsystemmanager.KubermaticOperatingSystemProfileRoleBindingCreator,
+		}
+
+		if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, seedNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to ensure RoleBindings: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -872,16 +894,16 @@ func (r *Reconciler) ensureEncryptionConfigurationIsRemoved(ctx context.Context,
 	return nil
 }
 
-func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace, seedNamespace string) error {
 	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
 		return err
 	}
 
-	if err := r.ensureRoles(ctx, cluster); err != nil {
+	if err := r.ensureRoles(ctx, cluster, seedNamespace); err != nil {
 		return err
 	}
 
-	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
+	if err := r.ensureRoleBindings(ctx, cluster, seedNamespace); err != nil {
 		return err
 	}
 
