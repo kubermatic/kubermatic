@@ -71,7 +71,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 		}
 	}()
 
-	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
+	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.Method)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
@@ -91,7 +91,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 
 // Delete uninstalls the application where the application was installed if necessary.
 func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.ApplicationVersion.Template.Method)
+	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.Method)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}

@@ -2179,11 +2179,12 @@ func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "v1.0.0",
 					Template: appskubermaticv1.ApplicationTemplate{
-						Method: appskubermaticv1.HelmTemplateMethod,
+
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
 								URL:          "https://charts.example.com",
@@ -2196,7 +2197,6 @@ func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 				{
 					Version: "v1.1.0",
 					Template: appskubermaticv1.ApplicationTemplate{
-						Method: appskubermaticv1.HelmTemplateMethod,
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{
 								Remote: "https://git.example.com",
@@ -2219,11 +2219,12 @@ func GenApiApplicationDefinition(name string) apiv2.ApplicationDefinition {
 			Name: name,
 		},
 		Spec: &appskubermaticv1.ApplicationDefinitionSpec{
+			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "v1.0.0",
 					Template: appskubermaticv1.ApplicationTemplate{
-						Method: appskubermaticv1.HelmTemplateMethod,
+
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
 								URL:          "https://charts.example.com",
@@ -2236,7 +2237,6 @@ func GenApiApplicationDefinition(name string) apiv2.ApplicationDefinition {
 				{
 					Version: "v1.1.0",
 					Template: appskubermaticv1.ApplicationTemplate{
-						Method: appskubermaticv1.HelmTemplateMethod,
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{
 								Remote: "https://git.example.com",

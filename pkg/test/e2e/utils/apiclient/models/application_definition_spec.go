@@ -24,6 +24,9 @@ type ApplicationDefinitionSpec struct {
 
 	// available version for this application
 	Versions []*ApplicationVersion `json:"versions"`
+
+	// method
+	Method TemplateMethod `json:"method,omitempty"`
 }
 
 // Validate validates this application definition spec
@@ -31,6 +34,10 @@ func (m *ApplicationDefinitionSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateVersions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMethod(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -66,11 +73,32 @@ func (m *ApplicationDefinitionSpec) validateVersions(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ApplicationDefinitionSpec) validateMethod(formats strfmt.Registry) error {
+	if swag.IsZero(m.Method) { // not required
+		return nil
+	}
+
+	if err := m.Method.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("method")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("method")
+		}
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this application definition spec based on the context it is used
 func (m *ApplicationDefinitionSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateVersions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMethod(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -95,6 +123,20 @@ func (m *ApplicationDefinitionSpec) contextValidateVersions(ctx context.Context,
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ApplicationDefinitionSpec) contextValidateMethod(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Method.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("method")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("method")
+		}
+		return err
 	}
 
 	return nil
