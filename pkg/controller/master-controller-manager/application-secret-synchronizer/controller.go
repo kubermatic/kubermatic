@@ -63,6 +63,7 @@ func Add(
 		recorder:     masterManager.GetEventRecorderFor(ControllerName),
 		masterClient: masterManager.GetClient(),
 		seedClients:  kuberneteshelper.SeedClientMap{},
+		namespace:    namespace,
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -144,7 +145,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 func secretCreator(s *corev1.Secret) reconciling.NamedSecretCreatorGetter {
 	return func() (name string, create reconciling.SecretCreator) {
 		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
-			return s, nil
+			existing.Labels = s.Labels
+			existing.Annotations = s.Annotations
+			existing.Data = s.Data
+			return existing, nil
 		}
 	}
 }
