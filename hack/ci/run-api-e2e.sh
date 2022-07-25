@@ -42,8 +42,8 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 echodate "Setting up openldap server..."
 
 LDAP_NAMESPACE="ldap"
-export KUBERMATIC_LDAP_OIDC_LOGIN="janedoe@example.com"
-export KUBERMATIC_LDAP_OIDC_PASSWORD="foo"
+export KUBERMATIC_LDAP_LOGIN="janedoe@example.com"
+export KUBERMATIC_LDAP_PASSWORD="foo"
 
 # Append Dex configuration with ldap connector
 cat << EOF >> hack/ci/testdata/oauth_values.yaml
