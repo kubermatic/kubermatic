@@ -43,22 +43,8 @@ func TestReconcile(t *testing.T) {
 		isDelete                  bool
 		existingKubermaticObjects []ctrlruntimeclient.Object
 	}{
-		// {
-		// 	name:        "scenario 1: add finalizer",
-		// 	clusterName: "test",
-		// 	isDelete:    false,
-		// 	existingKubermaticObjects: []ctrlruntimeclient.Object{
-		// 		genExternalCluster("test", false),
-		// 		&corev1.Secret{
-		// 			ObjectMeta: metav1.ObjectMeta{
-		// 				Name:      genExternalCluster("test", false).GetKubeconfigSecretName(),
-		// 				Namespace: resources.KubermaticNamespace,
-		// 			},
-		// 		},
-		// 	},
-		// },
 		{
-			name:        "scenario 2: cleanup finalizer and kubeconfig secret",
+			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
 			isDelete:    true,
 			existingKubermaticObjects: []ctrlruntimeclient.Object{

@@ -209,14 +209,20 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, r.reconcile(ctx, request.Name, log)
 }
 
+func (r *reconciler) getKubeOneNamespace(ctx context.Context, extexternalClusterName string) (*corev1.Namespace, error) {
+	ns := &corev1.Namespace{}
+	name := types.NamespacedName{Name: kubernetesprovider.GetKubeOneNamespaceName(extexternalClusterName)}
+	if err := r.Get(ctx, name, ns); err != nil {
+		return nil, err
+	}
+	return ns, nil
+}
+
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) error {
 	if kuberneteshelper.HasFinalizer(externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer) {
-		ns := &corev1.Namespace{}
-		name := types.NamespacedName{Name: kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)}
-		if err := r.Get(ctx, name, ns); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
+		ns, err := r.getKubeOneNamespace(ctx, externalCluster.Name)
+		if !apierrors.IsNotFound(err) {
+			return err
 		}
 		if err := r.Delete(ctx, ns); err != nil {
 			return err
@@ -246,8 +252,10 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
+	if _, err := r.getKubeOneNamespace(ctx, externalCluster.Name); err == nil {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
+		}
 	}
 
 	cloud := externalCluster.Spec.CloudSpec
