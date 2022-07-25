@@ -42,6 +42,8 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 echodate "Setting up openldap server..."
 
 LDAP_NAMESPACE="ldap"
+export KUBERMATIC_LDAP_OIDC_LOGIN="janedoe@example.com"
+export KUBERMATIC_LDAP_OIDC_PASSWORD="foo"
 
 # Append Dex configuration with ldap connector
 cat << EOF >> hack/ci/testdata/oauth_values.yaml
@@ -175,6 +177,19 @@ spec:
   admin: true
   email: roxy-admin@kubermatic.com
   name: roxy-admin
+EOF
+retry 2 kubectl apply -f user.yaml
+
+echodate "Creating jane user..."
+cat << EOF > user.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: User
+metadata:
+  name: jane
+spec:
+  admin: false
+  email: janedoe@example.com
+  name: jane
 EOF
 retry 2 kubectl apply -f user.yaml
 

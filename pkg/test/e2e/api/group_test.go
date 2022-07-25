@@ -29,18 +29,21 @@ import (
 
 func TestOidcGroupSupport(t *testing.T) {
 	ctx := context.Background()
-	t.Log("testing oidc group support")
 
-	masterToken, err := utils.RetrieveMasterTokenLDAP(ctx)
+	masterToken, err := utils.RetrieveMasterToken(ctx)
 	if err != nil {
 		t.Fatalf("failed to get master token: %v", err)
 	}
-	t.Logf("oidc: %s", masterToken)
-
 	testClient := utils.NewTestClient(masterToken, t)
 	project, err := testClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project: %v", err)
 	}
 	defer cleanupProject(t, project.ID)
+
+	janeToken, err := utils.RetrieveLDAPToken(ctx)
+	if err != nil {
+		t.Fatalf("failed to get jane's token: %v", err)
+	}
+	t.Logf("oidc: %s", janeToken)
 }

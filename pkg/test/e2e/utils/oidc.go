@@ -28,6 +28,8 @@ import (
 const (
 	LoginEnvironmentVariable         = "KUBERMATIC_OIDC_LOGIN"
 	PasswordEnvironmentVariable      = "KUBERMATIC_OIDC_PASSWORD"
+	LDAPLoginEnvironmentVariable     = "KUBERMATIC_LDAP_LOGIN"
+	LDAPPasswordEnvironmentVariable  = "KUBERMATIC_LDAP_PASSWORD"
 	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
 )
 
@@ -47,9 +49,20 @@ func OIDCCredentials() (string, string, error) {
 	return login, password, nil
 }
 
-// OIDCCredentialsLDAP temporary returns hardcoded dummy LDAP credentials
-func OIDCCredentialsLDAP() (string, string, error) {
-	return "janedoe@example.com", "foo", nil
+// LDAPCredentials takes the login name and password from environment variables and
+// returns them.
+func LDAPCredentials() (string, string, error) {
+	login := os.Getenv(LDAPLoginEnvironmentVariable)
+	if len(login) == 0 {
+		return "", "", fmt.Errorf("no OIDC username specified ($%s is unset)", LDAPLoginEnvironmentVariable)
+	}
+
+	password := os.Getenv(LDAPPasswordEnvironmentVariable)
+	if len(password) == 0 {
+		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", LDAPPasswordEnvironmentVariable)
+	}
+
+	return login, password, nil
 }
 
 // OIDCAdminCredentials takes the admin login name and password from environment variables and
@@ -86,8 +99,8 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 	return retrieveToken(ctx, &masterToken, login, password)
 }
 
-func RetrieveMasterTokenLDAP(ctx context.Context) (string, error) {
-	login, password, err := OIDCCredentialsLDAP()
+func RetrieveLDAPToken(ctx context.Context) (string, error) {
+	login, password, err := LDAPCredentials()
 	if err != nil {
 		return "", err
 	}
