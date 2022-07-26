@@ -27,6 +27,7 @@ import (
 	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
+	clustercredentialscontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-credentials-controller"
 	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
 	clusterstuckcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-stuck-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
@@ -77,6 +78,7 @@ var AllControllers = map[string]controllerCreator{
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
+	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -437,5 +439,15 @@ func createClusterStuckController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.log,
+	)
+}
+
+func createClusterCredentialsController(ctrlCtx *controllerContext) error {
+	return clustercredentialscontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.log,
+		ctrlCtx.versions,
 	)
 }
