@@ -142,10 +142,6 @@ const (
 	TestFakeCredential = "fake"
 	// RequiredEmailDomain required domain for predefined credentials.
 	RequiredEmailDomain = "acme.com"
-	// DefaultKubernetesVersion kubernetes version.
-	DefaultKubernetesVersion = "1.22.5"
-	// Kubermatic namespace.
-	KubermaticNamespace = "kubermatic"
 )
 
 var (
@@ -250,7 +246,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		kubermaticConfiguration = &kubermaticv1.KubermaticConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubermatic",
-				Namespace: KubermaticNamespace,
+				Namespace: resources.KubermaticNamespace,
 			},
 			Spec: kubermaticv1.KubermaticConfigurationSpec{
 				API: kubermaticv1.KubermaticAPIConfiguration{
@@ -379,7 +375,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
 	// the more complex implementation on the side
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, KubermaticNamespace)
+	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -424,7 +420,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
-	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, KubermaticNamespace)
+	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, resources.KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1313,8 +1309,8 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
-		*semver.NewSemverOrDie("1.22.5"),
-		*semver.NewSemverOrDie("1.23.8"),
+		*semver.NewSemverOrDie("1.22.12"),
+		*semver.NewSemverOrDie("1.23.9"),
 	}
 }
 

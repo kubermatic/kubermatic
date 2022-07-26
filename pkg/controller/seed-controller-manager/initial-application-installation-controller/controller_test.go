@@ -31,7 +31,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,11 +45,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	kubernetesVersion = defaults.DefaultKubernetesVersioning.Default
+)
+
 const (
-	kubernetesVersion = "v1.22.5"
-	datacenterName    = "testdc"
-	projectID         = "testproject"
-	applicationName   = "katana"
+	datacenterName  = "testdc"
+	projectID       = "testproject"
+	applicationName = "katana"
 )
 
 func init() {
@@ -83,7 +86,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie(kubernetesVersion),
+			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 			},

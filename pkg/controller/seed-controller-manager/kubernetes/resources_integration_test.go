@@ -28,7 +28,6 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -111,6 +110,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}()
 
 	caBundle := certificates.NewFakeCABundle()
+	version := defaults.DefaultKubernetesVersioning.Default
 
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -136,7 +136,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.5"),
+			Version: *version,
 		},
 	}
 
@@ -200,10 +200,10 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
 		Versions: kubermaticv1.ClusterVersionsStatus{
-			ControlPlane:      *semver.NewSemverOrDie("1.22.5"),
-			Apiserver:         *semver.NewSemverOrDie("1.22.5"),
-			ControllerManager: *semver.NewSemverOrDie("1.22.5"),
-			Scheduler:         *semver.NewSemverOrDie("1.22.5"),
+			ControlPlane:      *version,
+			Apiserver:         *version,
+			ControllerManager: *version,
+			Scheduler:         *version,
 		},
 	}
 

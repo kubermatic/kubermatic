@@ -110,8 +110,8 @@ fi
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
 # so we must multiply the maxDuration with the number of scenarios
 numDists=$(echo "${DISTRIBUTIONS:-}" | tr "," "\n" | wc -l)
-numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
-((maxDuration = $numDists * $numVersions * $maxDuration))
+numReleases=$(echo "${RELEASES_TO_TEST:-}" | tr "," "\n" | wc -l)
+((maxDuration = $numDists * $numReleases * $maxDuration))
 
 # add a bit of setup time to bring up the project, tear it down again etc.
 ((maxDuration = $maxDuration + 30))
@@ -134,7 +134,7 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -reports-root="$ARTIFACTS/conformance" \
   -log-directory="$ARTIFACTS/logs" \
   -create-oidc-token=true \
-  -versions="$VERSIONS_TO_TEST" \
+  -releases="$RELEASES_TO_TEST" \
   -providers=$provider \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
   -distributions="${DISTRIBUTIONS:-}" \
