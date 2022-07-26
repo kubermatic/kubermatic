@@ -465,9 +465,7 @@ func (j *ClusterJig) applyPreset(ctx context.Context, cluster *kubermaticv1.Clus
 		return nil, fmt.Errorf("provider %q is not yet supported, please implement", cluster.Spec.Cloud.ProviderName)
 	}
 
-	err := kubernetes.CreateOrUpdateCredentialSecretForCluster(ctx, j.client, cluster)
-
-	return cluster, err
+	return cluster, nil
 }
 
 func (j *ClusterJig) getClusterProvider() (*kubernetes.ClusterProvider, error) {
