@@ -781,7 +781,6 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		ref := refTo(NutanixProxyURL)
 		ref.SecretKeyRef.Optional = pointer.Bool(true)
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", ValueFrom: ref})
-
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: dc.Spec.VMwareCloudDirector.URL})
