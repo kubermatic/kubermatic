@@ -1750,3 +1750,26 @@ func (r *TestClient) ConnectClusterTerminal(token, clusterID, projectID string) 
 
 	return conn, err
 }
+
+func (r *TestClient) CreateGroupProjectBinding(group, role, projectID string) (*apiv2.GroupProjectBinding, error) {
+	params := &project.CreateGroupProjectBindingParams{
+		Body: &models.GroupProjectBindingBody{
+			Group: group,
+			Role:  role,
+		},
+		ProjectID: projectID,
+	}
+
+	binding, err := r.client.Project.CreateGroupProjectBinding(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := binding.GetPayload()
+	return &apiv2.GroupProjectBinding{
+		Name:      payload.Name,
+		Group:     payload.Group,
+		ProjectID: payload.ProjectID,
+		Role:      payload.Role,
+	}, nil
+}

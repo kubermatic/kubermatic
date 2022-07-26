@@ -21,6 +21,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
@@ -34,8 +35,8 @@ func TestOidcGroupSupport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get master token: %v", err)
 	}
-	testClient := utils.NewTestClient(masterToken, t)
-	project, err := testClient.CreateProject(rand.String(10))
+	masterClient := utils.NewTestClient(masterToken, t)
+	project, err := masterClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project: %v", err)
 	}
@@ -49,10 +50,24 @@ func TestOidcGroupSupport(t *testing.T) {
 	}
 	t.Logf("oidc: %s", janeToken)
 	janeClient := utils.NewTestClient(janeToken, t)
-	p, err := janeClient.GetProject(project.ID)
+	project, err = janeClient.GetProject(project.ID)
 	if err == nil {
-		t.Logf("Project: %v", p)
-		t.Fatalf("expected error")
+		t.Fatalf("expected auth error")
 	}
 	t.Logf("error: %s", err.Error())
+
+	_, err = masterClient.CreateGroupProjectBinding("developers", "owners", project.ID)
+	if err != nil {
+		t.Fatalf("failed to create project group binding: %s", err.Error())
+	}
+
+	// we have to wait a moment for the RBAC stuff to be reconciled
+	time.Sleep(3 * time.Second)
+
+	project, err = janeClient.GetProject(project.ID)
+	if err != nil {
+		t.Fatalf("failed to get the project: %s", err.Error())
+	}
+
+	t.Logf("ID: %s, Name: %s", project.ID, project.Name)
 }
