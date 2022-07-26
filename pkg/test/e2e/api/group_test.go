@@ -49,8 +49,9 @@ func TestOidcGroupSupport(t *testing.T) {
 	}
 	t.Logf("oidc: %s", janeToken)
 	janeClient := utils.NewTestClient(janeToken, t)
-	_, err = janeClient.GetProject(project.ID)
+	p, err := janeClient.GetProject(project.ID)
 	if err == nil {
+		t.Logf("Project: %v", p)
 		t.Fatalf("expected error")
 	}
 	t.Logf("error: %s", err.Error())
