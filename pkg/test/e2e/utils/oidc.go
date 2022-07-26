@@ -81,6 +81,7 @@ func OIDCAdminCredentials() (string, string, error) {
 var (
 	masterToken      = ""
 	adminMasterToken = ""
+	ldapToken        = ""
 )
 
 // Logout resets the runtime cache for the master/admin tokens and
@@ -105,7 +106,7 @@ func RetrieveLDAPToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, dex.OIDCLDAPConnector)
+	return retrieveToken(ctx, &ldapToken, login, password, dex.OIDCLDAPConnector)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
