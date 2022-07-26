@@ -67,6 +67,9 @@ export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 export METAL_AUTH_TOKEN="${METAL_AUTH_TOKEN:-$(vault kv get -field=METAL_AUTH_TOKEN dev/e2e-equinix-metal)}"
 export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT_ID dev/e2e-equinix-metal)}"
 
+export VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
+export VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
+
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
