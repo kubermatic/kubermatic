@@ -813,7 +813,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
-			Namespace: test.KubermaticNamespace,
+			Namespace: resources.KubermaticNamespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{

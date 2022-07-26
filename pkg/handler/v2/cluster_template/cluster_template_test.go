@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -147,7 +148,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
-			Namespace: test.KubermaticNamespace,
+			Namespace: resources.KubermaticNamespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
@@ -792,7 +793,7 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
-			Namespace: test.KubermaticNamespace,
+			Namespace: resources.KubermaticNamespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{

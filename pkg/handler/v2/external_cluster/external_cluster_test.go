@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -169,7 +170,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
-			Namespace: test.KubermaticNamespace,
+			Namespace: resources.KubermaticNamespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{

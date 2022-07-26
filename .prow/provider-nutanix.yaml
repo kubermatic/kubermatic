@@ -36,7 +36,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+              value: "v1.24.3"
             - name: PROVIDER
               value: "nutanix"
             - name: DISTRIBUTIONS
@@ -81,7 +81,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+              value: "v1.24.3"
             - name: PROVIDER
               value: "nutanix"
             - name: DISTRIBUTIONS

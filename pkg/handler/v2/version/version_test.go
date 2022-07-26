@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,7 +149,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
-					Namespace: test.KubermaticNamespace,
+					Namespace: resources.KubermaticNamespace,
 				},
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Versions: kubermaticv1.KubermaticVersioningConfiguration{
