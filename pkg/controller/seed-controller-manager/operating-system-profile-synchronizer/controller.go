@@ -27,6 +27,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
+	"k8c.io/operating-system-manager/pkg/resources/reconciling"
+	osmreconciling "k8c.io/operating-system-manager/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -166,7 +168,7 @@ func (r *Reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 
 func (r *Reconciler) syncAllUserClusterNamespaces(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile) error {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := r.seedClient.List(context.Background(), clusters); err != nil {
+	if err := r.seedClient.List(ctx, clusters); err != nil {
 		log.Error(err)
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters: %w", err))
 	}
@@ -202,17 +204,6 @@ func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.Su
 		return fmt.Errorf("failed to get operatingSystemProfile %s/%s: %w", osp.Namespace, osp.Name, err)
 	}
 
-	// We need to create the OperatingSystemProfile.
-	if apierrors.IsNotFound(err) {
-		// set resource version to empty.
-		osp.ResourceVersion = ""
-		osp.Finalizers = nil
-		if err := r.seedClient.Create(ctx, osp); err != nil {
-			return fmt.Errorf("failed to create operatingSystemProfile: %w", err)
-		}
-		return nil
-	}
-
 	// We need to check if the existing OperatingSystemProfile can be updated.
 	// OSP is immutable by nature and to make modifications a version bump is mandatory
 	if equal := apiequality.Semantic.DeepEqual(existingOSP.Spec, osp.Spec); !equal && existingOSP.Spec.Version == osp.Spec.Version {
@@ -220,13 +211,20 @@ func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.Su
 		return nil
 	}
 
-	existingOSP.Spec = osp.Spec
-	existingOSP.Annotations = osp.Annotations
-	existingOSP.Labels = osp.Labels
+	// We need to update OSP
+	if existingOSP.Name == "" {
+		// set resource version to empty.
+		osp.ResourceVersion = ""
+		osp.Finalizers = nil
+	}
 
-	// We need to update the existing OperatingSystemProfile.
-	if err := r.seedClient.Update(ctx, existingOSP); err != nil {
-		return fmt.Errorf("failed to update operatingSystemProfile: %w", err)
+	var ospCreators []reconciling.NamedOperatingSystemProfileCreatorGetter
+	ospCreators = append(ospCreators, ospCreator(osp.Name, osp))
+
+	if err := osmreconciling.ReconcileOperatingSystemProfiles(ctx,
+		ospCreators,
+		namespace, r.seedClient); err != nil {
+		return fmt.Errorf("failed to reconcile osps: %w", err)
 	}
 	return nil
 }
@@ -269,7 +267,6 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 		ospList := &osmv1alpha1.OperatingSystemProfileList{}
 
 		if err := client.List(context.Background(), ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
-			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list operatingSystemProfiles: %w", err))
 		}
 
@@ -281,4 +278,12 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 		}
 		return requests
 	})
+}
+
+func ospCreator(name string ,osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileCreatorGetter {
+	return func() (string, osmreconciling.OperatingSystemProfileCreator) {
+		return name, func(*osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error) {
+			return osp, nil
+		}
+	}
 }
