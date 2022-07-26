@@ -41,9 +41,17 @@ func TestOidcGroupSupport(t *testing.T) {
 	}
 	defer cleanupProject(t, project.ID)
 
+	t.Logf("ID: %s, Name: %s", project.ID, project.Name)
+
 	janeToken, err := utils.RetrieveLDAPToken(ctx)
 	if err != nil {
 		t.Fatalf("failed to get jane's token: %v", err)
 	}
 	t.Logf("oidc: %s", janeToken)
+	janeClient := utils.NewTestClient(janeToken, t)
+	_, err = janeClient.GetProject(project.Name)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	t.Logf("error: %s", err.Error())
 }
