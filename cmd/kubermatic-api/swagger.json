@@ -27090,7 +27090,7 @@
           "x-go-name": "Branch"
         },
         "commit": {
-          "description": "Commit SHA to checkout.\n\nIt can be used in conjunction with branch to to avoid to clone the all repository. The commit must belong to this branch.",
+          "description": "Commit SHA in a Branch to checkout.\n\nIt must be used in conjunction with branch field.",
           "type": "string",
           "pattern": "=`^[a-f0-9]{40}$`",
           "x-go-name": "Commit"

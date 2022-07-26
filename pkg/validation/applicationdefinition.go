@@ -112,12 +112,17 @@ func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) []*
 
 func validateGitRef(ref appskubermaticv1.GitReference, f *field.Path) *field.Error {
 	if len(ref.Tag) == 0 && len(ref.Branch) == 0 && len(ref.Commit) == 0 {
-		return field.Required(f, "at least a branch, a commit or tag must be defined")
+		return field.Required(f, "at least a branch, a tag  or a commint and branch must be defined")
 	}
 
 	if len(ref.Tag) > 0 && (len(ref.Branch) > 0 || len(ref.Commit) > 0) {
 		return field.Forbidden(f.Child("tag"), "tag can not be used in conjunction with branch or commit")
 	}
+
+	if len(ref.Commit) > 0 && len(ref.Branch) == 0 {
+		return field.Forbidden(f.Child("commit"), "commit must be used in conjunction with branch")
+	}
+
 	return nil
 }
 
