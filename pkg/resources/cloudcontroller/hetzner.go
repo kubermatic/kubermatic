@@ -72,11 +72,6 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			f := false
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %w", err)
-			}
-
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
 			if network == "" {
 				network = data.DC().Spec.Hetzner.Network
@@ -106,8 +101,15 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 							},
 						},
 						{
-							Name:  "HCLOUD_TOKEN",
-							Value: credentials.Hetzner.Token,
+							Name: "HCLOUD_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.ClusterCloudCredentialsSecretName,
+									},
+									Key: resources.HetznerToken,
+								},
+							},
 						},
 						{
 							Name:  "HCLOUD_NETWORK",
