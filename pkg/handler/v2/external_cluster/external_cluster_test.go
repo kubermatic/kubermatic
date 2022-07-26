@@ -27,6 +27,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
@@ -382,6 +383,8 @@ func TestListClusters(t *testing.T) {
 }
 
 func TestGetClusterEndpoint(t *testing.T) {
+	version := defaults.DefaultKubernetesVersioning.Default.String()
+
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
@@ -394,7 +397,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}{
 		{
 			Name:                   "scenario 1: get external cluster",
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
+			ExpectedResponse:       fmt.Sprintf(`{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"v%s"},"cloud":{},"status":{"state":"Running"}}`, version),
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -403,7 +406,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster",
-			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.5"},"cloud":{},"status":{"state":"Running"}}`,
+			ExpectedResponse: fmt.Sprintf(`{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"v%s"},"cloud":{},"status":{"state":"Running"}}`, version),
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(

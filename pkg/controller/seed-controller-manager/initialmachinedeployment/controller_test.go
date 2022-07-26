@@ -29,8 +29,8 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,10 +45,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	kubernetesVersion = defaults.DefaultKubernetesVersioning.Default
+)
+
 const (
-	kubernetesVersion = "v1.22.5"
-	datacenterName    = "testdc"
-	projectID         = "testproject"
+	datacenterName = "testdc"
+	projectID      = "testproject"
 )
 
 func init() {
@@ -83,7 +86,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie(kubernetesVersion),
+			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 			},
@@ -136,7 +139,7 @@ func TestReconcile(t *testing.T) {
 						Replicas: 1,
 						Template: apiv1.NodeSpec{
 							Versions: apiv1.NodeVersionInfo{
-								Kubelet: kubernetesVersion,
+								Kubelet: kubernetesVersion.String(),
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{},
@@ -186,7 +189,7 @@ func TestReconcile(t *testing.T) {
 						Replicas: 1,
 						Template: apiv1.NodeSpec{
 							Versions: apiv1.NodeVersionInfo{
-								Kubelet: kubernetesVersion,
+								Kubelet: kubernetesVersion.String(),
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{},

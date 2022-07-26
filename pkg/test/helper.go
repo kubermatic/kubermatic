@@ -117,7 +117,7 @@ func LatestKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.
 }
 
 // LatestStableKubernetesVersion returns the most recent patch release of the "stable" releases,
-// which are latest-1 (i.e. if KKP is configured to support upto 1.29.7, then the stable
+// which are latest-1 (i.e. if KKP is configured to support up to 1.29.7, then the stable
 // releases would be all in the  1.28.x line). Passing nil for the KubermaticConfiguration
 // is fine and in this case the compiled-in defaults will be used.
 func LatestStableKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {

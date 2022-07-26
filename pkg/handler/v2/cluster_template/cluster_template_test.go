@@ -27,6 +27,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -36,6 +37,8 @@ import (
 )
 
 func TestCreateClusterTemplateEndpoint(t *testing.T) {
+	version := defaults.DefaultKubernetesVersioning.Default.String()
+
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
@@ -51,8 +54,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: create cluster template in user scope",
-			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -64,8 +67,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: create cluster template in project scope",
-			Body:             `{"name":"test","scope":"project","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"project","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -77,8 +80,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: create cluster template in global scope by admin",
-			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -91,7 +94,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: regular user can't create global cluster template",
-			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
 			ExpectedResponse: `{"error":{"code":500,"message":"the global scope is reserved only for admins"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -103,8 +106,8 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 5
 		{
 			Name:             "scenario 5: create cluster template in project scope with SSH key",
-			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -125,7 +128,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		// scenario 6
 		{
 			Name:             "scenario 6: create cluster template in project scope with wrong SSH key",
-			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"},{"id":"wrong-key","name":"wrong-key"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"},{"id":"wrong-key","name":"wrong-key"}],"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key wrong-key does not belong to the given project my-first-project (my-first-project-ID)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -708,6 +711,8 @@ func TestExportlusterTemplates(t *testing.T) {
 }
 
 func TestImportClusterTemplateEndpoint(t *testing.T) {
+	version := defaults.DefaultKubernetesVersioning.Default.String()
+
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
@@ -723,8 +728,8 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: import cluster template in user scope",
-			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -736,7 +741,7 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: regular user can't import global cluster template",
-			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
 			ExpectedResponse: `{"error":{"code":500,"message":"the global scope is reserved only for admins"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -748,8 +753,8 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: import cluster template in project scope with SSH key",
-			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"replicas":0,"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -770,7 +775,7 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: import cluster template in project scope with wrong SSH key",
-			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"},{"id":"wrong-key","name":"wrong-key"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			Body:             fmt.Sprintf(`{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"},{"id":"wrong-key","name":"wrong-key"}],"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key wrong-key does not belong to the given project my-first-project (my-first-project-ID)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ProjectToSync:    test.GenDefaultProject().Name,
