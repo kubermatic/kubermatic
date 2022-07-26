@@ -25,13 +25,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
-	"k8c.io/operating-system-manager/pkg/resources/reconciling"
 	osmreconciling "k8c.io/operating-system-manager/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -177,55 +176,35 @@ func (r *Reconciler) syncAllUserClusterNamespaces(ctx context.Context, log *zap.
 	for _, cluster := range clusters.Items {
 		// Ensure that this is a reconcilable cluster
 		if cluster.Spec.EnableOperatingSystemManager && cluster.DeletionTimestamp == nil && !cluster.Spec.Pause {
-			// We want to avoid changes to the original object.
-			currentOSP := osp.DeepCopy()
-			err := r.syncOperatingSystemProfile(ctx, log, currentOSP, cluster.Status.NamespaceName)
+			err := r.syncOperatingSystemProfile(ctx, log, osp, cluster.Status.NamespaceName)
 			if err != nil {
 				errors = append(errors, err)
 			}
 		}
 	}
+
 	return kerrors.NewAggregate(errors)
 }
 
 func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile, namespace string) error {
-	// We want to perform actions on the user-cluster namespace.
-	osp.Namespace = namespace
-
 	// If OSP is marked for deletion then remove it from the user-cluster namespace.
 	if osp.DeletionTimestamp != nil {
-		err := r.seedClient.Delete(ctx, osp)
+		toDelete := &osmv1alpha1.OperatingSystemProfile{}
+		toDelete.Name = osp.Name
+		toDelete.Namespace = namespace
+
+		err := r.seedClient.Delete(ctx, toDelete)
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	existingOSP := &osmv1alpha1.OperatingSystemProfile{}
-	err := r.seedClient.Get(ctx, types.NamespacedName{Name: osp.Name, Namespace: osp.Namespace}, existingOSP)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get operatingSystemProfile %s/%s: %w", osp.Namespace, osp.Name, err)
+	creators := []reconciling.NamedOperatingSystemProfileCreatorGetter{
+		ospCreator(osp),
 	}
 
-	// We need to check if the existing OperatingSystemProfile can be updated.
-	// OSP is immutable by nature and to make modifications a version bump is mandatory
-	if equal := apiequality.Semantic.DeepEqual(existingOSP.Spec, osp.Spec); !equal && existingOSP.Spec.Version == osp.Spec.Version {
-		log.Debug("OperatingSystemProfile is immutable. For updates .spec.version needs to be updated")
-		return nil
+	if err := osmreconciling.ReconcileOperatingSystemProfiles(ctx, creators, namespace, r.seedClient); err != nil {
+		return fmt.Errorf("failed to reconcile OSP: %w", err)
 	}
 
-	// We need to update OSP
-	if existingOSP.Name == "" {
-		// set resource version to empty.
-		osp.ResourceVersion = ""
-		osp.Finalizers = nil
-	}
-
-	var ospCreators []reconciling.NamedOperatingSystemProfileCreatorGetter
-	ospCreators = append(ospCreators, ospCreator(osp.Name, osp))
-
-	if err := osmreconciling.ReconcileOperatingSystemProfiles(ctx,
-		ospCreators,
-		namespace, r.seedClient); err != nil {
-		return fmt.Errorf("failed to reconcile osps: %w", err)
-	}
 	return nil
 }
 
@@ -280,10 +259,17 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 	})
 }
 
-func ospCreator(name string ,osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileCreatorGetter {
+func ospCreator(osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileCreatorGetter {
 	return func() (string, osmreconciling.OperatingSystemProfileCreator) {
-		return name, func(*osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error) {
-			return osp, nil
+		return osp.Name, func(existing *osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error) {
+			// We need to check if the existing OperatingSystemProfile can be updated.
+			// OSP is immutable by nature and to make modifications a version bump is mandatory,
+			// so we only update the OSP if the version is different.
+			if existing.Spec.Version != osp.Spec.Version {
+				existing.Spec = osp.Spec
+			}
+
+			return existing, nil
 		}
 	}
 }
