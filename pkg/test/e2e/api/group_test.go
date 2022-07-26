@@ -21,6 +21,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
@@ -63,6 +64,9 @@ func TestOidcGroupSupport(t *testing.T) {
 		t.Fatalf("failed to create project group binding: %s", err.Error())
 	}
 
+	// We have to wait a moment for the RBAC stuff to be reconciled.
+	time.Sleep(3 * time.Second)
+
 	// Try to access the project again.
 	_, err = janeClient.GetProject(testProject.ID)
 	if err != nil {
@@ -74,6 +78,9 @@ func TestOidcGroupSupport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to delete group project binding: %s", err.Error())
 	}
+
+	// Again, some sleep for the RBAC stuff to be reconciled.
+	time.Sleep(3 * time.Second)
 
 	// Try to access the project one last time.
 	_, err = janeClient.GetProject(testProject.ID)
