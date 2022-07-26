@@ -11,6 +11,7 @@ import (
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -986,6 +987,43 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1.ConstraintTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// OperatingSystemProfileCreator defines an interface to create/update OperatingSystemProfiles
+type OperatingSystemProfileCreator = func(existing *osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error)
+
+// NamedOperatingSystemProfileCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedOperatingSystemProfileCreatorGetter = func() (name string, create OperatingSystemProfileCreator)
+
+// OperatingSystemProfileObjectWrapper adds a wrapper so the OperatingSystemProfileCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func OperatingSystemProfileObjectWrapper(create OperatingSystemProfileCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*osmv1alpha1.OperatingSystemProfile))
+		}
+		return create(&osmv1alpha1.OperatingSystemProfile{})
+	}
+}
+
+// ReconcileOperatingSystemProfiles will create and update the OperatingSystemProfiles coming from the passed OperatingSystemProfileCreator slice
+func ReconcileOperatingSystemProfiles(ctx context.Context, namedGetters []NamedOperatingSystemProfileCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := OperatingSystemProfileObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &osmv1alpha1.OperatingSystemProfile{}, false); err != nil {
+			return fmt.Errorf("failed to ensure OperatingSystemProfile %s/%s: %w", namespace, name, err)
 		}
 	}
 

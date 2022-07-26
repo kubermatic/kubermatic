@@ -42,6 +42,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
@@ -78,6 +79,7 @@ var AllControllers = map[string]controllerCreator{
 	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
+	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 }
 
@@ -439,6 +441,16 @@ func createClusterStuckController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.log,
+	)
+}
+
+func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
+	return operatingsystemprofilesynchronizer.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.namespace,
+		ctrlCtx.runOptions.workerCount,
 	)
 }
 
