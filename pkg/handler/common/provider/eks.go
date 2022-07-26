@@ -21,12 +21,12 @@ import (
 	"fmt"
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/eks"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
+	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -47,13 +47,11 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 		return nil, err
 	}
 
-	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
-	err = req.Send()
+	clusters, err := eksprovider.ListCluster(client)
 	if err != nil {
-		return nil, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
+		return nil, err
 	}
-
-	return res.Clusters, nil
+	return clusters, nil
 }
 
 func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
@@ -110,7 +108,7 @@ func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error
 		return err
 	}
 
-	_, err = client.EKS.ListClusters(&eks.ListClustersInput{})
+	_, err = eksprovider.ListCluster(client)
 
 	return err
 }

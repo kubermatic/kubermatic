@@ -40,11 +40,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
-
-const GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
 
 func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -322,16 +319,18 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	}
 
 	for _, md := range resp.NodePools {
-		var readyReplicas int32
-		for _, n := range nodes.Items {
-			if n.Labels != nil {
-				if n.Labels[GKENodepoolNameLabel] == md.Name {
-					readyReplicas++
+		var readyReplicasCount int32
+		for _, node := range nodes.Items {
+			if node.Labels != nil {
+				if node.Labels[resources.GKENodepoolNameLabel] == md.Name {
+					if kuberneteshelper.IsNodeReady(&node) {
+						readyReplicasCount++
+					}
 				}
 			}
 		}
 
-		machineDeployments = append(machineDeployments, createMachineDeploymentFromGKENodePoll(md, readyReplicas))
+		machineDeployments = append(machineDeployments, createMachineDeploymentFromGKENodePoll(md, readyReplicasCount))
 	}
 
 	return machineDeployments, err
@@ -405,43 +404,6 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 	return getGKEMachineDeployment(ctx, svc, project, cluster, nodeGroupName, clusterProvider)
 }
 
-func getGKENodes(ctx context.Context,
-	cluster *kubermaticv1.ExternalCluster,
-	nodePoolID string,
-	secretKeySelector provider.SecretKeySelectorValueFunc,
-	credentialsReference *providerconfig.GlobalSecretKeySelector,
-	clusterProvider provider.ExternalClusterProvider,
-) ([]corev1.Node, error) {
-	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
-	if err != nil {
-		return nil, err
-	}
-	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
-	if err != nil {
-		return nil, err
-	}
-
-	req := svc.Projects.Zones.Clusters.NodePools.Get(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	var outputNodes []corev1.Node
-	nodes, err := clusterProvider.ListNodes(ctx, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	for _, n := range nodes.Items {
-		if n.Labels != nil {
-			if n.Labels[GKENodepoolNameLabel] == resp.Name {
-				outputNodes = append(outputNodes, n)
-			}
-		}
-	}
-	return outputNodes, err
-}
-
 func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
@@ -510,7 +472,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 	var readyReplicas int32
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
-			if n.Labels[GKENodepoolNameLabel] == np.Name {
+			if n.Labels[resources.GKENodepoolNameLabel] == np.Name {
 				readyReplicas++
 			}
 		}

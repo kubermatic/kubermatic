@@ -1046,7 +1046,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
-			eksStatus, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
+			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,

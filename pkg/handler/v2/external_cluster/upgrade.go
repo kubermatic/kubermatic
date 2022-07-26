@@ -148,7 +148,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			if err != nil {
 				return nil, err
 			}
-			return eks.ListEKSMachineDeploymentUpgrades(ctx,
+			return eks.ListMachineDeploymentUpgrades(ctx,
 				accessKeyID,
 				secretAccessKey,
 				cloud.EKS.Region,

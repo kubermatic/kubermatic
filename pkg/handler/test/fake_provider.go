@@ -221,6 +221,10 @@ func (p *FakeExternalClusterProvider) New(ctx context.Context, userInfo *provide
 	return p.Provider.New(ctx, userInfo, project, cluster)
 }
 
+func (p *FakeExternalClusterProvider) GetProviderPoolNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, providerNodeLabel, providerNodePoolName string) ([]corev1.Node, error) {
+	return p.Provider.GetProviderPoolNodes(ctx, cluster, providerNodeLabel, providerNodePoolName)
+}
+
 type FakeConstraintTemplateProvider struct {
 	Provider   *kubernetes.ConstraintTemplateProvider
 	FakeClient ctrlruntimeclient.Client

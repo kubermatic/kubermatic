@@ -47,13 +47,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
 const (
-	AKSNodepoolNameLabel = "kubernetes.azure.com/agentpool"
-	AgentPoolModeSystem  = "System"
+	AgentPoolModeSystem = "System"
 )
 
 // AKSTypesReq represent a request for AKS types.
@@ -426,15 +424,8 @@ func getAKSMachineDeployments(ctx context.Context, poolProfiles []*armcontainers
 	}
 
 	for _, poolProfile := range poolProfiles {
-		var readyReplicas int32
-		for _, n := range nodes.Items {
-			if n.Labels != nil {
-				if n.Labels[AKSNodepoolNameLabel] == *poolProfile.Name {
-					readyReplicas++
-				}
-			}
-		}
-		machineDeployments = append(machineDeployments, createMachineDeploymentFromAKSNodePoll(poolProfile, readyReplicas))
+		readyReplicasCount := kuberneteshelper.GetNodeGroupReadyCount(nodes, resources.AKSNodepoolNameLabel, *poolProfile.Name)
+		machineDeployments = append(machineDeployments, createMachineDeploymentFromAKSNodePoll(poolProfile, readyReplicasCount))
 	}
 
 	return machineDeployments, nil
@@ -478,15 +469,9 @@ func getAKSMachineDeployment(ctx context.Context, poolProfile *armcontainerservi
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	var readyReplicas int32
-	for _, n := range nodes.Items {
-		if n.Labels != nil {
-			if n.Labels[AKSNodepoolNameLabel] == *poolProfile.Name {
-				readyReplicas++
-			}
-		}
-	}
-	md := createMachineDeploymentFromAKSNodePoll(poolProfile, readyReplicas)
+	readyReplicasCount := kuberneteshelper.GetNodeGroupReadyCount(nodes, resources.AKSNodepoolNameLabel, *poolProfile.Name)
+
+	md := createMachineDeploymentFromAKSNodePoll(poolProfile, readyReplicasCount)
 	return &md, nil
 }
 
@@ -563,28 +548,6 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	}
 
 	return md
-}
-
-func getAKSNodes(ctx context.Context,
-	cluster *kubermaticv1.ExternalCluster,
-	nodePoolName string,
-	clusterProvider provider.ExternalClusterProvider,
-) ([]corev1.Node, error) {
-	var outputNodes []corev1.Node
-
-	nodes, err := clusterProvider.ListNodes(ctx, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	for _, n := range nodes.Items {
-		if n.Labels != nil {
-			if n.Labels[AKSNodepoolNameLabel] == nodePoolName {
-				outputNodes = append(outputNodes, n)
-			}
-		}
-	}
-
-	return outputNodes, err
 }
 
 func patchAKSMachineDeployment(ctx context.Context, oldCluster, newCluster *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterMachineDeployment, error) {
