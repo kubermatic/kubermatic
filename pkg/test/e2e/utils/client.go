@@ -1767,16 +1767,36 @@ func (r *TestClient) CreateGroupProjectBinding(group, role, projectID string) (*
 		Jitter:   0.1,
 	})
 
-	binding, err := r.client.Project.CreateGroupProjectBinding(params, r.bearerToken)
+	resp, err := r.client.Project.CreateGroupProjectBinding(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	payload := binding.GetPayload()
+	payload := resp.GetPayload()
 	return &apiv2.GroupProjectBinding{
 		Name:      payload.Name,
 		Group:     payload.Group,
 		ProjectID: payload.ProjectID,
 		Role:      payload.Role,
 	}, nil
+}
+
+func (r *TestClient) DeleteGroupProjectBinding(name, projectId string) error {
+	params := &project.DeleteGroupProjectBindingParams{
+		BindingName: name,
+		ProjectID:   projectId,
+	}
+
+	SetupRetryParams(r.test, params, Backoff{
+		Steps:    4,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
+	})
+
+	_, err := r.client.Project.DeleteGroupProjectBinding(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -20,54 +20,74 @@ package api
 
 import (
 	"context"
+	"errors"
 	"testing"
-	"time"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
+
+func isForbidden(err error) bool {
+	var errStatus *apierrors.StatusError
+	if errors.As(err, &errStatus) && errStatus.Status().Code == 403 {
+		return true
+	}
+	return false
+}
 
 func TestOidcGroupSupport(t *testing.T) {
 	ctx := context.Background()
 
+	// Login as an administrator.
 	masterToken, err := utils.RetrieveMasterToken(ctx)
 	if err != nil {
 		t.Fatalf("failed to get master token: %v", err)
 	}
 	masterClient := utils.NewTestClient(masterToken, t)
-	project, err := masterClient.CreateProject(rand.String(10))
+
+	// Create some project with administrator's account.
+	testProject, err := masterClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project: %v", err)
 	}
-	defer cleanupProject(t, project.ID)
+	defer cleanupProject(t, testProject.ID)
 
-	t.Logf("ID: %s, Name: %s", project.ID, project.Name)
-
+	// Login as Jane (member of "developers" group).
 	janeToken, err := utils.RetrieveLDAPToken(ctx)
 	if err != nil {
-		t.Fatalf("failed to get jane's token: %v", err)
+		t.Fatalf("failed to get Jane's token: %v", err)
 	}
-	t.Logf("oidc: %s", janeToken)
 	janeClient := utils.NewTestClient(janeToken, t)
-	_, err = janeClient.GetProject(project.ID)
-	if err == nil {
-		t.Fatalf("expected auth error")
-	}
-	t.Logf("error: %s", err.Error())
 
-	_, err = masterClient.CreateGroupProjectBinding("developers", "owners", project.ID)
+	// Try to access the project created by the administrator.
+	_, err = janeClient.GetProject(testProject.ID)
+	if !isForbidden(err) {
+		t.Fatalf("expected forbidden (403), got %s", err.Error())
+	}
+
+	// Create a binding between "developers" group and administrator's project.
+	binding, err := masterClient.CreateGroupProjectBinding("developers", "owners", testProject.ID)
 	if err != nil {
 		t.Fatalf("failed to create project group binding: %s", err.Error())
 	}
 
-	// we have to wait a moment for the RBAC stuff to be reconciled
-	time.Sleep(3 * time.Second)
-
-	project, err = janeClient.GetProject(project.ID)
+	// Try to access the project again.
+	_, err = janeClient.GetProject(testProject.ID)
 	if err != nil {
 		t.Fatalf("failed to get the project: %s", err.Error())
 	}
 
-	t.Logf("ID: %s, Name: %s", project.ID, project.Name)
+	// Remove GroupProjectBinding.
+	err = janeClient.DeleteGroupProjectBinding(binding.Name, testProject.ID)
+	if err != nil {
+		t.Fatalf("failed to delete group project binding: %s", err.Error())
+	}
+
+	// Try to access the project one last time.
+	_, err = janeClient.GetProject(testProject.ID)
+	if !isForbidden(err) {
+		t.Fatalf("expected forbidden (403), got %s", err.Error())
+	}
 }
