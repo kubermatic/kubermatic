@@ -31,8 +31,8 @@ import (
 
 func isForbidden(err error) bool {
 	var errStatus *apierrors.StatusError
-	if errors.As(err, &errStatus) && errStatus.Status().Code == 403 {
-		return true
+	if errors.As(err, &errStatus) {
+		return errStatus.Status().Code == 403
 	}
 	return false
 }
