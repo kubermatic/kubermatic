@@ -131,11 +131,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "aws",
 			osNames: []string{
 				"ubuntu",
+				"centos",
 			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
+			cni:                    "canal",
+			ipFamily:               util.DualStack,
+			skipNodes:              true,
+			skipHostNetworkPods:    true,
+			skipEgressConnectivity: true,
 		},
 		{
 			cloudName: "gcp",
@@ -188,6 +190,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 				"rockylinux",
+				"centos",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
@@ -203,6 +206,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
+				"centos",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
@@ -211,6 +215,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "equinix",
 			osNames: []string{
 				"ubuntu",
+				"centos",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
