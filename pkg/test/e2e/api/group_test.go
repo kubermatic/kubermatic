@@ -20,22 +20,12 @@ package api
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
-
-func isForbidden(err error) bool {
-	var errStatus *apierrors.StatusError
-	if errors.As(err, &errStatus) {
-		return errStatus.Status().Code == 403
-	}
-	return false
-}
 
 func TestOidcGroupSupport(t *testing.T) {
 	ctx := context.Background()
@@ -63,8 +53,8 @@ func TestOidcGroupSupport(t *testing.T) {
 
 	// Try to access the project created by the administrator.
 	_, err = janeClient.GetProject(testProject.ID)
-	if !isForbidden(err) {
-		t.Fatalf("expected forbidden (403), got %s", err.Error())
+	if err == nil {
+		t.Fatalf("expected error, shouldn't be able to get admin's project")
 	}
 
 	// Create a binding between "developers" group and administrator's project.
@@ -87,7 +77,7 @@ func TestOidcGroupSupport(t *testing.T) {
 
 	// Try to access the project one last time.
 	_, err = janeClient.GetProject(testProject.ID)
-	if !isForbidden(err) {
-		t.Fatalf("expected forbidden (403), got %s", err.Error())
+	if err == nil {
+		t.Fatalf("expected error, shouldn't be able to get admin's project")
 	}
 }
