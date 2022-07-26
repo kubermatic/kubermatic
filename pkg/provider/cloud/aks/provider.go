@@ -18,9 +18,11 @@ package aks
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	semverlib "github.com/Masterminds/semver/v3"
@@ -43,7 +45,7 @@ func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, cluste
 
 	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config: %w", err)
+		return nil, DecodeAKSError(err)
 	}
 
 	config, err := clientcmd.Load(credResult.Kubeconfigs[0].Value)
@@ -117,16 +119,14 @@ func GetAKSClusterClient(cred resources.AKSCredentials) (*armcontainerservice.Ma
 		return nil, err
 	}
 
-	return armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	client, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	return client, DecodeAKSError(err)
 }
 
 func GetAKSCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*armcontainerservice.ManagedCluster, error) {
-	resourceGroup := cloud.AKS.ResourceGroup
-	clusterName := cloud.AKS.Name
-
 	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %w", clusterName, resourceGroup, err)
+		return nil, DecodeAKSError(err)
 	}
 
 	return &aksCluster.ManagedCluster, nil
@@ -192,10 +192,7 @@ func DeleteAKSCluster(ctx context.Context, aksClient *armcontainerservice.Manage
 	clusterName := cloud.AKS.Name
 
 	_, err := aksClient.BeginDelete(ctx, resourceGroup, clusterName, &armcontainerservice.ManagedClustersClientBeginDeleteOptions{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return DecodeAKSError(err)
 }
 
 func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
@@ -208,12 +205,12 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCre
 
 	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, err
+		return nil, DecodeAKSError(err)
 	}
 
 	profile, err := agentPoolClient.GetUpgradeProfile(ctx, resourceGroupName, clusterName, machineDeployment, nil)
 	if err != nil {
-		return nil, err
+		return nil, DecodeAKSError(err)
 	}
 
 	poolUpgradeProperties := profile.Properties
@@ -232,4 +229,23 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCre
 	}
 
 	return upgrades, nil
+}
+
+func DecodeAKSError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var aerr *azcore.ResponseError
+	if ok := errors.As(err, &aerr); ok {
+		var response struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+			SubCode string `json:"subcode,omitempty"`
+		}
+		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
+			return err
+		}
+		return errors.New(response.Message)
+	}
+	return err
 }

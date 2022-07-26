@@ -28,6 +28,7 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -68,7 +69,7 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, err
+		return nil, aks.DecodeAKSError(err)
 	}
 
 	pager := aksClient.NewListPager(nil)
@@ -77,7 +78,7 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	for pager.More() {
 		nextResult, err := pager.NextPage(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list AKS clusters: %w", err)
+			return nil, aks.DecodeAKSError(err)
 		}
 
 		for i := range nextResult.Value {
@@ -111,12 +112,12 @@ func ListAKSUpgrades(ctx context.Context, cred resources.AKSCredentials, resourc
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, err
+		return nil, aks.DecodeAKSError(err)
 	}
 
 	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to upgrade cluster: %w", err)
+		return nil, aks.DecodeAKSError(err)
 	}
 
 	upgradeProperties := clusterUpgradeProfile.Properties
@@ -144,12 +145,12 @@ func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) 
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return err
+		return aks.DecodeAKSError(err)
 	}
 
 	_, err = aksClient.NewListPager(nil).NextPage(ctx)
 
-	return err
+	return aks.DecodeAKSError(err)
 }
 
 func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {
