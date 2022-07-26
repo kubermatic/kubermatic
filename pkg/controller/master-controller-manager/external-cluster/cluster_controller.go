@@ -76,27 +76,32 @@ func Add(
 		return err
 	}
 
-	// Watch for changes to ExternalCluster
+	// Watch for changes to ExternalCluster except KubeOne clusters.
 	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, withEventFilter())
 }
 
+func withKubeOnefilter(obj ctrlruntimeclient.Object) bool {
+	externalCluster, ok := obj.(*kubermaticv1.ExternalCluster)
+	if !ok {
+		return false
+	}
+	return externalCluster.Spec.CloudSpec.KubeOne == nil
+}
+
+// ExternalCluster controller doesn't process KubeOne clusters.
 func withEventFilter() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			externalCluster, ok := e.Object.(*kubermaticv1.ExternalCluster)
-			if !ok {
-				return false
-			}
-			return externalCluster.Spec.CloudSpec.KubeOne == nil
+			return withKubeOnefilter(e.Object)
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+			return withKubeOnefilter(e.ObjectNew) && e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return true
+			return withKubeOnefilter(e.Object)
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			return true
+			return withKubeOnefilter(e.Object)
 		},
 	}
 }
@@ -106,8 +111,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("externalcluster", request)
 	log.Debug("Processing...")
 
-	icl := &kubermaticv1.ExternalCluster{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
+	cluster := &kubermaticv1.ExternalCluster{}
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
@@ -115,7 +120,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	return r.reconcile(ctx, icl)
+	return r.reconcile(ctx, cluster)
 }
 
 func (r *Reconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
