@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Source: https://raw.githubusercontent.com/metallb/metallb/v0.13.3/config/manifests/metallb-native.yamlapiVersion: v1
+# Source: https://raw.githubusercontent.com/metallb/metallb/v0.13.3/config/manifests/metallb-native.yaml
+
+apiVersion: v1
 kind: Namespace
 metadata:
   labels:
