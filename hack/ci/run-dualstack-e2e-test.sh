@@ -31,6 +31,7 @@ trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export CNI="${CNI:-}"
+export PROVIDER="${PROVIDER:-}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
@@ -73,6 +74,6 @@ export VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER
 
 echodate "Dualstack tests done."
