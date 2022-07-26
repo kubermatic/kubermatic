@@ -1760,6 +1760,13 @@ func (r *TestClient) CreateGroupProjectBinding(group, role, projectID string) (*
 		ProjectID: projectID,
 	}
 
+	SetupRetryParams(r.test, params, Backoff{
+		Steps:    4,
+		Duration: 10 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
+	})
+
 	binding, err := r.client.Project.CreateGroupProjectBinding(params, r.bearerToken)
 	if err != nil {
 		return nil, err
