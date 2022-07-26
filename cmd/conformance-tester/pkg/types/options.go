@@ -176,6 +176,12 @@ func (o *Options) ParseFlags() error {
 		o.Versions = append(o.Versions, version)
 	}
 
+	// periodics do not specify a version at all and just rely on us auto-determining
+	// the most recent stable (stable = latest-1) supported Kubernetes version
+	if len(o.Versions) == 0 {
+		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
+	}
+
 	var err error
 	o.Distributions, err = o.effectiveDistributions()
 	if err != nil {
