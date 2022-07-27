@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-#    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -49,7 +49,7 @@ presubmits:
               memory: 18Gi
 
   - name: pre-kubermatic-konnectivity-e2e
-#    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
+    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -84,7 +84,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cilium-e2e
-#    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
+    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -195,7 +195,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-etcd-launcher-e2e
-#    run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow/)"
+    run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -229,7 +229,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-nodeport-proxy-e2e
-#    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -253,7 +253,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-opa-e2e
-#    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -288,7 +288,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-expose-strategy-e2e
-#    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -315,7 +315,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-ipam-e2e
-#    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/webhook/ipampool/|pkg/test/e2e/ipam/)"
+    run_if_changed: "(pkg/controller/seed-controller-manager/ipam/|pkg/webhook/ipampool/|pkg/test/e2e/ipam/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
