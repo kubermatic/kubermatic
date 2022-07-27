@@ -80,6 +80,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listGKEZones())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/gke/versions").
+		Handler(r.listGKEVersions())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gke/validatecredentials").
 		Handler(r.validateGKECredentials())
 
@@ -5803,8 +5807,8 @@ func (r Routing) listGKEClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
-		provider.DecodeGKEClusterListReq,
+		)(externalcluster.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		externalcluster.DecodeGKEClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5825,8 +5829,8 @@ func (r Routing) listGKEImages() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeGKEImagesReq,
+		)(externalcluster.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKEImagesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5847,8 +5851,30 @@ func (r Routing) listGKEZones() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeGKECommonReq,
+		)(externalcluster.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKECommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/versions gke listGKEVersions
+//
+// Lists GKE versions
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+func (r Routing) listGKEVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEVersionsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKEVersionsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5869,8 +5895,8 @@ func (r Routing) validateGKECredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeGKETypesReq,
+		)(externalcluster.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKETypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6010,8 +6036,8 @@ func (r Routing) listAKSVMSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeAKSVMSizesReq,
+		)(externalcluster.ListAKSVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeAKSVMSizesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6035,7 +6061,7 @@ func (r Routing) listAKSNodePoolModes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AKSNodePoolModesEndpoint()),
+		)(externalcluster.AKSNodePoolModesEndpoint()),
 		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6620,8 +6646,8 @@ func (r Routing) listAKSVMSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AKSSizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
-		provider.DecodeAKSNoCredentialReq,
+		)(externalcluster.AKSSizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeAKSNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
