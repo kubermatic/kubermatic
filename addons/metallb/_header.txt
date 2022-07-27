@@ -13,4 +13,5 @@
 # limitations under the License.
 
 # Source: https://raw.githubusercontent.com/metallb/metallb/v0.13.3/config/manifests/metallb-native.yaml
+# This file was generated, please run make metallb to update it.
 
