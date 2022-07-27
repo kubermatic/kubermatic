@@ -360,10 +360,8 @@ func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
 
 	var clusterNodes []corev1.Node
 	for _, node := range nodes.Items {
-		if node.Labels != nil {
-			if node.Labels[providerNodeLabel] == providerNodePoolName {
-				clusterNodes = append(clusterNodes, node)
-			}
+		if node.Labels[providerNodeLabel] == providerNodePoolName {
+			clusterNodes = append(clusterNodes, node)
 		}
 	}
 

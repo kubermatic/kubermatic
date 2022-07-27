@@ -284,7 +284,7 @@ func CreateCluster(client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterS
 	return nil
 }
 
-func ListCluster(client *awsprovider.ClientSet) ([]*string, error) {
+func ListClusters(client *awsprovider.ClientSet) ([]*string, error) {
 	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
 	err := req.Send()
 	if err != nil {

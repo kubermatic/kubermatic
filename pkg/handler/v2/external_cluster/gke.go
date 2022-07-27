@@ -321,12 +321,8 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	for _, md := range resp.NodePools {
 		var readyReplicasCount int32
 		for _, node := range nodes.Items {
-			if node.Labels != nil {
-				if node.Labels[resources.GKENodepoolNameLabel] == md.Name {
-					if kuberneteshelper.IsNodeReady(&node) {
-						readyReplicasCount++
-					}
-				}
+			if node.Labels[resources.GKENodepoolNameLabel] == md.Name && kuberneteshelper.IsNodeReady(&node) {
+				readyReplicasCount++
 			}
 		}
 

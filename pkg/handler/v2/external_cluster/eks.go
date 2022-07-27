@@ -448,7 +448,7 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 		if err != nil {
 			return nil, err
 		}
-		machineDeployments = append(machineDeployments, createMachineDeploymentFromEKSNodePoll(nodeGroup, readyReplicasCount))
+		machineDeployments = append(machineDeployments, createMachineDeploymentFromEKSNodePool(nodeGroup, readyReplicasCount))
 	}
 
 	return machineDeployments, err
@@ -489,12 +489,12 @@ func getEKSMachineDeployment(ctx context.Context,
 	}
 
 	readyReplicasCount := kuberneteshelper.GetNodeGroupReadyCount(nodes, resources.EKSNodeGroupNameLabel, nodeGroupName)
-	machineDeployment := createMachineDeploymentFromEKSNodePoll(nodeGroup, readyReplicasCount)
+	machineDeployment := createMachineDeploymentFromEKSNodePool(nodeGroup, readyReplicasCount)
 
 	return &machineDeployment, err
 }
 
-func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
+func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
 	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{

@@ -434,13 +434,10 @@ func IsNodeReady(node *corev1.Node) bool {
 func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerNodePoolName string) int32 {
 	var readyReplicasCount int32
 	for _, node := range nodes.Items {
-		if node.Labels != nil {
-			if node.Labels[providerNodeLabel] == providerNodePoolName {
-				if IsNodeReady(&node) {
-					readyReplicasCount++
-				}
-			}
+		if node.Labels[providerNodeLabel] == providerNodePoolName && IsNodeReady(&node) {
+			readyReplicasCount++
 		}
+
 	}
 
 	return readyReplicasCount

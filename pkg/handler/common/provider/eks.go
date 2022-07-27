@@ -47,11 +47,7 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 		return nil, err
 	}
 
-	clusters, err := eksprovider.ListCluster(client)
-	if err != nil {
-		return nil, err
-	}
-	return clusters, nil
+	return eksprovider.ListClusters(client)
 }
 
 func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
@@ -108,7 +104,7 @@ func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error
 		return err
 	}
 
-	_, err = eksprovider.ListCluster(client)
+	_, err = eksprovider.ListClusters(client)
 
 	return err
 }
