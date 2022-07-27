@@ -78,10 +78,6 @@ retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
-# TODO: remove
-echodate "Debug"
-cat hack/ci/testdata/oauth_values.yaml
-
 echodate "Creating Azure preset..."
 cat << EOF > preset-azure.yaml
 apiVersion: kubermatic.k8c.io/v1
