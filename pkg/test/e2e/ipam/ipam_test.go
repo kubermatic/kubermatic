@@ -88,6 +88,14 @@ func TestIPAM(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	// TODO: test block, should be deleted {
+	addon := &kubermaticv1.Addon{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: "metallb", Namespace: cluster1.Status.NamespaceName}, addon); err != nil {
+		t.Fatal(err.Error())
+	}
+	log.Infof("MetalLB addon: %+v", addon)
+	//}
+
 	log.Info("Checking IPAM Pool 1 allocation on first cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
@@ -304,7 +312,10 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
 	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
-		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
+		type IPAddressPool struct {
+			metallbv1beta1.IPAddressPool
+		}
+		metallbIPAddressPool := &IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
