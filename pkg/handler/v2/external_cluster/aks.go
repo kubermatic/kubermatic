@@ -107,7 +107,6 @@ func DecodeAKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 		return nil, err
 	}
 	req.AKSCommonReq = commonReq.(AKSCommonReq)
-
 	return req, nil
 }
 
@@ -199,7 +198,10 @@ type AKSClusterListReq struct {
 
 func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AKSClusterListReq)
+		req, ok := request.(AKSClusterListReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -215,7 +217,10 @@ func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 
 func ListAKSVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AKSVMSizesReq)
+		req, ok := request.(AKSVMSizesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -250,8 +255,10 @@ func (req AKSCommonReq) Validate() error {
 
 func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AKSTypesReq)
-
+		req, ok := request.(AKSTypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
@@ -840,7 +847,10 @@ func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserI
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -900,7 +910,10 @@ func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserI
 
 func AKSSizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(aksNoCredentialReq)
+		req, ok := request.(aksNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}

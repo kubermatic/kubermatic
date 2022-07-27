@@ -58,7 +58,10 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -107,7 +110,10 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -164,7 +170,10 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -199,7 +208,10 @@ func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfo
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -826,7 +838,10 @@ type GKEVersionsReq struct {
 
 func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GKEVersionsReq)
+		req, ok := request.(GKEVersionsReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -964,7 +979,10 @@ func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) 
 
 func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GKEClusterListReq)
+		req, ok := request.(GKEClusterListReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
@@ -979,7 +997,10 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 
 func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GKEImagesReq)
+		req, ok := request.(GKEImagesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -998,7 +1019,10 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 
 func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GKECommonReq)
+		req, ok := request.(GKECommonReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -1036,8 +1060,10 @@ type GKEClusterListReq struct {
 
 func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GKETypesReq)
-
+		req, ok := request.(GKETypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		var err error
 		sa := req.ServiceAccount
 		if len(req.Credential) > 0 {

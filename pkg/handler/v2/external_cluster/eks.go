@@ -201,7 +201,10 @@ func (req eksSubnetsNoCredentialReq) Validate() error {
 
 func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSClusterListReq)
+		req, ok := request.(EKSClusterListReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -216,7 +219,10 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 
 func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSTypesReq)
+		req, ok := request.(EKSTypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -232,7 +238,10 @@ func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider p
 
 func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSReq)
+		req, ok := request.(EKSReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -248,7 +257,10 @@ func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 
 func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSReq)
+		req, ok := request.(EKSReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -264,8 +276,10 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 
 func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSTypesReq)
-
+		req, ok := request.(EKSTypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
@@ -277,7 +291,10 @@ func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 
 func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(EKSTypesReq)
+		req, ok := request.(EKSTypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -743,7 +760,10 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(eksNoCredentialReq)
+		req, ok := request.(eksNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -779,7 +799,10 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 
 func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(eksNoCredentialReq)
+		req, ok := request.(eksNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -815,7 +838,10 @@ func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGette
 
 func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(eksSubnetsNoCredentialReq)
+		req, ok := request.(eksSubnetsNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
