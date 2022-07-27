@@ -24,6 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
+	applicationsecretclustercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
 	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
@@ -81,6 +82,7 @@ var AllControllers = map[string]controllerCreator{
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
+	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -461,5 +463,16 @@ func createClusterCredentialsController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.log,
 		ctrlCtx.versions,
+	)
+}
+
+func createApplicationSecretClusterController(ctrlCtx *controllerContext) error {
+	return applicationsecretclustercontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.namespace,
 	)
 }

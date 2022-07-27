@@ -40,7 +40,7 @@ import (
 
 const (
 	ControllerName       = "kkp-application-secret-synchronizer"
-	secretTypeAnnotation = "apps.kubermatic.k8c.io/secret-type"
+	SecretTypeAnnotation = "apps.kubermatic.k8c.io/secret-type"
 )
 
 type reconciler struct {
@@ -75,7 +75,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(secretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(SecretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
