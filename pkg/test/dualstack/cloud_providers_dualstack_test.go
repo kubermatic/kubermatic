@@ -101,19 +101,19 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	tests := []testCase{
 		{
 			cloudName: "azure",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "cilium",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "azure",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "canal",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName:           "aws",
-			osNames:             []string{"flatcar"},
+			osNames:             []string{"rockylinux"},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
@@ -121,7 +121,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName:           "aws",
-			osNames:             []string{"flatcar"},
+			osNames:             []string{"rockylinux"},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
@@ -129,7 +129,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName:           "gcp",
-			osNames:             []string{"flatcar"},
+			osNames:             []string{"rockylinux"},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
@@ -137,7 +137,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName:           "gcp",
-			osNames:             []string{"flatcar"},
+			osNames:             []string{"rockylinux"},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
@@ -145,61 +145,61 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName: "openstack",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "cilium",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "openstack",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "canal",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "cilium",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "hetzner",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "canal",
 			ipFamily:  util.DualStack,
 		}, {
 			cloudName: "do",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "cilium",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "do",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "canal",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "equinix",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "canal",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName: "equinix",
-			osNames:   []string{"flatcar"},
+			osNames:   []string{"rockylinux"},
 			cni:       "cilium",
 			ipFamily:  util.DualStack,
 		},
 		{
 			cloudName:              "vsphere",
-			osNames:                []string{"flatcar"},
+			osNames:                []string{"rockylinux"},
 			cni:                    "canal",
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
 			cloudName:              "vsphere",
-			osNames:                []string{"flatcar"},
+			osNames:                []string{"rockylinux"},
 			cni:                    "cilium",
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
