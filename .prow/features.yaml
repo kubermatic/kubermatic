@@ -142,8 +142,6 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: all
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -184,8 +182,6 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: all
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -225,8 +221,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: azure
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
