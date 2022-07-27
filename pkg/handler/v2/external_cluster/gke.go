@@ -1107,7 +1107,7 @@ func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string)
 	}
 
 	versions := make([]*apiv1.MasterVersion, 0)
-	if mode == "Manual" {
+	if mode == ManualMode {
 		for _, v := range resp.ValidMasterVersions {
 			validVersion, err := semverlib.NewVersion(v)
 			if err != nil {
@@ -1118,7 +1118,7 @@ func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string)
 				Default: v == resp.DefaultClusterVersion,
 			})
 		}
-	} else if mode == "Auto" {
+	} else if mode == AutoMode {
 		for _, channel := range resp.Channels {
 			// select versions from the current channel
 			if channel.Channel == releaseChannel {
