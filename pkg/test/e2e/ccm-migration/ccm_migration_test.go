@@ -23,7 +23,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -66,7 +66,7 @@ type testOptions struct {
 
 var (
 	options = testOptions{
-		kubernetesVersion: *semver.NewSemverOrDie(os.Getenv("VERSION_TO_TEST")),
+		kubernetesVersion: *defaults.DefaultKubernetesVersioning.Default,
 		logOptions:        e2eutils.DefaultLogOptions,
 	}
 )

@@ -56,7 +56,7 @@ const (
 type reconciler struct {
 	log          *zap.SugaredLogger
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 	recorder     record.EventRecorder
 }
 
@@ -68,7 +68,7 @@ func Add(masterMgr manager.Manager,
 	r := &reconciler{
 		log:          log,
 		masterClient: masterMgr.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
@@ -107,7 +107,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
 
-	err := r.reconcile(ctx, log, request)
+	resourceQuota := &kubermaticv1.ResourceQuota{}
+	if err := r.masterClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
+		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	err := r.reconcile(ctx, log, resourceQuota)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -115,27 +120,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota, action func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error) error {
-	for seedName, seedClient := range r.seedClients {
-		log := log.With("seed", seedName)
-
-		log.Debug("Reconciling resourceQuota with seed")
-
-		err := action(seedClient, resourceQuota)
-		if err != nil {
-			return fmt.Errorf("failed syncing resourceQuota %s for seed %s: %w", resourceQuota.Name, seedName, err)
-		}
-		log.Debug("Reconciled resourceQuota with seed")
-	}
-	return nil
-}
-
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-	resourceQuota := &kubermaticv1.ResourceQuota{}
-	if err := r.masterClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota) error {
 	// handling deletion
 	if !resourceQuota.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, resourceQuota); err != nil {
@@ -152,7 +137,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		resourceQuotaCreatorGetter(resourceQuota),
 	}
 
-	return r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, rq *kubermaticv1.ResourceQuota) error {
+	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		// ensure resource quota
 		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaCreatorGetters, "", seedClient); err != nil {
 			return err
@@ -172,7 +157,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return nil
 	}
 
-	err := r.syncAllSeeds(log, resourceQuota, func(seedClient ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		err := seedClient.Delete(ctx, &kubermaticv1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceQuota.Name,

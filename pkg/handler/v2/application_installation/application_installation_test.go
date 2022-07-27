@@ -85,6 +85,7 @@ func TestListApplicationInstallations(t *testing.T) {
 							},
 						},
 					},
+					Status: &apiv2.ApplicationInstallationStatus{},
 				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -103,6 +104,7 @@ func TestListApplicationInstallations(t *testing.T) {
 							},
 						},
 					},
+					Status: &apiv2.ApplicationInstallationStatus{},
 				},
 			},
 		},
@@ -179,6 +181,7 @@ func TestCreateApplicationInstallation(t *testing.T) {
 						},
 					},
 				},
+				Status: &apiv2.ApplicationInstallationStatus{},
 			},
 		},
 	}
@@ -356,6 +359,7 @@ func TestGetApplication(t *testing.T) {
 						},
 					},
 				},
+				Status: &apiv2.ApplicationInstallationStatus{},
 			},
 		},
 	}
@@ -435,6 +439,7 @@ func TestUpdateApplicationInstallation(t *testing.T) {
 					},
 					Values: *test.CreateRawVariables(t, map[string]interface{}{"key": "val"}),
 				},
+				Status: &apiv2.ApplicationInstallationStatus{},
 			},
 		},
 		{

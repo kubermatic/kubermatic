@@ -22,13 +22,13 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -67,7 +67,7 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func TestEnsureBackupCronJob(t *testing.T) {
-	version := *semver.NewSemverOrDie("1.22.5")
+	version := *defaults.DefaultKubernetesVersioning.Default
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",

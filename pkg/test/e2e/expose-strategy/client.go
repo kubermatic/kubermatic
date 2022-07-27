@@ -96,7 +96,7 @@ func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, ex
 	s := 0
 	for i := 0; i < retries; i++ {
 		stdout, stderr, err := cj.Exec(clientContainerName, "/bin/sh", "-c", filterCmd)
-		if err != nil || len(stderr) > 0 {
+		if err != nil {
 			cj.Log.Infof("Failed to execute %q: %v, stdout: %q, stderr: %q", filterCmd, err, stdout, stderr)
 		} else {
 			rawVersion := strings.TrimSpace(stdout)

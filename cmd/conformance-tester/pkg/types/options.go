@@ -34,6 +34,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -66,7 +67,7 @@ type Options struct {
 	ClusterParallelCount          int
 	WorkerName                    string
 	HomeDir                       string
-	versionsFlag                  string
+	releasesFlag                  string
 	Versions                      []*kubermativsemver.Semver
 	distributionsFlag             string
 	excludeDistributionsFlag      string
@@ -98,7 +99,7 @@ func NewDefaultOptions() *Options {
 		providersFlag:                strings.Join(providers.List(), ","),
 		Providers:                    providers,
 		PublicKeys:                   [][]byte{},
-		versionsFlag:                 strings.Join(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions), ","),
+		releasesFlag:                 strings.Join(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions), ","),
 		Versions:                     []*kubermativsemver.Semver{},
 		KubermaticNamespace:          "kubermatic",
 		KubermaticSeedName:           "kubermatic",
@@ -139,7 +140,7 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&o.WorkerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.StringVar(&o.versionsFlag, "versions", o.versionsFlag, "a comma-separated list of versions to test")
+	flag.StringVar(&o.releasesFlag, "releases", o.releasesFlag, "a comma-separated list of Kubernetes releases (e.g. '1.24') to test")
 	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.StringVar(&o.excludeDistributionsFlag, "exclude-distributions", o.excludeDistributionsFlag, "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
 	flag.BoolVar(&o.OnlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
@@ -166,8 +167,19 @@ func (o *Options) ParseFlags() error {
 	}
 
 	o.Versions = []*kubermativsemver.Semver{}
-	for _, s := range strings.Split(o.versionsFlag, ",") {
-		o.Versions = append(o.Versions, kubermativsemver.NewSemverOrDie(s))
+	for _, release := range strings.Split(o.releasesFlag, ",") {
+		version := test.LatestKubernetesVersionForRelease(release, nil)
+		if version == nil {
+			return fmt.Errorf("no version found for release %q", release)
+		}
+
+		o.Versions = append(o.Versions, version)
+	}
+
+	// periodics do not specify a version at all and just rely on us auto-determining
+	// the most recent stable (stable = latest-1) supported Kubernetes version
+	if len(o.Versions) == 0 {
+		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
 	}
 
 	var err error
