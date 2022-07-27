@@ -33,8 +33,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: PROVIDER
               value: "hetzner"
             - name: DISTRIBUTIONS

@@ -121,11 +121,6 @@ func CreateEndpoint(
 		return nil, utilerrors.NewAlreadyExists("cluster", partialCluster.Spec.HumanReadableName)
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
-		return nil, err
-	}
-	kuberneteshelper.AddFinalizer(partialCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
-
 	newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)

@@ -28,9 +28,9 @@ import (
 var (
 	cs                = appskubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
 	secretKeySelector = &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "git-cred"}, Key: "thekey"}
-	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
-	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: appskubermaticv1.HelmTemplateMethod, Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
-	spec              = appskubermaticv1.ApplicationDefinitionSpec{Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
+	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
+	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
+	spec              = appskubermaticv1.ApplicationDefinitionSpec{Method: appskubermaticv1.HelmTemplateMethod, Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
 )
 
 func validHelmSource() *appskubermaticv1.HelmSource {
@@ -53,7 +53,7 @@ func validGitSource() *appskubermaticv1.GitSource {
 	}
 }
 
-func TestValidateApplicationDefinition(t *testing.T) {
+func TestValidateApplicationDefinitionSpec(t *testing.T) {
 	tt := map[string]struct {
 		ad        appskubermaticv1.ApplicationDefinition
 		expErrLen int
@@ -83,7 +83,7 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = "invalid"
+					s.Method = "invalid"
 					return *s
 				}(),
 			},
@@ -93,7 +93,7 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
+					s.Method = appskubermaticv1.HelmTemplateMethod
 					return *s
 				}(),
 			},
@@ -103,7 +103,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{}
 					return *s
 				}(),
@@ -114,7 +113,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: validGitSource(), Helm: validHelmSource()}
 					return *s
 				}(),
@@ -125,7 +123,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "",
 						Ref:         appskubermaticv1.GitReference{Branch: "master"},
@@ -141,7 +138,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "",
 						ChartName:    "chartname",
@@ -157,7 +153,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "https://localhost/myrepo",
 						ChartName:    "",
@@ -173,7 +168,6 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "https://localhost/myrepo",
 						ChartName:    "chartname",
@@ -190,7 +184,7 @@ func TestValidateApplicationDefinition(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
-			errl := ValidateApplicationDefinition(tc.ad)
+			errl := ValidateApplicationDefinitionSpec(tc.ad)
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
@@ -208,7 +202,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "http://localhost/myrepo",
 						ChartName:    "chartname",
@@ -224,7 +217,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "https://localhost/myrepo",
 						ChartName:    "chartname",
@@ -240,7 +232,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "oci://localhost:5000/myrepo",
 						ChartName:    "chartname",
@@ -256,7 +247,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "",
 						ChartName:    "chartname",
@@ -272,7 +262,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "ssh://localhost:5000/myrepo",
 						ChartName:    "chartname",
@@ -288,7 +277,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "http://",
 						ChartName:    "chartname",
@@ -304,7 +292,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "https://",
 						ChartName:    "chartname",
@@ -320,7 +307,6 @@ func TestValidateHelmUrl(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
 						URL:          "oci://",
 						ChartName:    "chartname",
@@ -337,7 +323,7 @@ func TestValidateHelmUrl(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
-			errl := ValidateApplicationDefinition(tc.ad)
+			errl := ValidateApplicationDefinitionSpec(tc.ad)
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
@@ -355,7 +341,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: "master"},
@@ -371,7 +356,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0"},
@@ -387,10 +371,9 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794", Branch: "master"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -403,7 +386,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: "master", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
@@ -419,7 +401,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{},
@@ -435,7 +416,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
@@ -451,7 +431,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Branch: "master"},
@@ -467,7 +446,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: ""},
@@ -483,7 +461,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: ""},
@@ -499,7 +476,6 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: ""},
@@ -515,10 +491,24 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "abc"},
+						Ref:         appskubermaticv1.GitReference{Commit: "abc", Branch: "master"},
+						Path:        "",
+						Credentials: nil,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid Ref is commit without branch": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
+						Remote:      "https://localhost/repo.git",
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -531,10 +521,9 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong", Branch: "master"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -547,10 +536,9 @@ func TestValidateGitRef(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794", Branch: "master"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -564,7 +552,7 @@ func TestValidateGitRef(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
-			errl := ValidateApplicationDefinition(tc.ad)
+			errl := ValidateApplicationDefinitionSpec(tc.ad)
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
@@ -582,7 +570,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodToken, Token: secretKeySelector}
 					return *s
 				}(),
@@ -593,7 +580,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodPassword, Username: secretKeySelector, Password: secretKeySelector}
 					return *s
 				}(),
@@ -604,7 +590,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodSSHKey, SSHKey: secretKeySelector}
 					return *s
 				}(),
@@ -615,7 +600,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodToken, Token: nil}
 					return *s
 				}(),
@@ -626,7 +610,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodPassword, Username: nil, Password: secretKeySelector}
 					return *s
 				}(),
@@ -637,7 +620,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodPassword, Username: secretKeySelector, Password: nil}
 					return *s
 				}(),
@@ -648,7 +630,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodPassword, Username: nil, Password: nil}
 					return *s
 				}(),
@@ -659,7 +640,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: appskubermaticv1.GitAuthMethodSSHKey, SSHKey: nil}
 					return *s
 				}(),
@@ -670,7 +650,6 @@ func TestValidateGitCredentials(t *testing.T) {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[1].Template.Method = appskubermaticv1.HelmTemplateMethod
 					s.Versions[1].Template.Source.Git.Credentials = &appskubermaticv1.GitCredentials{Method: "unknown"}
 					return *s
 				}(),
@@ -682,7 +661,7 @@ func TestValidateGitCredentials(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
-			errl := ValidateApplicationDefinition(tc.ad)
+			errl := ValidateApplicationDefinitionSpec(tc.ad)
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
@@ -698,20 +677,20 @@ func TestValidateApplicationVersions(t *testing.T) {
 	}{
 		"duplicate version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
 			},
 			1,
 		},
 		"invalid kkp version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
 			},
 			1,
 		},
 		"invalid k8s version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}, Method: appskubermaticv1.HelmTemplateMethod}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
 			},
 			1,
 		},
@@ -719,6 +698,60 @@ func TestValidateApplicationVersions(t *testing.T) {
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
 			errl := ValidateApplicationVersions(tc.vs, nil)
+			if len(errl) != tc.expErrLen {
+				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
+			}
+		})
+	}
+}
+
+func TestValidateApplicationDefinitionUpdate(t *testing.T) {
+	appDef := appskubermaticv1.ApplicationDefinition{
+		Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+			s := spec.DeepCopy()
+			s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "https://kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
+			return *s
+		}(),
+	}
+
+	tt := map[string]struct {
+		oldAd     appskubermaticv1.ApplicationDefinition
+		newAd     appskubermaticv1.ApplicationDefinition
+		expErrLen int
+	}{
+		"Update ApplicationDefinition Success": {
+			oldAd: appDef,
+			newAd: appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					spec := appDef.Spec.DeepCopy()
+					spec.Description = "new description"
+					return *spec
+				}(),
+			},
+			expErrLen: 0,
+		},
+		"Update ApplicationDefinition failure - .Spec.Method is immutable": {
+			oldAd: appDef,
+			newAd: appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					spec := appDef.Spec.DeepCopy()
+					spec.Method = "foo"
+					return *spec
+				}(),
+			},
+			// Current we only support one Method which is helm. So we got 2 errors:
+			//  1) spec.method: Unsupported value "foo"
+			//  2) spec.method: Invalid value: "foo": field is immutable
+			expErrLen: 2,
+		},
+	}
+
+	for name, tc := range tt {
+		t.Run(name, func(t *testing.T) {
+			tc.oldAd.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+			tc.newAd.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+			errl := ValidateApplicationDefinitionUpdate(tc.newAd, tc.oldAd)
+
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
 			}

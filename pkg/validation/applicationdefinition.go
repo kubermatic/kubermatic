@@ -25,16 +25,33 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func ValidateApplicationDefinition(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
+func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	var parentFieldPath *field.Path = nil
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
 
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
+
+	return allErrs
+}
+
+func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefinition, oldAd appskubermaticv1.ApplicationDefinition) field.ErrorList {
+	var parentFieldPath *field.Path = nil
+
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateApplicationDefinitionSpec(newAd)...)
+
+	// Validate .Spec.Method for immutability
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAd.Spec.Method,
+		oldAd.Spec.Method,
+		parentFieldPath.Child("spec.method"),
+	)...)
 
 	return allErrs
 }
@@ -95,12 +112,17 @@ func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) []*
 
 func validateGitRef(ref appskubermaticv1.GitReference, f *field.Path) *field.Error {
 	if len(ref.Tag) == 0 && len(ref.Branch) == 0 && len(ref.Commit) == 0 {
-		return field.Required(f, "at least a branch, a commit or tag must be defined")
+		return field.Required(f, "at least a branch, a tag  or a commint and branch must be defined")
 	}
 
 	if len(ref.Tag) > 0 && (len(ref.Branch) > 0 || len(ref.Commit) > 0) {
 		return field.Forbidden(f.Child("tag"), "tag can not be used in conjunction with branch or commit")
 	}
+
+	if len(ref.Commit) > 0 && len(ref.Branch) == 0 {
+		return field.Forbidden(f.Child("commit"), "commit must be used in conjunction with branch")
+	}
+
 	return nil
 }
 

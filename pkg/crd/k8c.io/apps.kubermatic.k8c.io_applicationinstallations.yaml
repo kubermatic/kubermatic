@@ -154,11 +154,6 @@ spec:
                           - type
                           type: object
                         type: array
-                      method:
-                        description: Method used to install the application
-                        enum:
-                        - helm
-                        type: string
                       source:
                         description: Defined how the source of the application (e.g
                           Helm chart) is retrieved
@@ -287,10 +282,9 @@ spec:
                                       to reduce the amount of data to download.
                                     type: string
                                   commit:
-                                    description: "Commit SHA to checkout. \n It can
-                                      be used in conjunction with branch to to avoid
-                                      to clone the all repository. The commit must
-                                      belong to this branch."
+                                    description: "Commit SHA in a Branch to checkout.
+                                      \n It must be used in conjunction with branch
+                                      field."
                                     pattern: ^[a-f0-9]{40}$
                                     type: string
                                   tag:
@@ -384,7 +378,6 @@ spec:
                             type: object
                         type: object
                     required:
-                    - method
                     - source
                     type: object
                   version:
@@ -467,6 +460,13 @@ spec:
               lastUpdated:
                 format: date-time
                 type: string
+              method:
+                description: Method used to install the application
+                enum:
+                - helm
+                type: string
+            required:
+            - method
             type: object
         type: object
     served: true

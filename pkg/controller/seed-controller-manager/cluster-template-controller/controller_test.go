@@ -160,7 +160,6 @@ func genCluster(name, userEmail string, instance kubermaticv1.ClusterTemplateIns
 			Name:            name,
 			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubernetes.ClusterTemplateInstanceLabelKey: instance.Name},
 			ResourceVersion: "1",
-			Finalizers:      []string{kubermaticv1.CredentialsSecretsCleanupFinalizer},
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
 		Spec: kubermaticv1.ClusterSpec{

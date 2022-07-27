@@ -359,7 +359,6 @@ func (a do) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Digitalocean: &models.DigitaloceanNodeSpec{
 			Backups:    false,
-			IPV6:       true, // TODO: Could be set to false once MC is fixed.
 			Monitoring: false,
 			Size:       pointer.String("c-2"),
 		},
@@ -393,6 +392,35 @@ func (a equinix) CloudSpec() models.CloudSpec {
 		Packet: &models.PacketCloudSpec{
 			APIKey:    os.Getenv("METAL_AUTH_TOKEN"),
 			ProjectID: os.Getenv("METAL_PROJECT_ID"),
+		},
+	}
+}
+
+type vsphere struct{}
+
+var _ clusterSpec = vsphere{}
+
+func (a vsphere) NodeSpec() models.NodeCloudSpec {
+	return models.NodeCloudSpec{
+		Vsphere: &models.VSphereNodeSpec{
+			Template:   "ubuntu-20.04",
+			CPUs:       2,
+			Memory:     4096,
+			DiskSizeGB: 10,
+		},
+	}
+}
+
+func (a vsphere) CloudSpec() models.CloudSpec {
+	return models.CloudSpec{
+		DatacenterName: "vsphere-ger",
+		Vsphere: &models.VSphereCloudSpec{
+			Username: os.Getenv("VSPHERE_USERNAME"),
+			Password: os.Getenv("VSPHERE_PASSWORD"),
+			InfraManagementUser: &models.VSphereCredentials{
+				Username: os.Getenv("VSPHERE_USERNAME"),
+				Password: os.Getenv("VSPHERE_PASSWORD"),
+			},
 		},
 	}
 }

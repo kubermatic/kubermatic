@@ -62,6 +62,7 @@ var cloudProviders = map[string]clusterSpec{
 	"hetzner":   hetzner{},
 	"do":        do{},
 	"equinix":   equinix{},
+	"vsphere":   vsphere{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -88,12 +89,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	apicli := utils.NewTestClient(token, t)
 
 	type testCase struct {
-		cloudName           string
-		osNames             []string
-		cni                 string
-		ipFamily            util.IPFamily
-		skipNodes           bool
-		skipHostNetworkPods bool
+		cloudName              string
+		osNames                []string
+		cni                    string
+		ipFamily               util.IPFamily
+		skipNodes              bool
+		skipHostNetworkPods    bool
+		skipEgressConnectivity bool
 	}
 
 	tests := []testCase{
@@ -221,6 +223,24 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cni:      "cilium",
 			ipFamily: util.DualStack,
 		},
+		{
+			cloudName: "vsphere",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                    "canal",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+		{
+			cloudName: "vsphere",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                    "cilium",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
 	}
 
 	retestBudget := 2
@@ -345,7 +365,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				t.Fatalf("pods never became ready: %v", err)
 			}
 
-			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
+			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods, test.skipEgressConnectivity)
 		})
 	}
 }

@@ -131,6 +131,9 @@ type ApplicationInstallationStatus struct {
 	// ApplicationVersion contains information installing / removing application
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
 
+	// Method used to install the application
+	Method TemplateMethod `json:"method"`
+
 	// HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
 	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
 }
@@ -180,6 +183,8 @@ type ApplicationInstallationCondition struct {
 }
 
 // +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
+
+// swagger:enum ApplicationInstallationConditionType
 type ApplicationInstallationConditionType string
 
 const (

@@ -437,7 +437,6 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(ctx, config, r.Client),
-		kubermatic.ResourceQuotaMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 

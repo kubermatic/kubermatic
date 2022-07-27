@@ -469,8 +469,8 @@ go_test() {
 
   # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
   if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-    go test $@ 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
+    go test "$@" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
   else
-    go test $@
+    go test "$@"
   fi
 }

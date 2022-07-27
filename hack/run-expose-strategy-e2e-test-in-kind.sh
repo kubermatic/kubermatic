@@ -39,7 +39,6 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.11}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
@@ -206,7 +205,7 @@ echodate "Kubermatic ingress domain patched."
 echodate "Running tests..."
 
 go_test expose_strategy_e2e -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
-  -cluster-version "$USER_CLUSTER_KUBERNETES_VERSION" \
+  -cluster-version "${USER_CLUSTER_KUBERNETES_VERSION:-}" \
   -datacenter byo-kubernetes
 
 echodate "Done."

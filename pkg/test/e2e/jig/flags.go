@@ -56,11 +56,11 @@ func ClusterVersion(log *zap.SugaredLogger) string {
 	if version != "" {
 		v = version
 	} else if vv := os.Getenv("VERSION_TO_TEST"); vv != "" {
-		log.Info("Defaulting cluster version to VERSION_TO_TEST", "version", vv)
+		log.Infow("Defaulting cluster version to VERSION_TO_TEST", "version", vv)
 		v = vv
 	} else {
 		v = defaults.DefaultKubernetesVersioning.Default.String()
-		log.Info("Defaulting cluster version to DefaultKubernetesVersioning", "version", v)
+		log.Infow("Defaulting cluster version to DefaultKubernetesVersioning", "version", v)
 	}
 
 	// consistently output a leading "v"

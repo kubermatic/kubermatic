@@ -42,19 +42,21 @@ const (
 )
 
 var (
-	userconfig          string
-	ipFamily            string
-	cni                 string
-	skipNodes           bool
-	skipHostNetworkPods bool
+	userconfig             string
+	ipFamily               string
+	cni                    string
+	skipNodes              bool
+	skipHostNetworkPods    bool
+	skipEgressConnectivity bool
 )
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
 	flag.StringVar(&cni, "cni", "", "CNI cilium|canal")
-	flag.BoolVar(&skipNodes, "skipNodes", true, "Set false to test nodes")
-	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
+	flag.BoolVar(&skipNodes, "skipNodes", false, "If true, skips node IP address tests")
+	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", false, "If true, skips host network pods IP test")
+	flag.BoolVar(&skipEgressConnectivity, "skipEgressConnectivity", false, "If true, skips egress connectivity test")
 }
 
 // TestClusterIPFamily is used to run dualstack test against any cluster. Takes kubeconfig of the cluster as command line
@@ -78,10 +80,10 @@ func TestClusterIPFamily(t *testing.T) {
 		t.Fatalf("failed to create usercluster client: %s", err)
 	}
 
-	testUserCluster(t, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods)
+	testUserCluster(t, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods, skipEgressConnectivity)
 }
 
-func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods bool) {
+func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods, skipEgressConnectivity bool) {
 	t.Logf("testing with IP family: %q", ipFamily)
 	ctx := context.Background()
 
@@ -169,14 +171,18 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 	}
 
 	// validate egress connectivity
-	switch ipFamily {
-	case util.IPv4, util.Unspecified:
-		validateEgressConnectivity(t, userclusterClient, 4)
-	case util.IPv6:
-		validateEgressConnectivity(t, userclusterClient, 6)
-	case util.DualStack:
-		validateEgressConnectivity(t, userclusterClient, 4)
-		validateEgressConnectivity(t, userclusterClient, 6)
+	if skipEgressConnectivity {
+		t.Log("skipping validation of egress connectivity")
+	} else {
+		switch ipFamily {
+		case util.IPv4, util.Unspecified:
+			validateEgressConnectivity(t, userclusterClient, 4)
+		case util.IPv6:
+			validateEgressConnectivity(t, userclusterClient, 6)
+		case util.DualStack:
+			validateEgressConnectivity(t, userclusterClient, 4)
+			validateEgressConnectivity(t, userclusterClient, 6)
+		}
 	}
 }
 

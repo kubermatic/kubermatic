@@ -140,8 +140,6 @@ presubmits:
           env:
             - name: CNI
               value: cilium
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -180,8 +178,6 @@ presubmits:
           env:
             - name: CNI
               value: canal
-            - name: VERSION_TO_TEST
-              value: v1.23.8
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -373,8 +369,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: KUBERMATIC_OSM_ENABLED
