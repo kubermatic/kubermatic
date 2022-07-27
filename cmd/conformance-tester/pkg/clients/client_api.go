@@ -94,7 +94,7 @@ func (c *apiClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 			metrics.KubermaticLoginDurationMetric.WithLabelValues(),
 			log,
 			func() error {
-				token, err = dexClient.Login(ctx, login, password, dex.OIDCLocalConnector)
+				token, err = dexClient.Login(ctx, login, password, dex.LocalConnector)
 				return err
 			},
 		); err != nil {

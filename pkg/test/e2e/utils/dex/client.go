@@ -30,11 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 )
 
-type OIDCConnectorType string
+type ConnectorType string
 
 const (
-	OIDCLocalConnector OIDCConnectorType = "local"
-	OIDCLDAPConnector  OIDCConnectorType = "ldap"
+	LocalConnector ConnectorType = "local"
+	LDAPConnector  ConnectorType = "ldap"
 )
 
 // Client is a Dex client that uses Dex' web UI to acquire an ID token.
@@ -73,7 +73,7 @@ func NewClient(clientID string, redirectURI string, providerURI string, log *zap
 	}, nil
 }
 
-func (c *Client) Login(ctx context.Context, login, password string, connector OIDCConnectorType) (string, error) {
+func (c *Client) Login(ctx context.Context, login, password string, connector ConnectorType) (string, error) {
 	var accessToken string
 
 	err := wait.PollImmediate(3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
@@ -84,7 +84,7 @@ func (c *Client) Login(ctx context.Context, login, password string, connector OI
 	return accessToken, err
 }
 
-func (c *Client) tryLogin(ctx context.Context, login, password string, connector OIDCConnectorType) (string, error) {
+func (c *Client) tryLogin(ctx context.Context, login, password string, connector ConnectorType) (string, error) {
 	c.log.Debug("Attempting login")
 
 	// fetch login page and acquire the nonce
@@ -106,7 +106,7 @@ func (c *Client) tryLogin(ctx context.Context, login, password string, connector
 	return token, nil
 }
 
-func (c *Client) fetchLoginURL(ctx context.Context, connector OIDCConnectorType) (*url.URL, error) {
+func (c *Client) fetchLoginURL(ctx context.Context, connector ConnectorType) (*url.URL, error) {
 	// quick&dirty URL clone, so we don't change the u argument
 	loginURL, err := url.Parse(c.ProviderURI)
 	if err != nil {

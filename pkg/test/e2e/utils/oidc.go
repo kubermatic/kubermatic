@@ -97,7 +97,7 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password, dex.OIDCLocalConnector)
+	return retrieveToken(ctx, &masterToken, login, password, dex.LocalConnector)
 }
 
 func RetrieveLDAPToken(ctx context.Context) (string, error) {
@@ -106,7 +106,7 @@ func RetrieveLDAPToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &ldapToken, login, password, dex.OIDCLDAPConnector)
+	return retrieveToken(ctx, &ldapToken, login, password, dex.LDAPConnector)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
@@ -115,10 +115,10 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &adminMasterToken, login, password, dex.OIDCLocalConnector)
+	return retrieveToken(ctx, &adminMasterToken, login, password, dex.LocalConnector)
 }
 
-func retrieveToken(ctx context.Context, token *string, login, password string, connector dex.OIDCConnectorType) (string, error) {
+func retrieveToken(ctx context.Context, token *string, login, password string, connector dex.ConnectorType) (string, error) {
 	// re-use the previous token
 	if token != nil && *token != "" {
 		return *token, nil
