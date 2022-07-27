@@ -28,8 +28,15 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var noStatusUodate util.StatusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
+	// NO OP
+}
+
 // ApplicationInstallerRecorder is a fake ApplicationInstaller that records calls to apply and delete for testing assertions.
 type ApplicationInstallerRecorder struct {
+	// DownloadEvents stores the call to download function. Key is the name of the applicationInstallation.
+	DownloadEvents sync.Map
+
 	// ApplyEvents stores the call to apply function. Key is the name of the applicationInstallation.
 	ApplyEvents sync.Map
 
@@ -37,26 +44,43 @@ type ApplicationInstallerRecorder struct {
 	DeleteEvents sync.Map
 }
 
-func (a *ApplicationInstallerRecorder) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
+func (a *ApplicationInstallerRecorder) GetAppCache() string {
+	return ""
+}
+
+func (a *ApplicationInstallerRecorder) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+	a.DownloadEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
+	return "", nil
+}
+
+func (a *ApplicationInstallerRecorder) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
 	a.ApplyEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
-	return nil, nil
+	return noStatusUodate, nil
 }
 
 func (a *ApplicationInstallerRecorder) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	a.DeleteEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
-	return nil, nil
+	return noStatusUodate, nil
 }
 
 // ApplicationInstallerLogger is a fake ApplicationInstaller that just logs actions. it's used for the development of the controller.
 type ApplicationInstallerLogger struct {
 }
 
+func (a ApplicationInstallerLogger) GetAppCache() string {
+	return ""
+}
+
+func (a ApplicationInstallerLogger) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+	log.Debugf("Download application's source %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
+	return "", nil
+}
 func (a ApplicationInstallerLogger) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	log.Debugf("Install application %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
-	return nil, nil
+	return noStatusUodate, nil
 }
 
 func (a ApplicationInstallerLogger) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	log.Debugf("Uninstall application %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
-	return nil, nil
+	return noStatusUodate, nil
 }

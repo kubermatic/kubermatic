@@ -25,9 +25,8 @@ type ApplicationInstallationStatus struct {
 	// application version
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
 
-	// last updated
-	// Format: date-time
-	LastUpdated Time `json:"lastUpdated,omitempty"`
+	// method
+	Method TemplateMethod `json:"method,omitempty"`
 }
 
 // Validate validates this application installation status
@@ -42,7 +41,7 @@ func (m *ApplicationInstallationStatus) Validate(formats strfmt.Registry) error 
 		res = append(res, err)
 	}
 
-	if err := m.validateLastUpdated(formats); err != nil {
+	if err := m.validateMethod(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -97,16 +96,16 @@ func (m *ApplicationInstallationStatus) validateApplicationVersion(formats strfm
 	return nil
 }
 
-func (m *ApplicationInstallationStatus) validateLastUpdated(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastUpdated) { // not required
+func (m *ApplicationInstallationStatus) validateMethod(formats strfmt.Registry) error {
+	if swag.IsZero(m.Method) { // not required
 		return nil
 	}
 
-	if err := m.LastUpdated.Validate(formats); err != nil {
+	if err := m.Method.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastUpdated")
+			return ve.ValidateName("method")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastUpdated")
+			return ce.ValidateName("method")
 		}
 		return err
 	}
@@ -126,7 +125,7 @@ func (m *ApplicationInstallationStatus) ContextValidate(ctx context.Context, for
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateLastUpdated(ctx, formats); err != nil {
+	if err := m.contextValidateMethod(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -172,13 +171,13 @@ func (m *ApplicationInstallationStatus) contextValidateApplicationVersion(ctx co
 	return nil
 }
 
-func (m *ApplicationInstallationStatus) contextValidateLastUpdated(ctx context.Context, formats strfmt.Registry) error {
+func (m *ApplicationInstallationStatus) contextValidateMethod(ctx context.Context, formats strfmt.Registry) error {
 
-	if err := m.LastUpdated.ContextValidate(ctx, formats); err != nil {
+	if err := m.Method.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastUpdated")
+			return ve.ValidateName("method")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastUpdated")
+			return ce.ValidateName("method")
 		}
 		return err
 	}

@@ -19,18 +19,19 @@ package applicationinstallationcontroller
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
-	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -219,10 +220,45 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 
 // handleInstallation installs or updates the application in the user cluster.
 func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
-	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation)
-	if updateStatusErr := r.updateStatus(ctx, appInstallation, statusUpdater, "failed to update status with installation information"); updateStatusErr != nil {
-		return updateStatusErr
+	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
+	if err != nil {
+		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
 	}
+	defer func() {
+		if err := os.RemoveAll(downloadDest); err != nil {
+			log.Error("failed to remove temporary directory where application source has been downloaded: %s", err)
+		}
+	}()
+
+	oldAppInstallation := appInstallation.DeepCopy()
+	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
+	if downloadErr != nil {
+		r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+		return downloadErr
+	}
+	r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
+
+	oldAppInstallation = appInstallation.DeepCopy()
+	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation, appSourcePath)
+
+	if installErr != nil {
+		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
+	} else {
+		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application sudccessfuly install or upgraded")
+		statusUpdater(&appInstallation.Status)
+	}
+
+	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
+
 	return installErr
 }
 
@@ -230,12 +266,16 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if kuberneteshelper.HasFinalizer(appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer) {
 		statusUpdater, uninstallErr := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation)
-		if updateStatusErr := r.updateStatus(ctx, appInstallation, statusUpdater, "failed to update status with uninstall information"); updateStatusErr != nil {
-			return updateStatusErr
-		}
-
+		oldAppInstallation := appInstallation.DeepCopy()
 		if uninstallErr != nil {
-			return fmt.Errorf("failed to uninstall application: %w", uninstallErr)
+			r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
+		} else {
+			statusUpdater(&appInstallation.Status)
+		}
+		if !equality.Semantic.DeepEqual(oldAppInstallation.Status, appInstallation.Status) { // avoid to send empty patch
+			if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+				return fmt.Errorf("failed to update status: %w", err)
+			}
 		}
 
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.userClient, appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
@@ -245,18 +285,24 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-// updateStatus update the status of appInstallation with the statusUpdater. If the update of the status failed and error with errorMsg is returned.
-func (r *reconciler) updateStatus(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation, statusUpdater util.StatusUpdater, errorMsg string) error {
-	if statusUpdater != nil {
-		oldAppInstallation := appInstallation.DeepCopy()
-		statusUpdater(&appInstallation.Status)
-		if !equality.Semantic.DeepEqual(oldAppInstallation.Status, appInstallation.Status) { // avoid to send empty patch
-			if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
-				return fmt.Errorf("%s: %w", errorMsg, err)
-			}
-		}
+// setCondition on a appInstallation. It take care of update LastHeartbeatTime and LastTransitionTime if needed.
+func (r *reconciler) setCondition(appInstallation *appskubermaticv1.ApplicationInstallation, conditionType appskubermaticv1.ApplicationInstallationConditionType, status corev1.ConditionStatus, reason, message string) {
+	now := metav1.Now()
+
+	condition, exists := appInstallation.Status.Conditions[conditionType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = now
 	}
-	return nil
+
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+	condition.Reason = reason
+	condition.Message = message
+
+	if appInstallation.Status.Conditions == nil {
+		appInstallation.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{}
+	}
+	appInstallation.Status.Conditions[conditionType] = condition
 }
 
 // traceWarning logs the message in warning mode and raise a k8s event on appInstallation with the eventReason and the message.

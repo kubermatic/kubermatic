@@ -124,9 +124,8 @@ type Version struct {
 
 // ApplicationInstallationStatus denotes status information about an ApplicationInstallation.
 type ApplicationInstallationStatus struct {
-	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
-	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
+	Conditions map[ApplicationInstallationConditionType]ApplicationInstallationCondition `json:"conditions,omitempty"`
 
 	// ApplicationVersion contains information installing / removing application
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
@@ -159,7 +158,7 @@ type HelmReleaseInfo struct {
 	LastDeployed metav1.Time `json:"lastDeployed,omitempty"`
 
 	// Deleted tracks when this object was deleted.
-	Deleted metav1.Time `json:"deleted"`
+	Deleted metav1.Time `json:"deleted,omitempty"`
 
 	// Description is human-friendly "log entry" about this release.
 	Description string `json:"description,omitempty"`
@@ -172,10 +171,14 @@ type HelmReleaseInfo struct {
 }
 
 type ApplicationInstallationCondition struct {
-	// Type of cluster condition.
-	Type ApplicationInstallationConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 	// Human readable message indicating details about last transition.
@@ -185,13 +188,18 @@ type ApplicationInstallationCondition struct {
 // +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
 
 // swagger:enum ApplicationInstallationConditionType
+// All condition types must be registered within the `AllApplicationInstallationConditionTypes` variable.
 type ApplicationInstallationConditionType string
 
 const (
 	// ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.
 	ManifestsRetrieved ApplicationInstallationConditionType = "ManifestsRetrieved"
-	// ManifestsApplied indicates that all manifests have been applied in the target user-cluster.
-	ManifestsApplied ApplicationInstallationConditionType = "ManifestsApplied"
+
 	// Ready describes all components have been successfully rolled out and are ready.
 	Ready ApplicationInstallationConditionType = "Ready"
 )
+
+var AllApplicationInstallationConditionTypes = []ApplicationInstallationConditionType{
+	ManifestsRetrieved,
+	Ready,
+}
