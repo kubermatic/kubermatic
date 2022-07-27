@@ -37,6 +37,45 @@ source hack/ci/setup-kind-cluster.sh
 # gather the logs of all things in the Kubermatic namespace
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
+# As dex doesn't support groups in static users configuration we configure minimal LDAP server.
+# More details: https://github.com/dexidp/dex/issues/1080
+echodate "Setting up openldap server..."
+
+LDAP_NAMESPACE="ldap"
+export KUBERMATIC_LDAP_LOGIN="janedoe@example.com"
+export KUBERMATIC_LDAP_PASSWORD="foo"
+
+# Append Dex configuration with ldap connector
+cat << EOF >> hack/ci/testdata/oauth_values.yaml
+  connectors:
+  - type: ldap
+    name: OpenLDAP
+    id: ldap
+    config:
+      host: openldap.${LDAP_NAMESPACE}.svc.cluster.local:389
+      insecureNoSSL: true
+      bindDN: cn=admin,dc=example,dc=org
+      bindPW: admin
+      usernamePrompt: Email Address
+      userSearch:
+        baseDN: ou=People,dc=example,dc=org
+        filter: "(objectClass=person)"
+        username: mail
+        idAttr: DN
+        emailAttr: mail
+        nameAttr: cn
+      groupSearch:
+        baseDN: ou=Groups,dc=example,dc=org
+        filter: "(objectClass=groupOfNames)"
+        userMatchers:
+          - userAttr: DN
+            groupAttr: member
+        nameAttr: cn
+EOF
+
+retry 2 kubectl create ns ${LDAP_NAMESPACE}
+retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Creating Azure preset..."
@@ -134,6 +173,19 @@ spec:
   admin: true
   email: roxy-admin@kubermatic.com
   name: roxy-admin
+EOF
+retry 2 kubectl apply -f user.yaml
+
+echodate "Creating jane user..."
+cat << EOF > user.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: User
+metadata:
+  name: jane
+spec:
+  admin: false
+  email: janedoe@example.com
+  name: jane
 EOF
 retry 2 kubectl apply -f user.yaml
 
