@@ -1532,3 +1532,8 @@ type ApplicationDefinition struct {
 
 	Spec *appskubermaticv1.ApplicationDefinitionSpec `json:"spec"`
 }
+
+// swagger:model OperatingSystemProfile
+type OperatingSystemProfile struct {
+	Name string `json:"name"`
+}

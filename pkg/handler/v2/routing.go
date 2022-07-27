@@ -97,6 +97,7 @@ type Routing struct {
 	groupProjectBindingProvider             provider.GroupProjectBindingProvider
 	privilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
 	applicationDefinitionProvider           provider.ApplicationDefinitionProvider
+	operatingSystemProfileProvider          provider.OperatingSystemProfileProvider
 	versions                                kubermatic.Versions
 	caBundle                                *x509.CertPool
 	features                                features.FeatureGate
@@ -162,6 +163,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		groupProjectBindingProvider:             routingParams.GroupProjectBindingProvider,
 		privilegedIPAMPoolProviderGetter:        routingParams.PrivilegedIPAMPoolProviderGetter,
 		applicationDefinitionProvider:           routingParams.ApplicationDefinitionProvider,
+		operatingSystemProfileProvider:          routingParams.OperatingSystemProfileProvider,
 		versions:                                routingParams.Versions,
 		caBundle:                                routingParams.CABundle,
 		features:                                routingParams.Features,

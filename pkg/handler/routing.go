@@ -231,6 +231,7 @@ type RoutingParams struct {
 	GroupProjectBindingProvider             provider.GroupProjectBindingProvider
 	PrivilegedIPAMPoolProviderGetter        provider.PrivilegedIPAMPoolProviderGetter
 	ApplicationDefinitionProvider           provider.ApplicationDefinitionProvider
+	OperatingSystemProfileProvider          provider.OperatingSystemProfileProvider
 	Versions                                kubermatic.Versions
 	CABundle                                *x509.CertPool
 	Features                                features.FeatureGate

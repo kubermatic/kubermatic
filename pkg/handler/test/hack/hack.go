@@ -99,6 +99,7 @@ func NewTestRouting(
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	applicationDefinitionProvider provider.ApplicationDefinitionProvider,
 	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter,
+	operatingSystemProfileProvider provider.OperatingSystemProfileProvider,
 	features features.FeatureGate) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
@@ -160,6 +161,7 @@ func NewTestRouting(
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
 		Features:                                features,
 		PrivilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
+		OperatingSystemProfileProvider:          operatingSystemProfileProvider,
 	}
 
 	r := handler.NewRouting(routingParams, masterClient)

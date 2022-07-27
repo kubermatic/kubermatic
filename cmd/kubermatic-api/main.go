@@ -76,6 +76,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -124,6 +125,9 @@ func main() {
 	}
 	if err := gatekeeperconfigv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
+	}
+	if err := osmv1alpha1.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalw("failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	masterCfg, err := ctrlruntime.GetConfig()
@@ -354,6 +358,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	applicationDefinitionProvider := kubernetesprovider.NewApplicationDefinitionProvider(client)
 
+	operatingSystemProfileProvider := kubernetesprovider.NewOperatingSystemProfileProvider(client)
+
 	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, log)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to setup user-watcher: %w", err)
@@ -427,6 +433,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		groupProjectBindingProvider:             groupProjectBindingProvider,
 		privilegedIPAMPoolProviderGetter:        privilegedIPAMPoolProviderGetter,
 		applicationDefinitionProvider:           applicationDefinitionProvider,
+		operatingSystemProfileProvider:          operatingSystemProfileProvider,
 	}, nil
 }
 
@@ -550,6 +557,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		GroupProjectBindingProvider:             prov.groupProjectBindingProvider,
 		PrivilegedIPAMPoolProviderGetter:        prov.privilegedIPAMPoolProviderGetter,
 		ApplicationDefinitionProvider:           prov.applicationDefinitionProvider,
+		OperatingSystemProfileProvider:          prov.operatingSystemProfileProvider,
 		Versions:                                options.versions,
 		CABundle:                                options.caBundle.CertPool(),
 		Features:                                options.featureGates,
