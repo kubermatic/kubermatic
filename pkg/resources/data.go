@@ -712,6 +712,13 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		}
 	}
 
+	optionalRefTo := func(key string) *corev1.EnvVarSource {
+		ref := refTo(key)
+		ref.SecretKeyRef.Optional = pointer.Bool(true)
+
+		return ref
+	}
+
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", ValueFrom: refTo(AWSAccessKeyID)})
@@ -730,10 +737,10 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(OpenstackDomain)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: refTo(OpenstackProject)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: refTo(OpenstackProjectID)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: refTo(OpenstackApplicationCredentialID)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: refTo(OpenstackApplicationCredentialSecret)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: optionalRefTo(OpenstackProject)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: optionalRefTo(OpenstackProjectID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: optionalRefTo(OpenstackApplicationCredentialID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: optionalRefTo(OpenstackApplicationCredentialSecret)})
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", ValueFrom: refTo(HetznerToken)})
@@ -776,11 +783,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", ValueFrom: refTo(NutanixUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", ValueFrom: refTo(NutanixPassword)})
-
-		// proxy URL can be empty
-		ref := refTo(NutanixProxyURL)
-		ref.SecretKeyRef.Optional = pointer.Bool(true)
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", ValueFrom: ref})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", ValueFrom: optionalRefTo(NutanixProxyURL)}) // proxy URL can be empty
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: dc.Spec.VMwareCloudDirector.URL})

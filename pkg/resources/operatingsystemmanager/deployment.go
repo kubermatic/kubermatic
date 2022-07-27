@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -290,6 +291,13 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		}
 	}
 
+	optionalRefTo := func(key string) *corev1.EnvVarSource {
+		ref := refTo(key)
+		ref.SecretKeyRef.Optional = pointer.Bool(true)
+
+		return ref
+	}
+
 	var vars []corev1.EnvVar
 	if data.Cluster().Spec.Cloud.Azure != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", ValueFrom: refTo(resources.AzureClientID)})
@@ -302,10 +310,10 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(resources.OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(resources.OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(resources.OpenstackDomain)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: refTo(resources.OpenstackProject)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: refTo(resources.OpenstackProjectID)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: refTo(resources.OpenstackApplicationCredentialID)})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: refTo(resources.OpenstackApplicationCredentialSecret)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: optionalRefTo(resources.OpenstackProject)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: optionalRefTo(resources.OpenstackProjectID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: optionalRefTo(resources.OpenstackApplicationCredentialID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: optionalRefTo(resources.OpenstackApplicationCredentialSecret)})
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
