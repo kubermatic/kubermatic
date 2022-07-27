@@ -66,14 +66,6 @@ metadata:
   namespace: ldap
 data:
   config-ldap.ldif: |
-    # Already included in default config of Docker image osixia/openldap:1.4.0.
-    #
-    # dn: dc=example,dc=org
-    # objectClass: dcObject
-    # objectClass: organization
-    # o: Example Company
-    # dc: example
-
     dn: ou=People,dc=example,dc=org
     objectClass: organizationalUnit
     ou: People
@@ -86,25 +78,9 @@ data:
     mail: janedoe@example.com
     userpassword: foo
 
-    dn: cn=john,ou=People,dc=example,dc=org
-    objectClass: person
-    objectClass: inetOrgPerson
-    sn: doe
-    cn: john
-    mail: johndoe@example.com
-    userpassword: bar
-
-    # Group definitions.
-
     dn: ou=Groups,dc=example,dc=org
     objectClass: organizationalUnit
     ou: Groups
-
-    dn: cn=admins,ou=Groups,dc=example,dc=org
-    objectClass: groupOfNames
-    cn: admins
-    member: cn=john,ou=People,dc=example,dc=org
-    member: cn=jane,ou=People,dc=example,dc=org
 
     dn: cn=developers,ou=Groups,dc=example,dc=org
     objectClass: groupOfNames
