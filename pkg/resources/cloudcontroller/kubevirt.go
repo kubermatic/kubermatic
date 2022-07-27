@@ -32,10 +32,8 @@ import (
 )
 
 const (
-	KubeVirtCCMDeploymentName                       = "kubevirt-cloud-controller-manager"
-	KubeVirtCCMTag                                  = "v0.2.0"
-	CloudControllerManagerInfraKubeconfigSecretName = "cloud-controller-manager-infra-kubeconfig"
-	InfraKubeConfigSecretKey                        = "infra-kubeconfig"
+	KubeVirtCCMDeploymentName = "kubevirt-cloud-controller-manager"
+	KubeVirtCCMTag            = "v0.2.0"
 )
 
 var (
@@ -88,7 +86,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 							Sources: []corev1.VolumeProjection{
 								{
 									Secret: &corev1.SecretProjection{
-										LocalObjectReference: corev1.LocalObjectReference{Name: CloudControllerManagerInfraKubeconfigSecretName},
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.KubeVirtInfraSecretName},
 									},
 								},
 								{
@@ -97,6 +95,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 									},
 								},
 							},
+							DefaultMode: pointer.Int32(420),
 						},
 					},
 				},
@@ -148,20 +147,4 @@ func getKVFlags(data *resources.TemplateData) []string {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
 	}
 	return flags
-}
-
-func GetKubeVirtInfraKubeConfigCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
-		return CloudControllerManagerInfraKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
-			if se.Data == nil {
-				se.Data = map[string][]byte{}
-			}
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-			se.Data[InfraKubeConfigSecretKey] = []byte(credentials.Kubevirt.KubeConfig)
-			return se, nil
-		}
-	}
 }
