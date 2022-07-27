@@ -115,7 +115,6 @@ func (c *Client) fetchLoginURL(ctx context.Context, connector ConnectorType) (*u
 
 	// make sure we are seeing the email login form immediately
 	loginURL.Path += "/" + string(connector)
-	//loginURL.Path += "/local"
 
 	params := loginURL.Query()
 	params.Set("client_id", c.ClientID)
