@@ -437,7 +437,6 @@ func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerN
 		if node.Labels[providerNodeLabel] == providerNodePoolName && IsNodeReady(&node) {
 			readyReplicasCount++
 		}
-
 	}
 
 	return readyReplicasCount

@@ -107,7 +107,7 @@ func ConnectToContainerService(ctx context.Context, serviceAccount string) (*con
 	return svc, projectID, nil
 }
 
-func GetGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
 	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -123,12 +123,12 @@ func GetGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		return nil, err
 	}
 	return &apiv2.ExternalClusterStatus{
-		State:         ConvertGKEStatus(gkeCluster.Status),
+		State:         ConvertStatus(gkeCluster.Status),
 		StatusMessage: gkeCluster.StatusMessage,
 	}, nil
 }
 
-func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, projectID, sa string) (apiv2.GKEClusterList, error) {
+func ListClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, projectID, sa string) (apiv2.GKEClusterList, error) {
 	clusters := apiv2.GKEClusterList{}
 
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
@@ -183,7 +183,7 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {
+func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
@@ -240,7 +240,7 @@ func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.Maste
 	return upgrades, nil
 }
 
-func ListGKEMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+func ListMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
@@ -298,7 +298,7 @@ func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
 	return true
 }
 
-func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error) {
+func ListImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error) {
 	images := apiv2.GKEImageList{}
 	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
@@ -320,7 +320,7 @@ func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, er
 	return images, nil
 }
 
-func ListGKEZones(ctx context.Context, sa string) (apiv2.GKEZoneList, error) {
+func ListZones(ctx context.Context, sa string) (apiv2.GKEZoneList, error) {
 	computeService, gcpProject, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return nil, err
@@ -338,7 +338,7 @@ func ListGKEZones(ctx context.Context, sa string) (apiv2.GKEZoneList, error) {
 	return zones, err
 }
 
-func ValidateGKECredentials(ctx context.Context, sa string) error {
+func ValidateCredentials(ctx context.Context, sa string) error {
 	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return err
@@ -348,7 +348,7 @@ func ValidateGKECredentials(ctx context.Context, sa string) error {
 	return err
 }
 
-func ConvertGKEStatus(status string) apiv2.ExternalClusterState {
+func ConvertStatus(status string) apiv2.ExternalClusterState {
 	switch status {
 	case "PROVISIONING":
 		return apiv2.PROVISIONING

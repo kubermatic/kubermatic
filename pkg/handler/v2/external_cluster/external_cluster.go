@@ -183,7 +183,6 @@ func CreateEndpoint(
 		if cloud == nil {
 			isImported := resources.ExternalClusterIsImportedTrue
 			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
-			kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, utilerrors.NewBadRequest(err.Error())
@@ -1057,7 +1056,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *eksStatus
 		}
 		if cloud.AKS != nil {
-			aksStatus, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
+			aksStatus, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,
@@ -1068,7 +1067,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *aksStatus
 		}
 		if cloud.GKE != nil {
-			gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
+			gkeStatus, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,

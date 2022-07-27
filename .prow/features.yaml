@@ -140,8 +140,8 @@ presubmits:
           env:
             - name: CNI
               value: cilium
-            - name: VERSION_TO_TEST
-              value: v1.23.8
+            - name: PROVIDER
+              value: all
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -180,8 +180,47 @@ presubmits:
           env:
             - name: CNI
               value: canal
-            - name: VERSION_TO_TEST
-              value: v1.23.8
+            - name: PROVIDER
+              value: all
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-dualstack-e2e-smoke
+    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-10
+          imagePullPolicy: Always
+          command:
+            - "./hack/ci/run-dualstack-e2e-test.sh"
+          env:
+            - name: CNI
+              value: canal,cilium
+            - name: PROVIDER
+              value: azure
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -373,8 +412,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: KUBERMATIC_OSM_ENABLED

@@ -18,9 +18,11 @@ package aks
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	semverlib "github.com/Masterminds/semver/v3"
@@ -36,14 +38,14 @@ import (
 )
 
 func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
-	aksClient, err := GetAKSClusterClient(cred)
+	aksClient, err := GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
 
 	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config: %w", err)
+		return nil, DecodeError(err)
 	}
 
 	config, err := clientcmd.Load(credResult.Kubeconfigs[0].Value)
@@ -111,38 +113,36 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 	return cred, nil
 }
 
-func GetAKSClusterClient(cred resources.AKSCredentials) (*armcontainerservice.ManagedClustersClient, error) {
+func GetClusterClient(cred resources.AKSCredentials) (*armcontainerservice.ManagedClustersClient, error) {
 	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	client, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	return client, DecodeError(err)
 }
 
-func GetAKSCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*armcontainerservice.ManagedCluster, error) {
-	resourceGroup := cloud.AKS.ResourceGroup
-	clusterName := cloud.AKS.Name
-
+func GetCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*armcontainerservice.ManagedCluster, error) {
 	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %w", clusterName, resourceGroup, err)
+		return nil, DecodeError(err)
 	}
 
 	return &aksCluster.ManagedCluster, nil
 }
 
-func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
 	cred, err := GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	aksClient, err := GetAKSClusterClient(cred)
+	aksClient, err := GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := GetCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 		if aksCluster.Properties.ProvisioningState != nil {
 			provisioningState = *aksCluster.Properties.ProvisioningState
 		}
-		state = ConvertAKSStatus(provisioningState, powerState)
+		state = ConvertStatus(provisioningState, powerState)
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -164,7 +164,7 @@ func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	}, nil
 }
 
-func ConvertAKSStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
+func ConvertStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
 	switch {
 	case provisioningState == "Creating":
 		return apiv2.PROVISIONING
@@ -187,18 +187,15 @@ func ConvertAKSStatus(provisioningState string, powerState armcontainerservice.C
 	}
 }
 
-func DeleteAKSCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) error {
+func DeleteCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) error {
 	resourceGroup := cloud.AKS.ResourceGroup
 	clusterName := cloud.AKS.Name
 
 	_, err := aksClient.BeginDelete(ctx, resourceGroup, clusterName, &armcontainerservice.ManagedClustersClientBeginDeleteOptions{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return DecodeError(err)
 }
 
-func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+func ListMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 
 	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
@@ -208,12 +205,12 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCre
 
 	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	profile, err := agentPoolClient.GetUpgradeProfile(ctx, resourceGroupName, clusterName, machineDeployment, nil)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	poolUpgradeProperties := profile.Properties
@@ -232,4 +229,23 @@ func ListAKSMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCre
 	}
 
 	return upgrades, nil
+}
+
+func DecodeError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var aerr *azcore.ResponseError
+	if ok := errors.As(err, &aerr); ok {
+		var response struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+			SubCode string `json:"subcode,omitempty"`
+		}
+		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
+			return err
+		}
+		return errors.New(response.Message)
+	}
+	return err
 }

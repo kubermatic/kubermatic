@@ -165,6 +165,11 @@ func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *a
 		},
 		Namespace: app.Namespace,
 		Spec:      &app.Spec,
+		Status: &apiv2.ApplicationInstallationStatus{
+			LastUpdated:        apiv1.Time(app.Status.LastUpdated),
+			Conditions:         app.Status.Conditions,
+			ApplicationVersion: app.Status.ApplicationVersion,
+		},
 	}
 }
 
@@ -179,6 +184,11 @@ func convertExternalToInternal(app *apiv2.ApplicationInstallation) *appskubermat
 			Namespace: app.Namespace,
 		},
 		Spec: *app.Spec,
+		Status: appskubermaticv1.ApplicationInstallationStatus{
+			LastUpdated:        metav1.Time(app.Status.LastUpdated),
+			Conditions:         app.Status.Conditions,
+			ApplicationVersion: app.Status.ApplicationVersion,
+		},
 	}
 }
 

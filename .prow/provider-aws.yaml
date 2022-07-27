@@ -34,8 +34,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.22.11"
+            - name: RELEASES_TO_TEST
+              value: "1.22"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
@@ -76,8 +76,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.23.8"
+            - name: RELEASES_TO_TEST
+              value: "1.23"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
@@ -118,8 +118,8 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
@@ -163,8 +163,8 @@ presubmits:
               value: "ce"
             - name: ONLY_TEST_CREATION
               value: "true"
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
@@ -207,8 +207,8 @@ presubmits:
               value: "ee"
             - name: SETUP_MODE
               value: "kube"
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.2"
+            - name: RELEASES_TO_TEST
+              value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY

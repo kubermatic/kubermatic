@@ -387,7 +387,6 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.EKS.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)

@@ -173,6 +173,11 @@ func main() {
 				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1",
 			},
 			{
+				ResourceName:       "OperatingSystemProfile",
+				ImportAlias:        "osmv1alpha1",
+				ResourceImportPath: "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1",
+			},
+			{
 				ResourceName:     "ConstraintTemplate",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",

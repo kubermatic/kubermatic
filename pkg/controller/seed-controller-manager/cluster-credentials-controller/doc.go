@@ -1,5 +1,3 @@
-//go:build ee
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -16,21 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mutation
+/*
+Package clustercredentialscontroller contains a controller that watches Cluster
+objects and is responsible for moving inline credentials (from the CloudSpec)
+into dedicated Kubernetes Secrets.
 
-import (
-	"context"
-
-	"github.com/go-logr/logr"
-
-	eeresourcequotamutation "k8c.io/kubermatic/v2/pkg/ee/mutation/resourcequota"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-func handle(ctx context.Context, req webhook.AdmissionRequest, decoder *admission.Decoder,
-	logger logr.Logger, client ctrlruntimeclient.Client) webhook.AdmissionResponse {
-	return eeresourcequotamutation.Handle(ctx, req, decoder, logger, client)
-}
+In a perfect future, we would not even ever create a Cluster with inline credentials,
+but for historical reasons it's the safest method to handle credentials for now.
+It is also super convenient that users do not have to manually create a Secret
+somewhere themselves.
+*/
+package clustercredentialscontroller

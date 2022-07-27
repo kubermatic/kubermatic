@@ -151,40 +151,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name: "scenario 7: clone HTTP from commit",
-			source: &appskubermaticv1.GitSource{
-				Remote:      httpRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Hash},
-				Path:        "",
-				Credentials: nil,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop, // for commit we have to clone all repo
-		},
-		{
-			name: "scenario 8: clone HTTP from commit with path /",
-			source: &appskubermaticv1.GitSource{
-				Remote:      httpRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Hash},
-				Path:        "/",
-				Credentials: nil,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop, // for commit we have to clone all repo
-		},
-		{
-			name: "scenario 9: clone HTTP from commit with path subdir",
-			source: &appskubermaticv1.GitSource{
-				Remote:      httpRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Hash},
-				Path:        "subdir",
-				Credentials: nil,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop, // for commit we have to clone all repo
-		},
-		{
-			name: "scenario 10: clone HTTP from commit in branch",
+			name: "scenario 7: clone HTTP from commit in branch",
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpRemote,
 				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Hash, Branch: repoInfo.MasterBranch.Name},
@@ -197,7 +164,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 11: clone HTTP from commit in branch with path /",
+			name: "scenario 8: clone HTTP from commit in branch with path /",
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name, Commit: repoInfo.CommitInMaster.Hash},
@@ -210,7 +177,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 12: clone HTTP from commit in branch with path subdir",
+			name: "scenario 9: clone HTTP from commit in branch with path subdir",
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name, Commit: repoInfo.CommitInMaster.Hash},
@@ -223,7 +190,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 13: clone HTTP with auth from branch",
+			name:   "scenario 10: clone HTTP with auth from branch",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
@@ -235,7 +202,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 14: clone HTTP with auth from Tag",
+			name:   "scenario 11: clone HTTP with auth from Tag",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
@@ -247,19 +214,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 15: clone HTTP with auth from commit",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
-			source: &appskubermaticv1.GitSource{
-				Remote:      httpWithAuthRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Name},
-				Path:        "",
-				Credentials: &passwordCredentials,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop, // for commit we have to clone all repo
-		},
-		{
-			name:   "scenario 16: clone HTTP with auth from commit in branch",
+			name:   "scenario 12: clone HTTP with auth from commit in branch",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
@@ -273,7 +228,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 17: clone SSH from branch",
+			name:   "scenario 13: clone SSH from branch",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -285,7 +240,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 18: clone SSH from branch with path /",
+			name:   "scenario 14: clone SSH from branch with path /",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -297,7 +252,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 19: clone SSH from branch with path subdir",
+			name:   "scenario 15: clone SSH from branch with path subdir",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -309,7 +264,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 20: clone SSH from tag",
+			name:   "scenario 16: clone SSH from tag",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -321,7 +276,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 21: clone SSH from tag with path /",
+			name:   "scenario 17: clone SSH from tag with path /",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -333,7 +288,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 22: clone SSH from tag with path subdir",
+			name:   "scenario 18: clone SSH from tag with path subdir",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -345,43 +300,7 @@ func TestDownloadGitSource(t *testing.T) {
 			shallowCheckFunc: checkOnlyOneCommit,
 		},
 		{
-			name:   "scenario 23: clone SSH from commit",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
-			source: &appskubermaticv1.GitSource{
-				Remote:      sshRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Name},
-				Path:        "",
-				Credentials: sshCredentials,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop,
-		},
-		{
-			name:   "scenario 24: clone SSH from commit with path /",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
-			source: &appskubermaticv1.GitSource{
-				Remote:      sshRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Name},
-				Path:        "/",
-				Credentials: sshCredentials,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop,
-		},
-		{
-			name:   "scenario 25: clone SSH from commit with path subdir",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
-			source: &appskubermaticv1.GitSource{
-				Remote:      sshRemote,
-				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Name},
-				Path:        "subdir",
-				Credentials: sshCredentials,
-			},
-			expectedCommit:   repoInfo.CommitInMaster.Hash,
-			shallowCheckFunc: nop,
-		},
-		{
-			name:   "scenario 26: clone SSH from commit in branch",
+			name:   "scenario 19: clone SSH from commit in branch",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -395,7 +314,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 27: clone SSH from commit in branch with path /",
+			name:   "scenario 20: clone SSH from commit in branch with path /",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -409,7 +328,7 @@ func TestDownloadGitSource(t *testing.T) {
 			},
 		},
 		{
-			name:   "scenario 27: clone SSH from commit in branch with path subdir",
+			name:   "scenario 21: clone SSH from commit in branch with path subdir",
 			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
@@ -464,11 +383,6 @@ func TestDownloadGitSource(t *testing.T) {
 			tc.shallowCheckFunc(repository, t)
 		})
 	}
-}
-
-// nop is no operation function.
-// when we clone a commit we have to clone all repo. So no check can be done.
-func nop(repository *git.Repository, t *testing.T) {
 }
 
 // checkOnlyDesiredReferences fails the test if repository has different references than desiredRefSet.

@@ -42,8 +42,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -74,17 +76,43 @@ func Add(
 		return err
 	}
 
-	// Watch for changes to ExternalCluster
-	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to ExternalCluster except KubeOne clusters.
+	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, withEventFilter())
+}
+
+func withKubeOnefilter(obj ctrlruntimeclient.Object) bool {
+	externalCluster, ok := obj.(*kubermaticv1.ExternalCluster)
+	if !ok {
+		return false
+	}
+	return externalCluster.Spec.CloudSpec.KubeOne == nil
+}
+
+// ExternalCluster controller doesn't process KubeOne clusters.
+func withEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return withKubeOnefilter(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return withKubeOnefilter(e.ObjectNew) && e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return withKubeOnefilter(e.Object)
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return withKubeOnefilter(e.Object)
+		},
+	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	resourceName := request.Name
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("externalcluster", request)
+	log.Debug("Processing...")
 
-	icl := &kubermaticv1.ExternalCluster{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
+	cluster := &kubermaticv1.ExternalCluster{}
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
@@ -92,33 +120,51 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	if icl.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(icl, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer) {
-			if err := r.cleanUpKubeconfigSecret(ctx, icl); err != nil {
-				log.Errorf("Could not delete kubeconfig secret, %v", err)
-				return reconcile.Result{}, err
-			}
-		}
-		if kuberneteshelper.HasFinalizer(icl, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
-			if err := r.cleanUpCredentialsSecret(ctx, icl); err != nil {
-				log.Errorf("Could not delete credentials secret, %v", err)
-				return reconcile.Result{}, err
-			}
+	return r.reconcile(ctx, cluster)
+}
+
+func (r *Reconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	if kuberneteshelper.HasFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer) {
+		if err := r.cleanUpKubeconfigSecret(ctx, cluster); err != nil {
+			return err
 		}
 	}
-
-	return r.reconcile(ctx, icl)
+	if kuberneteshelper.HasFinalizer(cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
+		if err := r.cleanUpCredentialsSecret(ctx, cluster); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
+	// handling deletion
+	if !cluster.DeletionTimestamp.IsZero() {
+		if err := r.handleDeletion(ctx, cluster); err != nil {
+			return reconcile.Result{}, fmt.Errorf("handling deletion of externalcluster: %w", err)
+		}
+		return reconcile.Result{}, nil
+	}
+
 	cloud := cluster.Spec.CloudSpec
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 	if cloud.ProviderName == "" {
+		if cluster.Spec.KubeconfigReference != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to add kubeconfig secret finalizer: %w", err)
+			}
+		}
 		return reconcile.Result{}, nil
 	}
+
 	if cloud.GKE != nil {
 		r.log.Debugf("reconcile GKE cluster")
-		status, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
+		if cloud.GKE.CredentialsReference != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
+			}
+		}
+		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get GKE cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -141,6 +187,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 	}
 	if cloud.EKS != nil {
 		r.log.Debugf("reconcile EKS cluster %v", cluster.Name)
+		if cloud.EKS.CredentialsReference != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
+			}
+		}
 		status, err := eks.GetClusterStatus(secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get EKS cluster status %v", err)
@@ -164,7 +215,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 	}
 	if cloud.AKS != nil {
 		r.log.Debugf("reconcile AKS cluster %v", cluster.Name)
-		status, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
+		if cloud.AKS.CredentialsReference != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
+			}
+		}
+		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get AKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())

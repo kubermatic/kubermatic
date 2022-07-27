@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -62,6 +63,7 @@ var cloudProviders = map[string]clusterSpec{
 	"hetzner":   hetzner{},
 	"do":        do{},
 	"equinix":   equinix{},
+	"vsphere":   vsphere{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -88,12 +90,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	apicli := utils.NewTestClient(token, t)
 
 	type testCase struct {
-		cloudName           string
-		osNames             []string
-		cni                 string
-		ipFamily            util.IPFamily
-		skipNodes           bool
-		skipHostNetworkPods bool
+		cloudName              string
+		osNames                []string
+		cni                    string
+		ipFamily               util.IPFamily
+		skipNodes              bool
+		skipHostNetworkPods    bool
+		skipEgressConnectivity bool
 	}
 
 	tests := []testCase{
@@ -221,6 +224,24 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cni:      "cilium",
 			ipFamily: util.DualStack,
 		},
+		{
+			cloudName: "vsphere",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                    "canal",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+		{
+			cloudName: "vsphere",
+			osNames: []string{
+				"ubuntu",
+			},
+			cni:                    "cilium",
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
 	}
 
 	retestBudget := 2
@@ -236,8 +257,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		test := test
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
 
-		if cni != test.cni {
-			t.Logf("skipping %s due to different cni setting (%s != %s)...", name, test.cni, cni)
+		if cni != "" && !strings.Contains(cni, test.cni) {
+			t.Logf("skipping %s due to cni (%s not in %s)...", name, test.cni, cni)
+			continue
+		}
+
+		if provider != "all" && !strings.Contains(provider, test.cloudName) {
+			t.Logf("skipping %s due to provider (%s not in %s)...", name, test.cloudName, provider)
 			continue
 		}
 
@@ -345,7 +371,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				t.Fatalf("pods never became ready: %v", err)
 			}
 
-			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
+			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods, test.skipEgressConnectivity)
 		})
 	}
 }

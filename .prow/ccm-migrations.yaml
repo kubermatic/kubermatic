@@ -35,8 +35,6 @@ presubmits:
               value: ee
             - name: PROVIDER
               value: openstack
-            - name: VERSION_TO_TEST
-              value: "v1.22.11"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -76,8 +74,6 @@ presubmits:
               value: ee
             - name: PROVIDER
               value: vsphere
-            - name: VERSION_TO_TEST
-              value: "v1.22.11"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -117,8 +113,6 @@ presubmits:
               value: ee
             - name: PROVIDER
               value: azure
-            - name: VERSION_TO_TEST
-              value: "v1.23.8"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

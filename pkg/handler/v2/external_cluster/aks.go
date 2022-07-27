@@ -18,15 +18,12 @@ package externalcluster
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
@@ -197,7 +194,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 }
 
 func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSpec, aksCloudSpec *apiv2.AKSCloudSpec) error {
-	aksClient, err := aks.GetAKSClusterClient(resources.AKSCredentials{
+	aksClient, err := aks.GetClusterClient(resources.AKSCredentials{
 		TenantID:       aksCloudSpec.TenantID,
 		ClientID:       aksCloudSpec.ClientID,
 		SubscriptionID: aksCloudSpec.SubscriptionID,
@@ -258,23 +255,8 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		clusterToCreate,
 		nil,
 	)
-	if err != nil {
-		var aerr *azcore.ResponseError
-		if ok := errors.As(err, &aerr); ok {
-			var response struct {
-				Code    string `json:"code,omitempty"`
-				Message string `json:"message,omitempty"`
-				SubCode string `json:"subcode,omitempty"`
-			}
-			if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
-				return err
-			}
-			return errors.New(response.Message)
-		}
-		return err
-	}
 
-	return nil
+	return aks.DecodeError(err)
 }
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
@@ -346,7 +328,6 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.AKS.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -363,11 +344,11 @@ func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 		return nil, err
 	}
 
-	aksClient, err := aks.GetAKSClusterClient(cred)
+	aksClient, err := aks.GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -381,16 +362,12 @@ func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 		},
 	}
 
-	future, err := aksClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster, nil)
+	_, err = aksClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster, nil)
 	if err != nil {
-		return nil, err
+		return nil, aks.DecodeError(err)
 	}
 
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-
-	return newCluster, err
+	return newCluster, nil
 }
 
 func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -401,11 +378,11 @@ func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 		return nil, err
 	}
 
-	aksClient, err := aks.GetAKSClusterClient(cred)
+	aksClient, err := aks.GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -439,11 +416,11 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 		return nil, err
 	}
 
-	aksClient, err := aks.GetAKSClusterClient(cred)
+	aksClient, err := aks.GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +520,7 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	}
 	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: aks.ConvertAKSStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			State: aks.ConvertStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
 		}
 	}
 
@@ -629,8 +606,8 @@ func getAKSNodePoolClient(cred resources.AKSCredentials) (*armcontainerservice.A
 	if err != nil {
 		return nil, err
 	}
-
-	return armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	return agentPoolClient, aks.DecodeError(err)
 }
 
 func updateAKSNodePool(ctx context.Context, agentPoolClient armcontainerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, nodePool armcontainerservice.AgentPool) (*runtime.Poller[armcontainerservice.AgentPoolsClientCreateOrUpdateResponse], error) {
@@ -711,16 +688,9 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 	nodePool.Properties = &property
 
-	future, err := agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool, nil)
+	_, err = agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool, nil)
 	if err != nil {
-		return nil, err
-	}
-
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-	if err != nil {
-		return nil, err
+		return nil, aks.DecodeError(err)
 	}
 
 	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
@@ -821,11 +791,11 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	aksClient, err := aks.GetAKSClusterClient(cred)
+	aksClient, err := aks.GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := aks.GetCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -876,11 +846,11 @@ func deleteAKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 	if err != nil {
 		return err
 	}
-	aksClient, err := aks.GetAKSClusterClient(cred)
+	aksClient, err := aks.GetClusterClient(cred)
 	if err != nil {
 		return err
 	}
-	err = aks.DeleteAKSCluster(ctx, aksClient, cloud)
+	err = aks.DeleteCluster(ctx, aksClient, cloud)
 	if err != nil {
 		return err
 	}

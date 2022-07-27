@@ -265,7 +265,6 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.GKE.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -381,7 +380,7 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 		}
 	}
 	md.Phase = apiv2.ExternalClusterMDPhase{
-		State: gkeprovider.ConvertGKEStatus(np.Status),
+		State: gkeprovider.ConvertStatus(np.Status),
 	}
 
 	return md

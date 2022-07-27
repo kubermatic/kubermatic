@@ -218,7 +218,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				return nil, err
 			}
 		}
-		return gke.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+		return gke.ListClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
 	}
 }
 
@@ -237,7 +237,7 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 				return nil, err
 			}
 		}
-		return gke.ListGKEImages(ctx, sa, req.Zone)
+		return gke.ListImages(ctx, sa, req.Zone)
 	}
 }
 
@@ -256,7 +256,7 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 				return nil, err
 			}
 		}
-		return gke.ListGKEZones(ctx, sa)
+		return gke.ListZones(ctx, sa)
 	}
 }
 
@@ -272,7 +272,7 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 				return nil, err
 			}
 		}
-		return nil, gke.ValidateGKECredentials(ctx, sa)
+		return nil, gke.ValidateCredentials(ctx, sa)
 	}
 }
 

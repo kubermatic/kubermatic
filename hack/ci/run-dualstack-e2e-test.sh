@@ -31,6 +31,7 @@ trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export CNI="${CNI:-}"
+export PROVIDER="${PROVIDER:-}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
@@ -67,9 +68,12 @@ export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 export METAL_AUTH_TOKEN="${METAL_AUTH_TOKEN:-$(vault kv get -field=METAL_AUTH_TOKEN dev/e2e-equinix-metal)}"
 export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT_ID dev/e2e-equinix-metal)}"
 
+export VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
+export VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
+
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER
 
 echodate "Dualstack tests done."
