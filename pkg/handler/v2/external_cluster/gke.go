@@ -33,7 +33,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	gcpprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	gkeprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
@@ -268,7 +267,6 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 	newCluster.Spec.CloudSpec.GKE.CredentialsReference = keyRef
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
