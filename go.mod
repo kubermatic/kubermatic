@@ -136,7 +136,7 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.24.2
 )
 
-require go.universe.tf/metallb v0.13.4
+require go.universe.tf/metallb v0.13.3
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
