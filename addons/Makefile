@@ -46,3 +46,10 @@ aws-node-termination-handler:
 	  >> $(OUTPUT_FILE)
 	cat aws-node-termination-handler/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
+
+.PHONY: metallb
+metallb: OUTPUT_FILE=metallb/00_metallb.yaml
+metallb:
+	cat metallb/_header.txt > $(OUTPUT_FILE)
+	wget -q -O- https://raw.githubusercontent.com/metallb/metallb/v0.13.3/config/manifests/metallb-native.yaml >> $(OUTPUT_FILE)
+	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)	
