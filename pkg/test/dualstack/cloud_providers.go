@@ -344,7 +344,7 @@ func (a hetzner) NodeSpec() models.NodeCloudSpec {
 
 func (a hetzner) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
-		DatacenterName: "hetzner-hel1",
+		DatacenterName: "hetzner-nbg1",
 		Hetzner: &models.HetznerCloudSpec{
 			Token: os.Getenv("HETZNER_TOKEN"),
 		},

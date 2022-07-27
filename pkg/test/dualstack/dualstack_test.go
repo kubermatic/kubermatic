@@ -44,7 +44,8 @@ const (
 var (
 	userconfig             string
 	ipFamily               string
-	cni                    string
+	cni                    string // comma separated list of cni
+	provider               string // comma separated list of cloud providers
 	skipNodes              bool
 	skipHostNetworkPods    bool
 	skipEgressConnectivity bool
@@ -54,6 +55,7 @@ func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
 	flag.StringVar(&cni, "cni", "", "CNI cilium|canal")
+	flag.StringVar(&provider, "provider", "", "Cloud providers like azure,aws,gcp")
 	flag.BoolVar(&skipNodes, "skipNodes", false, "If true, skips node IP address tests")
 	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", false, "If true, skips host network pods IP test")
 	flag.BoolVar(&skipEgressConnectivity, "skipEgressConnectivity", false, "If true, skips egress connectivity test")
