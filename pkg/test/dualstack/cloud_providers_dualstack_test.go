@@ -190,7 +190,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"ubuntu",
 				"rockylinux",
-				"centos",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
