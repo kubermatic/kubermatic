@@ -214,6 +214,7 @@ var (
 		Default: semver.NewSemverOrDie("v1.23.9"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.22
+			newSemver("v1.22.5"),
 			newSemver("v1.22.9"),
 			newSemver("v1.22.12"),
 			// Kubernetes 1.23

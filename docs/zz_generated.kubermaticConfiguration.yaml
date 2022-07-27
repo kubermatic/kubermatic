@@ -516,6 +516,7 @@ spec:
         to: 1.24.*
     # Versions lists the available versions.
     versions:
+      - v1.22.5
       - v1.22.9
       - v1.22.12
       - v1.23.6
