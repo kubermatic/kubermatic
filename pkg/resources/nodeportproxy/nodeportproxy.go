@@ -403,6 +403,10 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				s.Annotations = seed.Spec.NodeportProxy.Annotations
 			}
 
+			if s.Annotations == nil {
+				s.Annotations = make(map[string]string)
+			}
+
 			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
 			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
 			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
@@ -418,10 +422,6 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 			}
 
 			if data.Cluster().Spec.Cloud.AWS != nil {
-				if s.Annotations == nil {
-					s.Annotations = make(map[string]string)
-				}
-
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 

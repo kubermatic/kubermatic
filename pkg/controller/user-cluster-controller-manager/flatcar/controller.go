@@ -140,27 +140,19 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
-	depCreators := getDeploymentCreators(r.overwriteRegistry, r.updateWindow)
+	depCreators := []reconciling.NamedDeploymentCreatorGetter{
+		resources.OperatorDeploymentCreator(registry.GetOverwriteFunc(r.overwriteRegistry), r.updateWindow),
+	}
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
-	dsCreators := getDaemonSetCreators(r.overwriteRegistry)
+	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
+		resources.AgentDaemonSetCreator(registry.GetOverwriteFunc(r.overwriteRegistry)),
+	}
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 
 	return nil
-}
-
-func getDeploymentCreators(overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) []reconciling.NamedDeploymentCreatorGetter {
-	return []reconciling.NamedDeploymentCreatorGetter{
-		resources.OperatorDeploymentCreator(registry.GetOverwriteFunc(overwriteRegistry), updateWindow),
-	}
-}
-
-func getDaemonSetCreators(overwriteRegistry string) []reconciling.NamedDaemonSetCreatorGetter {
-	return []reconciling.NamedDaemonSetCreatorGetter{
-		resources.AgentDaemonSetCreator(registry.GetOverwriteFunc(overwriteRegistry)),
-	}
 }

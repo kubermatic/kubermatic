@@ -16,3 +16,4 @@
 # Run `make hubble` instead.
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
+{{ if eq .Cluster.CNIPlugin.Version "v1.12" }}

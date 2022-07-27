@@ -126,6 +126,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.Namespace.Labels = map[string]string{"key": "value"}
+					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
 					return *spec
 				}(),
 			},
@@ -154,18 +155,6 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 				}(),
 			},
 			expectedError: `[spec.applicationRef.name: Invalid value: "app": field is immutable]`,
-		},
-		{
-			name: "Update ApplicationInstallation Failure - .ApplicationRef.Version is immutable",
-			ai:   ai,
-			updatedAI: &appskubermaticv1.ApplicationInstallation{
-				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
-					spec := ai.Spec.DeepCopy()
-					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
-					return *spec
-				}(),
-			},
-			expectedError: `[spec.applicationRef.version: Invalid value: "1.2.3": field is immutable]`,
 		},
 	}
 

@@ -4,6 +4,7 @@
 aliases:
   sig-api:
     - ahmedwaleedmalik
+    - hbernardo
     - lsviben
     - pkprzekwas
   sig-app-management:
@@ -38,7 +39,7 @@ aliases:
     - khizerrehan
     - waseem826
   sig-virtualization:
+    - dermorz
     - hdurand0710
     - mfranczy
-    - moadqassem
     - sankalp-r

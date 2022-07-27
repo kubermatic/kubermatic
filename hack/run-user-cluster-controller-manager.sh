@@ -41,11 +41,9 @@ fi
 # the one creating it in case of openshift. So we just use the internal kubeconfig and replace
 # the apiserver url
 KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
-kubectl --namespace "$NAMESPACE" get secret internal-admin-kubeconfig -o json |
+kubectl --namespace "$NAMESPACE" get secret admin-kubeconfig --output json |
   jq '.data.kubeconfig' -r |
-  base64 -d |
-  yq -o=json - |
-  jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url' \
+  base64 -d \
     > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
 

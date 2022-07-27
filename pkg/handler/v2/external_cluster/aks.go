@@ -18,15 +18,12 @@ package externalcluster
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
@@ -260,23 +257,8 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		clusterToCreate,
 		nil,
 	)
-	if err != nil {
-		var aerr *azcore.ResponseError
-		if ok := errors.As(err, &aerr); ok {
-			var response struct {
-				Code    string `json:"code,omitempty"`
-				Message string `json:"message,omitempty"`
-				SubCode string `json:"subcode,omitempty"`
-			}
-			if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
-				return err
-			}
-			return errors.New(response.Message)
-		}
-		return err
-	}
 
-	return nil
+	return aks.DecodeAKSError(err)
 }
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
@@ -383,16 +365,12 @@ func patchAKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 		},
 	}
 
-	future, err := aksClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster, nil)
+	_, err = aksClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, updateCluster, nil)
 	if err != nil {
-		return nil, err
+		return nil, aks.DecodeAKSError(err)
 	}
 
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-
-	return newCluster, err
+	return newCluster, nil
 }
 
 func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -666,8 +644,8 @@ func getAKSNodePoolClient(cred resources.AKSCredentials) (*armcontainerservice.A
 	if err != nil {
 		return nil, err
 	}
-
-	return armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	return agentPoolClient, aks.DecodeAKSError(err)
 }
 
 func updateAKSNodePool(ctx context.Context, agentPoolClient armcontainerservice.AgentPoolsClient, cloud *kubermaticv1.ExternalClusterCloudSpec, nodePoolName string, nodePool armcontainerservice.AgentPool) (*runtime.Poller[armcontainerservice.AgentPoolsClientCreateOrUpdateResponse], error) {
@@ -748,16 +726,9 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 	nodePool.Properties = &property
 
-	future, err := agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool, nil)
+	_, err = agentPoolClient.BeginCreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool, nil)
 	if err != nil {
-		return nil, err
-	}
-
-	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-		Frequency: 5 * time.Second,
-	})
-	if err != nil {
-		return nil, err
+		return nil, aks.DecodeAKSError(err)
 	}
 
 	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}

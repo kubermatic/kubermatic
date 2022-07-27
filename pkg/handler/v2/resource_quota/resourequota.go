@@ -35,7 +35,7 @@ func GetForProjectEndpoint(projectProvider provider.ProjectProvider, privilegedP
 	}
 }
 
-func GetResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider) endpoint.Endpoint {
+func GetResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider, projectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -45,7 +45,7 @@ func GetResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider p
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		resp, err := getResourceQuota(ctx, req, provider)
+		resp, err := getResourceQuota(ctx, req, provider, projectProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +54,7 @@ func GetResourceQuotaEndpoint(userInfoGetter provider.UserInfoGetter, provider p
 	}
 }
 
-func ListResourceQuotasEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider) endpoint.Endpoint {
+func ListResourceQuotasEndpoint(userInfoGetter provider.UserInfoGetter, provider provider.ResourceQuotaProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -64,7 +64,7 @@ func ListResourceQuotasEndpoint(userInfoGetter provider.UserInfoGetter, provider
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%s doesn't have admin rights", userInfo.Email))
 		}
 
-		resp, err := listResourceQuotas(ctx, req, provider)
+		resp, err := listResourceQuotas(ctx, req, provider, projectProvider)
 		if err != nil {
 			return nil, err
 		}

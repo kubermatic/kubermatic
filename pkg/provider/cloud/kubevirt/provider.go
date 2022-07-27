@@ -124,21 +124,22 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	if !kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
+		return cluster, nil
+	}
+
 	client, _, err := k.GetClientWithRestConfigForCluster(cluster)
 	if err != nil {
 		return cluster, err
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
-		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
-			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
-		}
-		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
-		})
+	if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
+		return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 
-	return cluster, nil
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
+	})
 }
 
 func (k *kubevirt) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {

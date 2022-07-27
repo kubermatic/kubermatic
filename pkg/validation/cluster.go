@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/coreos/locksmith/pkg/timeutil"
@@ -29,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -111,7 +113,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 
 	// general cloud spec logic
-	if errs := ValidateCloudSpec(spec.Cloud, dc, parentFieldPath.Child("cloud")); len(errs) > 0 {
+	if errs := ValidateCloudSpec(spec.Cloud, dc, spec.ClusterNetwork.IPFamily, parentFieldPath.Child("cloud")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -231,15 +233,6 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	} else if newCluster.Spec.EnableUserSSHKeyAgent != nil && !*newCluster.Spec.EnableUserSSHKeyAgent {
 		path := field.NewPath("cluster", "spec", "enableUserSSHKeyAgent")
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
-	}
-
-	// EnableOperatingSystemManager is immutable field as of now but in future this field will be mutable
-	if oldCluster.Spec.EnableOperatingSystemManager != newCluster.Spec.EnableOperatingSystemManager {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newCluster.Spec.EnableOperatingSystemManager,
-			oldCluster.Spec.EnableOperatingSystemManager,
-			specPath.Child("enableOperatingSystemManager"),
-		)...)
 	}
 
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
@@ -539,7 +532,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 // ValidateCloudSpec validates if the cloud spec is valid
 // If this is not called from within another validation
 // routine, parentFieldPath can be nil.
-func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter, parentFieldPath *field.Path) field.ErrorList {
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.DatacenterName == "" {
@@ -596,7 +589,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	case spec.Fake != nil:
 		providerErr = validateFakeCloudSpec(spec.Fake)
 	case spec.GCP != nil:
-		providerErr = validateGCPCloudSpec(spec.GCP)
+		providerErr = validateGCPCloudSpec(spec.GCP, dc, ipFamily, gcp.GetGCPSubnetwork)
 	case spec.Hetzner != nil:
 		providerErr = validateHetznerCloudSpec(spec.Hetzner)
 	case spec.Kubevirt != nil:
@@ -696,7 +689,7 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 	return nil
 }
 
-func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
+func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily, gcpSubnetworkGetter gcp.GCPSubnetworkGetter) error {
 	if spec.ServiceAccount == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.GCPServiceAccount); err != nil {
 			return err
@@ -709,6 +702,32 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 	}
 	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
 		return err
+	}
+	if ipFamily == kubermaticv1.IPFamilyDualStack {
+		if spec.Network == "" || spec.Subnetwork == "" {
+			return errors.New("network and subnetwork should be defined for GCP dual-stack (IPv4 + IPv6) cluster")
+		}
+
+		subnetworkParts := strings.Split(spec.Subnetwork, "/")
+		if len(subnetworkParts) != 6 {
+			return errors.New("invalid GCP subnetwork path")
+		}
+		subnetworkRegion := subnetworkParts[3]
+		subnetworkName := subnetworkParts[5]
+
+		if dc.Spec.GCP.Region != subnetworkRegion {
+			return errors.New("GCP subnetwork should belong to same cluster region")
+		}
+
+		if spec.ServiceAccount != "" {
+			gcpSubnetwork, err := gcpSubnetworkGetter(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
+			if err != nil {
+				return err
+			}
+			if ipFamily != gcpSubnetwork.IPFamily {
+				return errors.New("GCP subnetwork should belong to same cluster network stack type")
+			}
+		}
 	}
 	return nil
 }

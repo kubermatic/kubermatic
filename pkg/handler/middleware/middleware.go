@@ -165,7 +165,7 @@ func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProvider
 }
 
 // UserSaver is a middleware that checks if authenticated user already exists in the database
-// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContexKey.
+// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContextKey.
 func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {

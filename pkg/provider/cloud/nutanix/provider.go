@@ -73,30 +73,25 @@ func (n *Nutanix) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (n *Nutanix) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	logger := n.log.With("cluster", cluster.Name)
+	if !kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
+		return cluster, nil
+	}
 
 	client, err := GetClientSet(n.dc, cluster.Spec.Cloud.Nutanix, n.secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
+	logger := n.log.With("cluster", cluster.Name)
 	logger.Info("removing category values")
 
-	if kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
-		if err = deleteCategoryValues(ctx, client, cluster); err != nil {
-			return nil, err
-		}
-
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(cluster, categoryCleanupFinalizer)
-		})
-
-		if err != nil {
-			return nil, err
-		}
+	if err = deleteCategoryValues(ctx, client, cluster); err != nil {
+		return nil, err
 	}
 
-	return cluster, nil
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(cluster, categoryCleanupFinalizer)
+	})
 }
 
 func (n *Nutanix) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {

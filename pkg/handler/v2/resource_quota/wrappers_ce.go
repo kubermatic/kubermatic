@@ -30,11 +30,11 @@ func getResourceQuotaForProject(_ context.Context, _ interface{}, _ provider.Pro
 	_ provider.PrivilegedProjectProvider, _ provider.UserInfoGetter, _ provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
-func getResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
+func getResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider, _ provider.PrivilegedProjectProvider) (*apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 
-func listResourceQuotas(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) ([]apiv2.ResourceQuota, error) {
+func listResourceQuotas(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider, _ provider.ProjectProvider) ([]apiv2.ResourceQuota, error) {
 	return nil, nil
 }
 

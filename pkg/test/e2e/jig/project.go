@@ -136,7 +136,7 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 
 func (j *ProjectJig) Delete(ctx context.Context, synchronous bool) error {
 	if j.projectName == "" {
-		return errors.New("no project created or already deleted.")
+		return nil
 	}
 
 	log := j.log.With("project", j.projectName)

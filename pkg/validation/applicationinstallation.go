@@ -85,13 +85,6 @@ func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlrunti
 		specPath.Child("namespace", "name"),
 	)...)
 
-	// Validate .Spec.ApplicationRef.Version for immutability
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		newAI.Spec.ApplicationRef.Version.Version.String(),
-		oldAI.Spec.ApplicationRef.Version.Version.String(),
-		specPath.Child("applicationRef", "version"),
-	)...)
-
 	// Validate .Spec.ApplicationRef.Name for immutability
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		newAI.Spec.ApplicationRef.Name,

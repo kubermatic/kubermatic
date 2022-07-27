@@ -28,11 +28,11 @@ charts=$(find charts/ -name Chart.yaml | sort)
 
 [ -n "$charts" ] && while read -r chartYAML; do
   dirname="$(dirname $(echo "$chartYAML"))"
-  chartname=$(yq read "$chartYAML" name)
+  chartname=$(yq4 '.name' "$chartYAML")
   echodate "Fetching dependencies for ${chartname}..."
 
   i=0
-  for url in $(yq r "$chartYAML" dependencies --tojson | jq -r .[].repository); do
+  for url in $(yq4 '.dependencies.[].repository' "$chartYAML"); do
     i=$((i + 1))
     helm repo add ${chartname}-dep-${i} ${url}
   done

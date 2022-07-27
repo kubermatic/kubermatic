@@ -84,6 +84,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("clusterrole", request.Name)
+	log.Debug("Reconciling")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -91,9 +94,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("clusterrole", request.Name)
-	log.Debug("Reconciling")
 
 	err = r.reconcile(ctx, log, request.Name)
 	if err != nil {
@@ -122,8 +122,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Create Cluster Role Binding if doesn't exist
 	if existingClusterRoleBinding == nil {
-		log.Infow("Creating ClusterRoleBinding", "clusterrole", clusterRoleName)
-
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   fmt.Sprintf("%s:%s", rand.String(10), clusterRoleName),
@@ -149,6 +147,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 		}
 
+		log.Infow("Creating ClusterRoleBinding", "name", crb.Name)
 		if err := r.client.Create(ctx, crb); err != nil {
 			return fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 		}

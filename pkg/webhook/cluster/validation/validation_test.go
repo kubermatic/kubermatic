@@ -1419,7 +1419,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.23.8"),
+				Version: semver.NewSemverOrDie("1.23.9"),
 			}.Build(),
 			oldCluster: rawClusterGen{
 				Name:      "foo",
@@ -1444,7 +1444,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.22.11"),
+				Version: semver.NewSemverOrDie("1.22.12"),
 			}.BuildPtr(),
 			wantAllowed: true,
 		},

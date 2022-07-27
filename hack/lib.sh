@@ -424,10 +424,10 @@ set_helm_charts_version() {
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
 
-    yq write --inplace "$chartFile" version "$version"
+    yq4 --inplace ".version = \"$version\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
-      yq write --inplace "$chartFile" appVersion "$version"
-      yq write --inplace "$(dirname "$chartFile")/values.yaml" kubermaticOperator.image.tag "$dockerTag"
+      yq4 --inplace ".appVersion = \"$version\"" "$chartFile"
+      yq4 --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
     fi
   done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
 }
@@ -456,7 +456,7 @@ set_crds_version_annotation() {
   fi
 
   while IFS= read -r -d '' filename; do
-    yq write --inplace --doc '*' "$filename" metadata.annotations.'"app.kubernetes.io/version"' "$version"
+    yq4 --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
 }
 
@@ -469,8 +469,8 @@ go_test() {
 
   # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
   if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
-    go test $@ 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
+    go test "$@" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
   else
-    go test $@
+    go test "$@"
   fi
 }

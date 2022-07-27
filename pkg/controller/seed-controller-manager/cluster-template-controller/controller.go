@@ -25,7 +25,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -94,7 +93,7 @@ func Add(
 
 // Reconcile reconciles the kubermatic cluster template instance in the seed cluster.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("templateinstance", request.Name)
 	log.Debug("Reconciling")
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}
@@ -199,10 +198,6 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	if err != nil {
 		return fmt.Errorf("failed to get credentials: %w", err)
 	}
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
-		return err
-	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 
 	// re-use our reconciling framework, because this is a special place where right after the Cluster
 	// creation, we must set some status fields and this requires us to wait for the Cluster object

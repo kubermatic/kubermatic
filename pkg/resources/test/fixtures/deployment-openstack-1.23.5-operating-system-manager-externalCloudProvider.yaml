@@ -52,7 +52,7 @@ spec:
         - name: OS_PROJECT_ID
         - name: OS_APPLICATION_CREDENTIAL_ID
         - name: OS_APPLICATION_CREDENTIAL_SECRET
-        image: quay.io/kubermatic/operating-system-manager:45600227d69e6a105c34ba70ba641e5cd071887e
+        image: quay.io/kubermatic/operating-system-manager:952f1cd42007d6770b8e2805b0e18247377b14bb
         livenessProbe:
           failureThreshold: 3
           httpGet:

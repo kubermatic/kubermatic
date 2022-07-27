@@ -101,6 +101,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("role", request.Name)
+	log.Debug("Reconciling")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -108,9 +111,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("Role", request.Name)
-	log.Debug("Reconciling")
 
 	role := &rbacv1.Role{}
 	if err := r.client.Get(ctx, request.NamespacedName, role); err != nil {
@@ -143,7 +143,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 		}
 		// No point in trying to create something in a deleted namespace
 		if n.DeletionTimestamp != nil {
-			log.Debugf("Skipping namespace %s", n.Name)
+			log.Debugw("Skipping terminating namespace", "namespace", n.Name)
 			continue
 		}
 		namespaces = append(namespaces, n.Name)

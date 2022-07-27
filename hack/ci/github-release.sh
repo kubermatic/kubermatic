@@ -236,7 +236,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Creating CE archive..."
 
   # switch Docker repository used by the operator to the CE repository
-  yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
+  yq4 --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic"' charts/kubermatic-operator/values.yaml
 
   archive="_dist/kubermatic-ce-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
@@ -271,7 +271,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Creating EE archive..."
 
   # switch Docker repository used by the operator to the EE repository
-  yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
+  yq4 --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic-ee"' charts/kubermatic-operator/values.yaml
 
   archive="_dist/kubermatic-ee-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required

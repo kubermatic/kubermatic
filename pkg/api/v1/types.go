@@ -291,16 +291,17 @@ type GCPSubnetworkList []GCPSubnetwork
 // GCPSubnetwork represents a object of GCP subnetworks.
 // swagger:model GCPSubnetwork
 type GCPSubnetwork struct {
-	ID                    uint64 `json:"id"`
-	Name                  string `json:"name"`
-	Network               string `json:"network"`
-	IPCidrRange           string `json:"ipCidrRange"`
-	GatewayAddress        string `json:"gatewayAddress"`
-	Region                string `json:"region"`
-	SelfLink              string `json:"selfLink"`
-	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
-	Kind                  string `json:"kind"`
-	Path                  string `json:"path"`
+	ID                    uint64                `json:"id"`
+	Name                  string                `json:"name"`
+	Network               string                `json:"network"`
+	IPCidrRange           string                `json:"ipCidrRange"`
+	GatewayAddress        string                `json:"gatewayAddress"`
+	Region                string                `json:"region"`
+	SelfLink              string                `json:"selfLink"`
+	PrivateIPGoogleAccess bool                  `json:"privateIpGoogleAccess"`
+	Kind                  string                `json:"kind"`
+	Path                  string                `json:"path"`
+	IPFamily              kubermaticv1.IPFamily `json:"ipFamily"`
 }
 
 // DigitaloceanSizeList represents a object of digitalocean sizes.
@@ -558,6 +559,13 @@ type User struct {
 	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 
+var RolePriority = map[string]int{
+	"owners":          1000,
+	"projectmanagers": 100,
+	"editors":         10,
+	"viewers":         1,
+}
+
 func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool,
 	userBindings []*kubermaticv1.UserProjectBinding, groupBindings []*kubermaticv1.GroupProjectBinding,
 ) *User {
@@ -574,9 +582,10 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 				return nil
 			}(),
 		},
-		Email:   internalUser.Spec.Email,
-		Groups:  internalUser.Spec.Groups,
-		IsAdmin: internalUser.Spec.IsAdmin,
+		Email:    internalUser.Spec.Email,
+		Groups:   internalUser.Spec.Groups,
+		IsAdmin:  internalUser.Spec.IsAdmin,
+		Projects: []ProjectGroup{},
 	}
 
 	if !internalUser.Status.LastSeen.IsZero() {
@@ -589,28 +598,25 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 	}
 
 	for _, binding := range userBindings {
-		bindingAlreadyExists := false
-		for _, pg := range apiUser.Projects {
-			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
-				bindingAlreadyExists = true
-				break
-			}
-		}
-		if !bindingAlreadyExists {
-			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
-			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
-		}
+		groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
+		pg := ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix}
+		apiUser.Projects = append(apiUser.Projects, pg)
 	}
 
 	for _, binding := range groupBindings {
+		overwriteRole := false
 		bindingAlreadyExists := false
-		for _, p := range apiUser.Projects {
-			if p.ID == binding.Spec.ProjectID {
+		for _, pg := range apiUser.Projects {
+			if pg.ID == binding.Spec.ProjectID {
 				bindingAlreadyExists = true
+				// Check if role from group binding is more permissive.
+				if RolePriority[binding.Spec.Role] > RolePriority[pg.GroupPrefix] {
+					overwriteRole = true
+				}
 				break
 			}
 		}
-		if !bindingAlreadyExists {
+		if overwriteRole || !bindingAlreadyExists {
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{
 				ID:          binding.Spec.ProjectID,
 				GroupPrefix: binding.Spec.Role,
@@ -1153,7 +1159,7 @@ func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicA
 
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
 type PublicOpenstackCloudSpec struct {
-	FloatingIPPool string `json:"floatingIpPool"`
+	FloatingIPPool string `json:"floatingIPPool"`
 	Project        string `json:"project,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
 	Domain         string `json:"domain,omitempty"`

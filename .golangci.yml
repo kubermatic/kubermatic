@@ -21,10 +21,13 @@ run:
     - ce
     - cloud
     - create
+    - dualstack
     - e2e
     - ee
     - integration
-    - dualstack
+    - ipam
+    - kubevirt
+    - logout
   skip-files:
     - zz_generated.*.go
     # This package was forked from upstream (in #9826)

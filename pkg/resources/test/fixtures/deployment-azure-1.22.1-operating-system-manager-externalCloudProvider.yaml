@@ -47,7 +47,7 @@ spec:
           value: az-tenant-id
         - name: AZURE_SUBSCRIPTION_ID
           value: az-subscription-id
-        image: quay.io/kubermatic/operating-system-manager:45600227d69e6a105c34ba70ba641e5cd071887e
+        image: quay.io/kubermatic/operating-system-manager:952f1cd42007d6770b8e2805b0e18247377b14bb
         livenessProbe:
           failureThreshold: 3
           httpGet:

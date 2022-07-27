@@ -52,7 +52,7 @@ type reconciler struct {
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
 	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 }
 
 func Add(
@@ -65,7 +65,7 @@ func Add(
 		log:          log.Named(ControllerName),
 		recorder:     masterManager.GetEventRecorderFor(ControllerName),
 		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -125,9 +125,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		userProjectBindingCreatorGetter(userProjectBinding),
 	}
 
-	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedBinding := &kubermaticv1.UserProjectBinding{}
-		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedBinding); err != nil && !apierrors.IsNotFound(err) {
+		if err := seedClient.Get(ctx, request.NamespacedName, seedBinding); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch UserProjectBinding on seed cluster: %w", err)
 		}
 
@@ -136,7 +136,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClusterClient)
+		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClient)
 	})
 
 	if err != nil {
@@ -147,30 +147,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	err := r.syncAllSeeds(log, userProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-		if err := seedClusterClient.Delete(ctx, userProjectBinding); err != nil {
-			return ctrlruntimeclient.IgnoreNotFound(err)
-		}
-		return nil
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		return ctrlruntimeclient.IgnoreNotFound(seedClient.Delete(ctx, userProjectBinding))
 	})
 	if err != nil {
 		return err
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, userProjectBinding, cleanupFinalizer)
-}
-
-func (r *reconciler) syncAllSeeds(
-	log *zap.SugaredLogger,
-	userProjectBinding *kubermaticv1.UserProjectBinding,
-	action func(seedClusterClient ctrlruntimeclient.Client, userProjectBinding *kubermaticv1.UserProjectBinding) error) error {
-	for seedName, seedClient := range r.seedClients {
-		if err := action(seedClient, userProjectBinding); err != nil {
-			return fmt.Errorf("failed syncing userprojectbinding for seed %s: %w", seedName, err)
-		}
-		log.Debugw("Reconciled userprojectbinding with seed", "seed", seedName)
-	}
-	return nil
 }
 
 func enqueueUserProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

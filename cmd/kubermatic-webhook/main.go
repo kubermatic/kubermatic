@@ -43,7 +43,6 @@ import (
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
-	resourcequotamutation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/mutation"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
@@ -79,7 +78,7 @@ func main() {
 	log := rawLog.Sugar()
 
 	// set the logger used by controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()
@@ -200,7 +199,6 @@ func main() {
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ResourceQuota{}).WithValidator(quotaValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup resource quota validation webhook", zap.Error(err))
 	}
-	resourcequotamutation.NewAdmissionHandler(mgr.GetClient()).SetupWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks

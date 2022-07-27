@@ -58,15 +58,15 @@ func (j *TestJig) Setup(ctx context.Context, waitMode MachineWaitMode) (*kuberma
 	return project, cluster, nil
 }
 
-func (j *TestJig) Cleanup(ctx context.Context, t *testing.T) {
+func (j *TestJig) Cleanup(ctx context.Context, t *testing.T, synchronous bool) {
 	if j.ClusterJig != nil {
-		if err := j.ClusterJig.Delete(ctx, false); err != nil {
+		if err := j.ClusterJig.Delete(ctx, synchronous); err != nil {
 			t.Errorf("Failed to delete cluster: %v", err)
 		}
 	}
 
 	if j.ProjectJig != nil {
-		if err := j.ProjectJig.Delete(ctx, false); err != nil {
+		if err := j.ProjectJig.Delete(ctx, synchronous); err != nil {
 			t.Errorf("Failed to delete project: %v", err)
 		}
 	}

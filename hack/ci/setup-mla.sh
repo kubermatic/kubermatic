@@ -41,12 +41,12 @@ git clone "$URL" "$tempdir"
 
   # due to the anti affinities, getting more than 1 replica can take forever in kind,
   # so we reduce the replica count for all those components
-  yq write --inplace config/cortex/values.yaml cortex.ingester.replicas 1
-  yq write --inplace config/cortex/values.yaml cortex.distributor.replicas 1
-  yq write --inplace config/cortex/values.yaml cortex.alertmanager.replicas 1
+  yq4 --inplace '.cortex.ingester.replicas = 1' config/cortex/values.yaml
+  yq4 --inplace '.cortex.distributor.replicas = 1' config/cortex/values.yaml
+  yq4 --inplace '.cortex.alertmanager.replicas = 1' config/cortex/values.yaml
 
-  yq write --inplace config/loki/values.yaml loki-distributed.ingester.replicas 1
-  yq write --inplace config/loki/values.yaml loki-distributed.distributor.replicas 1
+  yq4 --inplace '.loki-distributed.ingester.replicas = 1' config/loki/values.yaml
+  yq4 --inplace '.loki-distributed.distributor.replicas = 1' config/loki/values.yaml
 
   # ensure that dependencies are fetched and stored in the corresponding charts dir
   echodate "Fetching dependencies for the charts"

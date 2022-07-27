@@ -16,6 +16,7 @@
 # Run `make hubble` instead.
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
+{{ if eq .Cluster.CNIPlugin.Version "v1.12" }}
 ---
 # Source: cilium/templates/hubble-relay/serviceaccount.yaml
 apiVersion: v1
@@ -138,6 +139,7 @@ rules:
     resources:
       - secrets
     resourceNames:
+      - cilium-ca
       - hubble-ca-secret
     verbs:
       - get
@@ -180,7 +182,7 @@ metadata:
   labels:
     k8s-app: hubble-relay
 spec:
-  type: ClusterIP
+  type: "ClusterIP"
   selector:
     k8s-app: hubble-relay
   ports:
@@ -197,7 +199,7 @@ metadata:
   labels:
     k8s-app: hubble-ui
 spec:
-  type: ClusterIP
+  type: "ClusterIP"
   selector:
     k8s-app: hubble-ui
   ports:
@@ -228,19 +230,9 @@ spec:
       labels:
         k8s-app: hubble-relay
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: "k8s-app"
-                  operator: In
-                  values:
-                    - cilium
-            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: hubble-relay
-          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.11.6@sha256:fd9034a2d04d5b973f1e8ed44f230ea195b89c37955ff32e34e5aa68f3ed675a"
+          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.12.0@sha256:ca8033ea8a3112d838f958862fa76c8d895e3c8d0f5590de849b91745af5ac4d"
           imagePullPolicy: IfNotPresent
           command:
             - hubble-relay
@@ -267,7 +259,16 @@ spec:
       serviceAccount: "hubble-relay"
       serviceAccountName: "hubble-relay"
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 0
+      terminationGracePeriodSeconds: 1
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                k8s-app: cilium
+            topologyKey: kubernetes.io/hostname
+      nodeSelector:
+        kubernetes.io/os: linux
       volumes:
       - name: config
         configMap:
@@ -310,9 +311,9 @@ spec:
         k8s-app: hubble-ui
     spec:
       securityContext:
-        runAsUser: 1001
-        runAsGroup: 1001
         fsGroup: 1001
+        runAsGroup: 1001
+        runAsUser: 1001
       priorityClassName: 
       serviceAccount: "hubble-ui"
       serviceAccountName: "hubble-ui"
@@ -327,6 +328,8 @@ spec:
           - name: hubble-ui-nginx-conf
             mountPath: /etc/nginx/conf.d/default.conf
             subPath: nginx.conf
+          - name: tmp-dir
+            mountPath: /tmp
       - name: backend
         image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.9.0@sha256:000df6b76719f607a9edefb9af94dfd1811a6f1b6a8a9c537cba90bf12df474b"
         imagePullPolicy: IfNotPresent
@@ -339,17 +342,21 @@ spec:
         - name: grpc
           containerPort: 8090
         volumeMounts:
+      nodeSelector:
+        kubernetes.io/os: linux
       volumes:
       - configMap:
           defaultMode: 420
           name: hubble-ui-nginx
         name: hubble-ui-nginx-conf
+      - emptyDir: {}
+        name: tmp-dir
 ---
 # Source: cilium/templates/hubble/tls-cronjob/job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: hubble-generate-certs-7dc7200f85
+  name: hubble-generate-certs-394f790584
   namespace: kube-system
   labels:
     k8s-app: hubble-generate-certs
@@ -361,7 +368,7 @@ spec:
     spec:
       containers:
         - name: certgen
-          image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.5@sha256:0c2b71bb3469990e7990e7e26243617aa344b5a69a4ce465740b8577f9d48ab9"
+          image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.8@sha256:4a456552a5f192992a6edcec2febb1c54870d665173a33dc7d876129b199ddbd"
           imagePullPolicy: IfNotPresent
           command:
             - "/usr/bin/cilium-certgen"
@@ -370,8 +377,8 @@ spec:
           # the values used in past runs by inspecting the completed pod.
           args:
             - "--cilium-namespace=kube-system"
-            - "--hubble-ca-generate"
-            - "--hubble-ca-reuse-secret"
+            - "--ca-generate"
+            - "--ca-reuse-secret"
             - "--hubble-server-cert-generate"
             - "--hubble-server-cert-common-name=*.default.hubble-grpc.cilium.io"
             - "--hubble-server-cert-validity-duration=94608000s"
@@ -403,7 +410,7 @@ spec:
         spec:
           containers:
             - name: certgen
-              image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.5@sha256:0c2b71bb3469990e7990e7e26243617aa344b5a69a4ce465740b8577f9d48ab9"
+              image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.8@sha256:4a456552a5f192992a6edcec2febb1c54870d665173a33dc7d876129b199ddbd"
               imagePullPolicy: IfNotPresent
               command:
                 - "/usr/bin/cilium-certgen"
@@ -412,8 +419,8 @@ spec:
               # the values used in past runs by inspecting the completed pod.
               args:
                 - "--cilium-namespace=kube-system"
-                - "--hubble-ca-generate"
-                - "--hubble-ca-reuse-secret"
+                - "--ca-generate"
+                - "--ca-reuse-secret"
                 - "--hubble-server-cert-generate"
                 - "--hubble-server-cert-common-name=*.default.hubble-grpc.cilium.io"
                 - "--hubble-server-cert-validity-duration=94608000s"
@@ -443,4 +450,5 @@ spec:
     protocol: TCP
     targetPort: 4244
   internalTrafficPolicy: Local
+{{ end }}
 {{ end }}

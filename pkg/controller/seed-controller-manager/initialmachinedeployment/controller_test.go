@@ -29,23 +29,29 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	kubernetesVersion = defaults.DefaultKubernetesVersioning.Default
+)
+
 const (
-	kubernetesVersion = "v1.22.5"
-	datacenterName    = "testdc"
-	projectID         = "testproject"
+	datacenterName = "testdc"
+	projectID      = "testproject"
 )
 
 func init() {
@@ -80,28 +86,31 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie(kubernetesVersion),
+			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 			},
 		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: healthy(),
+			NamespaceName:  "cluster-testcluster",
 		},
 	}
 }
 
 func TestReconcile(t *testing.T) {
-	log := zap.NewNop().Sugar()
+	logger := zap.NewNop().Sugar()
 
 	testCases := []struct {
-		name     string
-		cluster  *kubermaticv1.Cluster
-		validate func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
+		name      string
+		mcHealthy bool
+		cluster   *kubermaticv1.Cluster
+		validate  func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
 	}{
 		{
-			name:    "no annotation exists, nothing should happen",
-			cluster: genCluster(""),
+			name:      "no annotation exists, nothing should happen",
+			mcHealthy: true,
+			cluster:   genCluster(""),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				// cluster should now have its special condition
 				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
@@ -119,7 +128,8 @@ func TestReconcile(t *testing.T) {
 		},
 
 		{
-			name: "vanilla case, create a MachineDeployment from the annotation",
+			name:      "MC webhook is not healthy, nothing should happen",
+			mcHealthy: false,
 			cluster: func() *kubermaticv1.Cluster {
 				nd := apiv1.NodeDeployment{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -129,7 +139,57 @@ func TestReconcile(t *testing.T) {
 						Replicas: 1,
 						Template: apiv1.NodeSpec{
 							Versions: apiv1.NodeVersionInfo{
-								Kubelet: kubernetesVersion,
+								Kubelet: kubernetesVersion.String(),
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{},
+							},
+							Cloud: apiv1.NodeCloudSpec{
+								Hetzner: &apiv1.HetznerNodeSpec{
+									Type:    "big",
+									Network: "test",
+								},
+							},
+						},
+					},
+				}
+
+				data, err := json.Marshal(nd)
+				if err != nil {
+					panic(fmt.Sprintf("cannot marshal initial machine deployment: %v", err))
+				}
+
+				return genCluster(string(data))
+			}(),
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				// cluster should now have its special condition
+				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
+
+				if cond := cluster.Status.Conditions[name]; cond.Status != corev1.ConditionTrue {
+					return fmt.Errorf("cluster should have %v=%s condition, but does not", name, corev1.ConditionTrue)
+				}
+
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
+				}
+
+				return nil
+			},
+		},
+
+		{
+			name:      "vanilla case, create a MachineDeployment from the annotation",
+			mcHealthy: true,
+			cluster: func() *kubermaticv1.Cluster {
+				nd := apiv1.NodeDeployment{
+					ObjectMeta: apiv1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Replicas: 1,
+						Template: apiv1.NodeSpec{
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: kubernetesVersion.String(),
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{},
@@ -174,8 +234,9 @@ func TestReconcile(t *testing.T) {
 		},
 
 		{
-			name:    "invalid annotations should cause errors and then be removed",
-			cluster: genCluster("I am not valid JSON!"),
+			name:      "invalid annotations should cause errors and then be removed",
+			mcHealthy: true,
+			cluster:   genCluster("I am not valid JSON!"),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr == nil {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
@@ -198,10 +259,22 @@ func TestReconcile(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
+			webhook := &appsv1.Deployment{}
+			webhook.Name = resources.MachineControllerWebhookDeploymentName
+			webhook.Namespace = test.cluster.Status.NamespaceName
+			webhook.Spec.Replicas = pointer.Int32(1)
+
+			if test.mcHealthy {
+				webhook.Status.Replicas = *webhook.Spec.Replicas
+				webhook.Status.AvailableReplicas = *webhook.Spec.Replicas
+				webhook.Status.ReadyReplicas = *webhook.Spec.Replicas
+				webhook.Status.UpdatedReplicas = *webhook.Spec.Replicas
+			}
+
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.cluster, project).
+				WithObjects(test.cluster, project, webhook).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
@@ -215,7 +288,7 @@ func TestReconcile(t *testing.T) {
 			r := &Reconciler{
 				Client:   seedClient,
 				recorder: &record.FakeRecorder{},
-				log:      log,
+				log:      logger,
 				versions: kubermatic.NewFakeVersions(),
 
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),

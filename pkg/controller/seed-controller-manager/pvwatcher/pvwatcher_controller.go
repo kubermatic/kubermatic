@@ -94,8 +94,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("pvc", request)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	clusterName := kubernetes.ClusterNameFromNamespace(request.Namespace)

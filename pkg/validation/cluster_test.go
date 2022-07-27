@@ -17,12 +17,17 @@ limitations under the License.
 package validation
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"net"
 	"strings"
 	"testing"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/stretchr/testify/assert"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -184,7 +189,7 @@ func TestValidateCloudSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateCloudSpec(test.spec, dc, nil).ToAggregate()
+			err := ValidateCloudSpec(test.spec, dc, kubermaticv1.IPFamilyIPv4, nil).ToAggregate()
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
@@ -626,6 +631,258 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			if test.wantErr == (len(errs) == 0) {
 				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
 			}
+		})
+	}
+}
+
+func TestValidateGCPCloudSpec(t *testing.T) {
+	testCases := []struct {
+		name              string
+		spec              *kubermaticv1.GCPCloudSpec
+		dc                *kubermaticv1.Datacenter
+		ipFamily          kubermaticv1.IPFamily
+		gcpSubnetworkResp apiv1.GCPSubnetwork
+		expectedError     error
+	}{
+		{
+			name: "valid ipv4 gcp spec",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily: kubermaticv1.IPFamilyIPv4,
+		},
+		{
+			name: "invalid gcp spec: service account cannot be empty",
+			spec: &kubermaticv1.GCPCloudSpec{
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyIPv4,
+			expectedError: errors.New("\"serviceAccount\" cannot be empty"),
+		},
+		{
+			name: "invalid gcp spec: NodePortsAllowedIPRange",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "invalid",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyIPv4,
+			expectedError: &net.ParseError{Type: "CIDR address", Text: "invalid"},
+		},
+		{
+			name: "invalid gcp spec: NodePortsAllowedIPRanges",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"invalid",
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyIPv4,
+			expectedError: fmt.Errorf("unable to parse CIDR \"invalid\": %w", &net.ParseError{Type: "CIDR address", Text: "invalid"}),
+		},
+		{
+			name: "invalid dual-stack gcp spec: empty network",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyDualStack,
+			expectedError: errors.New("network and subnetwork should be defined for GCP dual-stack (IPv4 + IPv6) cluster"),
+		},
+		{
+			name: "invalid dual-stack gcp spec: empty subnetwork",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+				Network: "global/networks/dualstack",
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyDualStack,
+			expectedError: errors.New("network and subnetwork should be defined for GCP dual-stack (IPv4 + IPv6) cluster"),
+		},
+		{
+			name: "invalid dual-stack gcp spec: invalid subnetwork path",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+				Network:    "global/networks/dualstack",
+				Subnetwork: "invalid",
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyDualStack,
+			expectedError: errors.New("invalid GCP subnetwork path"),
+		},
+		{
+			name: "invalid dual-stack gcp spec: wrong region",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+				Network:    "global/networks/dualstack",
+				Subnetwork: "projects/kubermatic-dev/regions/europe-west2/subnetworks/dualstack-europe-west2",
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west3",
+					},
+				},
+			},
+			ipFamily:      kubermaticv1.IPFamilyDualStack,
+			expectedError: errors.New("GCP subnetwork should belong to same cluster region"),
+		},
+		{
+			name: "valid gcp dual-stack spec",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+				Network:    "global/networks/dualstack",
+				Subnetwork: "projects/kubermatic-dev/regions/europe-west2/subnetworks/dualstack-europe-west2",
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west2",
+					},
+				},
+			},
+			ipFamily: kubermaticv1.IPFamilyDualStack,
+			gcpSubnetworkResp: apiv1.GCPSubnetwork{
+				IPFamily: kubermaticv1.IPFamilyDualStack,
+			},
+		},
+		{
+			name: "invalid gcp dual-stack spec: wrong network stack type",
+			spec: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount:          "service-account",
+				NodePortsAllowedIPRange: "0.0.0.0/0",
+				NodePortsAllowedIPRanges: &kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{
+						"0.0.0.0/0",
+						"::/0",
+					},
+				},
+				Network:    "global/networks/default",
+				Subnetwork: "projects/kubermatic-dev/regions/europe-west2/subnetworks/default",
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					GCP: &kubermaticv1.DatacenterSpecGCP{
+						Region: "europe-west2",
+					},
+				},
+			},
+			ipFamily: kubermaticv1.IPFamilyDualStack,
+			gcpSubnetworkResp: apiv1.GCPSubnetwork{
+				IPFamily: kubermaticv1.IPFamilyIPv4,
+			},
+			expectedError: errors.New("GCP subnetwork should belong to same cluster network stack type"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateGCPCloudSpec(tc.spec, tc.dc, tc.ipFamily, func(ctx context.Context, sa, region, subnetworkName string) (apiv1.GCPSubnetwork, error) {
+				return tc.gcpSubnetworkResp, nil
+			})
+			assert.Equal(t, tc.expectedError, err)
 		})
 	}
 }

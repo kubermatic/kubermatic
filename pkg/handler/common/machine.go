@@ -405,14 +405,14 @@ func ListMachineDeploymentMetrics(ctx context.Context, userInfoGetter provider.U
 		}
 	}
 
-	dynamicCLient, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
+	dynamicClient, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
-	if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
+	if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
 		// Happens during cluster creation when the CRD is not setup yet
 		if !meta.IsNoMatchError(err) {
 			return nil, common.KubernetesErrorToHTTPError(err)

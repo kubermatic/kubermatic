@@ -374,6 +374,10 @@ const (
 	ConstraintViolationsLimit = 20
 	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks.
 	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
+	// ClusterCloudCredentialsSecretName is the name the Secret in the cluster namespace that contains
+	// the cloud provider credentials. This Secret is a copy of the credentials secret from the KKP
+	// namespace (which has a dynamic name).
+	ClusterCloudCredentialsSecretName = "cloud-credentials"
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init.
@@ -718,7 +722,7 @@ const (
 const (
 	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
 	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"
-	EtcdKetFile       = "/etc/etcd/pki/tls/etcd-tls.key"
+	EtcdKeyFile       = "/etc/etcd/pki/tls/etcd-tls.key"
 
 	EtcdPeerCertFile = "/etc/etcd/pki/tls/etcd-tls.crt"
 	EtcdPeerKeyFile  = "/etc/etcd/pki/tls/etcd-tls.key"

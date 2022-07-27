@@ -26,6 +26,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/go-kit/kit/endpoint"
 
@@ -368,7 +369,7 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 	}
 	_, err = client.EKS.CreateCluster(input)
 
-	return err
+	return decodeAWSError(err)
 }
 
 func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -427,7 +428,7 @@ func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySel
 	}
 	_, err = client.EKS.UpdateClusterVersion(&updateInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 
 	return newCluster, nil
@@ -451,7 +452,7 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 	}
 	nodeOutput, err := client.EKS.ListNodegroups(nodeInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 	nodeGroups := nodeOutput.Nodegroups
 
@@ -479,7 +480,7 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 
 		nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
 		if err != nil {
-			return nil, err
+			return nil, decodeAWSError(err)
 		}
 		nodeGroup := nodeGroupOutput.Nodegroup
 		machineDeployments = append(machineDeployments, createMachineDeploymentFromEKSNodePoll(nodeGroup, readyReplicas))
@@ -514,7 +515,7 @@ func getEKSMachineDeployment(ctx context.Context, client *awsprovider.ClientSet,
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -642,7 +643,7 @@ func upgradeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNa
 
 	updateOutput, err := client.EKS.UpdateNodegroupVersion(&nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 
 	return updateOutput, nil
@@ -656,7 +657,7 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(&nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 
 	nodeGroup := nodeGroupOutput.Nodegroup
@@ -690,7 +691,7 @@ func resizeEKSNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupNam
 
 	updateOutput, err := client.EKS.UpdateNodegroupConfig(&configInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 
 	return updateOutput, nil
@@ -737,7 +738,7 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 	}
 	_, err = client.EKS.DeleteNodegroup(&deleteNGInput)
 
-	return err
+	return decodeAWSError(err)
 }
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -863,7 +864,7 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 	eksCluster := clusterOutput.Cluster
 	if eksCluster == nil {
@@ -940,7 +941,7 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machine
 	}
 	_, err = client.EKS.CreateNodegroup(createInput)
 	if err != nil {
-		return nil, err
+		return nil, decodeAWSError(err)
 	}
 
 	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
@@ -989,8 +990,21 @@ func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 
 	_, err = client.EKS.DeleteCluster(&eks.DeleteClusterInput{Name: &cloudSpec.EKS.Name})
 	if err != nil {
-		return err
+		return decodeAWSError(err)
 	}
 
 	return nil
+}
+
+func decodeAWSError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var aerr awserr.Error
+	if errors.As(err, &aerr) {
+		return errors.New(aerr.Message())
+	}
+
+	return err
 }

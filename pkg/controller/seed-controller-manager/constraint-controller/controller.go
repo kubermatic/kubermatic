@@ -168,7 +168,7 @@ func ByLabel(key string) predicate.Funcs {
 // Reconcile reconciles the kubermatic constraints in the seed cluster and syncs them to all user clusters namespace
 // which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("constraint", request)
 	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}
@@ -298,7 +298,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 			return ctrlruntimeclient.IgnoreNotFound(err)
 		}
 
-		log.Debugw("cleanup processing:", namespace)
+		log.Debug("Deleting constraint")
 		err = seedClient.Delete(ctx, constraint)
 
 		return ctrlruntimeclient.IgnoreNotFound(err)
@@ -326,17 +326,17 @@ func (r *reconciler) syncAllClustersNS(
 
 		// cluster Validation
 		if userCluster.Spec.Pause {
-			clusterLog.Debugw("Cluster paused, skipping")
+			clusterLog.Debug("Cluster paused, skipping")
 			continue
 		}
 
 		if userCluster.Status.NamespaceName == "" {
-			clusterLog.Debugw("Cluster has no namespace name yet, skipping")
+			clusterLog.Debug("Cluster has no namespace name yet, skipping")
 			continue
 		}
 
 		if !userCluster.DeletionTimestamp.IsZero() {
-			clusterLog.Debugw("Cluster deletion in progress, skipping")
+			clusterLog.Debug("Cluster deletion in progress, skipping")
 			continue
 		}
 
@@ -345,9 +345,9 @@ func (r *reconciler) syncAllClustersNS(
 				return fmt.Errorf("failed syncing constraint for cluster %s namespace: %w", clusterName, err)
 			}
 
-			clusterLog.Debugw("Reconciled constraint with cluster")
+			clusterLog.Debug("Reconciled constraint with cluster")
 		} else {
-			clusterLog.Debugw("Cluster does not integrate with OPA, skipping")
+			clusterLog.Debug("Cluster does not integrate with OPA, skipping")
 		}
 	}
 

@@ -113,7 +113,7 @@ var _ = Describe("application Installation controller", func() {
 	})
 
 	Context("when an applicationDefinition is removed", func() {
-		It("should remove the application using this ApplicationDefintion", func() {
+		It("should remove the application using this ApplicationDefinition", func() {
 			appDefName := "app-def-5"
 			appInstallName := "app-5"
 
@@ -183,7 +183,6 @@ var _ = Describe("application Installation controller", func() {
 								Credentials:  nil,
 							},
 						},
-						Method:   "helm",
 						FormSpec: nil,
 					},
 				}}
@@ -205,7 +204,7 @@ var _ = Describe("application Installation controller", func() {
 func createApplicationDef(appDefName string) *appskubermaticv1.ApplicationDefinition {
 	Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
 
-	def := &appskubermaticv1.ApplicationDefinition{}
+	def := &appskubermaticv1.ApplicationDefinition{Spec: appskubermaticv1.ApplicationDefinitionSpec{Method: appskubermaticv1.HelmTemplateMethod}}
 	EventuallyWithOffset(1, func(g Gomega) {
 		g.Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
 	}, timeout, interval).Should(Succeed())

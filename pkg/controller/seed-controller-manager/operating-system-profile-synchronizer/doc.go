@@ -1,5 +1,3 @@
-//go:build !ee
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -16,19 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mutation
-
-import (
-	"context"
-	"fmt"
-
-	"github.com/go-logr/logr"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-func handle(_ context.Context, req webhook.AdmissionRequest, _ *admission.Decoder, _ logr.Logger, _ ctrlruntimeclient.Client) webhook.AdmissionResponse {
-	return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
-}
+/*
+Package operatingsystemprofilesynchronizer contains a controller that is responsible for ensuring that
+OperatingSystemProfiles are synced from the seed namespace to the user cluster namespace.
+*/
+package operatingsystemprofilesynchronizer

@@ -33,12 +33,12 @@ func getResourceQuotaForProject(ctx context.Context, request interface{}, projec
 	return resourcequota.GetResourceQuotaForProject(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter, quotaProvider)
 }
 
-func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) (*apiv2.ResourceQuota, error) {
-	return resourcequota.GetResourceQuota(ctx, request, provider)
+func getResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.PrivilegedProjectProvider) (*apiv2.ResourceQuota, error) {
+	return resourcequota.GetResourceQuota(ctx, request, provider, projectProvider)
 }
 
-func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) ([]*apiv2.ResourceQuota, error) {
-	return resourcequota.ListResourceQuotas(ctx, request, provider)
+func listResourceQuotas(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider, projectProvider provider.ProjectProvider) ([]*apiv2.ResourceQuota, error) {
+	return resourcequota.ListResourceQuotas(ctx, request, provider, projectProvider)
 }
 
 func createResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
