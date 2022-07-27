@@ -36,10 +36,10 @@ spec:
       containers:
         - name: openldap
           image: osixia/openldap:1.4.0
-          # For some unknown reason it fails at the first attempt to run
           command:
             - /bin/bash
             - -c
+            # For some unknown reason it fails at the first attempt to run
             - /container/tool/run --copy-service || /container/tool/run --copy-service --loglevel debug
           env:
             - name: LDAP_TLS_VERIFY_CLIENT
@@ -50,6 +50,13 @@ spec:
           volumeMounts:
             - mountPath: /container/service/slapd/assets/config/bootstrap/ldif/custom/
               name: config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
       volumes:
         - name: config
           configMap:
