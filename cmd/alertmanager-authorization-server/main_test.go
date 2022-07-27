@@ -90,6 +90,18 @@ func TestAuthorize(t *testing.T) {
 			expectedError:      false,
 			expectedAuthorized: true,
 		},
+		{
+			name:      "user is authorized to access alertmanager through group project bindings",
+			userEmail: "john@acme.com",
+			clusterID: test.DefaultClusterID,
+			existingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				test.GenUserWithGroups("user", "John", "john@acme.com", []string{"projectgroup"}),
+				test.GenGroupBinding(test.GenDefaultProject().Name, "projectgroup", "viewers"),
+			),
+			expectedError:      false,
+			expectedAuthorized: true,
+		},
 	}
 
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
