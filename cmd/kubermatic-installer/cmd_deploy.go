@@ -106,7 +106,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "full path to the KubermaticConfiguration YAML file")
+	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "full path to the KubermaticConfiguration YAML file (only required during first installation, on upgrades the configuration can automatically be read from the cluster instead)")
 	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
@@ -180,6 +180,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			return errors.New("no kubeconfig (--kubeconfig or $KUBECONFIG) given")
 		}
 
+		// this can result in both configs being nil, if no --config is given
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(opt.Config)
 		if err != nil {
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
@@ -207,24 +208,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			Versions:                           versions,
 		}
-
-		// validate the configuration
-		logger.Info("🚦 Validating the provided configuration…")
-
-		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
-
-		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, deployOptions, subLogger)
-		if len(validationErrors) > 0 {
-			logger.Error("⛔ The provided configuration files are invalid:")
-
-			for _, e := range validationErrors {
-				subLogger.Errorf("%v", e)
-			}
-
-			return errors.New("please review your configuration and try again")
-		}
-
-		logger.Info("✅ Provided configuration is valid.")
 
 		// prepapre Kubernetes and Helm clients
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(opt.KubeContext)
@@ -257,6 +240,33 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		}
 
 		kubeClient := mgr.GetClient()
+
+		// try to auto-find the KubermaticConfiguration
+		if kubermaticConfig == nil {
+			kubermaticConfig, err = findKubermaticConfiguration(appContext, kubeClient, kubermaticmaster.KubermaticOperatorNamespace)
+			if err != nil {
+				return fmt.Errorf("failed to detect current KubermaticConfiguration: %w", err)
+			}
+		}
+
+		// validate the configuration (in order to auto-fetch the config during upgrades,
+		// this validation has to happen after we connected to the cluster)
+		logger.Info("🚦 Validating the provided configuration…")
+
+		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
+
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, deployOptions, subLogger)
+		if len(validationErrors) > 0 {
+			logger.Error("⛔ The provided configuration files are invalid:")
+
+			for _, e := range validationErrors {
+				subLogger.Errorf("%v", e)
+			}
+
+			return errors.New("please review your configuration and try again")
+		}
+
+		logger.Info("✅ Provided configuration is valid.")
 
 		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
 			return fmt.Errorf("failed to add scheme: %w", err)
