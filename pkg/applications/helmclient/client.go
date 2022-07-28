@@ -215,23 +215,9 @@ func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResp
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies
 // from repositories into "charts" folder).
 func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
-	regClient, err := registry.NewClient() // todo credentials
+	fi, err := os.Stat(chartLoc)
 	if err != nil {
-		return nil, fmt.Errorf("can not initialize registry client: %w", err)
-	}
-
-	var out strings.Builder
-	man := &downloader.Manager{
-		Out:              &out,
-		ChartPath:        chartLoc,
-		Getters:          h.getterProviders,
-		RepositoryConfig: h.settings.RepositoryConfig,
-		RepositoryCache:  h.settings.RepositoryCache,
-		RegistryClient:   regClient,
-		Debug:            true,
-		Verify:           downloader.VerifyNever,
-		SkipUpdate:       true,
-		// todo credentials
+		return nil, fmt.Errorf("can not find chart at `%s': %w", chartLoc, err)
 	}
 
 	chartToInstall, err := loader.Load(chartLoc)
@@ -239,10 +225,7 @@ func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
 		return nil, fmt.Errorf("can not load chart: %w", err)
 	}
 
-	fi, err := os.Stat(chartLoc)
-	if err != nil {
-		return nil, fmt.Errorf("can not find chart at `%s': %w", chartLoc, err)
-	}
+	var out strings.Builder
 
 	// If we got the chart from the filesystem (i.e. cloned from a git repository), we have to build dependencies because
 	// charts directory may not exist.
@@ -250,6 +233,22 @@ func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
 	// note: if we got the chart from a remote helm repository, we don't have to build dependencies because the package
 	// (i.e. the tgz) should already contain it.
 	if fi.IsDir() {
+		regClient, err := registry.NewClient() // todo credentials
+		if err != nil {
+			return nil, fmt.Errorf("can not initialize registry client: %w", err)
+		}
+		man := &downloader.Manager{
+			Out:              &out,
+			ChartPath:        chartLoc,
+			Getters:          h.getterProviders,
+			RepositoryConfig: h.settings.RepositoryConfig,
+			RepositoryCache:  h.settings.RepositoryCache,
+			RegistryClient:   regClient,
+			Debug:            true,
+			Verify:           downloader.VerifyNever,
+			SkipUpdate:       true,
+		}
+
 		// Helm does not download dependency if the repository is unknown (i.e. not present in repository.xml)
 		// so we explicitly add to the repository file.
 		var dependencies []*chart.Dependency
