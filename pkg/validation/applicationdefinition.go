@@ -108,10 +108,10 @@ func validateHelmCredentials(credential *appskubermaticv1.HelmCredentials, f *fi
 		}
 
 		if credential.Username != nil && credential.Password == nil {
-			return field.Forbidden(f.Child("password"), "password must be definedif username if defined")
+			return field.Forbidden(f.Child("password"), "password must be specified with username")
 		}
 		if credential.Password != nil && credential.Username == nil {
-			return field.Forbidden(f.Child("username"), "username must be definedif password if defined")
+			return field.Forbidden(f.Child("username"), "username must be specified  with password")
 		}
 	}
 	return nil
