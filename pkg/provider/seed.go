@@ -93,6 +93,9 @@ type BackupCredentialsProviderGetter = func(seed *kubermaticv1.Seed) (BackupCred
 // PrivilegedIPAMPoolProviderGetter is used to get a PrivilegedIPAMPoolProvider.
 type PrivilegedIPAMPoolProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedIPAMPoolProvider, error)
 
+// PrivilegedOperatingSystemProfileProviderGetter is used to get a PrivilegedOperatingSystemProfileProvider.
+type PrivilegedOperatingSystemProfileProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedOperatingSystemProfileProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments.
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {

@@ -64,6 +64,11 @@ func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 					Verbs:     []string{"*"},
 				},
 				{
+					APIGroups: []string{"operatingsystemmanager.k8c.io"},
+					Resources: []string{"operatingsystemprofiles"},
+					Verbs:     []string{"get", "list"},
+				},
+				{
 					APIGroups: []string{""},
 					Resources: []string{"events"},
 					Verbs:     []string{"get", "list", "watch", "create", "patch"},

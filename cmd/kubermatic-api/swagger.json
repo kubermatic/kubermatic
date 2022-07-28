@@ -21014,6 +21014,50 @@
         }
       }
     },
+    "/api/v2/seeds/{seed_name}/operatingsystemprofiles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "operatingsystemprofile"
+        ],
+        "summary": "Lists Operating System Profiles.",
+        "operationId": "listOperatingSystemProfiles",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OperatingSystemProfile",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OperatingSystemProfile"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/seeds/{seed_name}/rulegroups": {
       "get": {
         "produces": [
@@ -21320,6 +21364,57 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles": {
+      "get": {
+        "description": "Lists all available Operating System Profiles for a cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "operatingsystemprofile"
+        ],
+        "operationId": "listOperatingSystemProfilesForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OperatingSystemProfile",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OperatingSystemProfile"
               }
             }
           },
@@ -30238,6 +30333,16 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "OperatingSystemProfile": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "OperatingSystemSpec": {
       "type": "object",
