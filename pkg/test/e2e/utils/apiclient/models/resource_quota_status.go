@@ -13,16 +13,16 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ResourceQuotaStatus ResourceQuotaStatus describes the current state of a resource quota.
+// ResourceQuotaStatus resource quota status
 //
 // swagger:model ResourceQuotaStatus
 type ResourceQuotaStatus struct {
 
 	// global usage
-	GlobalUsage *ResourceDetails `json:"globalUsage,omitempty"`
+	GlobalUsage *Quota `json:"globalUsage,omitempty"`
 
 	// local usage
-	LocalUsage *ResourceDetails `json:"localUsage,omitempty"`
+	LocalUsage *Quota `json:"localUsage,omitempty"`
 }
 
 // Validate validates this resource quota status
