@@ -28,6 +28,8 @@ import (
 const (
 	LoginEnvironmentVariable         = "KUBERMATIC_OIDC_LOGIN"
 	PasswordEnvironmentVariable      = "KUBERMATIC_OIDC_PASSWORD"
+	LDAPLoginEnvironmentVariable     = "KUBERMATIC_LDAP_LOGIN"
+	LDAPPasswordEnvironmentVariable  = "KUBERMATIC_LDAP_PASSWORD"
 	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
 )
 
@@ -42,6 +44,22 @@ func OIDCCredentials() (string, string, error) {
 	password := os.Getenv(PasswordEnvironmentVariable)
 	if len(password) == 0 {
 		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", PasswordEnvironmentVariable)
+	}
+
+	return login, password, nil
+}
+
+// LDAPCredentials takes the login name and password from environment variables and
+// returns them.
+func LDAPCredentials() (string, string, error) {
+	login := os.Getenv(LDAPLoginEnvironmentVariable)
+	if len(login) == 0 {
+		return "", "", fmt.Errorf("no OIDC username specified ($%s is unset)", LDAPLoginEnvironmentVariable)
+	}
+
+	password := os.Getenv(LDAPPasswordEnvironmentVariable)
+	if len(password) == 0 {
+		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", LDAPPasswordEnvironmentVariable)
 	}
 
 	return login, password, nil
@@ -63,6 +81,7 @@ func OIDCAdminCredentials() (string, string, error) {
 var (
 	masterToken      = ""
 	adminMasterToken = ""
+	ldapToken        = ""
 )
 
 // Logout resets the runtime cache for the master/admin tokens and
@@ -78,7 +97,16 @@ func RetrieveMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &masterToken, login, password)
+	return retrieveToken(ctx, &masterToken, login, password, dex.LocalConnector)
+}
+
+func RetrieveLDAPToken(ctx context.Context) (string, error) {
+	login, password, err := LDAPCredentials()
+	if err != nil {
+		return "", err
+	}
+
+	return retrieveToken(ctx, &ldapToken, login, password, dex.LDAPConnector)
 }
 
 func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
@@ -87,10 +115,10 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return retrieveToken(ctx, &adminMasterToken, login, password)
+	return retrieveToken(ctx, &adminMasterToken, login, password, dex.LocalConnector)
 }
 
-func retrieveToken(ctx context.Context, token *string, login string, password string) (string, error) {
+func retrieveToken(ctx context.Context, token *string, login, password string, connector dex.ConnectorType) (string, error) {
 	// re-use the previous token
 	if token != nil && *token != "" {
 		return *token, nil
@@ -101,14 +129,14 @@ func retrieveToken(ctx context.Context, token *string, login string, password st
 		return "", fmt.Errorf("no Helm values.yaml specified via $%s env variable", DexValuesFileEnvironmentVariable)
 	}
 
-	logger := log.New(false, log.FormatJSON).Sugar()
+	logger := log.New(true, log.FormatJSON).Sugar()
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {
 		return "", fmt.Errorf("failed to create OIDC client: %w", err)
 	}
 
-	newToken, err := client.Login(ctx, login, password)
+	newToken, err := client.Login(ctx, login, password, connector)
 	if err != nil {
 		return "", err
 	}

@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-kit/kit/endpoint"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/container/v1"
@@ -36,11 +37,17 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	gcpprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	gkeprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	ManualMode = "Manual"
+	AutoMode   = "Auto"
 )
 
 func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -49,7 +56,10 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -98,7 +108,10 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -155,7 +168,10 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -190,7 +206,10 @@ func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfo
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(GetClusterReq)
+		req, ok := request.(GetClusterReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -743,4 +762,338 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 	}
 
 	return nil
+}
+
+// GKEImagesReq represent a request for GKE images.
+// swagger:parameters listGKEImages
+type GKEImagesReq struct {
+	GKECommonReq
+	// The zone name
+	// in: header
+	// name: Zone
+	Zone string
+}
+
+// GKEVersionsReq represent a request for GKE versions.
+// swagger:parameters listGKEVersions
+type GKEVersionsReq struct {
+	GKECommonReq
+	// The zone name
+	// in: header
+	// name: Zone
+	Zone string
+	// The Mode is how you want GKE Control plane version to be managed.
+	// Manual: Manually manage the version upgrades.
+	// Auto: automatically manage the cluster's control plane version.
+	// in: header
+	// name: Mode
+	Mode string
+	// The ReleaseChannel
+	// in: header
+	// name: ReleaseChannel
+	ReleaseChannel string
+}
+
+func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKEVersionsReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return ListGKEVersions(ctx, sa, req.Zone, req.Mode, req.ReleaseChannel)
+	}
+}
+
+// Validate validates GKECommonReq request.
+func (req GKECommonReq) Validate() error {
+	if len(req.ServiceAccount) == 0 && len(req.Credential) == 0 {
+		return fmt.Errorf("GKE credentials cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates GKEImagesReq request.
+func (req GKEImagesReq) Validate() error {
+	if err := req.GKECommonReq.Validate(); err != nil {
+		return err
+	}
+	if len(req.Zone) == 0 {
+		return fmt.Errorf("GKE Zone cannot be empty")
+	}
+	return nil
+}
+
+// Validate validates GKEVersionsReq request.
+func (req GKEVersionsReq) Validate() error {
+	if err := req.GKECommonReq.Validate(); err != nil {
+		return err
+	}
+	if len(req.Zone) == 0 {
+		return fmt.Errorf("GKE Zone cannot be empty")
+	}
+	if len(req.Mode) == 0 {
+		return fmt.Errorf("GKE \"Mode\" cannot be empty")
+	}
+	if !sets.NewString(ManualMode, AutoMode).Has(req.Mode) {
+		return fmt.Errorf("provide valid GKE Mode: %s", req.Mode)
+	}
+	if req.Mode == AutoMode {
+		if len(req.ReleaseChannel) == 0 {
+			return fmt.Errorf("GKE \"ReleaseChannel\" cannot be empty")
+		}
+		if !sets.NewString(resources.GKERapidReleaseChannel, resources.GKERegularReleaseChannel, resources.GKEStableReleaseChannel).Has(req.ReleaseChannel) {
+			return fmt.Errorf("provide valid GKE ReleaseChannel: %s", req.ReleaseChannel)
+		}
+	}
+
+	return nil
+}
+
+func DecodeGKEImagesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEImagesReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+
+	req.Zone = r.Header.Get("Zone")
+
+	return req, nil
+}
+
+func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEVersionsReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+
+	req.Zone = r.Header.Get("Zone")
+	req.ReleaseChannel = r.Header.Get("ReleaseChannel")
+	req.Mode = r.Header.Get("Mode")
+
+	return req, nil
+}
+
+func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEClusterListReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// GKETypesReq represent a request for GKE types.
+// swagger:parameters validateGKECredentials
+type GKETypesReq struct {
+	GKECommonReq
+}
+
+func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKECommonReq
+
+	req.ServiceAccount = r.Header.Get("ServiceAccount")
+	req.Credential = r.Header.Get("Credential")
+
+	return req, nil
+}
+
+func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKETypesReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+
+	return req, nil
+}
+
+func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKEClusterListReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gke.ListClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+	}
+}
+
+func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKEImagesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gke.ListImages(ctx, sa, req.Zone)
+	}
+}
+
+func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKECommonReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gke.ListZones(ctx, sa)
+	}
+}
+
+// GKECommonReq represent a request with common parameters for GKE.
+type GKECommonReq struct {
+	// The plain GCP service account
+	// in: header
+	// name: ServiceAccount
+	ServiceAccount string
+	// The credential name used in the preset for the GCP provider
+	// in: header
+	// name: Credential
+	Credential string
+}
+
+// GKEClusterListReq represent a request for GKE cluster list.
+// swagger:parameters listGKEClusters
+type GKEClusterListReq struct {
+	common.ProjectReq
+	GKECommonReq
+}
+
+func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKETypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		var err error
+		sa := req.ServiceAccount
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, gke.ValidateCredentials(ctx, sa)
+	}
+}
+func getSAFromPreset(ctx context.Context,
+	userInfoGetter provider.UserInfoGetter,
+	presetProvider provider.PresetProvider,
+	presetName string,
+) (string, error) {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return "", common.KubernetesErrorToHTTPError(err)
+	}
+	preset, err := presetProvider.GetPreset(ctx, userInfo, presetName)
+	if err != nil {
+		return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
+	}
+	credentials := preset.Spec.GKE
+	if credentials == nil {
+		return "", fmt.Errorf("gke credentials not present in the preset %s", presetName)
+	}
+	return credentials.ServiceAccount, nil
+}
+func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string) ([]*apiv1.MasterVersion, error) {
+	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.GetServerconfig(project, zone)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	versions := make([]*apiv1.MasterVersion, 0)
+	if mode == ManualMode {
+		for _, v := range resp.ValidMasterVersions {
+			validVersion, err := semverlib.NewVersion(v)
+			if err != nil {
+				return nil, err
+			}
+			versions = append(versions, &apiv1.MasterVersion{
+				Version: validVersion,
+				Default: v == resp.DefaultClusterVersion,
+			})
+		}
+	} else if mode == AutoMode {
+		for _, channel := range resp.Channels {
+			// select versions from the current channel
+			if channel.Channel == releaseChannel {
+				for _, v := range channel.ValidVersions {
+					validVersion, err := semverlib.NewVersion(v)
+					if err != nil {
+						return nil, err
+					}
+					versions = append(versions, &apiv1.MasterVersion{
+						Version: validVersion,
+						Default: v == channel.DefaultVersion,
+					})
+				}
+				break
+			}
+		}
+	}
+
+	return versions, err
 }

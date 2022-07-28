@@ -273,7 +273,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 	return nil
 }
 
-func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
@@ -289,15 +289,16 @@ func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify fun
 		return nil, errors.New("updateCluster must not change cluster status")
 	}
 
-	opts := (&provider.UpdaterOptions{}).Apply(options...)
-	var patch ctrlruntimeclient.Patch
-	if opts.OptimisticLock {
-		patch = ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
-	} else {
-		patch = ctrlruntimeclient.MergeFrom(oldCluster)
+	// When finalizers were changed, we must force optimistic locking,
+	// as we do not exclusively own the metadata.finalizers field and do not
+	// want to risk overwriting other finalizers. Labels and annotations are
+	// maps and so not affected.
+	var opts []ctrlruntimeclient.MergeFromOption
+	if !reflect.DeepEqual(oldCluster.Finalizers, cluster.Finalizers) {
+		opts = append(opts, ctrlruntimeclient.MergeFromWithOptimisticLock{})
 	}
 
-	if err := r.Patch(ctx, cluster, patch); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)); err != nil {
 		return nil, err
 	}
 

@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -697,92 +698,105 @@ func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfigu
 }
 
 func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
-	credentials, err := GetCredentials(data)
-	if err != nil {
-		return nil, err
+	cluster := data.Cluster()
+	dc := data.DC()
+
+	refTo := func(key string) *corev1.EnvVarSource {
+		return &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: ClusterCloudCredentialsSecretName,
+				},
+				Key: key,
+			},
+		}
+	}
+
+	optionalRefTo := func(key string) *corev1.EnvVarSource {
+		ref := refTo(key)
+		ref.SecretKeyRef.Optional = pointer.Bool(true)
+
+		return ref
 	}
 
 	var vars []corev1.EnvVar
-	if data.Cluster().Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: credentials.AWS.AssumeRoleARN})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: credentials.AWS.AssumeRoleExternalID})
+	if cluster.Spec.Cloud.AWS != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", ValueFrom: refTo(AWSAccessKeyID)})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", ValueFrom: refTo(AWSSecretAccessKey)})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
-	if data.Cluster().Spec.Cloud.Azure != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", Value: credentials.Azure.ClientSecret})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", Value: credentials.Azure.TenantID})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", Value: credentials.Azure.SubscriptionID})
+	if cluster.Spec.Cloud.Azure != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", ValueFrom: refTo(AzureClientID)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", ValueFrom: refTo(AzureClientSecret)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", ValueFrom: refTo(AzureTenantID)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(AzureSubscriptionID)})
 	}
-	if data.Cluster().Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
-		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: credentials.Openstack.Username})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: credentials.Openstack.Password})
-		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: credentials.Openstack.Domain})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", Value: credentials.Openstack.Project})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", Value: credentials.Openstack.ProjectID})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", Value: credentials.Openstack.ApplicationCredentialID})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", Value: credentials.Openstack.ApplicationCredentialSecret})
+	if cluster.Spec.Cloud.Openstack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: dc.Spec.Openstack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(OpenstackUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(OpenstackPassword)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(OpenstackDomain)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: optionalRefTo(OpenstackProject)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: optionalRefTo(OpenstackProjectID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: optionalRefTo(OpenstackApplicationCredentialID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: optionalRefTo(OpenstackApplicationCredentialSecret)})
 	}
-	if data.Cluster().Spec.Cloud.Hetzner != nil {
-		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: credentials.Hetzner.Token})
+	if cluster.Spec.Cloud.Hetzner != nil {
+		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", ValueFrom: refTo(HetznerToken)})
 	}
-	if data.Cluster().Spec.Cloud.Digitalocean != nil {
-		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: credentials.Digitalocean.Token})
+	if cluster.Spec.Cloud.Digitalocean != nil {
+		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: credentials.VSphere.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: credentials.VSphere.Password})
+	if cluster.Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
 	}
-	if data.Cluster().Spec.Cloud.Packet != nil {
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: credentials.Packet.APIKey})
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: credentials.Packet.ProjectID})
+	if cluster.Spec.Cloud.Packet != nil {
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", ValueFrom: refTo(PacketAPIKey)})
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
 	}
-	if data.Cluster().Spec.Cloud.GCP != nil {
-		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: credentials.GCP.ServiceAccount})
+	if cluster.Spec.Cloud.GCP != nil {
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})
 	}
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
-		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubevirtKubeConfig)})
 	}
-	if data.Cluster().Spec.Cloud.Alibaba != nil {
-		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", Value: credentials.Alibaba.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_SECRET", Value: credentials.Alibaba.AccessKeySecret})
+	if cluster.Spec.Cloud.Alibaba != nil {
+		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", ValueFrom: refTo(AlibabaAccessKeyID)})
+		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_SECRET", ValueFrom: refTo(AlibabaAccessKeySecret)})
 	}
-	if data.Cluster().Spec.Cloud.Anexia != nil {
-		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", Value: credentials.Anexia.Token})
+	if cluster.Spec.Cloud.Anexia != nil {
+		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", ValueFrom: refTo(AnexiaToken)})
 	}
-	if data.Cluster().Spec.Cloud.Nutanix != nil {
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: data.DC().Spec.Nutanix.Endpoint})
-		if port := data.DC().Spec.Nutanix.Port; port != nil {
+	if cluster.Spec.Cloud.Nutanix != nil {
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: cluster.Spec.Cloud.Nutanix.ClusterName})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: dc.Spec.Nutanix.Endpoint})
+
+		if port := dc.Spec.Nutanix.Port; port != nil {
 			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PORT", Value: strconv.Itoa(int(*port))})
 		}
-		if data.DC().Spec.Nutanix.AllowInsecure {
+		if dc.Spec.Nutanix.AllowInsecure {
 			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_INSECURE", Value: "true"})
 		}
 
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: credentials.Nutanix.Username})
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: credentials.Nutanix.Password})
-		if proxyURL := credentials.Nutanix.ProxyURL; proxyURL != "" {
-			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", Value: proxyURL})
-		}
-
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: data.Cluster().Spec.Cloud.Nutanix.ClusterName})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", ValueFrom: refTo(NutanixUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", ValueFrom: refTo(NutanixPassword)})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", ValueFrom: optionalRefTo(NutanixProxyURL)}) // proxy URL can be empty
 	}
-	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: data.DC().Spec.VMwareCloudDirector.URL})
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: dc.Spec.VMwareCloudDirector.URL})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_USER", ValueFrom: refTo(VMwareCloudDirectorUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_PASSWORD", ValueFrom: refTo(VMwareCloudDirectorPassword)})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_ORG", ValueFrom: refTo(VMwareCloudDirectorOrganization)})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_VDC", ValueFrom: refTo(VMwareCloudDirectorVDC)})
 
-		if data.DC().Spec.VMwareCloudDirector.AllowInsecure {
+		if dc.Spec.VMwareCloudDirector.AllowInsecure {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
-
-		vars = append(vars, corev1.EnvVar{Name: "VCD_USER", Value: credentials.VMwareCloudDirector.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VCD_PASSWORD", Value: credentials.VMwareCloudDirector.Password})
-		vars = append(vars, corev1.EnvVar{Name: "VCD_ORG", Value: credentials.VMwareCloudDirector.Organization})
-		vars = append(vars, corev1.EnvVar{Name: "VCD_VDC", Value: credentials.VMwareCloudDirector.VDC})
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.GetAddress().InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})

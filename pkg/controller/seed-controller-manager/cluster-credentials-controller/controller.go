@@ -130,11 +130,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	oldCluster := cluster.DeepCopy()
 
-	// patch in the cleanup finalizer first (the pkg/clusterdeletion takes care of cleaning up)
-	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
-
-	if !equality.Semantic.DeepEqual(oldCluster.Finalizers, cluster.Finalizers) {
-		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	// add the cleanup finalizer first (the pkg/clusterdeletion takes care of cleaning up)
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 			return nil, fmt.Errorf("failed to add finalizer: %w", err)
 		}
 
