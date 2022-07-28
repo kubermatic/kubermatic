@@ -28,6 +28,9 @@ source hack/lib.sh
 
 URL="https://github.com/kubermatic/mla.git"
 
+# Frozen for KKP v2.20.x
+REF="v0.2.2"
+
 # Ensure Github's host key is available and disable IP checking.
 # ensure_github_host_pubkey
 
@@ -35,7 +38,7 @@ echodate "Cloning MLA repo"
 # clone the target and pick the right branch
 tempdir="$(mktemp -d)"
 trap "rm -rf '$tempdir'" EXIT
-git clone "$URL" "$tempdir"
+git clone --branch "$REF" "$URL" "$tempdir"
 (
   cd "$tempdir"
 
