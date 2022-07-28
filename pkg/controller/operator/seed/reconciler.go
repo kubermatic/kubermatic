@@ -48,6 +48,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -699,34 +700,26 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Clusters")
 
-	creators := []reconciling.NamedKubermaticV1ClusterCreatorGetter{}
-
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusterList); err != nil {
 		return fmt.Errorf("failed to list clusters: %w", err)
 	}
 
+	var errors []error
 	// We need to ensure that we explicitly set `.spec.enableOperatingSystemManager` to false for existing clusters.
 	// Although by default if this value is `nil` it should be treated as a truthy case. This migration is completely safe
 	// to do since for all the new clusters this field will be explicitly set to `true` via the webhooks.
 	for _, cluster := range clusterList.Items {
 		if cluster.Spec.EnableOperatingSystemManager == nil {
 			cluster.Spec.EnableOperatingSystemManager = pointer.Bool(false)
-			creators = append(creators, clusterCreatorGetter(&cluster))
+
+			if err := client.Update(ctx, &cluster); err != nil {
+				// Instead of breaking on the first error just aggregate them to []errors and try to cover as much resources
+				// as we can in each run.
+				errors = append(errors, err)
+			}
 		}
 	}
 
-	if err := reconciling.ReconcileKubermaticV1Clusters(ctx, creators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile Clusters: %w", err)
-	}
-
-	return nil
-}
-
-func clusterCreatorGetter(cluster *kubermaticv1.Cluster) reconciling.NamedKubermaticV1ClusterCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ClusterCreator) {
-		return cluster.Name, func(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-			return cluster, nil
-		}
-	}
+	return kerrors.NewAggregate(errors)
 }

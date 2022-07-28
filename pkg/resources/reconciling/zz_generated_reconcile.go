@@ -1252,43 +1252,6 @@ func ReconcileKubermaticV1Users(ctx context.Context, namedGetters []NamedKuberma
 	return nil
 }
 
-// KubermaticV1ClusterCreator defines an interface to create/update Clusters
-type KubermaticV1ClusterCreator = func(existing *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
-
-// NamedKubermaticV1ClusterCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedKubermaticV1ClusterCreatorGetter = func() (name string, create KubermaticV1ClusterCreator)
-
-// KubermaticV1ClusterObjectWrapper adds a wrapper so the KubermaticV1ClusterCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func KubermaticV1ClusterObjectWrapper(create KubermaticV1ClusterCreator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*kubermaticv1.Cluster))
-		}
-		return create(&kubermaticv1.Cluster{})
-	}
-}
-
-// ReconcileKubermaticV1Clusters will create and update the KubermaticV1Clusters coming from the passed KubermaticV1ClusterCreator slice
-func ReconcileKubermaticV1Clusters(ctx context.Context, namedGetters []NamedKubermaticV1ClusterCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := KubermaticV1ClusterObjectWrapper(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Cluster{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Cluster %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
 // KubermaticV1ClusterTemplateCreator defines an interface to create/update ClusterTemplates
 type KubermaticV1ClusterTemplateCreator = func(existing *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error)
 
