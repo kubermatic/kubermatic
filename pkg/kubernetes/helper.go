@@ -94,6 +94,8 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 			return err
 		}
 
+		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+
 		// modify it
 		previous := sets.NewString(obj.GetFinalizers()...)
 		RemoveFinalizer(obj, finalizers...)
@@ -105,7 +107,7 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 		}
 
 		// update the object
-		return client.Update(ctx, obj)
+		return client.Patch(ctx, obj, ctrlruntimeclient.MergeFromWithOptions(original, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
 	})
 
 	if err != nil {
@@ -137,6 +139,8 @@ func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj c
 			return nil
 		}
 
+		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+
 		// modify it
 		previous := sets.NewString(obj.GetFinalizers()...)
 		AddFinalizer(obj, finalizers...)
@@ -148,7 +152,7 @@ func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj c
 		}
 
 		// update the object
-		return client.Update(ctx, obj)
+		return client.Patch(ctx, obj, ctrlruntimeclient.MergeFromWithOptions(original, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
 	})
 
 	if err != nil {

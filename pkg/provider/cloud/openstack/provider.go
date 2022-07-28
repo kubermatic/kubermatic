@@ -192,7 +192,7 @@ func ensureFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finali
 	if len(finalizers) > 0 {
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.AddFinalizer(cluster, finalizers...)
-		}, provider.UpdaterOptionOptimisticLock)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -487,7 +487,7 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 			RouterCleanupFinalizer,
 			OldNetworkCleanupFinalizer,
 		)
-	}, provider.UpdaterOptionOptimisticLock)
+	})
 	if err != nil {
 		return nil, err
 	}
