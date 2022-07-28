@@ -32,8 +32,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -97,7 +95,8 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	}
 
 	if len(resourceQuotaList.Items) == 0 {
-		return nil, utilerrors.NewNotFound(kind, name)
+		// We ignore error to avoid error notification in the Dashboard.
+		return nil, nil
 	}
 
 	resourceQuota := resourceQuotaList.Items[0]
