@@ -114,8 +114,10 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	spec.Cloud.ProviderName = providerName
 
 	// Kubernetes dashboard is enabled by default.
-	if spec.KubernetesDashboard.Enabled == nil {
-		spec.KubernetesDashboard.Enabled = pointer.Bool(true)
+	if spec.KubernetesDashboard == nil {
+		spec.KubernetesDashboard = &kubermaticv1.KubernetesDashboard{
+			Enabled: true,
+		}
 	}
 
 	// OSM is enabled by default.

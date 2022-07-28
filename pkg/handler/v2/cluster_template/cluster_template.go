@@ -682,7 +682,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				UsePodNodeSelectorAdmissionPlugin:    template.Spec.UsePodNodeSelectorAdmissionPlugin,
 				EnableUserSSHKeyAgent:                template.Spec.EnableUserSSHKeyAgent,
 				EnableOperatingSystemManager:         template.Spec.EnableOperatingSystemManager,
-				KubernetesDashboard:                  &template.Spec.KubernetesDashboard,
+				KubernetesDashboard:                  template.Spec.KubernetesDashboard,
 				AdmissionPlugins:                     template.Spec.AdmissionPlugins,
 				OPAIntegration:                       template.Spec.OPAIntegration,
 				PodNodeSelectorAdmissionPluginConfig: template.Spec.PodNodeSelectorAdmissionPluginConfig,
