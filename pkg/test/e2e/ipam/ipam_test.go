@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -280,11 +281,12 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	return ipamPool, nil
 }
 
-func forceMetalLBAddonReconciling(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func forceMetalLBAddonReconciling(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	metallbAddon := &kubermaticv1.Addon{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: "metallb", Namespace: cluster.Status.NamespaceName}, metallbAddon); err != nil {
 		return err
 	}
+	log.Infof("metallbAddon before patch: %+v", metallbAddon)
 
 	oldMetallbAddon := metallbAddon.DeepCopy()
 
@@ -293,6 +295,12 @@ func forceMetalLBAddonReconciling(ctx context.Context, seedClient ctrlruntimecli
 	if err := seedClient.Patch(ctx, metallbAddon, ctrlruntimeclient.MergeFrom(oldMetallbAddon)); err != nil {
 		return err
 	}
+
+	updatedMetallbAddon := &kubermaticv1.Addon{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: "metallb", Namespace: cluster.Status.NamespaceName}, updatedMetallbAddon); err != nil {
+		return err
+	}
+	log.Infof("metallbAddon after patch: %+v", updatedMetallbAddon)
 
 	return nil
 }
@@ -307,7 +315,7 @@ func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctr
 		return err
 	}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
+	if err := forceMetalLBAddonReconciling(ctx, log, seedClient, cluster); err != nil {
 		return err
 	}
 
@@ -343,7 +351,28 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 1*time.Minute, 30*time.Minute, func() (error, error) {
+		deployment := &appsv1.Deployment{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "controller", Namespace: "metallb-system"}, deployment); err != nil {
+			log.Infof("error userClient.Get deployment metallb controller: %v", err)
+		} else {
+			log.Infof("deployment metallb controller: %+v", deployment)
+		}
+
+		metallbIPAddressPoolList := &metallbv1beta1.IPAddressPoolList{}
+		if err := userClient.List(ctx, metallbIPAddressPoolList, ctrlruntimeclient.InNamespace("metallb-system")); err != nil {
+			log.Infof("error userClient.List metallbIPAddressPoolList: %v", err)
+		} else {
+			log.Infof("metallbIPAddressPoolList.Items: %+v", metallbIPAddressPoolList.Items)
+		}
+
+		l2Advertisement := &metallbv1beta1.L2Advertisement{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "advertise-all", Namespace: "metallb-system"}, l2Advertisement); err != nil {
+			log.Infof("error userClient.Get l2Advertisement: %v", err)
+		} else {
+			log.Infof("l2Advertisement: %+v", l2Advertisement)
+		}
+
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
@@ -377,7 +406,7 @@ func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClie
 		return fmt.Errorf("IPAM Allocation %s in cluster %s is still persisted", ipamAllocationName, cluster.Name)
 	}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
+	if err := forceMetalLBAddonReconciling(ctx, log, seedClient, cluster); err != nil {
 		return err
 	}
 
