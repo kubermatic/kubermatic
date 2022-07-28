@@ -73,12 +73,12 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 1 allocation on first cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
-	}) {
-		t.Fatal("IPAM Allocation 1 wasn't created on cluster 1")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Creating second IPAM Pool...")
@@ -88,12 +88,12 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on first cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.0/28",
-	}) {
-		t.Fatal("IPAM Allocation 2 wasn't created on cluster 1")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Creating second user cluster...")
@@ -103,30 +103,32 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.8-192.168.1.15"},
-	}) {
-		t.Fatal("IPAM Allocation 1 wasn't created on cluster 2")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on second cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.16/28",
-	}) {
-		t.Fatal("IPAM Allocation 2 wasn't created on cluster 2")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Deleting first cluster...")
 	cleanupUserCluster1()
 
 	log.Info("Checking that the first cluster allocations were gone...")
-	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name) {
-		t.Fatal("IPAM Allocations in first cluster are still persisted")
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Creating third IPAM Pool...")
@@ -136,12 +138,12 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 3 allocation on second cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.0/29",
-	}) {
-		t.Fatalf("IPAM Allocation 3 wasn't created on cluster 2")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Creating third user cluster...")
@@ -151,30 +153,30 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.8/29",
-	}) {
-		t.Fatal("IPAM Allocation 3 wasn't created on cluster 3")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Checking IPAM Pool 1 allocation on third cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        jig.DatacenterName(),
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
-	}) {
-		t.Fatal("IPAM Allocation 1 wasn't created on cluster 3")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Checking IPAM Pool 2 allocation on third cluster...")
-	if !checkIPAMAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
+	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
 		CIDR: "192.168.1.0/28",
-	}) {
-		t.Fatal("IPAM Allocation 2 wasn't created on cluster 3")
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Deleting IPAM Pool 1...")
@@ -182,9 +184,11 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("Failed to delete IPAM Pool 1: %v", err)
 	}
 
-	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name) {
-		t.Fatal("Some IPAM Allocation is still persisted after IPAM Pool 1 was deleted")
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name); err != nil {
+		t.Fatal(err)
 	}
 
 	log.Info("Deleting second cluster...")
@@ -193,11 +197,17 @@ func TestIPAM(t *testing.T) {
 	log.Info("Deleting third cluster...")
 	cleanupUserCluster3()
 
-	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name) ||
-		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name) {
-		t.Fatal("Some IPAM Allocation is still persisted")
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -262,6 +272,33 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	return ipamPool, nil
 }
 
+func forceMetalLBAddonReconciling(ctx context.Context, seedClient ctrlruntimeclient.Client) error {
+	// TODO
+
+	return nil
+}
+
+func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) error {
+	if !checkIPAMAllocation(ctx, log, seedClient, userClient, cluster, ipamAllocationName, expectedIPAMAllocationSpec) {
+		return fmt.Errorf("IPAM Allocation %s wasn't created on cluster %s", ipamAllocationName, cluster.Name)
+	}
+
+	ipamAllocation := &kubermaticv1.IPAMAllocation{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
+		return err
+	}
+
+	if err := forceMetalLBAddonReconciling(ctx, seedClient); err != nil {
+		return err
+	}
+
+	if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
+		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s was not created properly on cluster %s", ipamAllocationName, cluster.Name)
+	}
+
+	return nil
+}
+
 func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) bool {
 	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
@@ -282,16 +319,12 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 			}
 		}
 
-		if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
-			return fmt.Errorf("metallb IP address pool was not created properly"), nil
-		}
-
 		return nil, nil
 	}) == nil
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(log, 1*time.Minute, 20*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
@@ -320,15 +353,28 @@ func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, user
 	}) == nil
 }
 
+func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) error {
+	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient, cluster, ipamAllocationName) {
+		return fmt.Errorf("IPAM Allocation %s in cluster %s is still persisted", ipamAllocationName, cluster.Name)
+	}
+
+	if err := forceMetalLBAddonReconciling(ctx, seedClient); err != nil {
+		return err
+	}
+
+	if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
+		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s is still persisted on cluster %s", ipamAllocationName, cluster.Name)
+	}
+
+	return nil
+}
+
 func checkIPAMAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
 	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
-					return fmt.Errorf("metallb IP address pool is still persisted"), nil
-				}
 				return nil, nil
 			}
 
@@ -340,7 +386,7 @@ func checkIPAMAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seed
 }
 
 func checkMetallbIPAddressPoolIsGone(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
-	return wait.PollLog(log, 1*time.Minute, 20*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: "metallb-system"}, metallbIPAddressPool)
 		if err != nil {
