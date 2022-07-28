@@ -280,8 +280,19 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	return ipamPool, nil
 }
 
-func forceMetalLBAddonReconciling(ctx context.Context, seedClient ctrlruntimeclient.Client) error {
-	// TODO
+func forceMetalLBAddonReconciling(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	metallbAddon := &kubermaticv1.Addon{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: "metallb", Namespace: cluster.Status.NamespaceName}, metallbAddon); err != nil {
+		return err
+	}
+
+	oldMetallbAddon := metallbAddon.DeepCopy()
+
+	metallbAddon.ObjectMeta.Labels["updatedAt"] = fmt.Sprintf("%v", time.Now().UnixNano())
+
+	if err := seedClient.Patch(ctx, metallbAddon, ctrlruntimeclient.MergeFrom(oldMetallbAddon)); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -296,13 +307,13 @@ func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctr
 		return err
 	}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient); err != nil {
+	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
 		return err
 	}
 
-	/*if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
+	if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
 		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s was not created properly on cluster %s", ipamAllocationName, cluster.Name)
-	}*/
+	}
 
 	return nil
 }
@@ -366,13 +377,13 @@ func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClie
 		return fmt.Errorf("IPAM Allocation %s in cluster %s is still persisted", ipamAllocationName, cluster.Name)
 	}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient); err != nil {
+	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
 		return err
 	}
 
-	/*if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
+	if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
 		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s is still persisted on cluster %s", ipamAllocationName, cluster.Name)
-	}*/
+	}
 
 	return nil
 }
