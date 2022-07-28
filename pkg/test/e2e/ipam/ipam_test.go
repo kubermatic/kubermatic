@@ -41,6 +41,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -83,6 +84,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get user cluster client: %v", err)
 	}
+	utilruntime.Must(metallbv1beta1.AddToScheme(userClient1.Scheme()))
 
 	log.Info("Creating first IPAM Pool...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
@@ -138,6 +140,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get user cluster client: %v", err)
 	}
+	utilruntime.Must(metallbv1beta1.AddToScheme(userClient2.Scheme()))
 
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
@@ -199,6 +202,7 @@ func TestIPAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get user cluster client: %v", err)
 	}
+	utilruntime.Must(metallbv1beta1.AddToScheme(userClient3.Scheme()))
 
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
