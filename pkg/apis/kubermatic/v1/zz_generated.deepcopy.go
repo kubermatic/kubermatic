@@ -1227,6 +1227,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableOperatingSystemManager != nil {
+		in, out := &in.EnableOperatingSystemManager, &out.EnableOperatingSystemManager
+		*out = new(bool)
+		**out = **in
+	}
 	if in.KubernetesDashboard != nil {
 		in, out := &in.KubernetesDashboard, &out.KubernetesDashboard
 		*out = new(KubernetesDashboard)

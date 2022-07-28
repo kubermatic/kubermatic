@@ -64,7 +64,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 
 			// Enable validations corresponding to OSM
-			if data.Cluster().Spec.EnableOperatingSystemManager {
+			if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
 				args = append(args, "-use-osm")
 			}
 

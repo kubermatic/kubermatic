@@ -51,9 +51,9 @@ var (
 
 const (
 	Name = "machine-controller"
-	// Ref: https://github.com/kubermatic/machine-controller/commit/40a5eb90958f0723d018b8ca411a597e4468cf13
+	// Ref: https://github.com/kubermatic/machine-controller/commit/6232612e8ee6fc53c20a125415f8764fd4e81517
 	// TODO: Update this to a semver tag before release.
-	Tag = "40a5eb90958f0723d018b8ca411a597e4468cf13"
+	Tag = "6232612e8ee6fc53c20a125415f8764fd4e81517"
 )
 
 type machinecontrollerData interface {
@@ -150,7 +150,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.EnableOperatingSystemManager, data.Cluster().Spec.Features),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.IsOperatingSystemManagerEnabled(), data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",

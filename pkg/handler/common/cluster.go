@@ -282,6 +282,13 @@ func GenerateCluster(
 		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
 	}
 
+	// OSM is enabled by default.
+	if body.Cluster.Spec.EnableOperatingSystemManager == nil {
+		partialCluster.Spec.EnableOperatingSystemManager = pointer.BoolPtr(true)
+	} else {
+		partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
+	}
+
 	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
 		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {

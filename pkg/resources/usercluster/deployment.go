@@ -227,10 +227,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				}
 			}
 
-			if data.Cluster().Spec.EnableOperatingSystemManager {
-				args = append(args, "-operating-system-manager-enabled")
-			}
-
 			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
 			}

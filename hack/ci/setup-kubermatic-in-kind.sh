@@ -30,7 +30,7 @@ fi
 
 # The Kubermatic version to build.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-KUBERMATIC_OSM_ENABLED="${KUBERMATIC_OSM_ENABLED:-false}"
+KUBERMATIC_OSM_ENABLED="${KUBERMATIC_OSM_ENABLED:-true}"
 
 REPOSUFFIX=""
 if [ "$KUBERMATIC_EDITION" != "ce" ]; then

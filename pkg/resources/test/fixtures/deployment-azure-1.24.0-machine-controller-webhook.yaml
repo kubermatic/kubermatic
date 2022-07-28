@@ -33,7 +33,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01","-use-osm"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -77,7 +77,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:40a5eb90958f0723d018b8ca411a597e4468cf13
+        image: quay.io/kubermatic/machine-controller:6232612e8ee6fc53c20a125415f8764fd4e81517
         livenessProbe:
           failureThreshold: 8
           httpGet:

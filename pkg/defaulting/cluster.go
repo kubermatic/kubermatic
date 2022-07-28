@@ -120,6 +120,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		}
 	}
 
+	// OSM is enabled by default.
+	if spec.EnableOperatingSystemManager == nil {
+		spec.EnableOperatingSystemManager = pointer.Bool(true)
+	}
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{

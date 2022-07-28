@@ -48,7 +48,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -307,6 +309,13 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	// This is a migration that is required to ensure that with the release of KKP v2.21
+	// we don't enable OSM for existing clusters.
+	// TODO: Remove this with KKP 2.22 release.
+	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
 		return err
 	}
 
@@ -667,14 +676,8 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationCreator(ctx, cfg, client),
-	}
-
-	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
-		validatingWebhookCreators = append(
-			validatingWebhookCreators,
-			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx, cfg, client),
-			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx, cfg, client),
-		)
+		kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx, cfg, client),
+		kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
@@ -692,4 +695,31 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	return nil
+}
+
+func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling Clusters")
+
+	clusterList := &kubermaticv1.ClusterList{}
+	if err := client.List(ctx, clusterList); err != nil {
+		return fmt.Errorf("failed to list clusters: %w", err)
+	}
+
+	var errors []error
+	// We need to ensure that we explicitly set `.spec.enableOperatingSystemManager` to false for existing clusters.
+	// Although by default if this value is `nil` it should be treated as a truthy case. This migration is completely safe
+	// to do since for all the new clusters this field will be explicitly set to `true` via the webhooks.
+	for _, cluster := range clusterList.Items {
+		if cluster.Spec.EnableOperatingSystemManager == nil {
+			cluster.Spec.EnableOperatingSystemManager = pointer.Bool(false)
+
+			if err := client.Update(ctx, &cluster); err != nil {
+				// Instead of breaking on the first error just aggregate them to []errors and try to cover as much resources
+				// as we can in each run.
+				errors = append(errors, err)
+			}
+		}
+	}
+
+	return kerrors.NewAggregate(errors)
 }

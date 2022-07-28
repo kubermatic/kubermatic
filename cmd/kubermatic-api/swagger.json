@@ -24175,7 +24175,7 @@
           "x-go-name": "ContainerRuntime"
         },
         "enableOperatingSystemManager": {
-          "description": "EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration",
+          "description": "EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration.",
           "type": "boolean",
           "x-go-name": "EnableOperatingSystemManager"
         },

@@ -136,6 +136,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
+	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
 	// Must be first because of openshift
@@ -267,7 +268,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if !r.enableOperatingSystemManager {
+	if !data.operatingSystemManagerEnabled {
 		if err := r.ensureOSMResourcesAreRemoved(ctx); err != nil {
 			return err
 		}
@@ -377,7 +378,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		creators = append(creators, usersshkeys.RoleCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
 	}
 
@@ -391,7 +392,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		machinecontroller.KubePublicRoleCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubePublicRoleCreator())
 	}
 
@@ -405,7 +406,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		clusterautoscaler.DefaultRoleCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.DefaultRoleCreator())
 	}
 
@@ -428,7 +429,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		cloudinitsettings.RoleCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		cloudInitRoleCreator = append(cloudInitRoleCreator, operatingsystemmanager.CloudInitSettingsRoleCreator())
 	}
 
@@ -463,7 +464,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		creators = append(creators, usersshkeys.RoleBindingCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
 	}
 
@@ -476,7 +477,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.KubePublicRoleBindingCreator(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubePublicRoleBindingCreator())
 	}
 
@@ -489,7 +490,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.DefaultRoleBindingCreator(),
 		clusterautoscaler.DefaultRoleBindingCreator(),
 	}
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.DefaultRoleBindingCreator())
 	}
 
@@ -511,7 +512,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		cloudinitsettings.RoleBindingCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		cloudInitRoleBindingCreator = append(cloudInitRoleBindingCreator, operatingsystemmanager.CloudInitSettingsRoleBindingCreator())
 	}
 
@@ -558,7 +559,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		creators = append(creators, userclusterprometheus.ClusterRoleCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleCreator())
 	}
 
@@ -607,7 +608,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, konnectivity.ClusterRoleBindingCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingCreator())
 	}
 
@@ -920,7 +921,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	// Operating System Manager
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = []reconciling.NamedSecretCreatorGetter{
 			cloudinitsettings.SecretCreator(),
 		}
@@ -1113,19 +1114,20 @@ type reconcileData struct {
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
-	csiCloudConfig              []byte
-	ccmMigration                bool
-	monitoringRequirements      *corev1.ResourceRequirements
-	loggingRequirements         *corev1.ResourceRequirements
-	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
-	gatekeeperAuditRequirements *corev1.ResourceRequirements
-	monitoringReplicas          *int32
-	clusterAddress              *kubermaticv1.ClusterAddress
-	ipFamily                    kubermaticv1.IPFamily
-	k8sServiceApiIP             *net.IP
-	reconcileK8sSvcEndpoints    bool
-	kubernetesDashboardEnabled  bool
-	coreDNSReplicas             *int32
+	csiCloudConfig                []byte
+	ccmMigration                  bool
+	monitoringRequirements        *corev1.ResourceRequirements
+	loggingRequirements           *corev1.ResourceRequirements
+	gatekeeperCtrlRequirements    *corev1.ResourceRequirements
+	gatekeeperAuditRequirements   *corev1.ResourceRequirements
+	monitoringReplicas            *int32
+	clusterAddress                *kubermaticv1.ClusterAddress
+	ipFamily                      kubermaticv1.IPFamily
+	k8sServiceApiIP               *net.IP
+	reconcileK8sSvcEndpoints      bool
+	kubernetesDashboardEnabled    bool
+	operatingSystemManagerEnabled bool
+	coreDNSReplicas               *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

@@ -130,6 +130,5 @@ func migrateUserClustersData(ctx context.Context, logger *logrus.Entry, kubeClie
 			return fmt.Errorf("failed to remove logrotate addons: %w", err)
 		}
 	}
-
 	return nil
 }

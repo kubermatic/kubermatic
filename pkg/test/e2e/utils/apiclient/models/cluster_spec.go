@@ -25,7 +25,7 @@ type ClusterSpec struct {
 	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
-	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration.
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.

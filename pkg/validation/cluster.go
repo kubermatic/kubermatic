@@ -235,15 +235,6 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
 	}
 
-	// EnableOperatingSystemManager is immutable field as of now but in future this field will be mutable
-	if oldCluster.Spec.EnableOperatingSystemManager != newCluster.Spec.EnableOperatingSystemManager {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newCluster.Spec.EnableOperatingSystemManager,
-			oldCluster.Spec.EnableOperatingSystemManager,
-			specPath.Child("enableOperatingSystemManager"),
-		)...)
-	}
-
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
 
 	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by

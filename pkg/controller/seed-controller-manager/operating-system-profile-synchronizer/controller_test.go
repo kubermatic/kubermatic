@@ -312,7 +312,7 @@ func genCluster(name string, osmEnabled bool) *kubermaticv1.Cluster {
 			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			EnableOperatingSystemManager: osmEnabled,
+			EnableOperatingSystemManager: pointer.Bool(osmEnabled),
 			HumanReadableName:            name,
 		},
 		Status: kubermaticv1.ClusterStatus{
