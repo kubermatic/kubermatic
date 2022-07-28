@@ -72,6 +72,41 @@ func (s HelmSettings) GetterProviders() getter.Providers {
 	})
 }
 
+// AuthSettings holds the different kinds of credentials for Helm repository and registry.
+type AuthSettings struct {
+	// Username used for basic authentication
+	Username string
+
+	// Password used for basic authentication
+	Password string
+
+	// RegistryConfigFile is the path to registry config file. It's dockercfg
+	// file that follows the same format rules as ~/.docker/config.json
+	RegistryConfigFile string
+}
+
+// newRegistryClient returns a new registry client with authentication is RegistryConfigFile is defined.
+func (a *AuthSettings) newRegistryClient() (*registry.Client, error) {
+	if a.RegistryConfigFile == "" {
+		return registry.NewClient()
+	}
+	return registry.NewClient(registry.ClientOptCredentialsFile(a.RegistryConfigFile))
+}
+
+// getterOptions return authentication options for Getter.
+func (a AuthSettings) getterOptions() ([]getter.Option, error) {
+	regClient, err := a.newRegistryClient()
+	if err != nil {
+		return nil, err
+	}
+	options := []getter.Option{getter.WithRegistryClient(regClient)}
+
+	if a.Username != "" && a.Password != "" {
+		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
+	}
+	return options, nil
+}
+
 // HelmClient is a client that allows interacting with Helm.
 // If you want to use it in a concurrency context, you must create several clients with different HelmSettings. Otherwise
 // writing repository.xml or download index file may fails as it will be written by several threads.
@@ -125,19 +160,22 @@ func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClien
 
 // DownloadChart from url into dest folder and return the chart location (eg /tmp/foo/apache-1.0.0.tgz)
 // The dest folder must exist.
-func (h HelmClient) DownloadChart(url string, chartName string, version string, dest string) (string, error) {
+func (h HelmClient) DownloadChart(url string, chartName string, version string, dest string, auth AuthSettings) (string, error) {
 	var repoName string
 	var err error
-
 	if strings.HasPrefix(url, "oci://") {
 		repoName = url
 	} else {
-		repoName, err = h.ensureRepository(url)
+		repoName, err = h.ensureRepository(url, auth)
 		if err != nil {
 			return "", err
 		}
 	}
 
+	options, err := auth.getterOptions()
+	if err != nil {
+		return "", err
+	}
 	var out strings.Builder
 	chartDownloader := downloader.ChartDownloader{
 		Out:              &out,
@@ -145,8 +183,9 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 		RepositoryConfig: h.settings.RepositoryConfig,
 		RepositoryCache:  h.settings.RepositoryCache,
 		Getters:          h.getterProviders,
-		// todo credentials
+		Options:          options,
 	}
+
 	// todo note: we may want to check the verificaton return by chartDownloader.DownloadTo. for the moment it's set to downloader.VerifyNever in struct init
 	chartRef := repoName + "/" + chartName
 	chartLoc, _, err := chartDownloader.DownloadTo(chartRef, version, dest)
@@ -162,17 +201,17 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 // InstallOrUpgrade installs the chart located at chartLoc into targetNamespace if it's not already installed.
 // Otherwise it upgrades the chart.
 // charLoc is the path to the chart archive (e.g. /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}) (*release.Release, error) {
+func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
 	if _, err := h.actionConfig.Releases.Last(releaseName); err != nil {
-		return h.Install(chartLoc, releaseName, values)
+		return h.Install(chartLoc, releaseName, values, auth)
 	}
-	return h.Upgrade(chartLoc, releaseName, values)
+	return h.Upgrade(chartLoc, releaseName, values, auth)
 }
 
 // Install the chart located at chartLoc into targetNamespace. If the chart was already installed, an error is returned.
 // charLoc is the path to the chart archive (eg /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) Install(chartLoc string, releaseName string, values map[string]interface{}) (*release.Release, error) {
-	chartToInstall, err := h.buildDependencies(chartLoc)
+func (h HelmClient) Install(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
+	chartToInstall, err := h.buildDependencies(chartLoc, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +229,8 @@ func (h HelmClient) Install(chartLoc string, releaseName string, values map[stri
 
 // Upgrade the chart located at chartLoc into targetNamespace. If the chart is not already installed, an error is returned.
 // charLoc is the path to the chart archive (e.g. /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) Upgrade(chartLoc string, releaseName string, values map[string]interface{}) (*release.Release, error) {
-	chartToUpgrade, err := h.buildDependencies(chartLoc)
+func (h HelmClient) Upgrade(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
+	chartToUpgrade, err := h.buildDependencies(chartLoc, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +253,7 @@ func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResp
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies
 // from repositories into "charts" folder).
-func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
+func (h HelmClient) buildDependencies(chartLoc string, auth AuthSettings) (*chart.Chart, error) {
 	fi, err := os.Stat(chartLoc)
 	if err != nil {
 		return nil, fmt.Errorf("can not find chart at `%s': %w", chartLoc, err)
@@ -233,7 +272,7 @@ func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
 	// note: if we got the chart from a remote helm repository, we don't have to build dependencies because the package
 	// (i.e. the tgz) should already contain it.
 	if fi.IsDir() {
-		regClient, err := registry.NewClient() // todo credentials
+		regClient, err := auth.newRegistryClient()
 		if err != nil {
 			return nil, fmt.Errorf("can not initialize registry client: %w", err)
 		}
@@ -261,7 +300,7 @@ func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
 		for _, dep := range dependencies {
 			// oci or file dependencies can not be added as a repository.
 			if strings.HasPrefix(dep.Repository, "http://") || strings.HasPrefix(dep.Repository, "https://") {
-				if _, err := h.ensureRepository(dep.Repository); err != nil {
+				if _, err := h.ensureRepository(dep.Repository, auth); err != nil {
 					return nil, fmt.Errorf("can not download index for repository: %w", err)
 				}
 			}
@@ -286,7 +325,7 @@ func (h HelmClient) buildDependencies(chartLoc string) (*chart.Chart, error) {
 
 // ensureRepository adds the repository url if it doesn't exist and downloads the latest index file.
 // The repository is added with the name helm-manager-$(sha256 url).
-func (h HelmClient) ensureRepository(url string) (string, error) {
+func (h HelmClient) ensureRepository(url string, auth AuthSettings) (string, error) {
 	repoFile, err := repo.LoadFile(h.settings.RepositoryConfig)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return "", err
@@ -297,8 +336,10 @@ func (h HelmClient) ensureRepository(url string) (string, error) {
 		return "", fmt.Errorf("can not compute repository's name for '%s': %w", url, err)
 	}
 	desiredEntry := &repo.Entry{
-		Name: repoName,
-		URL:  url,
+		Name:     repoName,
+		URL:      url,
+		Username: auth.Username,
+		Password: auth.Password,
 	}
 
 	// Ensure we have the last version of the index file.
