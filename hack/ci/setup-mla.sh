@@ -29,7 +29,7 @@ source hack/lib.sh
 URL="https://github.com/kubermatic/mla.git"
 
 # KKP master should follow kubermatic/mla master, please freeze when branching out a release!
-REF="master"
+REF="main"
 
 # Ensure Github's host key is available and disable IP checking.
 # ensure_github_host_pubkey
