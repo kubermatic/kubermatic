@@ -281,7 +281,12 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		}
 	}
 
-	j.log.Infow("Creating cluster...", "humanname", j.spec.HumanReadableName, "version", cluster.Spec.Version)
+	j.log.Infow("Creating cluster...",
+		"humanname", j.spec.HumanReadableName,
+		"version", cluster.Spec.Version,
+		"provider", cluster.Spec.Cloud.ProviderName,
+		"datacenter", cluster.Spec.Cloud.DatacenterName,
+	)
 	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, j.ownerEmail)
 	if err != nil {
 		return nil, err
@@ -347,11 +352,43 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 		}
 
 		if !curCluster.Status.ExtendedHealth.AllHealthy() {
-			return errors.New("cluster is not all healthy"), nil
+			return fmt.Errorf("cluster is unhealthy: %v", getUnhealthyComponents(curCluster.Status.ExtendedHealth)), nil
 		}
 
 		return nil, nil
 	})
+}
+
+func getUnhealthyComponents(health kubermaticv1.ExtendedClusterHealth) []string {
+	unhealthy := sets.NewString()
+	handle := func(key string, s kubermaticv1.HealthStatus) {
+		if s == kubermaticv1.HealthStatusUp {
+			return
+		}
+
+		// use custom formatting to keep the error message shorter and more readable
+		switch s {
+		case kubermaticv1.HealthStatusDown:
+			s = "down"
+		case kubermaticv1.HealthStatusProvisioning:
+			s = "provisioning"
+		}
+
+		unhealthy.Insert(fmt.Sprintf("%s=%s", key, s))
+	}
+
+	// control plane health
+	handle("etcd", health.Etcd)
+	handle("controller", health.Controller)
+	handle("apiserver", health.Apiserver)
+	handle("scheduler", health.Scheduler)
+
+	// "all healthy" additions to the control plane
+	handle("machineController", health.MachineController)
+	handle("cloudProviderInfrastructure", health.CloudProviderInfrastructure)
+	handle("userClusterControllerManager", health.UserClusterControllerManager)
+
+	return unhealthy.List()
 }
 
 func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
@@ -384,7 +421,7 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 			return fmt.Errorf("failed to get project: %w", err)
 		}
 
-		err = wait.PollLog(log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+		err = wait.PollLog(log, 10*time.Second, 10*time.Minute, func() (transient error, terminal error) {
 			_, err := clusterProvider.GetUnsecured(ctx, project, j.clusterName, nil)
 
 			if err == nil {
