@@ -238,9 +238,15 @@ spec:
         - name: SSL_CERT_FILE
           value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - name: AWS_ACCESS_KEY_ID
-          value: aws-access-key-id
+          valueFrom:
+            secretKeyRef:
+              key: accessKeyId
+              name: cloud-credentials
         - name: AWS_SECRET_ACCESS_KEY
-          value: aws-secret-access-key
+          valueFrom:
+            secretKeyRef:
+              key: secretAccessKey
+              name: cloud-credentials
         - name: AWS_VPC_ID
           value: aws-vpn-id
         - name: AWS_ASSUME_ROLE_ARN

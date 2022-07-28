@@ -53,11 +53,6 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			f := false
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %w", err)
-			}
-
 			deployment.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
 					Name: resources.CloudConfigConfigMapName,
@@ -83,8 +78,15 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 					},
 					Env: []corev1.EnvVar{
 						{
-							Name:  "ANEXIA_TOKEN",
-							Value: credentials.Anexia.Token,
+							Name: "ANEXIA_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.ClusterCloudCredentialsSecretName,
+									},
+									Key: resources.AnexiaToken,
+								},
+							},
 						},
 						{
 							Name:  "ANEXIA_AUTO_DISCOVER_LOAD_BALANCER",

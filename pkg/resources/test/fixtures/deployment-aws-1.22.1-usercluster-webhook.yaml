@@ -33,9 +33,15 @@ spec:
         - user-cluster-webhook
         env:
         - name: AWS_ACCESS_KEY_ID
-          value: aws-access-key-id
+          valueFrom:
+            secretKeyRef:
+              key: accessKeyId
+              name: cloud-credentials
         - name: AWS_SECRET_ACCESS_KEY
-          value: aws-secret-access-key
+          valueFrom:
+            secretKeyRef:
+              key: secretAccessKey
+              name: cloud-credentials
         - name: AWS_ASSUME_ROLE_ARN
           value: aws-assume-role-arn
         - name: AWS_ASSUME_ROLE_EXTERNAL_ID
