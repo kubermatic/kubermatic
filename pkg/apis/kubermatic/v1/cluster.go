@@ -238,7 +238,7 @@ type ClusterSpec struct {
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
-	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
+	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
 	// Optional: AuditLogging configures Kubernetes API audit logging (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/)
 	// for the user cluster.
@@ -279,11 +279,11 @@ type KubernetesDashboard struct {
 	// +kubebuilder:default=true
 
 	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
-func (k KubernetesDashboard) IsEnabled() bool {
-	return k.Enabled == nil || *k.Enabled
+func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
+	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
