@@ -29,8 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -120,28 +118,6 @@ func deleteLogrotateAddon(ctx context.Context, kubeClient ctrlruntimeclient.Clie
 	return kubeClient.Delete(ctx, &addon)
 }
 
-func disableOperatingSystemManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	clusters := kubermaticv1.ClusterList{}
-	if err := kubeClient.List(ctx, &clusters); err != nil {
-		return err
-	}
-
-	var errors []error
-	// iterates over all user clusters
-	for _, cluster := range clusters.Items {
-		if cluster.Spec.EnableOperatingSystemManager == nil {
-			cluster.Spec.EnableOperatingSystemManager = pointer.BoolPtr(false)
-
-			err := kubeClient.Update(ctx, &cluster)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-	}
-
-	return kerrors.NewAggregate(errors)
-}
-
 func migrateUserClustersData(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	if opt.EnableOpenstackCSIDriverMigration {
 		if err := migrateOpenStackCSIDrivers(ctx, logger, kubeClient, opt); err != nil {
@@ -153,10 +129,6 @@ func migrateUserClustersData(ctx context.Context, logger *logrus.Entry, kubeClie
 		if err := removeLogrotateAddons(ctx, logger, kubeClient, opt); err != nil {
 			return fmt.Errorf("failed to remove logrotate addons: %w", err)
 		}
-	}
-
-	if err := disableOperatingSystemManager(ctx, logger, kubeClient, opt); err != nil {
-		return fmt.Errorf("failed to remove logrotate addons: %w", err)
 	}
 	return nil
 }
