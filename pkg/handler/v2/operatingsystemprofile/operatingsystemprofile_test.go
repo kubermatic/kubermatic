@@ -206,7 +206,7 @@ func TestListOperatingSystemProfilesEndpointForCluster(t *testing.T) {
 			expectedResult:     []*apiv2.OperatingSystemProfile{},
 		},
 		{
-			name:      "John cannot list Bob's ApplicationInstallation",
+			name:      "John cannot list Bob's OSP",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			existingObjects: test.GenDefaultKubermaticObjects(
