@@ -150,7 +150,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.EnableOperatingSystemManager, data.Cluster().Spec.Features),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.IsOperatingSystemManagerEnabled(), data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -196,7 +196,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 	}
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager *bool, features map[string]bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, enableOperatingSystemManager bool, features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-cluster-dns", clusterDNSIP,
@@ -238,7 +238,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 	}
 
 	// Machine Controller will use OSM for managing machine's provisioning and bootstrapping configurations
-	if enableOperatingSystemManager == nil || *enableOperatingSystemManager {
+	if enableOperatingSystemManager {
 		flags = append(flags, "-use-osm")
 	}
 
