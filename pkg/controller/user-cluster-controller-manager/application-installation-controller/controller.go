@@ -250,7 +250,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	if installErr != nil {
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
 	} else {
-		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application sudccessfuly install or upgraded")
+		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
 		statusUpdater(&appInstallation.Status)
 	}
 
