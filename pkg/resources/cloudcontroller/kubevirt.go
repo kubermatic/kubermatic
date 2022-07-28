@@ -33,7 +33,7 @@ import (
 
 const (
 	KubeVirtCCMDeploymentName = "kubevirt-cloud-controller-manager"
-	KubeVirtCCMTag            = "v0.1.0"
+	KubeVirtCCMTag            = "v0.2.0"
 )
 
 var (
@@ -78,16 +78,28 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), []corev1.Volume{
+				{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							Sources: []corev1.VolumeProjection{
+								{
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.KubeVirtInfraSecretName},
+									},
+								},
+								{
+									ConfigMap: &corev1.ConfigMapProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigConfigMapName},
+									},
+								},
+							},
+							DefaultMode: pointer.Int32(420),
 						},
 					},
 				},
-			})
+			}...)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
