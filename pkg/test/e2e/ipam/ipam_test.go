@@ -29,6 +29,7 @@ import (
 	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -235,7 +236,14 @@ func createUserCluster(
 		return nil, nil, cleanup, fmt.Errorf("failed to setup test cluster: %w", err)
 	}
 
-	clusterClient, err := testJig.ClusterClient(ctx)
+	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
+	if err != nil {
+		return nil, nil, cleanup, fmt.Errorf("failed to get user cluster client provider: %w", err)
+	}
+	clusterClient, err := clusterClientProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, nil, cleanup, fmt.Errorf("failed to get user cluster client: %w", err)
+	}
 
 	utilruntime.Must(metallbv1beta1.AddToScheme(clusterClient.Scheme()))
 
