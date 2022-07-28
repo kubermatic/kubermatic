@@ -134,7 +134,7 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -reports-root="$ARTIFACTS/conformance" \
   -log-directory="$ARTIFACTS/logs" \
   -create-oidc-token=true \
-  -releases="$RELEASES_TO_TEST" \
+  -releases="${RELEASES_TO_TEST:-}" \
   -providers=$provider \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
   -distributions="${DISTRIBUTIONS:-}" \
