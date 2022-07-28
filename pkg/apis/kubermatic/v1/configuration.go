@@ -367,6 +367,28 @@ type KubermaticVersioningConfiguration struct {
 
 	// ProviderIncompatibilities lists all the Kubernetes version incompatibilities
 	ProviderIncompatibilities []Incompatibility `json:"providerIncompatibilities,omitempty"`
+
+	// ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
+	ExternalClusters map[ExternalClusterProviderType]ExternalClusterProviderVersioningConfiguration `json:"externalClusters,omitempty"`
+}
+
+// ExternalClusterProviderType is used to indicate ExternalCluster Provider Types.
+type ExternalClusterProviderType string
+
+const (
+	EKSProviderType ExternalClusterProviderType = "eks"
+	GKEProviderType ExternalClusterProviderType = "gke"
+	AKSProviderType ExternalClusterProviderType = "aks"
+)
+
+// ExternalClusterProviderVersioningConfiguration configures the available and default Kubernetes versions for ExternalCluster Providers.
+type ExternalClusterProviderVersioningConfiguration struct {
+	// Versions lists the available versions.
+	Versions []semver.Semver `json:"versions,omitempty"`
+	// Default is the default version to offer users.
+	Default *semver.Semver `json:"default,omitempty"`
+	// Updates is a list of available upgrades.
+	Updates []semver.Semver `json:"updates,omitempty"`
 }
 
 // Update represents an update option for a user cluster.
