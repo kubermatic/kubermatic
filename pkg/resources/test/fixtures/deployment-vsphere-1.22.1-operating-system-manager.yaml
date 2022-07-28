@@ -42,9 +42,15 @@ spec:
         - name: VSPHERE_ADDRESS
           value: https://vs-endpoint.io
         - name: VSPHERE_USERNAME
-          value: vs-username
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cloud-credentials
         - name: VSPHERE_PASSWORD
-          value: vs-password
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cloud-credentials
         image: quay.io/kubermatic/operating-system-manager:952f1cd42007d6770b8e2805b0e18247377b14bb
         livenessProbe:
           failureThreshold: 3
