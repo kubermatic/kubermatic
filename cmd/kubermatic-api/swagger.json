@@ -31094,22 +31094,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "ResourceDetails": {
-      "type": "object",
-      "title": "ResourceDetails holds the CPU, Memory and Storage quantities.",
-      "properties": {
-        "cpu": {
-          "$ref": "#/definitions/Quantity"
-        },
-        "memory": {
-          "$ref": "#/definitions/Quantity"
-        },
-        "storage": {
-          "$ref": "#/definitions/Quantity"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
     "ResourceLabelMap": {
       "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -31157,16 +31141,15 @@
     },
     "ResourceQuotaStatus": {
       "type": "object",
-      "title": "ResourceQuotaStatus describes the current state of a resource quota.",
       "properties": {
         "globalUsage": {
-          "$ref": "#/definitions/ResourceDetails"
+          "$ref": "#/definitions/Quota"
         },
         "localUsage": {
-          "$ref": "#/definitions/ResourceDetails"
+          "$ref": "#/definitions/Quota"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ResourceRequirements": {
       "type": "object",

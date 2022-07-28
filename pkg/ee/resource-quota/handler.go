@@ -190,7 +190,7 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, err
 	}
 
-	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, strings.ToLower(kubermaticProject.Kind))
+	projectResourceQuota, err := quotaProvider.Get(ctx, userInfo, kubermaticProject.Name, strings.ToLower(kubermaticv1.ProjectKindName))
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -299,11 +299,14 @@ func PatchResourceQuota(ctx context.Context, request interface{}, provider provi
 
 func convertToAPIStruct(resourceQuota *kubermaticv1.ResourceQuota, humanReadableSubjectName string) *apiv2.ResourceQuota {
 	return &apiv2.ResourceQuota{
-		Name:                     resourceQuota.Name,
-		SubjectName:              resourceQuota.Spec.Subject.Name,
-		SubjectKind:              resourceQuota.Spec.Subject.Kind,
-		Quota:                    convertToAPIQuota(resourceQuota.Spec.Quota),
-		Status:                   resourceQuota.Status,
+		Name:        resourceQuota.Name,
+		SubjectName: resourceQuota.Spec.Subject.Name,
+		SubjectKind: resourceQuota.Spec.Subject.Kind,
+		Quota:       convertToAPIQuota(resourceQuota.Spec.Quota),
+		Status: apiv2.ResourceQuotaStatus{
+			GlobalUsage: convertToAPIQuota(resourceQuota.Status.GlobalUsage),
+			LocalUsage:  convertToAPIQuota(resourceQuota.Status.LocalUsage),
+		},
 		SubjectHumanReadableName: humanReadableSubjectName,
 	}
 }

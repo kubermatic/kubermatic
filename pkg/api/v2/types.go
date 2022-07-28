@@ -1463,9 +1463,17 @@ type ResourceQuota struct {
 	SubjectName string `json:"subjectName"`
 	SubjectKind string `json:"subjectKind"`
 	// SubjectHumanReadableName contains the human-readable name for the subject(if applicable). Just filled as information in get/list.
-	SubjectHumanReadableName string                           `json:"subjectHumanReadableName,omitempty"`
-	Quota                    Quota                            `json:"quota"`
-	Status                   kubermaticv1.ResourceQuotaStatus `json:"status"`
+	SubjectHumanReadableName string              `json:"subjectHumanReadableName,omitempty"`
+	Quota                    Quota               `json:"quota"`
+	Status                   ResourceQuotaStatus `json:"status"`
+}
+
+// swagger:model ResourceQuotaStatus
+type ResourceQuotaStatus struct {
+	// GlobalUsage is holds the current usage of resources for all seeds.
+	GlobalUsage Quota `json:"globalUsage,omitempty"`
+	// LocalUsage is holds the current usage of resources for the local seed.
+	LocalUsage Quota `json:"localUsage,omitempty"`
 }
 
 // swagger:model Quota

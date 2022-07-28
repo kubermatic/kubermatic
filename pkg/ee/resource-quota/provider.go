@@ -96,7 +96,8 @@ func (p *ResourceQuotaProvider) Get(ctx context.Context, userInfo *provider.User
 	}
 
 	if len(resourceQuotaList.Items) == 0 {
-		return nil, fmt.Errorf("resource quota not found for project %q", name)
+		// We ignore error to avoid error notification in the Dashboard.
+		return nil, nil
 	}
 
 	resourceQuota := resourceQuotaList.Items[0]
