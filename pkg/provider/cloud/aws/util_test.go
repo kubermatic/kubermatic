@@ -65,7 +65,7 @@ func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 }
 
 func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
-	return func(clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+	return func(clusterName string, patcher func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 		patcher(cluster)
 		return cluster, nil
 	}
