@@ -21,6 +21,9 @@ type HelmCredentials struct {
 	// password
 	Password *SecretKeySelector `json:"password,omitempty"`
 
+	// registry config file
+	RegistryConfigFile *SecretKeySelector `json:"registryConfigFile,omitempty"`
+
 	// username
 	Username *SecretKeySelector `json:"username,omitempty"`
 }
@@ -30,6 +33,10 @@ func (m *HelmCredentials) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validatePassword(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRegistryConfigFile(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -54,6 +61,25 @@ func (m *HelmCredentials) validatePassword(formats strfmt.Registry) error {
 				return ve.ValidateName("password")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("password")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *HelmCredentials) validateRegistryConfigFile(formats strfmt.Registry) error {
+	if swag.IsZero(m.RegistryConfigFile) { // not required
+		return nil
+	}
+
+	if m.RegistryConfigFile != nil {
+		if err := m.RegistryConfigFile.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("registryConfigFile")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("registryConfigFile")
 			}
 			return err
 		}
@@ -89,6 +115,10 @@ func (m *HelmCredentials) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateRegistryConfigFile(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateUsername(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -107,6 +137,22 @@ func (m *HelmCredentials) contextValidatePassword(ctx context.Context, formats s
 				return ve.ValidateName("password")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("password")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *HelmCredentials) contextValidateRegistryConfigFile(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RegistryConfigFile != nil {
+		if err := m.RegistryConfigFile.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("registryConfigFile")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("registryConfigFile")
 			}
 			return err
 		}

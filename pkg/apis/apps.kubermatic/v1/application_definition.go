@@ -34,11 +34,16 @@ const (
 type HelmCredentials struct {
 	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
 	// KKP is installed.
-	Username corev1.SecretKeySelector `json:"username"`
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
 	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
 	// KKP is installed.
-	Password corev1.SecretKeySelector `json:"password"`
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
+
+	// RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
+	// file that follows the same format rules as ~/.docker/config.json
+	// The Secret must exist in the namespace where KKP is installed.
+	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }
 
 type HelmSource struct {

@@ -561,6 +561,105 @@ func TestValidateGitRef(t *testing.T) {
 	}
 }
 
+func TestValidateHelmCredentials(t *testing.T) {
+	tt := map[string]struct {
+		ad        appskubermaticv1.ApplicationDefinition
+		expErrLen int
+	}{
+		"valid: no credentials": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = nil
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid: username and passord are defined and RegistryConfigFile is undefined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Username: secretKeySelector, Password: secretKeySelector}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid: username and passord are undefined and RegistryConfigFile is defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{RegistryConfigFile: secretKeySelector}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"invalid: username is defined and password is defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Username: secretKeySelector}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid: password is defined and username is defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Password: secretKeySelector}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid: username and password and RegistryConfigFile are defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Username: secretKeySelector, Password: secretKeySelector, RegistryConfigFile: secretKeySelector}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid: username  and RegistryConfigFile are defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Username: secretKeySelector, RegistryConfigFile: secretKeySelector}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid: password and RegistryConfigFile are defined": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source.Helm.Credentials = &appskubermaticv1.HelmCredentials{Password: secretKeySelector, RegistryConfigFile: secretKeySelector}
+					return *s
+				}(),
+			},
+			1,
+		},
+	}
+
+	for name, tc := range tt {
+		t.Run(name, func(t *testing.T) {
+			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+			errl := ValidateApplicationDefinitionSpec(tc.ad)
+
+			if len(errl) != tc.expErrLen {
+				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
+			}
+		})
+	}
+}
+
 func TestValidateGitCredentials(t *testing.T) {
 	tt := map[string]struct {
 		ad        appskubermaticv1.ApplicationDefinition

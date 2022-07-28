@@ -90,12 +90,31 @@ func validateSource(source appskubermaticv1.ApplicationSource, f *field.Path) []
 	case source.Git != nil:
 		allErrs = append(allErrs, validateGitSource(source.Git, f.Child("git"))...)
 	case source.Helm != nil:
-		break // all validations are in cr definition.
+		if e := validateHelmCredentials(source.Helm.Credentials, f.Child("helm.credentials")); e != nil {
+			allErrs = append(allErrs, e)
+		}
+
 	default:
 		allErrs = append(allErrs, field.Required(f, "no source provided"))
 	}
 
 	return allErrs
+}
+
+func validateHelmCredentials(credential *appskubermaticv1.HelmCredentials, f *field.Path) *field.Error {
+	if credential != nil {
+		if credential.RegistryConfigFile != nil && (credential.Username != nil || credential.Password != nil) {
+			return field.Forbidden(f.Child("registryConfigFile"), "registryConfigFile can not be used in conjunction with username / password")
+		}
+
+		if credential.Username != nil && credential.Password == nil {
+			return field.Forbidden(f.Child("password"), "password must be specified with username")
+		}
+		if credential.Password != nil && credential.Username == nil {
+			return field.Forbidden(f.Child("username"), "username must be specified  with password")
+		}
+	}
+	return nil
 }
 
 func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) []*field.Error {
