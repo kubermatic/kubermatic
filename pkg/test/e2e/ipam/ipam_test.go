@@ -34,6 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	appsv1 "k8s.io/api/apps/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -312,10 +314,29 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
 	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
-		type IPAddressPool struct {
-			metallbv1beta1.IPAddressPool
+		dep := &appsv1.Deployment{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "dashboard-metrics-scraper", Namespace: "kubernetes-dashboard"}, dep); err != nil {
+			log.Info(fmt.Errorf("!!! error getting dashboard-metrics-scraper Deployment in user cluster %s: %w", cluster.Name, err))
 		}
-		metallbIPAddressPool := &IPAddressPool{}
+
+		dep2 := &appsv1.Deployment{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "coredns", Namespace: "kube-system"}, dep2); err != nil {
+			log.Info(fmt.Errorf("!!! error getting coredns Deployment in user cluster %s: %w", cluster.Name, err))
+		}
+
+		dep3 := &appsv1.Deployment{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "controller", Namespace: "metallb-system"}, dep3); err != nil {
+			log.Info(fmt.Errorf("!!! error getting metallb Deployment in user cluster %s: %w", cluster.Name, err))
+		}
+		log.Infof("MetalLB controller deployment: %+v", dep3)
+
+		crd := &apiextensionsv1.CustomResourceDefinition{}
+		if err := userClient.Get(ctx, types.NamespacedName{Name: "ipaddresspools.metallb.io"}, crd); err != nil {
+			log.Info(fmt.Errorf("!!! error getting metallb IPAddressPool CRD in user cluster %s: %w", cluster.Name, err))
+		}
+		log.Infof("MetalLB IPAddressPool CRD: %+v", crd)
+
+		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
