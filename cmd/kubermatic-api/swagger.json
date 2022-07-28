@@ -27277,6 +27277,9 @@
         "password": {
           "$ref": "#/definitions/SecretKeySelector"
         },
+        "registryConfigFile": {
+          "$ref": "#/definitions/SecretKeySelector"
+        },
         "username": {
           "$ref": "#/definitions/SecretKeySelector"
         }

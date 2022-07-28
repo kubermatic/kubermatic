@@ -338,6 +338,32 @@ spec:
                                     - key
                                     type: object
                                     x-kubernetes-map-type: atomic
+                                  registryConfigFile:
+                                    description: RegistryConfigFile holds the ref
+                                      and key in the secret for the registry credential
+                                      file. The value is dockercfg file that follows
+                                      the same format rules as ~/.docker/config.json
+                                      The Secret must exist in the namespace where
+                                      KKP is installed.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   username:
                                     description: Username holds the ref and key in
                                       the secret for the username credential. Secret
@@ -361,9 +387,6 @@ spec:
                                     - key
                                     type: object
                                     x-kubernetes-map-type: atomic
-                                required:
-                                - password
-                                - username
                                 type: object
                               url:
                                 description: URl of the helm repository. It can be
