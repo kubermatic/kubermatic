@@ -108,7 +108,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		extendedHealth.OperatingSystemManager = &status
 	}
 
-	if cluster.Spec.KubernetesDashboard.IsEnabled() {
+	if cluster.Spec.IsKubernetesDashboardEnabled() {
 		status, err := r.kubernetesDashboardHealthCheck(ctx, cluster, ns)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kubernetes-dashboard health: %w", err)

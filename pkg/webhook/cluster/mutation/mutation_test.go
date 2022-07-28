@@ -87,7 +87,7 @@ var (
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaults.DefaultNodePortRange),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaults.DefaultControllerManagerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard/enabled", true),
+		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 	}
 
 	defaultNetworkingPatchesWithoutProxyMode = []jsonpatch.JsonPatchOperation{
@@ -274,7 +274,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard/enabled", true),
+				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			},

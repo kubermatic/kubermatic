@@ -136,7 +136,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
-	data.kubernetesDashboardEnabled = cluster.Spec.KubernetesDashboard.IsEnabled()
+	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
