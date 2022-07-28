@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -146,7 +147,7 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 	if err != nil {
 		return nil, err
 	}
-	state := apiv2.UNKNOWN
+	state := apiv2.UnknownExternalClusterState
 	if aksCluster.Properties != nil {
 		var powerState armcontainerservice.Code
 		var provisioningState string
@@ -166,24 +167,43 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 
 func ConvertStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
 	switch {
-	case provisioningState == "Creating":
-		return apiv2.PROVISIONING
-	case provisioningState == "Succeeded" && powerState == "Running":
-		return apiv2.RUNNING
-	case provisioningState == "Starting":
-		return apiv2.PROVISIONING
-	case provisioningState == "Stopping":
-		return apiv2.STOPPING
-	case provisioningState == "Succeeded" && powerState == "Stopped":
-		return apiv2.STOPPED
-	case provisioningState == "Failed":
-		return apiv2.ERROR
-	case provisioningState == "Deleting":
-		return apiv2.DELETING
-	case provisioningState == "Upgrading":
-		return apiv2.RECONCILING
+	case provisioningState == string(resources.CreatingAKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
+		return apiv2.RunningExternalClusterState
+	case provisioningState == string(resources.StartingAKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case provisioningState == string(resources.StoppingAKSState):
+		return apiv2.StoppingExternalClusterState
+	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
+		return apiv2.StoppedExternalClusterState
+	case provisioningState == string(resources.FailedAKSState):
+		return apiv2.ErrorExternalClusterState
+	case provisioningState == string(resources.DeletingAKSState):
+		return apiv2.DeletingExternalClusterState
+	case provisioningState == string(resources.UpgradingAKSState):
+		return apiv2.ReconcilingExternalClusterState
 	default:
-		return apiv2.UNKNOWN
+		return apiv2.UnknownExternalClusterState
+	}
+}
+
+func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterMDState {
+	switch {
+	case provisioningState == string(resources.CreatingAKSMDState):
+		return apiv2.ProvisioningExternalClusterMDState
+	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
+		return apiv2.RunningExternalClusterMDState
+	case provisioningState == string(resources.FailedAKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	case provisioningState == string(resources.DeletingAKSMDState):
+		return apiv2.DeletingExternalClusterMDState
+	// "Upgrading" indicates Kubernetes version upgrade.
+	// "Updating" indicates MachineDeployment Replica Scale.
+	case sets.NewString(string(resources.UpgradingAKSMDState), string(resources.UpdatingAKSMDState), string(resources.ScalingAKSMDState)).Has(provisioningState):
+		return apiv2.ReconcilingExternalClusterMDState
+	default:
+		return apiv2.UnknownExternalClusterMDState
 	}
 }
 

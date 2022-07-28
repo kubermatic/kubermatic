@@ -730,6 +730,80 @@ const (
 	GKENodepoolNameLabel              = "cloud.google.com/gke-nodepool"
 )
 
+type AKSState string
+
+const (
+	CreatingAKSState  AKSState = "Creating"
+	RunningAKSState   AKSState = "Running"
+	StartingAKSState  AKSState = "Starting"
+	StoppingAKSState  AKSState = "Stopping"
+	SucceededAKSState AKSState = "Succeeded"
+	StoppedAKSState   AKSState = "Stopped"
+	FailedAKSState    AKSState = "Failed"
+	DeletingAKSState  AKSState = "Deleting"
+	UpgradingAKSState AKSState = "Upgrading"
+)
+
+type AKSMDState string
+
+const (
+	CreatingAKSMDState  AKSMDState = "Creating"
+	SucceededAKSMDState AKSMDState = "Succeeded"
+	RunningAKSMDState   AKSMDState = "Running"
+	FailedAKSMDState    AKSMDState = "Failed"
+	DeletingAKSMDState  AKSMDState = "Deleting"
+	UpgradingAKSMDState AKSMDState = "Upgrading"
+	UpdatingAKSMDState  AKSMDState = "Updating"
+	ScalingAKSMDState   AKSMDState = "Scaling"
+)
+
+type EKSState string
+
+const (
+	CreatingEKSState EKSState = "CREATING"
+	PendingEKSState  EKSState = "PENDING"
+	ActiveEKSState   EKSState = "ACTIVE"
+	UpdatingEKSState EKSState = "UPDATING"
+	DeletingEKSState EKSState = "DELETING"
+	FailedEKSState   EKSState = "FAILED"
+)
+
+type EKSMDState string
+
+const (
+	CreatingEKSMDState     EKSMDState = "CREATING"
+	ActiveEKSMDState       EKSMDState = "ACTIVE"
+	UpdatingEKSMDState     EKSMDState = "UPDATING"
+	DeletingEKSMDState     EKSMDState = "DELETING"
+	CreateFailedEKSMDState EKSMDState = "CREATE_FAILED"
+	DeleteFailedEKSMDState EKSMDState = "DELETE_FAILED"
+	DegradedEKSMDState     EKSMDState = "DEGRADED"
+)
+
+type GKEState string
+
+const (
+	ProvisioningGKEState GKEState = "PROVISIONING"
+	RunningGKEState      GKEState = "RUNNING"
+	ReconcilingGKEState  GKEState = "RECONCILING"
+	StoppingGKEState     GKEState = "STOPPING"
+	ErrorGKEState        GKEState = "ERROR"
+	DegradedGKEState     GKEState = "DEGRADED"
+	UnspecifiedGKEState  GKEState = "STATUS_UNSPECIFIED"
+)
+
+type GKEMDState string
+
+const (
+	ProvisioningGKEMDState     GKEMDState = "PROVISIONING"
+	RunningGKEMDState          GKEMDState = "RUNNING"
+	ReconcilingGKEMDState      GKEMDState = "RECONCILING"
+	StoppingGKEMDState         GKEMDState = "STOPPING"
+	ErrorGKEMDState            GKEMDState = "ERROR"
+	RunningWithErrorGKEMDState GKEMDState = "RUNNING_WITH_ERROR"
+	UnspecifiedGKEMDState      GKEMDState = "STATUS_UNSPECIFIED"
+)
+
 const (
 	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
 	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"

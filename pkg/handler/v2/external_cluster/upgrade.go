@@ -62,7 +62,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, us
 		if cloud.ProviderName == "" {
 			return upgrades, nil
 		}
-		if apiCluster.Status.State != apiv2.RUNNING {
+		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 			return upgrades, nil
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
@@ -115,7 +115,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 		if cloud.ProviderName == "" {
 			return upgrades, nil
 		}
-		if apiCluster.Status.State != apiv2.RUNNING {
+		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 			return upgrades, nil
 		}
 

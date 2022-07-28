@@ -539,7 +539,12 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 		DiskSize:      aws.Int64Value(nodeGroup.DiskSize),
 		InstanceTypes: nodeGroup.InstanceTypes,
 		Labels:        nodeGroup.Labels,
+		Tags:          nodeGroup.Tags,
 		Version:       aws.StringValue(nodeGroup.Version),
+	}
+
+	if nodeGroup.CreatedAt != nil {
+		md.Cloud.EKS.CreatedAt = *nodeGroup.CreatedAt
 	}
 
 	scalingConfig := nodeGroup.ScalingConfig
@@ -555,7 +560,7 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 
 	if nodeGroup.Status != nil {
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: eksprovider.ConvertStatus(*nodeGroup.Status),
+			State: eksprovider.ConvertMDStatus(*nodeGroup.Status),
 		}
 	}
 
@@ -824,7 +829,9 @@ func createEKSNodePool(clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec, 
 	if err != nil {
 		return nil, err
 	}
-	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{
+		State: apiv2.ProvisioningExternalClusterMDState,
+	}
 
 	return &machineDeployment, nil
 }

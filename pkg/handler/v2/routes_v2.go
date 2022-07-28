@@ -354,16 +354,16 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.getExternalClusterUpgrades())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
+		Handler(r.getExternalClusterMachineDeployment())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments").
 		Handler(r.listExternalClusterMachineDeployments())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments").
 		Handler(r.createExternalClusterMachineDeployment())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").
-		Handler(r.getExternalClusterMachineDeployment())
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}").

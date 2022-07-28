@@ -186,22 +186,41 @@ func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, clo
 
 func ConvertStatus(status string) apiv2.ExternalClusterState {
 	switch status {
-	case "CREATING":
-		return apiv2.PROVISIONING
-	case "ACTIVE":
-		return apiv2.RUNNING
-	case "UPDATING":
-		return apiv2.RECONCILING
-	case "DELETING":
-		return apiv2.DELETING
-	case "CREATE_FAILED":
-		return apiv2.ERROR
-	case "DELETE_FAILED":
-		return apiv2.ERROR
-	case "FAILED":
-		return apiv2.ERROR
+	case string(resources.CreatingEKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case string(resources.PendingEKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case string(resources.ActiveEKSState):
+		return apiv2.RunningExternalClusterState
+	case string(resources.UpdatingEKSState):
+		return apiv2.ReconcilingExternalClusterState
+	case string(resources.DeletingEKSState):
+		return apiv2.DeletingExternalClusterState
+	case string(resources.FailedEKSState):
+		return apiv2.ErrorExternalClusterState
 	default:
-		return apiv2.UNKNOWN
+		return apiv2.UnknownExternalClusterState
+	}
+}
+
+func ConvertMDStatus(status string) apiv2.ExternalClusterMDState {
+	switch status {
+	case string(resources.CreatingEKSMDState):
+		return apiv2.ProvisioningExternalClusterMDState
+	case string(resources.ActiveEKSMDState):
+		return apiv2.RunningExternalClusterMDState
+	case string(resources.UpdatingEKSMDState):
+		return apiv2.ReconcilingExternalClusterMDState
+	case string(resources.DeletingEKSMDState):
+		return apiv2.DeletingExternalClusterMDState
+	case string(resources.CreateFailedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	case string(resources.DeleteFailedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	case string(resources.DegradedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	default:
+		return apiv2.UnknownExternalClusterMDState
 	}
 }
 
