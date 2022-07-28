@@ -38,6 +38,8 @@ type ClientService interface {
 
 	ListGKEImages(params *ListGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEImagesOK, error)
 
+	ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVersionsOK, error)
+
 	ListGKEZones(params *ListGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEZonesOK, error)
 
 	ValidateGKECredentials(params *ValidateGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateGKECredentialsOK, error)
@@ -232,6 +234,44 @@ func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListGKEImagesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGKEVersions Lists GKE versions
+*/
+func (a *Client) ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGKEVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGKEVersions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/gke/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGKEVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGKEVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGKEVersionsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

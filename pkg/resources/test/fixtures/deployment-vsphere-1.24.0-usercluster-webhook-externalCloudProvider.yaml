@@ -35,9 +35,15 @@ spec:
         - name: VSPHERE_ADDRESS
           value: https://vs-endpoint.io
         - name: VSPHERE_USERNAME
-          value: vs-username
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cloud-credentials
         - name: VSPHERE_PASSWORD
-          value: vs-password
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cloud-credentials
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY

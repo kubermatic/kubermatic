@@ -19396,6 +19396,67 @@
         }
       }
     },
+    "/api/v2/providers/gke/versions": {
+      "get": {
+        "description": "Lists GKE versions",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "listGKEVersions",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The Mode is how you want GKE Control plane version to be managed.\nManual: Manually manage the version upgrades.\nAuto: automatically manage the cluster's control plane version.",
+            "name": "Mode",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The ReleaseChannel",
+            "name": "ReleaseChannel",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/gke/zones": {
       "get": {
         "description": "Lists GKE zones",

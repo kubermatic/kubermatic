@@ -43,13 +43,25 @@ spec:
         - /http-prober-bin/http-prober
         env:
         - name: AZURE_CLIENT_ID
-          value: az-client-id
+          valueFrom:
+            secretKeyRef:
+              key: clientID
+              name: cloud-credentials
         - name: AZURE_CLIENT_SECRET
-          value: az-client-secret
+          valueFrom:
+            secretKeyRef:
+              key: clientSecret
+              name: cloud-credentials
         - name: AZURE_TENANT_ID
-          value: az-tenant-id
+          valueFrom:
+            secretKeyRef:
+              key: tenantID
+              name: cloud-credentials
         - name: AZURE_SUBSCRIPTION_ID
-          value: az-subscription-id
+          valueFrom:
+            secretKeyRef:
+              key: subscriptionID
+              name: cloud-credentials
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY

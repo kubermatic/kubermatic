@@ -295,6 +295,15 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 }
 
 func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	// if no --config was given, no opt.RawKubermaticConfiguration is set and we
+	// auto-detected the configuration; in this case we do not want to update
+	// the config in the cluster (which would be bad because an auto-detected
+	// KubermaticConfiguration is also defaulted and we do not want to persist
+	// the defaulted values).
+	if opt.RawKubermaticConfiguration == nil {
+		return nil
+	}
+
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
 	existingConfig := &kubermaticv1.KubermaticConfiguration{}

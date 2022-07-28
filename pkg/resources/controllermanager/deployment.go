@@ -401,15 +401,11 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 }
 
 type kubeControllerManagerEnvData interface {
-	resources.CredentialsData
+	Cluster() *kubermaticv1.Cluster
 	Seed() *kubermaticv1.Seed
 }
 
 func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
 	cluster := data.Cluster()
 
 	vars := []corev1.EnvVar{
@@ -419,9 +415,20 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		},
 	}
 
+	refTo := func(key string) *corev1.EnvVarSource {
+		return &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: resources.ClusterCloudCredentialsSecretName,
+				},
+				Key: key,
+			},
+		}
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", ValueFrom: refTo(resources.AWSAccessKeyID)})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", ValueFrom: refTo(resources.AWSSecretAccessKey)})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})

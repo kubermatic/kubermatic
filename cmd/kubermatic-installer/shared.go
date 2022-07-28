@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -26,10 +27,12 @@ import (
 	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type cobraFuncE func(cmd *cobra.Command, args []string) error
@@ -45,9 +48,19 @@ func handleErrors(logger *logrus.Logger, action cobraFuncE) cobraFuncE {
 	}
 }
 
+func findKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
+	getter, err := provider.DynamicKubermaticConfigurationGetterFactory(client, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return getter(ctx)
+}
+
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, *unstructured.Unstructured, error) {
+	// the config file is optional during upgrades, so we do not yet error out if it's not given
 	if filename == "" {
-		return nil, nil, errors.New("no file specified via --config flag")
+		return nil, nil, nil
 	}
 
 	content, err := os.ReadFile(filename)

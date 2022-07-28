@@ -33,7 +33,10 @@ spec:
         - user-cluster-webhook
         env:
         - name: DO_TOKEN
-          value: do-token
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: cloud-credentials
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
