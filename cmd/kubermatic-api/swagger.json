@@ -23030,6 +23030,12 @@
     "ApplicationInstallationCondition": {
       "type": "object",
       "properties": {
+        "lastHeartbeatTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "lastTransitionTime": {
+          "$ref": "#/definitions/Time"
+        },
         "message": {
           "description": "Human readable message indicating details about last transition.",
           "type": "string",
@@ -23044,18 +23050,17 @@
           "$ref": "#/definitions/ConditionStatus"
         },
         "type": {
-          "description": "Type of cluster condition.\nManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nManifestsApplied ManifestsApplied  ManifestsApplied indicates that all manifests have been applied in the target user-cluster.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
+          "description": "Type of ApplicationInstallation condition.\nManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
           "type": "string",
           "enum": [
             "ManifestsRetrieved",
-            "ManifestsApplied",
             "Ready"
           ],
-          "x-go-enum-desc": "ManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nManifestsApplied ManifestsApplied  ManifestsApplied indicates that all manifests have been applied in the target user-cluster.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
+          "x-go-enum-desc": "ManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.\nReady Ready  Ready describes all components have been successfully rolled out and are ready.",
           "x-go-name": "Type"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ApplicationInstallationSpec": {
       "type": "object",
@@ -23087,8 +23092,8 @@
           },
           "x-go-name": "Conditions"
         },
-        "lastUpdated": {
-          "$ref": "#/definitions/Time"
+        "method": {
+          "$ref": "#/definitions/TemplateMethod"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

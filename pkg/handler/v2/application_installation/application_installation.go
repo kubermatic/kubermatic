@@ -18,6 +18,7 @@ package applicationinstallation
 
 import (
 	"context"
+	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -158,6 +159,24 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 }
 
 func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
+	var apiCondition []apiv2.ApplicationInstallationCondition
+
+	for condType, condition := range app.Status.Conditions {
+		apiCondition = append(apiCondition, apiv2.ApplicationInstallationCondition{
+			Type:               condType,
+			Status:             condition.Status,
+			LastHeartbeatTime:  apiv1.NewTime(condition.LastHeartbeatTime.Time),
+			LastTransitionTime: apiv1.NewTime(condition.LastTransitionTime.Time),
+			Reason:             condition.Reason,
+			Message:            condition.Message,
+		})
+	}
+
+	// ensure a stable sorting order
+	sort.Slice(apiCondition, func(i, j int) bool {
+		return apiCondition[i].Type < apiCondition[j].Type
+	})
+
 	return &apiv2.ApplicationInstallation{
 		ObjectMeta: apiv1.ObjectMeta{
 			CreationTimestamp: apiv1.Time(app.CreationTimestamp),
@@ -166,9 +185,9 @@ func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *a
 		Namespace: app.Namespace,
 		Spec:      &app.Spec,
 		Status: &apiv2.ApplicationInstallationStatus{
-			LastUpdated:        apiv1.Time(app.Status.LastUpdated),
-			Conditions:         app.Status.Conditions,
+			Conditions:         apiCondition,
 			ApplicationVersion: app.Status.ApplicationVersion,
+			Method:             app.Status.Method,
 		},
 	}
 }
@@ -184,11 +203,6 @@ func convertExternalToInternal(app *apiv2.ApplicationInstallation) *appskubermat
 			Namespace: app.Namespace,
 		},
 		Spec: *app.Spec,
-		Status: appskubermaticv1.ApplicationInstallationStatus{
-			LastUpdated:        metav1.Time(app.Status.LastUpdated),
-			Conditions:         app.Status.Conditions,
-			ApplicationVersion: app.Status.ApplicationVersion,
-		},
 	}
 }
 

@@ -411,11 +411,17 @@ spec:
                 - version
                 type: object
               conditions:
-                description: Conditions contains conditions an installation is in,
-                  its primary use case is status signaling between controllers or
-                  between controllers and the API
-                items:
+                additionalProperties:
                   properties:
+                    lastHeartbeatTime:
+                      description: Last time we got an update on a given condition.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: Last time the condition transit from one status
+                        to another.
+                      format: date-time
+                      type: string
                     message:
                       description: Human readable message indicating details about
                         last transition.
@@ -426,18 +432,13 @@ spec:
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
-                    type:
-                      description: Type of cluster condition.
-                      enum:
-                      - ManifestsRetrieved
-                      - ManifestsApplied
-                      - Ready
-                      type: string
                   required:
                   - status
-                  - type
                   type: object
-                type: array
+                description: Conditions contains conditions an installation is in,
+                  its primary use case is status signaling between controllers or
+                  between controllers and the API
+                type: object
               helmRelease:
                 description: HelmRelease holds the information about the helm release
                   installed by this application. This field is only filled if template
@@ -469,8 +470,6 @@ spec:
                       status:
                         description: Status is the current state of the release.
                         type: string
-                    required:
-                    - deleted
                     type: object
                   name:
                     description: Name is the name of the release.
@@ -480,9 +479,6 @@ spec:
                       the release.
                     type: integer
                 type: object
-              lastUpdated:
-                format: date-time
-                type: string
               method:
                 description: Method used to install the application
                 enum:

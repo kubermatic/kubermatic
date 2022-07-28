@@ -1510,13 +1510,31 @@ type ApplicationInstallation struct {
 // swagger:model ApplicationInstallationStatus
 // it is needed because metav1.Time used by appsv1 confuses swaggers with apiv1.Time.
 type ApplicationInstallationStatus struct {
-	LastUpdated apiv1.Time `json:"lastUpdated,omitempty"`
-
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
-	Conditions []appskubermaticv1.ApplicationInstallationCondition `json:"conditions,omitempty"`
+	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
 
 	// ApplicationVersion contains information installing / removing application
 	ApplicationVersion *appskubermaticv1.ApplicationVersion `json:"applicationVersion,omitempty"`
+
+	// Method used to install the application
+	Method appskubermaticv1.TemplateMethod `json:"method"`
+}
+
+type ApplicationInstallationCondition struct {
+	// Type of ApplicationInstallation condition.
+	Type appskubermaticv1.ApplicationInstallationConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
+	// (brief) reason for the condition's last transition.
+	Reason string `json:"reason,omitempty"`
+	// Human readable message indicating details about last transition.
+	Message string `json:"message,omitempty"`
 }
 
 // swagger:model IPAMPool

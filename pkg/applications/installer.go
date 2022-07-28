@@ -19,7 +19,6 @@ package applications
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"go.uber.org/zap"
 
@@ -34,8 +33,14 @@ import (
 
 // ApplicationInstaller handles the installation / uninstallation of an Application on the user cluster.
 type ApplicationInstaller interface {
+	// GetAppCache return the application cache location (i.e. where source and others temporary files are written)
+	GetAppCache() string
+
+	// DonwloadSource the application's source into downloadDest and returns the full path to the sources.
+	DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error)
+
 	// Apply function installs the application on the user-cluster and returns an error if the installation has failed; this is idempotent.
-	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
+	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error)
 
 	// Delete function uninstalls the application on the user-cluster and returns an error if the uninstallation has failed; this is idempotent.
 	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
@@ -53,24 +58,27 @@ type ApplicationManager struct {
 	SecretNamespace string
 }
 
-// Apply creates the namespace where the application will be installed (if necessary) and installs the application.
-func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
-	// initialize tools
+func (a *ApplicationManager) GetAppCache() string {
+	return a.ApplicationCache
+}
+
+// DonwloadSource the application's source using the appropriate provider into downloadDest and returns the full path to the sources.
+func (a *ApplicationManager) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
 	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, applicationInstallation, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize source provider: %w", err)
+		return "", fmt.Errorf("failed to initialize source provider: %w", err)
 	}
 
-	downloadDest, err := os.MkdirTemp(a.ApplicationCache, applicationInstallation.Namespace+"-"+applicationInstallation.Name)
+	appSourcePath, err := sourceProvider.DownloadSource(downloadDest)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
+		return "", fmt.Errorf("failed to download application source: %w", err)
 	}
-	defer func() {
-		if err := os.RemoveAll(downloadDest); err != nil {
-			log.Error("failed to remove temporary directory where application source has been downloaded: %s", err)
-		}
-	}()
 
+	return appSourcePath, nil
+}
+
+// Apply creates the namespace where the application will be installed (if necessary) and installs the application.
+func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
 	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.Method)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
@@ -80,12 +88,6 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
 		return nil, err
 	}
-
-	appSourcePath, err := sourceProvider.DownloadSource(downloadDest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to download application source: %w", err)
-	}
-
 	return templateProvider.InstallOrUpgrade(appSourcePath, applicationInstallation)
 }
 

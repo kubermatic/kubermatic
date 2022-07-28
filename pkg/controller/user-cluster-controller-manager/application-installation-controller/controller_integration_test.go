@@ -25,6 +25,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -55,6 +56,7 @@ var _ = Describe("application Installation controller", func() {
 			Expect(*app.Status.ApplicationVersion).To(Equal(def.Spec.Versions[0]))
 
 			expectApplicationInstalledWithVersion(app.Name, def.Spec.Versions[0])
+			expectStatusHasConditions(app.Name)
 		})
 	})
 
@@ -215,6 +217,9 @@ func createApplicationDef(appDefName string) *appskubermaticv1.ApplicationDefini
 func expectApplicationInstalledWithVersion(appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
 	By("check application has been installed")
 	EventuallyWithOffset(1, func(g Gomega) {
+		_, found := applicationInstallerRecorder.DownloadEvents.Load(appName)
+		g.Expect(found).To(BeTrue(), "Application "+appName+"'s sources have not been installed")
+
 		result, found := applicationInstallerRecorder.ApplyEvents.Load(appName)
 		g.Expect(found).To(BeTrue(), "Application "+appName+" has not been installed")
 
@@ -231,5 +236,18 @@ func expectApplicationUninstalledWithVersion(appName string, expectedVersion app
 
 		currentVersion := result.(appskubermaticv1.ApplicationInstallation)
 		g.Expect(*currentVersion.Status.ApplicationVersion).To(Equal(expectedVersion))
+	}, timeout, interval).Should(Succeed())
+}
+
+func expectStatusHasConditions(appName string) {
+	app := &appskubermaticv1.ApplicationInstallation{}
+	EventuallyWithOffset(1, func(g Gomega) {
+		g.Expect(userClient.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespace}, app)).To(Succeed())
+
+		g.Expect(app.Status.Conditions).To(HaveKey(appskubermaticv1.ManifestsRetrieved))
+		g.Expect(app.Status.Conditions[appskubermaticv1.ManifestsRetrieved].Status).To(Equal(corev1.ConditionTrue))
+
+		g.Expect(app.Status.Conditions).To(HaveKey(appskubermaticv1.Ready))
+		g.Expect(app.Status.Conditions[appskubermaticv1.Ready].Status).To(Equal(corev1.ConditionTrue))
 	}, timeout, interval).Should(Succeed())
 }

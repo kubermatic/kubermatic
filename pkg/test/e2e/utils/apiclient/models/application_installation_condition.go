@@ -26,12 +26,19 @@ type ApplicationInstallationCondition struct {
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 
-	// Type of cluster condition.
+	// Type of ApplicationInstallation condition.
 	// ManifestsRetrieved ManifestsRetrieved  ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.
-	// ManifestsApplied ManifestsApplied  ManifestsApplied indicates that all manifests have been applied in the target user-cluster.
 	// Ready Ready  Ready describes all components have been successfully rolled out and are ready.
-	// Enum: [ManifestsRetrieved ManifestsApplied Ready]
+	// Enum: [ManifestsRetrieved Ready]
 	Type string `json:"type,omitempty"`
+
+	// last heartbeat time
+	// Format: date-time
+	LastHeartbeatTime Time `json:"lastHeartbeatTime,omitempty"`
+
+	// last transition time
+	// Format: date-time
+	LastTransitionTime Time `json:"lastTransitionTime,omitempty"`
 
 	// status
 	Status ConditionStatus `json:"status,omitempty"`
@@ -42,6 +49,14 @@ func (m *ApplicationInstallationCondition) Validate(formats strfmt.Registry) err
 	var res []error
 
 	if err := m.validateType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastHeartbeatTime(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastTransitionTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -59,7 +74,7 @@ var applicationInstallationConditionTypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["ManifestsRetrieved","ManifestsApplied","Ready"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["ManifestsRetrieved","Ready"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -71,9 +86,6 @@ const (
 
 	// ApplicationInstallationConditionTypeManifestsRetrieved captures enum value "ManifestsRetrieved"
 	ApplicationInstallationConditionTypeManifestsRetrieved string = "ManifestsRetrieved"
-
-	// ApplicationInstallationConditionTypeManifestsApplied captures enum value "ManifestsApplied"
-	ApplicationInstallationConditionTypeManifestsApplied string = "ManifestsApplied"
 
 	// ApplicationInstallationConditionTypeReady captures enum value "Ready"
 	ApplicationInstallationConditionTypeReady string = "Ready"
@@ -94,6 +106,40 @@ func (m *ApplicationInstallationCondition) validateType(formats strfmt.Registry)
 
 	// value enum
 	if err := m.validateTypeEnum("type", "body", m.Type); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastHeartbeatTime) { // not required
+		return nil
+	}
+
+	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastHeartbeatTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastHeartbeatTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) validateLastTransitionTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastTransitionTime) { // not required
+		return nil
+	}
+
+	if err := m.LastTransitionTime.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastTransitionTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastTransitionTime")
+		}
 		return err
 	}
 
@@ -121,6 +167,14 @@ func (m *ApplicationInstallationCondition) validateStatus(formats strfmt.Registr
 func (m *ApplicationInstallationCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateLastHeartbeatTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLastTransitionTime(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -128,6 +182,34 @@ func (m *ApplicationInstallationCondition) ContextValidate(ctx context.Context, 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) contextValidateLastHeartbeatTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastHeartbeatTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastHeartbeatTime")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) contextValidateLastTransitionTime(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastTransitionTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastTransitionTime")
+		}
+		return err
+	}
+
 	return nil
 }
 
