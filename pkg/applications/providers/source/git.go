@@ -39,8 +39,8 @@ import (
 type GitSource struct {
 	Ctx context.Context
 
-	// Client to seed cluster.
-	Client ctrlruntimeclient.Client
+	// SeedClient to seed cluster.
+	SeedClient ctrlruntimeclient.Client
 
 	Source *appskubermaticv1.GitSource
 
@@ -112,7 +112,7 @@ func (g GitSource) authFromCredentials() (gogittransport.AuthMethod, error) {
 
 func (g GitSource) getCredentialFromSecret(name string, key string) (string, error) {
 	secret := &corev1.Secret{}
-	if err := g.Client.Get(g.Ctx, types.NamespacedName{Namespace: g.SecretNamespace, Name: name}, secret); err != nil {
+	if err := g.SeedClient.Get(g.Ctx, types.NamespacedName{Namespace: g.SecretNamespace, Name: name}, secret); err != nil {
 		return "", fmt.Errorf("failed to get git credential: %w", err)
 	}
 
