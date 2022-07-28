@@ -103,10 +103,9 @@ func TestProviderGetResourceQuota(t *testing.T) {
 			},
 		},
 		{
-			name:          "scenario 2: get non existing resource quota",
-			projectName:   projectName,
-			userInfo:      &provider.UserInfo{Email: "john@acme.com"},
-			expectedError: fmt.Sprintf("resource quota not found for project \"%s\"", projectName),
+			name:        "scenario 2: get non existing resource quota",
+			projectName: projectName,
+			userInfo:    &provider.UserInfo{Email: "john@acme.com"},
 		},
 		{
 			name:          "scenario 3: missing user info",
@@ -132,7 +131,7 @@ func TestProviderGetResourceQuota(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if rq.Name != fmt.Sprintf("project-%s", tc.projectName) {
+				if rq != nil && rq.Name != fmt.Sprintf("project-%s", tc.projectName) {
 					t.Fatalf("name does not match")
 				}
 			}
