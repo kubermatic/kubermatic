@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	gcpprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
@@ -41,14 +42,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
-	ManualMode           = "Manual"
-	AutoMode             = "Auto"
+	ManualMode = "Manual"
+	AutoMode   = "Auto"
 )
 
 func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -338,16 +337,14 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	}
 
 	for _, md := range resp.NodePools {
-		var readyReplicas int32
-		for _, n := range nodes.Items {
-			if n.Labels != nil {
-				if n.Labels[GKENodepoolNameLabel] == md.Name {
-					readyReplicas++
-				}
+		var readyReplicasCount int32
+		for _, node := range nodes.Items {
+			if node.Labels[resources.GKENodepoolNameLabel] == md.Name && kuberneteshelper.IsNodeReady(&node) {
+				readyReplicasCount++
 			}
 		}
 
-		machineDeployments = append(machineDeployments, createMachineDeploymentFromGKENodePoll(md, readyReplicas))
+		machineDeployments = append(machineDeployments, createMachineDeploymentFromGKENodePoll(md, readyReplicasCount))
 	}
 
 	return machineDeployments, err
@@ -402,7 +399,7 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 		}
 	}
 	md.Phase = apiv2.ExternalClusterMDPhase{
-		State: gkeprovider.ConvertGKEStatus(np.Status),
+		State: gkeprovider.ConvertStatus(np.Status),
 	}
 
 	return md
@@ -419,43 +416,6 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 	}
 
 	return getGKEMachineDeployment(ctx, svc, project, cluster, nodeGroupName, clusterProvider)
-}
-
-func getGKENodes(ctx context.Context,
-	cluster *kubermaticv1.ExternalCluster,
-	nodePoolID string,
-	secretKeySelector provider.SecretKeySelectorValueFunc,
-	credentialsReference *providerconfig.GlobalSecretKeySelector,
-	clusterProvider provider.ExternalClusterProvider,
-) ([]corev1.Node, error) {
-	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
-	if err != nil {
-		return nil, err
-	}
-	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
-	if err != nil {
-		return nil, err
-	}
-
-	req := svc.Projects.Zones.Clusters.NodePools.Get(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	var outputNodes []corev1.Node
-	nodes, err := clusterProvider.ListNodes(ctx, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	for _, n := range nodes.Items {
-		if n.Labels != nil {
-			if n.Labels[GKENodepoolNameLabel] == resp.Name {
-				outputNodes = append(outputNodes, n)
-			}
-		}
-	}
-	return outputNodes, err
 }
 
 func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolID string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
@@ -526,7 +486,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 	var readyReplicas int32
 	for _, n := range nodes.Items {
 		if n.Labels != nil {
-			if n.Labels[GKENodepoolNameLabel] == np.Name {
+			if n.Labels[resources.GKENodepoolNameLabel] == np.Name {
 				readyReplicas++
 			}
 		}
@@ -989,7 +949,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				return nil, err
 			}
 		}
-		return gke.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+		return gke.ListClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
 	}
 }
 
@@ -1011,7 +971,7 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 				return nil, err
 			}
 		}
-		return gke.ListGKEImages(ctx, sa, req.Zone)
+		return gke.ListImages(ctx, sa, req.Zone)
 	}
 }
 
@@ -1033,7 +993,7 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 				return nil, err
 			}
 		}
-		return gke.ListGKEZones(ctx, sa)
+		return gke.ListZones(ctx, sa)
 	}
 }
 
@@ -1070,7 +1030,7 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 				return nil, err
 			}
 		}
-		return nil, gke.ValidateGKECredentials(ctx, sa)
+		return nil, gke.ValidateCredentials(ctx, sa)
 	}
 }
 func getSAFromPreset(ctx context.Context,

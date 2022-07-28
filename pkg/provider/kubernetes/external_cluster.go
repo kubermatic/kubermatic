@@ -349,6 +349,25 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, projectID, secretData)
 }
 
+func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	providerNodeLabel, providerNodePoolName string,
+) ([]corev1.Node, error) {
+	nodes, err := p.ListNodes(ctx, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var clusterNodes []corev1.Node
+	for _, node := range nodes.Items {
+		if node.Labels[providerNodeLabel] == providerNodePoolName {
+			clusterNodes = append(clusterNodes, node)
+		}
+	}
+
+	return clusterNodes, err
+}
+
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

@@ -164,7 +164,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
+		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get GKE cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -192,7 +192,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
+		status, err := eks.GetClusterStatus(secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get EKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -220,7 +220,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
+		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
 			r.log.Debugf("failed to get AKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())

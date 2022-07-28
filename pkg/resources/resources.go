@@ -725,6 +725,9 @@ const (
 	ExternalAKSClusterSubscriptionID  = "subscriptionID"
 	ExternalAKSClusterClientID        = "clientID"
 	ExternalAKSClusterClientSecret    = "clientSecret"
+	AKSNodepoolNameLabel              = "kubernetes.azure.com/agentpool"
+	EKSNodeGroupNameLabel             = "eks.amazonaws.com/nodegroup"
+	GKENodepoolNameLabel              = "cloud.google.com/gke-nodepool"
 )
 
 const (

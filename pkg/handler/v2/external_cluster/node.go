@@ -33,6 +33,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,10 @@ import (
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-const errGlue = " & "
+const (
+	errGlue         = " & "
+	NodeWorkerLabel = "workerset"
+)
 
 func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -71,7 +75,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		}
 
 		for _, n := range nodes.Items {
-			outNode, err := outputNode(n)
+			outNode, err := ConvertNodetoExternalClusterNode(n)
 			if err != nil {
 				return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 			}
@@ -208,7 +212,7 @@ func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return outputNode(*node)
+		return ConvertNodetoExternalClusterNode(*node)
 	}
 }
 
@@ -291,17 +295,18 @@ func ListMachineDeploymentNodesEndpoint(userInfoGetter provider.UserInfoGetter, 
 		if err != nil {
 			return nil, err
 		}
-		var mdNodes []apiv2.ExternalClusterNode
+		var externalClusterNodes []apiv2.ExternalClusterNode
 		for _, node := range nodes {
-			mdNode, err := outputNode(node)
+			mdNode, err := ConvertNodetoExternalClusterNode(node)
 			if err != nil {
 				return nil, err
 			}
 			if mdNode != nil {
-				mdNodes = append(mdNodes, *mdNode)
+				externalClusterNodes = append(externalClusterNodes, *mdNode)
 			}
 		}
-		return mdNodes, nil
+
+		return externalClusterNodes, nil
 	}
 }
 
@@ -326,42 +331,40 @@ func getMachineDeploymentNodes(ctx context.Context,
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	var nodes []corev1.Node
+	var clusterNodes []corev1.Node
 	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 	if apiCluster.Status.State != apiv2.RUNNING {
-		return nodes, nil
+		return clusterNodes, nil
 	}
 	cloud := cluster.Spec.CloudSpec
 	if cloud != nil {
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-
 		if cloud.GKE != nil {
-			nodes, err = getGKENodes(ctx, cluster, machineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.GKENodepoolNameLabel, machineDeploymentID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 		if cloud.EKS != nil {
-			nodes, err = getEKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
+			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.EKSNodeGroupNameLabel, machineDeploymentID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 		if cloud.AKS != nil {
-			nodes, err = getAKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
+			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.AKSNodepoolNameLabel, machineDeploymentID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 		if cloud.KubeOne != nil {
-			nodes, err = getKubeOneNodes(ctx, cluster, machineDeploymentID, clusterProvider)
+			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, NodeWorkerLabel, machineDeploymentID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 	}
 
-	return nodes, nil
+	return clusterNodes, nil
 }
 
 func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
@@ -472,7 +475,7 @@ func ListMachineDeploymentEventsEndpoint(userInfoGetter provider.UserInfoGetter,
 			return nil, err
 		}
 
-		mdNodes, err := getMachineDeploymentNodes(ctx,
+		nodes, err := getMachineDeploymentNodes(ctx,
 			userInfoGetter,
 			projectProvider,
 			privilegedProjectProvider,
@@ -484,7 +487,7 @@ func ListMachineDeploymentEventsEndpoint(userInfoGetter provider.UserInfoGetter,
 		if err != nil {
 			return nil, err
 		}
-		for _, node := range mdNodes {
+		for _, node := range nodes {
 			kubermaticEvents, err := common.GetEvents(ctx,
 				client,
 				&node,
@@ -684,7 +687,7 @@ func (req getNodeReq) Validate() error {
 	return nil
 }
 
-func outputNode(node corev1.Node) (*apiv2.ExternalClusterNode, error) {
+func ConvertNodetoExternalClusterNode(node corev1.Node) (*apiv2.ExternalClusterNode, error) {
 	displayName := node.Name
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node)

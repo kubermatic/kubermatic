@@ -21,9 +21,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	awsprovider "github.com/aws/aws-sdk-go/aws"
+	aws "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -32,15 +34,17 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
+	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+const EKSNodeGroupStatus = "ACTIVE"
+
 func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
-	config := awsprovider.
+	config := aws.
 		NewConfig().
 		WithRegion(region).
 		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
@@ -55,13 +59,13 @@ func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*sess
 	return session.NewSession(config)
 }
 
-func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*aws.ClientSet, error) {
+func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*awsprovider.ClientSet, error) {
 	sess, err := getAWSSession(accessKeyID, secretAccessKey, region, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
-	return &aws.ClientSet{
+	return &awsprovider.ClientSet{
 		EKS: eks.New(sess),
 	}, nil
 }
@@ -74,7 +78,7 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 	eksSvc := eks.New(sess)
 
 	clusterInput := &eks.DescribeClusterInput{
-		Name: awsprovider.String(clusterName),
+		Name: aws.String(clusterName),
 	}
 	clusterOutput, err := eksSvc.DescribeCluster(clusterInput)
 	if err != nil {
@@ -109,7 +113,7 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 	// example: eks_eu-central-1_cluster-1 => https://XX.XX.XX.XX
 	name := fmt.Sprintf("eks_%s_%s", region, *eksclusterName)
 
-	cert, err := base64.StdEncoding.DecodeString(awsprovider.StringValue(cluster.CertificateAuthority.Data))
+	cert, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +163,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 	return accessKeyID, secretAccessKey, nil
 }
 
-func GetEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
 	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -172,15 +176,15 @@ func GetEKSClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, 
 
 	eksCluster, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
 	if err != nil {
-		return nil, err
+		return nil, DecodeAWSError(err)
 	}
 
 	return &apiv2.ExternalClusterStatus{
-		State: ConvertEKSStatus(*eksCluster.Cluster.Status),
+		State: ConvertStatus(*eksCluster.Cluster.Status),
 	}, nil
 }
 
-func ConvertEKSStatus(status string) apiv2.ExternalClusterState {
+func ConvertStatus(status string) apiv2.ExternalClusterState {
 	switch status {
 	case "CREATING":
 		return apiv2.PROVISIONING
@@ -201,17 +205,17 @@ func ConvertEKSStatus(status string) apiv2.ExternalClusterState {
 	}
 }
 
-func ListEKSMachineDeploymentUpgrades(ctx context.Context,
+func ListMachineDeploymentUpgrades(ctx context.Context,
 	accessKeyID, secretAccessKey, region, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 
-	client, err := aws.GetClientSet(accessKeyID, secretAccessKey, "", "", region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
 	}
 	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &clusterName})
 	if err != nil {
-		return nil, err
+		return nil, DecodeAWSError(err)
 	}
 
 	if clusterOutput == nil || clusterOutput.Cluster == nil {
@@ -234,7 +238,7 @@ func ListEKSMachineDeploymentUpgrades(ctx context.Context,
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeAWSError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -252,4 +256,186 @@ func ListEKSMachineDeploymentUpgrades(ctx context.Context,
 	}
 
 	return upgrades, nil
+}
+
+func GetCluster(client *awsprovider.ClientSet, eksClusterName string) (*eks.DescribeClusterOutput, error) {
+	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &eksClusterName})
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+	return clusterOutput, nil
+}
+
+func CreateCluster(client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterSpec, eksClusterName string) error {
+	input := &eks.CreateClusterInput{
+		Name: aws.String(eksClusterName),
+		ResourcesVpcConfig: &eks.VpcConfigRequest{
+			SecurityGroupIds: clusterSpec.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        clusterSpec.ResourcesVpcConfig.SubnetIds,
+		},
+		RoleArn: aws.String(clusterSpec.RoleArn),
+		Version: aws.String(clusterSpec.Version),
+	}
+	_, err := client.EKS.CreateCluster(input)
+
+	if err != nil {
+		return DecodeAWSError(err)
+	}
+	return nil
+}
+
+func ListClusters(client *awsprovider.ClientSet) ([]*string, error) {
+	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
+	err := req.Send()
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+	return res.Clusters, nil
+}
+
+func DeleteCluster(client *awsprovider.ClientSet, eksClusterName string) error {
+	_, err := client.EKS.DeleteCluster(&eks.DeleteClusterInput{Name: &eksClusterName})
+	return DecodeAWSError(err)
+}
+
+func UpgradeClusterVersion(client *awsprovider.ClientSet, version *semverlib.Version, eksClusterName string) error {
+	versionString := strings.TrimSuffix(version.String(), ".0")
+
+	updateInput := eks.UpdateClusterVersionInput{
+		Name:    &eksClusterName,
+		Version: &versionString,
+	}
+	_, err := client.EKS.UpdateClusterVersion(&updateInput)
+
+	return DecodeAWSError(err)
+}
+
+func CreateNodeGroup(client *awsprovider.ClientSet,
+	clusterName, nodeGroupName string,
+	eksMDCloudSpec *apiv2.EKSMachineDeploymentCloudSpec) error {
+	createInput := &eks.CreateNodegroupInput{
+		ClusterName:   aws.String(clusterName),
+		NodegroupName: aws.String(nodeGroupName),
+		Subnets:       eksMDCloudSpec.Subnets,
+		NodeRole:      aws.String(eksMDCloudSpec.NodeRole),
+		AmiType:       aws.String(eksMDCloudSpec.AmiType),
+		CapacityType:  aws.String(eksMDCloudSpec.CapacityType),
+		DiskSize:      aws.Int64(eksMDCloudSpec.DiskSize),
+		InstanceTypes: eksMDCloudSpec.InstanceTypes,
+		Labels:        eksMDCloudSpec.Labels,
+		ScalingConfig: &eks.NodegroupScalingConfig{
+			DesiredSize: aws.Int64(eksMDCloudSpec.ScalingConfig.DesiredSize),
+			MaxSize:     aws.Int64(eksMDCloudSpec.ScalingConfig.MaxSize),
+			MinSize:     aws.Int64(eksMDCloudSpec.ScalingConfig.MinSize),
+		},
+	}
+	_, err := client.EKS.CreateNodegroup(createInput)
+	return DecodeAWSError(err)
+}
+
+func ListNodegroups(client *awsprovider.ClientSet, clusterName string) ([]*string, error) {
+	nodeInput := &eks.ListNodegroupsInput{
+		ClusterName: &clusterName,
+	}
+	nodeOutput, err := client.EKS.ListNodegroups(nodeInput)
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+	nodeGroups := nodeOutput.Nodegroups
+
+	return nodeGroups, nil
+}
+
+func DescribeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string) (*eks.Nodegroup, error) {
+	nodeGroupInput := &eks.DescribeNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeGroupName,
+	}
+
+	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+	nodeGroup := nodeGroupOutput.Nodegroup
+
+	return nodeGroup, nil
+}
+
+func UpgradeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName, currentVersion, desiredVersion *string) (*eks.UpdateNodegroupVersionOutput, error) {
+	nodeGroupInput := eks.UpdateNodegroupVersionInput{
+		ClusterName:   clusterName,
+		NodegroupName: nodeGroupName,
+		Version:       desiredVersion,
+	}
+
+	updateOutput, err := client.EKS.UpdateNodegroupVersion(&nodeGroupInput)
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+
+	return updateOutput, nil
+}
+
+func ResizeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string, currentSize, desiredSize int64) (*eks.UpdateNodegroupConfigOutput, error) {
+	nodeGroup, err := DescribeNodeGroup(client, clusterName, nodeGroupName)
+	if err != nil {
+		return nil, err
+	}
+	if *nodeGroup.Status != EKSNodeGroupStatus {
+		return nil, fmt.Errorf("cannot resize, cluster nodegroup not active")
+	}
+
+	scalingConfig := nodeGroup.ScalingConfig
+	maxSize := *scalingConfig.MaxSize
+	minSize := *scalingConfig.MinSize
+
+	var newScalingConfig eks.NodegroupScalingConfig
+	newScalingConfig.DesiredSize = &desiredSize
+
+	switch {
+	case currentSize == desiredSize:
+		return nil, fmt.Errorf("cluster nodes are already of size: %d", desiredSize)
+
+	case desiredSize > maxSize:
+		newScalingConfig.MaxSize = &desiredSize
+
+	case desiredSize < minSize:
+		newScalingConfig.MinSize = &desiredSize
+	}
+
+	configInput := eks.UpdateNodegroupConfigInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeGroupName,
+		ScalingConfig: &newScalingConfig,
+	}
+
+	updateOutput, err := client.EKS.UpdateNodegroupConfig(&configInput)
+	if err != nil {
+		return nil, DecodeAWSError(err)
+	}
+
+	return updateOutput, nil
+}
+
+func DeleteNodegroup(client *awsprovider.ClientSet, clusterName, nodeGroupName string) error {
+	deleteNGInput := eks.DeleteNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeGroupName,
+	}
+	_, err := client.EKS.DeleteNodegroup(&deleteNGInput)
+
+	return DecodeAWSError(err)
+}
+
+func DecodeAWSError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var aerr awserr.Error
+	if errors.As(err, &aerr) {
+		return errors.New(aerr.Message())
+	}
+
+	return err
 }

@@ -421,3 +421,27 @@ func (m SeedClientMap) Each(ctx context.Context, log *zap.SugaredLogger, visitor
 
 	return nil
 }
+
+// IsNodeReady returns true if a node is ready; false otherwise.
+func IsNodeReady(node *corev1.Node) bool {
+	if node == nil {
+		return false
+	}
+	for _, c := range node.Status.Conditions {
+		if c.Type == corev1.NodeReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+	return false
+}
+
+func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerNodePoolName string) int32 {
+	var readyReplicasCount int32
+	for _, node := range nodes.Items {
+		if node.Labels[providerNodeLabel] == providerNodePoolName && IsNodeReady(&node) {
+			readyReplicasCount++
+		}
+	}
+
+	return readyReplicasCount
+}

@@ -72,7 +72,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, us
 			if err != nil {
 				return nil, err
 			}
-			return gke.ListGKEUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
+			return gke.ListUpgrades(ctx, sa, cloud.GKE.Zone, cloud.GKE.Name)
 		}
 		if cloud.AKS != nil {
 			cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
@@ -126,7 +126,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			if err != nil {
 				return nil, err
 			}
-			return gke.ListGKEMachineDeploymentUpgrades(ctx,
+			return gke.ListMachineDeploymentUpgrades(ctx,
 				sa,
 				cloud.GKE.Zone,
 				cloud.GKE.Name,
@@ -137,7 +137,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			if err != nil {
 				return nil, err
 			}
-			return aks.ListAKSMachineDeploymentUpgrades(ctx,
+			return aks.ListMachineDeploymentUpgrades(ctx,
 				cred,
 				cloud.AKS.Name,
 				cloud.AKS.ResourceGroup,
@@ -148,7 +148,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 			if err != nil {
 				return nil, err
 			}
-			return eks.ListEKSMachineDeploymentUpgrades(ctx,
+			return eks.ListMachineDeploymentUpgrades(ctx,
 				accessKeyID,
 				secretAccessKey,
 				cloud.EKS.Region,

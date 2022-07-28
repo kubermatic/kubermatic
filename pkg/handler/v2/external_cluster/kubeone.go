@@ -41,10 +41,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	NodeWorkerLabel = "workerset"
-)
-
 func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	kubeOneCluster, err := DecodeManifestFromKubeOneReq(cloud.KubeOne.Manifest)
 	if err != nil {
@@ -313,26 +309,4 @@ func getKubeOneAPIMachineDeployments(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	return machineDeployments, nil
-}
-
-func getKubeOneNodes(ctx context.Context,
-	cluster *kubermaticv1.ExternalCluster,
-	mdName string,
-	clusterProvider provider.ExternalClusterProvider,
-) ([]corev1.Node, error) {
-	var outputNodes []corev1.Node
-
-	nodes, err := clusterProvider.ListNodes(ctx, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	for _, n := range nodes.Items {
-		if n.Labels != nil {
-			if n.Labels[NodeWorkerLabel] == mdName {
-				outputNodes = append(outputNodes, n)
-			}
-		}
-	}
-
-	return outputNodes, err
 }

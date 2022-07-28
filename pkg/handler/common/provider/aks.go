@@ -69,7 +69,7 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, aks.DecodeAKSError(err)
+		return nil, aks.DecodeError(err)
 	}
 
 	pager := aksClient.NewListPager(nil)
@@ -78,7 +78,7 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	for pager.More() {
 		nextResult, err := pager.NextPage(ctx)
 		if err != nil {
-			return nil, aks.DecodeAKSError(err)
+			return nil, aks.DecodeError(err)
 		}
 
 		for i := range nextResult.Value {
@@ -112,12 +112,12 @@ func ListAKSUpgrades(ctx context.Context, cred resources.AKSCredentials, resourc
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return nil, aks.DecodeAKSError(err)
+		return nil, aks.DecodeError(err)
 	}
 
 	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName, nil)
 	if err != nil {
-		return nil, aks.DecodeAKSError(err)
+		return nil, aks.DecodeError(err)
 	}
 
 	upgradeProperties := clusterUpgradeProfile.Properties
@@ -145,12 +145,12 @@ func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) 
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
 	if err != nil {
-		return aks.DecodeAKSError(err)
+		return aks.DecodeError(err)
 	}
 
 	_, err = aksClient.NewListPager(nil).NextPage(ctx)
 
-	return aks.DecodeAKSError(err)
+	return aks.DecodeError(err)
 }
 
 func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {

@@ -1045,7 +1045,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
 		if cloud.EKS != nil {
-			eksStatus, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
+			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,
@@ -1056,7 +1056,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *eksStatus
 		}
 		if cloud.AKS != nil {
-			aksStatus, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
+			aksStatus, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,
@@ -1067,7 +1067,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *aksStatus
 		}
 		if cloud.GKE != nil {
-			gkeStatus, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
+			gkeStatus, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ERROR,
