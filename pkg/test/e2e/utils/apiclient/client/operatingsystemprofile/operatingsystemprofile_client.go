@@ -46,7 +46,7 @@ func (a *Client) ListOperatingSystemProfiles(params *ListOperatingSystemProfiles
 	op := &runtime.ClientOperation{
 		ID:                 "listOperatingSystemProfiles",
 		Method:             "GET",
-		PathPattern:        "/api/v2/operatingsystemprofiles",
+		PathPattern:        "/api/v2/seeds/{seed_name}/operatingsystemprofiles",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

@@ -18,16 +18,17 @@ package operatingsystemprofile
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 )
 
 // TODO: Find a way to populate these dynamically.
@@ -74,6 +75,30 @@ func (req listOperatingSystemProfilesReq) GetSeedCluster() apiv1.SeedCluster {
 	}
 }
 
+// seedReq represents a request for referencing a seed
+// swagger:parameters listOperatingSystemProfiles
+type seedReq struct {
+	// in: path
+	// required: true
+	SeedName string `json:"seed_name"`
+}
+
+func (req seedReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.SeedName,
+	}
+}
+
+func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req seedReq
+	seedName := mux.Vars(r)["seed_name"]
+	if seedName == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
+	}
+	req.SeedName = seedName
+	return req, nil
+}
+
 func DecodeListOperatingSystemProfiles(c context.Context, r *http.Request) (interface{}, error) {
 	var req listOperatingSystemProfilesReq
 
@@ -92,7 +117,7 @@ func DecodeListOperatingSystemProfiles(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func ListOperatingSystemProfilesEndpointForCluster(userInfoGetter provider.UserInfoGetter, operatingSystemProfile provider.OperatingSystemProfileProvider) endpoint.Endpoint {
+func ListOperatingSystemProfilesEndpointForCluster(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(listOperatingSystemProfilesReq)
 
@@ -101,7 +126,9 @@ func ListOperatingSystemProfilesEndpointForCluster(userInfoGetter provider.UserI
 			return nil, err
 		}
 
-		ospList, err := operatingSystemProfile.ListUnsecured(ctx, userClusterNamespace)
+		privilegedOperatingSystemProfileProvider := ctx.Value(middleware.PrivilegedOperatingSystemProfileProviderContextKey).(provider.PrivilegedOperatingSystemProfileProvider)
+
+		ospList, err := privilegedOperatingSystemProfileProvider.ListUnsecuredForUserClusterNamespace(ctx, userClusterNamespace)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -118,34 +145,24 @@ func ListOperatingSystemProfilesEndpointForCluster(userInfoGetter provider.UserI
 	}
 }
 
-func ListOperatingSystemProfilesEndpoint(seedsGetter provider.SeedsGetter, operatingSystemProfile provider.OperatingSystemProfileProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		seeds, err := seedsGetter()
+func ListOperatingSystemProfilesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		privilegedOperatingSystemProfileProvider := ctx.Value(middleware.PrivilegedOperatingSystemProfileProviderContextKey).(provider.PrivilegedOperatingSystemProfileProvider)
+
+		ospList, err := privilegedOperatingSystemProfileProvider.ListUnsecured(ctx)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		// Fetch OSPs for all the seeds.
-		var osps []osmv1alpha1.OperatingSystemProfile
-		for _, seed := range seeds {
-			ospList, err := operatingSystemProfile.ListUnsecured(ctx, seed.Namespace)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			osps = append(osps, ospList.Items...)
-		}
-
-		// Add all custom OSPs to the response.
 		var resp []*apiv2.OperatingSystemProfile
-		for _, osp := range osps {
+
+		for _, osp := range ospList.Items {
 			ospModel := &apiv2.OperatingSystemProfile{
 				Name: osp.Name,
 			}
 			resp = append(resp, ospModel)
 		}
 
-		// Add all default OSPs to the response.
 		for _, osp := range defaultOperatingSystemProfiles {
 			ospModel := osp
 			resp = append(resp, &ospModel)

@@ -36,8 +36,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestListOperatingSystemProfilesEndpoint(t *testing.T) {
-	t.Parallel()
+func TestListOperatingSystemProfiles(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		existingObjects       []ctrlruntimeclient.Object
@@ -47,7 +46,7 @@ func TestListOperatingSystemProfilesEndpoint(t *testing.T) {
 		expectedErrorResponse []byte
 	}{
 		{
-			name: "should list custom & default OSPs",
+			name: "base case",
 			existingObjects: []ctrlruntimeclient.Object{
 				&osmv1alpha1.OperatingSystemProfile{
 					ObjectMeta: metav1.ObjectMeta{
@@ -105,7 +104,7 @@ func TestListOperatingSystemProfilesEndpoint(t *testing.T) {
 			},
 		},
 		{
-			name:               "should list only default OSPs",
+			name:               "default OSPs",
 			existingObjects:    []ctrlruntimeclient.Object{},
 			apiUser:            test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
@@ -139,7 +138,7 @@ func TestListOperatingSystemProfilesEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
-			req := httptest.NewRequest("GET", "/api/v2/operatingsystemprofiles", strings.NewReader(""))
+			req := httptest.NewRequest("GET", "/api/v2/seeds/us-central1/operatingsystemprofiles", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)

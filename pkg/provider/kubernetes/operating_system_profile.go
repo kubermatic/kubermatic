@@ -19,26 +19,60 @@ package kubernetes
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type OperatingSystemProfileProvider struct {
+// PrivilegedOperatingSystemProfileProvider struct that holds required components of the PrivilegedOperatingSystemProfileProvider.
+type PrivilegedOperatingSystemProfileProvider struct {
 	privilegedClient ctrlruntimeclient.Client
+	namespace        string
 }
 
-var _ provider.OperatingSystemProfileProvider = &OperatingSystemProfileProvider{}
+var _ provider.PrivilegedOperatingSystemProfileProvider = &PrivilegedOperatingSystemProfileProvider{}
 
-func NewOperatingSystemProfileProvider(privilegedClient ctrlruntimeclient.Client) *OperatingSystemProfileProvider {
-	return &OperatingSystemProfileProvider{
+// NewPrivilegedOperatingSystemProfileProvider returns a new PrivilegedOperatingSystemProfileProvider.
+func NewPrivilegedOperatingSystemProfileProvider(privilegedClient ctrlruntimeclient.Client, namespace string) *PrivilegedOperatingSystemProfileProvider {
+	return &PrivilegedOperatingSystemProfileProvider{
 		privilegedClient: privilegedClient,
 	}
 }
 
-func (p *OperatingSystemProfileProvider) ListUnsecured(ctx context.Context, namespace string) (*osmv1alpha1.OperatingSystemProfileList, error) {
-	ospList := &osmv1alpha1.OperatingSystemProfileList{}
-	err := p.privilegedClient.List(ctx, ospList, ctrlruntimeclient.InNamespace(namespace))
-	return ospList, err
+// ListUnsecured lists available OSPs from seed namespace.
+func (p *PrivilegedOperatingSystemProfileProvider) ListUnsecured(ctx context.Context) (*osmv1alpha1.OperatingSystemProfileList, error) {
+	res := &osmv1alpha1.OperatingSystemProfileList{}
+	if err := p.privilegedClient.List(ctx, res, &ctrlruntimeclient.ListOptions{Namespace: p.namespace}); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// ListUnsecuredForUserClusterNamespace lists available OSPs for the user cluster namespace.
+func (p *PrivilegedOperatingSystemProfileProvider) ListUnsecuredForUserClusterNamespace(ctx context.Context, namespace string) (*osmv1alpha1.OperatingSystemProfileList, error) {
+	res := &osmv1alpha1.OperatingSystemProfileList{}
+	if err := p.privilegedClient.List(ctx, res, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func PrivilegedOperatingSystemProfileProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.PrivilegedOperatingSystemProfileProviderGetter {
+	return func(seed *kubermaticv1.Seed) (provider.PrivilegedOperatingSystemProfileProvider, error) {
+		cfg, err := seedKubeconfigGetter(seed)
+		if err != nil {
+			return nil, err
+		}
+		privilegedClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+		if err != nil {
+			return nil, err
+		}
+		return NewPrivilegedOperatingSystemProfileProvider(
+			privilegedClient,
+			seed.Namespace,
+		), nil
+	}
 }

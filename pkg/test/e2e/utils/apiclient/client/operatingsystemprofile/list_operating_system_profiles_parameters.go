@@ -58,6 +58,10 @@ func NewListOperatingSystemProfilesParamsWithHTTPClient(client *http.Client) *Li
    Typically these are written to a http.Request.
 */
 type ListOperatingSystemProfilesParams struct {
+
+	// SeedName.
+	SeedName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +115,17 @@ func (o *ListOperatingSystemProfilesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithSeedName adds the seedName to the list operating system profiles params
+func (o *ListOperatingSystemProfilesParams) WithSeedName(seedName string) *ListOperatingSystemProfilesParams {
+	o.SetSeedName(seedName)
+	return o
+}
+
+// SetSeedName adds the seedName to the list operating system profiles params
+func (o *ListOperatingSystemProfilesParams) SetSeedName(seedName string) {
+	o.SeedName = seedName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListOperatingSystemProfilesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +133,11 @@ func (o *ListOperatingSystemProfilesParams) WriteToRequest(r runtime.ClientReque
 		return err
 	}
 	var res []error
+
+	// path param seed_name
+	if err := r.SetPathParam("seed_name", o.SeedName); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

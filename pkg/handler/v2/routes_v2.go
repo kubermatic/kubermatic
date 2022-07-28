@@ -1109,7 +1109,7 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 
 	// Define endpoints to manage operating system profiles.
 	mux.Methods(http.MethodGet).
-		Path("/operatingsystemprofiles").
+		Path("/seeds/{seed_name}/operatingsystemprofiles").
 		Handler(r.listOperatingSystemProfiles())
 
 	mux.Methods(http.MethodGet).
@@ -7434,25 +7434,26 @@ func (r Routing) deleteIPAMPool() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/operatingsystemprofiles operatingsystemprofile listOperatingSystemProfiles
+//swagger:route GET /api/v2/seeds/{seed_name}/operatingsystemprofiles operatingsystemprofile listOperatingSystemProfiles
 //
-//     Lists Operating System Profiles.
+//    Lists Operating System Profiles.
 //
-//     Produces:
-//     - application/json
+//    Produces:
+//    - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OperatingSystemProfile
-//       401: empty
-//       403: empty
+//    Responses:
+//      default: errorResponse
+//      200: []OperatingSystemProfile
+//      401: empty
+//      403: empty
 func (r Routing) listOperatingSystemProfiles() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(operatingsystemprofile.ListOperatingSystemProfilesEndpoint(r.seedsGetter, r.operatingSystemProfileProvider)),
-		common.DecodeEmptyReq,
+			middleware.PrivilegedOperatingSystemProfile(r.clusterProviderGetter, r.privilegedOperatingSystemProfileProviderGetter, r.seedsGetter),
+		)(operatingsystemprofile.ListOperatingSystemProfilesEndpoint(r.userInfoGetter)),
+		operatingsystemprofile.DecodeSeedReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -7476,7 +7477,8 @@ func (r Routing) listOperatingSystemProfilesForCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(operatingsystemprofile.ListOperatingSystemProfilesEndpointForCluster(r.userInfoGetter, r.operatingSystemProfileProvider)),
+			middleware.PrivilegedOperatingSystemProfile(r.clusterProviderGetter, r.privilegedOperatingSystemProfileProviderGetter, r.seedsGetter),
+		)(operatingsystemprofile.ListOperatingSystemProfilesEndpointForCluster(r.userInfoGetter)),
 		operatingsystemprofile.DecodeListOperatingSystemProfiles,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

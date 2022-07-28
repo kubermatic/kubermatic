@@ -9764,41 +9764,6 @@
         }
       }
     },
-    "/api/v2/operatingsystemprofiles": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "operatingsystemprofile"
-        ],
-        "summary": "Lists Operating System Profiles.",
-        "operationId": "listOperatingSystemProfiles",
-        "responses": {
-          "200": {
-            "description": "OperatingSystemProfile",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OperatingSystemProfile"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
     "/api/v2/presets": {
       "get": {
         "description": "Lists presets",
@@ -20972,6 +20937,50 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/seeds/{seed_name}/operatingsystemprofiles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "operatingsystemprofile"
+        ],
+        "summary": "Lists Operating System Profiles.",
+        "operationId": "listOperatingSystemProfiles",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "SeedName",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OperatingSystemProfile",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OperatingSystemProfile"
+              }
+            }
           },
           "401": {
             "$ref": "#/responses/empty"

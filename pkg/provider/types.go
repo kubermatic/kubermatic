@@ -1429,7 +1429,9 @@ type ApplicationDefinitionProvider interface {
 	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
 }
 
-type OperatingSystemProfileProvider interface {
+type PrivilegedOperatingSystemProfileProvider interface {
 	// List returns a list of OperatingSystemProfiles for the KKP installation.
-	ListUnsecured(context.Context, string) (*osmv1alpha1.OperatingSystemProfileList, error)
+	ListUnsecured(context.Context) (*osmv1alpha1.OperatingSystemProfileList, error)
+
+	ListUnsecuredForUserClusterNamespace(context.Context, string) (*osmv1alpha1.OperatingSystemProfileList, error)
 }

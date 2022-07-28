@@ -224,7 +224,7 @@ type newRoutingFunc func(
 	groupProjectBindingProvider provider.GroupProjectBindingProvider,
 	applicationDefinitionProvider provider.ApplicationDefinitionProvider,
 	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter,
-	operatingSystemProfileProvider provider.OperatingSystemProfileProvider,
+	privilegedOperatingSystemProfileProviderGetter provider.PrivilegedOperatingSystemProfileProviderGetter,
 	features features.FeatureGate,
 ) http.Handler
 
@@ -535,8 +535,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	applicationDefinitionProvider := kubernetes.NewApplicationDefinitionProvider(fakeClient)
 
-	operatingSystemProfileProvider := kubernetes.NewOperatingSystemProfileProvider(fakeClient)
-
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(ctx, zap.NewNop().Sugar())
@@ -566,6 +564,16 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 			return privilegedIPAMPool, nil
 		}
 		return nil, fmt.Errorf("can not find privilegedIPAMPoolProvider for cluster %q", seed.Name)
+	}
+
+	privilegedOperatingSystemProfileProvider := kubernetes.NewPrivilegedOperatingSystemProfileProvider(fakeClient, "kubermatic")
+
+	privilegedOperatingSystemProfileProviders := map[string]provider.PrivilegedOperatingSystemProfileProvider{"us-central1": privilegedOperatingSystemProfileProvider}
+	privilegedOperatingSystemProfileProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedOperatingSystemProfileProvider, error) {
+		if operatingSystemProfiles, exists := privilegedOperatingSystemProfileProviders[seed.Name]; exists {
+			return operatingSystemProfiles, nil
+		}
+		return nil, fmt.Errorf("can not find backupCredentialsProvider for cluster %q", seed.Name)
 	}
 
 	mainRouter := routingFunc(
@@ -624,7 +632,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		groupProjectBindingProvider,
 		applicationDefinitionProvider,
 		privilegedIPAMPoolProviderGetter,
-		operatingSystemProfileProvider,
+		privilegedOperatingSystemProfileProviderGetter,
 		featureGates,
 	)
 

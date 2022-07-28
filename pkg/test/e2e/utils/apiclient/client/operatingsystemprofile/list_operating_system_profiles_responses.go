@@ -67,7 +67,7 @@ type ListOperatingSystemProfilesOK struct {
 }
 
 func (o *ListOperatingSystemProfilesOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/operatingsystemprofiles][%d] listOperatingSystemProfilesOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesOK  %+v", 200, o.Payload)
 }
 func (o *ListOperatingSystemProfilesOK) GetPayload() []*models.OperatingSystemProfile {
 	return o.Payload
@@ -96,7 +96,7 @@ type ListOperatingSystemProfilesUnauthorized struct {
 }
 
 func (o *ListOperatingSystemProfilesUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/operatingsystemprofiles][%d] listOperatingSystemProfilesUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesUnauthorized ", 401)
 }
 
 func (o *ListOperatingSystemProfilesUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -117,7 +117,7 @@ type ListOperatingSystemProfilesForbidden struct {
 }
 
 func (o *ListOperatingSystemProfilesForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/operatingsystemprofiles][%d] listOperatingSystemProfilesForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesForbidden ", 403)
 }
 
 func (o *ListOperatingSystemProfilesForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -148,7 +148,7 @@ func (o *ListOperatingSystemProfilesDefault) Code() int {
 }
 
 func (o *ListOperatingSystemProfilesDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/operatingsystemprofiles][%d] listOperatingSystemProfiles default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfiles default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListOperatingSystemProfilesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

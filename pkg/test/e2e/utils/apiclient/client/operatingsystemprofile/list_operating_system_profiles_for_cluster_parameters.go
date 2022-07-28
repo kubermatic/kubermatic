@@ -58,6 +58,13 @@ func NewListOperatingSystemProfilesForClusterParamsWithHTTPClient(client *http.C
    Typically these are written to a http.Request.
 */
 type ListOperatingSystemProfilesForClusterParams struct {
+
+	// ClusterID.
+	ClusterID string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +118,28 @@ func (o *ListOperatingSystemProfilesForClusterParams) SetHTTPClient(client *http
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the list operating system profiles for cluster params
+func (o *ListOperatingSystemProfilesForClusterParams) WithClusterID(clusterID string) *ListOperatingSystemProfilesForClusterParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the list operating system profiles for cluster params
+func (o *ListOperatingSystemProfilesForClusterParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithProjectID adds the projectID to the list operating system profiles for cluster params
+func (o *ListOperatingSystemProfilesForClusterParams) WithProjectID(projectID string) *ListOperatingSystemProfilesForClusterParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list operating system profiles for cluster params
+func (o *ListOperatingSystemProfilesForClusterParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListOperatingSystemProfilesForClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +147,16 @@ func (o *ListOperatingSystemProfilesForClusterParams) WriteToRequest(r runtime.C
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

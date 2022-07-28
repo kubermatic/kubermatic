@@ -120,6 +120,9 @@ const (
 	// PrivilegedIPAMPoolProviderContextKey key under which the current PrivilegedIPAMPoolProvider is kept in the ctx.
 	PrivilegedIPAMPoolProviderContextKey kubermaticcontext.Key = "privileged-ipampool-provider"
 
+	// PrivilegedOperatingSystemProfileProviderContextKey key under which the current PrivilegedOperatingSystemProfileProvider is kept in the ctx.
+	PrivilegedOperatingSystemProfileProviderContextKey kubermaticcontext.Key = "privileged-operatingsystemprofile-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -925,4 +928,46 @@ func PrivilegedIPAMPool(ipamPoolProviderGetter provider.PrivilegedIPAMPoolProvid
 			return next(ctx, request)
 		}
 	}
+}
+
+// PrivilegedOperatingSystemProfile is a middleware that injects the current PrivilegedOperatingSystemProfileProvider into the ctx.
+func PrivilegedOperatingSystemProfile(clusterProviderGetter provider.ClusterProviderGetter, providerGetter provider.PrivilegedOperatingSystemProfileProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			privilegedOperatingSystemProfileProvider, err := getPrivilegedOperatingSystemProfileProvider(ctx, clusterProviderGetter, providerGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, PrivilegedOperatingSystemProfileProviderContextKey, privilegedOperatingSystemProfileProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getPrivilegedOperatingSystemProfileProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, providerGetter provider.PrivilegedOperatingSystemProfileProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.PrivilegedOperatingSystemProfileProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if clusterProvider.IsCluster(ctx, clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return providerGetter(seed)
 }
