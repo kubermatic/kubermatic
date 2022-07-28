@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,4 +63,36 @@ func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Clien
 		return "", fmt.Errorf("key '%s' does not exist in secret '%s'", key, fmt.Sprintf("%s/%s", secret.GetNamespace(), secret.GetName()))
 	}
 	return string(cred), nil
+}
+
+// AuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
+func AuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
+	auth := helmclient.AuthSettings{}
+	if source.Credentials != nil {
+		if source.Credentials.Username != nil {
+			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.Username.Name, source.Credentials.Username.Key)
+			if err != nil {
+				return auth, err
+			}
+			auth.Username = username
+		}
+		if source.Credentials.Password != nil {
+			password, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.Password.Name, source.Credentials.Password.Key)
+			if err != nil {
+				return auth, err
+			}
+			auth.Password = password
+		}
+		if source.Credentials.RegistryConfigFile != nil {
+			registryConfigFile, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.RegistryConfigFile.Name, source.Credentials.RegistryConfigFile.Key)
+			if err != nil {
+				return auth, err
+			}
+			if err := os.WriteFile(registryConfigFilePath, []byte(registryConfigFile), 0600); err != nil {
+				return helmclient.AuthSettings{}, fmt.Errorf("failed to writre registryConfigFile: %w", err)
+			}
+			auth.RegistryConfigFile = registryConfigFilePath
+		}
+	}
+	return auth, nil
 }

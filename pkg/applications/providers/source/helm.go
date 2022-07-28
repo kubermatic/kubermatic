@@ -18,6 +18,7 @@ package source
 
 import (
 	"context"
+	"path"
 
 	"go.uber.org/zap"
 
@@ -26,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // HelmSource downloads Helm chart from Helm HTTP or OCI registry.
@@ -36,6 +38,11 @@ type HelmSource struct {
 	CacheDir   string
 	Log        *zap.SugaredLogger
 	Source     *appskubermaticv1.HelmSource
+	// Namespace where credential secrets are stored.
+	SecretNamespace string
+
+	// SeedClient to seed cluster.
+	SeedClient ctrlruntimeclient.Client
 }
 
 // DownloadSource downloads the chart into destination folder and return the full path to the chart.
@@ -46,6 +53,11 @@ func (h HelmSource) DownloadSource(destination string) (string, error) {
 		return "", err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
+
+	auth, err := util.AuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.Source)
+	if err != nil {
+		return "", err
+	}
 
 	// Namespace does not matter to downloading chart.
 	ns := "default"
@@ -64,5 +76,5 @@ func (h HelmSource) DownloadSource(destination string) (string, error) {
 		return "", err
 	}
 
-	return helmClient.DownloadChart(h.Source.URL, h.Source.ChartName, h.Source.ChartVersion, destination)
+	return helmClient.DownloadChart(h.Source.URL, h.Source.ChartName, h.Source.ChartVersion, destination, auth)
 }

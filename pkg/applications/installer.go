@@ -64,7 +64,7 @@ func (a *ApplicationManager) GetAppCache() string {
 
 // DonwloadSource the application's source using the appropriate provider into downloadDest and returns the full path to the sources.
 func (a *ApplicationManager) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
-	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, applicationInstallation, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
+	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
 	if err != nil {
 		return "", fmt.Errorf("failed to initialize source provider: %w", err)
 	}
@@ -79,7 +79,7 @@ func (a *ApplicationManager) DonwloadSource(ctx context.Context, log *zap.Sugare
 
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
 func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.Method)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
@@ -93,7 +93,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 
 // Delete uninstalls the application where the application was installed if necessary.
 func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, applicationInstallation.Status.Method)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize template provider: %w", err)
 	}

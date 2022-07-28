@@ -83,6 +83,21 @@ var _ = Describe("helm template", func() {
 				},
 				Values: runtime.RawExtension{},
 			},
+			Status: appskubermaticv1.ApplicationInstallationStatus{
+				Method: appskubermaticv1.HelmTemplateMethod,
+				ApplicationVersion: &appskubermaticv1.ApplicationVersion{
+					Version: "0.1.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "localhost",
+								ChartName:    "example",
+								ChartVersion: "0.1.0",
+							},
+						},
+					},
+				},
+			},
 		}
 	})
 
@@ -100,6 +115,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
@@ -135,6 +152,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
@@ -171,6 +190,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
@@ -205,6 +226,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
@@ -236,6 +259,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err = template.InstallOrUpgrade(chartLoc, app)
@@ -268,6 +293,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
@@ -297,6 +324,8 @@ var _ = Describe("helm template", func() {
 				CacheDir:                helmCacheDir,
 				Log:                     kubermaticlog.Logger,
 				ApplicationInstallation: app,
+				SecretNamespace:         "abc",
+				SeedClient:              userClient,
 			}
 
 			statusUpdater, err = template.Uninstall(app)
