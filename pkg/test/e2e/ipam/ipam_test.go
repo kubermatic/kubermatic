@@ -292,9 +292,9 @@ func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctr
 		return err
 	}
 
-	if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
+	/*if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
 		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s was not created properly on cluster %s", ipamAllocationName, cluster.Name)
-	}
+	}*/
 
 	return nil
 }
@@ -362,9 +362,9 @@ func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClie
 		return err
 	}
 
-	if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
+	/*if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
 		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s is still persisted on cluster %s", ipamAllocationName, cluster.Name)
-	}
+	}*/
 
 	return nil
 }
