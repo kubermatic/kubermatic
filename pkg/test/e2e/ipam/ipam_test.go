@@ -29,13 +29,10 @@ import (
 	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	appsv1 "k8s.io/api/apps/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,42 +60,17 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
+	log.Info("Creating first user cluster...")
+	cluster1, userClient1, cleanupUserCluster1, err := createUserCluster(ctx, t, log, seedClient)
 	if err != nil {
-		t.Fatalf("failed to get user cluster client provider: %v", err)
+		t.Fatalf("failed to create user cluster: %v", err)
 	}
-
-	// prepare jig, create projecta nd the first cluster
-	testJig1 := jig.NewBYOCluster(seedClient, log)
-	testJig1.ProjectJig.WithHumanReadableName("IPAM test")
-	testJig1.ClusterJig.WithAddons("metallb")
-
-	_, cluster1, err := testJig1.Setup(ctx, jig.WaitForReadyPods)
-	if err != nil {
-		t.Fatalf("failed to setup first test cluster: %v", err)
-	}
-	defer testJig1.Cleanup(ctx, t, false)
-
-	// get the user client
-	userClient1, err := clusterClientProvider.GetClient(ctx, cluster1)
-	if err != nil {
-		t.Fatalf("failed to get user cluster client: %v", err)
-	}
-	utilruntime.Must(metallbv1beta1.AddToScheme(userClient1.Scheme()))
 
 	log.Info("Creating first IPAM Pool...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-
-	// TODO: test block, should be deleted {
-	addon := &kubermaticv1.Addon{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: "metallb", Namespace: cluster1.Status.NamespaceName}, addon); err != nil {
-		t.Fatal(err.Error())
-	}
-	log.Infof("MetalLB addon: %+v", addon)
-	//}
 
 	log.Info("Checking IPAM Pool 1 allocation on first cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
@@ -124,23 +96,11 @@ func TestIPAM(t *testing.T) {
 		t.Fatal("IPAM Allocation 2 wasn't created on cluster 1")
 	}
 
-	log.Info("Creating second cluster...")
-	testJig2 := jig.NewBYOCluster(seedClient, log)
-	testJig2.ProjectJig = testJig1.ProjectJig // stay in the same project
-	testJig2.ClusterJig.WithAddons("metallb")
-
-	_, cluster2, err := testJig2.Setup(ctx, jig.WaitForReadyPods)
+	log.Info("Creating second user cluster...")
+	cluster2, userClient2, cleanupUserCluster2, err := createUserCluster(ctx, t, log, seedClient)
 	if err != nil {
-		t.Fatalf("failed to setup second test cluster: %v", err)
+		t.Fatalf("failed to create user cluster: %v", err)
 	}
-	defer testJig2.Cleanup(ctx, t, false)
-
-	// get the user client
-	userClient2, err := clusterClientProvider.GetClient(ctx, cluster2)
-	if err != nil {
-		t.Fatalf("failed to get user cluster client: %v", err)
-	}
-	utilruntime.Must(metallbv1beta1.AddToScheme(userClient2.Scheme()))
 
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
@@ -161,9 +121,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Deleting first cluster...")
-	if err := testJig1.ClusterJig.Delete(ctx, true); err != nil {
-		t.Fatalf("Failed to delete first cluster: %v", err)
-	}
+	cleanupUserCluster1()
 
 	log.Info("Checking that the first cluster allocations were gone...")
 	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name) ||
@@ -186,23 +144,11 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("IPAM Allocation 3 wasn't created on cluster 2")
 	}
 
-	log.Info("Creating third cluster...")
-	testJig3 := jig.NewBYOCluster(seedClient, log)
-	testJig3.ProjectJig = testJig1.ProjectJig // stay in the same project
-	testJig3.ClusterJig.WithAddons("metallb")
-
-	_, cluster3, err := testJig3.Setup(ctx, jig.WaitForReadyPods)
+	log.Info("Creating third user cluster...")
+	cluster3, userClient3, cleanupUserCluster3, err := createUserCluster(ctx, t, log, seedClient)
 	if err != nil {
-		t.Fatalf("failed to setup second test cluster: %v", err)
+		t.Fatalf("failed to create user cluster: %v", err)
 	}
-	defer testJig3.Cleanup(ctx, t, false)
-
-	// get the user client
-	userClient3, err := clusterClientProvider.GetClient(ctx, cluster3)
-	if err != nil {
-		t.Fatalf("failed to get user cluster client: %v", err)
-	}
-	utilruntime.Must(metallbv1beta1.AddToScheme(userClient3.Scheme()))
 
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
 	if !checkIPAMAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
@@ -241,14 +187,11 @@ func TestIPAM(t *testing.T) {
 		t.Fatal("Some IPAM Allocation is still persisted after IPAM Pool 1 was deleted")
 	}
 
-	// no cloud provider resources were involved, so we do not need to wait for cleanup
-	if err := testJig2.ClusterJig.Delete(ctx, false); err != nil {
-		t.Fatalf("Failed to delete second cluster: %v", err)
-	}
+	log.Info("Deleting second cluster...")
+	cleanupUserCluster2()
 
-	if err := testJig3.ClusterJig.Delete(ctx, false); err != nil {
-		t.Fatalf("Failed to delete third cluster: %v", err)
-	}
+	log.Info("Deleting third cluster...")
+	cleanupUserCluster3()
 
 	if !checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name) ||
 		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name) ||
@@ -256,6 +199,37 @@ func TestIPAM(t *testing.T) {
 		!checkIPAMAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name) {
 		t.Fatal("Some IPAM Allocation is still persisted")
 	}
+}
+
+func createUserCluster(
+	ctx context.Context,
+	t *testing.T,
+	log *zap.SugaredLogger,
+	seedClient ctrlruntimeclient.Client,
+) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
+	testJig := jig.NewBYOCluster(seedClient, log)
+	testJig.ProjectJig.WithHumanReadableName("IPAM test")
+	testJig.ClusterJig.WithAddons(jig.Addon{
+		Name: "metallb",
+		Labels: map[string]string{
+			"addons.kubermatic.io/ensure": "true",
+		},
+	})
+
+	cleanup := func() {
+		testJig.Cleanup(ctx, t, true)
+	}
+
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	if err != nil {
+		return nil, nil, cleanup, fmt.Errorf("failed to setup test cluster: %w", err)
+	}
+
+	clusterClient, err := testJig.ClusterClient(ctx)
+
+	utilruntime.Must(metallbv1beta1.AddToScheme(clusterClient.Scheme()))
+
+	return cluster, clusterClient, cleanup, err
 }
 
 func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, poolCIDR kubermaticv1.SubnetCIDR, allocationType kubermaticv1.IPAMPoolAllocationType, allocationValue int) (*kubermaticv1.IPAMPool, error) {
@@ -317,29 +291,7 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
-		dep := &appsv1.Deployment{}
-		if err := userClient.Get(ctx, types.NamespacedName{Name: "dashboard-metrics-scraper", Namespace: "kubernetes-dashboard"}, dep); err != nil {
-			log.Info(fmt.Errorf("!!! error getting dashboard-metrics-scraper Deployment in user cluster %s: %w", cluster.Name, err))
-		}
-
-		dep2 := &appsv1.Deployment{}
-		if err := userClient.Get(ctx, types.NamespacedName{Name: "coredns", Namespace: "kube-system"}, dep2); err != nil {
-			log.Info(fmt.Errorf("!!! error getting coredns Deployment in user cluster %s: %w", cluster.Name, err))
-		}
-
-		dep3 := &appsv1.Deployment{}
-		if err := userClient.Get(ctx, types.NamespacedName{Name: "controller", Namespace: "metallb-system"}, dep3); err != nil {
-			log.Info(fmt.Errorf("!!! error getting metallb Deployment in user cluster %s: %w", cluster.Name, err))
-		}
-		log.Infof("MetalLB controller deployment: %+v", dep3)
-
-		crd := &apiextensionsv1.CustomResourceDefinition{}
-		if err := userClient.Get(ctx, types.NamespacedName{Name: "ipaddresspools.metallb.io"}, crd); err != nil {
-			log.Info(fmt.Errorf("!!! error getting metallb IPAddressPool CRD in user cluster %s: %w", cluster.Name, err))
-		}
-		log.Infof("MetalLB IPAddressPool CRD: %+v", crd)
-
+	return wait.PollLog(log, 1*time.Minute, 20*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
@@ -388,7 +340,7 @@ func checkIPAMAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seed
 }
 
 func checkMetallbIPAddressPoolIsGone(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
-	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 1*time.Minute, 20*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: "metallb-system"}, metallbIPAddressPool)
 		if err != nil {
