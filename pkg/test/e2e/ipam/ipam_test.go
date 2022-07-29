@@ -45,10 +45,12 @@ import (
 )
 
 var (
+	preset     = ""
 	logOptions = log.NewDefaultOptions()
 )
 
 func init() {
+	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -219,14 +221,16 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	seedClient ctrlruntimeclient.Client,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
-	testJig := jig.NewBYOCluster(seedClient, log)
+	testJig := jig.NewHetznerCluster(seedClient, log, 1)
 	testJig.ProjectJig.WithHumanReadableName("IPAM test")
-	testJig.ClusterJig.WithAddons(jig.Addon{
-		Name: "metallb",
-		Labels: map[string]string{
-			"addons.kubermatic.io/ensure": "true",
-		},
-	})
+	testJig.ClusterJig.
+		WithPreset(preset).
+		WithAddons(jig.Addon{
+			Name: "metallb",
+			Labels: map[string]string{
+				"addons.kubermatic.io/ensure": "true",
+			},
+		})
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)

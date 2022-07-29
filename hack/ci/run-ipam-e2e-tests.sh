@@ -39,7 +39,37 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
+echodate "Creating Hetzner preset..."
+cat << EOF > preset-hetzner.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: Preset
+metadata:
+  name: e2e-hetzner
+  namespace: kubermatic
+spec:
+  hetzner:
+    token: ${HZ_E2E_TOKEN}
+EOF
+retry 2 kubectl apply -f preset-hetzner.yaml
+
+echodate "Creating roxy-admin user..."
+cat << EOF > user.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: User
+metadata:
+  name: roxy-admin
+spec:
+  admin: true
+  email: roxy-admin@kubermatic.com
+  name: roxy-admin
+EOF
+retry 2 kubectl apply -f user.yaml
+
 echodate "Running IPAM tests..."
+
 go_test ipam_e2e -timeout 30m -tags ipam -v ./pkg/test/e2e/ipam \
-  -datacenter byo-kubernetes
+  -kubeconfig "$KUBECONFIG" \
+  -datacenter hetzner-hel1 \
+  -preset e2e-hetzner
+
 echodate "Tests completed successfully!"
