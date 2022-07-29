@@ -28252,7 +28252,7 @@
       "title": "KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.",
       "properties": {
         "enabled": {
-          "description": "Controls whether kubernetes-dashboard is deployed to the user cluster or not.",
+          "description": "Controls whether kubernetes-dashboard is deployed to the user cluster or not.\nEnabled by default.",
           "type": "boolean",
           "x-go-name": "Enabled"
         }

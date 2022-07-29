@@ -18,6 +18,7 @@ import (
 type KubernetesDashboard struct {
 
 	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
+	// Enabled by default.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
