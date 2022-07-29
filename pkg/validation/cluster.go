@@ -236,7 +236,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	// OperatingSystemManager cannot be disabled once it's enabled.
-	if !newCluster.Spec.IsOperatingSystemManagerEnabled() && oldCluster.Spec.IsKubernetesDashboardEnabled() {
+	if !newCluster.Spec.IsOperatingSystemManagerEnabled() && oldCluster.Spec.IsOperatingSystemManagerEnabled() {
 		path := field.NewPath("cluster", "spec", "enableOperatingSystemManager")
 		allErrs = append(allErrs, field.Invalid(path, newCluster.Spec.IsOperatingSystemManagerEnabled(), "OperatingSystemManager cannot be disabled once it's enabled"))
 	}
