@@ -175,7 +175,7 @@ func (r *Reconciler) syncAllUserClusterNamespaces(ctx context.Context, log *zap.
 	var errors []error
 	for _, cluster := range clusters.Items {
 		// Ensure that this is a reconcilable cluster
-		if cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil && !cluster.Spec.Pause {
+		if cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil && !cluster.Spec.Pause && cluster.Status.NamespaceName != "" {
 			err := r.syncOperatingSystemProfile(ctx, log, osp, cluster.Status.NamespaceName)
 			if err != nil {
 				errors = append(errors, err)
@@ -215,7 +215,7 @@ func withEventFilter() predicate.Predicate {
 			if !ok {
 				return false
 			}
-			return cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil
+			return cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldCluster, ok := e.ObjectOld.(*kubermaticv1.Cluster)
@@ -227,7 +227,7 @@ func withEventFilter() predicate.Predicate {
 				return false
 			}
 			// We might need to install or delete custom OSPs from the user cluster namespace.
-			if oldCluster.Spec.EnableOperatingSystemManager != newCluster.Spec.EnableOperatingSystemManager && newCluster.DeletionTimestamp == nil {
+			if oldCluster.Spec.EnableOperatingSystemManager != newCluster.Spec.EnableOperatingSystemManager && newCluster.DeletionTimestamp == nil && newCluster.Status.NamespaceName != "" {
 				return true
 			}
 

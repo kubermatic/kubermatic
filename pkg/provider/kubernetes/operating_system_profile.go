@@ -39,6 +39,7 @@ var _ provider.PrivilegedOperatingSystemProfileProvider = &PrivilegedOperatingSy
 func NewPrivilegedOperatingSystemProfileProvider(privilegedClient ctrlruntimeclient.Client, namespace string) *PrivilegedOperatingSystemProfileProvider {
 	return &PrivilegedOperatingSystemProfileProvider{
 		privilegedClient: privilegedClient,
+		namespace:        namespace,
 	}
 }
 
