@@ -23,13 +23,14 @@ import (
 	"net"
 	"strings"
 
-	coreV3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
-	typeV3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
+
+	coreV3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
+	typeV3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
