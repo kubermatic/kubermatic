@@ -70,7 +70,7 @@ func main() {
 	log := rawLog.Sugar()
 
 	// parse our CLI flags
-	if err := opts.ParseFlags(); err != nil {
+	if err := opts.ParseFlags(log); err != nil {
 		log.Fatalw("Invalid flags", zap.Error(err))
 	}
 
