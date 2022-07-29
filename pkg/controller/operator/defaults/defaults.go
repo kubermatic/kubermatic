@@ -290,6 +290,32 @@ var (
 			},
 		},
 	}
+
+	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		Default: semver.NewSemverOrDie("v1.22"),
+		Versions: []semver.Semver{
+			newSemver("v1.22"),
+			newSemver("v1.21"),
+			newSemver("v1.20"),
+			newSemver("v1.19"),
+		},
+	}
+
+	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		Default: semver.NewSemverOrDie("v1.22"),
+		Versions: []semver.Semver{
+			// v1.24 is a Preview version (not Production ready).
+			// newSemver("v1.24"),
+			newSemver("v1.23"),
+			newSemver("v1.22"),
+			newSemver("v1.21"),
+		},
+	}
+
+	ExternalClusterDefaultKubernetesVersioning = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		kubermaticv1.EKSProviderType: eksProviderVersioningConfiguration,
+		kubermaticv1.AKSProviderType: aksProviderVersioningConfiguration,
+	}
 )
 
 func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
@@ -409,6 +435,8 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning, "versions", logger); err != nil {
 		return configCopy, err
 	}
+
+	configCopy.Spec.Versions.ExternalClusters = ExternalClusterDefaultKubernetesVersioning
 
 	auth := configCopy.Spec.Auth
 
