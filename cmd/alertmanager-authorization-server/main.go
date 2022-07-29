@@ -184,16 +184,14 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 
 	// authorize through group project bindings
 	allGroupBindings := &kubermaticv1.GroupProjectBindingList{}
-	if err := a.client.List(ctx, allGroupBindings); err != nil {
+	if err := a.client.List(ctx, allGroupBindings, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
 		return false, fmt.Errorf("listing groupProjectBinding: %w", err)
 	}
 
 	groupSet := sets.NewString()
 	for _, gpb := range allGroupBindings.Items {
-		if gpb.Spec.ProjectID == projectID {
-			a.log.Debugf("found group project binding %q for project %q with group %q", gpb.Name, projectID, gpb.Spec.Group)
-			groupSet.Insert(gpb.Spec.Group)
-		}
+		a.log.Debugf("found group project binding %q for project %q with group %q", gpb.Name, projectID, gpb.Spec.Group)
+		groupSet.Insert(gpb.Spec.Group)
 	}
 
 	if groupSet.Len() == 0 {
