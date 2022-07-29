@@ -2035,9 +2035,8 @@ spec:
                   component.
                 properties:
                   enabled:
-                    default: true
                     description: Controls whether kubernetes-dashboard is deployed
-                      to the user cluster or not.
+                      to the user cluster or not. Enabled by default.
                     type: boolean
                 type: object
               machineNetworks:

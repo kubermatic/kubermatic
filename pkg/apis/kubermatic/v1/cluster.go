@@ -280,9 +280,8 @@ func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
 type KubernetesDashboard struct {
-	// +kubebuilder:default=true
-
 	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
+	// Enabled by default.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
