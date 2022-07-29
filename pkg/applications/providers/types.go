@@ -40,12 +40,12 @@ type SourceProvider interface {
 }
 
 // NewSourceProvider returns the concrete implementation of SourceProvider according to source defined in appSource.
-func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubeconfig string, cacheDir string, appInstallation *appskubermaticv1.ApplicationInstallation, appSource *appskubermaticv1.ApplicationSource, secretNamespace string) (SourceProvider, error) {
+func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubeconfig string, cacheDir string, appSource *appskubermaticv1.ApplicationSource, secretNamespace string) (SourceProvider, error) {
 	switch {
 	case appSource.Helm != nil:
-		return source.HelmSource{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, Source: appSource.Helm}, nil
+		return source.HelmSource{Ctx: ctx, SeedClient: client, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, Source: appSource.Helm, SecretNamespace: secretNamespace}, nil
 	case appSource.Git != nil:
-		return source.GitSource{Ctx: ctx, Client: client, Source: appSource.Git, SecretNamespace: secretNamespace}, nil
+		return source.GitSource{Ctx: ctx, SeedClient: client, Source: appSource.Git, SecretNamespace: secretNamespace}, nil
 	default: // This should not happen. The admission webhook prevents that.
 		return nil, errors.New("no source found")
 	}
@@ -62,11 +62,11 @@ type TemplateProvider interface {
 }
 
 // NewTemplateProvider return the concrete implementation of TemplateProvider according to the templateMethod.
-func NewTemplateProvider(ctx context.Context, kubeconfig string, cacheDir string, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation, templateMethod appskubermaticv1.TemplateMethod) (TemplateProvider, error) {
-	switch templateMethod {
+func NewTemplateProvider(ctx context.Context, seedClient ctrlruntimeclient.Client, kubeconfig string, cacheDir string, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation, secretNamespace string) (TemplateProvider, error) {
+	switch appInstallation.Status.Method {
 	case appskubermaticv1.HelmTemplateMethod:
-		return template.HelmTemplate{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, ApplicationInstallation: appInstallation}, nil
+		return template.HelmTemplate{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, ApplicationInstallation: appInstallation, SecretNamespace: secretNamespace, SeedClient: seedClient}, nil
 	default:
-		return nil, fmt.Errorf("template method '%v' not implemented", templateMethod)
+		return nil, fmt.Errorf("template method '%v' not implemented", appInstallation.Status.Method)
 	}
 }

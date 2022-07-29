@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"path"
 
 	"go.uber.org/zap"
 
@@ -31,6 +32,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // HelmTemplate install upgrade or uninstall helm chart into cluster.
@@ -45,6 +47,12 @@ type HelmTemplate struct {
 
 	Log                     *zap.SugaredLogger
 	ApplicationInstallation *appskubermaticv1.ApplicationInstallation
+
+	// Namespace where credential secrets are stored.
+	SecretNamespace string
+
+	// SeedClient to seed cluster.
+	SeedClient ctrlruntimeclient.Client
 }
 
 // InstallOrUpgrade the chart located at chartLoc with parameters (releaseName, values) defined applicationInstallation into cluster.
@@ -54,6 +62,11 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		return nil, err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
+
+	auth, err := util.AuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.Source.Helm)
+	if err != nil {
+		return nil, err
+	}
 
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
@@ -78,7 +91,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		}
 	}
 
-	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values)
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, auth)
 	if err != nil {
 		return nil, err
 	}

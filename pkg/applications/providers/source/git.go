@@ -29,9 +29,8 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,8 +38,8 @@ import (
 type GitSource struct {
 	Ctx context.Context
 
-	// Client to seed cluster.
-	Client ctrlruntimeclient.Client
+	// SeedClient to seed cluster.
+	SeedClient ctrlruntimeclient.Client
 
 	Source *appskubermaticv1.GitSource
 
@@ -71,12 +70,12 @@ func (g GitSource) authFromCredentials() (gogittransport.AuthMethod, error) {
 	if credentials != nil {
 		switch credentials.Method {
 		case appskubermaticv1.GitAuthMethodPassword:
-			username, err := g.getCredentialFromSecret(credentials.Username.Name, credentials.Username.Key)
+			username, err := util.GetCredentialFromSecret(g.Ctx, g.SeedClient, g.SecretNamespace, credentials.Username.Name, credentials.Username.Key)
 			if err != nil {
 				return nil, err
 			}
 
-			password, err := g.getCredentialFromSecret(credentials.Password.Name, credentials.Password.Key)
+			password, err := util.GetCredentialFromSecret(g.Ctx, g.SeedClient, g.SecretNamespace, credentials.Password.Name, credentials.Password.Key)
 			if err != nil {
 				return nil, err
 			}
@@ -84,14 +83,14 @@ func (g GitSource) authFromCredentials() (gogittransport.AuthMethod, error) {
 			auth = &gogithttp.BasicAuth{Username: username, Password: password}
 
 		case appskubermaticv1.GitAuthMethodToken:
-			token, err := g.getCredentialFromSecret(credentials.Token.Name, credentials.Token.Key)
+			token, err := util.GetCredentialFromSecret(g.Ctx, g.SeedClient, g.SecretNamespace, credentials.Token.Name, credentials.Token.Key)
 			if err != nil {
 				return nil, err
 			}
 
 			auth = &gogithttp.TokenAuth{Token: token}
 		case appskubermaticv1.GitAuthMethodSSHKey:
-			privateKey, err := g.getCredentialFromSecret(credentials.SSHKey.Name, credentials.SSHKey.Key)
+			privateKey, err := util.GetCredentialFromSecret(g.Ctx, g.SeedClient, g.SecretNamespace, credentials.SSHKey.Name, credentials.SSHKey.Key)
 			if err != nil {
 				return nil, err
 			}
@@ -108,19 +107,6 @@ func (g GitSource) authFromCredentials() (gogittransport.AuthMethod, error) {
 		}
 	}
 	return auth, nil
-}
-
-func (g GitSource) getCredentialFromSecret(name string, key string) (string, error) {
-	secret := &corev1.Secret{}
-	if err := g.Client.Get(g.Ctx, types.NamespacedName{Namespace: g.SecretNamespace, Name: name}, secret); err != nil {
-		return "", fmt.Errorf("failed to get git credential: %w", err)
-	}
-
-	cred, found := secret.Data[key]
-	if !found {
-		return "", fmt.Errorf("key '%s' does not exist in secret '%s'", key, fmt.Sprintf("%s/%s", secret.GetNamespace(), secret.GetName()))
-	}
-	return string(cred), nil
 }
 
 // getCheckoutStrategy returns the checkoutFunc according to the GitSource.

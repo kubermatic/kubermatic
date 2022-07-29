@@ -351,7 +351,7 @@ func TestDownloadGitSource(t *testing.T) {
 
 			source := GitSource{
 				Ctx:             context.Background(),
-				Client:          tc.client,
+				SeedClient:      tc.client,
 				Source:          tc.source,
 				SecretNamespace: "kubermatic",
 			}
