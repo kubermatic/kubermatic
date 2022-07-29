@@ -65,7 +65,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
-		if apiCluster.Status.State != apiv2.RUNNING {
+		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 			return nodesV1, nil
 		}
 
@@ -113,7 +113,7 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 
 	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 
-	if apiCluster.Status.State != apiv2.RUNNING {
+	if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 		return nodeMetrics, nil
 	}
 
@@ -235,7 +235,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 		var machineDeployments []apiv2.ExternalClusterMachineDeployment
 		machineDeployments = make([]apiv2.ExternalClusterMachineDeployment, 0)
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
-		if apiCluster.Status.State != apiv2.RUNNING {
+		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 			return machineDeployments, nil
 		}
 
@@ -333,7 +333,7 @@ func getMachineDeploymentNodes(ctx context.Context,
 
 	var clusterNodes []corev1.Node
 	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
-	if apiCluster.Status.State != apiv2.RUNNING {
+	if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 		return clusterNodes, nil
 	}
 	cloud := cluster.Spec.CloudSpec

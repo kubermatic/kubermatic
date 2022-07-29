@@ -149,7 +149,7 @@ func UpgradeKubeOneCluster(ctx context.Context,
 	}
 
 	// update api externalcluster status.
-	newCluster.Status.State = apiv2.RECONCILING
+	newCluster.Status.State = apiv2.ReconcilingExternalClusterState
 	return newCluster, nil
 }
 
@@ -199,7 +199,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	}
 
 	// update api externalcluster status.
-	newCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.RECONCILING}
+	newCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.ReconcilingExternalClusterState}
 
 	return newCluster, nil
 }

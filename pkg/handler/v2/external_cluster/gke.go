@@ -398,8 +398,10 @@ func createMachineDeploymentFromGKENodePoll(np *container.NodePool, readyReplica
 			AutoUpgrade: np.Management.AutoUpgrade,
 		}
 	}
+
 	md.Phase = apiv2.ExternalClusterMDPhase{
-		State: gkeprovider.ConvertStatus(np.Status),
+		State:         gkeprovider.ConvertMDStatus(np.Status),
+		StatusMessage: gkeprovider.GetMDStatusMessage(np),
 	}
 
 	return md
@@ -557,7 +559,9 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 		return nil, err
 	}
 
-	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{
+		State: apiv2.ProvisioningExternalClusterMDState,
+	}
 	return &machineDeployment, nil
 }
 

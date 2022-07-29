@@ -625,7 +625,7 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	}
 	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: aks.ConvertStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
 		}
 	}
 
@@ -798,7 +798,9 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, aks.DecodeError(err)
 	}
 
-	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{State: apiv2.PROVISIONING}
+	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{
+		State: apiv2.ProvisioningExternalClusterMDState,
+	}
 
 	return &machineDeployment, nil
 }

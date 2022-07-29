@@ -25587,6 +25587,12 @@
           "type": "string",
           "x-go-name": "CapacityType"
         },
+        "createdAt": {
+          "description": "The Unix epoch timestamp in seconds for when the managed node group was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
         "diskSize": {
           "description": "The root device disk size (in GiB) for your node group instances. The default\ndisk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,\nor the node group deployment will fail. For more information about using\nlaunch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
           "type": "integer",
@@ -25624,6 +25630,14 @@
             "type": "string"
           },
           "x-go-name": "Subnets"
+        },
+        "tags": {
+          "description": "The metadata applied to the node group to assist with categorization and\norganization. Each tag consists of a key and an optional value. You define\nboth. Node group tags do not propagate to any other resources associated\nwith the node group, such as the Amazon EC2 instances or subnets.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         },
         "version": {
           "description": "The Kubernetes version to use for your managed nodes. By default, the Kubernetes\nversion of the cluster is used, and this is the only accepted specified value.\nIf you specify launchTemplate, and your launch template uses a custom AMI,\nthen don't specify version, or the node group deployment will fail. For more\ninformation about using launch templates with Amazon EKS, see Launch template\nsupport (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
@@ -26172,13 +26186,17 @@
       "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
       "properties": {
         "state": {
-          "$ref": "#/definitions/ExternalClusterState"
+          "$ref": "#/definitions/ExternalClusterMDState"
         },
         "statusMessage": {
           "type": "string",
           "x-go-name": "StatusMessage"
         }
       },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ExternalClusterMDState": {
+      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ExternalClusterMachineDeployment": {

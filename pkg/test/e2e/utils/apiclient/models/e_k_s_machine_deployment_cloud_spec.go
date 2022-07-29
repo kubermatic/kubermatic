@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // EKSMachineDeploymentCloudSpec e k s machine deployment cloud spec
@@ -30,6 +31,10 @@ type EKSMachineDeploymentCloudSpec struct {
 
 	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`
+
+	// The Unix epoch timestamp in seconds for when the managed node group was created.
+	// Format: date-time
+	CreatedAt strfmt.DateTime `json:"createdAt,omitempty"`
 
 	// The root device disk size (in GiB) for your node group instances. The default
 	// disk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,
@@ -85,6 +90,12 @@ type EKSMachineDeploymentCloudSpec struct {
 	// Subnets is a required field
 	Subnets []string `json:"subnets"`
 
+	// The metadata applied to the node group to assist with categorization and
+	// organization. Each tag consists of a key and an optional value. You define
+	// both. Node group tags do not propagate to any other resources associated
+	// with the node group, such as the Amazon EC2 instances or subnets.
+	Tags map[string]string `json:"tags,omitempty"`
+
 	// The Kubernetes version to use for your managed nodes. By default, the Kubernetes
 	// version of the cluster is used, and this is the only accepted specified value.
 	// If you specify launchTemplate, and your launch template uses a custom AMI,
@@ -102,6 +113,10 @@ type EKSMachineDeploymentCloudSpec struct {
 func (m *EKSMachineDeploymentCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateScalingConfig(formats); err != nil {
 		res = append(res, err)
 	}
@@ -109,6 +124,18 @@ func (m *EKSMachineDeploymentCloudSpec) Validate(formats strfmt.Registry) error 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *EKSMachineDeploymentCloudSpec) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("createdAt", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -122,9 +122,10 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 	if err != nil {
 		return nil, err
 	}
+
 	return &apiv2.ExternalClusterStatus{
 		State:         ConvertStatus(gkeCluster.Status),
-		StatusMessage: gkeCluster.StatusMessage,
+		StatusMessage: GetStatusMessage(gkeCluster),
 	}, nil
 }
 
@@ -350,19 +351,95 @@ func ValidateCredentials(ctx context.Context, sa string) error {
 
 func ConvertStatus(status string) apiv2.ExternalClusterState {
 	switch status {
-	case "PROVISIONING":
-		return apiv2.PROVISIONING
-	case "RUNNING":
-		return apiv2.RUNNING
-	case "RECONCILING":
-		return apiv2.RECONCILING
-	case "STOPPING":
-		return apiv2.DELETING
-	case "ERROR":
-		return apiv2.ERROR
+	// The PROVISIONING state indicates the cluster is being created.
+	case string(resources.ProvisioningGKEState):
+		return apiv2.ProvisioningExternalClusterState
+	// The RUNNING state indicates the cluster has been created and is fully usable.
+	case string(resources.RunningGKEState):
+		return apiv2.RunningExternalClusterState
+	// The RECONCILING state indicates that some work is
+	// actively being done on the cluster, such as upgrading the master or
+	// node software.
+	case string(resources.ReconcilingGKEState):
+		return apiv2.ReconcilingExternalClusterState
+	// The STOPPING state indicates the cluster is being deleted.
+	case string(resources.StoppingGKEState):
+		return apiv2.DeletingExternalClusterState
+	// The ERROR state indicates the cluster is unusable. It
+	// will be automatically deleted.
+	case string(resources.ErrorGKEState):
+		return apiv2.ErrorExternalClusterState
+	// The DEGRADED state indicates the cluster requires user
+	// action to restore full functionality.
+	case string(resources.DegradedGKEState):
+		return apiv2.ErrorExternalClusterState
+	// "STATUS_UNSPECIFIED" - Not set.
+	case string(resources.UnspecifiedGKEState):
+		return apiv2.UnknownExternalClusterState
 	default:
-		return apiv2.UNKNOWN
+		return apiv2.UnknownExternalClusterState
 	}
+}
+
+func GetMDStatusMessage(np *container.NodePool) string {
+	var statusMessage string
+	if np == nil {
+		return statusMessage
+	}
+	statusMessage = np.StatusMessage
+	if statusMessage == "" {
+		if np.Conditions != nil && len(np.Conditions) > 0 {
+			statusMessage = np.Conditions[1].Message
+		}
+	}
+	return statusMessage
+}
+
+func ConvertMDStatus(status string) apiv2.ExternalClusterMDState {
+	switch status {
+	// The PROVISIONING state indicates the node pool is being created.
+	case string(resources.ProvisioningGKEMDState):
+		return apiv2.ProvisioningExternalClusterMDState
+	// The RUNNING state indicates the node pool has been
+	// created and is fully usable.
+	case string(resources.RunningGKEMDState):
+		return apiv2.RunningExternalClusterMDState
+	// "RECONCILING" - The RECONCILING state indicates that some work is
+	// actively being done on the node pool, such as upgrading node
+	// software.
+	case string(resources.ReconcilingGKEMDState):
+		return apiv2.ReconcilingExternalClusterMDState
+	// "STOPPING" - The STOPPING state indicates the node pool is being deleted.
+	case string(resources.StoppingGKEMDState):
+		return apiv2.DeletingExternalClusterMDState
+	// The ERROR state indicates the node pool may be unusable.
+	case string(resources.ErrorGKEMDState):
+		return apiv2.ErrorExternalClusterMDState
+	// The RUNNING_WITH_ERROR state indicates the
+	// node pool has been created and is partially usable. Some error state
+	// has occurred and some functionality may be impaired.
+	case string(resources.RunningWithErrorGKEMDState):
+		return apiv2.ErrorExternalClusterMDState
+	// "STATUS_UNSPECIFIED" - Not set.
+	case string(resources.UnspecifiedGKEMDState):
+		return apiv2.UnknownExternalClusterMDState
+	default:
+		return apiv2.UnknownExternalClusterMDState
+	}
+}
+
+func GetStatusMessage(gkeCluster *container.Cluster) string {
+	var statusMessage string
+	if gkeCluster == nil {
+		return statusMessage
+	}
+	statusMessage = gkeCluster.StatusMessage
+	if statusMessage == "" {
+		if gkeCluster.Conditions != nil && len(gkeCluster.Conditions) > 0 {
+			statusMessage = gkeCluster.Conditions[1].Message
+		}
+	}
+	return statusMessage
 }
 
 func getCredentials(ctx context.Context, serviceAccount string) (*google.Credentials, error) {

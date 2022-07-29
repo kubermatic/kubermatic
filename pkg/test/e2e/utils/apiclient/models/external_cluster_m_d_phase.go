@@ -22,7 +22,7 @@ type ExternalClusterMDPhase struct {
 	StatusMessage string `json:"statusMessage,omitempty"`
 
 	// state
-	State ExternalClusterState `json:"state,omitempty"`
+	State ExternalClusterMDState `json:"state,omitempty"`
 }
 
 // Validate validates this external cluster m d phase

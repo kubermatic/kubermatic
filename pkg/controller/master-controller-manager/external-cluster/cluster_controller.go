@@ -170,11 +170,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		if status.State == apiv2.PROVISIONING {
+		if status.State == apiv2.ProvisioningExternalClusterState {
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: time.Second * 10}, err
 		}
-		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
 			err = r.createOrUpdateGKEKubeconfig(ctx, cluster)
 			if err != nil {
 				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
@@ -198,11 +198,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		if status.State == apiv2.PROVISIONING {
+		if status.State == apiv2.ProvisioningExternalClusterState {
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: time.Second * 10}, err
 		}
-		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
 			err = r.createOrUpdateEKSKubeconfig(ctx, cluster)
 			if err != nil {
 				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
@@ -226,11 +226,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		if status.State == apiv2.PROVISIONING {
+		if status.State == apiv2.ProvisioningExternalClusterState {
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: time.Second * 10}, err
 		}
-		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
 			err = r.createOrUpdateAKSKubeconfig(ctx, cluster)
 			if err != nil {
 				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
