@@ -436,7 +436,9 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	configCopy.Spec.Versions.ExternalClusters = ExternalClusterDefaultKubernetesVersioning
+	if err := defaultExternalClusterVersioning(configCopy.Spec.Versions.ExternalClusters, ExternalClusterDefaultKubernetesVersioning); err != nil {
+		return configCopy, err
+	}
 
 	auth := configCopy.Spec.Auth
 
@@ -706,6 +708,45 @@ func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration,
 	if len(settings.ProviderIncompatibilities) == 0 {
 		settings.ProviderIncompatibilities = defaults.ProviderIncompatibilities
 	}
+
+	return nil
+}
+
+func defaultExternalClusterVersioning(settings, defaults map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
+	// this should never happen as the resources are not pointers in a KubermaticConfiguration
+	if settings == nil {
+		settings = make(map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration)
+	}
+
+	if len(settings) == 0 {
+		settings = defaults
+	}
+
+	eksProviderVersioningConfiguration, ok := settings[kubermaticv1.EKSProviderType]
+	if !ok {
+		settings[kubermaticv1.EKSProviderType] = defaults[kubermaticv1.EKSProviderType]
+	} else {
+		if len(eksProviderVersioningConfiguration.Versions) == 0 {
+			eksProviderVersioningConfiguration.Versions = defaults[kubermaticv1.EKSProviderType].Versions
+		}
+		if eksProviderVersioningConfiguration.Default == nil {
+			eksProviderVersioningConfiguration.Default = defaults[kubermaticv1.EKSProviderType].Default
+		}
+	}
+	settings[kubermaticv1.EKSProviderType] = eksProviderVersioningConfiguration
+
+	aksProviderVersioningConfiguration, ok = settings[kubermaticv1.AKSProviderType]
+	if !ok {
+		settings[kubermaticv1.AKSProviderType] = defaults[kubermaticv1.AKSProviderType]
+	} else {
+		if len(aksProviderVersioningConfiguration.Versions) == 0 {
+			aksProviderVersioningConfiguration.Versions = defaults[kubermaticv1.AKSProviderType].Versions
+		}
+		if aksProviderVersioningConfiguration.Default == nil {
+			aksProviderVersioningConfiguration.Default = defaults[kubermaticv1.AKSProviderType].Default
+		}
+	}
+	settings[kubermaticv1.AKSProviderType] = aksProviderVersioningConfiguration
 
 	return nil
 }
