@@ -28,6 +28,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
+	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -152,7 +153,7 @@ func (o *Options) AddFlags() {
 	o.Secrets.AddFlags()
 }
 
-func (o *Options) ParseFlags() error {
+func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	if o.ExistingClusterLabel != "" && o.ClusterParallelCount != 1 {
 		return errors.New("-cluster-parallel-count must be 1 when testing an existing cluster")
 	}
@@ -168,6 +169,11 @@ func (o *Options) ParseFlags() error {
 
 	o.Versions = []*kubermativsemver.Semver{}
 	for _, release := range strings.Split(o.releasesFlag, ",") {
+		// skip bogus/empty versions
+		if strings.TrimSpace(release) == "" {
+			continue
+		}
+
 		version := test.LatestKubernetesVersionForRelease(release, nil)
 		if version == nil {
 			return fmt.Errorf("no version found for release %q", release)
@@ -180,6 +186,7 @@ func (o *Options) ParseFlags() error {
 	// the most recent stable (stable = latest-1) supported Kubernetes version
 	if len(o.Versions) == 0 {
 		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
+		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
 	}
 
 	var err error
