@@ -235,12 +235,6 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
 	}
 
-	// OperatingSystemManager cannot be disabled once it's enabled.
-	if !newCluster.Spec.IsOperatingSystemManagerEnabled() && oldCluster.Spec.IsKubernetesDashboardEnabled() {
-		path := field.NewPath("cluster", "spec", "enableOperatingSystemManager")
-		allErrs = append(allErrs, field.Invalid(path, newCluster.Spec.IsOperatingSystemManagerEnabled(), "OperatingSystemManager cannot be disabled once it's enabled"))
-	}
-
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
 
 	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by
