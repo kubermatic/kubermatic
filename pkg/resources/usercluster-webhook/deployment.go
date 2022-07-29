@@ -22,6 +22,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 )
 
@@ -46,6 +48,7 @@ var (
 )
 
 type webhookData interface {
+	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	DC() *kubermaticv1.Datacenter
 	KubermaticAPIImage() string
@@ -187,6 +190,12 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 					},
 				},
 			}
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(resources.UserClusterControllerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
+			}
+			d.Spec.Template.Spec = *wrappedPodSpec
 
 			return d, nil
 		}

@@ -21,16 +21,19 @@ spec:
     spec:
       containers:
       - args:
-        - -kubeconfig
-        - /etc/kubernetes/kubeconfig/kubeconfig
-        - -webhook-cert-dir=/opt/webhook-serving-cert/
-        - -webhook-cert-name=serving.crt
-        - -webhook-key-name=serving.key
-        - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
-        - -project-id=my-project
-        - -v=2
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"user-cluster-webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-webhook-cert-dir=/opt/webhook-serving-cert/","-webhook-cert-name=serving.crt","-webhook-key-name=serving.key","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-project-id=my-project","-v=2"]}'
         command:
-        - user-cluster-webhook
+        - /http-prober-bin/http-prober
         env:
         - name: AZURE_CLIENT_ID
           valueFrom:
@@ -102,8 +105,21 @@ spec:
         - mountPath: /opt/ca-bundle/
           name: ca-bundle
           readOnly: true
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
       imagePullSecrets:
       - name: dockercfg
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.3.3
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
       serviceAccountName: usercluster-webhook
       volumes:
       - name: webhook-serving-cert
@@ -115,4 +131,6 @@ spec:
       - configMap:
           name: ca-bundle
         name: ca-bundle
+      - emptyDir: {}
+        name: http-prober-bin
 status: {}
