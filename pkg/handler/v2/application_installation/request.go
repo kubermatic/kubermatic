@@ -47,7 +47,7 @@ type createApplicationInstallationReq struct {
 
 	// in: body
 	// required: true
-	Body apiv2.ApplicationInstallation
+	Body apiv2.ApplicationInstallationBody
 }
 
 // deleteApplicationInstallationReq defines HTTP request for deleteApplicationInstallation
@@ -93,7 +93,7 @@ type updateApplicationInstallationReq struct {
 
 	// in: body
 	// required: true
-	Body apiv2.ApplicationInstallation
+	Body apiv2.ApplicationInstallationBody
 }
 
 func DecodeListApplicationInstallations(c context.Context, r *http.Request) (interface{}, error) {
