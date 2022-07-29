@@ -69,8 +69,8 @@ func TestIPAM(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
-	log.Info("Creating first IPAM Pool...")
-	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8)
+	log.Info("Creating first IPAM Pool (for metallb addon)...")
+	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8, "metallb")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -85,7 +85,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating second IPAM Pool...")
-	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/27", "prefix", 28)
+	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/27", "prefix", 28, "")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -135,7 +135,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating third IPAM Pool...")
-	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "193.169.1.0/28", "prefix", 29)
+	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "193.169.1.0/28", "prefix", 29, "")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -254,8 +254,10 @@ func createUserCluster(
 	return cluster, clusterClient, cleanup, err
 }
 
-func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, poolCIDR kubermaticv1.SubnetCIDR, allocationType kubermaticv1.IPAMPoolAllocationType, allocationValue int) (*kubermaticv1.IPAMPool, error) {
-	ipamPoolName := rand.String(10)
+func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, poolCIDR kubermaticv1.SubnetCIDR, allocationType kubermaticv1.IPAMPoolAllocationType, allocationValue int, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
+	if ipamPoolName == "" {
+		ipamPoolName = rand.String(10)
+	}
 
 	if err := seedClient.Create(ctx, &kubermaticv1.IPAMPool{
 		ObjectMeta: metav1.ObjectMeta{
@@ -306,17 +308,19 @@ func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctr
 		return fmt.Errorf("IPAM Allocation %s wasn't created on cluster %s", ipamAllocationName, cluster.Name)
 	}
 
-	ipamAllocation := &kubermaticv1.IPAMAllocation{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
-		return err
-	}
+	if ipamAllocationName == "metallb" {
+		ipamAllocation := &kubermaticv1.IPAMAllocation{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
+			return err
+		}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
-		return err
-	}
+		/*if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
+			return err
+		}*/ // TODO: check if really necessary
 
-	if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
-		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s was not created properly on cluster %s", ipamAllocationName, cluster.Name)
+		if !checkMetallbIPAddressPool(ctx, log, userClient, cluster, ipamAllocation) {
+			return fmt.Errorf("metallb IP address pool for IPAM Allocation %s was not created properly on cluster %s", ipamAllocationName, cluster.Name)
+		}
 	}
 
 	return nil
@@ -347,7 +351,7 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 20*time.Second, 10*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
@@ -381,14 +385,6 @@ func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClie
 		return fmt.Errorf("IPAM Allocation %s in cluster %s is still persisted", ipamAllocationName, cluster.Name)
 	}
 
-	if err := forceMetalLBAddonReconciling(ctx, seedClient, cluster); err != nil {
-		return err
-	}
-
-	if !checkMetallbIPAddressPoolIsGone(ctx, log, userClient, cluster, ipamAllocationName) {
-		return fmt.Errorf("metallb IP address pool for IPAM Allocation %s is still persisted on cluster %s", ipamAllocationName, cluster.Name)
-	}
-
 	return nil
 }
 
@@ -405,21 +401,5 @@ func checkIPAMAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seed
 		}
 
 		return fmt.Errorf("IPAM allocation is not gone for cluster %s", cluster.Name), nil
-	}) == nil
-}
-
-func checkMetallbIPAddressPoolIsGone(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
-	return wait.PollLog(log, 10*time.Second, 5*time.Minute, func() (error, error) {
-		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
-		err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: "metallb-system"}, metallbIPAddressPool)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil, nil
-			}
-
-			return fmt.Errorf("error getting metallb IP address pool for cluster %s: %w", cluster.Name, err), nil
-		}
-
-		return fmt.Errorf("metallb IP address pool is not gone for cluster %s", cluster.Name), nil
 	}) == nil
 }
