@@ -1506,6 +1506,16 @@ type ApplicationInstallation struct {
 	Status *ApplicationInstallationStatus `json:"status"`
 }
 
+// ApplicationInstallationBody is the object representing the POST/PUT payload of an ApplicationInstallation
+// swagger:model ApplicationInstallationBody
+type ApplicationInstallationBody struct {
+	apiv1.ObjectMeta
+
+	Namespace string `json:"namespace,omitempty"`
+
+	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+}
+
 // ApplicationInstallationStatus is the object representing the status of an Application.
 // swagger:model ApplicationInstallationStatus
 // it is needed because metav1.Time used by appsv1 confuses swaggers with apiv1.Time.

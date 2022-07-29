@@ -18,11 +18,9 @@ package applicationinstallation
 
 import (
 	"context"
-	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -52,7 +50,7 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoi
 
 		installations := make([]*apiv2.ApplicationInstallation, len(installList.Items))
 		for i := range installList.Items {
-			installations[i] = convertInternalToExternal(&installList.Items[i])
+			installations[i] = convertInternalToAPIApplicationInstallation(&installList.Items[i])
 		}
 
 		return installations, nil
@@ -76,12 +74,12 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		internalAppInstall := convertExternalToInternal(&req.Body)
+		internalAppInstall := convertAPItoInternalApplicationInstallationBody(&req.Body)
 		if err := client.Create(ctx, internalAppInstall); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToExternal(internalAppInstall), nil
+		return convertInternalToAPIApplicationInstallation(internalAppInstall), nil
 	}
 }
 
@@ -127,7 +125,7 @@ func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToExternal(applicationInstallation), nil
+		return convertInternalToAPIApplicationInstallation(applicationInstallation), nil
 	}
 }
 
@@ -146,7 +144,7 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		newAppInstall := convertExternalToInternal(&req.Body)
+		newAppInstall := convertAPItoInternalApplicationInstallationBody(&req.Body)
 		currentAppInstall.Spec = newAppInstall.Spec
 
 		err = client.Update(ctx, currentAppInstall)
@@ -154,55 +152,7 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToExternal(currentAppInstall), nil
-	}
-}
-
-func convertInternalToExternal(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
-	var apiCondition []apiv2.ApplicationInstallationCondition
-
-	for condType, condition := range app.Status.Conditions {
-		apiCondition = append(apiCondition, apiv2.ApplicationInstallationCondition{
-			Type:               condType,
-			Status:             condition.Status,
-			LastHeartbeatTime:  apiv1.NewTime(condition.LastHeartbeatTime.Time),
-			LastTransitionTime: apiv1.NewTime(condition.LastTransitionTime.Time),
-			Reason:             condition.Reason,
-			Message:            condition.Message,
-		})
-	}
-
-	// ensure a stable sorting order
-	sort.Slice(apiCondition, func(i, j int) bool {
-		return apiCondition[i].Type < apiCondition[j].Type
-	})
-
-	return &apiv2.ApplicationInstallation{
-		ObjectMeta: apiv1.ObjectMeta{
-			CreationTimestamp: apiv1.Time(app.CreationTimestamp),
-			Name:              app.Name,
-		},
-		Namespace: app.Namespace,
-		Spec:      &app.Spec,
-		Status: &apiv2.ApplicationInstallationStatus{
-			Conditions:         apiCondition,
-			ApplicationVersion: app.Status.ApplicationVersion,
-			Method:             app.Status.Method,
-		},
-	}
-}
-
-func convertExternalToInternal(app *apiv2.ApplicationInstallation) *appskubermaticv1.ApplicationInstallation {
-	return &appskubermaticv1.ApplicationInstallation{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       appskubermaticv1.ApplicationInstallationKindName,
-			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      app.Name,
-			Namespace: app.Namespace,
-		},
-		Spec: *app.Spec,
+		return convertInternalToAPIApplicationInstallation(currentAppInstall), nil
 	}
 }
 
