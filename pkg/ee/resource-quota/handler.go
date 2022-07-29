@@ -195,6 +195,11 @@ func GetResourceQuotaForProject(ctx context.Context, request interface{}, projec
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	if projectResourceQuota == nil {
+		// ResourceQuota not found. Return an empty response.
+		return nil, nil
+	}
+
 	return convertToAPIStruct(projectResourceQuota, kubermaticProject.Spec.Name), nil
 }
 
