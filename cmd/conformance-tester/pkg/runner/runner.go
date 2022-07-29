@@ -208,41 +208,7 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		return report, err
 	}
 
-	// cluster could become nil during the wait loop, save its name in a local variable;
-	// NB: It's important for this health check loop to refresh the cluster object, as
-	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
-	// and later when we create MachineDeployments we potentially rely on these fields
-	// being set in the cluster variable.
-	clusterName := cluster.Name
-	log = log.With("cluster", clusterName)
-
-	healthCheck := func() error {
-		log.Info("Waiting for cluster to be successfully reconciled...")
-
-		return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
-			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-				return err, nil
-			}
-
-			versions := kubermatic.NewDefaultVersions()
-
-			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
-			if len(missingConditions) > 0 {
-				return fmt.Errorf("missing conditions: %v", missingConditions), nil
-			}
-
-			return nil, nil
-		})
-	}
-
-	if err := util.JUnitWrapper("[KKP] Wait for successful reconciliation", report, metrics.TimeMeasurementWrapper(
-		metrics.KubermaticReconciliationDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
-		log,
-		healthCheck,
-	)); err != nil {
-		return report, fmt.Errorf("failed to wait for successful reconciliation: %w", err)
-	}
+	log = log.With("cluster", cluster.Name)
 
 	if err := r.executeTests(ctx, log, cluster, report, scenario); err != nil {
 		return report, err
@@ -318,6 +284,38 @@ func (r *TestRunner) executeTests(
 	defer r.dumpClusterInformation(ctx, log, clusterName)
 
 	var err error
+
+	// NB: It's important for this health check loop to refresh the cluster object, as
+	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
+	// and later when we create MachineDeployments we potentially rely on these fields
+	// being set in the cluster variable.
+	healthCheck := func() error {
+		log.Info("Waiting for cluster to be successfully reconciled...")
+
+		return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+				return err, nil
+			}
+
+			versions := kubermatic.NewDefaultVersions()
+
+			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
+			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
+			if len(missingConditions) > 0 {
+				return fmt.Errorf("missing conditions: %v", missingConditions), nil
+			}
+
+			return nil, nil
+		})
+	}
+
+	if err := util.JUnitWrapper("[KKP] Wait for successful reconciliation", report, metrics.TimeMeasurementWrapper(
+		metrics.KubermaticReconciliationDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+		log,
+		healthCheck,
+	)); err != nil {
+		return fmt.Errorf("failed to wait for successful reconciliation: %w", err)
+	}
 
 	if err := util.JUnitWrapper("[KKP] Wait for control plane", report, metrics.TimeMeasurementWrapper(
 		metrics.SeedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
