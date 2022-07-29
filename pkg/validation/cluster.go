@@ -52,6 +52,15 @@ var (
 	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
 	// UnsafeCNIMigrationLabel allows unsafe CNI type migration.
 	UnsafeCNIMigrationLabel = "unsafe-cni-migration"
+
+	// MaxClusterNameLength is the maximum allowed length for cluster names.
+	// This is restricted by the many uses of cluster names, from embedding
+	// them in namespace names (and prefixing them) to using them in role
+	// names (when using AWS).
+	// AWS role names have a max length of 64 characters, "kubernetes-" and
+	// "-control-plane" being added by KKP. This leaves 39 usable characters
+	// and to give some wiggle room, we define the max length to be 36.
+	MaxClusterNameLength = 36
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation

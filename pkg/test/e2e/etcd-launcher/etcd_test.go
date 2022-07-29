@@ -71,6 +71,7 @@ func TestBackup(t *testing.T) {
 
 	// create test environment
 	testJig := jig.NewBYOCluster(client, logger)
+	testJig.ClusterJig.WithTestName("etcd-backup")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
@@ -146,6 +147,7 @@ func TestScaling(t *testing.T) {
 
 	// create test environment
 	testJig := jig.NewBYOCluster(client, logger)
+	testJig.ClusterJig.WithTestName("etcd-scaling")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
@@ -194,6 +196,7 @@ func TestRecovery(t *testing.T) {
 
 	// create test environment
 	testJig := jig.NewBYOCluster(client, logger)
+	testJig.ClusterJig.WithTestName("etcd-recovery")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)

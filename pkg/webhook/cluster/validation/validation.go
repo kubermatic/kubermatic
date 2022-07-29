@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -78,11 +77,8 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 	}
 
-	// We prepend "cluster-" to the cluster name to get the namespace name,
-	// so we need to ensure there is enough room to fit in the prefix
-	maxNameLength := k8svalidation.DNS1035LabelMaxLength - len(kubernetes.NamespacePrefix)
-	if len(cluster.Name) > maxNameLength {
-		return fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", maxNameLength)
+	if len(cluster.Name) > validation.MaxClusterNameLength {
+		return fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", validation.MaxClusterNameLength)
 	}
 
 	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)

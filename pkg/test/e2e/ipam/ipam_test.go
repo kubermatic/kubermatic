@@ -64,7 +64,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating first user cluster...")
-	cluster1, userClient1, cleanupUserCluster1, err := createUserCluster(ctx, t, log, seedClient)
+	cluster1, userClient1, cleanupUserCluster1, err := createUserCluster(ctx, t, log, seedClient, "ipam1")
 	if err != nil {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating second user cluster...")
-	cluster2, userClient2, cleanupUserCluster2, err := createUserCluster(ctx, t, log, seedClient)
+	cluster2, userClient2, cleanupUserCluster2, err := createUserCluster(ctx, t, log, seedClient, "ipam2")
 	if err != nil {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating third user cluster...")
-	cluster3, userClient3, cleanupUserCluster3, err := createUserCluster(ctx, t, log, seedClient)
+	cluster3, userClient3, cleanupUserCluster3, err := createUserCluster(ctx, t, log, seedClient, "ipam3")
 	if err != nil {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
@@ -219,10 +219,12 @@ func createUserCluster(
 	t *testing.T,
 	log *zap.SugaredLogger,
 	seedClient ctrlruntimeclient.Client,
+	name string,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
 	testJig := jig.NewHetznerCluster(seedClient, log, 1)
 	testJig.ProjectJig.WithHumanReadableName("IPAM test")
 	testJig.ClusterJig.
+		WithTestName(name).
 		WithPreset(preset).
 		WithAddons(jig.Addon{
 			Name: "metallb",

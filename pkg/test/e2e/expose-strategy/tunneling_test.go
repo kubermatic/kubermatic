@@ -56,6 +56,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 	// create test environment
 	testJig := jig.NewBYOCluster(seedClient, logger)
 	testJig.ClusterJig.
+		WithTestName("expose-strategy").
 		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
