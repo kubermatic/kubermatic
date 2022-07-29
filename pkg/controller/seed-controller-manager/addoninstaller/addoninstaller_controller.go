@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -37,7 +38,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -103,24 +103,10 @@ func Add(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
+		return fmt.Errorf("failed to create watch for Clusters: %w", err)
 	}
 
-	enqueueClusterForNamespacedObject := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
-			log.Errorw("Failed to list clusters", zap.Error(err))
-			return []reconcile.Request{}
-		}
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-			}
-		}
-		return []reconcile.Request{}
-	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, enqueueClusterForNamespacedObject); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, util.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 		return fmt.Errorf("failed to create watch for Addons: %w", err)
 	}
 

@@ -206,14 +206,6 @@ func inClusterClient(log *zap.SugaredLogger) (ctrlruntimeclient.Client, error) {
 	return client, nil
 }
 
-func getK8cCluster(client ctrlruntimeclient.Client, name string, log *zap.SugaredLogger) (*kubermaticv1.Cluster, error) {
-	ret := kubermaticv1.Cluster{}
-	if err := client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: ""}, &ret); err != nil {
-		return nil, err
-	}
-	return &ret, nil
-}
-
 func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 	if _, err := os.Stat(etcdCommandPath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("find etcd executable: %w", err)
@@ -757,9 +749,12 @@ func closeClient(c io.Closer, log *zap.SugaredLogger) {
 }
 
 func (e *etcdCluster) setInitialState(log *zap.SugaredLogger) error {
-	k8cCluster, err := getK8cCluster(e.clusterClient, kubernetes.ClusterNameFromNamespace(e.namespace), log)
+	k8cCluster, err := kubernetes.ClusterFromNamespace(context.Background(), e.clusterClient, e.namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster: %w", err)
+	}
+	if k8cCluster == nil {
+		return fmt.Errorf("no cluster exists for namespace %q", e.namespace)
 	}
 
 	// check if the etcd cluster is initialized successfully.

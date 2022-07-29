@@ -1154,11 +1154,12 @@ func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.C
 }
 
 func (r *reconciler) getCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
-	key := types.NamespacedName{Name: kubernetes.ClusterNameFromNamespace(r.namespace)}
-
-	cluster := &kubermaticv1.Cluster{}
-	if err := r.seedClient.Get(ctx, key, cluster); err != nil {
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, r, r.namespace)
+	if err != nil {
 		return nil, err
+	}
+	if cluster == nil {
+		return nil, fmt.Errorf("no cluster exists for namespace %q", r.namespace)
 	}
 
 	return cluster, nil

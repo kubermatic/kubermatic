@@ -30,7 +30,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -99,22 +101,10 @@ func newAlertmanagerReconciler(
 		return fmt.Errorf("failed to watch Cluster: %w", err)
 	}
 
-	enqueueClusterForAlertmanager := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(context.Background(), clusterList); err != nil {
-			log.Errorw("Failed to list clusters", zap.Error(err))
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
-		}
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-			}
-		}
-		return []reconcile.Request{}
-	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Alertmanager{}}, enqueueClusterForAlertmanager); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Alertmanager{}}, util.EnqueueClusterForNamespacedObject(client)); err != nil {
 		return fmt.Errorf("failed to watch Alertmanager: %w", err)
 	}
+
 	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		ctx := context.Background()
 		alertmanager := &kubermaticv1.Alertmanager{}
@@ -125,21 +115,20 @@ func newAlertmanagerReconciler(
 			if apierrors.IsNotFound(err) {
 				return []reconcile.Request{}
 			}
-			log.Errorw("Failed to get alertmanager object", zap.Error(err))
 			utilruntime.HandleError(fmt.Errorf("failed to get alertmanager object: %w", err))
 		}
+
 		if alertmanager.Spec.ConfigSecret.Name == a.GetName() {
-			clusterList := &kubermaticv1.ClusterList{}
-			if err := client.List(ctx, clusterList); err != nil {
-				log.Errorw("Failed to list clusters", zap.Error(err))
+			cluster, err := kubernetesprovider.ClusterFromNamespace(ctx, client, a.GetNamespace())
+			if err != nil {
 				utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+				return []reconcile.Request{}
 			}
-			for _, cluster := range clusterList.Items {
-				if cluster.Status.NamespaceName == a.GetNamespace() {
-					return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-				}
+			if cluster != nil {
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 			}
 		}
+
 		return []reconcile.Request{}
 	})
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForSecret); err != nil {

@@ -97,14 +97,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("pvc", request)
 	log.Debug("Reconciling")
 
-	cluster := &kubermaticv1.Cluster{}
-	clusterName := kubernetes.ClusterNameFromNamespace(request.Namespace)
-	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Debug("Skipping because the cluster is already gone")
-			return reconcile.Result{}, nil
-		}
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, r, request.Namespace)
+	if err != nil {
 		return reconcile.Result{}, err
+	}
+	if cluster == nil {
+		return reconcile.Result{}, nil
 	}
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName || cluster.Spec.Pause {
 		return reconcile.Result{}, nil

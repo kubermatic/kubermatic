@@ -17,8 +17,10 @@ limitations under the License.
 package kubernetes
 
 import (
-	"strings"
+	"context"
+	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -39,13 +41,22 @@ func NamespaceName(clusterName string) string {
 	return NamespacePrefix + clusterName
 }
 
-// ClusterNameFromNamespace returns name of a cluster from the cluster namespace.
-func ClusterNameFromNamespace(namespace string) string {
-	if !strings.HasPrefix(namespace, NamespacePrefix) {
-		return ""
+// ClusterFromNamespace filters all Cluster objects and returns the
+// one where status.namespaceName matches the given namespace. If no
+// such cluster exists, nil is returned (no error).
+func ClusterFromNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*kubermaticv1.Cluster, error) {
+	clusters := kubermaticv1.ClusterList{}
+	if err := client.List(ctx, &clusters); err != nil {
+		return nil, fmt.Errorf("failed to list Cluster objects: %w", err)
 	}
 
-	return strings.TrimPrefix(namespace, NamespacePrefix)
+	for i, c := range clusters.Items {
+		if c.Status.NamespaceName == namespace {
+			return &clusters.Items[i], nil
+		}
+	}
+
+	return nil, nil
 }
 
 // createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation.
