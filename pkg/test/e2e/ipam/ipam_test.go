@@ -85,7 +85,7 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating second IPAM Pool...")
-	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/27", "prefix", 28, "")
+	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.169.1.0/27", "prefix", 28, "")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -94,7 +94,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
-		CIDR: "192.168.1.0/28",
+		CIDR: "192.169.1.0/28",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
-		CIDR: "192.168.1.16/28",
+		CIDR: "192.169.1.16/28",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   jig.DatacenterName(),
-		CIDR: "192.168.1.0/28",
+		CIDR: "192.169.1.0/28",
 	}); err != nil {
 		t.Fatal(err)
 	}
