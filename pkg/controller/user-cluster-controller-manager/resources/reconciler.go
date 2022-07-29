@@ -1154,7 +1154,7 @@ func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.C
 }
 
 func (r *reconciler) getCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
-	cluster, err := kubernetes.ClusterFromNamespace(ctx, r, r.namespace)
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, r.seedClient, r.namespace)
 	if err != nil {
 		return nil, err
 	}
