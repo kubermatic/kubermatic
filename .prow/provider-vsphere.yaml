@@ -55,7 +55,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.24-customfolder
     decorate: true
@@ -101,7 +101,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.24-datastore-cluster
     decorate: true
@@ -147,4 +147,4 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi

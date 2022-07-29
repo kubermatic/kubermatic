@@ -54,4 +54,4 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
