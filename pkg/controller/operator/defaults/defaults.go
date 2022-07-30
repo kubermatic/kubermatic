@@ -432,11 +432,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 
-	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning, "versions", logger); err != nil {
+	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning); err != nil {
 		return configCopy, err
 	}
 
-	if err := defaultExternalClusterVersioning(configCopy.Spec.Versions.ExternalClusters, ExternalClusterDefaultKubernetesVersioning); err != nil {
+	if err := defaultExternalClusterVersioning(&configCopy.Spec.Versions, ExternalClusterDefaultKubernetesVersioning); err != nil {
 		return configCopy, err
 	}
 
@@ -687,7 +687,7 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	return nil
 }
 
-func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults kubermaticv1.KubermaticVersioningConfiguration, key string, logger *zap.SugaredLogger) error {
+func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults kubermaticv1.KubermaticVersioningConfiguration) error {
 	// this should never happen as the resources are not pointers in a KubermaticConfiguration
 	if settings == nil {
 		return nil
@@ -712,41 +712,33 @@ func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration,
 	return nil
 }
 
-func defaultExternalClusterVersioning(settings, defaults map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
+func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
 	// this should never happen as the resources are not pointers in a KubermaticConfiguration
 	if settings == nil {
-		settings = make(map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration)
+		return nil
 	}
 
-	if len(settings) == 0 {
-		settings = defaults
-	}
+	for provider, providerVersions := range defaults {
+		curSettings := settings.ExternalClusters[provider]
 
-	eksProviderVersioningConfiguration, ok := settings[kubermaticv1.EKSProviderType]
-	if !ok {
-		settings[kubermaticv1.EKSProviderType] = defaults[kubermaticv1.EKSProviderType]
-	} else {
-		if len(eksProviderVersioningConfiguration.Versions) == 0 {
-			eksProviderVersioningConfiguration.Versions = defaults[kubermaticv1.EKSProviderType].Versions
+		if curSettings.Default == nil {
+			curSettings.Default = providerVersions.Default
 		}
-		if eksProviderVersioningConfiguration.Default == nil {
-			eksProviderVersioningConfiguration.Default = defaults[kubermaticv1.EKSProviderType].Default
-		}
-	}
-	settings[kubermaticv1.EKSProviderType] = eksProviderVersioningConfiguration
 
-	aksProviderVersioningConfiguration, ok = settings[kubermaticv1.AKSProviderType]
-	if !ok {
-		settings[kubermaticv1.AKSProviderType] = defaults[kubermaticv1.AKSProviderType]
-	} else {
-		if len(aksProviderVersioningConfiguration.Versions) == 0 {
-			aksProviderVersioningConfiguration.Versions = defaults[kubermaticv1.AKSProviderType].Versions
+		if len(curSettings.Versions) == 0 {
+			curSettings.Versions = providerVersions.Versions
 		}
-		if aksProviderVersioningConfiguration.Default == nil {
-			aksProviderVersioningConfiguration.Default = defaults[kubermaticv1.AKSProviderType].Default
+
+		if len(curSettings.Updates) == 0 {
+			curSettings.Updates = providerVersions.Updates
 		}
+
+		if settings.ExternalClusters == nil {
+			settings.ExternalClusters = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{}
+		}
+
+		settings.ExternalClusters[provider] = curSettings
 	}
-	settings[kubermaticv1.AKSProviderType] = aksProviderVersioningConfiguration
 
 	return nil
 }
