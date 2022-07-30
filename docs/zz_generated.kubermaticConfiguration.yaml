@@ -466,7 +466,28 @@ spec:
     # Default is the default version to offer users.
     default: v1.23.9
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
-    externalClusters: null
+    externalClusters:
+      aks:
+        # Default is the default version to offer users.
+        default: v1.22
+        # Updates is a list of available upgrades.
+        updates: null
+        # Versions lists the available versions.
+        versions:
+          - v1.23
+          - v1.22
+          - v1.21
+      eks:
+        # Default is the default version to offer users.
+        default: v1.22
+        # Updates is a list of available upgrades.
+        updates: null
+        # Versions lists the available versions.
+        versions:
+          - v1.22
+          - v1.21
+          - v1.20
+          - v1.19
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version

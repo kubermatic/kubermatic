@@ -290,6 +290,32 @@ var (
 			},
 		},
 	}
+
+	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		Default: semver.NewSemverOrDie("v1.22"),
+		Versions: []semver.Semver{
+			newSemver("v1.22"),
+			newSemver("v1.21"),
+			newSemver("v1.20"),
+			newSemver("v1.19"),
+		},
+	}
+
+	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		Default: semver.NewSemverOrDie("v1.22"),
+		Versions: []semver.Semver{
+			// v1.24 is a Preview version (not Production ready).
+			// newSemver("v1.24"),
+			newSemver("v1.23"),
+			newSemver("v1.22"),
+			newSemver("v1.21"),
+		},
+	}
+
+	ExternalClusterDefaultKubernetesVersioning = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		kubermaticv1.EKSProviderType: eksProviderVersioningConfiguration,
+		kubermaticv1.AKSProviderType: aksProviderVersioningConfiguration,
+	}
 )
 
 func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
@@ -406,7 +432,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 
-	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning, "versions", logger); err != nil {
+	if err := defaultVersioning(&configCopy.Spec.Versions, DefaultKubernetesVersioning); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultExternalClusterVersioning(&configCopy.Spec.Versions, ExternalClusterDefaultKubernetesVersioning); err != nil {
 		return configCopy, err
 	}
 
@@ -657,7 +687,7 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	return nil
 }
 
-func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults kubermaticv1.KubermaticVersioningConfiguration, key string, logger *zap.SugaredLogger) error {
+func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults kubermaticv1.KubermaticVersioningConfiguration) error {
 	// this should never happen as the resources are not pointers in a KubermaticConfiguration
 	if settings == nil {
 		return nil
@@ -677,6 +707,37 @@ func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration,
 
 	if len(settings.ProviderIncompatibilities) == 0 {
 		settings.ProviderIncompatibilities = defaults.ProviderIncompatibilities
+	}
+
+	return nil
+}
+
+func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
+	// this should never happen as the resources are not pointers in a KubermaticConfiguration
+	if settings == nil {
+		return nil
+	}
+
+	for provider, providerVersions := range defaults {
+		curSettings := settings.ExternalClusters[provider]
+
+		if curSettings.Default == nil {
+			curSettings.Default = providerVersions.Default
+		}
+
+		if len(curSettings.Versions) == 0 {
+			curSettings.Versions = providerVersions.Versions
+		}
+
+		if len(curSettings.Updates) == 0 {
+			curSettings.Updates = providerVersions.Updates
+		}
+
+		if settings.ExternalClusters == nil {
+			settings.ExternalClusters = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{}
+		}
+
+		settings.ExternalClusters[provider] = curSettings
 	}
 
 	return nil
