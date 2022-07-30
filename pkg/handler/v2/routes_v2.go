@@ -109,6 +109,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listEKSRegions())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/versions").
+		Handler(r.listEKSVersions())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/eks/amitypes").
 		Handler(r.listEKSAMITypes())
 
@@ -6189,6 +6193,28 @@ func (r Routing) listEKSRegions() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/versions eks listEKSVersions
+//
+// Lists EKS versions
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+func (r Routing) listEKSVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSVersionsEndpoint(r.userInfoGetter, r.kubermaticConfigGetter)),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
