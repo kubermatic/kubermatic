@@ -23,6 +23,7 @@ import (
 	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -172,6 +173,10 @@ func (p *FakeExternalClusterProvider) Update(ctx context.Context, userInfo *prov
 
 func (p *FakeExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*semver.Semver, error) {
 	return defaults.DefaultKubernetesVersioning.Default, nil
+}
+
+func (p *FakeExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
+	return p.Provider.VersionsEndpoint(ctx, configGetter, providerType)
 }
 
 func (p *FakeExternalClusterProvider) GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {

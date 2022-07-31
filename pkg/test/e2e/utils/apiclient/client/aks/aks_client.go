@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesNoCredentialsOK, error)
 
+	ListAKSVersions(params *ListAKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVersionsOK, error)
+
 	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -190,6 +192,44 @@ func (a *Client) ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentials
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAKSVMSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAKSVersions Lists AKS versions
+*/
+func (a *Client) ListAKSVersions(params *ListAKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSVersions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/aks/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSVersionsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

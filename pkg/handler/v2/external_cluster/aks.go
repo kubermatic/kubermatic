@@ -976,3 +976,10 @@ func deleteAKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 
 	return nil
 }
+
+func AKSVersionsEndpoint(configGetter provider.KubermaticConfigurationGetter,
+	clusterProvider provider.ExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.AKSProviderType)
+	}
+}

@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
@@ -268,4 +269,39 @@ func DecodeError(err error) error {
 		return errors.New(response.Message)
 	}
 	return err
+}
+
+func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGroupName, resourceName string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	upgradeProperties := clusterUpgradeProfile.Properties
+	if upgradeProperties == nil || upgradeProperties.ControlPlaneProfile == nil || upgradeProperties.ControlPlaneProfile.Upgrades == nil {
+		return upgrades, nil
+	}
+
+	for _, upgradesItem := range upgradeProperties.ControlPlaneProfile.Upgrades {
+		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
+		if err != nil {
+			return nil, err
+		}
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Semver(),
+		})
+	}
+	return upgrades, nil
 }

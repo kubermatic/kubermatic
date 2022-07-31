@@ -24,13 +24,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -100,41 +98,6 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		clusters = append(clusters, apiv2.AKSCluster{Name: *cluster.Name, ResourceGroup: resourceGroup, IsImported: imported})
 	}
 	return clusters, nil
-}
-
-func ListAKSUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGroupName, resourceName string) ([]*apiv1.MasterVersion, error) {
-	upgrades := make([]*apiv1.MasterVersion, 0)
-
-	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
-	if err != nil {
-		return nil, aks.DecodeError(err)
-	}
-
-	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName, nil)
-	if err != nil {
-		return nil, aks.DecodeError(err)
-	}
-
-	upgradeProperties := clusterUpgradeProfile.Properties
-	if upgradeProperties == nil || upgradeProperties.ControlPlaneProfile == nil || upgradeProperties.ControlPlaneProfile.Upgrades == nil {
-		return upgrades, nil
-	}
-
-	for _, upgradesItem := range upgradeProperties.ControlPlaneProfile.Upgrades {
-		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
-		if err != nil {
-			return nil, err
-		}
-		upgrades = append(upgrades, &apiv1.MasterVersion{
-			Version: v.Semver(),
-		})
-	}
-	return upgrades, nil
 }
 
 func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) error {

@@ -42,7 +42,6 @@ import (
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	"k8c.io/kubermatic/v2/pkg/version"
 )
 
 const (
@@ -880,17 +879,9 @@ func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 	}
 }
 
-func EKSVersionsEndpoint(userInfoGetter provider.UserInfoGetter,
-	configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
+func EKSVersionsEndpoint(configGetter provider.KubermaticConfigurationGetter,
+	clusterProvider provider.ExternalClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		config, err := configGetter(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		versions = config.Spec.Versions.ExternalClusters[]
-		if err != nil {
-			return fmt.Errorf("failed to get available cluster versions: %w", err)
-		}
+		return clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.EKSProviderType)
 	}
 }
