@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{- if not .Variables.disableAutoIPAMAllocation }}
 {{- if .Cluster.Network.IPAMAllocations.metallb }}
 {{- $allocation := .Cluster.Network.IPAMAllocations.metallb }}
 ---
@@ -30,6 +31,7 @@ spec:
     - {{ . }}
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}
 
 {{- if .Variables.addressPoolYaml }}
