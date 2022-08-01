@@ -26,10 +26,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func convertInternalToAPIApplicationInstallation(app *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
-	var apiCondition []apiv2.ApplicationInstallationCondition
+func convertInternalToAPIApplicationInstallation(in *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallation {
+	out := &apiv2.ApplicationInstallation{
+		ObjectMeta: apiv1.ObjectMeta{
+			CreationTimestamp: apiv1.Time(in.CreationTimestamp),
+			Name:              in.Name,
+		},
+		Namespace: in.Namespace,
+		Spec:      &in.Spec,
+		Status: &apiv2.ApplicationInstallationStatus{
+			ApplicationVersion: in.Status.ApplicationVersion,
+			Method:             in.Status.Method,
+		},
+	}
 
-	for condType, condition := range app.Status.Conditions {
+	var apiCondition []apiv2.ApplicationInstallationCondition
+	for condType, condition := range in.Status.Conditions {
 		apiCondition = append(apiCondition, apiv2.ApplicationInstallationCondition{
 			Type:               condType,
 			Status:             condition.Status,
@@ -39,25 +51,18 @@ func convertInternalToAPIApplicationInstallation(app *appskubermaticv1.Applicati
 			Message:            condition.Message,
 		})
 	}
-
 	// ensure a stable sorting order
 	sort.Slice(apiCondition, func(i, j int) bool {
 		return apiCondition[i].Type < apiCondition[j].Type
 	})
+	out.Status.Conditions = apiCondition
 
-	return &apiv2.ApplicationInstallation{
-		ObjectMeta: apiv1.ObjectMeta{
-			CreationTimestamp: apiv1.Time(app.CreationTimestamp),
-			Name:              app.Name,
-		},
-		Namespace: app.Namespace,
-		Spec:      &app.Spec,
-		Status: &apiv2.ApplicationInstallationStatus{
-			Conditions:         apiCondition,
-			ApplicationVersion: app.Status.ApplicationVersion,
-			Method:             app.Status.Method,
-		},
+	if in.DeletionTimestamp != nil {
+		ts := apiv1.NewTime(in.DeletionTimestamp.Time)
+		out.DeletionTimestamp = &ts
 	}
+
+	return out
 }
 
 func convertAPItoInternalApplicationInstallationBody(app *apiv2.ApplicationInstallationBody) *appskubermaticv1.ApplicationInstallation {
