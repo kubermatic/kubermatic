@@ -135,6 +135,10 @@ func credentialSecretCreatorGetter(secretName string, clusterLabels map[string]s
 
 	return func() (name string, create reconciling.SecretCreator) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			if existing.Labels == nil {
+				existing.Labels = map[string]string{}
+			}
+
 			existing.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 			existing.Data = secretData
 
