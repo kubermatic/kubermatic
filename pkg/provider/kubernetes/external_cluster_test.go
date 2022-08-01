@@ -73,7 +73,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -91,7 +90,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 						Namespace:       resources.KubermaticNamespace,
 					},
 					Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte("abc")},
-					Type: corev1.SecretTypeOpaque,
 				},
 			},
 			externalCluster: genExternalCluster(defaultClusterName, defaultProjectID),
@@ -106,7 +104,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 	}
@@ -186,7 +183,6 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalEKSClusterAccessKeyID: []byte(defaultAccessKeyID), resources.ExternalEKSClusterSecretAccessKey: []byte(defaultSecretAccessKey)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -214,7 +210,6 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalGKEClusterSeriveAccount: []byte(defaultAccessKeyID)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -245,7 +240,6 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalAKSClusterTenantID: []byte(defaultTenantID), resources.ExternalAKSClusterSubscriptionID: []byte(defaultSubscriptionID), resources.ExternalAKSClusterClientID: []byte(defaultClientID), resources.ExternalAKSClusterClientSecret: []byte(defaultClientSecret)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 	}
