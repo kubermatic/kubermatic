@@ -302,13 +302,16 @@ var (
 	}
 
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.22"),
+		Default: semver.NewSemverOrDie("v1.22.11"),
 		Versions: []semver.Semver{
 			// v1.24 is a Preview version (not Production ready).
 			// newSemver("v1.24"),
-			newSemver("v1.23"),
-			newSemver("v1.22"),
-			newSemver("v1.21"),
+			newSemver("v1.23.8"),
+			newSemver("v1.23.5"),
+			newSemver("v1.22.11"),
+			newSemver("v1.22.6"),
+			newSemver("v1.21.14"),
+			newSemver("v1.21.9"),
 		},
 	}
 
