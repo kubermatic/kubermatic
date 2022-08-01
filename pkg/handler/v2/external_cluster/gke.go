@@ -37,7 +37,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	gcpprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	gkeprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -88,7 +87,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 
 		config, err := svc.Projects.Zones.GetServerconfig(gcpProject, cluster.Spec.CloudSpec.GKE.Zone).Context(ctx).Do()
 		if err != nil {
-			return nil, err
+			return nil, gkeprovider.DecodeError(err)
 		}
 
 		for _, imageType := range config.ValidImageTypes {
@@ -310,7 +309,7 @@ func patchGKECluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 	req := svc.Projects.Zones.Clusters.Update(project, oldCluster.Cloud.GKE.Zone, oldCluster.Cloud.GKE.Name, updateclusterrequest)
 	_, err = req.Context(ctx).Do()
 
-	return newCluster, err
+	return newCluster, gkeprovider.DecodeError(err)
 }
 
 func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
@@ -326,7 +325,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	req := svc.Projects.Zones.Clusters.NodePools.List(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, gkeprovider.DecodeError(err)
 	}
 
 	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(resp.NodePools))
@@ -432,7 +431,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 
 	req := svc.Projects.Zones.Clusters.NodePools.Delete(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodePoolID)
 	_, err = req.Context(ctx).Do()
-	return err
+	return gkeprovider.DecodeError(err)
 }
 
 func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
@@ -456,7 +455,7 @@ func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.External
 		sizeReq := svc.Projects.Zones.Clusters.NodePools.SetSize(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, oldMD.Name, sizeRequest)
 		_, err = sizeReq.Context(ctx).Do()
 		if err != nil {
-			return nil, err
+			return nil, gkeprovider.DecodeError(err)
 		}
 		return newMD, nil
 	}
@@ -467,7 +466,7 @@ func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.External
 	updateReq := svc.Projects.Zones.Clusters.NodePools.Update(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, oldMD.Name, updateRequest)
 	_, err = updateReq.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, gkeprovider.DecodeError(err)
 	}
 
 	return newMD, nil
@@ -477,7 +476,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 	req := svc.Projects.Zones.Clusters.NodePools.Get(projectID, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, nodeGroupName)
 	np, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, gkeprovider.DecodeError(err)
 	}
 
 	nodes, err := clusterProvider.ListNodes(ctx, cluster)
@@ -556,7 +555,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	req := svc.Projects.Zones.Clusters.NodePools.Create(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, createRequest)
 	_, err = req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, gkeprovider.DecodeError(err)
 	}
 
 	machineDeployment.Phase = apiv2.ExternalClusterMDPhase{
@@ -578,7 +577,7 @@ func createNewGKECluster(ctx context.Context, gkeClusterSpec *apiv2.GKEClusterSp
 	req := svc.Projects.Zones.Clusters.Create(project, gkeCloudSpec.Zone, createRequest)
 	_, err = req.Context(ctx).Do()
 
-	return err
+	return gkeprovider.DecodeError(err)
 }
 
 func genGKECluster(gkeClusterSpec *apiv2.GKEClusterSpec, gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {
@@ -672,7 +671,7 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, err)
+		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, gkeprovider.DecodeError(err))
 	}
 
 	clusterSpec := &apiv2.GKEClusterSpec{
@@ -762,7 +761,7 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 	req := svc.Projects.Zones.Clusters.Delete(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
 	_, err = req.Context(ctx).Do()
 	if err != nil {
-		return err
+		return gkeprovider.DecodeError(err)
 	}
 
 	return nil
@@ -953,7 +952,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				return nil, err
 			}
 		}
-		return gke.ListClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+		return gkeprovider.ListClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
 	}
 }
 
@@ -975,7 +974,7 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 				return nil, err
 			}
 		}
-		return gke.ListImages(ctx, sa, req.Zone)
+		return gkeprovider.ListImages(ctx, sa, req.Zone)
 	}
 }
 
@@ -997,7 +996,7 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 				return nil, err
 			}
 		}
-		return gke.ListZones(ctx, sa)
+		return gkeprovider.ListZones(ctx, sa)
 	}
 }
 
@@ -1034,7 +1033,7 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 				return nil, err
 			}
 		}
-		return nil, gke.ValidateCredentials(ctx, sa)
+		return nil, gkeprovider.ValidateCredentials(ctx, sa)
 	}
 }
 func getSAFromPreset(ctx context.Context,
@@ -1065,7 +1064,7 @@ func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string)
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, gkeprovider.DecodeError(err)
 	}
 
 	versions := make([]*apiv1.MasterVersion, 0)

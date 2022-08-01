@@ -18,6 +18,7 @@ package externalcluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -166,8 +168,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Debugf("failed to get GKE cluster status %v", err)
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+			if IsNotFoundError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
+				return reconcile.Result{}, nil
+			} else if IsForbiddenError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{}, err
 		}
 		if status.State == apiv2.ProvisioningExternalClusterState {
@@ -194,8 +201,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := eks.GetClusterStatus(secretKeySelector, cloud)
 		if err != nil {
-			r.log.Debugf("failed to get EKS cluster status %v", err)
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+			if IsNotFoundError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
+				return reconcile.Result{}, nil
+			} else if IsForbiddenError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{}, err
 		}
 		if status.State == apiv2.ProvisioningExternalClusterState {
@@ -222,8 +234,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Debugf("failed to get AKS cluster status %v", err)
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+			if IsNotFoundError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
+				return reconcile.Result{}, nil
+			} else if IsForbiddenError(err) {
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{}, err
 		}
 		if status.State == apiv2.ProvisioningExternalClusterState {
@@ -388,4 +405,24 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	return r.Update(ctx, cluster)
+}
+
+func IsNotFoundError(err error) bool {
+	var httpError utilerrors.HTTPError
+	if ok := errors.As(err, &httpError); ok {
+		if httpError.StatusCode() == int(utilerrors.NotFoundStatusCode) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsForbiddenError(err error) bool {
+	var httpError utilerrors.HTTPError
+	if ok := errors.As(err, &httpError); ok {
+		if httpError.StatusCode() == int(utilerrors.ForbiddenStatusCode) {
+			return true
+		}
+	}
+	return false
 }

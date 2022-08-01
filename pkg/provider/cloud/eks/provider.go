@@ -37,6 +37,7 @@ import (
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -176,7 +177,7 @@ func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, clo
 
 	eksCluster, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, utilerrors.New(DecodeAWSErrorCode(err), DecodeAWSError(err).Error())
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -457,4 +458,21 @@ func DecodeAWSError(err error) error {
 	}
 
 	return err
+}
+
+func DecodeAWSErrorCode(err error) int {
+	var statusCode int
+	if err == nil {
+		return statusCode
+	}
+
+	var aerr awserr.Error
+	if errors.As(err, &aerr) {
+		var reqErr awserr.RequestFailure
+		if errors.As(aerr, &reqErr) {
+			statusCode = reqErr.StatusCode()
+		}
+	}
+
+	return statusCode
 }

@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
@@ -257,15 +258,18 @@ func DecodeError(err error) error {
 	}
 	var aerr *azcore.ResponseError
 	if ok := errors.As(err, &aerr); ok {
-		var response struct {
+		type response struct {
 			Code    string `json:"code,omitempty"`
 			Message string `json:"message,omitempty"`
 			SubCode string `json:"subcode,omitempty"`
 		}
-		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&response); err != nil {
+		responsemap := map[string]response{}
+		code := aerr.StatusCode
+		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&responsemap); err != nil {
 			return err
 		}
-		return errors.New(response.Message)
+
+		return utilerrors.New(code, responsemap["error"].Message)
 	}
 	return err
 }

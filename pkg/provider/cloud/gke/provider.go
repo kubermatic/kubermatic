@@ -28,6 +28,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/container/v1"
+	googleapi "google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -38,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -53,7 +55,7 @@ func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.C
 	req := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, err)
+		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, DecodeError(err))
 	}
 	config := api.Config{
 		APIVersion: "v1",
@@ -120,7 +122,7 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
 	gkeCluster, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, utilerrors.New(DecodeErrorCode(err), DecodeError(err).Error())
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -170,7 +172,7 @@ func ListClusters(ctx context.Context, projectProvider provider.ProjectProvider,
 	req := svc.Projects.Zones.Clusters.List(gkeProject, allZones)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return clusters, fmt.Errorf("clusters list project=%v: %w", project, err)
+		return clusters, fmt.Errorf("clusters list project=%v: %w", project, DecodeError(err))
 	}
 	for _, f := range resp.Clusters {
 		var imported bool
@@ -194,7 +196,7 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, name)
 	cluster, err := clusterReq.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
@@ -209,7 +211,7 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	upgradesMap := map[string]bool{}
 	for _, channel := range resp.Channels {
@@ -251,7 +253,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, m
 	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
 	cluster, err := clusterReq.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
@@ -262,7 +264,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, m
 	req := svc.Projects.Zones.Clusters.NodePools.Get(project, zone, clusterName, machineDeployment)
 	np, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	currentMachineDeploymentVer, err := semverlib.NewVersion(np.Version)
@@ -308,7 +310,7 @@ func ListImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error
 
 	config, err := svc.Projects.Zones.GetServerconfig(project, zone).Context(ctx).Do()
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	for _, imageType := range config.ValidImageTypes {
@@ -346,7 +348,7 @@ func ValidateCredentials(ctx context.Context, sa string) error {
 	}
 	_, err = svc.Projects.Zones.Clusters.List(project, allZones).Context(ctx).Do()
 
-	return err
+	return DecodeError(err)
 }
 
 func ConvertStatus(status string) apiv2.ExternalClusterState {
@@ -478,4 +480,30 @@ func createClient(ctx context.Context, serviceAccount string, scope string) (*ht
 	client := conf.Client(ctx)
 
 	return client, projectID, nil
+}
+
+func DecodeError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if apiErr, ok := err.(*googleapi.Error); ok {
+		return errors.New(apiErr.Message)
+	}
+
+	return err
+}
+
+func DecodeErrorCode(err error) int {
+	var statusCode int
+
+	if err == nil {
+		return statusCode
+	}
+
+	if apiErr, ok := err.(*googleapi.Error); ok {
+		return apiErr.Code
+	}
+
+	return statusCode
 }
