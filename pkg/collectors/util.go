@@ -17,15 +17,23 @@ limitations under the License.
 package collectors
 
 import (
+	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func convertKubernetesLabels(labels map[string]string) map[string]string {
-	promLabels := map[string]string{}
-	for k, v := range labels {
-		k := "label_" + strings.ReplaceAll(k, "-", "_")
-		promLabels[k] = v
+func convertKubernetesLabels(labelKeys sets.String) []string {
+	promLabels := make([]string, labelKeys.Len())
+	for i, key := range labelKeys.List() {
+		promLabels[i] = convertKubernetesLabel(key)
 	}
 
 	return promLabels
+}
+
+var validMetricLabel = regexp.MustCompile(`[^a-z0-9_]`)
+
+func convertKubernetesLabel(label string) string {
+	return "label_" + validMetricLabel.ReplaceAllString(strings.ToLower(label), "_")
 }
