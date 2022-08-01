@@ -878,3 +878,10 @@ func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 		return capacityTypes, nil
 	}
 }
+
+func EKSVersionsEndpoint(configGetter provider.KubermaticConfigurationGetter,
+	clusterProvider provider.ExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.EKSProviderType)
+	}
+}

@@ -46,6 +46,8 @@ type ClientService interface {
 
 	ListEKSVPCsNoCredentials(params *ListEKSVPCsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCsNoCredentialsOK, error)
 
+	ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVersionsOK, error)
+
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -390,6 +392,44 @@ func (a *Client) ListEKSVPCsNoCredentials(params *ListEKSVPCsNoCredentialsParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEKSVPCsNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSVersions Lists EKS versions
+*/
+func (a *Client) ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSVersions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/eks/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSVersionsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
