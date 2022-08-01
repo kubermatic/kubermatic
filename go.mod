@@ -75,6 +75,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.4
 	go.etcd.io/etcd/etcdutl/v3 v3.5.4
 	go.uber.org/zap v1.21.0
+	go.universe.tf/metallb v0.13.3
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
 	golang.org/x/tools v0.1.11
@@ -135,8 +136,6 @@ replace (
 	k8s.io/kubelet => k8s.io/kubelet v0.24.2
 	k8s.io/metrics => k8s.io/metrics v0.24.2
 )
-
-require go.universe.tf/metallb v0.13.3
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect

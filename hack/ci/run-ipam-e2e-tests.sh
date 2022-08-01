@@ -52,19 +52,6 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-hetzner.yaml
 
-echodate "Creating roxy-admin user..."
-cat << EOF > user.yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: User
-metadata:
-  name: roxy-admin
-spec:
-  admin: true
-  email: roxy-admin@kubermatic.com
-  name: roxy-admin
-EOF
-retry 2 kubectl apply -f user.yaml
-
 echodate "Running IPAM tests..."
 
 go_test ipam_e2e -timeout 45m -tags ipam -v ./pkg/test/e2e/ipam \
