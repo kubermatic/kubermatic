@@ -92,6 +92,7 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		"replicaset_controller_rate_limiter_use",
 		"apiserver_request_total",
 		"workqueue_retries_total",
+		"machine_cpu_cores",
 	)
 
 	if cluster.Spec.Version.LessThan(semver.NewSemverOrDie("v1.23.0")) {
