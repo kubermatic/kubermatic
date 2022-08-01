@@ -52,7 +52,13 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 				return nil, err
 			}
 		} else {
-			groups.Insert(user.Spec.Groups...)
+			for _, group := range user.Spec.Groups {
+				groupName := group
+				if projectID != "" {
+					groupName += "-" + projectID
+				}
+				groups.Insert(groupName)
+			}
 		}
 
 		return &UserInfo{Email: user.Spec.Email, Groups: groups.List(), IsAdmin: user.Spec.IsAdmin, Roles: roles}, nil

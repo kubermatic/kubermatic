@@ -66,7 +66,7 @@ func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, cluster
 				{
 					APIGroup: "rbac.authorization.k8s.io",
 					Kind:     "Group",
-					Name:     binding.Spec.Group,
+					Name:     fmt.Sprintf("%s-%s", binding.Spec.Group, binding.Spec.ProjectID),
 				},
 			}
 
@@ -103,7 +103,7 @@ func roleBindingCreator(binding kubermaticv1.GroupProjectBinding, role rbacv1.Ro
 				{
 					APIGroup: "rbac.authorization.k8s.io",
 					Kind:     "Group",
-					Name:     binding.Spec.Group,
+					Name:     fmt.Sprintf("%s-%s", binding.Spec.Group, binding.Spec.ProjectID),
 				},
 			}
 

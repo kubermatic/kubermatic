@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 						{
 							APIGroup: "rbac.authorization.k8s.io",
 							Kind:     "Group",
-							Name:     "external-group",
+							Name:     "external-group-test",
 						},
 					},
 				},
@@ -132,7 +132,7 @@ func TestReconcile(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{""},
-							Resources: []string{"screts"},
+							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
 					},
@@ -157,7 +157,6 @@ func TestReconcile(t *testing.T) {
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
-
 						APIGroup: "rbac.authorization.k8s.io",
 						Kind:     "Role",
 						Name:     "kubermatic:secrets:owners",
@@ -166,7 +165,7 @@ func TestReconcile(t *testing.T) {
 						{
 							APIGroup: "rbac.authorization.k8s.io",
 							Kind:     "Group",
-							Name:     "external-group",
+							Name:     "external-group-test",
 						},
 					},
 				},
@@ -237,7 +236,7 @@ func TestReconcile(t *testing.T) {
 						{
 							APIGroup: "rbac.authorization.k8s.io",
 							Kind:     "Group",
-							Name:     "external-group",
+							Name:     "external-group-test",
 						},
 					},
 				},
@@ -268,7 +267,7 @@ func TestReconcile(t *testing.T) {
 						{
 							APIGroup: "rbac.authorization.k8s.io",
 							Kind:     "Group",
-							Name:     "external-group",
+							Name:     "external-group-test",
 						},
 					},
 				},

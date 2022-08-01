@@ -177,9 +177,6 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
 	groups := sets.NewString()
 
-	idpGroups := user.Spec.Groups
-	groups.Insert(idpGroups...)
-
 	userBindingGroup, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
 	if err != nil {
 		return nil, err
@@ -187,25 +184,31 @@ func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kuber
 
 	if userBindingGroup != "" {
 		groups.Insert(userBindingGroup)
-		return groups, nil
-	} else {
-		// Check if one of idp groups is associated with a project
-		groupBindings, err := p.GroupMappingsFor(ctx, idpGroups)
-		if err != nil {
-			return nil, err
-		}
-		for _, binding := range groupBindings {
-			if binding.Spec.ProjectID == projectID {
-				return groups, nil
-			}
+	}
+
+	idpGroups := user.Spec.Groups
+
+	groupBindings, err := p.GroupMappingsFor(ctx, idpGroups)
+	if err != nil {
+		return nil, err
+	}
+	for _, binding := range groupBindings {
+		if binding.Spec.ProjectID == projectID {
+			suffixedGroupName := fmt.Sprintf("%s-%s", binding.Spec.Group, projectID)
+			groups.Insert(suffixedGroupName)
 		}
 	}
 
-	return nil, apierrors.NewForbidden(
-		schema.GroupResource{},
-		projectID,
-		fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
-	)
+	if groups.Len() > 0 {
+		return groups, nil
+	} else {
+		return nil, apierrors.NewForbidden(
+			schema.GroupResource{},
+			projectID,
+			fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
+		)
+	}
+
 }
 
 func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
@@ -277,7 +280,7 @@ func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kuberm
 
 	roles := sets.NewString()
 	for _, gpb := range groupProjectBindings.Items {
-		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) {
+		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) && gpb.Spec.ProjectID == projectID {
 			roles.Insert(gpb.Spec.Role)
 		}
 	}
