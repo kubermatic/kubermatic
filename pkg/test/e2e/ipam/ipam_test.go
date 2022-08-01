@@ -330,7 +330,7 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(log, 20*time.Second, 10*time.Minute, func() (error, error) {
+	return wait.PollLog(log, 20*time.Second, 20*time.Minute, func() (error, error) {
 		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
 		if err := userClient.Get(ctx, types.NamespacedName{Name: ipamAllocation.Name, Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
