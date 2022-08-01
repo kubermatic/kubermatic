@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -72,12 +73,23 @@ func (cc ProjectCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
+	allLabels := sets.NewString()
 	for _, project := range projects.Items {
-		cc.collectProject(ch, &project)
+		allLabels = allLabels.Union(sets.StringKeySet(project.Labels))
+	}
+
+	kubernetesLabels := convertKubernetesLabels(allLabels)
+	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: projectPrefix + "labels",
+		Help: "Kubernetes labels on Project resources",
+	}, append([]string{"name"}, kubernetesLabels...))
+
+	for _, project := range projects.Items {
+		cc.collectProject(ch, &project, allLabels, labelsGauge)
 	}
 }
 
-func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project) {
+func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project, allLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
 	owner := ""
 	for _, ref := range p.OwnerReferences {
 		if ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "User" {
@@ -96,7 +108,11 @@ func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kuber
 		string(p.Status.Phase),
 	)
 
-	kubernetesLabels := convertKubernetesLabels(p.Labels)
-	desc := prometheus.NewDesc(projectPrefix+"labels", "Kubernetes labels on Project resources", nil, kubernetesLabels)
-	ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, 1)
+	projectLabels := make([]string, allLabels.Len()+1)
+	projectLabels[0] = p.Name
+	for i, key := range allLabels.List() {
+		projectLabels[i+1] = p.Labels[key]
+	}
+
+	labelsGaugeVec.WithLabelValues(projectLabels...).Collect(ch)
 }
