@@ -70,7 +70,6 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"cloud_provider",
 				"datacenter",
 				"pause",
-				"project",
 				"phase",
 			},
 			nil,
@@ -128,10 +127,6 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 			labels...,
 		)
 	}
-
-	kubernetesLabels := convertKubernetesLabels(c.Labels)
-	desc := prometheus.NewDesc(clusterPrefix+"labels", "Kubernetes labels on Cluster resources", nil, kubernetesLabels)
-	ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, 1)
 }
 
 func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
@@ -154,7 +149,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
-		cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 		string(cluster.Status.Phase),
 	}, nil
 }

@@ -246,10 +246,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 	log.Debug("Starting addons collector")
 	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
-	// The canonical source of projects is the master cluster, but since they are replicated onto
-	// seeds, we start the project collctor on seed clusters as well, just for convenience for the admin.
-	log.Debug("Starting projects collector")
-	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
 	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
 		log.Fatalw("failed to add metrics server", zap.Error(err))
