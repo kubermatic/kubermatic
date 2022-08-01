@@ -208,7 +208,6 @@ func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kuber
 			fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
 		)
 	}
-
 }
 
 func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
