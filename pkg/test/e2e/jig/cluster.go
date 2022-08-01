@@ -78,7 +78,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 		ownerEmail: "e2e@test.kubermatic.com",
 		addons:     []Addon{},
 	}
-	
+
 	jig.WithTestName("e2e")
 
 	if version := ClusterVersion(log); version != "" {
