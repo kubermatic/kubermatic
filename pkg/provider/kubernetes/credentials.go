@@ -17,7 +17,6 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/base64"
@@ -47,9 +46,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -113,7 +110,7 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 }
 
 func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(cluster, secretData)
+	creator, err := credentialSecretCreatorGetter(cluster.GetSecretName(), cluster.Labels, secretData)
 	if err != nil {
 		return nil, err
 	}
@@ -130,14 +127,14 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}, nil
 }
 
-func credentialSecretCreatorGetter(cluster *kubermaticv1.Cluster, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
-	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+func credentialSecretCreatorGetter(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+	projectID := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 	if len(projectID) == 0 {
 		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
 	}
 
 	return func() (name string, create reconciling.SecretCreator) {
-		return cluster.GetSecretName(), func(existing *corev1.Secret) (*corev1.Secret, error) {
+		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 			existing.Data = secretData
 
@@ -675,54 +672,16 @@ func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Cont
 }
 
 func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
-	namespacedName := types.NamespacedName{Namespace: kubeOneNamespaceName, Name: secretName}
-	existingSecret := &corev1.Secret{}
-	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %w", secretName, err)
+	creator, err := credentialSecretCreatorGetter(secretName, externalcluster.Labels, secretData)
+	if err != nil {
+		return nil, err
 	}
 
-	if existingSecret.Name == "" {
-		projectID := externalcluster.Labels[kubermaticv1.ProjectIDLabelKey]
-		if len(projectID) == 0 {
-			return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
-		}
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: kubeOneNamespaceName,
-				Labels: map[string]string{
-					"name":                         secretName,
-					kubermaticv1.ProjectIDLabelKey: projectID,
-				},
-			},
-			Type: corev1.SecretTypeOpaque,
-			Data: secretData,
-		}
+	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
+	creators := []reconciling.NamedSecretCreatorGetter{creator}
 
-		if err := masterClient.Create(ctx, secret); err != nil {
-			return nil, fmt.Errorf("failed to create credential secret: %w", err)
-		}
-	} else {
-		if existingSecret.Data == nil {
-			existingSecret.Data = map[string][]byte{}
-		}
-
-		requiresUpdate := false
-
-		for k, v := range secretData {
-			if !bytes.Equal(v, existingSecret.Data[k]) {
-				requiresUpdate = true
-				break
-			}
-		}
-
-		if requiresUpdate {
-			existingSecret.Data = secretData
-			if err := masterClient.Update(ctx, existingSecret); err != nil {
-				return nil, fmt.Errorf("failed to update credential secret: %w", err)
-			}
-		}
+	if err := reconciling.ReconcileSecrets(ctx, creators, kubeOneNamespaceName, masterClient); err != nil {
+		return nil, err
 	}
 
 	return &providerconfig.GlobalSecretKeySelector{
