@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"go.uber.org/zap"
@@ -410,7 +411,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 func IsNotFoundError(err error) bool {
 	var httpError utilerrors.HTTPError
 	if ok := errors.As(err, &httpError); ok {
-		if httpError.StatusCode() == int(utilerrors.NotFoundStatusCode) {
+		if httpError.StatusCode() == http.StatusNotFound {
 			return true
 		}
 	}
@@ -420,7 +421,7 @@ func IsNotFoundError(err error) bool {
 func IsForbiddenError(err error) bool {
 	var httpError utilerrors.HTTPError
 	if ok := errors.As(err, &httpError); ok {
-		if httpError.StatusCode() == int(utilerrors.ForbiddenStatusCode) {
+		if httpError.StatusCode() == http.StatusForbidden {
 			return true
 		}
 	}

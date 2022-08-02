@@ -21,13 +21,6 @@ import (
 	"net/http"
 )
 
-type StatusCode int
-
-const (
-	NotFoundStatusCode  StatusCode = 404
-	ForbiddenStatusCode StatusCode = 403
-)
-
 // HTTPError represents an HTTP server error.
 type HTTPError struct {
 	code    int

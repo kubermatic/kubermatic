@@ -487,7 +487,8 @@ func DecodeError(err error) error {
 		return nil
 	}
 
-	if apiErr, ok := err.(*googleapi.Error); ok {
+	var apiErr *googleapi.Error
+	if errors.As(err, &apiErr) {
 		return errors.New(apiErr.Message)
 	}
 
@@ -501,7 +502,8 @@ func DecodeErrorCode(err error) int {
 		return statusCode
 	}
 
-	if apiErr, ok := err.(*googleapi.Error); ok {
+	var apiErr *googleapi.Error
+	if errors.As(err, &apiErr) {
 		return apiErr.Code
 	}
 
