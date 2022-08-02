@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go v1.37.22
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
-	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
+	github.com/cristim/ec2-instances-info v0.0.0-20220623102241-067009cd38ea
 	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
