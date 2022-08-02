@@ -24,6 +24,8 @@ spec:
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 2
+    machineController:
+      imageTag: "50f736d97c23a7fd15917f9ec29cd9db2281e79c-dirty"
   api:
     replicas: 1
     debugLog: true
