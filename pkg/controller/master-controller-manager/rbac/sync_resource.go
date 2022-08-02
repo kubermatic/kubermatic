@@ -159,6 +159,11 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 		return nil
 	}
 
+	// do not reconcile anyone once a cluster is in deletion
+	if cluster.DeletionTimestamp != nil {
+		return nil
+	}
+
 	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		return err

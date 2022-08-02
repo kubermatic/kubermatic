@@ -128,6 +128,10 @@ func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
+	if obj.GetDeletionTimestamp() != nil {
+		return reconcile.Result{}, nil
+	}
+
 	err := c.reconcile(ctx, obj)
 	if err != nil {
 		kind := obj.GetObjectKind().GroupVersionKind().Kind
