@@ -65,8 +65,8 @@ func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Clien
 	return string(cred), nil
 }
 
-// AuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
-func AuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
+// HelmAuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
+func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
 	auth := helmclient.AuthSettings{}
 	if source.Credentials != nil {
 		if source.Credentials.Username != nil {
