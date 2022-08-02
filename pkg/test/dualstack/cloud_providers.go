@@ -467,14 +467,12 @@ func rockyLinux() models.OperatingSystemSpec {
 
 func cilium() models.CNIPluginSettings {
 	return models.CNIPluginSettings{
-		Version: "v1.11",
-		Type:    "cilium",
+		Type: "cilium",
 	}
 }
 
 func canal() models.CNIPluginSettings {
 	return models.CNIPluginSettings{
-		Type:    "canal",
-		Version: "v3.22",
+		Type: "canal",
 	}
 }
