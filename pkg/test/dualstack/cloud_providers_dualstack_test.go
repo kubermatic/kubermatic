@@ -250,6 +250,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				WithCNI(cniSpec).
 				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
 			spec := models.CreateClusterSpec(clusterSpec)
+			spec.Cluster.Spec.EnableOperatingSystemManager = false
 
 			mu.Lock()
 			name := fmt.Sprintf("%s-%s", name, rand.String(4))
