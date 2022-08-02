@@ -477,8 +477,9 @@ github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4 h1:uPdJfcX6oBDV/n7KYnXipTvZr0Mll06CnH0FYsY5vYY=
 github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4/go.mod h1:0yCjO4zBzlwWSGh/zGfW2Zq1NX605qCYVBHD1fPXKNs=
+github.com/cristim/ec2-instances-info v0.0.0-20220623102241-067009cd38ea h1:Q74hCjyozEfdzSouIiTxiHFva6PbtM14UftQ8TUrCJY=
+github.com/cristim/ec2-instances-info v0.0.0-20220623102241-067009cd38ea/go.mod h1:0yCjO4zBzlwWSGh/zGfW2Zq1NX605qCYVBHD1fPXKNs=
 github.com/cyphar/filepath-securejoin v0.2.2/go.mod h1:FpkQEhXnPnOthhzymB7CGsFk2G9VLXONKD9G7QGMM+4=
 github.com/daixiang0/gci v0.2.8/go.mod h1:+4dZ7TISfSmqfAGv59ePaHfNzgGtIkHAhhdKggP1JAc=
 github.com/davecgh/go-spew v0.0.0-20161028175848-04cdfd42973b/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
