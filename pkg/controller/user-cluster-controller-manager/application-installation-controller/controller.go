@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -87,7 +88,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
 	}
 
-	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
+	// update event on generation. We also allow update events if annotations have changed so that the user can force a
+	// reconciliation without changing the spec.
+	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
 		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
 	}
 
