@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,6 +71,7 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"cloud_provider",
 				"datacenter",
 				"pause",
+				"project",
 				"phase",
 			},
 			nil,
@@ -81,9 +83,7 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 
 // Describe returns the metrics descriptors.
 func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- cc.clusterCreated
-	ch <- cc.clusterDeleted
-	ch <- cc.clusterInfo
+	prometheus.DescribeByCollect(cc, ch)
 }
 
 // Collect gets called by prometheus to collect the metrics.
@@ -94,12 +94,23 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
+	allLabels := sets.NewString()
 	for _, cluster := range clusters.Items {
-		cc.collectCluster(ch, &cluster)
+		allLabels = allLabels.Union(sets.StringKeySet(cluster.Labels))
+	}
+
+	kubernetesLabels := convertKubernetesLabels(allLabels)
+	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: clusterPrefix + "labels",
+		Help: "Kubernetes labels on Cluster resources",
+	}, append([]string{"name"}, kubernetesLabels...))
+
+	for _, cluster := range clusters.Items {
+		cc.collectCluster(ch, &cluster, allLabels, labelsGauge)
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster) {
+func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, allLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -116,7 +127,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 		)
 	}
 
-	labels, err := cc.clusterLabels(c)
+	infoLabels, err := cc.clusterInfoLabels(c)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %w", c.Name, err))
 	} else {
@@ -124,12 +135,20 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 			cc.clusterInfo,
 			prometheus.GaugeValue,
 			1,
-			labels...,
+			infoLabels...,
 		)
 	}
+
+	clusterLabels := make([]string, allLabels.Len()+1)
+	clusterLabels[0] = c.Name
+	for i, key := range allLabels.List() {
+		clusterLabels[i+1] = c.Labels[key]
+	}
+
+	labelsGaugeVec.WithLabelValues(clusterLabels...).Collect(ch)
 }
 
-func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
+func (cc *ClusterCollector) clusterInfoLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
 	provider, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
@@ -149,6 +168,7 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
+		cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 		string(cluster.Status.Phase),
 	}, nil
 }

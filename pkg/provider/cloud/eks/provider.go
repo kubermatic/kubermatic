@@ -476,3 +476,27 @@ func DecodeAWSErrorCode(err error) int {
 
 	return statusCode
 }
+
+func ListUpgrades(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	clusterProvider provider.ExternalClusterProvider,
+	configGetter provider.KubermaticConfigurationGetter) ([]*apiv1.MasterVersion, error) {
+	upgradeVersions := []*apiv1.MasterVersion{}
+	currentVersion, err := clusterProvider.GetVersion(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+	masterVersions, err := clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.EKSProviderType)
+	if err != nil {
+		return nil, err
+	}
+	for _, masterVersion := range masterVersions {
+		version := masterVersion.Version
+		if version.GreaterThan(currentVersion.Semver()) {
+			upgradeVersions = append(upgradeVersions, &apiv1.MasterVersion{
+				Version: version,
+			})
+		}
+	}
+	return upgradeVersions, nil
+}

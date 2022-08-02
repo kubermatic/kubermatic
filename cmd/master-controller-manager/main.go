@@ -194,6 +194,9 @@ func main() {
 	log.Debug("Starting external clusters collector")
 	collectors.MustRegisterExternalClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
+	log.Debug("Starting projects collector")
+	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+
 	if err := createAllControllers(ctrlCtx); err != nil {
 		log.Fatalw("could not create all controllers", zap.Error(err))
 	}

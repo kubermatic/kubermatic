@@ -444,7 +444,7 @@ func createUserCluster(
 	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 2)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
-		WithAddons("hubble").
+		WithAddons(jig.Addon{Name: "hubble"}).
 		WithProxyMode(proxyMode).
 		WithKonnectivity(true).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{

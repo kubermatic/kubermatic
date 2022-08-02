@@ -109,6 +109,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listEKSRegions())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/versions").
+		Handler(r.listEKSVersions())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/eks/amitypes").
 		Handler(r.listEKSAMITypes())
 
@@ -127,6 +131,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/providers/aks/modes").
 		Handler(r.listAKSNodePoolModes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/versions").
+		Handler(r.listAKSVersions())
 
 	mux.Methods(http.MethodGet).
 		Path("/featuregates").
@@ -6078,6 +6086,28 @@ func (r Routing) listAKSNodePoolModes() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/aks/versions aks listAKSVersions
+//
+// Lists AKS versions
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+func (r Routing) listAKSVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.AKSVersionsEndpoint(r.kubermaticConfigGetter, r.externalClusterProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/providers/eks/clusters project listEKSClusters
 //
 // Lists EKS clusters
@@ -6189,6 +6219,28 @@ func (r Routing) listEKSRegions() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/versions eks listEKSVersions
+//
+// Lists EKS versions
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+func (r Routing) listEKSVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSVersionsEndpoint(r.kubermaticConfigGetter, r.externalClusterProvider)),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

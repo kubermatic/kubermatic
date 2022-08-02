@@ -18682,6 +18682,35 @@
         }
       }
     },
+    "/api/v2/providers/aks/versions": {
+      "get": {
+        "description": "Lists AKS versions",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "operationId": "listAKSVersions",
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/aks/vmsizes": {
       "get": {
         "produces": [
@@ -19255,6 +19284,35 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/versions": {
+      "get": {
+        "description": "Lists EKS versions",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSVersions",
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
           },
           "default": {
             "description": "errorResponse",

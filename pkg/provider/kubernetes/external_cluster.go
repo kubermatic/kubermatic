@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -251,6 +252,23 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 		return nil, err
 	}
 	return v, nil
+}
+
+func (p *ExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
+	masterVersions := []apiv1.MasterVersion{}
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versions := config.Spec.Versions.ExternalClusters[providerType]
+	for _, version := range versions.Versions {
+		masterVersions = append(masterVersions, apiv1.MasterVersion{
+			Version: version.Semver(),
+			Default: versions.Default != nil && version.Equal(versions.Default),
+		})
+	}
+	return masterVersions, nil
 }
 
 func (p *ExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error {
