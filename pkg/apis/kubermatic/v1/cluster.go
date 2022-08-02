@@ -275,7 +275,8 @@ type ClusterSpec struct {
 }
 
 func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
-	return c.EnableOperatingSystemManager == nil || *c.EnableOperatingSystemManager
+	//return c.EnableOperatingSystemManager == nil || *c.EnableOperatingSystemManager
+	return false
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
