@@ -42,6 +42,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -160,6 +161,7 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 							Kind: AllowedRegistryCTName,
 						},
 						Validation: &constrainttemplatev1beta1.Validation{
+							LegacySchema: pointer.Bool(false),
 							OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 								Properties: map[string]apiextensionsv1.JSONSchemaProps{
 									AllowedRegistryField: {
