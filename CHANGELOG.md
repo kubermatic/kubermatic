@@ -150,6 +150,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 # Kubermatic 2.19
 
+## [v2.19.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.8)
+
+### Updates
+
+- Update Canal 3.21 version to v3.21.6 ([#10491](https://github.com/kubermatic/kubermatic/issues/10491))
+- Update machine-controller to v1.42.7 ([#10626](https://github.com/kubermatic/kubermatic/issues/10626))
+
+
 ## [v2.19.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.7)
 
 ### Updates
