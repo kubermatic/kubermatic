@@ -75,7 +75,10 @@ func TestDownloadChart(t *testing.T) {
 	chartArchiveDir := t.TempDir()
 
 	chartGlobPath := path.Join(chartArchiveDir, "*.tgz")
-	chartArchiveSize := packageChart(t, "testdata/examplechart", chartArchiveDir)
+	chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
+	chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
+	chartArchiveV1Name := "examplechart-0.1.0.tgz"
+	chartArchiveV2Name := "examplechart-0.2.0.tgz"
 
 	srv, err := repotest.NewTempServerWithCleanup(t, chartGlobPath)
 	if err != nil {
@@ -96,31 +99,44 @@ func TestDownloadChart(t *testing.T) {
 	ociregistryWithAuthUrl, registryConfigFile := startOciRegistryWithAuth(t, chartGlobPath)
 
 	testCases := []struct {
-		name              string
-		repoUrl           string
-		chartName         string
-		chartVersion      string
-		auth              AuthSettings
-		expectedChartSize int64
-		wantErr           bool
+		name               string
+		repoUrl            string
+		chartName          string
+		chartVersion       string
+		auth               AuthSettings
+		expectedAchiveName string
+		expectedChartSize  int64
+		wantErr            bool
 	}{
 		{
-			name:              "Download from HTTP repository should be successful",
-			repoUrl:           srv.URL(),
-			chartName:         "examplechart",
-			chartVersion:      "0.1.0",
-			auth:              AuthSettings{},
-			expectedChartSize: chartArchiveSize,
-			wantErr:           false,
+			name:               "Download from HTTP repository should be successful",
+			repoUrl:            srv.URL(),
+			chartName:          "examplechart",
+			chartVersion:       "0.1.0",
+			auth:               AuthSettings{},
+			expectedAchiveName: chartArchiveV1Name,
+			expectedChartSize:  chartArchiveV1Size,
+			wantErr:            false,
 		},
 		{
-			name:              "Download from HTTP repository with auth should be successful",
-			repoUrl:           srvWithAuth.URL(),
-			chartName:         "examplechart",
-			chartVersion:      "0.1.0",
-			auth:              AuthSettings{Username: "username", Password: "password"},
-			expectedChartSize: chartArchiveSize,
-			wantErr:           false,
+			name:               "Download from HTTP repository with empty version should get the latest version",
+			repoUrl:            srv.URL(),
+			chartName:          "examplechart",
+			chartVersion:       "",
+			auth:               AuthSettings{},
+			expectedAchiveName: chartArchiveV2Name,
+			expectedChartSize:  chartArchiveV2Size,
+			wantErr:            false,
+		},
+		{
+			name:               "Download from HTTP repository with auth should be successful",
+			repoUrl:            srvWithAuth.URL(),
+			chartName:          "examplechart",
+			chartVersion:       "0.1.0",
+			auth:               AuthSettings{Username: "username", Password: "password"},
+			expectedAchiveName: chartArchiveV1Name,
+			expectedChartSize:  chartArchiveV1Size,
+			wantErr:            false,
 		},
 		{
 			name:              "Download from HTTP repository should fail when chart does not exist",
@@ -131,30 +147,60 @@ func TestDownloadChart(t *testing.T) {
 			expectedChartSize: 0,
 			wantErr:           true,
 		},
+		{
+			name:              "Download from HTTP repository should fail when version is not a semversion",
+			repoUrl:           srv.URL(),
+			chartName:         "examplechart",
+			chartVersion:      "notSemver",
+			auth:              AuthSettings{},
+			expectedChartSize: 0,
+			wantErr:           true,
+		},
 
 		{
-			name:              "Download from OCI repository should be successful",
-			repoUrl:           ociRegistryUrl,
-			chartName:         "examplechart",
-			chartVersion:      "0.1.0",
-			auth:              AuthSettings{},
-			expectedChartSize: chartArchiveSize,
-			wantErr:           false,
+			name:               "Download from OCI repository should be successful",
+			repoUrl:            ociRegistryUrl,
+			chartName:          "examplechart",
+			chartVersion:       "0.1.0",
+			auth:               AuthSettings{},
+			expectedAchiveName: chartArchiveV1Name,
+			expectedChartSize:  chartArchiveV1Size,
+			wantErr:            false,
 		},
 		{
-			name:              "Download from OCI repository with auth should be successful",
-			repoUrl:           ociregistryWithAuthUrl,
-			chartName:         "examplechart",
-			chartVersion:      "0.1.0",
-			auth:              AuthSettings{RegistryConfigFile: registryConfigFile},
-			expectedChartSize: chartArchiveSize,
-			wantErr:           false,
+			name:               "Download from oci repository with empty version should get the latest version",
+			repoUrl:            ociRegistryUrl,
+			chartName:          "examplechart",
+			chartVersion:       "",
+			auth:               AuthSettings{},
+			expectedAchiveName: chartArchiveV2Name,
+			expectedChartSize:  chartArchiveV2Size,
+			wantErr:            false,
+		},
+		{
+			name:               "Download from OCI repository with auth should be successful",
+			repoUrl:            ociregistryWithAuthUrl,
+			chartName:          "examplechart",
+			chartVersion:       "0.1.0",
+			auth:               AuthSettings{RegistryConfigFile: registryConfigFile},
+			expectedAchiveName: chartArchiveV1Name,
+			expectedChartSize:  chartArchiveV1Size,
+			wantErr:            false,
 		},
 		{
 			name:              "Download from oci repository should fail when chart does not exist",
 			repoUrl:           ociRegistryUrl,
 			chartName:         "chartthatdoesnotexist",
 			chartVersion:      "0.1.0",
+			auth:              AuthSettings{},
+			expectedChartSize: 0,
+			wantErr:           true,
+		},
+		{
+			name:              "Download from oci repository should fail when version is not a semversion",
+			repoUrl:           ociRegistryUrl,
+			chartName:         "examplechart",
+			chartVersion:      "notSemver",
 			auth:              AuthSettings{},
 			expectedChartSize: 0,
 			wantErr:           true,
@@ -186,8 +232,7 @@ func TestDownloadChart(t *testing.T) {
 				}
 
 				// Test chart is downloaded where we expect
-				chartArchiveName := tc.chartName + "-" + tc.chartVersion + ".tgz"
-				expectedChartLoc := downloadDest + "/" + chartArchiveName
+				expectedChartLoc := downloadDest + "/" + tc.expectedAchiveName
 				if chartLoc != expectedChartLoc {
 					t.Fatalf("charLoc is invalid. got '%s'. expect '%s'", chartLoc, expectedChartLoc)
 				}
@@ -332,6 +377,34 @@ func TestBuildDependencies(t *testing.T) {
 			hasLockFile:  false,
 			auth:         AuthSettings{RegistryConfigFile: registryConfigFile},
 			wantErr:      false,
+		},
+		{
+			name:         "http dependency with empty version should fail",
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: srv.URL()}},
+			hasLockFile:  false,
+			auth:         AuthSettings{},
+			wantErr:      true,
+		},
+		{
+			name:         "oci dependency with empty version should fail",
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociRegistryWithAuthUrl}},
+			hasLockFile:  false,
+			auth:         AuthSettings{},
+			wantErr:      true,
+		},
+		{
+			name:         "http dependency with non semver should fail",
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: srv.URL()}},
+			hasLockFile:  false,
+			auth:         AuthSettings{},
+			wantErr:      true,
+		},
+		{
+			name:         "oci dependency with non semver should fail",
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociRegistryWithAuthUrl}},
+			hasLockFile:  false,
+			auth:         AuthSettings{},
+			wantErr:      true,
 		},
 	}
 	for _, tc := range testCases {

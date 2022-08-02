@@ -93,18 +93,18 @@ func (a *AuthSettings) newRegistryClient() (*registry.Client, error) {
 	return registry.NewClient(registry.ClientOptCredentialsFile(a.RegistryConfigFile))
 }
 
-// getterOptions return authentication options for Getter.
-func (a AuthSettings) getterOptions() ([]getter.Option, error) {
+// registryClientAndGetterOptions return registry.Client and authentication options for Getter.
+func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []getter.Option, error) {
 	regClient, err := a.newRegistryClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	options := []getter.Option{getter.WithRegistryClient(regClient)}
 
 	if a.Username != "" && a.Password != "" {
 		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
 	}
-	return options, nil
+	return regClient, options, nil
 }
 
 // HelmClient is a client that allows interacting with Helm.
@@ -172,7 +172,7 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 		}
 	}
 
-	options, err := auth.getterOptions()
+	regClient, options, err := auth.registryClientAndGetterOptions()
 	if err != nil {
 		return "", err
 	}
@@ -183,6 +183,7 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 		RepositoryConfig: h.settings.RepositoryConfig,
 		RepositoryCache:  h.settings.RepositoryCache,
 		Getters:          h.getterProviders,
+		RegistryClient:   regClient,
 		Options:          options,
 	}
 
