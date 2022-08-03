@@ -23,17 +23,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func convertKubernetesLabels(labelKeys sets.String) []string {
-	promLabels := make([]string, labelKeys.Len())
-	for i, key := range labelKeys.List() {
-		promLabels[i] = convertKubernetesLabel(key)
+func convertToPrometheusLabels(labelKeys sets.String) []string {
+	promLabels := sets.NewString()
+	for _, key := range labelKeys.List() {
+		// due to conversion, different labels might result in the same Prometheus label
+		// (e.g. "foo-bar" and "foo/bar" will both be normalised to "foo_bar"), hence we
+		// use a set.
+		promLabels.Insert(convertToPrometheusLabel(key))
 	}
 
-	return promLabels
+	return promLabels.List()
 }
 
 var validMetricLabel = regexp.MustCompile(`[^a-z0-9_]`)
 
-func convertKubernetesLabel(label string) string {
+func convertToPrometheusLabel(label string) string {
 	return "label_" + validMetricLabel.ReplaceAllString(strings.ToLower(label), "_")
 }

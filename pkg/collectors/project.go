@@ -73,23 +73,23 @@ func (cc ProjectCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	allLabels := sets.NewString()
+	kubernetesLabels := sets.NewString()
 	for _, project := range projects.Items {
-		allLabels = allLabels.Union(sets.StringKeySet(project.Labels))
+		kubernetesLabels = kubernetesLabels.Union(sets.StringKeySet(project.Labels))
 	}
 
-	kubernetesLabels := convertKubernetesLabels(allLabels)
+	prometheusLabels := convertToPrometheusLabels(kubernetesLabels)
 	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: projectPrefix + "labels",
 		Help: "Kubernetes labels on Project resources",
-	}, append([]string{"name"}, kubernetesLabels...))
+	}, append([]string{"name"}, prometheusLabels...))
 
 	for _, project := range projects.Items {
-		cc.collectProject(ch, &project, allLabels, labelsGauge)
+		cc.collectProject(ch, &project, kubernetesLabels, labelsGauge)
 	}
 }
 
-func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project, allLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
+func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project, kubernetesLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
 	owner := ""
 	for _, ref := range p.OwnerReferences {
 		if ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "User" {
@@ -108,10 +108,16 @@ func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kuber
 		string(p.Status.Phase),
 	)
 
-	projectLabels := make([]string, allLabels.Len()+1)
-	projectLabels[0] = p.Name
-	for i, key := range allLabels.List() {
-		projectLabels[i+1] = p.Labels[key]
+	// assemble the labels for this project, in the order given by kubernetesLabels, but
+	// taking special care of label key conflicts
+	projectLabels := []string{p.Name}
+	usedLabels := sets.NewString()
+	for _, key := range kubernetesLabels.List() {
+		prometheusLabel := convertToPrometheusLabel(key)
+		if !usedLabels.Has(prometheusLabel) {
+			projectLabels = append(projectLabels, p.Labels[key])
+			usedLabels.Insert(prometheusLabel)
+		}
 	}
 
 	labelsGaugeVec.WithLabelValues(projectLabels...).Collect(ch)

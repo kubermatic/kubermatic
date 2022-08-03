@@ -43,9 +43,8 @@ type ClusterCollector struct {
 	clusterInfo    *prometheus.Desc
 }
 
-// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
-func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
-	cc := &ClusterCollector{
+func newClusterCollector(client ctrlruntimeclient.Reader) *ClusterCollector {
+	return &ClusterCollector{
 		client: client,
 		clusterCreated: prometheus.NewDesc(
 			clusterPrefix+"created",
@@ -77,8 +76,11 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 			nil,
 		),
 	}
+}
 
-	registry.MustRegister(cc)
+// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
+func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
+	registry.MustRegister(newClusterCollector(client))
 }
 
 // Describe returns the metrics descriptors.
@@ -94,23 +96,23 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	allLabels := sets.NewString()
+	kubernetesLabels := sets.NewString()
 	for _, cluster := range clusters.Items {
-		allLabels = allLabels.Union(sets.StringKeySet(cluster.Labels))
+		kubernetesLabels = kubernetesLabels.Union(sets.StringKeySet(cluster.Labels))
 	}
 
-	kubernetesLabels := convertKubernetesLabels(allLabels)
+	prometheusLabels := convertToPrometheusLabels(kubernetesLabels)
 	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: clusterPrefix + "labels",
 		Help: "Kubernetes labels on Cluster resources",
-	}, append([]string{"name"}, kubernetesLabels...))
+	}, append([]string{"name"}, prometheusLabels...))
 
 	for _, cluster := range clusters.Items {
-		cc.collectCluster(ch, &cluster, allLabels, labelsGauge)
+		cc.collectCluster(ch, &cluster, kubernetesLabels, labelsGauge)
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, allLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
+func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -139,10 +141,16 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 		)
 	}
 
-	clusterLabels := make([]string, allLabels.Len()+1)
-	clusterLabels[0] = c.Name
-	for i, key := range allLabels.List() {
-		clusterLabels[i+1] = c.Labels[key]
+	// assemble the labels for this cluster, in the order given by kubernetesLabels, but
+	// taking special care of label key conflicts
+	clusterLabels := []string{c.Name}
+	usedLabels := sets.NewString()
+	for _, key := range kubernetesLabels.List() {
+		prometheusLabel := convertToPrometheusLabel(key)
+		if !usedLabels.Has(prometheusLabel) {
+			clusterLabels = append(clusterLabels, c.Labels[key])
+			usedLabels.Insert(prometheusLabel)
+		}
 	}
 
 	labelsGaugeVec.WithLabelValues(clusterLabels...).Collect(ch)
