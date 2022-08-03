@@ -17,7 +17,6 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -30,11 +29,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -344,27 +343,41 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, c
 }
 
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	name := cluster.GetKubeconfigSecretName()
-
-	if cluster.Labels == nil {
-		return nil, fmt.Errorf("missing cluster labels")
-	}
-	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if !ok {
-		return nil, fmt.Errorf("missing cluster projectID label")
+	creator, err := kubeconfigSecretCreatorGetter(cluster, secretData)
+	if err != nil {
+		return nil, err
 	}
 
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
-	existingSecret := &corev1.Secret{}
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
+		return nil, err
+	}
 
-	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      cluster.GetKubeconfigSecretName(),
+			Namespace: resources.KubermaticNamespace,
+		},
+	}, nil
+}
+
+func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if len(projectID) == 0 {
+		return nil, fmt.Errorf("external cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
+	}
+
+	return func() (name string, create reconciling.SecretCreator) {
+		return cluster.GetKubeconfigSecretName(), func(existing *corev1.Secret) (*corev1.Secret, error) {
+			if existing.Labels == nil {
+				existing.Labels = map[string]string{}
+			}
+
+			existing.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
+			existing.Data = secretData
+
+			return existing, nil
 		}
-		return createKubeconfigSecret(ctx, p.clientPrivileged, name, projectID, secretData)
-	}
-
-	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, projectID, secretData)
+	}, nil
 }
 
 func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
@@ -384,61 +397,6 @@ func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
 	}
 
 	return clusterNodes, err
-}
-
-func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels:    map[string]string{kubermaticv1.ProjectIDLabelKey: projectID},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: secretData,
-	}
-	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
-	}
-	return &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-		},
-	}, nil
-}
-
-func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	if existingSecret.Data == nil {
-		existingSecret.Data = map[string][]byte{}
-	}
-
-	requiresUpdate := false
-
-	for k, v := range secretData {
-		if !bytes.Equal(v, existingSecret.Data[k]) {
-			requiresUpdate = true
-			break
-		}
-	}
-
-	if existingSecret.Labels == nil {
-		existingSecret.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
-		requiresUpdate = true
-	}
-
-	if requiresUpdate {
-		existingSecret.Data = secretData
-		if err := client.Update(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to update kubeconfig secret: %w", err)
-		}
-	}
-
-	return &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      existingSecret.Name,
-			Namespace: resources.KubermaticNamespace,
-		},
-	}, nil
 }
 
 func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
