@@ -409,20 +409,19 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalCluster, error) {
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	eksClusterCloudSpec := clusterCloudSpec.EKS
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	newVersion := newCluster.Spec.Version.Semver()
-	err = eksprovider.UpgradeClusterVersion(client, newVersion, eksClusterCloudSpec.Name)
+	err = eksprovider.UpgradeClusterVersion(client, newVersion, cloudSpec.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -431,19 +430,18 @@ func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySel
 }
 
 func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
-	clusterCloudSpec := cluster.Spec.CloudSpec
-	eksClusterCloudSpec := clusterCloudSpec.EKS
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+	cloudSpec := cluster.Spec.CloudSpec.EKS
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterName := eksClusterCloudSpec.Name
+	clusterName := cloudSpec.Name
 
 	nodeGroups, err := eksprovider.ListNodegroups(client, clusterName)
 	if err != nil {
@@ -471,15 +469,14 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 }
 
 func getEKSNodeGroup(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
-	clusterCloudSpec := cluster.Spec.CloudSpec
-	eksClusterCloudSpec := clusterCloudSpec.EKS
+	cloudSpec := cluster.Spec.CloudSpec.EKS
 
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -568,15 +565,14 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 }
 
 func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
-	clusterCloudSpec := cluster.Spec.CloudSpec
-	eksClusterCloudSpec := clusterCloudSpec.EKS
+	cloudSpec := cluster.Spec.CloudSpec.EKS
 
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -584,7 +580,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 	// The EKS can update Node Group size or NodeGroup object. Can't change both till one of the update is in progress.
 	// It's required to update NodeGroup size separately.
 
-	clusterName := eksClusterCloudSpec.Name
+	clusterName := cloudSpec.Name
 	nodeGroupName := newMD.NodeDeployment.Name
 
 	currentReplicas := oldMD.NodeDeployment.Spec.Replicas
@@ -614,7 +610,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 }
 
 func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cluster.Spec.CloudSpec, secretKeySelector)
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cluster.Spec.CloudSpec.EKS, secretKeySelector)
 	if err != nil {
 		return err
 	}
@@ -646,24 +642,23 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-		clusterCloudSpec := cluster.Spec.CloudSpec
-		eksClusterCloudSpec := clusterCloudSpec.EKS
-		if eksClusterCloudSpec == nil {
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
 			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
 		}
 
-		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 		if err != nil {
 			return nil, err
 		}
 
-		if eksClusterCloudSpec.Region == "" {
+		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
 		credential := providercommon.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
-			Region:          eksClusterCloudSpec.Region,
+			Region:          cloudSpec.Region,
 		}
 		return providercommon.ListInstanceTypes(ctx, credential)
 	}
@@ -686,24 +681,23 @@ func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGette
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-		clusterCloudSpec := cluster.Spec.CloudSpec
-		eksClusterCloudSpec := clusterCloudSpec.EKS
-		if eksClusterCloudSpec == nil {
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
 			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
 		}
 
-		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 		if err != nil {
 			return nil, err
 		}
 
-		if eksClusterCloudSpec.Region == "" {
+		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
 		credential := providercommon.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
-			Region:          eksClusterCloudSpec.Region,
+			Region:          cloudSpec.Region,
 		}
 		return providercommon.ListEKSVPC(ctx, credential)
 	}
@@ -729,67 +723,64 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-		clusterCloudSpec := cluster.Spec.CloudSpec
-		eksClusterCloudSpec := clusterCloudSpec.EKS
-		if eksClusterCloudSpec == nil {
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
 			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
 		}
 
-		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 		if err != nil {
 			return nil, err
 		}
 
-		if eksClusterCloudSpec.Region == "" {
+		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
 		cred := providercommon.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
-			Region:          eksClusterCloudSpec.Region,
+			Region:          cloudSpec.Region,
 		}
 		return providercommon.ListEKSSubnetIDs(ctx, cred, req.VpcId)
 	}
 }
 
-func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalCluster, error) {
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	eksClusterCloudSpec := clusterCloudSpec.EKS
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
-	clusterOutput, err := eksprovider.GetCluster(client, eksClusterCloudSpec.Name)
+	cluster, err := eksprovider.GetCluster(client, cloudSpec.Name)
 	if err != nil {
 		return nil, err
 	}
-	eksCluster := clusterOutput.Cluster
-	if eksCluster == nil {
+	if cluster == nil {
 		return apiCluster, nil
 	}
 
 	clusterSpec := &apiv2.EKSClusterSpec{
-		Version:   aws.StringValue(eksCluster.Version),
-		CreatedAt: eksCluster.CreatedAt,
+		Version:   aws.StringValue(cluster.Version),
+		CreatedAt: cluster.CreatedAt,
 	}
 
-	if eksCluster.KubernetesNetworkConfig != nil {
+	if cluster.KubernetesNetworkConfig != nil {
 		clusterSpec.KubernetesNetworkConfig = &apiv2.EKSKubernetesNetworkConfigResponse{
-			IpFamily:        eksCluster.KubernetesNetworkConfig.IpFamily,
-			ServiceIpv4Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv4Cidr,
-			ServiceIpv6Cidr: eksCluster.KubernetesNetworkConfig.ServiceIpv6Cidr,
+			IpFamily:        cluster.KubernetesNetworkConfig.IpFamily,
+			ServiceIpv4Cidr: cluster.KubernetesNetworkConfig.ServiceIpv4Cidr,
+			ServiceIpv6Cidr: cluster.KubernetesNetworkConfig.ServiceIpv6Cidr,
 		}
 	}
 
-	if eksCluster.ResourcesVpcConfig != nil {
+	if cluster.ResourcesVpcConfig != nil {
 		clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
-			SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
-			SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
-			VpcId:            eksCluster.ResourcesVpcConfig.VpcId,
+			SecurityGroupIds: cluster.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        cluster.ResourcesVpcConfig.SubnetIds,
+			VpcId:            cluster.ResourcesVpcConfig.VpcId,
 		}
 	}
 
@@ -809,23 +800,22 @@ func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeplo
 	return nil
 }
 
-func createEKSNodePool(clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
 		return nil, err
 	}
 	eksMDCloudSpec := machineDeployment.Cloud.EKS
-	eksClusterCloudSpec := clusterCloudSpec.EKS
 
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	err = eksprovider.CreateNodeGroup(client, machineDeployment.Name, eksClusterCloudSpec.Name, eksMDCloudSpec)
+	err = eksprovider.CreateNodeGroup(client, cloudSpec.Name, machineDeployment.Name, eksMDCloudSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -836,19 +826,18 @@ func createEKSNodePool(clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec, 
 	return &machineDeployment, nil
 }
 
-func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, clusterCloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
-	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*clusterCloudSpec, secretKeySelector)
+func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) error {
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return err
 	}
 
-	eksClusterCloudSpec := clusterCloudSpec.EKS
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return err
 	}
 
-	return eksprovider.DeleteCluster(client, eksClusterCloudSpec.Name)
+	return eksprovider.DeleteCluster(client, cloudSpec.Name)
 }
 
 func EKSAMITypesEndpoint() endpoint.Endpoint {

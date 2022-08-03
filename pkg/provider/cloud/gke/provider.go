@@ -109,8 +109,8 @@ func ConnectToContainerService(ctx context.Context, serviceAccount string) (*con
 	return svc, projectID, nil
 }
 
-func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	sa, err := secretKeySelector(cloudSpec.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		return nil, err
 	}
 
-	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.Zone, cloudSpec.Name)
 	gkeCluster, err := req.Context(ctx).Do()
 	if err != nil {
 		return nil, DecodeError(err)

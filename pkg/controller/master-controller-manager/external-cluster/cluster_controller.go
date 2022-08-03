@@ -167,7 +167,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
+		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
 		if err != nil {
 			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
@@ -200,7 +200,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := eks.GetClusterStatus(secretKeySelector, cloud)
+		status, err := eks.GetClusterStatus(secretKeySelector, cloud.EKS)
 		if err != nil {
 			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
@@ -233,7 +233,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
+		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
 		if err != nil {
 			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())

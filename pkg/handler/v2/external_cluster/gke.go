@@ -497,7 +497,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 	return &md, nil
 }
 
-func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+func createGKENodePool(ctx context.Context, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	sa, err := secretKeySelector(credentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -552,7 +552,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	createRequest := &container.CreateNodePoolRequest{
 		NodePool: nodePool,
 	}
-	req := svc.Projects.Zones.Clusters.NodePools.Create(project, cluster.Spec.CloudSpec.GKE.Zone, cluster.Spec.CloudSpec.GKE.Name, createRequest)
+	req := svc.Projects.Zones.Clusters.NodePools.Create(project, cloudSpec.Zone, cloudSpec.Name, createRequest)
 	_, err = req.Context(ctx).Do()
 	if err != nil {
 		return nil, gkeprovider.DecodeError(err)
@@ -658,8 +658,8 @@ func genGKECluster(gkeClusterSpec *apiv2.GKEClusterSpec, gkeCloudSpec *apiv2.GKE
 	return newCluster
 }
 
-func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
-	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) (*apiv2.ExternalCluster, error) {
+	sa, err := secretKeySelector(cloudSpec.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -668,7 +668,7 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		return nil, err
 	}
 
-	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.Zone, cloudSpec.Name)
 	resp, err := req.Context(ctx).Do()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, gkeprovider.DecodeError(err))
@@ -748,8 +748,8 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	return apiCluster, nil
 }
 
-func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) error {
-	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) error {
+	sa, err := secretKeySelector(cloudSpec.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return err
 	}
@@ -758,7 +758,7 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 		return err
 	}
 
-	req := svc.Projects.Zones.Clusters.Delete(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	req := svc.Projects.Zones.Clusters.Delete(project, cloudSpec.Zone, cloudSpec.Name)
 	_, err = req.Context(ctx).Do()
 	if err != nil {
 		return gkeprovider.DecodeError(err)

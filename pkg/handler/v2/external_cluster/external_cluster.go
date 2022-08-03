@@ -318,19 +318,19 @@ func deleteProviderCluster(ctx context.Context,
 	if cloud != nil && cloud.ProviderName != "" {
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 		if cloud.AKS != nil {
-			err := deleteAKSCluster(ctx, secretKeySelector, cloud)
+			err := deleteAKSCluster(ctx, secretKeySelector, cloud.AKS)
 			if err != nil {
 				return err
 			}
 		}
 		if cloud.EKS != nil {
-			err := deleteEKSCluster(ctx, secretKeySelector, cloud)
+			err := deleteEKSCluster(ctx, secretKeySelector, cloud.EKS)
 			if err != nil {
 				return err
 			}
 		}
 		if cloud.GKE != nil {
-			err := deleteGKECluster(ctx, secretKeySelector, cloud)
+			err := deleteGKECluster(ctx, secretKeySelector, cloud.GKE)
 			if err != nil {
 				return err
 			}
@@ -478,19 +478,19 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if cloud != nil {
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 			if cloud.AKS != nil {
-				apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.AKS)
 				if err != nil {
 					return nil, err
 				}
 			}
 			if cloud.EKS != nil {
-				apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.EKS)
 				if err != nil {
 					return nil, err
 				}
 			}
 			if cloud.GKE != nil {
-				apiCluster, err = getGKEClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				apiCluster, err = getGKEClusterDetails(ctx, apiCluster, secretKeySelector, cloud.GKE)
 				if err != nil {
 					return nil, err
 				}
@@ -639,13 +639,13 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud)
+				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
 			}
 			if cloud.AKS != nil {
 				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
+				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.AKS)
 			}
 			if cloud.KubeOne != nil {
 				containerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, cluster, clusterProvider)
@@ -1045,7 +1045,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status.State = apiv2.RunningExternalClusterState
 	} else {
 		if cloud.EKS != nil {
-			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud)
+			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud.EKS)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ErrorExternalClusterState,
@@ -1056,7 +1056,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *eksStatus
 		}
 		if cloud.AKS != nil {
-			aksStatus, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
+			aksStatus, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ErrorExternalClusterState,
@@ -1067,7 +1067,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			apiCluster.Status = *aksStatus
 		}
 		if cloud.GKE != nil {
-			gkeStatus, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
+			gkeStatus, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ErrorExternalClusterState,

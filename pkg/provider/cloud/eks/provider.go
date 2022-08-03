@@ -137,25 +137,25 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 	return &config, nil
 }
 
-func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
-	accessKeyID = cloud.EKS.AccessKeyID
-	secretAccessKey = cloud.EKS.SecretAccessKey
+func GetCredentialsForCluster(cloud *kubermaticv1.ExternalClusterEKSCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+	accessKeyID = cloud.AccessKeyID
+	secretAccessKey = cloud.SecretAccessKey
 
 	if accessKeyID == "" {
-		if cloud.EKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return "", "", errors.New("no credentials provided")
 		}
-		accessKeyID, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSAccessKeyID)
+		accessKeyID, err = secretKeySelector(cloud.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
 			return "", "", err
 		}
 	}
 
 	if secretAccessKey == "" {
-		if cloud.EKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return "", "", errors.New("no credentials provided")
 		}
-		secretAccessKey, err = secretKeySelector(cloud.EKS.CredentialsReference, resources.AWSSecretAccessKey)
+		secretAccessKey, err = secretKeySelector(cloud.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
 			return "", "", err
 		}
@@ -164,65 +164,33 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 	return accessKeyID, secretAccessKey, nil
 }
 
-func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+func GetCluster(client *awsprovider.ClientSet, eksClusterName string) (*eks.Cluster, error) {
+	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &eksClusterName})
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+	return clusterOutput.Cluster, nil
+}
+
+func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := getClientSet(accessKeyID, secretAccessKey, cloudSpec.EKS.Region, "")
+	client, err := getClientSet(accessKeyID, secretAccessKey, cloudSpec.Region, "")
 	if err != nil {
 		return nil, err
 	}
 
-	eksCluster, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
+	eksCluster, err := GetCluster(client, cloudSpec.Name)
 	if err != nil {
-		return nil, utilerrors.New(DecodeErrorCode(err), DecodeError(err).Error())
+		return nil, err
 	}
-
+	// check nil
 	return &apiv2.ExternalClusterStatus{
-		State: ConvertStatus(*eksCluster.Cluster.Status),
+		State: ConvertStatus(*eksCluster.Status),
 	}, nil
-}
-
-func ConvertStatus(status string) apiv2.ExternalClusterState {
-	switch status {
-	case string(resources.CreatingEKSState):
-		return apiv2.ProvisioningExternalClusterState
-	case string(resources.PendingEKSState):
-		return apiv2.ProvisioningExternalClusterState
-	case string(resources.ActiveEKSState):
-		return apiv2.RunningExternalClusterState
-	case string(resources.UpdatingEKSState):
-		return apiv2.ReconcilingExternalClusterState
-	case string(resources.DeletingEKSState):
-		return apiv2.DeletingExternalClusterState
-	case string(resources.FailedEKSState):
-		return apiv2.ErrorExternalClusterState
-	default:
-		return apiv2.UnknownExternalClusterState
-	}
-}
-
-func ConvertMDStatus(status string) apiv2.ExternalClusterMDState {
-	switch status {
-	case string(resources.CreatingEKSMDState):
-		return apiv2.ProvisioningExternalClusterMDState
-	case string(resources.ActiveEKSMDState):
-		return apiv2.RunningExternalClusterMDState
-	case string(resources.UpdatingEKSMDState):
-		return apiv2.ReconcilingExternalClusterMDState
-	case string(resources.DeletingEKSMDState):
-		return apiv2.DeletingExternalClusterMDState
-	case string(resources.CreateFailedEKSMDState):
-		return apiv2.ErrorExternalClusterMDState
-	case string(resources.DeleteFailedEKSMDState):
-		return apiv2.ErrorExternalClusterMDState
-	case string(resources.DegradedEKSMDState):
-		return apiv2.ErrorExternalClusterMDState
-	default:
-		return apiv2.UnknownExternalClusterMDState
-	}
 }
 
 func ListMachineDeploymentUpgrades(ctx context.Context,
@@ -276,14 +244,6 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 	}
 
 	return upgrades, nil
-}
-
-func GetCluster(client *awsprovider.ClientSet, eksClusterName string) (*eks.DescribeClusterOutput, error) {
-	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &eksClusterName})
-	if err != nil {
-		return nil, DecodeError(err)
-	}
-	return clusterOutput, nil
 }
 
 func CreateCluster(client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterSpec, eksClusterName string) error {
@@ -471,23 +431,57 @@ func ListUpgrades(ctx context.Context,
 	return upgradeVersions, nil
 }
 
+func ConvertStatus(status string) apiv2.ExternalClusterState {
+	switch status {
+	case string(resources.CreatingEKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case string(resources.PendingEKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case string(resources.ActiveEKSState):
+		return apiv2.RunningExternalClusterState
+	case string(resources.UpdatingEKSState):
+		return apiv2.ReconcilingExternalClusterState
+	case string(resources.DeletingEKSState):
+		return apiv2.DeletingExternalClusterState
+	case string(resources.FailedEKSState):
+		return apiv2.ErrorExternalClusterState
+	default:
+		return apiv2.UnknownExternalClusterState
+	}
+}
+
+func ConvertMDStatus(status string) apiv2.ExternalClusterMDState {
+	switch status {
+	case string(resources.CreatingEKSMDState):
+		return apiv2.ProvisioningExternalClusterMDState
+	case string(resources.ActiveEKSMDState):
+		return apiv2.RunningExternalClusterMDState
+	case string(resources.UpdatingEKSMDState):
+		return apiv2.ReconcilingExternalClusterMDState
+	case string(resources.DeletingEKSMDState):
+		return apiv2.DeletingExternalClusterMDState
+	case string(resources.CreateFailedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	case string(resources.DeleteFailedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	case string(resources.DegradedEKSMDState):
+		return apiv2.ErrorExternalClusterMDState
+	default:
+		return apiv2.UnknownExternalClusterMDState
+	}
+}
+
 func DecodeError(err error) error {
+	// Generic AWS Error with Code, Message, and original error (if any).
 	var aerr awserr.Error
 	if errors.As(err, &aerr) {
+		// A service error occurred.
+		var reqErr awserr.RequestFailure
+		if errors.As(aerr, &reqErr) {
+			return utilerrors.New(reqErr.StatusCode(), reqErr.Message())
+		}
 		return errors.New(aerr.Message())
 	}
 
 	return err
-}
-
-func DecodeErrorCode(err error) int {
-	var aerr awserr.Error
-	if errors.As(err, &aerr) {
-		var reqErr awserr.RequestFailure
-		if errors.As(aerr, &reqErr) {
-			return reqErr.StatusCode()
-		}
-	}
-
-	return 0
 }
