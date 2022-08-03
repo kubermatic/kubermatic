@@ -122,7 +122,7 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
 	gkeCluster, err := req.Context(ctx).Do()
 	if err != nil {
-		return nil, utilerrors.New(DecodeErrorCode(err), DecodeError(err).Error())
+		return nil, DecodeError(err)
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -483,29 +483,10 @@ func createClient(ctx context.Context, serviceAccount string, scope string) (*ht
 }
 
 func DecodeError(err error) error {
-	if err == nil {
-		return nil
-	}
-
 	var apiErr *googleapi.Error
 	if errors.As(err, &apiErr) {
-		return errors.New(apiErr.Message)
+		return utilerrors.New(apiErr.Code, apiErr.Message)
 	}
 
 	return err
-}
-
-func DecodeErrorCode(err error) int {
-	var statusCode int
-
-	if err == nil {
-		return statusCode
-	}
-
-	var apiErr *googleapi.Error
-	if errors.As(err, &apiErr) {
-		return apiErr.Code
-	}
-
-	return statusCode
 }

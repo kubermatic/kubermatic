@@ -253,28 +253,6 @@ func ListMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCreden
 	return upgrades, nil
 }
 
-func DecodeError(err error) error {
-	if err == nil {
-		return nil
-	}
-	var aerr *azcore.ResponseError
-	if ok := errors.As(err, &aerr); ok {
-		type response struct {
-			Code    string `json:"code,omitempty"`
-			Message string `json:"message,omitempty"`
-			SubCode string `json:"subcode,omitempty"`
-		}
-		responsemap := map[string]response{}
-		code := aerr.StatusCode
-		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&responsemap); err != nil {
-			return err
-		}
-
-		return utilerrors.New(code, responsemap["error"].Message)
-	}
-	return err
-}
-
 func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGroupName, resourceName string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
 
@@ -308,4 +286,23 @@ func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGr
 		})
 	}
 	return upgrades, nil
+}
+
+func DecodeError(err error) error {
+	var aerr *azcore.ResponseError
+	if errors.As(err, &aerr) {
+		type response struct {
+			Code    string `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+			SubCode string `json:"subcode,omitempty"`
+		}
+		responsemap := map[string]response{}
+		code := aerr.StatusCode
+		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&responsemap); err != nil {
+			return err
+		}
+
+		return utilerrors.New(code, responsemap["error"].Message)
+	}
+	return err
 }

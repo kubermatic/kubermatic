@@ -169,10 +169,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			if IsNotFoundError(err) {
+			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
 				return reconcile.Result{}, nil
-			} else if IsForbiddenError(err) {
+			} else if IsHttpError(err, http.StatusForbidden) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 				return reconcile.Result{}, nil
 			}
@@ -202,10 +202,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := eks.GetClusterStatus(secretKeySelector, cloud)
 		if err != nil {
-			if IsNotFoundError(err) {
+			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
 				return reconcile.Result{}, nil
-			} else if IsForbiddenError(err) {
+			} else if IsHttpError(err, http.StatusForbidden) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 				return reconcile.Result{}, nil
 			}
@@ -235,10 +235,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		}
 		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			if IsNotFoundError(err) {
+			if IsHttpError(err, http.StatusNotFound) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
 				return reconcile.Result{}, nil
-			} else if IsForbiddenError(err) {
+			} else if IsHttpError(err, http.StatusForbidden) {
 				r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 				return reconcile.Result{}, nil
 			}
@@ -408,20 +408,10 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	return r.Update(ctx, cluster)
 }
 
-func IsNotFoundError(err error) bool {
+func IsHttpError(err error, status int) bool {
 	var httpError utilerrors.HTTPError
-	if ok := errors.As(err, &httpError); ok {
-		if httpError.StatusCode() == http.StatusNotFound {
-			return true
-		}
-	}
-	return false
-}
-
-func IsForbiddenError(err error) bool {
-	var httpError utilerrors.HTTPError
-	if ok := errors.As(err, &httpError); ok {
-		if httpError.StatusCode() == http.StatusForbidden {
+	if errors.As(err, &httpError) {
+		if httpError.StatusCode() == status {
 			return true
 		}
 	}

@@ -177,7 +177,7 @@ func GetClusterStatus(secretKeySelector provider.SecretKeySelectorValueFunc, clo
 
 	eksCluster, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
 	if err != nil {
-		return nil, utilerrors.New(DecodeAWSErrorCode(err), DecodeAWSError(err).Error())
+		return nil, utilerrors.New(DecodeErrorCode(err), DecodeError(err).Error())
 	}
 
 	return &apiv2.ExternalClusterStatus{
@@ -235,7 +235,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 	}
 	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &clusterName})
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 
 	if clusterOutput == nil || clusterOutput.Cluster == nil {
@@ -258,7 +258,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -281,7 +281,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 func GetCluster(client *awsprovider.ClientSet, eksClusterName string) (*eks.DescribeClusterOutput, error) {
 	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &eksClusterName})
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 	return clusterOutput, nil
 }
@@ -299,7 +299,7 @@ func CreateCluster(client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterS
 	_, err := client.EKS.CreateCluster(input)
 
 	if err != nil {
-		return DecodeAWSError(err)
+		return DecodeError(err)
 	}
 	return nil
 }
@@ -308,14 +308,14 @@ func ListClusters(client *awsprovider.ClientSet) ([]*string, error) {
 	req, res := client.EKS.ListClustersRequest(&eks.ListClustersInput{})
 	err := req.Send()
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 	return res.Clusters, nil
 }
 
 func DeleteCluster(client *awsprovider.ClientSet, eksClusterName string) error {
 	_, err := client.EKS.DeleteCluster(&eks.DeleteClusterInput{Name: &eksClusterName})
-	return DecodeAWSError(err)
+	return DecodeError(err)
 }
 
 func UpgradeClusterVersion(client *awsprovider.ClientSet, version *semverlib.Version, eksClusterName string) error {
@@ -327,7 +327,7 @@ func UpgradeClusterVersion(client *awsprovider.ClientSet, version *semverlib.Ver
 	}
 	_, err := client.EKS.UpdateClusterVersion(&updateInput)
 
-	return DecodeAWSError(err)
+	return DecodeError(err)
 }
 
 func CreateNodeGroup(client *awsprovider.ClientSet,
@@ -350,7 +350,7 @@ func CreateNodeGroup(client *awsprovider.ClientSet,
 		},
 	}
 	_, err := client.EKS.CreateNodegroup(createInput)
-	return DecodeAWSError(err)
+	return DecodeError(err)
 }
 
 func ListNodegroups(client *awsprovider.ClientSet, clusterName string) ([]*string, error) {
@@ -359,7 +359,7 @@ func ListNodegroups(client *awsprovider.ClientSet, clusterName string) ([]*strin
 	}
 	nodeOutput, err := client.EKS.ListNodegroups(nodeInput)
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 	nodeGroups := nodeOutput.Nodegroups
 
@@ -374,7 +374,7 @@ func DescribeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(nodeGroupInput)
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -390,7 +390,7 @@ func UpgradeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName,
 
 	updateOutput, err := client.EKS.UpdateNodegroupVersion(&nodeGroupInput)
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 
 	return updateOutput, nil
@@ -431,7 +431,7 @@ func ResizeNodeGroup(client *awsprovider.ClientSet, clusterName, nodeGroupName s
 
 	updateOutput, err := client.EKS.UpdateNodegroupConfig(&configInput)
 	if err != nil {
-		return nil, DecodeAWSError(err)
+		return nil, DecodeError(err)
 	}
 
 	return updateOutput, nil
@@ -444,37 +444,7 @@ func DeleteNodegroup(client *awsprovider.ClientSet, clusterName, nodeGroupName s
 	}
 	_, err := client.EKS.DeleteNodegroup(&deleteNGInput)
 
-	return DecodeAWSError(err)
-}
-
-func DecodeAWSError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	var aerr awserr.Error
-	if errors.As(err, &aerr) {
-		return errors.New(aerr.Message())
-	}
-
-	return err
-}
-
-func DecodeAWSErrorCode(err error) int {
-	var statusCode int
-	if err == nil {
-		return statusCode
-	}
-
-	var aerr awserr.Error
-	if errors.As(err, &aerr) {
-		var reqErr awserr.RequestFailure
-		if errors.As(aerr, &reqErr) {
-			statusCode = reqErr.StatusCode()
-		}
-	}
-
-	return statusCode
+	return DecodeError(err)
 }
 
 func ListUpgrades(ctx context.Context,
@@ -499,4 +469,25 @@ func ListUpgrades(ctx context.Context,
 		}
 	}
 	return upgradeVersions, nil
+}
+
+func DecodeError(err error) error {
+	var aerr awserr.Error
+	if errors.As(err, &aerr) {
+		return errors.New(aerr.Message())
+	}
+
+	return err
+}
+
+func DecodeErrorCode(err error) int {
+	var aerr awserr.Error
+	if errors.As(err, &aerr) {
+		var reqErr awserr.RequestFailure
+		if errors.As(aerr, &reqErr) {
+			return reqErr.StatusCode()
+		}
+	}
+
+	return 0
 }
