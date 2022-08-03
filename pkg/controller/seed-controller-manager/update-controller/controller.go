@@ -264,7 +264,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return fmt.Errorf("failed to update controller-manager version status: %w", err)
 		}
 
-		log.Infow("Updating controller-manager to match apiserer", "apiserver", versions.Apiserver, "controllerManager", versions.ControllerManager)
+		log.Infow("Updating controller-manager to match apiserver", "apiserver", versions.Apiserver, "controllerManager", versions.ControllerManager)
 		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ControllerManagerUpdated", "Kubernetes controller-manager was updated to version %s.", versions.Apiserver)
 		updated = true
 	}
@@ -276,7 +276,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return fmt.Errorf("failed to update scheduler version status: %w", err)
 		}
 
-		log.Infow("Updating scheduler to match apiserer", "apiserver", versions.Apiserver, "scheduler", versions.Scheduler)
+		log.Infow("Updating scheduler to match apiserver", "apiserver", versions.Apiserver, "scheduler", versions.Scheduler)
 		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "SchedulerUpdated", "Kubernetes scheduler was updated to version %s.", versions.Apiserver)
 		updated = true
 	}
