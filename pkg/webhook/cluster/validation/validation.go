@@ -72,8 +72,13 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return errors.New("object is not a Cluster")
 	}
 
+	// This validates the charset and the max length.
 	if errs := k8svalidation.IsDNS1035Label(cluster.Name); len(errs) != 0 {
 		return fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
+	}
+
+	if len(cluster.Name) > validation.MaxClusterNameLength {
+		return fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", validation.MaxClusterNameLength)
 	}
 
 	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)

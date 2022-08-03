@@ -125,7 +125,7 @@ appendTrap copy_junit EXIT
 
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -client="${SETUP_MODE:-api}" \
-  -name-prefix=prow-e2e \
+  -name-prefix="kkp-$BUILD_ID" \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
   -kubermatic-endpoint="$KUBERMATIC_API_ENDPOINT" \

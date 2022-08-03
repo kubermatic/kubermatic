@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -127,17 +128,9 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, adminSett
 		return fmt.Errorf("failed to get Seed client: %w", err)
 	}
 
-	clusters := kubermaticv1.ClusterList{}
-	if err := client.List(ctx, &clusters); err != nil {
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, client, adminSetting.Namespace)
+	if err != nil {
 		return fmt.Errorf("failed to list Cluster objects: %w", err)
-	}
-
-	var cluster *kubermaticv1.Cluster
-	for i, c := range clusters.Items {
-		if c.Status.NamespaceName == adminSetting.Namespace {
-			cluster = &clusters.Items[i]
-			break
-		}
 	}
 
 	if cluster == nil {

@@ -50,7 +50,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-ccm-migration-vsphere-e2e
     run_if_changed: "(pkg/provider/cloud/vsphere/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/|.prow/ccm-migrations.yaml)"
@@ -89,7 +89,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-ccm-migration-azure-e2e
     run_if_changed: "(addons/azure-cloud-node-manager/|pkg/provider/cloud/azure/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/|.prow/ccm-migrations.yaml)"
@@ -128,4 +128,4 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi

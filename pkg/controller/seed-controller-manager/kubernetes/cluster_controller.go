@@ -32,6 +32,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -202,24 +203,16 @@ func Add(
 	// Instead of splitting this controller into 2 reconcilers, we simply do not return any requests if
 	// the cluster is in deletion.
 	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := reconciler.Client.List(context.Background(), clusterList); err != nil {
+		cluster, err := kubernetes.ClusterFromNamespace(context.Background(), reconciler, a.GetNamespace())
+		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				// if the cluster is already being deleted,
-				// we do not care about the resources inside its namespace
-				if cluster.DeletionTimestamp != nil {
-					break
-				}
-
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{
-					Name: cluster.Name,
-				}}}
-			}
+		// if the cluster is already being deleted,
+		// we do not care about the resources inside its namespace
+		if cluster != nil && cluster.DeletionTimestamp == nil {
+			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 		}
 
 		return []reconcile.Request{}

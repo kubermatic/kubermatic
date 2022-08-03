@@ -339,7 +339,7 @@ func createUserCluster(
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
 	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 1)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
-	testJig.ClusterJig.WithKonnectivity(true)
+	testJig.ClusterJig.WithKonnectivity(true).WithTestName("konnectivity")
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)

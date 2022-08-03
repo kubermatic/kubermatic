@@ -77,7 +77,7 @@ func TestOPAIntegration(t *testing.T) {
 
 	// create test environment
 	testJig := jig.NewHetznerCluster(seedClient, logger, 1)
-	testJig.ClusterJig.WithPreset(preset)
+	testJig.ClusterJig.WithPreset(preset).WithTestName("opa")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)

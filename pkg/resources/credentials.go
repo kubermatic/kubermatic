@@ -163,6 +163,9 @@ func (cd *credentialsData) GetGlobalSecretKeySelectorValue(configVar *providerco
 	return cd.globalSecretKeySelectorValueFunc(configVar, key)
 }
 
+// GetCredentialsReference returns the CredentialsReference for the cluster's chosen
+// cloud provider (or nil if the provider is BYO). If an unknown provider is used, an
+// error is returned.
 func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.GlobalSecretKeySelector, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		return cluster.Spec.Cloud.AWS.CredentialsReference, nil
@@ -202,6 +205,9 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
 		return cluster.Spec.Cloud.VMwareCloudDirector.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.BringYourOwn != nil {
+		return nil, nil
 	}
 
 	return nil, errors.New("cluster has no known cloud provider spec set")

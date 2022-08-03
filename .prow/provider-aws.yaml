@@ -53,7 +53,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.23
     decorate: true
@@ -95,7 +95,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24
     decorate: true
@@ -137,7 +137,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24-ce
@@ -182,7 +182,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24-headless
     decorate: true
@@ -226,6 +226,6 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
 

@@ -444,6 +444,7 @@ func createUserCluster(
 	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 2)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
+		WithTestName("cilium").
 		WithAddons(jig.Addon{Name: "hubble"}).
 		WithProxyMode(proxyMode).
 		WithKonnectivity(true).

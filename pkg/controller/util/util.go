@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -37,16 +38,16 @@ import (
 // It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(context.Background(), clusterList); err != nil {
+		cluster, err := kubernetes.ClusterFromNamespace(context.Background(), client, a.GetNamespace())
+		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-			}
+
+		if cluster != nil {
+			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 		}
+
 		return []reconcile.Request{}
 	})
 }

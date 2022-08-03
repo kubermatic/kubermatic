@@ -52,6 +52,7 @@ type ClusterJig struct {
 	projectName  string
 	spec         *kubermaticv1.ClusterSpec
 	generateName string
+	desiredName  string
 	ownerEmail   string
 	labels       map[string]string
 	presetSecret string
@@ -69,15 +70,16 @@ type Addon struct {
 
 func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
-		client:       client,
-		log:          log,
-		versions:     kubermatic.NewFakeVersions(),
-		spec:         &kubermaticv1.ClusterSpec{},
-		labels:       map[string]string{},
-		generateName: "e2e-",
-		ownerEmail:   "e2e@test.kubermatic.com",
-		addons:       []Addon{},
+		client:     client,
+		log:        log,
+		versions:   kubermatic.NewFakeVersions(),
+		spec:       &kubermaticv1.ClusterSpec{},
+		labels:     map[string]string{},
+		ownerEmail: "e2e@test.kubermatic.com",
+		addons:     []Addon{},
 	}
+
+	jig.WithTestName("e2e")
 
 	if version := ClusterVersion(log); version != "" {
 		jig.WithVersion(version)
@@ -100,7 +102,20 @@ func (j *ClusterJig) WithExistingCluster(clusterName string) *ClusterJig {
 	return j
 }
 
+// WithTestName injects the test name into the cluster name. The name should
+// be less than 18 characters in length.
+func (j *ClusterJig) WithTestName(name string) *ClusterJig {
+	return j.WithName(fmt.Sprintf("kkp-%s-%s", name, BuildID()))
+}
+
+func (j *ClusterJig) WithName(name string) *ClusterJig {
+	j.desiredName = name
+	j.generateName = ""
+	return j
+}
+
 func (j *ClusterJig) WithGenerateName(prefix string) *ClusterJig {
+	j.desiredName = ""
 	j.generateName = prefix
 	return j
 }
@@ -270,6 +285,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: j.generateName,
+			Name:         j.desiredName,
 			Labels:       j.labels,
 		},
 		Spec: *j.spec,
