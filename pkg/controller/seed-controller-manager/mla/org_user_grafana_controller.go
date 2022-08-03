@@ -75,7 +75,7 @@ func newOrgUserGrafanaReconciler(
 	reconciler := &orgUserGrafanaReconciler{
 		Client: client,
 
-		log:                      log,
+		log:                      log.Named("grafana-org-user"),
 		workerName:               workerName,
 		recorder:                 mgr.GetEventRecorderFor(ControllerName),
 		versions:                 versions,
@@ -148,7 +148,7 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 
 	if err := ensureOrgUser(ctx, grafanaClient, project, userProjectBinding); err != nil {
 		if strings.Contains(err.Error(), "project should have grafana org annotation set") {
-			log.Warnf("unable to ensure Grafana Org/User, retrying in 30s: %w", err)
+			log.Warnf("unable to ensure Grafana Org/User, retrying in 30s: %s", err.Error())
 			return reconcile.Result{RequeueAfter: time.Second * 30}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to ensure project: %w", err)
