@@ -92,22 +92,6 @@ func main() {
 		log.Fatalw("Failed to setup kube clients", zap.Error(err))
 	}
 
-	// determine what's to do
-	scenarios, err := scenarios.NewGenerator().
-		WithCloudProviders(opts.Providers.List()...).
-		WithOperatingSystems(opts.Distributions.List()...).
-		WithContainerRuntimes(opts.ContainerRuntimes.List()...).
-		WithOSM(opts.OperatingSystemManagerEnabled).
-		WithVersions(opts.Versions...).
-		Scenarios(rootCtx, opts, log)
-	if err != nil {
-		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
-	}
-
-	if len(scenarios) == 0 {
-		log.Fatal("No scenarios match the given criteria.")
-	}
-
 	// create a temporary home directory and a fresh SSH key
 	homeDir, dynamicSSHPublicKey, err := setupHomeDir(log)
 	if err != nil {
@@ -122,6 +106,22 @@ func main() {
 		testRunner = runner.NewKubeRunner(opts, log)
 	} else {
 		testRunner = runner.NewAPIRunner(opts, log)
+	}
+
+	// determine what's to do
+	scenarios, err := scenarios.NewGenerator().
+		WithCloudProviders(opts.Providers.List()...).
+		WithOperatingSystems(opts.Distributions.List()...).
+		WithContainerRuntimes(opts.ContainerRuntimes.List()...).
+		WithOSM(opts.OperatingSystemManagerEnabled).
+		WithVersions(opts.Versions...).
+		Scenarios(rootCtx, opts, log)
+	if err != nil {
+		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
+	}
+
+	if len(scenarios) == 0 {
+		log.Fatal("No scenarios match the given criteria.")
 	}
 
 	// setup runner and KKP clients
