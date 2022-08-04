@@ -115,6 +115,8 @@ require (
 
 replace (
 	github.com/envoyproxy/go-control-plane => github.com/envoyproxy/go-control-plane v0.10.1
+
+	github.com/kubermatic/machine-controller => github.com/kubermatic/machine-controller v1.53.1-0.20220804112942-7dbd142f06e7
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	// the opentelemetry overrides are for OPA constraints
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0
