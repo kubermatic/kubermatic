@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	gcetypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -35,43 +35,68 @@ import (
 
 // GetGCPScenarios returns a matrix of (version x operating system).
 func GetGCPScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &gcpScenario{
-			version:    v,
+	baseScenarios := []*gcpScenario{
+		{
 			datacenter: datacenter.Spec.GCP,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &gcpScenario{
-			version:    v,
+		},
+		{
 			datacenter: datacenter.Spec.GCP,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
+		},
 	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
+	}
+
 	return scenarios
 }
 
 type gcpScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecGCP
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecGCP
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *gcpScenario) DeepCopy() *gcpScenario {
+	version := s.version.DeepCopy()
+
+	return &gcpScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		datacenter:       s.datacenter.DeepCopy(),
+		osSpec:           s.osSpec,
+	}
+}
+
+func (s *gcpScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *gcpScenario) Name() string {
-	version := strings.ReplaceAll(s.version.String(), ".", "-")
-	return fmt.Sprintf("gcp-%s-%s", getOSNameFromSpec(s.osSpec), version)
+	return fmt.Sprintf("gcp-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.GCP.KKPDatacenter,
 					Gcp: &apimodels.GCPCloudSpec{
@@ -88,6 +113,7 @@ func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 
 func (s *gcpScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{

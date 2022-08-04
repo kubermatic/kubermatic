@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
@@ -49,21 +50,16 @@ const (
 
 // GetAWSScenarios returns a matrix of (version x operating system).
 func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
+	baseScenarios := []*awsScenario{
+		{
 			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// Flatcar
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
+		},
+		{
 			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
@@ -73,54 +69,84 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 					DisableAutoUpdate: true,
 				},
 			},
-		})
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
+		},
+		{
 			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
+		},
+		{
 			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
 				Rhel: &apimodels.RHELSpec{},
 			},
-		})
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
+		},
+		{
 			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 			osSpec: apimodels.OperatingSystemSpec{
 				RockyLinux: &apimodels.RockyLinuxSpec{},
 			},
-		})
+		},
 	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
+	}
+
 	return scenarios
 }
 
 type awsScenario struct {
 	version                 *semver.Semver
+	containerRuntime        string
 	datacenter              *kubermaticv1.DatacenterSpecAWS
 	osSpec                  apimodels.OperatingSystemSpec
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
+func (s *awsScenario) DeepCopy() *awsScenario {
+	version := s.version.DeepCopy()
+
+	return &awsScenario{
+		version:                 &version,
+		containerRuntime:        s.containerRuntime,
+		datacenter:              s.datacenter.DeepCopy(),
+		osSpec:                  s.osSpec,
+		kubermaticClient:        s.kubermaticClient,
+		kubermaticAuthenticator: s.kubermaticAuthenticator,
+	}
+}
+
+func (s *awsScenario) ContainerRuntime() string {
+	return s.containerRuntime
+}
+
 func (s *awsScenario) Name() string {
-	return fmt.Sprintf("aws-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("aws-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.AWS.KKPDatacenter,
 					Aws: &apimodels.AWSCloudSpec{
@@ -136,6 +162,7 @@ func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 
 func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.AWS.KKPDatacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{

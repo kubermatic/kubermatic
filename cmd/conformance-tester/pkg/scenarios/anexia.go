@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -40,34 +41,62 @@ const (
 
 // GetAnexiaScenarios returns a matrix of (version x operating system).
 func GetAnexiaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Flatcar
-		scenarios = append(scenarios, &anexiaScenario{
-			version:    v,
+	baseScenarios := []*anexiaScenario{
+		{
 			datacenter: datacenter.Spec.Anexia,
 			osSpec: apimodels.OperatingSystemSpec{
 				Flatcar: &apimodels.FlatcarSpec{},
 			},
-		})
+		},
 	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
+	}
+
 	return scenarios
 }
 
 type anexiaScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecAnexia
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecAnexia
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *anexiaScenario) DeepCopy() *anexiaScenario {
+	version := s.version.DeepCopy()
+
+	return &anexiaScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		datacenter:       s.datacenter.DeepCopy(),
+		osSpec:           s.osSpec,
+	}
+}
+
+func (s *anexiaScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *anexiaScenario) Name() string {
-	return fmt.Sprintf("anexia-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("anexia-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Anexia.KKPDatacenter,
 					Anexia: &apimodels.AnexiaCloudSpec{
@@ -82,6 +111,7 @@ func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 
 func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Anexia.KKPDatacenter,
 			Anexia: &kubermaticv1.AnexiaCloudSpec{

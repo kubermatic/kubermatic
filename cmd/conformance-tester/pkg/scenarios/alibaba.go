@@ -26,48 +26,75 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 // GetAlibabaScenarios returns a matrix of (version x operating system).
 func GetAlibabaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &alibabaScenario{
-			version:    v,
+	baseScenarios := []*alibabaScenario{
+		{
 			datacenter: datacenter.Spec.Alibaba,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &alibabaScenario{
-			version:    v,
+		},
+		{
 			datacenter: datacenter.Spec.Alibaba,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
+		},
 	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
+	}
+
 	return scenarios
 }
 
 type alibabaScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecAlibaba
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecAlibaba
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *alibabaScenario) DeepCopy() *alibabaScenario {
+	version := s.version.DeepCopy()
+
+	return &alibabaScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		datacenter:       s.datacenter.DeepCopy(),
+		osSpec:           s.osSpec,
+	}
+}
+
+func (s *alibabaScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *alibabaScenario) Name() string {
-	return fmt.Sprintf("alibaba-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("alibaba-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Alibaba.KKPDatacenter,
 					Alibaba: &apimodels.AlibabaCloudSpec{
@@ -83,6 +110,7 @@ func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 
 func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Alibaba.KKPDatacenter,
 			Alibaba: &kubermaticv1.AlibabaCloudSpec{

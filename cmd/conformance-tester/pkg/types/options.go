@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
@@ -75,6 +76,8 @@ type Options struct {
 	testsFlag                     string
 	excludeTestsFlag              string
 	Tests                         sets.String
+	containerRuntimesFlag         string
+	ContainerRuntimes             sets.String
 	ExistingClusterLabel          string
 	PspEnabled                    bool
 	CreateOIDCToken               bool
@@ -102,6 +105,7 @@ func NewDefaultOptions() *Options {
 		Versions:                     []*kubermativsemver.Semver{},
 		KubermaticNamespace:          "kubermatic",
 		KubermaticSeedName:           "kubermatic",
+		containerRuntimesFlag:        resources.ContainerRuntimeContainerd,
 		ControlPlaneReadyWaitTimeout: 10 * time.Minute,
 		NodeReadyTimeout:             20 * time.Minute,
 		CustomTestTimeout:            10 * time.Minute,
@@ -145,6 +149,7 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.excludeTestsFlag, "exclude-tests", o.excludeTestsFlag, "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
+	flag.StringVar(&o.containerRuntimesFlag, "container-runtimes", o.containerRuntimesFlag, "Comma-separated list of container runtimes to test")
 	flag.StringVar(&o.ScenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", false, "When set, enables Operating System Manager in the user cluster")
@@ -159,6 +164,11 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	if !sets.NewString("api", "kube").Has(o.Client) {
 		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
+
+	if o.containerRuntimesFlag == "" {
+		return errors.New("no -container-runtimes given")
+	}
+	o.ContainerRuntimes = sets.NewString(strings.Split(o.containerRuntimesFlag, ",")...)
 
 	o.Providers = AllProviders.Intersection(sets.NewString(strings.Split(o.providersFlag, ",")...))
 	if o.Providers.Len() == 0 {

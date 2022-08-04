@@ -42,6 +42,7 @@ import (
 type Scenario interface {
 	Name() string
 	OS() apimodels.OperatingSystemSpec
+	ContainerRuntime() string
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
 	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
@@ -170,29 +171,11 @@ func GetScenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogg
 		scenarios = append(scenarios, GetVMwareCloudDirectorScenarios(opts.Versions, dc)...)
 	}
 
-	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
-		return opts.Distributions.Has(string(distribution))
-	}
-
 	var filteredScenarios []Scenario
 	for _, scenario := range scenarios {
-		osspec := scenario.OS()
-		if osspec.Ubuntu != nil && hasDistribution(providerconfig.OperatingSystemUbuntu) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
-		if osspec.Flatcar != nil && hasDistribution(providerconfig.OperatingSystemFlatcar) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
-		if osspec.Centos != nil && hasDistribution(providerconfig.OperatingSystemCentOS) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
-		if osspec.Sles != nil && hasDistribution(providerconfig.OperatingSystemSLES) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
-		if osspec.Rhel != nil && hasDistribution(providerconfig.OperatingSystemRHEL) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
-		if osspec.RockyLinux != nil && hasDistribution(providerconfig.OperatingSystemRockyLinux) {
+		os := getOSNameFromSpec(scenario.OS())
+
+		if opts.Distributions.Has(string(os)) && opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
 			filteredScenarios = append(filteredScenarios, scenario)
 		}
 	}

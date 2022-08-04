@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	nutanixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -41,43 +41,68 @@ const (
 
 // GetNutanixScenarios returns a matrix of (version x operating system).
 func GetNutanixScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &nutanixScenario{
-			version:    v,
+	baseScenarios := []*nutanixScenario{
+		{
 			datacenter: datacenter.Spec.Nutanix,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &nutanixScenario{
-			version:    v,
+		},
+		{
 			datacenter: datacenter.Spec.Nutanix,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
 }
 
 type nutanixScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecNutanix
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecNutanix
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *nutanixScenario) DeepCopy() *nutanixScenario {
+	version := s.version.DeepCopy()
+
+	return &nutanixScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+		datacenter:       s.datacenter,
+	}
+}
+
+func (s *nutanixScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *nutanixScenario) Name() string {
-	return fmt.Sprintf("nutanix-%s-%s", getOSNameFromSpec(s.osSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
+	return fmt.Sprintf("nutanix-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Nutanix.KKPDatacenter,
 					Nutanix: &apimodels.NutanixCloudSpec{
@@ -103,6 +128,7 @@ func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 
 func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Nutanix.KKPDatacenter,
 			Nutanix: &kubermaticv1.NutanixCloudSpec{

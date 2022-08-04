@@ -28,6 +28,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -44,43 +45,66 @@ const (
 
 // GetKubevirtScenarios Returns a matrix of (version x operating system).
 func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, _ *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &kubevirtScenario{
-			version: v,
+	baseScenarios := []*kubevirtScenario{
+		{
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-			logger: log,
-		})
-		// CentOS
-		scenarios = append(scenarios, &kubevirtScenario{
-			version: v,
+		},
+		{
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-			logger: log,
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
 }
 
 type kubevirtScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
-	logger  *zap.SugaredLogger
+	version          *semver.Semver
+	containerRuntime string
+	osSpec           apimodels.OperatingSystemSpec
+	logger           *zap.SugaredLogger
+}
+
+func (s *kubevirtScenario) DeepCopy() *kubevirtScenario {
+	version := s.version.DeepCopy()
+
+	return &kubevirtScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+		logger:           s.logger,
+	}
+}
+
+func (s *kubevirtScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *kubevirtScenario) Name() string {
-	return fmt.Sprintf("kubevirt-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("kubevirt-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Kubevirt.KKPDatacenter,
 					Kubevirt: &apimodels.KubevirtCloudSpec{
@@ -95,6 +119,7 @@ func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateCl
 
 func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{

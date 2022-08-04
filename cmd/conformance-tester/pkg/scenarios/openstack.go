@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -39,43 +40,68 @@ const (
 
 // GetOpenStackScenarios returns a matrix of (version x operating system).
 func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &openStackScenario{
-			version:    v,
+	baseScenarios := []*openStackScenario{
+		{
 			datacenter: datacenter.Spec.Openstack,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &openStackScenario{
-			version:    v,
+		},
+		{
 			datacenter: datacenter.Spec.Openstack,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
 }
 
 type openStackScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecOpenstack
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecOpenstack
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *openStackScenario) DeepCopy() *openStackScenario {
+	version := s.version.DeepCopy()
+
+	return &openStackScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+		datacenter:       s.datacenter,
+	}
+}
+
+func (s *openStackScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *openStackScenario) Name() string {
-	return fmt.Sprintf("openstack-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("openstack-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.OpenStack.KKPDatacenter,
 					Openstack: &apimodels.OpenstackCloudSpec{
@@ -95,6 +121,7 @@ func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateC
 
 func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.OpenStack.KKPDatacenter,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{

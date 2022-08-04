@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -47,28 +47,36 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, da
 		}
 	}
 
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &vSphereScenario{
-			version: v,
-			dc:      datacenter.Spec.VSphere,
+	baseScenarios := []*vSphereScenario{
+		{
+			dc:               datacenter.Spec.VSphere,
+			customFolder:     customFolder,
+			datastoreCluster: datastoreCluster,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
+		},
+		{
+			dc:               datacenter.Spec.VSphere,
 			customFolder:     customFolder,
 			datastoreCluster: datastoreCluster,
-		})
-		// CentOS
-		scenarios = append(scenarios, &vSphereScenario{
-			version: v,
-			dc:      datacenter.Spec.VSphere,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-			customFolder:     customFolder,
-			datastoreCluster: datastoreCluster,
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
@@ -76,20 +84,39 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, da
 
 type vSphereScenario struct {
 	version          *semver.Semver
+	containerRuntime string
 	dc               *kubermaticv1.DatacenterSpecVSphere
 	osSpec           apimodels.OperatingSystemSpec
 	customFolder     bool
 	datastoreCluster bool
 }
 
+func (s *vSphereScenario) DeepCopy() *vSphereScenario {
+	version := s.version.DeepCopy()
+
+	return &vSphereScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+		dc:               s.dc,
+		customFolder:     s.customFolder,
+		datastoreCluster: s.datastoreCluster,
+	}
+}
+
+func (s *vSphereScenario) ContainerRuntime() string {
+	return s.containerRuntime
+}
+
 func (s *vSphereScenario) Name() string {
-	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.osSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
+	return fmt.Sprintf("vsphere-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.VSphere.KKPDatacenter,
 					Vsphere: &apimodels.VSphereCloudSpec{
@@ -117,6 +144,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{

@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -36,40 +37,64 @@ const (
 
 // GetPacketScenarios returns a matrix of (version x operating system).
 func GetPacketScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &packetScenario{
-			version: v,
+	baseScenarios := []*packetScenario{
+		{
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &packetScenario{
-			version: v,
+		},
+		{
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
 }
 
 type packetScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *packetScenario) DeepCopy() *packetScenario {
+	version := s.version.DeepCopy()
+
+	return &packetScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+	}
+}
+
+func (s *packetScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *packetScenario) Name() string {
-	return fmt.Sprintf("packet-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	return fmt.Sprintf("packet-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Packet.KKPDatacenter,
 					Packet: &apimodels.PacketCloudSpec{
@@ -85,6 +110,7 @@ func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 
 func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Packet.KKPDatacenter,
 			Packet: &kubermaticv1.PacketCloudSpec{

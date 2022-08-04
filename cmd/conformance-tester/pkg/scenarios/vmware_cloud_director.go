@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -45,35 +45,62 @@ const (
 
 // GetVMwareCloudDirectorScenarios returns a matrix of (version x operating system).
 func GetVMwareCloudDirectorScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &vmwareCloudDirectorScenario{
-			version:    v,
+	baseScenarios := []*vmwareCloudDirectorScenario{
+		{
 			datacenter: datacenter.Spec.VMwareCloudDirector,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
+		},
+	}
+
+	scenarios := []Scenario{}
+	for _, v := range versions {
+		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
+			for _, scenario := range baseScenarios {
+				copy := scenario.DeepCopy()
+				copy.version = v
+				copy.containerRuntime = cri
+
+				scenarios = append(scenarios, copy)
+			}
+		}
 	}
 
 	return scenarios
 }
 
 type vmwareCloudDirectorScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecVMwareCloudDirector
-	osSpec     apimodels.OperatingSystemSpec
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecVMwareCloudDirector
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *vmwareCloudDirectorScenario) DeepCopy() *vmwareCloudDirectorScenario {
+	version := s.version.DeepCopy()
+
+	return &vmwareCloudDirectorScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		osSpec:           s.osSpec,
+		datacenter:       s.datacenter,
+	}
+}
+
+func (s *vmwareCloudDirectorScenario) ContainerRuntime() string {
+	return s.containerRuntime
 }
 
 func (s *vmwareCloudDirectorScenario) Name() string {
-	return fmt.Sprintf("vmware-cloud-director-%s-%s", getOSNameFromSpec(s.osSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
+	return fmt.Sprintf("vmware-cloud-director-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
@@ -97,6 +124,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
