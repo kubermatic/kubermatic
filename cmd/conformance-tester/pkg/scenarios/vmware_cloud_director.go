@@ -47,9 +47,11 @@ const (
 func GetVMwareCloudDirectorScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*vmwareCloudDirectorScenario{
 		{
-			datacenter: datacenter.Spec.VMwareCloudDirector,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 	}
@@ -71,25 +73,13 @@ func GetVMwareCloudDirectorScenarios(versions []*semver.Semver, datacenter *kube
 }
 
 type vmwareCloudDirectorScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecVMwareCloudDirector
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *vmwareCloudDirectorScenario) DeepCopy() *vmwareCloudDirectorScenario {
-	version := s.version.DeepCopy()
-
 	return &vmwareCloudDirectorScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
-		datacenter:       s.datacenter,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *vmwareCloudDirectorScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *vmwareCloudDirectorScenario) Name() string {
@@ -154,7 +144,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
-							Template:         s.datacenter.Templates[osName],
+							Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[osName],
 							Catalog:          vmwareCloudDirectorCatalog,
 							CPUs:             vmwareCloudDirectorCPUs,
 							CPUCores:         vmwareCloudDirectorCPUCores,
@@ -181,7 +171,7 @@ func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num 
 	os := getOSNameFromSpec(s.osSpec)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, vcdtypes.RawConfig{
-		Template:         providerconfig.ConfigVarString{Value: s.datacenter.Templates[os]},
+		Template:         providerconfig.ConfigVarString{Value: s.datacenter.Spec.VMwareCloudDirector.Templates[os]},
 		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
 		CPUs:             vmwareCloudDirectorCPUs,
 		MemoryMB:         vmwareCloudDirectoMemoryMB,
@@ -195,8 +185,4 @@ func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num 
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *vmwareCloudDirectorScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

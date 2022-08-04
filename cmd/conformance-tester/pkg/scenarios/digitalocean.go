@@ -36,16 +36,22 @@ const (
 )
 
 // GetDigitaloceanScenarios returns a matrix of (version x operating system).
-func GetDigitaloceanScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
+func GetDigitaloceanScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*digitaloceanScenario{
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -67,23 +73,13 @@ func GetDigitaloceanScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacen
 }
 
 type digitaloceanScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *digitaloceanScenario) DeepCopy() *digitaloceanScenario {
-	version := s.version.DeepCopy()
-
 	return &digitaloceanScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *digitaloceanScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *digitaloceanScenario) Name() string {
@@ -157,8 +153,4 @@ func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, se
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *digitaloceanScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

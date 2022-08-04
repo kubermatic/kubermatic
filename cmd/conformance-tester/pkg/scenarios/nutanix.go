@@ -43,15 +43,19 @@ const (
 func GetNutanixScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*nutanixScenario{
 		{
-			datacenter: datacenter.Spec.Nutanix,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			datacenter: datacenter.Spec.Nutanix,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -73,25 +77,13 @@ func GetNutanixScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Dat
 }
 
 type nutanixScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecNutanix
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *nutanixScenario) DeepCopy() *nutanixScenario {
-	version := s.version.DeepCopy()
-
 	return &nutanixScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
-		datacenter:       s.datacenter,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *nutanixScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *nutanixScenario) Name() string {
@@ -160,7 +152,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 					Cloud: &apimodels.NodeCloudSpec{
 						Nutanix: &apimodels.NutanixNodeSpec{
 							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  s.datacenter.Images[osName],
+							ImageName:  s.datacenter.Spec.Nutanix.Images[osName],
 							CPUs:       nutanixCPUs,
 							MemoryMB:   nutanixMemoryMB,
 							DiskSize:   nutanixDiskSize,
@@ -185,7 +177,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderNutanix, nutanixtypes.RawConfig{
 		SubnetName: providerconfig.ConfigVarString{Value: secrets.Nutanix.SubnetName},
-		ImageName:  providerconfig.ConfigVarString{Value: s.datacenter.Images[os]},
+		ImageName:  providerconfig.ConfigVarString{Value: s.datacenter.Spec.Nutanix.Images[os]},
 		CPUs:       nutanixCPUs,
 		MemoryMB:   nutanixMemoryMB,
 		DiskSize:   pointer.Int64(nutanixDiskSize),
@@ -195,8 +187,4 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *nutanixScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

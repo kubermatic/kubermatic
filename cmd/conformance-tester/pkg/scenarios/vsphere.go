@@ -49,20 +49,24 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, da
 
 	baseScenarios := []*vSphereScenario{
 		{
-			dc:               datacenter.Spec.VSphere,
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
+			},
 			customFolder:     customFolder,
 			datastoreCluster: datastoreCluster,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
 		},
 		{
-			dc:               datacenter.Spec.VSphere,
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
+			},
 			customFolder:     customFolder,
 			datastoreCluster: datastoreCluster,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
 		},
 	}
 
@@ -83,29 +87,18 @@ func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, da
 }
 
 type vSphereScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	dc               *kubermaticv1.DatacenterSpecVSphere
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
+
 	customFolder     bool
 	datastoreCluster bool
 }
 
 func (s *vSphereScenario) DeepCopy() *vSphereScenario {
-	version := s.version.DeepCopy()
-
 	return &vSphereScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
-		dc:               s.dc,
+		baseScenario:     *s.baseScenario.DeepCopy(),
 		customFolder:     s.customFolder,
 		datastoreCluster: s.datastoreCluster,
 	}
-}
-
-func (s *vSphereScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *vSphereScenario) Name() string {
@@ -122,7 +115,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 					Vsphere: &apimodels.VSphereCloudSpec{
 						Username:  secrets.VSphere.Username,
 						Password:  secrets.VSphere.Password,
-						Datastore: s.dc.DefaultDatastore,
+						Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -131,7 +124,7 @@ func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.dc.RootPath)
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
 	}
 
 	if s.datastoreCluster {
@@ -150,14 +143,14 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username:  secrets.VSphere.Username,
 				Password:  secrets.VSphere.Password,
-				Datastore: s.dc.DefaultDatastore,
+				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
 			},
 		},
 		Version: *s.version,
 	}
 
 	if s.customFolder {
-		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.dc.RootPath)
+		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
 	}
 
 	if s.datastoreCluster {
@@ -178,7 +171,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: s.dc.Templates[osName],
+							Template: s.datacenter.Spec.VSphere.Templates[osName],
 							CPUs:     2,
 							Memory:   4096,
 						},
@@ -201,7 +194,7 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 	os := getOSNameFromSpec(s.osSpec)
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVsphere, vspheretypes.RawConfig{
-		TemplateVMName: providerconfig.ConfigVarString{Value: s.dc.Templates[os]},
+		TemplateVMName: providerconfig.ConfigVarString{Value: s.datacenter.Spec.VSphere.Templates[os]},
 		CPUs:           2,
 		MemoryMB:       4096,
 	})
@@ -210,8 +203,4 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *vSphereScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

@@ -36,16 +36,22 @@ const (
 )
 
 // GetAzureScenarios returns a matrix of (version x operating system).
-func GetAzureScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
+func GetAzureScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*azureScenario{
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -67,23 +73,13 @@ func GetAzureScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []
 }
 
 type azureScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *azureScenario) DeepCopy() *azureScenario {
-	version := s.version.DeepCopy()
-
 	return &azureScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *azureScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *azureScenario) Name() string {
@@ -174,8 +170,4 @@ func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets t
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *azureScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

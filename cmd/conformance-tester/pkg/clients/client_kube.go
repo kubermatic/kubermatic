@@ -28,7 +28,9 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -139,6 +141,16 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
 	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
 
+	if cloudcontroller.ExternalCloudControllerFeatureSupported(scenario.Datacenter(), cluster, version.NewFromConfiguration(c.opts.KubermaticConfiguration).GetIncompatibilities()...) {
+		cluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
+		if cloudcontroller.ExternalCloudControllerClusterName(cluster) {
+			cluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
+		}
+		if cluster.Spec.Cloud.VSphere != nil {
+			cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+		}
+	}
+
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
@@ -207,7 +219,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		return nil
 	}
 
-	log.Info("Preparing MachineDeployments")
+	log.Info("Preparing MachineDeployments...")
 
 	var mds []clusterv1alpha1.MachineDeployment
 	if err := wait.PollImmediate(3*time.Second, time.Minute, func() (bool, error) {
@@ -229,7 +241,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		}
 	}
 
-	log.Infof("Successfully created %d MachineDeployments", nodeCount)
+	log.Infof("Successfully created MachineDeployments with %d replicas in total", nodeCount)
 	return nil
 }
 

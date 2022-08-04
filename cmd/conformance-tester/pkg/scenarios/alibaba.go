@@ -35,15 +35,19 @@ import (
 func GetAlibabaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*alibabaScenario{
 		{
-			datacenter: datacenter.Spec.Alibaba,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			datacenter: datacenter.Spec.Alibaba,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -65,25 +69,13 @@ func GetAlibabaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Dat
 }
 
 type alibabaScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecAlibaba
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *alibabaScenario) DeepCopy() *alibabaScenario {
-	version := s.version.DeepCopy()
-
 	return &alibabaScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		datacenter:       s.datacenter.DeepCopy(),
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *alibabaScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *alibabaScenario) Name() string {
@@ -176,10 +168,6 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *alibabaScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
-}
-
 func (s *alibabaScenario) getZoneID() string {
-	return fmt.Sprintf("%sa", s.datacenter.Region)
+	return fmt.Sprintf("%sa", s.datacenter.Spec.Alibaba.Region)
 }

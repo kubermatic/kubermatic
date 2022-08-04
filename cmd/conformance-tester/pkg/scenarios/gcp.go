@@ -37,15 +37,19 @@ import (
 func GetGCPScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*gcpScenario{
 		{
-			datacenter: datacenter.Spec.GCP,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			datacenter: datacenter.Spec.GCP,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -67,25 +71,13 @@ func GetGCPScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacen
 }
 
 type gcpScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecGCP
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *gcpScenario) DeepCopy() *gcpScenario {
-	version := s.version.DeepCopy()
-
 	return &gcpScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		datacenter:       s.datacenter.DeepCopy(),
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *gcpScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *gcpScenario) Name() string {
@@ -178,10 +170,6 @@ func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets typ
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *gcpScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
-}
-
 func (s *gcpScenario) getZone() string {
-	return fmt.Sprintf("%s%s", s.datacenter.Region, s.datacenter.ZoneSuffixes[0])
+	return fmt.Sprintf("%s%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
 }

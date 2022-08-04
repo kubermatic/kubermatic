@@ -41,11 +41,13 @@ const (
 
 // GetAnexiaScenarios returns a matrix of (version x operating system).
 func GetAnexiaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*anexiaScenario{
+	baseScenarios := []*alibabaScenario{
 		{
-			datacenter: datacenter.Spec.Anexia,
-			osSpec: apimodels.OperatingSystemSpec{
-				Flatcar: &apimodels.FlatcarSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Flatcar: &apimodels.FlatcarSpec{},
+				},
 			},
 		},
 	}
@@ -67,25 +69,13 @@ func GetAnexiaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Data
 }
 
 type anexiaScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecAnexia
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *anexiaScenario) DeepCopy() *anexiaScenario {
-	version := s.version.DeepCopy()
-
 	return &anexiaScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		datacenter:       s.datacenter.DeepCopy(),
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *anexiaScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *anexiaScenario) Name() string {
@@ -158,7 +148,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		Token:      providerconfig.ConfigVarString{Value: secrets.Anexia.Token},
 		TemplateID: providerconfig.ConfigVarString{Value: secrets.Anexia.TemplateID},
 		VlanID:     providerconfig.ConfigVarString{Value: secrets.Anexia.VlanID},
-		LocationID: providerconfig.ConfigVarString{Value: s.datacenter.LocationID},
+		LocationID: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Anexia.LocationID},
 		DiskSize:   nodeDiskSize,
 		CPUs:       nodeCpu,
 		Memory:     nodeMemory,
@@ -168,8 +158,4 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *anexiaScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

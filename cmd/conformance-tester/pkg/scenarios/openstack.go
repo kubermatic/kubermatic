@@ -42,15 +42,19 @@ const (
 func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*openStackScenario{
 		{
-			datacenter: datacenter.Spec.Openstack,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			datacenter: datacenter.Spec.Openstack,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -72,25 +76,13 @@ func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.D
 }
 
 type openStackScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecOpenstack
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *openStackScenario) DeepCopy() *openStackScenario {
-	version := s.version.DeepCopy()
-
 	return &openStackScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
-		datacenter:       s.datacenter,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *openStackScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *openStackScenario) Name() string {
@@ -140,7 +132,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.osSpec)
 	flavor := openStackFlavor
-	image := s.datacenter.Images[osName]
+	image := s.datacenter.Spec.Openstack.Images[osName]
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -175,7 +167,7 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 
 	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, openstacktypes.RawConfig{
 		Flavor:                    providerconfig.ConfigVarString{Value: openStackFlavor},
-		Image:                     providerconfig.ConfigVarString{Value: s.datacenter.Images[os]},
+		Image:                     providerconfig.ConfigVarString{Value: s.datacenter.Spec.Openstack.Images[os]},
 		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckPeriod},
 		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckTimeout},
 	})
@@ -184,8 +176,4 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *openStackScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

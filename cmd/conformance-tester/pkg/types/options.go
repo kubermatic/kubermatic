@@ -89,6 +89,7 @@ type Options struct {
 	KubermaticOIDCToken           string
 	KubermaticClient              *apiclient.KubermaticKubernetesPlatformAPI
 	KubermaticAuthenticator       runtime.ClientAuthInfoWriter
+	KubermaticConfiguration       *kubermaticv1.KubermaticConfiguration
 	ScenarioOptions               string
 	PushgatewayEndpoint           string
 	OperatingSystemManagerEnabled bool

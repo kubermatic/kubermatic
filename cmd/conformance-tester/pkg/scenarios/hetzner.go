@@ -38,15 +38,19 @@ const (
 func GetHetznerScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*hetznerScenario{
 		{
-			datacenter: datacenter.Spec.Hetzner,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			datacenter: datacenter.Spec.Hetzner,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -68,25 +72,13 @@ func GetHetznerScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Dat
 }
 
 type hetznerScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.DatacenterSpecHetzner
-	osSpec           apimodels.OperatingSystemSpec
+	baseScenario
 }
 
 func (s *hetznerScenario) DeepCopy() *hetznerScenario {
-	version := s.version.DeepCopy()
-
 	return &hetznerScenario{
-		version:          &version,
-		datacenter:       s.datacenter.DeepCopy(),
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
+		baseScenario: *s.baseScenario.DeepCopy(),
 	}
-}
-
-func (s *hetznerScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *hetznerScenario) Name() string {
@@ -113,6 +105,9 @@ func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
+		Features: map[string]bool{
+			kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+		},
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Hetzner.KKPDatacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
@@ -150,17 +145,13 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderHetzner, hetznertypes.RawConfig{
 		ServerType: providerconfig.ConfigVarString{Value: hetznerServerType},
-		Datacenter: providerconfig.ConfigVarString{Value: s.datacenter.Datacenter},
-		Networks:   []providerconfig.ConfigVarString{{Value: s.datacenter.Network}},
-		Location:   providerconfig.ConfigVarString{Value: s.datacenter.Location},
+		Datacenter: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Hetzner.Datacenter},
+		Networks:   []providerconfig.ConfigVarString{{Value: s.datacenter.Spec.Hetzner.Network}},
+		Location:   providerconfig.ConfigVarString{Value: s.datacenter.Spec.Hetzner.Location},
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *hetznerScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

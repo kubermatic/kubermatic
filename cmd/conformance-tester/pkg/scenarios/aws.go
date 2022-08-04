@@ -52,47 +52,57 @@ const (
 func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*awsScenario{
 		{
-			datacenter:              datacenter.Spec.AWS,
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		},
-		{
-			datacenter:              datacenter.Spec.AWS,
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Flatcar: &apimodels.FlatcarSpec{
-					// Otherwise the nodes restart directly after creation - bad for tests
-					DisableAutoUpdate: true,
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
 				},
 			},
-		},
-		{
-			datacenter:              datacenter.Spec.AWS,
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
 		},
 		{
-			datacenter:              datacenter.Spec.AWS,
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Flatcar: &apimodels.FlatcarSpec{
+						// Otherwise the nodes restart directly after creation - bad for tests
+						DisableAutoUpdate: true,
+					},
+				},
+			},
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Rhel: &apimodels.RHELSpec{},
-			},
 		},
 		{
-			datacenter:              datacenter.Spec.AWS,
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
+			},
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				RockyLinux: &apimodels.RockyLinuxSpec{},
+		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Rhel: &apimodels.RHELSpec{},
+				},
 			},
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
+		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					RockyLinux: &apimodels.RockyLinuxSpec{},
+				},
+			},
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
 		},
 	}
 
@@ -113,29 +123,18 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 }
 
 type awsScenario struct {
-	version                 *semver.Semver
-	containerRuntime        string
-	datacenter              *kubermaticv1.DatacenterSpecAWS
-	osSpec                  apimodels.OperatingSystemSpec
+	baseScenario
+
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 func (s *awsScenario) DeepCopy() *awsScenario {
-	version := s.version.DeepCopy()
-
 	return &awsScenario{
-		version:                 &version,
-		containerRuntime:        s.containerRuntime,
-		datacenter:              s.datacenter.DeepCopy(),
-		osSpec:                  s.osSpec,
+		baseScenario:            *s.baseScenario.DeepCopy(),
 		kubermaticClient:        s.kubermaticClient,
 		kubermaticAuthenticator: s.kubermaticAuthenticator,
 	}
-}
-
-func (s *awsScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *awsScenario) Name() string {
@@ -315,7 +314,7 @@ func (s *awsScenario) NodeDeployments(
 }
 
 func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region)
+	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +331,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 		}
 	}
 
-	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region, *vpcID)
+	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region, *vpcID)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +356,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	result := []clusterv1alpha1.MachineDeployment{}
 
 	for _, subnet := range subnets {
-		ami := s.datacenter.Images[getOSNameFromSpec(s.osSpec)]
+		ami := s.datacenter.Spec.AWS.Images[getOSNameFromSpec(s.osSpec)]
 
 		config := awstypes.RawConfig{
 			AMI:              providerconfig.ConfigVarString{Value: ami},
@@ -365,7 +364,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			DiskType:         providerconfig.ConfigVarString{Value: awsVolumeType},
 			DiskSize:         int64(awsVolumeSize),
 			AvailabilityZone: providerconfig.ConfigVarString{Value: *subnet.AvailabilityZone},
-			Region:           providerconfig.ConfigVarString{Value: s.datacenter.Region},
+			Region:           providerconfig.ConfigVarString{Value: s.datacenter.Spec.AWS.Region},
 			VpcID:            providerconfig.ConfigVarString{Value: *vpcID},
 			SubnetID:         providerconfig.ConfigVarString{Value: *subnet.SubnetId},
 			// rely on the KKP's reconciling to have filled these fields in already and
@@ -408,8 +407,4 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	}
 
 	return result, nil
-}
-
-func (s *awsScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

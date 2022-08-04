@@ -39,9 +39,44 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type baseScenario struct {
+	version          *semver.Semver
+	containerRuntime string
+	datacenter       *kubermaticv1.Datacenter
+	osSpec           apimodels.OperatingSystemSpec
+}
+
+func (s *baseScenario) DeepCopy() *baseScenario {
+	version := s.version.DeepCopy()
+
+	return &baseScenario{
+		version:          &version,
+		containerRuntime: s.containerRuntime,
+		datacenter:       s.datacenter.DeepCopy(),
+		osSpec:           s.osSpec,
+	}
+}
+
+func (s *baseScenario) Version() *semver.Semver {
+	return s.version
+}
+
+func (s *baseScenario) Datacenter() *kubermaticv1.Datacenter {
+	return s.datacenter
+}
+
+func (s *baseScenario) ContainerRuntime() string {
+	return s.containerRuntime
+}
+
+func (s *baseScenario) OS() apimodels.OperatingSystemSpec {
+	return s.osSpec
+}
+
 type Scenario interface {
 	Name() string
 	OS() apimodels.OperatingSystemSpec
+	Datacenter() *kubermaticv1.Datacenter
 	ContainerRuntime() string
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec

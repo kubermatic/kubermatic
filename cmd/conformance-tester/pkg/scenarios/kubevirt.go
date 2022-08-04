@@ -44,16 +44,22 @@ const (
 )
 
 // GetKubevirtScenarios Returns a matrix of (version x operating system).
-func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, _ *kubermaticv1.Datacenter) []Scenario {
+func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*kubevirtScenario{
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Ubuntu: &apimodels.UbuntuSpec{},
+				},
 			},
 		},
 		{
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Centos: &apimodels.CentOSSpec{},
+				},
 			},
 		},
 	}
@@ -75,25 +81,16 @@ func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, _ *
 }
 
 type kubevirtScenario struct {
-	version          *semver.Semver
-	containerRuntime string
-	osSpec           apimodels.OperatingSystemSpec
-	logger           *zap.SugaredLogger
+	baseScenario
+
+	logger *zap.SugaredLogger
 }
 
 func (s *kubevirtScenario) DeepCopy() *kubevirtScenario {
-	version := s.version.DeepCopy()
-
 	return &kubevirtScenario{
-		version:          &version,
-		containerRuntime: s.containerRuntime,
-		osSpec:           s.osSpec,
-		logger:           s.logger,
+		baseScenario: *s.baseScenario.DeepCopy(),
+		logger:       s.logger,
 	}
-}
-
-func (s *kubevirtScenario) ContainerRuntime() string {
-	return s.containerRuntime
 }
 
 func (s *kubevirtScenario) Name() string {
@@ -203,8 +200,4 @@ func (s *kubevirtScenario) getOSImage() (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", os)
 	}
-}
-
-func (s *kubevirtScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

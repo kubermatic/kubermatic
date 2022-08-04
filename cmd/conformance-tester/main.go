@@ -167,6 +167,16 @@ func setupKubeClients(ctx context.Context, opts *types.Options) error {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
+	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(opts.SeedClusterClient, opts.KubermaticNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to construct configGetter: %w", err)
+	}
+
+	opts.KubermaticConfiguration, err = configGetter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get Kubermatic config: %w", err)
+	}
+
 	clusterClientProvider, err := clusterclient.NewExternal(seedClusterClient)
 	if err != nil {
 		return fmt.Errorf("failed to get clusterClientProvider: %w", err)
