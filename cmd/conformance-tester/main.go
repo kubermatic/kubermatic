@@ -78,18 +78,14 @@ func main() {
 	// say hello
 	cli.Hello(log, "Conformance Tests", true, nil)
 	log.Infow("Kubermatic API Endpoint", "endpoint", opts.KubermaticEndpoint)
-	log.Infow("Enabled cloud providers", "providers", opts.Providers.List())
-	log.Infow("Enabled versions", "versions", opts.Versions)
-	log.Infow("Enabled operating system", "distributions", opts.Distributions.List())
-	log.Infow("Enabled tests", "tests", opts.Tests.List())
-
-	// create a temporary home directory and a fresh SSH key
-	homeDir, dynamicSSHPublicKey, err := setupHomeDir(log)
-	if err != nil {
-		log.Fatalw("Failed to setup temporary home dir", zap.Error(err))
-	}
-	opts.PublicKeys = append(opts.PublicKeys, dynamicSSHPublicKey)
-	opts.HomeDir = homeDir
+	log.Infow("Runner configuration",
+		"providers", opts.Providers.List(),
+		"operatingsystems", opts.Distributions.List(),
+		"versions", opts.Versions,
+		"containerruntimes", opts.ContainerRuntimes.List(),
+		"tests", opts.Tests.List(),
+		"osm", opts.OperatingSystemManagerEnabled,
+	)
 
 	// setup kube client, ctrl-runtime client, clientgetter, seedgetter etc.
 	if err := setupKubeClients(rootCtx, opts); err != nil {
@@ -111,6 +107,14 @@ func main() {
 	if len(scenarios) == 0 {
 		log.Fatal("No scenarios match the given criteria.")
 	}
+
+	// create a temporary home directory and a fresh SSH key
+	homeDir, dynamicSSHPublicKey, err := setupHomeDir(log)
+	if err != nil {
+		log.Fatalw("Failed to setup temporary home dir", zap.Error(err))
+	}
+	opts.PublicKeys = append(opts.PublicKeys, dynamicSSHPublicKey)
+	opts.HomeDir = homeDir
 
 	// setup test runner, choose between API-based or Kubernetes-based implementations
 	var testRunner *runner.TestRunner
