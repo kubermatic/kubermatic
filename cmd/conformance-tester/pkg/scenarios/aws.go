@@ -105,6 +105,16 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 			kubermaticClient:        kubermaticClient,
 			kubermaticAuthenticator: kubermaticAuthenticator,
 		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Sles: &apimodels.SLESSpec{},
+				},
+			},
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
+		},
 	}
 
 	scenarios := []Scenario{}

@@ -54,6 +54,30 @@ func GetAzureScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datac
 				},
 			},
 		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Rhel: &apimodels.RHELSpec{},
+				},
+			},
+		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					RockyLinux: &apimodels.RockyLinuxSpec{},
+				},
+			},
+		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					Flatcar: &apimodels.FlatcarSpec{},
+				},
+			},
+		},
 	}
 
 	scenarios := []Scenario{}

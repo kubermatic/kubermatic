@@ -54,6 +54,14 @@ func GetDigitaloceanScenarios(versions []*semver.Semver, datacenter *kubermaticv
 				},
 			},
 		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					RockyLinux: &apimodels.RockyLinuxSpec{},
+				},
+			},
+		},
 	}
 
 	scenarios := []Scenario{}

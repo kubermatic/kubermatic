@@ -54,6 +54,14 @@ func GetHetznerScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Dat
 				},
 			},
 		},
+		{
+			baseScenario: baseScenario{
+				datacenter: datacenter,
+				osSpec: apimodels.OperatingSystemSpec{
+					RockyLinux: &apimodels.RockyLinuxSpec{},
+				},
+			},
+		},
 	}
 
 	scenarios := []Scenario{}
