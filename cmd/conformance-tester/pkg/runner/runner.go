@@ -224,6 +224,10 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		deleteTimeout = 30 * time.Minute
 	}
 
+	if !r.opts.WaitForClusterDeletion {
+		deleteTimeout = 0
+	}
+
 	if err := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
 		return r.kkpClient.DeleteCluster(ctx, log, cluster, deleteTimeout)
 	}); err != nil {

@@ -56,6 +56,7 @@ type Options struct {
 	CustomTestTimeout             time.Duration
 	UserClusterPollInterval       time.Duration
 	DeleteClusterAfterTests       bool
+	WaitForClusterDeletion        bool
 	NodeCount                     int
 	PublicKeys                    [][]byte
 	ReportsRoot                   string
@@ -142,6 +143,7 @@ func (o *Options) AddFlags() {
 	flag.DurationVar(&o.CustomTestTimeout, "custom-test-timeout", o.CustomTestTimeout, "timeout for Kubermatic-specific PVC/LB tests")
 	flag.DurationVar(&o.UserClusterPollInterval, "user-cluster-poll-interval", o.UserClusterPollInterval, "poll interval when checking user-cluster conditions")
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
+	flag.BoolVar(&o.WaitForClusterDeletion, "wait-for-cluster-deletion", true, "wait for the cluster deletion to have finished")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&o.releasesFlag, "releases", o.releasesFlag, "a comma-separated list of Kubernetes releases (e.g. '1.24') to test")
 	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")

@@ -18,6 +18,7 @@ package clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -30,11 +31,11 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -67,18 +68,17 @@ func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, 
 		return "", fmt.Errorf("failed to create project: %w", err)
 	}
 
-	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
+	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (error, error) {
 		p := &kubermaticv1.Project{}
 		if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), p); err != nil {
-			return false, fmt.Errorf("failed to get project: %w", err)
+			return nil, fmt.Errorf("failed to get project: %w", err)
 		}
 
 		if p.Status.Phase != kubermaticv1.ProjectActive {
-			log.Warnw("Project not active yet", "project-status", p.Status.Phase)
-			return false, nil
+			return fmt.Errorf("project is %s", p.Status.Phase), nil
 		}
 
-		return true, nil
+		return nil, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %w", err)
 	}
@@ -156,7 +156,17 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 
 	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, c.opts.SeedClusterClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
-	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
+	if err := wait.Poll(100*time.Millisecond, 5*time.Second, func() (error, error) {
+		success, err := waiter()
+		if err != nil {
+			return nil, err
+		}
+		if !success {
+			return errors.New("object is not yet in cache"), nil
+		}
+
+		return nil, nil
+	}); err != nil {
 		return nil, fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
 	}
 
@@ -222,22 +232,19 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 	log.Info("Preparing MachineDeployments...")
 
 	var mds []clusterv1alpha1.MachineDeployment
-	if err := wait.PollImmediate(3*time.Second, time.Minute, func() (bool, error) {
-		var err error
-		mds, err = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
-		if err != nil {
-			log.Warnw("Getting NodeDeployments from scenario failed", zap.Error(err))
-			return false, nil
-		}
-		return true, nil
+	if err := wait.PollImmediate(3*time.Second, time.Minute, func() (transient error, terminal error) {
+		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
+		return transient, nil
 	}); err != nil {
 		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
 	}
 
 	log.Info("Creating MachineDeployments...")
 	for _, md := range mds {
-		if err := userClusterClient.Create(ctx, &md); err != nil {
-			return fmt.Errorf("failed to create MachineDeployment: %w", err)
+		if err := wait.PollImmediateLog(log, 5*time.Second, time.Minute, func() (error, error) {
+			return userClusterClient.Create(ctx, &md), nil
+		}); err != nil {
+			return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
 		}
 	}
 
@@ -246,30 +253,36 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 }
 
 func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	// if there is no timeout, we do not wait for the cluster to be gone
+	if timeout == 0 {
+		log.Info("Deleting user cluster now...")
+
+		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, cluster))
+	}
+
+	return wait.PollImmediate(1*time.Second, timeout, func() (error, error) {
 		cl := &kubermaticv1.Cluster{}
 		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cl)
 
 		// gone already!
 		if apierrors.IsNotFound(err) {
-			return true, nil
+			return nil, nil
 		}
 
 		if err != nil {
-			log.Errorw("Failed to get cluster object", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get cluster: %w", err), nil
 		}
 
 		if cl.DeletionTimestamp == nil {
-			log.With("cluster", cl.Name).Info("Deleting user cluster now...")
+			log.Info("Deleting user cluster now...")
 
 			if err := c.opts.SeedClusterClient.Delete(ctx, cl); err != nil {
-				log.Warnw("Failed to delete cluster", zap.Error(err))
+				return fmt.Errorf("failed to delete cluster: %w", err), nil
 			}
 
-			return false, nil
+			return errors.New("cluster was deleted"), nil
 		}
 
-		return false, nil
+		return errors.New("cluster still exists"), nil
 	})
 }

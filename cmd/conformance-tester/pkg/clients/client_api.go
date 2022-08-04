@@ -318,6 +318,22 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 }
 
 func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
+	// if there is no timeout, we do not wait for the cluster to be gone
+	if timeout == 0 {
+		log.Info("Deleting user cluster now...")
+
+		deleteParams := &project.DeleteClusterParams{
+			Context:   ctx,
+			ProjectID: c.opts.KubermaticProject,
+			ClusterID: cluster.Name,
+			DC:        c.opts.Seed.Name,
+		}
+		utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
+
+		_, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParams, c.opts.KubermaticAuthenticator)
+		return err
+	}
+
 	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
 		cl := &kubermaticv1.Cluster{}
 		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cl)
@@ -333,7 +349,7 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 		}
 
 		if cl.DeletionTimestamp == nil {
-			log.With("cluster", cl.Name).Info("Deleting user cluster now...")
+			log.Info("Deleting user cluster now...")
 
 			deleteParams := &project.DeleteClusterParams{
 				Context:   ctx,
