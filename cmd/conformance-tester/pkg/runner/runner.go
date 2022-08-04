@@ -87,7 +87,7 @@ func (r *TestRunner) SetupProject(ctx context.Context) error {
 		r.opts.KubermaticProject = projectName
 	}
 
-	if err := r.kkpClient.CreateSSHKeys(ctx, r.log); err != nil {
+	if err := r.kkpClient.EnsureSSHKeys(ctx, r.log); err != nil {
 		return fmt.Errorf("failed to create SSH keys: %w", err)
 	}
 

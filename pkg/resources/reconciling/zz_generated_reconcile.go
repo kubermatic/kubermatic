@@ -1547,3 +1547,40 @@ func ReconcileKubermaticV1ResourceQuotas(ctx context.Context, namedGetters []Nam
 
 	return nil
 }
+
+// KubermaticV1UserSSHKeyCreator defines an interface to create/update UserSSHKeys
+type KubermaticV1UserSSHKeyCreator = func(existing *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+
+// NamedKubermaticV1UserSSHKeyCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1UserSSHKeyCreatorGetter = func() (name string, create KubermaticV1UserSSHKeyCreator)
+
+// KubermaticV1UserSSHKeyObjectWrapper adds a wrapper so the KubermaticV1UserSSHKeyCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1UserSSHKeyObjectWrapper(create KubermaticV1UserSSHKeyCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.UserSSHKey))
+		}
+		return create(&kubermaticv1.UserSSHKey{})
+	}
+}
+
+// ReconcileKubermaticV1UserSSHKeys will create and update the KubermaticV1UserSSHKeys coming from the passed KubermaticV1UserSSHKeyCreator slice
+func ReconcileKubermaticV1UserSSHKeys(ctx context.Context, namedGetters []NamedKubermaticV1UserSSHKeyCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1UserSSHKeyObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.UserSSHKey{}, false); err != nil {
+			return fmt.Errorf("failed to ensure UserSSHKey %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}

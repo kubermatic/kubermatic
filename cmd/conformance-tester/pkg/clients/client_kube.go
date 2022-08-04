@@ -84,23 +84,33 @@ func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, 
 	return name, nil
 }
 
-func (c *kubeClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+	creators := []reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter{}
+
 	for i, key := range c.opts.PublicKeys {
-		log.Infow("Creating UserSSHKey...", "pubkey", string(key))
+		log.Infow("Ensuring UserSSHKey...", "pubkey", string(key))
 
-		sshKey := &kubermaticv1.UserSSHKey{}
-		sshKey.Name = fmt.Sprintf("ssh-key-%d", i+1)
-		sshKey.Spec.Name = fmt.Sprintf("SSH Key No. %d", i+1)
-		sshKey.Spec.Project = c.opts.KubermaticProject
-		sshKey.Spec.PublicKey = string(key)
-		sshKey.Spec.Clusters = []string{}
-
-		if err := c.opts.SeedClusterClient.Create(ctx, sshKey); err != nil {
-			return fmt.Errorf("failed to create SSH key: %w", err)
-		}
+		name := fmt.Sprintf("ssh-key-%s-%d", c.opts.KubermaticProject, i+1)
+		creators = append(creators, userSSHKeyCreatorGetter(name, c.opts.KubermaticProject, key))
 	}
 
-	return nil
+	return reconciling.ReconcileKubermaticV1UserSSHKeys(ctx, creators, "", c.opts.SeedClusterClient)
+}
+
+func userSSHKeyCreatorGetter(keyName string, project string, publicKey []byte) reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter {
+	return func() (string, reconciling.KubermaticV1UserSSHKeyCreator) {
+		return keyName, func(existing *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
+			existing.Spec.Name = "Test SSH Key"
+			existing.Spec.Project = project
+			existing.Spec.PublicKey = string(publicKey)
+
+			if existing.Spec.Clusters == nil {
+				existing.Spec.Clusters = []string{}
+			}
+
+			return existing, nil
+		}
+	}
 }
 
 func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {

@@ -149,7 +149,7 @@ func (c *apiClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, n
 	return projectID, nil
 }
 
-func (c *apiClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *apiClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	for i, key := range c.opts.PublicKeys {
 		log.Infow("Creating UserSSHKey...", "pubkey", string(key))
 
