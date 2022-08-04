@@ -46,6 +46,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -209,13 +210,10 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	}
 
 	log = log.With("cluster", cluster.Name)
-
-	if err := r.executeTests(ctx, log, cluster, report, scenario); err != nil {
-		return report, err
-	}
+	testError := r.executeTests(ctx, log, cluster, report, scenario)
 
 	if !r.opts.DeleteClusterAfterTests {
-		return report, nil
+		return report, testError
 	}
 
 	deleteTimeout := 15 * time.Minute
@@ -228,13 +226,11 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		deleteTimeout = 0
 	}
 
-	if err := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
+	deleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
 		return r.kkpClient.DeleteCluster(ctx, log, cluster, deleteTimeout)
-	}); err != nil {
-		return report, fmt.Errorf("failed to delete cluster: %w", err)
-	}
+	})
 
-	return report, nil
+	return report, kerrors.NewAggregate([]error{testError, deleteError})
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {

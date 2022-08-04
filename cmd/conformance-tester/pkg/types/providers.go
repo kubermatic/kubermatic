@@ -18,4 +18,4 @@ package types
 
 import "k8s.io/apimachinery/pkg/util/sets"
 
-var AllProviders = sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmwareclouddirector")
+var AllProviders = sets.NewString("anexia", "aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmwareclouddirector")

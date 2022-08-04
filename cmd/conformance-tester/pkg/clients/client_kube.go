@@ -195,9 +195,16 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	// assign them to the new cluster
 	for _, key := range projectKeys {
-		key.AddToCluster(name)
+		if err := wait.PollImmediate(1*time.Second, 10*time.Second, func() (transient error, terminal error) {
+			k := &kubermaticv1.UserSSHKey{}
+			if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(&key), k); err != nil {
+				return err, nil
+			}
 
-		if err := c.opts.SeedClusterClient.Update(ctx, &key); err != nil {
+			key.AddToCluster(name)
+
+			return c.opts.SeedClusterClient.Update(ctx, &key), nil
+		}); err != nil {
 			return nil, fmt.Errorf("failed to assign SSH key to cluster: %w", err)
 		}
 	}

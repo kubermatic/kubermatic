@@ -275,8 +275,10 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 }
 
 func (o *Options) effectiveTests() (sets.String, error) {
+	// Do not force all scripts to keep a list of all tests, just default to running all tests
+	// when no relevant CLI flag was given.
 	if o.testsFlag == "" && o.excludeTestsFlag == "" {
-		return nil, fmt.Errorf("either -tests or -exclude-tests must be given (each is a comma-separated list of %v)", AllTests.List())
+		return AllTests, nil
 	}
 
 	if o.testsFlag != "" && o.excludeTestsFlag != "" {
