@@ -37,6 +37,9 @@ func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) providerconfig.Operat
 	if spec.Flatcar != nil {
 		return providerconfig.OperatingSystemFlatcar
 	}
+	if spec.RockyLinux != nil {
+		return providerconfig.OperatingSystemRockyLinux
+	}
 
 	return ""
 }
