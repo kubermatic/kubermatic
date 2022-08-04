@@ -47,7 +47,13 @@ func supportsLoadBalancer(cluster *kubermaticv1.Cluster) bool {
 }
 
 func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {
+	if !opts.Tests.Has(ctypes.LoadbalancerTests) {
+		log.Info("LoadBalancers tests disabled, skipping.")
+		return nil
+	}
+
 	if !supportsLoadBalancer(cluster) {
+		log.Info("Provider does not support LoadBalancers, skipping.")
 		return nil
 	}
 

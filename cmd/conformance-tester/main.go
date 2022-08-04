@@ -85,6 +85,7 @@ func main() {
 	log.Infow("Enabled cloud providers", "providers", opts.Providers.List())
 	log.Infow("Enabled versions", "versions", opts.Versions)
 	log.Infow("Enabled operating system", "distributions", opts.Distributions.List())
+	log.Infow("Enabled tests", "tests", opts.Tests.List())
 
 	// create a temporary home directory and a fresh SSH key
 	homeDir, dynamicSSHPublicKey, err := setupHomeDir(log)

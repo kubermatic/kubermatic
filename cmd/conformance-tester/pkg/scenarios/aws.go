@@ -83,6 +83,24 @@ func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.Kube
 				Centos: &apimodels.CentOSSpec{},
 			},
 		})
+		scenarios = append(scenarios, &awsScenario{
+			version:                 v,
+			datacenter:              datacenter.Spec.AWS,
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
+			osSpec: apimodels.OperatingSystemSpec{
+				Rhel: &apimodels.RHELSpec{},
+			},
+		})
+		scenarios = append(scenarios, &awsScenario{
+			version:                 v,
+			datacenter:              datacenter.Spec.AWS,
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
+			osSpec: apimodels.OperatingSystemSpec{
+				RockyLinux: &apimodels.RockyLinuxSpec{},
+			},
+		})
 	}
 	return scenarios
 }

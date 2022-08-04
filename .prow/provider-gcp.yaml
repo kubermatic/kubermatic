@@ -85,8 +85,8 @@ presubmits:
               value: ubuntu
             - name: KUBERMATIC_PSP_ENABLED
               value: "true"
-            - name: ONLY_TEST_CREATION
-              value: "true"
+            - name: EXCLUDE_TESTS
+              value: "conformance,storage,loadbalancer"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

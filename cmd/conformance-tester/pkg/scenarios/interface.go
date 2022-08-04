@@ -192,6 +192,9 @@ func GetScenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogg
 		if osspec.Rhel != nil && hasDistribution(providerconfig.OperatingSystemRHEL) {
 			filteredScenarios = append(filteredScenarios, scenario)
 		}
+		if osspec.RockyLinux != nil && hasDistribution(providerconfig.OperatingSystemRockyLinux) {
+			filteredScenarios = append(filteredScenarios, scenario)
+		}
 	}
 
 	// Shuffle scenarios - avoids timeouts caused by quota issues

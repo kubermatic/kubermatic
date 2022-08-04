@@ -73,8 +73,10 @@ type Options struct {
 	distributionsFlag             string
 	excludeDistributionsFlag      string
 	Distributions                 sets.String
+	testsFlag                     string
+	excludeTestsFlag              string
+	Tests                         sets.String
 	ExistingClusterLabel          string
-	OnlyTestCreation              bool
 	PspEnabled                    bool
 	CreateOIDCToken               bool
 	DexHelmValuesFile             string
@@ -93,14 +95,11 @@ type Options struct {
 }
 
 func NewDefaultOptions() *Options {
-	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmwareclouddirector")
-
 	return &Options{
 		Client:                       "api",
-		providersFlag:                strings.Join(providers.List(), ","),
-		Providers:                    providers,
-		PublicKeys:                   [][]byte{},
+		providersFlag:                strings.Join(AllProviders.List(), ","),
 		releasesFlag:                 strings.Join(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions), ","),
+		PublicKeys:                   [][]byte{},
 		Versions:                     []*kubermativsemver.Semver{},
 		KubermaticNamespace:          "kubermatic",
 		KubermaticSeedName:           "kubermatic",
@@ -119,7 +118,7 @@ func (o *Options) AddFlags() {
 	// user.Current does not work in Alpine
 	pubKeyPath = path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
-	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `gitops`")
+	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `kube`")
 	flag.StringVar(&o.ExistingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&o.providersFlag, "providers", o.providersFlag, "comma separated list of providers to test")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
@@ -144,7 +143,8 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.releasesFlag, "releases", o.releasesFlag, "a comma-separated list of Kubernetes releases (e.g. '1.24') to test")
 	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.StringVar(&o.excludeDistributionsFlag, "exclude-distributions", o.excludeDistributionsFlag, "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
-	flag.BoolVar(&o.OnlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
+	flag.StringVar(&o.testsFlag, "tests", o.testsFlag, "Comma-separated list of enabled tests (cannot be used in conjunction with -exclude-tests)")
+	flag.StringVar(&o.excludeTestsFlag, "exclude-tests", o.excludeTestsFlag, "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&o.ScenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
@@ -162,9 +162,19 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 
-	o.Providers = sets.NewString()
-	for _, s := range strings.Split(o.providersFlag, ",") {
-		o.Providers.Insert(strings.ToLower(strings.TrimSpace(s)))
+	o.Providers = AllProviders.Intersection(sets.NewString(strings.Split(o.providersFlag, ",")...))
+	if o.Providers.Len() == 0 {
+		return errors.New("no cloud provider was enabled")
+	}
+
+	var err error
+	o.Tests, err = o.effectiveTests()
+	if err != nil {
+		return err
+	}
+
+	if o.Tests.Len() == 0 {
+		log.Warn("All tests have been disabled, will only test cluster creation and whether nodes come up successfully.")
 	}
 
 	o.Versions = []*kubermativsemver.Semver{}
@@ -189,7 +199,6 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
 	}
 
-	var err error
 	o.Distributions, err = o.effectiveDistributions()
 	if err != nil {
 		return err
@@ -249,6 +258,32 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 
 	if chosen.Len() == 0 {
 		return nil, errors.New("no distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
+	}
+
+	return chosen, nil
+}
+
+func (o *Options) effectiveTests() (sets.String, error) {
+	if o.testsFlag == "" && o.excludeTestsFlag == "" {
+		return nil, fmt.Errorf("either -tests or -exclude-tests must be given (each is a comma-separated list of %v)", AllTests.List())
+	}
+
+	if o.testsFlag != "" && o.excludeTestsFlag != "" {
+		return nil, errors.New("-tests and -exclude-tests must not be given at the same time")
+	}
+
+	var chosen sets.String
+
+	if o.testsFlag != "" {
+		chosen = sets.NewString(strings.Split(o.testsFlag, ",")...)
+
+		unsupported := chosen.Difference(AllTests)
+		if unsupported.Len() > 0 {
+			return nil, fmt.Errorf("unknown tests: %v", unsupported.List())
+		}
+	} else {
+		excluded := sets.NewString(strings.Split(o.excludeTestsFlag, ",")...)
+		chosen = AllTests.Difference(excluded)
 	}
 
 	return chosen, nil

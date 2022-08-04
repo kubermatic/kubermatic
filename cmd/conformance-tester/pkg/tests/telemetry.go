@@ -46,6 +46,11 @@ type telemetryReport struct {
 // gets the logs from the most recent one, assuming that it output
 // a big JSON document with KKP and k8s statistics.
 func TestTelemetry(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options) error {
+	if !opts.Tests.Has(ctypes.TelemetryTests) {
+		log.Info("Telemetry tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing telemetry availability...")
 
 	pod, err := getLatestTelemetryPod(ctx, opts.SeedClusterClient, kubermaticmaster.TelemetryNamespace)

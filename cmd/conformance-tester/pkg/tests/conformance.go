@@ -55,6 +55,11 @@ func TestKubernetesConformance(
 	cloudConfigFilename string,
 	report *reporters.JUnitTestSuite,
 ) error {
+	if !opts.Tests.Has(types.ConformanceTests) {
+		log.Info("Kubernetes conformance tests disabled, skipping.")
+		return nil
+	}
+
 	ginkgoRuns, err := getGinkgoRuns(opts, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Ginkgo runs: %w", err)

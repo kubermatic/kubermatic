@@ -47,7 +47,13 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 }
 
 func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {
+	if !opts.Tests.Has(ctypes.StorageTests) {
+		log.Info("Storage tests disabled, skipping.")
+		return nil
+	}
+
 	if !supportsStorage(cluster) {
+		log.Info("Provider does not support storage, skipping.")
 		return nil
 	}
 

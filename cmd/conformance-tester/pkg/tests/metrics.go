@@ -50,6 +50,11 @@ type metricsData struct {
 // includes kubelets, so nodes must have been ready for at least 30 seconds
 // before this can succeed.
 func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.MetricsTests) {
+		log.Info("Metrics tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing user cluster metrics availability...")
 
 	res := opts.SeedGeneratedClient.CoreV1().RESTClient().Get().
@@ -114,6 +119,11 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 }
 
 func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.MetricsTests) {
+		log.Info("Metrics tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing user cluster pod and node metrics availability...")
 
 	// check node metrics

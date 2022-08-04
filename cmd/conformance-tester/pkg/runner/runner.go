@@ -433,11 +433,6 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
 	}
 
-	if r.opts.OnlyTestCreation {
-		log.Info("All nodes are ready. Only testing cluster creation, skipping further tests.")
-		return nil
-	}
-
 	if err := r.testCluster(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
 		return fmt.Errorf("failed to test cluster: %w", err)
 	}
