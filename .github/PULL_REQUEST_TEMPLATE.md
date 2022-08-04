@@ -28,11 +28,14 @@ Optionally add one or more of the following kinds if applicable:
 <!--
 Please do one of the following options:
 - Add a link to the existing documentation
-- Add links to the related documentation changes related to this pull request. E.g. the link to the kubermatic/docs pull request.
-- If no documentation change is applicable, then a brief explanation about the reasoning (like “not user-facing change”, “Will be updated along with the next PR” etc.)
+- Add a link to the kubermatic/docs pull request
+- If no documentation change is applicable then add:
+  - TBD (documentation will be added later)
+  - NONE (no documentation needed for this PR)
 -->
+```documentation
 
-Documentation link / PR link / Explanation
+```
 
 **Does this PR introduce a user-facing change? Then add your Release Note here**:
 <!--
