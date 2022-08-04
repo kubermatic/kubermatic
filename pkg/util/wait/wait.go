@@ -76,7 +76,7 @@ func enrich(poller PollFunc, log *zap.SugaredLogger, interval, timeout time.Dura
 
 		// If a logger is given, we provide continuous feedback about the condition.
 		if transient != nil && log != nil {
-			log.Infow("Waiting", "status", transient.Error())
+			log.Infof("Waiting: %s", transient.Error())
 		}
 
 		return transient == nil, nil

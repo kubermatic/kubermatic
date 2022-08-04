@@ -21,13 +21,10 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
@@ -39,55 +36,8 @@ const (
 	nutanixDiskSize = 40
 )
 
-// GetNutanixScenarios returns a matrix of (version x operating system).
-func GetNutanixScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*nutanixScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type nutanixScenario struct {
 	baseScenario
-}
-
-func (s *nutanixScenario) DeepCopy() *nutanixScenario {
-	return &nutanixScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
-	}
-}
-
-func (s *nutanixScenario) Name() string {
-	return fmt.Sprintf("nutanix-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -136,13 +86,17 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				ProjectName: secrets.Nutanix.ProjectName,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -152,7 +106,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 					Cloud: &apimodels.NodeCloudSpec{
 						Nutanix: &apimodels.NutanixNodeSpec{
 							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  s.datacenter.Spec.Nutanix.Images[osName],
+							ImageName:  s.datacenter.Spec.Nutanix.Images[s.operatingSystem],
 							CPUs:       nutanixCPUs,
 							MemoryMB:   nutanixMemoryMB,
 							DiskSize:   nutanixDiskSize,
@@ -161,7 +115,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -169,13 +123,17 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets ty
 }
 
 func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	os := getOSNameFromSpec(s.osSpec)
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Nutanix: &apiv1.NutanixNodeSpec{
 				SubnetName: secrets.Nutanix.SubnetName,
-				ImageName:  s.datacenter.Spec.Nutanix.Images[os],
+				ImageName:  s.datacenter.Spec.Nutanix.Images[s.operatingSystem],
 				CPUs:       nutanixCPUs,
 				MemoryMB:   nutanixMemoryMB,
 				DiskSize:   pointer.Int64(nutanixDiskSize),
@@ -188,7 +146,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderNutanix, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}

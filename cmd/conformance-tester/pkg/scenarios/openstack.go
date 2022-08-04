@@ -21,13 +21,10 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
@@ -38,55 +35,8 @@ const (
 	openStackInstanceReadyCheckTimeout = "2m"
 )
 
-// GetOpenStackScenarios returns a matrix of (version x operating system).
-func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*openStackScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type openStackScenario struct {
 	baseScenario
-}
-
-func (s *openStackScenario) DeepCopy() *openStackScenario {
-	return &openStackScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
-	}
-}
-
-func (s *openStackScenario) Name() string {
-	return fmt.Sprintf("openstack-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -125,15 +75,19 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 				FloatingIPPool: openStackFloatingIPPool,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
 	flavor := openStackFlavor
-	image := s.datacenter.Spec.Openstack.Images[osName]
 	replicas := int32(num)
+	image := s.datacenter.Spec.Openstack.Images[s.operatingSystem]
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -151,7 +105,7 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -159,13 +113,17 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	os := getOSNameFromSpec(s.osSpec)
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Openstack: &apiv1.OpenstackNodeSpec{
 				Flavor:                    openStackFlavor,
-				Image:                     s.datacenter.Spec.Openstack.Images[os],
+				Image:                     s.datacenter.Spec.Openstack.Images[s.operatingSystem],
 				InstanceReadyCheckPeriod:  openStackInstanceReadyCheckPeriod,
 				InstanceReadyCheckTimeout: openStackInstanceReadyCheckTimeout,
 			},
@@ -177,7 +135,7 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}

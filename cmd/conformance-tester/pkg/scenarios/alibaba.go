@@ -21,65 +21,15 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// GetAlibabaScenarios returns a matrix of (version x operating system).
-func GetAlibabaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*alibabaScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type alibabaScenario struct {
 	baseScenario
-}
-
-func (s *alibabaScenario) DeepCopy() *alibabaScenario {
-	return &alibabaScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
-	}
-}
-
-func (s *alibabaScenario) Name() string {
-	return fmt.Sprintf("alibaba-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -110,12 +60,17 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				AccessKeyID:     secrets.Alibaba.AccessKeyID,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -135,15 +90,21 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets ty
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
 	}, nil
 }
 
-func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *alibabaScenario) MachineDeployments(_ context.Context, replicas int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Alibaba: &apiv1.AlibabaNodeSpec{
 				InstanceType:            "ecs.c6.xsmall",
@@ -161,7 +122,7 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAlibaba, config)
+	md, err := s.createMachineDeployment(replicas, config)
 	if err != nil {
 		return nil, err
 	}

@@ -21,13 +21,10 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
@@ -35,63 +32,8 @@ const (
 	dropletSize = "4gb"
 )
 
-// GetDigitaloceanScenarios returns a matrix of (version x operating system).
-func GetDigitaloceanScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*digitaloceanScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					RockyLinux: &apimodels.RockyLinuxSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type digitaloceanScenario struct {
 	baseScenario
-}
-
-func (s *digitaloceanScenario) DeepCopy() *digitaloceanScenario {
-	return &digitaloceanScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
-	}
-}
-
-func (s *digitaloceanScenario) Name() string {
-	return fmt.Sprintf("digitalocean-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -120,13 +62,18 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.Clus
 				Token: secrets.Digitalocean.Token,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := dropletSize
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -141,7 +88,7 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -149,7 +96,13 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 }
 
 func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Digitalocean: &apiv1.DigitaloceanNodeSpec{
 				Size: dropletSize,
@@ -162,7 +115,7 @@ func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, se
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderDigitalocean, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}

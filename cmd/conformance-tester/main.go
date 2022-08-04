@@ -96,6 +96,22 @@ func main() {
 		log.Fatalw("Failed to setup kube clients", zap.Error(err))
 	}
 
+	// determine what's to do
+	scenarios, err := scenarios.NewGenerator().
+		WithCloudProviders(opts.Providers.List()...).
+		WithOperatingSystems(opts.Distributions.List()...).
+		WithContainerRuntimes(opts.ContainerRuntimes.List()...).
+		WithOSM(opts.OperatingSystemManagerEnabled).
+		WithVersions(opts.Versions...).
+		Scenarios(rootCtx, opts, log)
+	if err != nil {
+		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
+	}
+
+	if len(scenarios) == 0 {
+		log.Fatal("No scenarios match the given criteria.")
+	}
+
 	// setup test runner, choose between API-based or Kubernetes-based implementations
 	var testRunner *runner.TestRunner
 	if opts.Client == "kube" {
@@ -115,11 +131,6 @@ func main() {
 	}
 
 	log.Infow("Using project", "project", opts.KubermaticProject)
-
-	scenarios, err := scenarios.GetScenarios(rootCtx, opts, log)
-	if err != nil {
-		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
-	}
 
 	// let the magic happen!
 	log.Info("Running E2E tests...")

@@ -21,89 +21,20 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+
 	"k8s.io/utils/pointer"
 )
-
-// GetVSphereScenarios returns a matrix of (version x operating system).
-func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var (
-		customFolder     bool
-		datastoreCluster bool
-	)
-
-	for _, opt := range scenarioOptions {
-		switch opt {
-		case "custom-folder":
-			customFolder = true
-		case "datastore-cluster":
-			datastoreCluster = true
-		}
-	}
-
-	baseScenarios := []*vSphereScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-			customFolder:     customFolder,
-			datastoreCluster: datastoreCluster,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-			customFolder:     customFolder,
-			datastoreCluster: datastoreCluster,
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
 
 type vSphereScenario struct {
 	baseScenario
 
 	customFolder     bool
 	datastoreCluster bool
-}
-
-func (s *vSphereScenario) DeepCopy() *vSphereScenario {
-	return &vSphereScenario{
-		baseScenario:     *s.baseScenario.DeepCopy(),
-		customFolder:     s.customFolder,
-		datastoreCluster: s.datastoreCluster,
-	}
-}
-
-func (s *vSphereScenario) Name() string {
-	return fmt.Sprintf("vsphere-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -147,7 +78,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 
 	if s.customFolder {
@@ -163,8 +94,13 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 }
 
 func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -172,7 +108,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: s.datacenter.Spec.VSphere.Templates[osName],
+							Template: s.datacenter.Spec.VSphere.Templates[s.operatingSystem],
 							CPUs:     2,
 							Memory:   4096,
 						},
@@ -180,7 +116,7 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -188,14 +124,19 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 }
 
 func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	os := getOSNameFromSpec(s.osSpec)
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			VSphere: &apiv1.VSphereNodeSpec{
 				CPUs:       2,
 				Memory:     4096,
 				DiskSizeGB: pointer.Int64(10),
-				Template:   s.datacenter.Spec.VSphere.Templates[os],
+				Template:   s.datacenter.Spec.VSphere.Templates[s.operatingSystem],
 			},
 		},
 	}
@@ -205,7 +146,7 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVsphere, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}

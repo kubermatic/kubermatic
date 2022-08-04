@@ -20,14 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
@@ -39,47 +39,21 @@ const (
 	nodeMemory   = 2048
 )
 
-// GetAnexiaScenarios returns a matrix of (version x operating system).
-func GetAnexiaScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*anexiaScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Flatcar: &apimodels.FlatcarSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type anexiaScenario struct {
 	baseScenario
 }
 
-func (s *anexiaScenario) DeepCopy() *anexiaScenario {
-	return &anexiaScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
+func (s *anexiaScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
+	if !s.baseScenario.IsValid(opts, log) {
+		return false
 	}
-}
 
-func (s *anexiaScenario) Name() string {
-	return fmt.Sprintf("anexia-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
+	if s.operatingSystem != providerconfig.OperatingSystemFlatcar {
+		s.Log(log).Debug("Skipping because provider only supports Flatcar.")
+		return false
+	}
+
+	return true
 }
 
 func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -108,12 +82,17 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 				Token: secrets.Anexia.Token,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -132,7 +111,7 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -140,7 +119,13 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 }
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Anexia: &apiv1.AnexiaNodeSpec{
 				CPUs:       nodeCpu,
@@ -157,7 +142,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAnexia, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}

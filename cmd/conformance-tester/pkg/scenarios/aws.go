@@ -26,14 +26,11 @@ import (
 	"github.com/go-openapi/runtime"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
@@ -49,107 +46,11 @@ const (
 	awsVolumeSize   = 100
 )
 
-// GetAWSScenarios returns a matrix of (version x operating system).
-func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*awsScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Flatcar: &apimodels.FlatcarSpec{
-						// Otherwise the nodes restart directly after creation - bad for tests
-						DisableAutoUpdate: true,
-					},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Rhel: &apimodels.RHELSpec{},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					RockyLinux: &apimodels.RockyLinuxSpec{},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Sles: &apimodels.SLESSpec{},
-				},
-			},
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type awsScenario struct {
 	baseScenario
 
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
-}
-
-func (s *awsScenario) DeepCopy() *awsScenario {
-	return &awsScenario{
-		baseScenario:            *s.baseScenario.DeepCopy(),
-		kubermaticClient:        s.kubermaticClient,
-		kubermaticAuthenticator: s.kubermaticAuthenticator,
-	}
-}
-
-func (s *awsScenario) Name() string {
-	return fmt.Sprintf("aws-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -180,15 +81,11 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 				AccessKeyID:     secrets.AWS.AccessKeyID,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
-func (s *awsScenario) NodeDeployments(
-	ctx context.Context,
-	num int,
-	secrets types.Secrets,
-) ([]apimodels.NodeDeployment, error) {
+func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := awsInstanceType
 	volumeType := awsVolumeType
 	volumeSize := int64(awsVolumeSize)
@@ -247,6 +144,11 @@ func (s *awsScenario) NodeDeployments(
 		return nil, fmt.Errorf("wanted three subnets in different AZs, got only %d", n)
 	}
 
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nds := []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -263,7 +165,7 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -282,7 +184,7 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -301,15 +203,15 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
 	}
 
 	// evenly distribute the nodes among deployments
-	nodesInEachAZ := num / 3
-	azsWithExtraNode := num % 3
+	nodesInEachAZ := replicas / 3
+	azsWithExtraNode := replicas % 3
 
 	for i := range nds {
 		var replicas int32
@@ -366,8 +268,14 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 
 	result := []clusterv1alpha1.MachineDeployment{}
 
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	for _, subnet := range subnets {
 		nodeSpec := apiv1.NodeSpec{
+			OperatingSystem: *osSpec,
 			Cloud: apiv1.NodeCloudSpec{
 				AWS: &apiv1.AWSNodeSpec{
 					InstanceType:     awsInstanceType,
@@ -384,7 +292,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			return nil, err
 		}
 
-		md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAWS, config)
+		md, err := s.createMachineDeployment(num, config)
 		if err != nil {
 			return nil, err
 		}

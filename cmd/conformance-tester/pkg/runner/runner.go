@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -101,7 +100,7 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 	r.log.Info("Test suite:")
 	for _, scenario := range testScenarios {
-		r.log.Info(scenario.Name())
+		scenario.Log(r.log).Info("Scenario")
 		scenariosCh <- scenario
 	}
 	r.log.Infof("Total: %d tests", len(testScenarios))
@@ -151,7 +150,7 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 	for s := range scenarios {
 		var report *reporters.JUnitTestSuite
 
-		scenarioLog := r.log.With("scenario", s.Name())
+		scenarioLog := s.Log(r.log)
 		scenarioLog.Info("Starting to test scenario...")
 
 		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
@@ -162,7 +161,7 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 		if err != nil {
 			scenarioLog.Warnw("Finished with error", zap.Error(err))
 		} else {
-			scenarioLog.Info("Finished")
+			scenarioLog.Info("Finished successfully")
 		}
 
 		results <- testResult{
@@ -342,13 +341,6 @@ func (r *TestRunner) executeTests(
 	}); err != nil {
 		return fmt.Errorf("failed to add PV and LB cleanup finalizers: %w", err)
 	}
-
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("failed to get cloud provider name from cluster: %w", err)
-	}
-
-	log = log.With("cloud-provider", providerName)
 
 	kubeconfigFilename, err := r.getKubeconfig(ctx, log, cluster)
 	if err != nil {

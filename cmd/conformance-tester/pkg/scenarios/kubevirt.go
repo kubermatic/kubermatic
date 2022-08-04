@@ -20,16 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	utilpointer "k8s.io/utils/pointer"
@@ -43,58 +39,8 @@ const (
 	kubevirtDiskClassName      = "longhorn"
 )
 
-// GetKubevirtScenarios Returns a matrix of (version x operating system).
-func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, datacenter *kubermaticv1.Datacenter) []Scenario {
-	baseScenarios := []*kubevirtScenario{
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Ubuntu: &apimodels.UbuntuSpec{},
-				},
-			},
-		},
-		{
-			baseScenario: baseScenario{
-				datacenter: datacenter,
-				osSpec: apimodels.OperatingSystemSpec{
-					Centos: &apimodels.CentOSSpec{},
-				},
-			},
-		},
-	}
-
-	scenarios := []Scenario{}
-	for _, v := range versions {
-		for _, cri := range []string{resources.ContainerRuntimeContainerd, resources.ContainerRuntimeDocker} {
-			for _, scenario := range baseScenarios {
-				copy := scenario.DeepCopy()
-				copy.version = v
-				copy.containerRuntime = cri
-
-				scenarios = append(scenarios, copy)
-			}
-		}
-	}
-
-	return scenarios
-}
-
 type kubevirtScenario struct {
 	baseScenario
-
-	logger *zap.SugaredLogger
-}
-
-func (s *kubevirtScenario) DeepCopy() *kubevirtScenario {
-	return &kubevirtScenario{
-		baseScenario: *s.baseScenario.DeepCopy(),
-		logger:       s.logger,
-	}
-}
-
-func (s *kubevirtScenario) Name() string {
-	return fmt.Sprintf("kubevirt-%s-%s-%s", getOSNameFromSpec(s.osSpec), s.containerRuntime, s.version.String())
 }
 
 func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
@@ -123,7 +69,7 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 				Kubeconfig: secrets.Kubevirt.Kubeconfig,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
@@ -131,6 +77,11 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
+	}
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
 	}
 
 	return []apimodels.NodeDeployment{
@@ -150,7 +101,7 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -163,7 +114,13 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 		return nil, err
 	}
 
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Kubevirt: &apiv1.KubevirtNodeSpec{
 				CPUs:                        kubevirtCPUs,
@@ -180,7 +137,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderKubeVirt, config)
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
@@ -189,14 +146,12 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 }
 
 func (s *kubevirtScenario) getOSImage() (string, error) {
-	os := getOSNameFromSpec(s.osSpec)
-
-	switch {
-	case os == providerconfig.OperatingSystemUbuntu:
+	switch s.operatingSystem {
+	case providerconfig.OperatingSystemUbuntu:
 		return kubevirtImageHttpServerSvc + "/ubuntu.img", nil
-	case os == providerconfig.OperatingSystemCentOS:
+	case providerconfig.OperatingSystemCentOS:
 		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:
-		return "", fmt.Errorf("unsupported OS %q selected", os)
+		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}
 }
