@@ -18,7 +18,6 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -36,14 +35,16 @@ const (
 )
 
 // GetHetznerScenarios returns a matrix of (version x operating system).
-func GetHetznerScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
+func GetHetznerScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
 	baseScenarios := []*hetznerScenario{
 		{
+			datacenter: datacenter.Spec.Hetzner,
 			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		},
 		{
+			datacenter: datacenter.Spec.Hetzner,
 			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -69,6 +70,7 @@ func GetHetznerScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) 
 type hetznerScenario struct {
 	version          *semver.Semver
 	containerRuntime string
+	datacenter       *kubermaticv1.DatacenterSpecHetzner
 	osSpec           apimodels.OperatingSystemSpec
 }
 
@@ -77,6 +79,7 @@ func (s *hetznerScenario) DeepCopy() *hetznerScenario {
 
 	return &hetznerScenario{
 		version:          &version,
+		datacenter:       s.datacenter.DeepCopy(),
 		containerRuntime: s.containerRuntime,
 		osSpec:           s.osSpec,
 	}
@@ -145,12 +148,11 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 }
 
 func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderHetzner, hetznertypes.RawConfig{
 		ServerType: providerconfig.ConfigVarString{Value: hetznerServerType},
+		Datacenter: providerconfig.ConfigVarString{Value: s.datacenter.Datacenter},
+		Networks:   []providerconfig.ConfigVarString{{Value: s.datacenter.Network}},
+		Location:   providerconfig.ConfigVarString{Value: s.datacenter.Location},
 	})
 	if err != nil {
 		return nil, err
