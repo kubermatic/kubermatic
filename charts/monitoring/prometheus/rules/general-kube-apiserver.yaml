@@ -120,3 +120,18 @@ groups:
           severity: critical
           resource: apiserver
           service: kubernetes
+      - alert: KubeAPIErrorBudgetBurn
+        annotations:
+          message: The API server is burning too much error budget.
+          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeapierrorbudgetburn
+          summary: The API server is burning too much error budget.
+        expr: |
+          sum(apiserver_request:burnrate1h) > (14.40 * 0.01000)
+          and
+          sum(apiserver_request:burnrate5m) > (14.40 * 0.01000)
+        for: 2m
+        labels:
+        long: 1h
+          severity: critical
+        short: 5m
+		      service: KubeAPIErrorBudget
