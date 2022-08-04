@@ -264,7 +264,6 @@ scp ${SSH_OPTS} /tmp/kubeconfig-remote root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_
 scp ${SSH_OPTS} /tmp/id_rsa.pub root@${PROXY_EXTERNAL_ADDR}:/tmp/id_rsa.pub
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
   /tmp/${BUILD_ID}/conformance-tester \
-    -worker-name=${BUILD_ID} \
     -kubeconfig=/tmp/${BUILD_ID}/kubeconfig \
     -node-ssh-pub-key=/tmp/id_rsa.pub \
     -kubermatic-nodes=3 \

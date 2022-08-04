@@ -63,10 +63,6 @@ func main() {
 
 	// setup logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	if opts.WorkerName != "" {
-		rawLog = rawLog.Named(opts.WorkerName)
-	}
-
 	log := rawLog.Sugar()
 
 	// parse our CLI flags

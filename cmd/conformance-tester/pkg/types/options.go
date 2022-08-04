@@ -66,7 +66,6 @@ type Options struct {
 	Seed                          *kubermaticv1.Seed
 	SeedRestConfig                *rest.Config
 	ClusterParallelCount          int
-	WorkerName                    string
 	HomeDir                       string
 	releasesFlag                  string
 	Versions                      []*kubermativsemver.Semver
@@ -139,7 +138,6 @@ func (o *Options) AddFlags() {
 	flag.DurationVar(&o.UserClusterPollInterval, "user-cluster-poll-interval", o.UserClusterPollInterval, "poll interval when checking user-cluster conditions")
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
-	flag.StringVar(&o.WorkerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.StringVar(&o.releasesFlag, "releases", o.releasesFlag, "a comma-separated list of Kubernetes releases (e.g. '1.24') to test")
 	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.StringVar(&o.excludeDistributionsFlag, "exclude-distributions", o.excludeDistributionsFlag, "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")

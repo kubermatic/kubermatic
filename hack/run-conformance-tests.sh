@@ -184,7 +184,6 @@ if [ -n "${NO_DOCKER:-}" ]; then
   echodate "Starting conformance-tester..."
   _build/conformance-tester $extraArgs \
     -log-format=console \
-    -worker-name="$USER" \
     -kubeconfig=$KUBECONFIG \
     -reports-root=reports \
     -kubermatic-endpoint="$endpoint" \
@@ -216,7 +215,6 @@ else
     quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24 \
     _build/conformance-tester $extraArgs \
     -log-format=console \
-    -worker-name="$USER" \
     -kubeconfig=/kubeconfig \
     -reports-root=/reports \
     -log-directory=/reports \

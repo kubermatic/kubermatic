@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/dex"
 
-	"k8s.io/apimachinery/pkg/labels"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -183,9 +183,6 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	if c.opts.NamePrefix != "" {
 		cluster.Cluster.Name = c.opts.NamePrefix + "-"
 	}
-	if c.opts.WorkerName != "" {
-		cluster.Cluster.Name += c.opts.WorkerName + "-"
-	}
 	cluster.Cluster.Name += scenario.Name() + "-"
 	cluster.Cluster.Name += rand.String(8)
 
@@ -321,54 +318,36 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 }
 
 func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
-	var (
-		selector labels.Selector
-		err      error
-	)
-
-	if c.opts.WorkerName != "" {
-		selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", c.opts.WorkerName))
-		if err != nil {
-			return fmt.Errorf("failed to parse selector: %w", err)
-		}
-	}
-
 	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
-		clusterList := &kubermaticv1.ClusterList{}
-		listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := c.opts.SeedClusterClient.List(ctx, clusterList, listOpts); err != nil {
-			log.Errorw("Listing clusters failed", zap.Error(err))
-			return false, nil
-		}
+		cl := &kubermaticv1.Cluster{}
+		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cl)
 
-		// Success!
-		if len(clusterList.Items) == 0 {
+		// gone already!
+		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
 
-		// Should never happen
-		if len(clusterList.Items) > 1 {
-			return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
-		}
-
-		// Cluster is currently being deleted
-		if clusterList.Items[0].DeletionTimestamp != nil {
+		if err != nil {
+			log.Errorw("Failed to get cluster object", zap.Error(err))
 			return false, nil
 		}
 
-		// Issue Delete call
-		log.With("cluster", clusterList.Items[0].Name).Info("Deleting user cluster now...")
+		if cl.DeletionTimestamp == nil {
+			log.With("cluster", cl.Name).Info("Deleting user cluster now...")
 
-		deleteParams := &project.DeleteClusterParams{
-			Context:   ctx,
-			ProjectID: c.opts.KubermaticProject,
-			ClusterID: clusterList.Items[0].Name,
-			DC:        c.opts.Seed.Name,
-		}
-		utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
+			deleteParams := &project.DeleteClusterParams{
+				Context:   ctx,
+				ProjectID: c.opts.KubermaticProject,
+				ClusterID: cl.Name,
+				DC:        c.opts.Seed.Name,
+			}
+			utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
 
-		if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParams, c.opts.KubermaticAuthenticator); err != nil {
-			log.Warnw("Failed to delete cluster", zap.Error(err))
+			if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParams, c.opts.KubermaticAuthenticator); err != nil {
+				log.Warnw("Failed to delete cluster", zap.Error(err))
+			}
+
+			return false, nil
 		}
 
 		return false, nil
