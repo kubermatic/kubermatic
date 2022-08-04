@@ -18,19 +18,17 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	gcetypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-
-	"k8s.io/utils/pointer"
 )
 
 // GetGCPScenarios returns a matrix of (version x operating system).
@@ -149,20 +147,27 @@ func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.
 }
 
 func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderGoogle, gcetypes.RawConfig{
-		Zone:        providerconfig.ConfigVarString{Value: s.getZone()},
-		MachineType: providerconfig.ConfigVarString{Value: "n1-standard-2"},
-		DiskType:    providerconfig.ConfigVarString{Value: "pd-standard"},
-		DiskSize:    50,
-		Preemptible: providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
-		Labels: map[string]string{
-			"kubernetes-cluster": "my-cluster",
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			GCP: &apiv1.GCPNodeSpec{
+				Zone:        s.getZone(),
+				MachineType: "n1-standard-2",
+				DiskType:    "pd-standard",
+				DiskSize:    50,
+				Preemptible: false,
+				Labels: map[string]string{
+					"kubernetes-cluster": cluster.Name,
+				},
+			},
 		},
-	})
+	}
+
+	config, err := machine.GetGCPProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderGoogle, config)
 	if err != nil {
 		return nil, err
 	}

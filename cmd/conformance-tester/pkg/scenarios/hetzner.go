@@ -21,11 +21,12 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -143,12 +144,20 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 }
 
 func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderHetzner, hetznertypes.RawConfig{
-		ServerType: providerconfig.ConfigVarString{Value: hetznerServerType},
-		Datacenter: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Hetzner.Datacenter},
-		Networks:   []providerconfig.ConfigVarString{{Value: s.datacenter.Spec.Hetzner.Network}},
-		Location:   providerconfig.ConfigVarString{Value: s.datacenter.Spec.Hetzner.Location},
-	})
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Hetzner: &apiv1.HetznerNodeSpec{
+				Type: hetznerServerType,
+			},
+		},
+	}
+
+	config, err := machine.GetHetznerProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderHetzner, config)
 	if err != nil {
 		return nil, err
 	}

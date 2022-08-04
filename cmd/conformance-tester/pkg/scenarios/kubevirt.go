@@ -18,17 +18,17 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -158,30 +158,29 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 }
 
 func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderKubeVirt, kubevirttypes.RawConfig{
-		VirtualMachine: kubevirttypes.VirtualMachine{
-			Template: kubevirttypes.Template{
-				CPUs:   providerconfig.ConfigVarString{Value: kubevirtCPUs},
-				Memory: providerconfig.ConfigVarString{Value: kubevirtMemory},
-				PrimaryDisk: kubevirttypes.PrimaryDisk{
-					OsImage: providerconfig.ConfigVarString{Value: image},
-					Disk: kubevirttypes.Disk{
-						Size:             providerconfig.ConfigVarString{Value: kubevirtDiskSize},
-						StorageClassName: providerconfig.ConfigVarString{Value: kubevirtDiskClassName},
-					},
-				},
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Kubevirt: &apiv1.KubevirtNodeSpec{
+				CPUs:                        kubevirtCPUs,
+				Memory:                      kubevirtMemory,
+				PrimaryDiskOSImage:          image,
+				PrimaryDiskSize:             kubevirtDiskSize,
+				PrimaryDiskStorageClassName: kubevirtDiskClassName,
 			},
 		},
-	})
+	}
+
+	config, err := machine.GetKubevirtProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderKubeVirt, config)
 	if err != nil {
 		return nil, err
 	}

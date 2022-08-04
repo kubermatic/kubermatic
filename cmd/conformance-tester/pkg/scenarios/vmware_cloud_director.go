@@ -18,15 +18,15 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -164,22 +164,27 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 }
 
 func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
+	osName := getOSNameFromSpec(s.osSpec)
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			VMwareCloudDirector: &apiv1.VMwareCloudDirectorNodeSpec{
+				Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[osName],
+				Catalog:          vmwareCloudDirectorCatalog,
+				CPUs:             vmwareCloudDirectorCPUs,
+				CPUCores:         vmwareCloudDirectorCPUCores,
+				MemoryMB:         vmwareCloudDirectoMemoryMB,
+				DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
+				IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
+			},
+		},
+	}
 
-	//nolint:govet
-	os := getOSNameFromSpec(s.osSpec)
+	config, err := machine.GetVMwareCloudDirectorProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, vcdtypes.RawConfig{
-		Template:         providerconfig.ConfigVarString{Value: s.datacenter.Spec.VMwareCloudDirector.Templates[os]},
-		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
-		CPUs:             vmwareCloudDirectorCPUs,
-		MemoryMB:         vmwareCloudDirectoMemoryMB,
-		CPUCores:         vmwareCloudDirectorCPUCores,
-		DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
-		IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
-	})
-
+	md, err := createMachineDeployment(num, s.version, osName, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, config)
 	if err != nil {
 		return nil, err
 	}

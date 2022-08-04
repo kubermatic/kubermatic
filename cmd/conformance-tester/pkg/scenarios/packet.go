@@ -21,11 +21,12 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	equinixmetaltypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -141,18 +142,20 @@ func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Sec
 }
 
 func (s *packetScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	facilities := []providerconfig.ConfigVarString{}
-	for _, facility := range s.datacenter.Spec.Packet.Facilities {
-		facilities = append(facilities, providerconfig.ConfigVarString{Value: facility})
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Packet: &apiv1.PacketNodeSpec{
+				InstanceType: packetInstanceType,
+			},
+		},
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderPacket, equinixmetaltypes.RawConfig{
-		InstanceType: providerconfig.ConfigVarString{Value: packetInstanceType},
-		Token:        providerconfig.ConfigVarString{Value: secrets.Packet.APIKey},
-		ProjectID:    providerconfig.ConfigVarString{Value: secrets.Packet.ProjectID},
-		Metro:        providerconfig.ConfigVarString{Value: s.datacenter.Spec.Packet.Metro},
-		Facilities:   facilities,
-	})
+	config, err := machine.GetPacketProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderPacket, config)
 	if err != nil {
 		return nil, err
 	}

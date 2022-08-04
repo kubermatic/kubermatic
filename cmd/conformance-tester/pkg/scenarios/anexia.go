@@ -21,11 +21,12 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	anexiatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -139,15 +140,24 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 }
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAnexia, anexiatypes.RawConfig{
-		Token:      providerconfig.ConfigVarString{Value: secrets.Anexia.Token},
-		TemplateID: providerconfig.ConfigVarString{Value: secrets.Anexia.TemplateID},
-		VlanID:     providerconfig.ConfigVarString{Value: secrets.Anexia.VlanID},
-		LocationID: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Anexia.LocationID},
-		DiskSize:   nodeDiskSize,
-		CPUs:       nodeCpu,
-		Memory:     nodeMemory,
-	})
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Anexia: &apiv1.AnexiaNodeSpec{
+				CPUs:       nodeCpu,
+				Memory:     nodeMemory,
+				DiskSize:   nodeDiskSize,
+				TemplateID: secrets.Anexia.TemplateID,
+				VlanID:     secrets.Anexia.VlanID,
+			},
+		},
+	}
+
+	config, err := machine.GetAnexiaProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAnexia, config)
 	if err != nil {
 		return nil, err
 	}

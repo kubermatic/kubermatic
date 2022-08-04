@@ -18,15 +18,15 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -143,24 +143,25 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets ty
 }
 
 func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// It is unfortunately not possible to convert an apimodels.NodeDeployment into anything
-	// useful for GitOps, so this function has to completely reimplement everything (most of
-	// the logic from pkg/resources/machine/common.go); since #9541 focused only on AWS, the
-	// following code is most likely incomplete and to ensure that nobody gets tripped up by
-	// that, we instead return a very clear error message right away. We leave the code stub
-	// behind so that when someone wants to implement this specific scenario for GitOps, they
-	// have a starting point.
-	return nil, errors.New("not implemented for gitops yet")
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Alibaba: &apiv1.AlibabaNodeSpec{
+				InstanceType:            "ecs.c6.xsmall",
+				DiskSize:                "40",
+				DiskType:                "cloud_efficiency",
+				VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
+				InternetMaxBandwidthOut: "10",
+				ZoneID:                  s.getZoneID(),
+			},
+		},
+	}
 
-	//nolint:govet
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAlibaba, alibabatypes.RawConfig{
-		InstanceType:            providerconfig.ConfigVarString{Value: "ecs.c6.xsmall"},
-		DiskSize:                providerconfig.ConfigVarString{Value: "40"},
-		DiskType:                providerconfig.ConfigVarString{Value: "cloud_efficiency"},
-		VSwitchID:               providerconfig.ConfigVarString{Value: "vsw-gw8g8mn4ohmj483hsylmn"},
-		InternetMaxBandwidthOut: providerconfig.ConfigVarString{Value: "10"},
-		ZoneID:                  providerconfig.ConfigVarString{Value: s.getZoneID()},
-	})
+	config, err := machine.GetAlibabaProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAlibaba, config)
 	if err != nil {
 		return nil, err
 	}

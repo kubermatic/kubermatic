@@ -18,15 +18,15 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -159,18 +159,25 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, openstacktypes.RawConfig{
-		Flavor:                    providerconfig.ConfigVarString{Value: openStackFlavor},
-		Image:                     providerconfig.ConfigVarString{Value: s.datacenter.Spec.Openstack.Images[os]},
-		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckPeriod},
-		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckTimeout},
-	})
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Openstack: &apiv1.OpenstackNodeSpec{
+				Flavor:                    openStackFlavor,
+				Image:                     s.datacenter.Spec.Openstack.Images[os],
+				InstanceReadyCheckPeriod:  openStackInstanceReadyCheckPeriod,
+				InstanceReadyCheckTimeout: openStackInstanceReadyCheckTimeout,
+			},
+		},
+	}
+
+	config, err := machine.GetOpenstackProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, config)
 	if err != nil {
 		return nil, err
 	}

@@ -21,11 +21,12 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
@@ -140,11 +141,20 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 }
 
 func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderDigitalocean, digitaloceantypes.RawConfig{
-		Size:   providerconfig.ConfigVarString{Value: dropletSize},
-		Region: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Digitalocean.Region},
-		Token:  providerconfig.ConfigVarString{Value: secrets.Digitalocean.Token},
-	})
+	nodeSpec := apiv1.NodeSpec{
+		Cloud: apiv1.NodeCloudSpec{
+			Digitalocean: &apiv1.DigitaloceanNodeSpec{
+				Size: dropletSize,
+			},
+		},
+	}
+
+	config, err := machine.GetDigitaloceanProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderDigitalocean, config)
 	if err != nil {
 		return nil, err
 	}

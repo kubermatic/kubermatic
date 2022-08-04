@@ -26,12 +26,13 @@ import (
 	"github.com/go-openapi/runtime"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
@@ -356,32 +357,21 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	result := []clusterv1alpha1.MachineDeployment{}
 
 	for _, subnet := range subnets {
-		ami := s.datacenter.Spec.AWS.Images[getOSNameFromSpec(s.osSpec)]
-
-		config := awstypes.RawConfig{
-			AMI:              providerconfig.ConfigVarString{Value: ami},
-			InstanceType:     providerconfig.ConfigVarString{Value: awsInstanceType},
-			DiskType:         providerconfig.ConfigVarString{Value: awsVolumeType},
-			DiskSize:         int64(awsVolumeSize),
-			AvailabilityZone: providerconfig.ConfigVarString{Value: *subnet.AvailabilityZone},
-			Region:           providerconfig.ConfigVarString{Value: s.datacenter.Spec.AWS.Region},
-			VpcID:            providerconfig.ConfigVarString{Value: *vpcID},
-			SubnetID:         providerconfig.ConfigVarString{Value: *subnet.SubnetId},
-			// rely on the KKP's reconciling to have filled these fields in already and
-			// the caller to have since refreshed the cluster object
-			InstanceProfile: providerconfig.ConfigVarString{Value: cluster.Spec.Cloud.AWS.InstanceProfileName},
-			SecurityGroupIDs: []providerconfig.ConfigVarString{
-				{Value: cluster.Spec.Cloud.AWS.SecurityGroupID},
+		nodeSpec := apiv1.NodeSpec{
+			Cloud: apiv1.NodeCloudSpec{
+				AWS: &apiv1.AWSNodeSpec{
+					InstanceType:     awsInstanceType,
+					VolumeType:       awsVolumeType,
+					VolumeSize:       awsVolumeSize,
+					AvailabilityZone: *subnet.AvailabilityZone,
+					SubnetID:         *subnet.SubnetId,
+				},
 			},
 		}
 
-		config.Tags = map[string]string{}
-		config.Tags["kubernetes.io/cluster/"+cluster.Name] = ""
-		config.Tags["system/cluster"] = cluster.Name
-
-		projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-		if ok {
-			config.Tags["system/project"] = projectID
+		config, err := machine.GetAWSProviderConfig(cluster, nodeSpec, s.datacenter)
+		if err != nil {
+			return nil, err
 		}
 
 		md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAWS, config)
