@@ -18,7 +18,6 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -141,12 +140,10 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 }
 
 func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderDigitalocean, digitaloceantypes.RawConfig{
-		Size: providerconfig.ConfigVarString{Value: dropletSize},
+		Size:   providerconfig.ConfigVarString{Value: dropletSize},
+		Region: providerconfig.ConfigVarString{Value: s.datacenter.Spec.Digitalocean.Region},
+		Token:  providerconfig.ConfigVarString{Value: secrets.Digitalocean.Token},
 	})
 	if err != nil {
 		return nil, err
