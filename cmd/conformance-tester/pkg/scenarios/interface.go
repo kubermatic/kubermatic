@@ -30,6 +30,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -76,6 +77,7 @@ func (s *baseScenario) OS() apimodels.OperatingSystemSpec {
 type Scenario interface {
 	Name() string
 	OS() apimodels.OperatingSystemSpec
+	Version() *semver.Semver
 	Datacenter() *kubermaticv1.Datacenter
 	ContainerRuntime() string
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
@@ -208,15 +210,39 @@ func GetScenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogg
 
 	var filteredScenarios []Scenario
 	for _, scenario := range scenarios {
-		os := getOSNameFromSpec(scenario.OS())
-
-		if opts.Distributions.Has(string(os)) && opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
+		if isValidScenario(opts, log, scenario) {
 			filteredScenarios = append(filteredScenarios, scenario)
 		}
 	}
 
 	// Shuffle scenarios - avoids timeouts caused by quota issues
 	return shuffle(filteredScenarios), nil
+}
+
+func isValidScenario(opts *types.Options, log *zap.SugaredLogger, scenario Scenario) bool {
+	// check if the CRI is enabled by the user
+	cri := scenario.ContainerRuntime()
+	if !opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
+		log.Debugw("Skipping scenario because this CRI is not enabled.", "cri", cri, "scenario", scenario.Name())
+		return false
+	}
+
+	// check if the OS is enabled by the user
+	os := getOSNameFromSpec(scenario.OS())
+	if !opts.Distributions.Has(string(os)) {
+		log.Debugw("Skipping scenario because this OS is not enabled.", "os", os, "scenario", scenario.Name())
+		return false
+	}
+
+	// apply static filters
+	clusterVersion := scenario.Version()
+	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
+	if !dockerSupported && cri == resources.ContainerRuntimeDocker {
+		log.Infow("Skipping scenario because CRI is not supported in this Kubernetes version", "cri", cri, "version", clusterVersion, "scenario", scenario.Name())
+		return false
+	}
+
+	return true
 }
 
 func shuffle(vals []Scenario) []Scenario {
