@@ -71,7 +71,7 @@ type Options struct {
 	PspEnabled                    bool
 	ScenarioOptions               sets.String
 
-	// addtional settings
+	// additional settings
 
 	ControlPlaneReadyWaitTimeout time.Duration
 	NodeReadyTimeout             time.Duration
