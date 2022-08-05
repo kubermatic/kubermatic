@@ -36,6 +36,7 @@ import (
 	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"github.com/kubermatic/machine-controller/pkg/userdata/amzn2"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
@@ -70,6 +71,9 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	}
 	if nodeSpec.OperatingSystem.RockyLinux != nil {
 		return providerconfig.OperatingSystemRockyLinux, nil
+	}
+	if nodeSpec.OperatingSystem.AmazonLinux != nil {
+		return providerconfig.OperatingSystemAmazonLinux2, nil
 	}
 
 	return "", errors.New("unknown operating system")
@@ -703,6 +707,21 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 func getRockyLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := rockylinux.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.RockyLinux.DistUpgradeOnBoot,
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getAmazonLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := amzn2.Config{
+		DistUpgradeOnBoot: nodeSpec.OperatingSystem.AmazonLinux.DistUpgradeOnBoot,
 	}
 
 	ext := &runtime.RawExtension{}

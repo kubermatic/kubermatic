@@ -22810,6 +22810,18 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "AmazonLinuxSpec": {
+      "description": "AmazonLinuxSpec amazon linux specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "Anexia": {
       "type": "object",
       "properties": {
@@ -30476,6 +30488,9 @@
       "type": "object",
       "title": "OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.",
       "properties": {
+        "amzn2": {
+          "$ref": "#/definitions/AmazonLinuxSpec"
+        },
         "centos": {
           "$ref": "#/definitions/CentOSSpec"
         },

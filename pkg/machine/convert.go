@@ -34,6 +34,7 @@ import (
 	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"github.com/kubermatic/machine-controller/pkg/userdata/amzn2"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
@@ -113,6 +114,15 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 			return nil, fmt.Errorf("failed to parse rockylinux config: %w", err)
 		}
 		operatingSystemSpec.RockyLinux = &apiv1.RockyLinuxSpec{
+			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
+		}
+
+	case providerconfig.OperatingSystemAmazonLinux2:
+		config := &amzn2.Config{}
+		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse amzn2 config: %w", err)
+		}
+		operatingSystemSpec.AmazonLinux = &apiv1.AmazonLinuxSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
 		}
 	}
