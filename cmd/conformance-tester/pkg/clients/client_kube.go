@@ -57,8 +57,12 @@ func (c *kubeClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 	return nil
 }
 
+func (c *kubeClient) log(log *zap.SugaredLogger) *zap.SugaredLogger {
+	return log.With("client", "kube")
+}
+
 func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
-	log.Info("Creating project...")
+	c.log(log).Info("Creating project...")
 
 	project := &kubermaticv1.Project{}
 	project.Name = name
@@ -90,7 +94,7 @@ func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) 
 	creators := []reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter{}
 
 	for i, key := range c.opts.PublicKeys {
-		log.Infow("Ensuring UserSSHKey...", "pubkey", string(key))
+		c.log(log).Infow("Ensuring UserSSHKey...", "pubkey", string(key))
 
 		name := fmt.Sprintf("ssh-key-%s-%d", c.opts.KubermaticProject, i+1)
 		creators = append(creators, userSSHKeyCreatorGetter(name, c.opts.KubermaticProject, key))
@@ -116,7 +120,7 @@ func userSSHKeyCreatorGetter(keyName string, project string, publicKey []byte) r
 }
 
 func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
-	log.Info("Creating cluster...")
+	c.log(log).Info("Creating cluster...")
 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
 
@@ -209,13 +213,13 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		}
 	}
 
-	log.Infof("Successfully created cluster %s", cluster.Name)
+	c.log(log).Infof("Successfully created cluster %s", cluster.Name)
 
 	return cluster, nil
 }
 
 func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	log.Info("Getting existing MachineDeployments...")
+	c.log(log).Info("Getting existing MachineDeployments...")
 
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
 	if err := userClusterClient.List(ctx, mdList); err != nil {
@@ -226,7 +230,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 	for _, md := range mdList.Items {
 		existingReplicas += int(*md.Spec.Replicas)
 	}
-	log.Infof("Found %d pre-existing node replicas", existingReplicas)
+	c.log(log).Infof("Found %d pre-existing node replicas", existingReplicas)
 
 	nodeCount := c.opts.NodeCount - existingReplicas
 	if nodeCount < 0 {
@@ -236,7 +240,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		return nil
 	}
 
-	log.Info("Preparing MachineDeployments...")
+	c.log(log).Info("Preparing MachineDeployments...")
 
 	var mds []clusterv1alpha1.MachineDeployment
 	if err := wait.PollImmediate(ctx, 3*time.Second, time.Minute, func() (transient error, terminal error) {
@@ -246,7 +250,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
 	}
 
-	log.Info("Creating MachineDeployments...")
+	c.log(log).Info("Creating MachineDeployments...")
 	for _, md := range mds {
 		if err := wait.PollImmediateLog(ctx, log, 5*time.Second, time.Minute, func() (error, error) {
 			return userClusterClient.Create(ctx, &md), nil
@@ -255,14 +259,14 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		}
 	}
 
-	log.Infof("Successfully created MachineDeployments with %d replicas in total", nodeCount)
+	c.log(log).Infof("Successfully created MachineDeployments with %d replicas in total", nodeCount)
 	return nil
 }
 
 func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
 	// if there is no timeout, we do not wait for the cluster to be gone
 	if timeout == 0 {
-		log.Info("Deleting user cluster now...")
+		c.log(log).Info("Deleting user cluster now...")
 
 		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, cluster))
 	}
@@ -281,7 +285,7 @@ func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, 
 		}
 
 		if cl.DeletionTimestamp == nil {
-			log.Info("Deleting user cluster now...")
+			c.log(log).Info("Deleting user cluster now...")
 
 			if err := c.opts.SeedClusterClient.Delete(ctx, cl); err != nil {
 				return fmt.Errorf("failed to delete cluster: %w", err), nil

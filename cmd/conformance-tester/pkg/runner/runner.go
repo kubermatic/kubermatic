@@ -59,7 +59,7 @@ type TestRunner struct {
 
 func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
-		log:       log.With("client", "api"),
+		log:       log,
 		opts:      opts,
 		kkpClient: clients.NewAPIClient(opts),
 	}
@@ -67,7 +67,7 @@ func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 
 func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
-		log:       log.With("client", "kube"),
+		log:       log,
 		opts:      opts,
 		kkpClient: clients.NewKubeClient(opts),
 	}

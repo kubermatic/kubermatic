@@ -56,23 +56,27 @@ func NewAPIClient(opts *ctypes.Options) Client {
 	}
 }
 
+func (c *apiClient) log(log *zap.SugaredLogger) *zap.SugaredLogger {
+	return log.With("client", "api")
+}
+
 func (c *apiClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 	kubermaticClient, err := utils.NewKubermaticClient(c.opts.KubermaticEndpoint)
 	if err != nil {
-		log.Fatalw("Failed to create Kubermatic API client", zap.Error(err))
+		c.log(log).Fatalw("Failed to create Kubermatic API client", zap.Error(err))
 	}
 	c.opts.KubermaticClient = kubermaticClient
 
 	if !c.opts.CreateOIDCToken {
 		if c.opts.KubermaticOIDCToken == "" {
-			log.Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
+			c.log(log).Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
 		}
 
 		c.opts.KubermaticAuthenticator = httptransport.BearerToken(c.opts.KubermaticOIDCToken)
 	} else {
 		dexClient, err := dex.NewClientFromHelmValues(c.opts.DexHelmValuesFile, "kubermatic", log)
 		if err != nil {
-			log.Fatalw("Failed to create OIDC client", zap.Error(err))
+			c.log(log).Fatalw("Failed to create OIDC client", zap.Error(err))
 		}
 
 		// OIDC credentials are passed in as environment variables instead of
@@ -83,10 +87,10 @@ func (c *apiClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 		// into the `go test` runs.
 		login, password, err := utils.OIDCCredentials()
 		if err != nil {
-			log.Fatalf("Invalid OIDC credentials: %v", err)
+			c.log(log).Fatalf("Invalid OIDC credentials: %v", err)
 		}
 
-		log.Infow("Creating login token", "login", login, "provider", dexClient.ProviderURI, "client", dexClient.ClientID)
+		c.log(log).Infow("Creating login token", "login", login, "provider", dexClient.ProviderURI, "client", dexClient.ClientID)
 
 		var token string
 
@@ -98,10 +102,10 @@ func (c *apiClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 				return err
 			},
 		); err != nil {
-			log.Fatalw("Failed to get master token", zap.Error(err))
+			c.log(log).Fatalw("Failed to get master token", zap.Error(err))
 		}
 
-		log.Info("Successfully retrieved master token")
+		c.log(log).Info("Successfully retrieved master token")
 
 		c.opts.KubermaticAuthenticator = httptransport.BearerToken(token)
 	}
@@ -110,7 +114,7 @@ func (c *apiClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 }
 
 func (c *apiClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
-	log.Info("Creating project...")
+	c.log(log).Info("Creating project...")
 
 	params := &project.CreateProjectParams{
 		Context: ctx,
@@ -134,11 +138,11 @@ func (c *apiClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, n
 	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
 		response, err := c.opts.KubermaticClient.Project.GetProject(getProjectParams, c.opts.KubermaticAuthenticator)
 		if err != nil {
-			log.Errorw("Failed to get project", zap.Error(err))
+			c.log(log).Errorw("Failed to get project", zap.Error(err))
 			return false, nil
 		}
 		if response.Payload.Status != string(kubermaticv1.ProjectActive) {
-			log.Warnw("Project not active yet", "project-status", response.Payload.Status)
+			c.log(log).Warnw("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
 		return true, nil
@@ -151,7 +155,7 @@ func (c *apiClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, n
 
 func (c *apiClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	for i, key := range c.opts.PublicKeys {
-		log.Infow("Creating UserSSHKey...", "pubkey", string(key))
+		c.log(log).Infow("Creating UserSSHKey...", "pubkey", string(key))
 
 		body := &project.CreateSSHKeyParams{
 			Context:   ctx,
@@ -174,7 +178,7 @@ func (c *apiClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) e
 }
 
 func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
-	log.Info("Creating cluster...")
+	c.log(log).Info("Creating cluster...")
 
 	cluster := scenario.APICluster(c.opts.Secrets)
 	// The cluster name must be unique per project;
@@ -250,7 +254,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 		}
 	}
 
-	log.Infof("Successfully created cluster %s", crCluster.Name)
+	c.log(log).Infof("Successfully created cluster %s", crCluster.Name)
 	return crCluster, nil
 }
 
@@ -263,7 +267,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	}
 	utils.SetupParams(nil, nodeDeploymentGetParams, 5*time.Second, 1*time.Minute)
 
-	log.Info("Getting existing NodeDeployments…")
+	c.log(log).Info("Getting existing NodeDeployments…")
 	resp, err := c.opts.KubermaticClient.Project.ListNodeDeployments(nodeDeploymentGetParams, c.opts.KubermaticAuthenticator)
 	if err != nil {
 		return fmt.Errorf("failed to get existing NodeDeployments: %w", err)
@@ -273,7 +277,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	for _, nodeDeployment := range resp.Payload {
 		existingReplicas += int(*nodeDeployment.Spec.Replicas)
 	}
-	log.Infof("Found %d pre-existing node replicas", existingReplicas)
+	c.log(log).Infof("Found %d pre-existing node replicas", existingReplicas)
 
 	nodeCount := c.opts.NodeCount - existingReplicas
 	if nodeCount < 0 {
@@ -283,13 +287,13 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 		return nil
 	}
 
-	log.Info("Preparing NodeDeployments")
+	c.log(log).Info("Preparing NodeDeployments")
 	var nodeDeployments []models.NodeDeployment
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
 		var err error
 		nodeDeployments, err = scenario.NodeDeployments(ctx, nodeCount, c.opts.Secrets)
 		if err != nil {
-			log.Warnw("Getting NodeDeployments from scenario failed", zap.Error(err))
+			c.log(log).Warnw("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil
 		}
 		return true, nil
@@ -297,7 +301,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
 	}
 
-	log.Info("Creating NodeDeployments…")
+	c.log(log).Info("Creating NodeDeployments…")
 	for _, nd := range nodeDeployments {
 		params := &project.CreateNodeDeploymentParams{
 			Context:   ctx,
@@ -313,14 +317,14 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 		}
 	}
 
-	log.Infof("Successfully created %d NodeDeployments", nodeCount)
+	c.log(log).Infof("Successfully created %d NodeDeployments", nodeCount)
 	return nil
 }
 
 func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
 	// if there is no timeout, we do not wait for the cluster to be gone
 	if timeout == 0 {
-		log.Info("Deleting user cluster now...")
+		c.log(log).Info("Deleting user cluster now...")
 
 		deleteParams := &project.DeleteClusterParams{
 			Context:   ctx,
@@ -344,12 +348,12 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 		}
 
 		if err != nil {
-			log.Errorw("Failed to get cluster object", zap.Error(err))
+			c.log(log).Errorw("Failed to get cluster object", zap.Error(err))
 			return false, nil
 		}
 
 		if cl.DeletionTimestamp == nil {
-			log.Info("Deleting user cluster now...")
+			c.log(log).Info("Deleting user cluster now...")
 
 			deleteParams := &project.DeleteClusterParams{
 				Context:   ctx,
@@ -360,7 +364,7 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 			utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
 
 			if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParams, c.opts.KubermaticAuthenticator); err != nil {
-				log.Warnw("Failed to delete cluster", zap.Error(err))
+				c.log(log).Warnw("Failed to delete cluster", zap.Error(err))
 			}
 
 			return false, nil
