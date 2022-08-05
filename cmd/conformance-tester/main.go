@@ -108,6 +108,12 @@ func main() {
 		testRunner = runner.NewAPIRunner(opts, log)
 	}
 
+	// setup runner and KKP clients
+	log.Info("Preparing project...")
+	if err := testRunner.Setup(rootCtx); err != nil {
+		log.Fatalw("Failed to setup runner", zap.Error(err))
+	}
+
 	// determine what's to do
 	scenarios, err := scenarios.NewGenerator().
 		WithCloudProviders(opts.Providers.List()...).
@@ -123,12 +129,6 @@ func main() {
 	if len(scenarios) == 0 {
 		// Fatalw() because Fatal() trips up the linter because of the previous defer.
 		log.Fatalw("No scenarios match the given criteria.")
-	}
-
-	// setup runner and KKP clients
-	log.Info("Preparing project...")
-	if err := testRunner.Setup(rootCtx); err != nil {
-		log.Fatalw("Failed to setup runner", zap.Error(err))
 	}
 
 	if err := testRunner.SetupProject(rootCtx); err != nil {
