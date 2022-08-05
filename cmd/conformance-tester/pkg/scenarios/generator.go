@@ -75,7 +75,7 @@ func (g *Generator) WithVersions(versions ...*semver.Semver) *Generator {
 
 func (g *Generator) WithContainerRuntimes(runtimes ...string) *Generator {
 	for _, runtime := range runtimes {
-		g.containerRuntimes.Insert(string(runtime))
+		g.containerRuntimes.Insert(runtime)
 	}
 	return g
 }
@@ -83,14 +83,6 @@ func (g *Generator) WithContainerRuntimes(runtimes ...string) *Generator {
 func (g *Generator) WithOSM(enable bool) *Generator {
 	g.enableOSM = enable
 	return g
-}
-
-type NewScenario struct {
-	cloudProvider    providerconfig.CloudProvider
-	operatingSystem  providerconfig.OperatingSystem
-	version          semver.Semver
-	containerRuntime string
-	datacenter       *kubermaticv1.Datacenter
 }
 
 func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
@@ -238,8 +230,20 @@ func isValidNewScenario(opts *types.Options, log *zap.SugaredLogger, scenario Sc
 	clusterVersion := scenario.Version()
 	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
 	if !dockerSupported && scenario.ContainerRuntime() == resources.ContainerRuntimeDocker {
-		scenario.Log(log).Infow("Skipping because CRI is not supported in this Kubernetes version")
+		scenario.Log(log).Infow("Skipping because CRI is not supported in this Kubernetes version.")
 		return false
+	}
+
+	if scenario.OperatingSystem() == providerconfig.OperatingSystemSLES {
+		if scenario.CloudProvider() != providerconfig.CloudProviderAWS {
+			scenario.Log(log).Infow("Skipping because OS is not supported on this cloud provider.")
+			return false
+		}
+
+		if scenario.ContainerRuntime() != resources.ContainerRuntimeDocker {
+			scenario.Log(log).Infow("Skipping because OS only supports Docker.")
+			return false
+		}
 	}
 
 	return scenario.IsValid(opts, log)

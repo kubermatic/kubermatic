@@ -121,7 +121,8 @@ func main() {
 	}
 
 	if len(scenarios) == 0 {
-		log.Fatal("No scenarios match the given criteria.")
+		// Fatalw() because Fatal() trips up the linter because of the previous defer.
+		log.Fatalw("No scenarios match the given criteria.")
 	}
 
 	// setup runner and KKP clients
