@@ -19,6 +19,7 @@ package util
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -26,11 +27,12 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 )
 
-func RetryN(maxAttempts int, f func(attempt int) error) error {
+func RetryN(delay time.Duration, maxAttempts int, f func(attempt int) error) error {
 	var err error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		err = f(attempt)
 		if err != nil {
+			time.Sleep(delay)
 			continue
 		}
 		return nil
@@ -47,13 +49,14 @@ func MeasuredRetryN(
 	//nolint:interfacer
 	attemptsMetric prometheus.Gauge,
 	log *zap.SugaredLogger,
+	delay time.Duration,
 	maxAttempts int,
 	f func(attempt int) error,
 ) func() error {
 	return func() error {
 		attempts := 0
 
-		err := RetryN(maxAttempts, func(attempt int) error {
+		err := RetryN(delay, maxAttempts, func(attempt int) error {
 			attempts++
 			metric := runtimeMetric.With(prometheus.Labels{"attempt": strconv.Itoa(attempt)})
 

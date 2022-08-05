@@ -470,6 +470,7 @@ func (r *TestRunner) testCluster(
 		metrics.PVCTestRuntimeMetric.MustCurryWith(defaultLabels),
 		metrics.PVCTestAttemptsMetric.With(defaultLabels),
 		log,
+		3*time.Second,
 		maxTestAttempts,
 		func(attempt int) error {
 			return tests.TestStorage(ctx, log, r.opts, cluster, userClusterClient, attempt)
@@ -483,6 +484,7 @@ func (r *TestRunner) testCluster(
 		metrics.LBTestRuntimeMetric.MustCurryWith(defaultLabels),
 		metrics.LBTestAttemptsMetric.With(defaultLabels),
 		log,
+		3*time.Second,
 		maxTestAttempts,
 		func(attempt int) error {
 			return tests.TestLoadBalancer(ctx, log, r.opts, cluster, userClusterClient, attempt)
@@ -493,7 +495,7 @@ func (r *TestRunner) testCluster(
 
 	// Do user cluster RBAC controller test
 	if err := util.JUnitWrapper("[KKP] Test user cluster RBAC controller", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserclusterControllerRBAC(ctx, log, r.opts, cluster, userClusterClient, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -502,7 +504,7 @@ func (r *TestRunner) testCluster(
 
 	// Do prometheus metrics available test
 	if err := util.JUnitWrapper("[KKP] Test prometheus metrics availability", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterMetrics(ctx, log, r.opts, cluster, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -511,7 +513,7 @@ func (r *TestRunner) testCluster(
 
 	// Do pod and node metrics availability test
 	if err := util.JUnitWrapper("[KKP] Test pod and node metrics availability", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterPodAndNodeMetrics(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {
@@ -520,7 +522,7 @@ func (r *TestRunner) testCluster(
 
 	// Check seccomp profiles for Pods running on user cluster
 	if err := util.JUnitWrapper("[KKP] Test pod seccomp profiles on user cluster", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterSeccompProfiles(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {
@@ -529,7 +531,7 @@ func (r *TestRunner) testCluster(
 
 	// Check security context (seccomp profiles) for control plane pods running on seed cluster
 	if err := util.JUnitWrapper("[KKP] Test pod security context on seed cluster", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterControlPlaneSecurityContext(ctx, log, r.opts, cluster)
 		})
 	}); err != nil {
@@ -538,7 +540,7 @@ func (r *TestRunner) testCluster(
 
 	// Check telemetry is working
 	if err := util.JUnitWrapper("[KKP] Test telemetry", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestTelemetry(ctx, log, r.opts)
 		})
 	}); err != nil {
