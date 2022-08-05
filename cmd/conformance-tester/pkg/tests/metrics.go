@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -127,19 +128,26 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 	log.Info("Testing user cluster pod and node metrics availability...")
 
 	// check node metrics
-	allNodeMetricsList := &v1beta1.NodeMetricsList{}
-	if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
-		return fmt.Errorf("error getting node metrics list: %w", err)
-	}
-	if len(allNodeMetricsList.Items) == 0 {
-		return fmt.Errorf("node metrics list is empty")
-	}
-
-	for _, nodeMetric := range allNodeMetricsList.Items {
-		// check a metric to see if it works
-		if nodeMetric.Usage.Memory().IsZero() {
-			return fmt.Errorf("node %q memory usage metric is 0", nodeMetric.Name)
+	err := wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
+			return fmt.Errorf("error getting node metrics list: %w", err), nil
 		}
+		if len(allNodeMetricsList.Items) == 0 {
+			return fmt.Errorf("node metrics list is empty"), nil
+		}
+
+		for _, nodeMetric := range allNodeMetricsList.Items {
+			// check a metric to see if it works
+			if nodeMetric.Usage.Memory().IsZero() {
+				return fmt.Errorf("node %q memory usage metric is 0", nodeMetric.Name), nil
+			}
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to check if test node metrics: %w", err)
 	}
 
 	// create pod to check metrics
@@ -165,11 +173,11 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 		},
 	}
 
-	if err := userClusterClient.Create(ctx, pod); err != nil {
+	if err := userClusterClient.Create(ctx, pod); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
-	err := wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err = wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		metricPod := &corev1.Pod{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, metricPod); err != nil {
 			return fmt.Errorf("failed to get test metric pod: %w", err), nil
