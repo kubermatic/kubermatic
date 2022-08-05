@@ -63,7 +63,7 @@ func main() {
 
 	// setup logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	log := rawLog.Sugar()
+	log := rawLog.Sugar().With("osm", opts.OperatingSystemManagerEnabled)
 
 	// parse our CLI flags
 	if err := opts.ParseFlags(log); err != nil {

@@ -137,10 +137,18 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	}
 
 	fmt.Println("========================== RESULT ===========================")
+	fmt.Println("Parameters:")
+	fmt.Printf("  Name Prefix.....: %q\n", r.opts.NamePrefix)
+	fmt.Printf("  OSM Enabled.....: %v\n", r.opts.OperatingSystemManagerEnabled)
+	fmt.Printf("  PSP Enabled.....: %v\n", r.opts.PspEnabled)
+	fmt.Printf("  Enabled Tests...: %v\n", r.opts.Tests.List())
+	fmt.Printf("  Scenario Options: %q\n", r.opts.ScenarioOptions)
+	fmt.Println("")
+	fmt.Println("Test results:")
 	fmt.Println(overallResultBuf.String())
 
 	if hadFailure {
-		return errors.New("some tests failed")
+		return errors.New("not all scenarios have passed all selected tests")
 	}
 
 	return nil
