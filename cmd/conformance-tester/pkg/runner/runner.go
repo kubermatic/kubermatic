@@ -142,7 +142,7 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Printf("  OSM Enabled.....: %v\n", r.opts.OperatingSystemManagerEnabled)
 	fmt.Printf("  PSP Enabled.....: %v\n", r.opts.PspEnabled)
 	fmt.Printf("  Enabled Tests...: %v\n", r.opts.Tests.List())
-	fmt.Printf("  Scenario Options: %q\n", r.opts.ScenarioOptions)
+	fmt.Printf("  Scenario Options: %v\n", r.opts.ScenarioOptions.List())
 	fmt.Println("")
 	fmt.Println("Test results:")
 	fmt.Println(overallResultBuf.String())
