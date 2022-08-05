@@ -76,7 +76,7 @@ func NewClient(clientID string, redirectURI string, providerURI string, log *zap
 func (c *Client) Login(ctx context.Context, login, password string, connector ConnectorType) (string, error) {
 	var accessToken string
 
-	err := wait.PollImmediate(3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
+	err := wait.PollImmediate(ctx, 3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
 		accessToken, transient = c.tryLogin(ctx, login, password, connector)
 		return transient, nil
 	})

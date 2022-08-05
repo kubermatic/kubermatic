@@ -110,7 +110,7 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 			return nil, fmt.Errorf("failed to create project provider: %w", err)
 		}
 
-		err = wait.PollLog(j.log, 2*time.Second, 30*time.Second, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, j.log, 2*time.Second, 30*time.Second, func() (transient error, terminal error) {
 			project, err = projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{
 				IncludeUninitialized: true,
 			})
@@ -154,7 +154,7 @@ func (j *ProjectJig) Delete(ctx context.Context, synchronous bool) error {
 	if synchronous {
 		log.Info("Waiting for project to be gone...")
 
-		err = wait.PollLog(log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
 			_, err := projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{
 				IncludeUninitialized: true,
 			})

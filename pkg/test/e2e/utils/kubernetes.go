@@ -329,7 +329,7 @@ func WaitForDeploymentReady(ctx context.Context, c ctrlruntimeclient.Client, log
 	logger := log.With("deployment", key.String())
 	logger.Info("Waiting for Deployment to be ready...")
 
-	return wait.PollImmediateLog(log, 5*time.Second, timeout, func() (error, error) {
+	return wait.PollImmediateLog(ctx, log, 5*time.Second, timeout, func() (error, error) {
 		status, err := resources.HealthyDeployment(ctx, c, key, -1)
 		if err != nil {
 			return nil, err

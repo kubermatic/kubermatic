@@ -122,7 +122,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 
 	var host string
 	log.Debug("Waiting until the Service has a public IP/Name...")
-	err := wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err := wait.Poll(ctx, 3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		currentService := &corev1.Service{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
 			return fmt.Errorf("failed to fetch Service %s/%s: %w", ns.Name, service.Name, err), nil
@@ -152,7 +152,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 
 	hostURL := fmt.Sprintf("http://%s", net.JoinHostPort(host, "80"))
 	log.Debug("Waiting until the pod is available via the LoadBalancer...")
-	err = wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err = wait.Poll(ctx, 3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		request, err := http.NewRequestWithContext(ctx, "GET", hostURL, nil)
 		if err != nil {
 			return nil, err

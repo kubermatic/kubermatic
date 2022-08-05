@@ -128,7 +128,7 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 	log.Info("Testing user cluster pod and node metrics availability...")
 
 	// check node metrics
-	err := wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err := wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
 		if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
 			return fmt.Errorf("error getting node metrics list: %w", err), nil
@@ -177,7 +177,7 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
-	err = wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err = wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		metricPod := &corev1.Pod{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, metricPod); err != nil {
 			return fmt.Errorf("failed to get test metric pod: %w", err), nil
@@ -194,7 +194,7 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 	}
 
 	// check pod metrics
-	err = wait.PollLog(log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err = wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		podMetrics := &v1beta1.PodMetrics{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, podMetrics); err != nil {
 			return fmt.Errorf("failed to get test metric pod metrics: %w", err), nil

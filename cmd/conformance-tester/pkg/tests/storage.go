@@ -139,7 +139,7 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 	}
 
 	log.Info("Waiting until the StatefulSet is ready...")
-	err := wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	err := wait.Poll(ctx, 3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		currentSet := &appsv1.StatefulSet{}
 		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
 		if err := userClusterClient.Get(ctx, name, currentSet); err != nil {

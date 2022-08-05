@@ -226,7 +226,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 
 	log.Info("Testing Hubble relay observe...")
-	err = wait.PollLog(log, 2*time.Second, 5*time.Minute, func() (error, error) {
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func() (error, error) {
 		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return fmt.Errorf("failed to dial to Hubble relay: %w", err), nil
@@ -255,7 +255,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 
 	log.Info("Testing Hubble UI observe...")
-	err = wait.PollLog(log, 2*time.Second, 5*time.Minute, func() (error, error) {
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func() (error, error) {
 		uiURL := fmt.Sprintf("http://%s", net.JoinHostPort(nodeIP, "30007"))
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uiURL, nil)
 		if err != nil {
@@ -297,7 +297,7 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 	}
 	l := labels.NewSelector().Add(*r)
 
-	return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		err = client.List(ctx, &pods, ctrlruntimeclient.InNamespace(namespace), ctrlruntimeclient.MatchingLabelsSelector{Selector: l})
 		if err != nil {

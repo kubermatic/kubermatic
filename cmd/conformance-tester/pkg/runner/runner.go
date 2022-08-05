@@ -234,7 +234,9 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	}
 
 	deleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
-		return r.kkpClient.DeleteCluster(ctx, log, cluster, deleteTimeout)
+		// use a background context to ensure that when the test is cancelled using Ctrl-C,
+		// the cleanup is still happening
+		return r.kkpClient.DeleteCluster(context.Background(), log, cluster, deleteTimeout)
 	})
 
 	return report, kerrors.NewAggregate([]error{testError, deleteError})
@@ -299,7 +301,7 @@ func (r *TestRunner) executeTests(
 	healthCheck := func() error {
 		log.Info("Waiting for cluster to be successfully reconciled...")
 
-		return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+		return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 				return err, nil
 			}
@@ -369,7 +371,7 @@ func (r *TestRunner) executeTests(
 	//         dial tcp <ciclusternodeip>:<port>:
 	//           connect: connection refused
 	// To prevent this from stopping a conformance test, we simply retry a couple of times.
-	if err := wait.PollImmediate(1*time.Second, 15*time.Second, func() (transient error, terminal error) {
+	if err := wait.PollImmediate(ctx, 1*time.Second, 15*time.Second, func() (transient error, terminal error) {
 		userClusterClient, err = r.opts.ClusterClientProvider.GetClient(ctx, cluster)
 		return err, nil
 	}); err != nil {

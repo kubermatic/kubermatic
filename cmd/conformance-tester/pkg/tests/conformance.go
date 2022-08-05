@@ -318,7 +318,7 @@ func cleanupBeforeGinkgo(
 ) error {
 	log.Info("Removing non-default webhooks...")
 
-	if err := wait.PollImmediate(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	if err := wait.PollImmediate(ctx, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
 		if err := client.List(ctx, webhookList); err != nil {
 			return fmt.Errorf("failed to list webhooks: %w", err), nil
