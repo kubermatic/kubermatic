@@ -136,8 +136,8 @@ func (s *Semver) MajorMinor() string {
 	return fmt.Sprintf("%d.%d", sver.Major(), sver.Minor())
 }
 
-func (s *Semver) DeepCopy() Semver {
-	if s == nil || s.Semver() == nil {
+func (s Semver) DeepCopy() Semver {
+	if s.Semver() == nil {
 		return ""
 	}
 
