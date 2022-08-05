@@ -316,7 +316,7 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 		}
 	case nd.Spec.Template.OperatingSystem.AmazonLinux != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemAmazonLinux2
-		osExt, err = getRockyLinuxOperatingSystemSpec(nd.Spec.Template)
+		osExt, err = getAmazonLinuxOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
 			return err
 		}
