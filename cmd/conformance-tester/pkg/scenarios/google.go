@@ -153,5 +153,5 @@ func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets 
 }
 
 func (s *googleScenario) getZone() string {
-	return fmt.Sprintf("%s%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
+	return fmt.Sprintf("%s-%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
 }
