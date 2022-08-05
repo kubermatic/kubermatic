@@ -138,7 +138,10 @@ func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec,
 
 	case providerconfig.OperatingSystemFlatcar:
 		return &apimodels.OperatingSystemSpec{
-			Flatcar: &apimodels.FlatcarSpec{},
+			Flatcar: &apimodels.FlatcarSpec{
+				// Otherwise the nodes restart directly after creation - bad for tests
+				DisableAutoUpdate: true,
+			},
 		}, nil
 
 	case providerconfig.OperatingSystemRockyLinux:

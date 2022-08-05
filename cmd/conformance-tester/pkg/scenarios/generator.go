@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -201,11 +200,9 @@ func providerScenario(
 	case providerconfig.CloudProviderVMwareCloudDirector:
 		return &vmwareCloudDirectorScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderVsphere:
-		options := sets.NewString(strings.Split(opts.ScenarioOptions, ",")...)
-
 		scenario := &vSphereScenario{baseScenario: base}
-		scenario.customFolder = options.Has("custom-folder")
-		scenario.datastoreCluster = options.Has("datastore-cluster")
+		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
+		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")
 
 		return scenario, nil
 	default:

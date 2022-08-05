@@ -23,7 +23,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strings"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -38,6 +37,7 @@ import (
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -47,67 +47,81 @@ import (
 
 // Options represent combination of flags and ENV options.
 type Options struct {
-	Client                        string
-	NamePrefix                    string
-	providersFlag                 string
-	Providers                     sets.String
-	ControlPlaneReadyWaitTimeout  time.Duration
-	NodeReadyTimeout              time.Duration
-	CustomTestTimeout             time.Duration
-	UserClusterPollInterval       time.Duration
-	DeleteClusterAfterTests       bool
-	WaitForClusterDeletion        bool
-	NodeCount                     int
-	PublicKeys                    [][]byte
-	ReportsRoot                   string
-	LogDirectory                  string
-	SeedClusterClient             ctrlruntimeclient.Client
-	SeedGeneratedClient           kubernetes.Interface
-	ClusterClientProvider         *clusterclient.Provider
-	RepoRoot                      string
-	Seed                          *kubermaticv1.Seed
-	SeedRestConfig                *rest.Config
-	ClusterParallelCount          int
-	HomeDir                       string
-	releasesFlag                  string
-	Versions                      []*kubermativsemver.Semver
-	distributionsFlag             string
-	excludeDistributionsFlag      string
-	Distributions                 sets.String
-	testsFlag                     string
-	excludeTestsFlag              string
-	Tests                         sets.String
-	containerRuntimesFlag         string
-	ContainerRuntimes             sets.String
-	ExistingClusterLabel          string
-	PspEnabled                    bool
-	CreateOIDCToken               bool
-	DexHelmValuesFile             string
-	KubermaticNamespace           string
-	KubermaticEndpoint            string
-	KubermaticSeedName            string
-	KubermaticProject             string
-	KubermaticOIDCToken           string
-	KubermaticClient              *apiclient.KubermaticKubernetesPlatformAPI
-	KubermaticAuthenticator       runtime.ClientAuthInfoWriter
-	KubermaticConfiguration       *kubermaticv1.KubermaticConfiguration
-	ScenarioOptions               string
-	PushgatewayEndpoint           string
+	Client     string
+	NamePrefix string
+
+	// these flags control the test scenario matrix;
+	// the Enabled... and Exclude... sets are combined
+	// together to result in the final ... set
+
+	Providers            sets.String
+	Releases             sets.String
+	Versions             []*kubermativsemver.Semver
+	EnableDistributions  sets.String
+	ExcludeDistributions sets.String
+	Distributions        sets.String
+	EnableTests          sets.String
+	ExcludeTests         sets.String
+	Tests                sets.String
+	ContainerRuntimes    sets.String
+
+	// additional settings identical for all scenarios
+
 	OperatingSystemManagerEnabled bool
+	PspEnabled                    bool
+	ScenarioOptions               sets.String
+
+	// addtional settings
+
+	ControlPlaneReadyWaitTimeout time.Duration
+	NodeReadyTimeout             time.Duration
+	CustomTestTimeout            time.Duration
+	UserClusterPollInterval      time.Duration
+	DeleteClusterAfterTests      bool
+	WaitForClusterDeletion       bool
+	NodeCount                    int
+	PublicKeys                   [][]byte
+	ReportsRoot                  string
+	LogDirectory                 string
+	SeedClusterClient            ctrlruntimeclient.Client
+	SeedGeneratedClient          kubernetes.Interface
+	ClusterClientProvider        *clusterclient.Provider
+	RepoRoot                     string
+	Seed                         *kubermaticv1.Seed
+	SeedRestConfig               *rest.Config
+	ClusterParallelCount         int
+	HomeDir                      string
+	ExistingClusterLabel         string
+	CreateOIDCToken              bool
+	DexHelmValuesFile            string
+	KubermaticNamespace          string
+	KubermaticEndpoint           string
+	KubermaticSeedName           string
+	KubermaticProject            string
+	KubermaticOIDCToken          string
+	KubermaticClient             *apiclient.KubermaticKubernetesPlatformAPI
+	KubermaticAuthenticator      runtime.ClientAuthInfoWriter
+	KubermaticConfiguration      *kubermaticv1.KubermaticConfiguration
+	PushgatewayEndpoint          string
 
 	Secrets Secrets
 }
 
 func NewDefaultOptions() *Options {
 	return &Options{
-		Client:                       "api",
-		providersFlag:                strings.Join(AllProviders.List(), ","),
-		releasesFlag:                 strings.Join(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions), ","),
-		PublicKeys:                   [][]byte{},
-		Versions:                     []*kubermativsemver.Semver{},
+		Client:                       "kube",
+		ScenarioOptions:              sets.NewString(),
+		Providers:                    sets.NewString(),
+		Releases:                     sets.NewString(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions)...),
+		ContainerRuntimes:            sets.NewString(resources.ContainerRuntimeContainerd),
+		EnableDistributions:          sets.NewString(),
+		ExcludeDistributions:         sets.NewString(),
+		Distributions:                sets.NewString(),
+		EnableTests:                  sets.NewString(),
+		ExcludeTests:                 sets.NewString(),
+		Tests:                        sets.NewString(),
 		KubermaticNamespace:          "kubermatic",
 		KubermaticSeedName:           "kubermatic",
-		containerRuntimesFlag:        resources.ContainerRuntimeContainerd,
 		ControlPlaneReadyWaitTimeout: 10 * time.Minute,
 		NodeReadyTimeout:             20 * time.Minute,
 		CustomTestTimeout:            10 * time.Minute,
@@ -125,8 +139,15 @@ func (o *Options) AddFlags() {
 
 	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `kube`")
 	flag.StringVar(&o.ExistingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
-	flag.StringVar(&o.providersFlag, "providers", o.providersFlag, "comma separated list of providers to test")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
+	flag.Var(flagopts.SetFlag(o.Providers), "providers", "Comma-separated list of providers to test")
+	flag.Var(flagopts.SetFlag(o.Releases), "releases", "Comma-separated list of Kubernetes releases (e.g. '1.24') to test")
+	flag.Var(flagopts.SetFlag(o.ContainerRuntimes), "container-runtimes", "Comma-separated list of container runtimes to test")
+	flag.Var(flagopts.SetFlag(o.EnableDistributions), "distributions", "Comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
+	flag.Var(flagopts.SetFlag(o.ExcludeDistributions), "exclude-distributions", "Comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
+	flag.Var(flagopts.SetFlag(o.EnableTests), "tests", "Comma-separated list of enabled tests (cannot be used in conjunction with -exclude-tests)")
+	flag.Var(flagopts.SetFlag(o.ExcludeTests), "exclude-tests", "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
+	flag.Var(flagopts.SetFlag(o.ScenarioOptions), "scenario-options", "Comma-separated list of additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&o.RepoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
 	flag.StringVar(&o.KubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
 	flag.StringVar(&o.KubermaticProject, "kubermatic-project", "", "Kubermatic project to use; leave empty to create a new one")
@@ -145,17 +166,10 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.BoolVar(&o.WaitForClusterDeletion, "wait-for-cluster-deletion", true, "wait for the cluster deletion to have finished")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
-	flag.StringVar(&o.releasesFlag, "releases", o.releasesFlag, "a comma-separated list of Kubernetes releases (e.g. '1.24') to test")
-	flag.StringVar(&o.distributionsFlag, "distributions", o.distributionsFlag, "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
-	flag.StringVar(&o.excludeDistributionsFlag, "exclude-distributions", o.excludeDistributionsFlag, "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
-	flag.StringVar(&o.testsFlag, "tests", o.testsFlag, "Comma-separated list of enabled tests (cannot be used in conjunction with -exclude-tests)")
-	flag.StringVar(&o.excludeTestsFlag, "exclude-tests", o.excludeTestsFlag, "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
-	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
-	flag.StringVar(&o.containerRuntimesFlag, "container-runtimes", o.containerRuntimesFlag, "Comma-separated list of container runtimes to test")
-	flag.StringVar(&o.ScenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
-	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", false, "When set, enables Operating System Manager in the user cluster")
+	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
+	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 	o.Secrets.AddFlags()
 }
 
@@ -168,12 +182,13 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 
-	if o.containerRuntimesFlag == "" {
-		return errors.New("no -container-runtimes given")
+	// restrict to known container runtimes
+	o.ContainerRuntimes = sets.NewString(resources.ContainerRuntimeDocker, resources.ContainerRuntimeContainerd).Intersection(o.ContainerRuntimes)
+	if o.Providers.Len() == 0 {
+		return errors.New("no container runtime was enabled")
 	}
-	o.ContainerRuntimes = sets.NewString(strings.Split(o.containerRuntimesFlag, ",")...)
 
-	o.Providers = AllProviders.Intersection(sets.NewString(strings.Split(o.providersFlag, ",")...))
+	o.Providers = AllProviders.Intersection(o.Providers)
 	if o.Providers.Len() == 0 {
 		return errors.New("no cloud provider was enabled")
 	}
@@ -188,13 +203,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		log.Warn("All tests have been disabled, will only test cluster creation and whether nodes come up successfully.")
 	}
 
-	o.Versions = []*kubermativsemver.Semver{}
-	for _, release := range strings.Split(o.releasesFlag, ",") {
-		// skip bogus/empty versions
-		if strings.TrimSpace(release) == "" {
-			continue
-		}
-
+	for _, release := range o.Releases.List() {
 		version := test.LatestKubernetesVersionForRelease(release, nil)
 		if version == nil {
 			return fmt.Errorf("no version found for release %q", release)
@@ -206,8 +215,8 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	// periodics do not specify a version at all and just rely on us auto-determining
 	// the most recent stable (stable = latest-1) supported Kubernetes version
 	if len(o.Versions) == 0 {
-		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
 		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
+		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
 	}
 
 	o.Distributions, err = o.effectiveDistributions()
@@ -245,62 +254,47 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 		all.Insert(string(os))
 	}
 
-	if o.distributionsFlag == "" && o.excludeDistributionsFlag == "" {
-		return nil, fmt.Errorf("either -distributions or -exclude-distributions must be given (each is a comma-separated list of %v)", all.List())
-	}
-
-	if o.distributionsFlag != "" && o.excludeDistributionsFlag != "" {
-		return nil, errors.New("-distributions and -exclude-distributions must not be given at the same time")
-	}
-
-	var chosen sets.String
-
-	if o.distributionsFlag != "" {
-		chosen = sets.NewString(strings.Split(o.distributionsFlag, ",")...)
-
-		unsupported := chosen.Difference(all)
-		if unsupported.Len() > 0 {
-			return nil, fmt.Errorf("unknown distributions: %v", unsupported.List())
-		}
-	} else {
-		excluded := sets.NewString(strings.Split(o.excludeDistributionsFlag, ",")...)
-		chosen = all.Difference(excluded)
-	}
-
-	if chosen.Len() == 0 {
-		return nil, errors.New("no distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
-	}
-
-	return chosen, nil
+	return combineSets(o.EnableDistributions, o.ExcludeDistributions, all, "distributions")
 }
 
 func (o *Options) effectiveTests() (sets.String, error) {
 	// Do not force all scripts to keep a list of all tests, just default to running all tests
 	// when no relevant CLI flag was given.
-	if o.testsFlag == "" && o.excludeTestsFlag == "" {
+	if o.EnableTests.Len() == 0 && o.ExcludeTests.Len() == 0 {
 		return AllTests, nil
 	}
 
-	if o.testsFlag != "" && o.excludeTestsFlag != "" {
-		return nil, errors.New("-tests and -exclude-tests must not be given at the same time")
+	// Make it more comfortable to disable all custom tests.
+	if o.EnableTests.Len() == 0 && o.ExcludeTests.Has("all") {
+		return sets.NewString(), nil
+	}
+
+	return combineSets(o.EnableTests, o.ExcludeTests, AllTests, "tests")
+}
+
+func combineSets(include, exclude, all sets.String, flagname string) (sets.String, error) {
+	if include.Len() == 0 && exclude.Len() == 0 {
+		return nil, fmt.Errorf("either -%s or -exclude-%s must be given (each is a comma-separated list of %v)", flagname, flagname, all.List())
+	}
+
+	if include.Len() > 0 && exclude.Len() > 0 {
+		return nil, fmt.Errorf("-%s and -exclude-%s must not be given at the same time", flagname, flagname)
 	}
 
 	var chosen sets.String
 
-	if o.testsFlag != "" {
-		chosen = sets.NewString(strings.Split(o.testsFlag, ",")...)
+	if include.Len() > 0 {
+		chosen = include
 
-		unsupported := chosen.Difference(AllTests)
-		if unsupported.Len() > 0 {
-			return nil, fmt.Errorf("unknown tests: %v", unsupported.List())
+		if unsupported := chosen.Difference(all); unsupported.Len() > 0 {
+			return nil, fmt.Errorf("unknown %s: %v", flagname, unsupported.List())
 		}
 	} else {
-		if o.excludeTestsFlag == "all" {
-			return sets.NewString(), nil
-		}
+		chosen = all.Difference(exclude)
+	}
 
-		excluded := sets.NewString(strings.Split(o.excludeTestsFlag, ",")...)
-		chosen = AllTests.Difference(excluded)
+	if chosen.Len() == 0 {
+		return nil, fmt.Errorf("no %s to use in tests remained after evaluating -%s and -exclude-%s", flagname, flagname, flagname)
 	}
 
 	return chosen, nil
