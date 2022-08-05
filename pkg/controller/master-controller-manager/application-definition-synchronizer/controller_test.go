@@ -139,10 +139,6 @@ func generateApplicationDef(name string, deleted bool) *appskubermaticv1.Applica
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "version 1",
-					Constraints: appskubermaticv1.ApplicationConstraints{
-						K8sVersion: "> 1.0.0",
-						KKPVersion: "> 1.1.1",
-					},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{

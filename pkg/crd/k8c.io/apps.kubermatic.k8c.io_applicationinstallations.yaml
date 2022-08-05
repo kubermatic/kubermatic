@@ -99,23 +99,6 @@ spec:
                 description: ApplicationVersion contains information installing /
                   removing application
                 properties:
-                  constraints:
-                    description: Constraints defined criteria that a user cluster
-                      must satisfy for the application to be installed
-                    properties:
-                      k8sVersion:
-                        description: Version of K8s version that a user cluster must
-                          satisfy for the application to be installed. Wildcards are
-                          allowed  e.g. "1.18.*" Range are allowed e.g." >= 1.19.0,
-                          < 1.19.15"
-                        type: string
-                      kkpVersion:
-                        description: Version of KKP version that a user cluster must
-                          satisfy for the application to be installed. Wildcards are
-                          allowed  e.g. "2.18.*" Range are allowed e.g.">= 2.16, <
-                          2.18.0"
-                        type: string
-                    type: object
                   template:
                     description: Template defines how application is installed (source
                       provenance, Method...)

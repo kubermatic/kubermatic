@@ -108,10 +108,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "1.0.0",
-					Constraints: appskubermaticv1.ApplicationConstraints{
-						K8sVersion: "> 1.19",
-						KKPVersion: "> 2.0",
-					},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
@@ -126,10 +122,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 				},
 				{
 					Version: "2.0.0",
-					Constraints: appskubermaticv1.ApplicationConstraints{
-						K8sVersion: ">= 1.21",
-						KKPVersion: "> 2.0",
-					},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{

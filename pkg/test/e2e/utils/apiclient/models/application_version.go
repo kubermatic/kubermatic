@@ -21,9 +21,6 @@ type ApplicationVersion struct {
 	// Version of the application (eg v1.2.3)
 	Version string `json:"version,omitempty"`
 
-	// constraints
-	Constraints *ApplicationConstraints `json:"constraints,omitempty"`
-
 	// template
 	Template *ApplicationTemplate `json:"template,omitempty"`
 }
@@ -32,10 +29,6 @@ type ApplicationVersion struct {
 func (m *ApplicationVersion) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateConstraints(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateTemplate(formats); err != nil {
 		res = append(res, err)
 	}
@@ -43,25 +36,6 @@ func (m *ApplicationVersion) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ApplicationVersion) validateConstraints(formats strfmt.Registry) error {
-	if swag.IsZero(m.Constraints) { // not required
-		return nil
-	}
-
-	if m.Constraints != nil {
-		if err := m.Constraints.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("constraints")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("constraints")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -88,10 +62,6 @@ func (m *ApplicationVersion) validateTemplate(formats strfmt.Registry) error {
 func (m *ApplicationVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateConstraints(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateTemplate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -99,22 +69,6 @@ func (m *ApplicationVersion) ContextValidate(ctx context.Context, formats strfmt
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ApplicationVersion) contextValidateConstraints(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Constraints != nil {
-		if err := m.Constraints.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("constraints")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("constraints")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 
