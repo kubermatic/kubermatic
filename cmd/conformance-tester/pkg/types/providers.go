@@ -16,6 +16,24 @@ limitations under the License.
 
 package types
 
-import "k8s.io/apimachinery/pkg/util/sets"
+import (
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-var AllProviders = sets.NewString("anexia", "aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix", "vmwareclouddirector")
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+var AllProviders = sets.NewString(
+	string(providerconfig.CloudProviderAWS),
+	string(providerconfig.CloudProviderAlibaba),
+	string(providerconfig.CloudProviderAnexia),
+	string(providerconfig.CloudProviderAzure),
+	string(providerconfig.CloudProviderDigitalocean),
+	string(providerconfig.CloudProviderGoogle),
+	string(providerconfig.CloudProviderHetzner),
+	string(providerconfig.CloudProviderKubeVirt),
+	string(providerconfig.CloudProviderNutanix),
+	string(providerconfig.CloudProviderOpenstack),
+	string(providerconfig.CloudProviderPacket),
+	string(providerconfig.CloudProviderVMwareCloudDirector),
+	string(providerconfig.CloudProviderVsphere),
+)

@@ -184,7 +184,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 
 	// restrict to known container runtimes
 	o.ContainerRuntimes = sets.NewString(resources.ContainerRuntimeDocker, resources.ContainerRuntimeContainerd).Intersection(o.ContainerRuntimes)
-	if o.Providers.Len() == 0 {
+	if o.ContainerRuntimes.Len() == 0 {
 		return errors.New("no container runtime was enabled")
 	}
 
