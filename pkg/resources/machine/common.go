@@ -706,18 +706,9 @@ func getRockyLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExte
 }
 
 func getAmazonLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := amzn2.Config{
+	return EncodeAsRawExtension(amzn2.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.AmazonLinux.DistUpgradeOnBoot,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	})
 }
 
 // defaultIfEmpty returns the given value if not empty or the default value
