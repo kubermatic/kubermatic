@@ -168,7 +168,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: "ce"
             - name: EXCLUDE_TESTS
-              value: "conformance"
+              value: "all"
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: DISTRIBUTIONS

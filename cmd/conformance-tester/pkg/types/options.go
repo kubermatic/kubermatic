@@ -295,6 +295,10 @@ func (o *Options) effectiveTests() (sets.String, error) {
 			return nil, fmt.Errorf("unknown tests: %v", unsupported.List())
 		}
 	} else {
+		if o.excludeTestsFlag == "all" {
+			return sets.NewString(), nil
+		}
+
 		excluded := sets.NewString(strings.Split(o.excludeTestsFlag, ",")...)
 		chosen = AllTests.Difference(excluded)
 	}

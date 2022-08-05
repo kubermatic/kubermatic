@@ -88,7 +88,7 @@ presubmits:
             - name: KUBERMATIC_PSP_ENABLED
               value: "true"
             - name: EXCLUDE_TESTS
-              value: "conformance,storage,loadbalancer"
+              value: "all"
             - name: SETUP_MODE
               value: "kube"
             - name: SERVICE_ACCOUNT_KEY
