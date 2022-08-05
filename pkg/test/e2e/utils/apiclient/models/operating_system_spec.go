@@ -18,6 +18,9 @@ import (
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
 
+	// amzn2
+	Amzn2 *AmazonLinuxSpec `json:"amzn2,omitempty"`
+
 	// centos
 	Centos *CentOSSpec `json:"centos,omitempty"`
 
@@ -40,6 +43,10 @@ type OperatingSystemSpec struct {
 // Validate validates this operating system spec
 func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAmzn2(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateCentos(formats); err != nil {
 		res = append(res, err)
@@ -68,6 +75,25 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *OperatingSystemSpec) validateAmzn2(formats strfmt.Registry) error {
+	if swag.IsZero(m.Amzn2) { // not required
+		return nil
+	}
+
+	if m.Amzn2 != nil {
+		if err := m.Amzn2.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("amzn2")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("amzn2")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -189,6 +215,10 @@ func (m *OperatingSystemSpec) validateUbuntu(formats strfmt.Registry) error {
 func (m *OperatingSystemSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAmzn2(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCentos(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -216,6 +246,22 @@ func (m *OperatingSystemSpec) ContextValidate(ctx context.Context, formats strfm
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *OperatingSystemSpec) contextValidateAmzn2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Amzn2 != nil {
+		if err := m.Amzn2.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("amzn2")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("amzn2")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

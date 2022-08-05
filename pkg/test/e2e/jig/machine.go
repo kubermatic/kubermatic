@@ -31,6 +31,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
@@ -442,6 +443,8 @@ func (j *MachineJig) determineOperatingSystem() (providerconfig.OperatingSystem,
 		return providerconfig.OperatingSystemSLES, nil
 	case ubuntu.Config:
 		return providerconfig.OperatingSystemUbuntu, nil
+	case amzn2.Config:
+		return providerconfig.OperatingSystemAmazonLinux2, nil
 	}
 
 	return "", errors.New("cannot determine OS from the given osSpec")
