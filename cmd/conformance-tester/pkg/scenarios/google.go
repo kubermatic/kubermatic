@@ -20,7 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -30,6 +33,19 @@ import (
 
 type googleScenario struct {
 	baseScenario
+}
+
+func (s *googleScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
+	if !s.baseScenario.IsValid(opts, log) {
+		return false
+	}
+
+	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
+		s.Log(log).Debug("Skipping because provider only supports Ubuntu.")
+		return false
+	}
+
+	return true
 }
 
 func (s *googleScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
