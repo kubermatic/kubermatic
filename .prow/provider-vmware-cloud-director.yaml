@@ -40,6 +40,8 @@ presubmits:
               value: "vmwareclouddirector"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

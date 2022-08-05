@@ -40,6 +40,8 @@ presubmits:
               value: "gcp"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -87,6 +89,8 @@ presubmits:
               value: "true"
             - name: EXCLUDE_TESTS
               value: "conformance,storage,loadbalancer"
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
