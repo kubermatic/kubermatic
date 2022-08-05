@@ -37,7 +37,7 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: PROVIDER
-              value: "gcp"
+              value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SETUP_MODE
@@ -82,7 +82,7 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: PROVIDER
-              value: "gcp"
+              value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: KUBERMATIC_PSP_ENABLED

@@ -37,7 +37,7 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: PROVIDER
-              value: "vmwareclouddirector"
+              value: "vmware-cloud-director"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SETUP_MODE

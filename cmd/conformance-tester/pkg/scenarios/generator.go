@@ -186,7 +186,7 @@ func providerScenario(
 	case providerconfig.CloudProviderDigitalocean:
 		return &digitaloceanScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderGoogle:
-		return &gcpScenario{baseScenario: base}, nil
+		return &googleScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderHetzner:
 		return &hetznerScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderKubeVirt:

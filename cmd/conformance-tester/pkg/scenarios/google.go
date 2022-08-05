@@ -28,11 +28,11 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-type gcpScenario struct {
+type googleScenario struct {
 	baseScenario
 }
 
-func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
+func (s *googleScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
@@ -51,7 +51,7 @@ func (s *gcpScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 	}
 }
 
-func (s *gcpScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
@@ -66,7 +66,7 @@ func (s *gcpScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	}
 }
 
-func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *googleScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 
 	osSpec, err := s.APIOperatingSystemSpec()
@@ -101,7 +101,7 @@ func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.
 	}, nil
 }
 
-func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	osSpec, err := s.OperatingSystemSpec()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build OS spec: %w", err)
@@ -136,6 +136,6 @@ func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets typ
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *gcpScenario) getZone() string {
+func (s *googleScenario) getZone() string {
 	return fmt.Sprintf("%s%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
 }

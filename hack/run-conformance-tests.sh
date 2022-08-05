@@ -100,6 +100,11 @@ digitalocean)
     -digitalocean-kkp-datacenter=do-ams3"
   ;;
 
+gce)
+  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT
+    -gcp-kkp-datacenter=gcp-westeurope"
+  ;;
+
 gcp)
   extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT
     -gcp-kkp-datacenter=gcp-westeurope"
