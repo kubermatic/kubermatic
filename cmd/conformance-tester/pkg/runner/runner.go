@@ -210,7 +210,7 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 
 	// We need the closure to defer the evaluation of the time.Since(totalStart) call
 	defer func() {
-		log.Infof("Finished testing cluster after %s", time.Since(totalStart))
+		log.Infof("Finished testing cluster after %s", time.Since(totalStart).Round(time.Second))
 	}()
 
 	// Always write junit to disk

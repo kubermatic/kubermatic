@@ -91,7 +91,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 		return nil, err
 	}
 
-	log.Infow("Control plane is ready", "duration", time.Since(started))
+	log.Infow("Control plane is ready", "duration", time.Since(started).Round(time.Second))
 	return cluster, nil
 }
 
@@ -137,7 +137,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 		return err
 	}
 
-	log.Infow("All pods became ready", "duration", time.Since(started))
+	log.Infow("All pods became ready", "duration", time.Since(started).Round(time.Second))
 
 	return nil
 }
@@ -173,7 +173,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All machines joined the cluster", "duration", elapsed)
+		log.Infow("All machines joined the cluster", "duration", elapsed.Round(time.Second))
 	}
 
 	return timeout - elapsed, err
@@ -209,7 +209,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All nodes became ready", "duration", elapsed)
+		log.Infow("All nodes became ready", "duration", elapsed.Round(time.Second))
 	}
 
 	return timeout - elapsed, err
