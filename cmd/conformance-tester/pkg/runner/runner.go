@@ -138,6 +138,7 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 	fmt.Println("========================== RESULT ===========================")
 	fmt.Println("Parameters:")
+	fmt.Printf("  KKP Version.....: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
 	fmt.Printf("  Name Prefix.....: %q\n", r.opts.NamePrefix)
 	fmt.Printf("  OSM Enabled.....: %v\n", r.opts.OperatingSystemManagerEnabled)
 	fmt.Printf("  PSP Enabled.....: %v\n", r.opts.PspEnabled)
