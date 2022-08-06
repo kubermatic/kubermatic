@@ -110,10 +110,23 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 	close(scenariosCh)
 
+	success := 0
+	failures := 0
+	remaining := len(testScenarios)
+
 	var results []testResult
 	for range testScenarios {
-		results = append(results, <-resultsCh)
-		r.log.Infof("Finished %d/%d scenarios", len(results), len(testScenarios))
+		result := <-resultsCh
+
+		remaining--
+		if result.Passed() {
+			success++
+		} else {
+			failures++
+		}
+
+		results = append(results, result)
+		r.log.Infof("Scenario finished.", "successful", success, "failed", failures, "remaining", remaining)
 	}
 
 	r.log.Info("All scenarios have finished.")
