@@ -28,10 +28,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var noStatusUodate util.StatusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
-	// NO OP
-}
-
 // ApplicationInstallerRecorder is a fake ApplicationInstaller that records calls to apply and delete for testing assertions.
 type ApplicationInstallerRecorder struct {
 	// DownloadEvents stores the call to download function. Key is the name of the applicationInstallation.
@@ -55,12 +51,12 @@ func (a *ApplicationInstallerRecorder) DonwloadSource(ctx context.Context, log *
 
 func (a *ApplicationInstallerRecorder) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
 	a.ApplyEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
-	return noStatusUodate, nil
+	return util.NoStatusUpdate, nil
 }
 
 func (a *ApplicationInstallerRecorder) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	a.DeleteEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
-	return noStatusUodate, nil
+	return util.NoStatusUpdate, nil
 }
 
 // ApplicationInstallerLogger is a fake ApplicationInstaller that just logs actions. it's used for the development of the controller.
@@ -77,10 +73,10 @@ func (a ApplicationInstallerLogger) DonwloadSource(ctx context.Context, log *zap
 }
 func (a ApplicationInstallerLogger) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	log.Debugf("Install application %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
-	return noStatusUodate, nil
+	return util.NoStatusUpdate, nil
 }
 
 func (a ApplicationInstallerLogger) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	log.Debugf("Uninstall application %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
-	return noStatusUodate, nil
+	return util.NoStatusUpdate, nil
 }
