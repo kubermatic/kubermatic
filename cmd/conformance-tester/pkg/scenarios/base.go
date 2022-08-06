@@ -47,6 +47,7 @@ type Scenario interface {
 	Datacenter() *kubermaticv1.Datacenter
 	Name() string
 	Log(log *zap.SugaredLogger) *zap.SugaredLogger
+	NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger
 	IsValid(opts *types.Options, log *zap.SugaredLogger) bool
 
 	// these are implemented per provider
@@ -95,6 +96,10 @@ func (s *baseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 		"version", s.version.String(),
 		"cri", s.containerRuntime,
 	)
+}
+
+func (s *baseScenario) NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger {
+	return log.With("scenario", s.Name())
 }
 
 func (s *baseScenario) Name() string {

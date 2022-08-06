@@ -17,13 +17,13 @@ limitations under the License.
 package runner
 
 import (
-	"bytes"
 	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/onsi/ginkgo/reporters"
@@ -98,12 +98,11 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	scenariosCh := make(chan scenarios.Scenario, len(testScenarios))
 	resultsCh := make(chan testResult, len(testScenarios))
 
-	r.log.Info("Test suite:")
+	r.log.Infow("Test suite:", "total", len(testScenarios))
 	for _, scenario := range testScenarios {
-		scenario.Log(r.log).Info("Scenario")
+		scenario.NamedLog(scenario.Log(r.log)).Info("Scenario")
 		scenariosCh <- scenario
 	}
-	r.log.Infof("Total: %d tests", len(testScenarios))
 
 	for i := 1; i <= r.opts.ClusterParallelCount; i++ {
 		go r.scenarioWorker(ctx, scenariosCh, resultsCh)
@@ -114,28 +113,18 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	var results []testResult
 	for range testScenarios {
 		results = append(results, <-resultsCh)
-		r.log.Infof("Finished %d/%d test cases", len(results), len(testScenarios))
+		r.log.Infof("Finished %d/%d scenarios", len(results), len(testScenarios))
 	}
 
-	overallResultBuf := &bytes.Buffer{}
-	hadFailure := false
-	for _, result := range results {
-		prefix := "PASS"
-		if !result.Passed() {
-			prefix = "FAIL"
-			hadFailure = true
-		}
-		scenarioResultMsg := fmt.Sprintf("[%s] - %s", prefix, result.scenario.Name())
-		if result.err != nil {
-			scenarioResultMsg = fmt.Sprintf("%s : %v", scenarioResultMsg, result.err)
-		}
+	r.log.Info("All scenarios have finished.")
 
-		fmt.Fprintln(overallResultBuf, scenarioResultMsg)
+	for _, result := range results {
 		if result.report != nil {
 			printDetailedReport(result.report)
 		}
 	}
 
+	fmt.Println("")
 	fmt.Println("========================== RESULT ===========================")
 	fmt.Println("Parameters:")
 	fmt.Printf("  KKP Version.....: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
@@ -146,7 +135,30 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Printf("  Scenario Options: %v\n", r.opts.ScenarioOptions.List())
 	fmt.Println("")
 	fmt.Println("Test results:")
-	fmt.Println(overallResultBuf.String())
+
+	// sort results alphabetically
+	sort.Slice(results, func(i, j int) bool {
+		iname := results[i].scenario.Name()
+		jname := results[j].scenario.Name()
+
+		return iname < jname
+	})
+
+	hadFailure := false
+	for _, result := range results {
+		prefix := " OK "
+		if !result.Passed() {
+			prefix = "FAIL"
+			hadFailure = true
+		}
+		duration := result.duration.Round(time.Second)
+		scenarioResultMsg := fmt.Sprintf("[%s] - %s (%s)", prefix, result.scenario.Name(), duration)
+		if result.err != nil {
+			scenarioResultMsg = fmt.Sprintf("%s: %v", scenarioResultMsg, result.err)
+		}
+
+		fmt.Println(scenarioResultMsg)
+	}
 
 	if hadFailure {
 		return errors.New("not all scenarios have passed all selected tests")
@@ -159,8 +171,10 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 	for s := range scenarios {
 		var report *reporters.JUnitTestSuite
 
-		scenarioLog := s.Log(r.log)
+		scenarioLog := s.NamedLog(r.log)
 		scenarioLog.Info("Starting to test scenario...")
+
+		start := time.Now()
 
 		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
 			var err error
@@ -175,6 +189,7 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 
 		results <- testResult{
 			report:   report,
+			duration: time.Since(start),
 			scenario: s,
 			err:      err,
 		}
