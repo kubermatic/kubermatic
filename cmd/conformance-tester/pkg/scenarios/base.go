@@ -149,10 +149,10 @@ func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec,
 			RockyLinux: &apimodels.RockyLinuxSpec{},
 		}, nil
 
-	// case providerconfig.OperatingSystemAmazonLinux2:
-	// 	return &apimodels.OperatingSystemSpec{
-	// 		???
-	// 	}, nil
+	case providerconfig.OperatingSystemAmazonLinux2:
+		return &apimodels.OperatingSystemSpec{
+			Amzn2: &apimodels.AmazonLinuxSpec{},
+		}, nil
 
 	default:
 		return nil, errors.New("cannot create API OS spec based on the scenario: unknown OS")
@@ -191,10 +191,10 @@ func (s *baseScenario) OperatingSystemSpec() (*apiv1.OperatingSystemSpec, error)
 			RockyLinux: &apiv1.RockyLinuxSpec{},
 		}, nil
 
-	// case providerconfig.OperatingSystemAmazonLinux2:
-	// 	return &apimodels.OperatingSystemSpec{
-	// 		???
-	// 	}, nil
+	case providerconfig.OperatingSystemAmazonLinux2:
+		return &apiv1.OperatingSystemSpec{
+			AmazonLinux: &apiv1.AmazonLinuxSpec{},
+		}, nil
 
 	default:
 		return nil, errors.New("cannot create OS spec based on the scenario: unknown OS")
