@@ -78,7 +78,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 				{
 					Name:            resources.KonnectivityAgentContainer,
 					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryEUGCR), name, version),
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{
 						"--logtostderr=true",
