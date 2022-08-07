@@ -19,7 +19,7 @@ groups:
       - alert: CortexDistributorDown
         annotations:
           message: Cortex-distributor has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexdistributordown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexdistributordown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -29,7 +29,7 @@ groups:
       - alert: CortexQuerierDown
         annotations:
           message: Cortex-querier has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexquerierdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexquerierdown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -39,7 +39,7 @@ groups:
       - alert: CortexQueryFrontendDown
         annotations:
           message: Cortex-query-frontend has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexqueryfrontenddown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexqueryfrontenddown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -49,7 +49,7 @@ groups:
       - alert: CortexRulerDown
         annotations:
           message: Cortex-ruler has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexrulerdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexrulerdown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -59,7 +59,7 @@ groups:
       - alert: CortexMemcachedBlocksDown
         annotations:
           message: Cortex-memcached-blocks has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexmemcachedblocksdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksdown
         expr: absent(up{job="pods",namespace="mla", app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks"} == 1)
         for: 15m
         labels:
@@ -69,7 +69,7 @@ groups:
       - alert: CortexMemcachedBlocksMetadataDown
         annotations:
           message: Cortex-memcached-blocks-metadata has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexmemcachedblocksmetadatadown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksmetadatadown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-metadata"} == 1)
         for: 15m
         labels:
@@ -79,7 +79,7 @@ groups:
       - alert: CortexMemcachedBlocksIndexDown
         annotations:
           message: Cortex-memcached-blocks-index has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexmemcachedblocksindexdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksindexdown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-index"} == 1)
         for: 15m
         labels:
@@ -89,7 +89,7 @@ groups:
       - alert: CortexAlertmanagerDown
         annotations:
           message: Cortex-alertmanager has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexalertmanagerdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexalertmanagerdown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="alertmanager",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -99,7 +99,7 @@ groups:
       - alert: CortexCompactorDown
         annotations:
           message: Cortex-compactor has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexcompactordown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexcompactordown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -109,7 +109,7 @@ groups:
       - alert: CortexIngesterDown
         annotations:
           message: Cortex-ingester has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexingesterdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexingesterdown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:
@@ -119,7 +119,7 @@ groups:
       - alert: CortexStoreGatewayDown
         annotations:
           message: Cortex-store-gateway has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-cortexstoregatewaydown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cortexstoregatewaydown
         expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="store-gateway",app_kubernetes_io_name="cortex"} == 1)
         for: 15m
         labels:

@@ -19,37 +19,37 @@ groups:
       - alert: KubermaticTooManyUnhandledErrors
         annotations:
           message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubermatictoomanyunhandlederrors
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
         expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
         for: 10m
         labels:
           severity: warning
-          resource: '{{ $labels.namespace }}'
+          resource: "{{ $labels.namespace }}"
           service: kubermatic-seed
       - alert: KubermaticClusterDeletionTakesTooLong
         annotations:
           message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubermaticclusterdeletiontakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
         expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
         for: 0m
         labels:
           severity: warning
-          resource: '{{ $labels.cluster }}'
+          resource: "{{ $labels.cluster }}"
           service: kubermatic-seed
       - alert: KubermaticAddonDeletionTakesTooLong
         annotations:
           message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubermaticaddondeletiontakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
         expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
         for: 0m
         labels:
           severity: warning
-          resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+          resource: "{{ $labels.cluster }}/{{ $labels.addon }}"
           service: kubermatic-seed
       - alert: KubermaticAddonTakesTooLongToReconcile
         annotations:
           message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related resources created for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubermaticaddonreconciliationtakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
         expr: |
           kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_created
           - kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_deleted
@@ -57,12 +57,12 @@ groups:
         for: 30m
         labels:
           severity: warning
-          resource: '{{ $labels.cluster }}/{{ $labels.addon }}'
+          resource: "{{ $labels.cluster }}/{{ $labels.addon }}"
           service: kubermatic-seed
       - alert: KubermaticSeedControllerManagerDown
         annotations:
           message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubermaticseedcontrollermanagerdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
         expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-seed-controller-manager"} == 1)
         for: 15m
         labels:
@@ -71,17 +71,17 @@ groups:
       - alert: OpenVPNServerDown
         annotations:
           message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-openvpnserverdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
         expr: (kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"} != kube_deployment_spec_replicas{cluster!="",deployment="openvpn-server"}) and count(kubermatic_cluster_info) > 0
         for: 15m
         labels:
           severity: critical
-          resource: '{{ $labels.cluster }}'
+          resource: "{{ $labels.cluster }}"
           service: kubermatic-seed
       - alert: UserClusterPrometheusAbsent
         annotations:
           message: There is no Prometheus in cluster {{ $labels.name }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-userclusterprometheusdisappeared
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
         expr: |
           (
             kubermatic_cluster_info * on (name) group_left
@@ -92,7 +92,7 @@ groups:
         for: 15m
         labels:
           severity: critical
-          resource: '{{ $labels.name }}'
+          resource: "{{ $labels.name }}"
           service: kubermatic-seed
       # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
       # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
@@ -102,5 +102,5 @@ groups:
         expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
         labels:
           severity: informational
-          resource: '{{ $labels.name }}'
+          resource: "{{ $labels.name }}"
           service: kubermatic-seed
