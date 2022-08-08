@@ -56,9 +56,6 @@ func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
-		Features: map[string]bool{
-			kubermaticv1.ClusterFeatureExternalCloudProvider: true,
-		},
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Hetzner.KKPDatacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{

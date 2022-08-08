@@ -247,7 +247,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
 		return transient, nil
 	}); err != nil {
-		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
+		return fmt.Errorf("failed to create NodeDeployments from scenario: %w", err)
 	}
 
 	c.log(log).Info("Creating MachineDeployments...")
@@ -255,7 +255,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 		if err := wait.PollImmediateLog(ctx, log, 5*time.Second, time.Minute, func() (error, error) {
 			return userClusterClient.Create(ctx, &md), nil
 		}); err != nil {
-			return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
+			return fmt.Errorf("failed to apply MachineDeployments: %w", err)
 		}
 	}
 
