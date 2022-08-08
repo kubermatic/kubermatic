@@ -19,7 +19,6 @@ Optionally add one or more of the following kinds if applicable:
 /kind failing-test
 /kind flake
 /kind regression
-/kind question
 -->
 
 **Special notes for your reviewer**:
