@@ -284,6 +284,9 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		for _, group := range groupMappings {
 			projectID := group.Spec.ProjectID
 
+			// Append user info with projectId-suffixed group name to allow for get project request.
+			userInfo.Groups = append(userInfo.Groups, fmt.Sprintf("%s-%s", group.Spec.Group, projectID))
+
 			if projectIDSet.Has(projectID) {
 				// The project has been already added either from user or other group bindings.
 				continue
