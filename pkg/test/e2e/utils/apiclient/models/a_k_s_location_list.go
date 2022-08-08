@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// EKSInstanceTypes EKSInstanceTypes represents a list of EKS InstanceType object for node group.
+// AKSLocationList AKSLocationList represents a list of AKS Location object for node group.
 //
-// swagger:model EKSInstanceTypes
-type EKSInstanceTypes []*EKSInstanceType
+// swagger:model AKSLocationList
+type AKSLocationList []*AKSLocation
 
-// Validate validates this e k s instance types
-func (m EKSInstanceTypes) Validate(formats strfmt.Registry) error {
+// Validate validates this a k s location list
+func (m AKSLocationList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m EKSInstanceTypes) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this e k s instance types based on the context it is used
-func (m EKSInstanceTypes) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this a k s location list based on the context it is used
+func (m AKSLocationList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {

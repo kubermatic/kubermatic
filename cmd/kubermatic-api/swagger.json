@@ -18600,6 +18600,32 @@
         }
       }
     },
+    "/api/v2/providers/aks/locations": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "summary": "List AKS recommended Locations.",
+        "operationId": "listAKSLocations",
+        "responses": {
+          "200": {
+            "description": "AKSLocationList",
+            "schema": {
+              "$ref": "#/definitions/AKSLocationList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/aks/modes": {
       "get": {
         "produces": [
@@ -18719,7 +18745,7 @@
         "tags": [
           "aks"
         ],
-        "summary": "List AKS available VM sizes in an Azure region.",
+        "summary": "List AKS available VM sizes in an Azure location.",
         "operationId": "listAKSVMSizes",
         "parameters": [
           {
@@ -20847,9 +20873,6 @@
     },
     "/api/v2/seeds/{seed_name}/ipampools": {
       "get": {
-        "produces": [
-          "application/json"
-        ],
         "tags": [
           "ipampool"
         ],
@@ -20984,7 +21007,6 @@
         "tags": [
           "ipampool"
         ],
-        "summary": "Removes an existing IPAM pool.",
         "operationId": "deleteIPAMPool",
         "parameters": [
           {
@@ -21695,6 +21717,31 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSLocation": {
+      "type": "object",
+      "title": "AKSLocation is the object representing Azure Location.",
+      "properties": {
+        "name": {
+          "description": "The location name.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "regionCategory": {
+          "description": "READ-ONLY; The category of the region.",
+          "type": "string",
+          "x-go-name": "RegionCategory"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSLocationList": {
+      "type": "array",
+      "title": "AKSLocationList represents a list of AKS Location object for node group.",
+      "items": {
+        "$ref": "#/definitions/AKSLocation"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AKSMachineDeploymentCloudSpec": {
       "type": "object",
       "properties": {
@@ -21794,8 +21841,44 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "AKSVMSize": {
-      "type": "string",
+      "type": "object",
       "title": "AKSVMSize is the object representing Azure VM sizes.",
+      "properties": {
+        "maxDataDiskCount": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxDataDiskCount"
+        },
+        "memoryInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MemoryInMB"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "numberOfCores": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumberOfCores"
+        },
+        "numberOfGPUs": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumberOfGPUs"
+        },
+        "osDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OsDiskSizeInMB"
+        },
+        "resourceDiskSizeInMB": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ResourceDiskSizeInMB"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "AKSVMSizeList": {
@@ -25658,11 +25741,41 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "EKSInstanceType": {
+      "type": "object",
+      "title": "EKSInstanceType is the object representing EKS nodegroup instancetype..",
+      "properties": {
+        "gpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GPUs"
+        },
+        "memory": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "pretty_name": {
+          "type": "string",
+          "x-go-name": "PrettyName"
+        },
+        "vcpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "EKSInstanceTypes": {
       "type": "array",
-      "title": "EKSInstanceTypes represents a list of EKS Instance Types for node group.",
+      "title": "EKSInstanceTypes represents a list of EKS InstanceType object for node group.",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/EKSInstanceType"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

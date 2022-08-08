@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -30,6 +31,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+// Due to big amount of data we are loading AWS instance types only once. Do not edit it.
+func init() {
+	data, _ = ec2.Data()
+}
 
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
@@ -144,14 +150,30 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypes, error) {
 	instanceTypes := apiv2.EKSInstanceTypes{}
 
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
+	}
+
 	instanceTypesResults, err := awsprovider.GetInstanceTypes(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, instanceTypeResult := range instanceTypesResults {
-		instanceTypes = append(instanceTypes, *instanceTypeResult.InstanceType)
+	for _, i := range *data {
+		for _, r := range instanceTypesResults {
+			if i.InstanceType == *r.InstanceType {
+				instanceTypes = append(instanceTypes, apiv2.EKSInstanceType{
+					Name:       i.InstanceType,
+					PrettyName: i.PrettyName,
+					Memory:     i.Memory,
+					VCPUs:      i.VCPU,
+					GPUs:       i.GPU,
+				})
+				break
+			}
+		}
 	}
+
 	return instanceTypes, nil
 }
 

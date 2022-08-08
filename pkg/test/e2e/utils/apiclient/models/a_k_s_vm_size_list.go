@@ -11,26 +11,32 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // AKSVMSizeList AKSVMSizeList represents an array of AKS VM sizes.
 //
 // swagger:model AKSVMSizeList
-type AKSVMSizeList []AKSVMSize
+type AKSVMSizeList []*AKSVMSize
 
 // Validate validates this a k s VM size list
 func (m AKSVMSizeList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
+		if swag.IsZero(m[i]) { // not required
+			continue
+		}
 
-		if err := m[i].Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName(strconv.Itoa(i))
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName(strconv.Itoa(i))
+		if m[i] != nil {
+			if err := m[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName(strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName(strconv.Itoa(i))
+				}
+				return err
 			}
-			return err
 		}
 
 	}
@@ -47,13 +53,15 @@ func (m AKSVMSizeList) ContextValidate(ctx context.Context, formats strfmt.Regis
 
 	for i := 0; i < len(m); i++ {
 
-		if err := m[i].ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName(strconv.Itoa(i))
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName(strconv.Itoa(i))
+		if m[i] != nil {
+			if err := m[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName(strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName(strconv.Itoa(i))
+				}
+				return err
 			}
-			return err
 		}
 
 	}

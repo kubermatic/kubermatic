@@ -310,6 +310,7 @@ func CreateNodeGroup(client *awsprovider.ClientSet,
 		},
 	}
 	_, err := client.EKS.CreateNodegroup(createInput)
+
 	return DecodeError(err)
 }
 

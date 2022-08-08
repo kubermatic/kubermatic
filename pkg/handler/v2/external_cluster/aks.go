@@ -232,6 +232,30 @@ func ListAKSVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGett
 	}
 }
 
+func ListAKSLocationsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(AKSCommonReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		cred, err := getAKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		locations, err := aks.GetLocations(ctx, *cred)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't get locations: %w", err)
+		}
+
+		return locations, nil
+	}
+}
+
 func AKSNodePoolModesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var modes apiv2.AKSNodePoolModes
@@ -918,6 +942,7 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
+
 	aksClusterProperties := aksCluster.Properties
 	if aksClusterProperties == nil {
 		return apiCluster, nil
