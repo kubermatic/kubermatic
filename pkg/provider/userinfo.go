@@ -55,7 +55,7 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 			for _, group := range user.Spec.Groups {
 				groupName := group
 				if projectID != "" {
-					groupName += "-" + projectID
+					groupName += fmt.Sprintf("-%s", projectID)
 				}
 				groups.Insert(groupName)
 			}
