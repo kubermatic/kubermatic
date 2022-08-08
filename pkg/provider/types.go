@@ -414,7 +414,8 @@ type ProjectMemberMapper interface {
 	MapUserToRoles(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 
 	// MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
-	// group from UserProjectBinding (if exists).
+	// group from UserProjectBinding (if exists). Groups returned by this function are suffixed with project's ID to
+	// avoid leaking permissions among projects having binding with the same group but different roles.
 	// This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
 	MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 }
