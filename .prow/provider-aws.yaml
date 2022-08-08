@@ -38,6 +38,8 @@ presubmits:
               value: "1.22"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -80,6 +82,8 @@ presubmits:
               value: "1.23"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -122,6 +126,8 @@ presubmits:
               value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -161,12 +167,14 @@ presubmits:
           env:
             - name: KUBERMATIC_EDITION
               value: "ce"
-            - name: ONLY_TEST_CREATION
-              value: "true"
+            - name: EXCLUDE_TESTS
+              value: "all"
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -184,7 +192,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-aws-ubuntu-1.24-headless
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.24-api
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -206,7 +214,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: "ee"
             - name: SETUP_MODE
-              value: "kube"
+              value: "api"
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: DISTRIBUTIONS

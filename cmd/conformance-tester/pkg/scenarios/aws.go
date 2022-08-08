@@ -26,12 +26,11 @@ import (
 	"github.com/go-openapi/runtime"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
@@ -47,62 +46,18 @@ const (
 	awsVolumeSize   = 100
 )
 
-// GetAWSScenarios returns a matrix of (version x operating system).
-func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
-			datacenter:              datacenter.Spec.AWS,
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-		// Flatcar
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
-			datacenter:              datacenter.Spec.AWS,
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Flatcar: &apimodels.FlatcarSpec{
-					// Otherwise the nodes restart directly after creation - bad for tests
-					DisableAutoUpdate: true,
-				},
-			},
-		})
-		scenarios = append(scenarios, &awsScenario{
-			version:                 v,
-			datacenter:              datacenter.Spec.AWS,
-			kubermaticClient:        kubermaticClient,
-			kubermaticAuthenticator: kubermaticAuthenticator,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-		})
-	}
-	return scenarios
-}
-
 type awsScenario struct {
-	version                 *semver.Semver
-	datacenter              *kubermaticv1.DatacenterSpecAWS
-	osSpec                  apimodels.OperatingSystemSpec
+	baseScenario
+
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
-}
-
-func (s *awsScenario) Name() string {
-	return fmt.Sprintf("aws-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
 }
 
 func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.AWS.KKPDatacenter,
 					Aws: &apimodels.AWSCloudSpec{
@@ -118,6 +73,7 @@ func (s *awsScenario) APICluster(secrets types.Secrets) *apimodels.CreateCluster
 
 func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.AWS.KKPDatacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{
@@ -125,15 +81,11 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 				AccessKeyID:     secrets.AWS.AccessKeyID,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
-func (s *awsScenario) NodeDeployments(
-	ctx context.Context,
-	num int,
-	secrets types.Secrets,
-) ([]apimodels.NodeDeployment, error) {
+func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := awsInstanceType
 	volumeType := awsVolumeType
 	volumeSize := int64(awsVolumeSize)
@@ -192,6 +144,11 @@ func (s *awsScenario) NodeDeployments(
 		return nil, fmt.Errorf("wanted three subnets in different AZs, got only %d", n)
 	}
 
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	nds := []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -208,7 +165,7 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -227,7 +184,7 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -246,15 +203,15 @@ func (s *awsScenario) NodeDeployments(
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
 	}
 
 	// evenly distribute the nodes among deployments
-	nodesInEachAZ := num / 3
-	azsWithExtraNode := num % 3
+	nodesInEachAZ := replicas / 3
+	azsWithExtraNode := replicas % 3
 
 	for i := range nds {
 		var replicas int32
@@ -270,7 +227,7 @@ func (s *awsScenario) NodeDeployments(
 }
 
 func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region)
+	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +244,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 		}
 	}
 
-	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Region, *vpcID)
+	allSubnets, err := awsprovider.GetSubnets(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region, *vpcID)
 	if err != nil {
 		return nil, err
 	}
@@ -311,36 +268,31 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 
 	result := []clusterv1alpha1.MachineDeployment{}
 
-	for _, subnet := range subnets {
-		ami := s.datacenter.Images[getOSNameFromSpec(s.osSpec)]
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-		config := awstypes.RawConfig{
-			AMI:              providerconfig.ConfigVarString{Value: ami},
-			InstanceType:     providerconfig.ConfigVarString{Value: awsInstanceType},
-			DiskType:         providerconfig.ConfigVarString{Value: awsVolumeType},
-			DiskSize:         int64(awsVolumeSize),
-			AvailabilityZone: providerconfig.ConfigVarString{Value: *subnet.AvailabilityZone},
-			Region:           providerconfig.ConfigVarString{Value: s.datacenter.Region},
-			VpcID:            providerconfig.ConfigVarString{Value: *vpcID},
-			SubnetID:         providerconfig.ConfigVarString{Value: *subnet.SubnetId},
-			// rely on the KKP's reconciling to have filled these fields in already and
-			// the caller to have since refreshed the cluster object
-			InstanceProfile: providerconfig.ConfigVarString{Value: cluster.Spec.Cloud.AWS.InstanceProfileName},
-			SecurityGroupIDs: []providerconfig.ConfigVarString{
-				{Value: cluster.Spec.Cloud.AWS.SecurityGroupID},
+	for _, subnet := range subnets {
+		nodeSpec := apiv1.NodeSpec{
+			OperatingSystem: *osSpec,
+			Cloud: apiv1.NodeCloudSpec{
+				AWS: &apiv1.AWSNodeSpec{
+					InstanceType:     awsInstanceType,
+					VolumeType:       awsVolumeType,
+					VolumeSize:       awsVolumeSize,
+					AvailabilityZone: *subnet.AvailabilityZone,
+					SubnetID:         *subnet.SubnetId,
+				},
 			},
 		}
 
-		config.Tags = map[string]string{}
-		config.Tags["kubernetes.io/cluster/"+cluster.Name] = ""
-		config.Tags["system/cluster"] = cluster.Name
-
-		projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-		if ok {
-			config.Tags["system/project"] = projectID
+		config, err := machine.GetAWSProviderConfig(cluster, nodeSpec, s.datacenter)
+		if err != nil {
+			return nil, err
 		}
 
-		md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAWS, config)
+		md, err := s.createMachineDeployment(num, config)
 		if err != nil {
 			return nil, err
 		}
@@ -363,8 +315,4 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	}
 
 	return result, nil
-}
-
-func (s *awsScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

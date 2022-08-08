@@ -20,7 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -28,23 +31,34 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-const (
-	dropletSize = "4gb"
-)
-
-type digitaloceanScenario struct {
+type googleScenario struct {
 	baseScenario
 }
 
-func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
+func (s *googleScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
+	if !s.baseScenario.IsValid(opts, log) {
+		return false
+	}
+
+	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
+		s.Log(log).Debug("Skipping because provider only supports Ubuntu.")
+		return false
+	}
+
+	return true
+}
+
+func (s *googleScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
 				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.Digitalocean.KKPDatacenter,
-					Digitalocean: &apimodels.DigitaloceanCloudSpec{
-						Token: secrets.Digitalocean.Token,
+					DatacenterName: secrets.GCP.KKPDatacenter,
+					Gcp: &apimodels.GCPCloudSpec{
+						ServiceAccount: secrets.GCP.ServiceAccount,
+						Network:        secrets.GCP.Network,
+						Subnetwork:     secrets.GCP.Subnetwork,
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -53,22 +67,23 @@ func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.Crea
 	}
 }
 
-func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: secrets.Digitalocean.KKPDatacenter,
-			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
-				Token: secrets.Digitalocean.Token,
+			DatacenterName: secrets.GCP.KKPDatacenter,
+			GCP: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount: secrets.GCP.ServiceAccount,
+				Network:        secrets.GCP.Network,
+				Subnetwork:     secrets.GCP.Subnetwork,
 			},
 		},
 		Version: s.version,
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
+func (s *googleScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
-	size := dropletSize
 
 	osSpec, err := s.APIOperatingSystemSpec()
 	if err != nil {
@@ -81,8 +96,15 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 				Replicas: &replicas,
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
-						Digitalocean: &apimodels.DigitaloceanNodeSpec{
-							Size: &size,
+						Gcp: &apimodels.GCPNodeSpec{
+							Zone:        s.getZone(),
+							MachineType: "n1-standard-2",
+							DiskType:    "pd-standard",
+							DiskSize:    50,
+							Preemptible: false,
+							Labels: map[string]string{
+								"kubernetes-cluster": "my-cluster",
+							},
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -95,7 +117,7 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 	}, nil
 }
 
-func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
 	osSpec, err := s.OperatingSystemSpec()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build OS spec: %w", err)
@@ -104,13 +126,20 @@ func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, se
 	nodeSpec := apiv1.NodeSpec{
 		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
-			Digitalocean: &apiv1.DigitaloceanNodeSpec{
-				Size: dropletSize,
+			GCP: &apiv1.GCPNodeSpec{
+				Zone:        s.getZone(),
+				MachineType: "n1-standard-2",
+				DiskType:    "pd-standard",
+				DiskSize:    50,
+				Preemptible: false,
+				Labels: map[string]string{
+					"kubernetes-cluster": cluster.Name,
+				},
 			},
 		},
 	}
 
-	config, err := machine.GetDigitaloceanProviderConfig(cluster, nodeSpec, s.datacenter)
+	config, err := machine.GetGCPProviderConfig(cluster, nodeSpec, s.datacenter)
 	if err != nil {
 		return nil, err
 	}
@@ -121,4 +150,8 @@ func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, se
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
+}
+
+func (s *googleScenario) getZone() string {
+	return fmt.Sprintf("%s-%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
 }

@@ -216,7 +216,7 @@ func genTestConfigMap() *corev1.ConfigMap {
 }
 
 func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	return wait.PollLog(log, 3*time.Second, 2*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 3*time.Second, 2*time.Minute, func() (error, error) {
 		cm := genTestConfigMap()
 		err := userClient.Create(ctx, cm)
 		if err == nil {
@@ -232,7 +232,7 @@ func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclien
 }
 
 func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, ctName string, deleted bool) error {
-	return wait.PollLog(log, 3*time.Second, 1*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 3*time.Second, 1*time.Minute, func() (error, error) {
 		gatekeeperCT := &constrainttemplatev1.ConstraintTemplate{}
 		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
 
@@ -253,7 +253,7 @@ func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, log
 }
 
 func waitForConstraintSync(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, cName, namespace string, deleted bool) error {
-	return wait.PollLog(log, 3*time.Second, 2*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 3*time.Second, 2*time.Minute, func() (error, error) {
 		constraint := &kubermaticv1.Constraint{}
 		err := client.Get(ctx, types.NamespacedName{Name: cName, Namespace: namespace}, constraint)
 

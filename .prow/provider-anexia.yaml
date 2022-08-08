@@ -40,6 +40,8 @@ presubmits:
           value: "anexia"
         - name: DISTRIBUTIONS
           value: flatcar
+        - name: SETUP_MODE
+          value: "kube"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY

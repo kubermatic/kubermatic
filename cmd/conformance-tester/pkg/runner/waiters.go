@@ -43,7 +43,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 
 	log.Infow("Waiting for control plane to become ready...", "timeout", opts.ControlPlaneReadyWaitTimeout)
 
-	err := wait.PollLog(log, 5*time.Second, opts.ControlPlaneReadyWaitTimeout, func() (transient error, terminal error) {
+	err := wait.PollLog(ctx, log, 5*time.Second, opts.ControlPlaneReadyWaitTimeout, func() (transient error, terminal error) {
 		newCluster := &kubermaticv1.Cluster{}
 
 		if err := opts.SeedClusterClient.Get(ctx, namespacedClusterName, newCluster); err != nil {
@@ -91,7 +91,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 		return nil, err
 	}
 
-	log.Infow("Control plane is ready", "duration", time.Since(started))
+	log.Infow("Control plane is ready", "duration", time.Since(started).Round(time.Second))
 	return cluster, nil
 }
 
@@ -113,7 +113,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 
 	log.Infow("Waiting for all Pods to be ready...", "timeout", timeout)
 
-	err := wait.PollLog(log, opts.UserClusterPollInterval, timeout, func() (transient error, terminal error) {
+	err := wait.PollLog(ctx, log, opts.UserClusterPollInterval, timeout, func() (transient error, terminal error) {
 		podList := &corev1.PodList{}
 		if err := userClusterClient.List(ctx, podList); err != nil {
 			return fmt.Errorf("failed to list Pods in user cluster: %w", err), nil
@@ -137,7 +137,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 		return err
 	}
 
-	log.Infow("All pods became ready", "duration", time.Since(started))
+	log.Infow("All pods became ready", "duration", time.Since(started).Round(time.Second))
 
 	return nil
 }
@@ -150,7 +150,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 
 	log.Infow("Waiting for machines to join cluster...", "timeout", timeout)
 
-	err := wait.PollLog(log, 10*time.Second, timeout, func() (transient error, terminal error) {
+	err := wait.PollLog(ctx, log, 10*time.Second, timeout, func() (transient error, terminal error) {
 		machineList := &clusterv1alpha1.MachineList{}
 		if err := client.List(ctx, machineList); err != nil {
 			return fmt.Errorf("failed to list machines: %w", err), nil
@@ -173,7 +173,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All machines joined the cluster", "duration", elapsed)
+		log.Infow("All machines joined the cluster", "duration", elapsed.Round(time.Second))
 	}
 
 	return timeout - elapsed, err
@@ -186,7 +186,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 
 	log.Infow("Waiting for nodes to become ready...", "timeout", timeout)
 
-	err := wait.PollLog(log, 10*time.Second, timeout, func() (transient error, terminal error) {
+	err := wait.PollLog(ctx, log, 10*time.Second, timeout, func() (transient error, terminal error) {
 		nodeList := &corev1.NodeList{}
 		if err := client.List(ctx, nodeList); err != nil {
 			return fmt.Errorf("failed to list nodes: %w", err), nil
@@ -209,7 +209,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 	elapsed := time.Since(startTime)
 
 	if err == nil {
-		log.Infow("All nodes became ready", "duration", elapsed)
+		log.Infow("All nodes became ready", "duration", elapsed.Round(time.Second))
 	}
 
 	return timeout - elapsed, err

@@ -18,15 +18,13 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
@@ -34,42 +32,15 @@ const (
 	hetznerServerType = "cx31"
 )
 
-// GetHetznerScenarios returns a matrix of (version x operating system).
-func GetHetznerScenarios(versions []*semver.Semver, _ *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &hetznerScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &hetznerScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-		})
-	}
-
-	return scenarios
-}
-
 type hetznerScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
-}
-
-func (s *hetznerScenario) Name() string {
-	return fmt.Sprintf("hetzner-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	baseScenario
 }
 
 func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Hetzner.KKPDatacenter,
 					Hetzner: &apimodels.HetznerCloudSpec{
@@ -84,19 +55,25 @@ func (s *hetznerScenario) APICluster(secrets types.Secrets) *apimodels.CreateClu
 
 func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Hetzner.KKPDatacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
 				Token: secrets.Hetzner.Token,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	nodeType := hetznerServerType
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -111,7 +88,7 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -119,20 +96,29 @@ func (s *hetznerScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 }
 
 func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-	//nolint:govet
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderHetzner, hetznertypes.RawConfig{
-		ServerType: providerconfig.ConfigVarString{Value: hetznerServerType},
-	})
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			Hetzner: &apiv1.HetznerNodeSpec{
+				Type: hetznerServerType,
+			},
+		},
+	}
+
+	config, err := machine.GetHetznerProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *hetznerScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

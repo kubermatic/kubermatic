@@ -37,6 +37,11 @@ import (
 )
 
 func TestUserclusterControllerRBAC(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.UserClusterRBACTests) {
+		log.Info("User cluster RBAC tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing user cluster RBAC controller")
 	clusterNamespace := fmt.Sprintf("cluster-%s", cluster.Name)
 
@@ -90,6 +95,11 @@ func TestUserclusterControllerRBAC(ctx context.Context, log *zap.SugaredLogger, 
 }
 
 func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.UserClusterSeccompTests) {
+		log.Info("User cluster Seccomp tests disabled, skipping.")
+		return nil
+	}
+
 	pods := &corev1.PodList{}
 
 	errors := []string{}

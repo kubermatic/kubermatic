@@ -18,15 +18,13 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
@@ -37,45 +35,15 @@ const (
 	openStackInstanceReadyCheckTimeout = "2m"
 )
 
-// GetOpenStackScenarios returns a matrix of (version x operating system).
-func GetOpenStackScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &openStackScenario{
-			version:    v,
-			datacenter: datacenter.Spec.Openstack,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &openStackScenario{
-			version:    v,
-			datacenter: datacenter.Spec.Openstack,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-		})
-	}
-
-	return scenarios
-}
-
 type openStackScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecOpenstack
-	osSpec     apimodels.OperatingSystemSpec
-}
-
-func (s *openStackScenario) Name() string {
-	return fmt.Sprintf("openstack-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	baseScenario
 }
 
 func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.OpenStack.KKPDatacenter,
 					Openstack: &apimodels.OpenstackCloudSpec{
@@ -95,6 +63,7 @@ func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateC
 
 func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.OpenStack.KKPDatacenter,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -106,15 +75,19 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 				FloatingIPPool: openStackFloatingIPPool,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
 func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
 	flavor := openStackFlavor
-	image := s.datacenter.Images[osName]
 	replicas := int32(num)
+	image := s.datacenter.Spec.Openstack.Images[s.operatingSystem]
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
 	return []apimodels.NodeDeployment{
 		{
@@ -132,7 +105,7 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -140,25 +113,32 @@ func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-	//nolint:govet
-	os := getOSNameFromSpec(s.osSpec)
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			Openstack: &apiv1.OpenstackNodeSpec{
+				Flavor:                    openStackFlavor,
+				Image:                     s.datacenter.Spec.Openstack.Images[s.operatingSystem],
+				InstanceReadyCheckPeriod:  openStackInstanceReadyCheckPeriod,
+				InstanceReadyCheckTimeout: openStackInstanceReadyCheckTimeout,
+			},
+		},
+	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderOpenstack, openstacktypes.RawConfig{
-		Flavor:                    providerconfig.ConfigVarString{Value: openStackFlavor},
-		Image:                     providerconfig.ConfigVarString{Value: s.datacenter.Images[os]},
-		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckPeriod},
-		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: openStackInstanceReadyCheckTimeout},
-	})
+	config, err := machine.GetOpenstackProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *openStackScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }
