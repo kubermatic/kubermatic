@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -67,6 +68,37 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 		}
 	}
 
+	return nil
+}
+
+// DeleteOldApplicationInstallationCrd removes old applicationInstallation crd from cluster.
+// See pkg/install/stack/kubermatic-master/stack.go::InstallKubermaticCRDs() for more information.
+// TODO REMOVE AFTER release v2.21.
+func DeleteOldApplicationInstallationCrd(ctx context.Context, kubeClient ctrlruntimeclient.Client) error {
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: appskubermaticv1.ApplicationInstallationsFQDNName}, crd)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get CRD %s: %w", appskubermaticv1.ApplicationInstallationsFQDNName, err)
+	}
+
+	// No action is required
+	if err != nil && apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	// CRD exists, now we need to check if it's namespaced scoped
+	if crd.Spec.Scope == apiextensionsv1.NamespaceScoped {
+		return nil
+	}
+
+	// Crd is cluster scoped, so we need to delete it.
+	if err := kubeClient.Delete(ctx, crd); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete CRD %s: %w", crd.Name, err)
+	}
+
+	if err := WaitForCRDGone(ctx, kubeClient, appskubermaticv1.ApplicationInstallationsFQDNName, 10*time.Second); err != nil {
+		return fmt.Errorf(" %s could not be deleted, please check for remaining resources and remove any finalizers", appskubermaticv1.ApplicationInstallationsFQDNName)
+	}
 	return nil
 }
 
