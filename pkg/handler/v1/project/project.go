@@ -284,15 +284,20 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		for _, group := range groupMappings {
 			projectID := group.Spec.ProjectID
 
-			// Append user info with projectId-suffixed group name to allow for get project request.
-			userInfo.Groups = append(userInfo.Groups, fmt.Sprintf("%s-%s", group.Spec.Group, projectID))
-
 			if projectIDSet.Has(projectID) {
 				// The project has been already added either from user or other group bindings.
 				continue
 			}
 
-			project, err := projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			// Create a temporary user info with projectId-suffixed group name to allow for get project request.
+			projectUserInfo := &provider.UserInfo{
+				Email:   userInfo.Email,
+				Groups:  append(userInfo.Groups, fmt.Sprintf("%s-%s", group.Spec.Group, projectID)),
+				Roles:   userInfo.Roles,
+				IsAdmin: userInfo.IsAdmin,
+			}
+
+			project, err := projectProvider.Get(ctx, projectUserInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
 				if isStatus(err, http.StatusNotFound) {
 					continue
