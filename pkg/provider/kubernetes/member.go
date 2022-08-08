@@ -172,7 +172,8 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 }
 
 // MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
-// group from UserProjectBinding (if exists).
+// group from UserProjectBinding (if exists). Groups returned by this function are suffixed with project's ID to
+// avoid leaking permissions among projects having binding with the same group but different roles.
 // This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
 func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
 	groups := sets.NewString()
@@ -242,7 +243,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 	return memberMappings, nil
 }
 
-// GroupMappingsFor returns the list of projects (bindings) for the given group
+// GroupMappingsFor returns the list of projects (bindings) for the given set of groups.
 // This function is unsafe in a sense that it uses privileged account to list all members in the system.
 func (p *ProjectMemberProvider) GroupMappingsFor(ctx context.Context, groups []string) ([]*kubermaticv1.GroupProjectBinding, error) {
 	groupSet := sets.NewString(groups...)
