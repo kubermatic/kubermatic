@@ -49,7 +49,14 @@ func CleanUpHelmTempDir(cacheDir string, logger *zap.SugaredLogger) {
 }
 
 // StatusUpdater is a function that postpone the update of the applicationInstallation.
+// It used to set status's filed of a specific template Porvider (eg status.HelmRelease).
 type StatusUpdater func(status *appskubermaticv1.ApplicationInstallationStatus)
+
+// NoStatusUpdate is a StatusUpdater that does not update the status.
+// It useful in case an error happens and we don't have information to update the status.
+var NoStatusUpdate StatusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
+	// NO OP
+}
 
 // GetCredentialFromSecret get the secret and returns secret.Data[key].
 func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Client, namespce string, name string, key string) (string, error) {

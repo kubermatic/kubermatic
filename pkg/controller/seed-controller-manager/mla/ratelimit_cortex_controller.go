@@ -86,7 +86,7 @@ func newRatelimitCortexReconciler(
 	reconciler := &ratelimitCortexReconciler{
 		Client: client,
 
-		log:                       log,
+		log:                       log.Named("cortex-ratelimit"),
 		workerName:                workerName,
 		recorder:                  mgr.GetEventRecorderFor(ControllerName),
 		versions:                  versions,

@@ -400,7 +400,7 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 				}
 			}
 			if cloud.AKS != nil {
-				err := deleteAKSNodeGroup(ctx, cluster.Spec.CloudSpec, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+				err := deleteAKSNodeGroup(ctx, cloud.AKS, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -867,7 +867,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
 				}
-				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster.Spec.CloudSpec)
+				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cloud.AKS)
 			}
 			if cloud.KubeOne != nil {
 				machineDeployment, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
@@ -907,13 +907,13 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.GKE != nil {
-				return createGKENodePool(ctx, cluster, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
+				return createGKENodePool(ctx, cloud.GKE, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
 			if cloud.AKS != nil {
-				return createAKSNodePool(ctx, cloud, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
+				return createAKSNodePool(ctx, cloud.AKS, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
 			}
 			if cloud.EKS != nil {
-				return createEKSNodePool(cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
+				return createEKSNodePool(cloud.EKS, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
 			}
 		}
 

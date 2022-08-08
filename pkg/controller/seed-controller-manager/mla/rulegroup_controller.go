@@ -78,7 +78,7 @@ func newRuleGroupReconciler(
 
 	reconciler := &ruleGroupReconciler{
 		Client:              client,
-		log:                 log,
+		log:                 log.Named("rulegroup"),
 		workerName:          workerName,
 		recorder:            mgr.GetEventRecorderFor(ControllerName),
 		versions:            versions,

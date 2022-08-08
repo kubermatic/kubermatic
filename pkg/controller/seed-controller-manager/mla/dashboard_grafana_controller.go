@@ -71,7 +71,7 @@ func newDashboardGrafanaReconciler(
 	reconciler := &dashboardGrafanaReconciler{
 		Client: client,
 
-		log:                        log,
+		log:                        log.Named("grafana-dashboard"),
 		workerName:                 workerName,
 		recorder:                   mgr.GetEventRecorderFor(ControllerName),
 		versions:                   versions,

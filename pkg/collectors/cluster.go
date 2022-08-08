@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,9 +43,8 @@ type ClusterCollector struct {
 	clusterInfo    *prometheus.Desc
 }
 
-// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
-func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
-	cc := &ClusterCollector{
+func newClusterCollector(client ctrlruntimeclient.Reader) *ClusterCollector {
+	return &ClusterCollector{
 		client: client,
 		clusterCreated: prometheus.NewDesc(
 			clusterPrefix+"created",
@@ -70,20 +70,22 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"cloud_provider",
 				"datacenter",
 				"pause",
+				"project",
 				"phase",
 			},
 			nil,
 		),
 	}
+}
 
-	registry.MustRegister(cc)
+// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
+func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
+	registry.MustRegister(newClusterCollector(client))
 }
 
 // Describe returns the metrics descriptors.
 func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- cc.clusterCreated
-	ch <- cc.clusterDeleted
-	ch <- cc.clusterInfo
+	prometheus.DescribeByCollect(cc, ch)
 }
 
 // Collect gets called by prometheus to collect the metrics.
@@ -94,12 +96,23 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
+	kubernetesLabels := sets.NewString()
 	for _, cluster := range clusters.Items {
-		cc.collectCluster(ch, &cluster)
+		kubernetesLabels = kubernetesLabels.Union(sets.StringKeySet(cluster.Labels))
+	}
+
+	prometheusLabels := convertToPrometheusLabels(kubernetesLabels)
+	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: clusterPrefix + "labels",
+		Help: "Kubernetes labels on Cluster resources",
+	}, append([]string{"name"}, prometheusLabels...))
+
+	for _, cluster := range clusters.Items {
+		cc.collectCluster(ch, &cluster, kubernetesLabels, labelsGauge)
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster) {
+func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -116,7 +129,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 		)
 	}
 
-	labels, err := cc.clusterLabels(c)
+	infoLabels, err := cc.clusterInfoLabels(c)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %w", c.Name, err))
 	} else {
@@ -124,12 +137,26 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 			cc.clusterInfo,
 			prometheus.GaugeValue,
 			1,
-			labels...,
+			infoLabels...,
 		)
 	}
+
+	// assemble the labels for this cluster, in the order given by kubernetesLabels, but
+	// taking special care of label key conflicts
+	clusterLabels := []string{c.Name}
+	usedLabels := sets.NewString()
+	for _, key := range kubernetesLabels.List() {
+		prometheusLabel := convertToPrometheusLabel(key)
+		if !usedLabels.Has(prometheusLabel) {
+			clusterLabels = append(clusterLabels, c.Labels[key])
+			usedLabels.Insert(prometheusLabel)
+		}
+	}
+
+	labelsGaugeVec.WithLabelValues(clusterLabels...).Collect(ch)
 }
 
-func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
+func (cc *ClusterCollector) clusterInfoLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
 	provider, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
@@ -149,6 +176,7 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
+		cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 		string(cluster.Status.Phase),
 	}, nil
 }

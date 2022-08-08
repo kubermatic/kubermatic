@@ -59,13 +59,13 @@ type HelmTemplate struct {
 func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
-		return nil, err
+		return util.NoStatusUpdate, err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
 	auth, err := util.AuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.Source.Helm)
 	if err != nil {
-		return nil, err
+		return util.NoStatusUpdate, err
 	}
 
 	restClientGetter := &genericclioptions.ConfigFlags{
@@ -81,42 +81,45 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		h.Log)
 
 	if err != nil {
-		return nil, err
+		return util.NoStatusUpdate, err
 	}
 
 	values := make(map[string]interface{})
 	if len(applicationInstallation.Spec.Values.Raw) > 0 {
 		if err := json.Unmarshal(applicationInstallation.Spec.Values.Raw, &values); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall values: %w", err)
+			return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
 		}
 	}
 
 	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, auth)
-	if err != nil {
-		return nil, err
+	statusUpdater := util.NoStatusUpdate
+
+	// In some case, even if an error occurred, the helmRelease is updated.
+	if helmRelease != nil {
+		statusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
+			status.HelmRelease = &appskubermaticv1.HelmRelease{
+				Name:    helmRelease.Name,
+				Version: helmRelease.Version,
+				Info: &appskubermaticv1.HelmReleaseInfo{
+					FirstDeployed: metav1.Time(helmRelease.Info.FirstDeployed),
+					LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
+					Deleted:       metav1.Time(helmRelease.Info.Deleted),
+					Description:   helmRelease.Info.Description,
+					Status:        helmRelease.Info.Status,
+					Notes:         helmRelease.Info.Notes,
+				},
+			}
+		}
 	}
 
-	return func(status *appskubermaticv1.ApplicationInstallationStatus) {
-		status.HelmRelease = &appskubermaticv1.HelmRelease{
-			Name:    helmRelease.Name,
-			Version: helmRelease.Version,
-			Info: &appskubermaticv1.HelmReleaseInfo{
-				FirstDeployed: metav1.Time(helmRelease.Info.FirstDeployed),
-				LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
-				Deleted:       metav1.Time(helmRelease.Info.Deleted),
-				Description:   helmRelease.Info.Description,
-				Status:        helmRelease.Info.Status,
-				Notes:         helmRelease.Info.Notes,
-			},
-		}
-	}, nil
+	return statusUpdater, err
 }
 
 // Uninstall the chart from the user cluster.
 func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
-		return nil, err
+		return util.NoStatusUpdate, err
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
@@ -133,28 +136,30 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 		h.Log)
 
 	if err != nil {
-		return nil, err
+		return util.NoStatusUpdate, err
 	}
 
 	uninstallReleaseResponse, err := helmClient.Uninstall(getReleaseName(applicationInstallation))
-	if err != nil {
-		return nil, err
+	statusUpdater := util.NoStatusUpdate
+
+	if uninstallReleaseResponse != nil {
+		statusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
+			status.HelmRelease = &appskubermaticv1.HelmRelease{
+				Name:    uninstallReleaseResponse.Release.Name,
+				Version: uninstallReleaseResponse.Release.Version,
+				Info: &appskubermaticv1.HelmReleaseInfo{
+					FirstDeployed: metav1.Time(uninstallReleaseResponse.Release.Info.FirstDeployed),
+					LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
+					Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
+					Description:   uninstallReleaseResponse.Release.Info.Description,
+					Status:        uninstallReleaseResponse.Release.Info.Status,
+					Notes:         uninstallReleaseResponse.Release.Info.Notes,
+				},
+			}
+		}
 	}
 
-	return func(status *appskubermaticv1.ApplicationInstallationStatus) {
-		status.HelmRelease = &appskubermaticv1.HelmRelease{
-			Name:    uninstallReleaseResponse.Release.Name,
-			Version: uninstallReleaseResponse.Release.Version,
-			Info: &appskubermaticv1.HelmReleaseInfo{
-				FirstDeployed: metav1.Time(uninstallReleaseResponse.Release.Info.FirstDeployed),
-				LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
-				Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
-				Description:   uninstallReleaseResponse.Release.Info.Description,
-				Status:        uninstallReleaseResponse.Release.Info.Status,
-				Notes:         uninstallReleaseResponse.Release.Info.Notes,
-			},
-		}
-	}, nil
+	return statusUpdater, err
 }
 
 // getReleaseName computes the release name from the applicationInstallation.

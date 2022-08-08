@@ -35,6 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -51,26 +52,34 @@ type ClusterJig struct {
 	projectName  string
 	spec         *kubermaticv1.ClusterSpec
 	generateName string
+	desiredName  string
 	ownerEmail   string
 	labels       map[string]string
 	presetSecret string
-	addons       sets.String
+	addons       []Addon
 
 	// data about the generated cluster
 	clusterName string
 }
 
+type Addon struct {
+	Name      string
+	Variables *runtime.RawExtension
+	Labels    map[string]string
+}
+
 func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
-		client:       client,
-		log:          log,
-		versions:     kubermatic.NewFakeVersions(),
-		spec:         &kubermaticv1.ClusterSpec{},
-		labels:       map[string]string{},
-		generateName: "e2e-",
-		ownerEmail:   "e2e@test.kubermatic.com",
-		addons:       sets.NewString(),
+		client:     client,
+		log:        log,
+		versions:   kubermatic.NewFakeVersions(),
+		spec:       &kubermaticv1.ClusterSpec{},
+		labels:     map[string]string{},
+		ownerEmail: "e2e@test.kubermatic.com",
+		addons:     []Addon{},
 	}
+
+	jig.WithTestName("e2e")
 
 	if version := ClusterVersion(log); version != "" {
 		jig.WithVersion(version)
@@ -93,7 +102,20 @@ func (j *ClusterJig) WithExistingCluster(clusterName string) *ClusterJig {
 	return j
 }
 
+// WithTestName injects the test name into the cluster name. The name should
+// be less than 18 characters in length.
+func (j *ClusterJig) WithTestName(name string) *ClusterJig {
+	return j.WithName(fmt.Sprintf("kkp-%s-%s", name, BuildID()))
+}
+
+func (j *ClusterJig) WithName(name string) *ClusterJig {
+	j.desiredName = name
+	j.generateName = ""
+	return j
+}
+
 func (j *ClusterJig) WithGenerateName(prefix string) *ClusterJig {
+	j.desiredName = ""
 	j.generateName = prefix
 	return j
 }
@@ -103,8 +125,8 @@ func (j *ClusterJig) WithHumanReadableName(name string) *ClusterJig {
 	return j
 }
 
-func (j *ClusterJig) WithAddons(addons ...string) *ClusterJig {
-	j.addons.Insert(addons...)
+func (j *ClusterJig) WithAddons(addons ...Addon) *ClusterJig {
+	j.addons = append(j.addons, addons...)
 	return j
 }
 
@@ -263,6 +285,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: j.generateName,
+			Name:         j.desiredName,
 			Labels:       j.labels,
 		},
 		Spec: *j.spec,
@@ -449,17 +472,17 @@ func (j *ClusterJig) installAddons(ctx context.Context) error {
 		return fmt.Errorf("failed to wait for cluster namespace: %w", err)
 	}
 
-	for _, addon := range j.addons.List() {
+	for _, addon := range j.addons {
 		if err := j.EnsureAddon(ctx, addon); err != nil {
-			return fmt.Errorf("failed to install %q addon: %w", addon, err)
+			return fmt.Errorf("failed to install %q addon: %w", addon.Name, err)
 		}
 	}
 
 	return nil
 }
 
-func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
-	j.log.Info("Installing addon...", "addon", addonName)
+func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
+	j.log.Info("Installing addon...", "addon", addon.Name)
 
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
@@ -472,7 +495,7 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addonName string) error {
 	}
 
 	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, addonName, nil, nil); err != nil && !apierrors.IsAlreadyExists(err) {
+	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to ensure addon: %w", err)
 	}
 

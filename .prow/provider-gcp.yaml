@@ -55,7 +55,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.24-psp
     decorate: true
@@ -102,7 +102,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-offline
     decorate: true
@@ -127,5 +127,5 @@ presubmits:
               memory: 2.5Gi
               cpu: 500m
             limits:
-              memory: 4Gi
+              memory: 6Gi
               cpu: 2

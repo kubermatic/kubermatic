@@ -71,7 +71,7 @@ func newOrgGrafanaReconciler(
 	reconciler := &orgGrafanaReconciler{
 		Client: client,
 
-		log:                  log,
+		log:                  log.Named("grafana-org"),
 		workerName:           workerName,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,

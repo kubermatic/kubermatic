@@ -100,6 +100,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get kubermatic configuration: %w", err)
 	}
 
+	if kc.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.reconcile(ctx, logger, kc); err != nil {
 		r.recorder.Event(kc, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile kubermatic configuration %s: %w", kc.Name, err)
@@ -109,13 +113,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kc *kubermaticv1.KubermaticConfiguration) error {
-	if kc.DeletionTimestamp != nil {
-		return nil
-	}
-	versions := r.versions
 	return kubermaticv1helper.UpdateKubermaticConfigurationStatus(ctx, r, kc, func(config *kubermaticv1.KubermaticConfiguration) {
-		config.Status.KubermaticEdition = versions.KubermaticCommit
-
-		config.Status.KubermaticVersion = versions.KubermaticEdition.ShortString()
+		config.Status.KubermaticEdition = r.versions.KubermaticEdition.ShortString()
+		config.Status.KubermaticVersion = r.versions.KubermaticCommit
 	})
 }

@@ -153,9 +153,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{Requeue: true}, nil
 	}
 
-	// Now that a Secret was created in the KKP namespace, duplicate it into the
-	// cluster namespace so that Deployments like the kube-apiserver can reference
-	// it.
+	// Now that a Secret was (possibly) created in the KKP namespace, duplicate it into
+	// the cluster namespace so that Deployments like the kube-apiserver can reference it.
 
 	// We need a cluster namespace to mirror the Secret.
 	if cluster.Status.NamespaceName == "" {
@@ -165,6 +164,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	reference, err := resources.GetCredentialsReference(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine cluster credentials: %w", err)
+	}
+
+	// Clusters using BYO provider do not have a credential secret.
+	if reference == nil {
+		return nil, nil
 	}
 
 	secret := &corev1.Secret{}

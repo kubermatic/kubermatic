@@ -281,7 +281,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 		return nil, err // something bad happened when trying to get the namespace
 	}
 
-	log.Info("Creating cluster namespace", "namespace", namespace)
+	log.Infow("Creating cluster namespace", "namespace", namespace)
 	ns = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            namespace,

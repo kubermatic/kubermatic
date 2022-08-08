@@ -22,7 +22,10 @@ import (
 	"strings"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	testhelper "k8c.io/kubermatic/v2/pkg/test"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var update = flag.Bool("update", false, "update .golden files")
@@ -30,23 +33,34 @@ var update = flag.Bool("update", false, "update .golden files")
 func TestGetEtcdCommand(t *testing.T) {
 	tests := []struct {
 		name                  string
-		clusterName           string
-		clusterNamespace      string
+		cluster               *kubermaticv1.Cluster
 		enableCorruptionCheck bool
 		launcherEnabled       bool
 		expectedArgs          int
 	}{
 		{
-			name:             "with-launcher",
-			clusterName:      "62m9k9tqlm",
-			clusterNamespace: "cluster-62m9k9tqlm",
-			launcherEnabled:  true,
-			expectedArgs:     11,
+			name: "with-launcher",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "62m9k9tqlm",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-62m9k9tqlm",
+				},
+			},
+			launcherEnabled: true,
+			expectedArgs:    11,
 		},
 		{
-			name:                  "with-corruption-flags",
-			clusterName:           "lg69pmx8wf",
-			clusterNamespace:      "cluster-lg69pmx8wf",
+			name: "with-corruption-flags",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "lg69pmx8wf",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-lg69pmx8wf",
+				},
+			},
 			enableCorruptionCheck: true,
 			launcherEnabled:       false,
 			expectedArgs:          3,
@@ -55,7 +69,7 @@ func TestGetEtcdCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			args, err := getEtcdCommand(test.clusterName, test.clusterNamespace, test.enableCorruptionCheck, test.launcherEnabled)
+			args, err := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

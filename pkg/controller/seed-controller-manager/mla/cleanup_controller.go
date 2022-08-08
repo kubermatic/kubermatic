@@ -49,7 +49,7 @@ func newCleanupReconciler(
 
 	reconciler := &cleanupReconciler{
 		Client:            client,
-		log:               log,
+		log:               log.Named("cleanup"),
 		workerName:        workerName,
 		recorder:          mgr.GetEventRecorderFor(ControllerName),
 		versions:          versions,

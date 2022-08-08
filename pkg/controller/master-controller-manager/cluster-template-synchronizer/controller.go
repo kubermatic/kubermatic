@@ -159,7 +159,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(template, cleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(template, kubermaticv1.CredentialsSecretsCleanupFinalizer) {
 		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, _ *zap.SugaredLogger) error {
 			err := seedClient.Delete(ctx, &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{

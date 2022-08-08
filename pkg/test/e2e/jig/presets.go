@@ -100,7 +100,6 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, acce
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
-		WithGenerateName("e2e-").
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
@@ -128,7 +127,6 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
-		WithGenerateName("e2e-").
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
@@ -153,7 +151,6 @@ func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Tes
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
-		WithGenerateName("e2e-").
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{

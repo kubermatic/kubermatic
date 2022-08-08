@@ -77,7 +77,7 @@ func newDatasourceGrafanaReconciler(
 	reconciler := &datasourceGrafanaReconciler{
 		Client: client,
 
-		log:                         log,
+		log:                         log.Named("grafana-datasource"),
 		workerName:                  workerName,
 		recorder:                    mgr.GetEventRecorderFor(ControllerName),
 		versions:                    versions,

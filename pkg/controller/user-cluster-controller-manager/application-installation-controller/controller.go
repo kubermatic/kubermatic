@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -87,7 +88,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
 	}
 
-	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
+	// update event on generation. We also allow update events if annotations have changed so that the user can force a
+	// reconciliation without changing the spec.
+	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
 		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
 	}
 
@@ -251,8 +255,8 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
 	} else {
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
-		statusUpdater(&appInstallation.Status)
 	}
+	statusUpdater(&appInstallation.Status)
 
 	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
@@ -269,9 +273,9 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		oldAppInstallation := appInstallation.DeepCopy()
 		if uninstallErr != nil {
 			r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
-		} else {
-			statusUpdater(&appInstallation.Status)
 		}
+		statusUpdater(&appInstallation.Status)
+
 		if !equality.Semantic.DeepEqual(oldAppInstallation.Status, appInstallation.Status) { // avoid to send empty patch
 			if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 				return fmt.Errorf("failed to update status: %w", err)

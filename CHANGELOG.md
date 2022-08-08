@@ -1,5 +1,22 @@
 # Kubermatic 2.20
 
+## [v2.20.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.6)
+
+### Bugfixes
+
+- Fix etcdbackup controller constantly updating the EtcdBackupConfig status ([#10650](https://github.com/kubermatic/kubermatic/issues/10650))
+- Fix finalizers on clusters sometimes getting overwritten by the cloud controller or cluster-credentials controller ([#10536](https://github.com/kubermatic/kubermatic/issues/10536))
+- Fix handling custom annotations for the front-loadbalancer Service ([#10436](https://github.com/kubermatic/kubermatic/issues/10436))
+- Fix reconcile loop in AllowedRegistry controller ([#10644](https://github.com/kubermatic/kubermatic/issues/10644))
+
+### Updates
+
+- Update Canal 3.21 version to v3.21.6 ([#10491](https://github.com/kubermatic/kubermatic/issues/10491))
+- Update Canal 3.22 version to v3.22.4 ([#10499](https://github.com/kubermatic/kubermatic/issues/10499))
+- Update ec2-instances-info to a newer version to include newer AWS EC2 instances ([#10653](https://github.com/kubermatic/kubermatic/issues/10653))
+- Update machine-controller to v1.45.3 ([#10628](https://github.com/kubermatic/kubermatic/issues/10628))
+
+
 ## [v2.20.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.5)
 
 ### Updates
@@ -149,6 +166,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.19
+
+## [v2.19.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.8)
+
+### Updates
+
+- Update Canal 3.21 version to v3.21.6 ([#10491](https://github.com/kubermatic/kubermatic/issues/10491))
+- Update machine-controller to v1.42.7 ([#10626](https://github.com/kubermatic/kubermatic/issues/10626))
+
 
 ## [v2.19.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.7)
 
