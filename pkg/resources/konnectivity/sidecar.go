@@ -49,7 +49,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 	return &corev1.Container{
 		Name:            resources.KonnectivityServerContainer,
 		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryEUGCR), name, version),
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"/proxy-server",
 		},
