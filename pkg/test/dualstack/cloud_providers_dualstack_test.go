@@ -103,6 +103,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "azure",
 			osNames: []string{
+				"flatcar",
+				"rockylinux",
 				"ubuntu",
 			},
 			cni:      "cilium",
@@ -112,6 +114,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "azure",
 			osNames: []string{
 				"centos",
+				"flatcar",
+				"rockylinux",
 				"ubuntu",
 			},
 			cni:      "canal",
@@ -122,6 +126,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"rhel",
 				"ubuntu",
+				"flatcar",
+				"rockylinux",
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
@@ -131,7 +137,10 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
+				"rhel",
 				"ubuntu",
+				"flatcar",
+				"rockylinux",
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
@@ -162,6 +171,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "openstack",
 			osNames: []string{
 				"ubuntu",
+				"flatcar",
 			},
 			cni:      "cilium",
 			ipFamily: util.DualStack,
@@ -171,6 +181,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				"centos",
 				"ubuntu",
+				"flatcar",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
@@ -192,10 +203,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
-		}, {
+		},
+		{
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
+				"rockylinux",
 			},
 			cni:      "cilium",
 			ipFamily: util.DualStack,
@@ -204,6 +217,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "do",
 			osNames: []string{
 				"ubuntu",
+				"centos",
+				"rocklinux",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
@@ -212,6 +227,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "equinix",
 			osNames: []string{
 				"ubuntu",
+				"centos",
+				"flatcar",
+				"rockylinux",
 			},
 			cni:      "canal",
 			ipFamily: util.DualStack,
@@ -220,6 +238,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "equinix",
 			osNames: []string{
 				"ubuntu",
+				"flatcar",
+				"rockylinux",
 			},
 			cni:      "cilium",
 			ipFamily: util.DualStack,
