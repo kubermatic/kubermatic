@@ -68,6 +68,7 @@ type Options struct {
 	// additional settings identical for all scenarios
 
 	OperatingSystemManagerEnabled bool
+	DualStackEnabled              bool
 	PspEnabled                    bool
 	ScenarioOptions               sets.String
 
@@ -168,6 +169,7 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
 	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", true, "When set, enables Operating System Manager in the user cluster")
+	flag.BoolVar(&o.DualStackEnabled, "enable-dualstack", false, "When set, enables dualstack (IPv4+IPv6 networking) in the user cluster")
 	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 	o.Secrets.AddFlags()

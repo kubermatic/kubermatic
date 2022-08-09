@@ -145,6 +145,12 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
 	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
 
+	if c.opts.DualStackEnabled {
+		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
+	}
+
+	cluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(true)
+
 	if cloudcontroller.ExternalCloudControllerFeatureSupported(scenario.Datacenter(), cluster, version.NewFromConfiguration(c.opts.KubermaticConfiguration).GetIncompatibilities()...) {
 		cluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		if cloudcontroller.ExternalCloudControllerClusterName(cluster) {
