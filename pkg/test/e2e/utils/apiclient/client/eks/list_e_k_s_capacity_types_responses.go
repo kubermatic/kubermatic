@@ -60,16 +60,16 @@ func NewListEKSCapacityTypesOK() *ListEKSCapacityTypesOK {
 
 /* ListEKSCapacityTypesOK describes a response with status code 200, with default header values.
 
-EKSCapacityTypes
+EKSCapacityTypeList
 */
 type ListEKSCapacityTypesOK struct {
-	Payload models.EKSCapacityTypes
+	Payload models.EKSCapacityTypeList
 }
 
 func (o *ListEKSCapacityTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSCapacityTypesOK) GetPayload() models.EKSCapacityTypes {
+func (o *ListEKSCapacityTypesOK) GetPayload() models.EKSCapacityTypeList {
 	return o.Payload
 }
 

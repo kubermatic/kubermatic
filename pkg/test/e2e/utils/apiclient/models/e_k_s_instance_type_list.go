@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// EKSInstanceTypes EKSInstanceTypes represents a list of EKS InstanceType object for node group.
+// EKSInstanceTypeList EKSInstanceTypeList represents a list of EKS InstanceType object for node group.
 //
-// swagger:model EKSInstanceTypes
-type EKSInstanceTypes []*EKSInstanceType
+// swagger:model EKSInstanceTypeList
+type EKSInstanceTypeList []*EKSInstanceType
 
-// Validate validates this e k s instance types
-func (m EKSInstanceTypes) Validate(formats strfmt.Registry) error {
+// Validate validates this e k s instance type list
+func (m EKSInstanceTypeList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m EKSInstanceTypes) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this e k s instance types based on the context it is used
-func (m EKSInstanceTypes) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this e k s instance type list based on the context it is used
+func (m EKSInstanceTypeList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {

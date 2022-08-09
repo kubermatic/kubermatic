@@ -74,7 +74,7 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 // EKSTypesReq represent a request for EKS types.
-// swagger:parameters validateEKSCredentials listEKSRegions listEKSVPCS
+// swagger:parameters validateEKSCredentials listEKSRegion listEKSVPCS
 type EKSTypesReq struct {
 	EKSCommonReq
 	// in: header
@@ -843,7 +843,7 @@ func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 func EKSAMITypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var ami types.AMITypes = EKSAMITypes
-		var amiTypes apiv2.EKSAMITypes
+		var amiTypes apiv2.EKSAMITypeList
 
 		for _, amiType := range ami.Values() {
 			// AMI type Custom is not valid
@@ -859,7 +859,7 @@ func EKSAMITypesEndpoint() endpoint.Endpoint {
 func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var capacityType types.CapacityTypes = EKSCapacityTypes
-		var capacityTypes apiv2.EKSCapacityTypes
+		var capacityTypes apiv2.EKSCapacityTypeList
 
 		for _, c := range capacityType.Values() {
 			capacityTypes = append(capacityTypes, string(c))

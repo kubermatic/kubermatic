@@ -821,21 +821,21 @@ type EKSCluster struct {
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents a list of EKS regions.
-// swagger:model EKSRegions
-type EKSRegions []string
+// EKSRegionList represents a list of EKS regions.
+// swagger:model EKSRegionList
+type EKSRegionList []string
 
-// EKSAMITypes represents a list of EKS AMI Types for node group.
-// swagger:model EKSAMITypes
-type EKSAMITypes []string
+// EKSAMITypeList represents a list of EKS AMI Types for node group.
+// swagger:model EKSAMITypeList
+type EKSAMITypeList []string
 
-// EKSCapacityTypes represents a list of EKS Capacity Types for node group.
-// swagger:model EKSCapacityTypes
-type EKSCapacityTypes []string
+// EKSCapacityTypeList represents a list of EKS Capacity Types for node group.
+// swagger:model EKSCapacityTypeList
+type EKSCapacityTypeList []string
 
-// EKSInstanceTypes represents a list of EKS InstanceType object for node group.
-// swagger:model EKSInstanceTypes
-type EKSInstanceTypes []EKSInstanceType
+// EKSInstanceTypeList represents a list of EKS InstanceType object for node group.
+// swagger:model EKSInstanceTypeList
+type EKSInstanceTypeList []EKSInstanceType
 
 // EKSInstanceType is the object representing EKS nodegroup instancetype..
 // swagger:model EKSInstanceType

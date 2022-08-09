@@ -147,8 +147,8 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypes, error) {
-	instanceTypes := apiv2.EKSInstanceTypes{}
+func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+	instanceTypes := apiv2.EKSInstanceTypeList{}
 
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
@@ -177,7 +177,7 @@ func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstan
 	return instanceTypes, nil
 }
 
-func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, error) {
+func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegionList, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions

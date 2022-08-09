@@ -160,7 +160,7 @@ func (a *Client) ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoC
 }
 
 /*
-  ListAKSVMSizes lists a k s available VM sizes in an azure location
+  ListAKSVMSizes lists a k s available VM sizes in an azure region
 */
 func (a *Client) ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error) {
 	// TODO: Validate the params before sending
