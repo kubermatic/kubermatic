@@ -276,6 +276,14 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
 	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
 
+	// in 2.19 applicationInstallation crd was introduced with cluster scope. In 2.21 we change the scope to namespaced
+	// as this field is immutable, we must delete the crd and then recreate it. This operation is safe because:
+	// 1) the feature was not "officially released", so not used by users.
+	// 2) the applicationInstallation crd should be used in user-cluster only.
+	// TODO REMOVE AFTER release v2.21.
+	if err := util.DeleteOldApplicationInstallationCrd(ctx, client); err != nil {
+		return err
+	}
 	// install KKP CRDs
 	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
 		return err

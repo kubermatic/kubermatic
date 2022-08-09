@@ -18,17 +18,14 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	utilpointer "k8s.io/utils/pointer"
@@ -42,45 +39,15 @@ const (
 	kubevirtDiskClassName      = "longhorn"
 )
 
-// GetKubevirtScenarios Returns a matrix of (version x operating system).
-func GetKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger, _ *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &kubevirtScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-			logger: log,
-		})
-		// CentOS
-		scenarios = append(scenarios, &kubevirtScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-			logger: log,
-		})
-	}
-
-	return scenarios
-}
-
 type kubevirtScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
-	logger  *zap.SugaredLogger
-}
-
-func (s *kubevirtScenario) Name() string {
-	return fmt.Sprintf("kubevirt-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
+	baseScenario
 }
 
 func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Kubevirt.KKPDatacenter,
 					Kubevirt: &apimodels.KubevirtCloudSpec{
@@ -95,13 +62,14 @@ func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateCl
 
 func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 				Kubeconfig: secrets.Kubevirt.Kubeconfig,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
@@ -109,6 +77,11 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
+	}
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
 	}
 
 	return []apimodels.NodeDeployment{
@@ -128,7 +101,7 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -136,30 +109,35 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 }
 
 func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
-
-	//nolint:govet
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
 	}
 
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderKubeVirt, kubevirttypes.RawConfig{
-		VirtualMachine: kubevirttypes.VirtualMachine{
-			Template: kubevirttypes.Template{
-				CPUs:   providerconfig.ConfigVarString{Value: kubevirtCPUs},
-				Memory: providerconfig.ConfigVarString{Value: kubevirtMemory},
-				PrimaryDisk: kubevirttypes.PrimaryDisk{
-					OsImage: providerconfig.ConfigVarString{Value: image},
-					Disk: kubevirttypes.Disk{
-						Size:             providerconfig.ConfigVarString{Value: kubevirtDiskSize},
-						StorageClassName: providerconfig.ConfigVarString{Value: kubevirtDiskClassName},
-					},
-				},
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			Kubevirt: &apiv1.KubevirtNodeSpec{
+				CPUs:                        kubevirtCPUs,
+				Memory:                      kubevirtMemory,
+				PrimaryDiskOSImage:          image,
+				PrimaryDiskSize:             kubevirtDiskSize,
+				PrimaryDiskStorageClassName: kubevirtDiskClassName,
 			},
 		},
-	})
+	}
+
+	config, err := machine.GetKubevirtProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
+
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
@@ -168,18 +146,12 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 }
 
 func (s *kubevirtScenario) getOSImage() (string, error) {
-	os := getOSNameFromSpec(s.osSpec)
-
-	switch {
-	case os == providerconfig.OperatingSystemUbuntu:
+	switch s.operatingSystem {
+	case providerconfig.OperatingSystemUbuntu:
 		return kubevirtImageHttpServerSvc + "/ubuntu.img", nil
-	case os == providerconfig.OperatingSystemCentOS:
+	case providerconfig.OperatingSystemCentOS:
 		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:
-		return "", fmt.Errorf("unsupported OS %q selected", os)
+		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}
-}
-
-func (s *kubevirtScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

@@ -206,7 +206,7 @@ func setupSleeperPod(ctx context.Context, userClient ctrlruntimeclient.Client, l
 func verifyPodLogs(ctx context.Context, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, clientset *kubernetes.Clientset) error {
 	log.Info("Verifying that we can get logs from Pods...")
 
-	return wait.PollLog(log, 5*time.Second, 2*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 5*time.Second, 2*time.Minute, func() (error, error) {
 		podList := corev1.PodList{}
 		if err := userClient.List(ctx, &podList, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return fmt.Errorf("failed to list Pods: %w", err), nil
@@ -255,7 +255,7 @@ func verifyCopyingFiles(ctx context.Context, log *zap.SugaredLogger, config *res
 func verifyMetrics(ctx context.Context, metricsClient *metrics.Clientset, log *zap.SugaredLogger) error {
 	log.Info("Verifying that we can get metrics...")
 
-	return wait.PollLog(log, 5*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (error, error) {
 		// TODO: check if metrics have sane values.
 		nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
 		if err != nil {

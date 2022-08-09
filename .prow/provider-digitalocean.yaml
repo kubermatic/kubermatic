@@ -40,6 +40,8 @@ presubmits:
               value: centos
             - name: PROVIDER
               value: "digitalocean"
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

@@ -18,16 +18,13 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
@@ -43,37 +40,15 @@ const (
 	vmwareCloudDirectorStorageProfile   = "Intermediate"
 )
 
-// GetVMwareCloudDirectorScenarios returns a matrix of (version x operating system).
-func GetVMwareCloudDirectorScenarios(versions []*semver.Semver, datacenter *kubermaticv1.Datacenter) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &vmwareCloudDirectorScenario{
-			version:    v,
-			datacenter: datacenter.Spec.VMwareCloudDirector,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-	}
-
-	return scenarios
-}
-
 type vmwareCloudDirectorScenario struct {
-	version    *semver.Semver
-	datacenter *kubermaticv1.DatacenterSpecVMwareCloudDirector
-	osSpec     apimodels.OperatingSystemSpec
-}
-
-func (s *vmwareCloudDirectorScenario) Name() string {
-	return fmt.Sprintf("vmware-cloud-director-%s-%s", getOSNameFromSpec(s.osSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
+	baseScenario
 }
 
 func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Spec: &apimodels.ClusterSpec{
+				ContainerRuntime: s.containerRuntime,
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
@@ -97,6 +72,7 @@ func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimode
 
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
@@ -110,15 +86,20 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 				},
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 
 	return spec
 }
 
 func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
 	replicas := int32(num)
+
+	osSpec, err := s.APIOperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -126,7 +107,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
-							Template:         s.datacenter.Templates[osName],
+							Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[s.operatingSystem],
 							Catalog:          vmwareCloudDirectorCatalog,
 							CPUs:             vmwareCloudDirectorCPUs,
 							CPUCores:         vmwareCloudDirectorCPUCores,
@@ -138,7 +119,7 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.osSpec,
+					OperatingSystem: osSpec,
 				},
 			},
 		},
@@ -146,29 +127,35 @@ func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int
 }
 
 func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-	//nolint:govet
-	os := getOSNameFromSpec(s.osSpec)
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			VMwareCloudDirector: &apiv1.VMwareCloudDirectorNodeSpec{
+				Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[s.operatingSystem],
+				Catalog:          vmwareCloudDirectorCatalog,
+				CPUs:             vmwareCloudDirectorCPUs,
+				CPUCores:         vmwareCloudDirectorCPUCores,
+				MemoryMB:         vmwareCloudDirectoMemoryMB,
+				DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
+				IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
+			},
+		},
+	}
 
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderVMwareCloudDirector, vcdtypes.RawConfig{
-		Template:         providerconfig.ConfigVarString{Value: s.datacenter.Templates[os]},
-		Catalog:          providerconfig.ConfigVarString{Value: vmwareCloudDirectorCatalog},
-		CPUs:             vmwareCloudDirectorCPUs,
-		MemoryMB:         vmwareCloudDirectoMemoryMB,
-		CPUCores:         vmwareCloudDirectorCPUCores,
-		DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
-		IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
-	})
+	config, err := machine.GetVMwareCloudDirectorProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
 
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *vmwareCloudDirectorScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

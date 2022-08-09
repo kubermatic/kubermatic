@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
@@ -55,6 +56,11 @@ func TestKubernetesConformance(
 	cloudConfigFilename string,
 	report *reporters.JUnitTestSuite,
 ) error {
+	if !opts.Tests.Has(types.ConformanceTests) {
+		log.Info("Kubernetes conformance tests disabled, skipping.")
+		return nil
+	}
+
 	ginkgoRuns, err := getGinkgoRuns(opts, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Ginkgo runs: %w", err)
@@ -276,15 +282,14 @@ func getGinkgoRuns(
 
 		args = append(args, "--provider=local")
 
-		osSpec := scenario.OS()
-		switch {
-		case osSpec.Ubuntu != nil:
+		switch scenario.OperatingSystem() {
+		case providerconfig.OperatingSystemUbuntu:
 			args = append(args, "--node-os-distro=ubuntu")
 			env = append(env, "KUBE_SSH_USER=ubuntu")
-		case osSpec.Centos != nil:
+		case providerconfig.OperatingSystemCentOS:
 			args = append(args, "--node-os-distro=centos")
 			env = append(env, "KUBE_SSH_USER=centos")
-		case osSpec.Flatcar != nil:
+		case providerconfig.OperatingSystemFlatcar:
 			args = append(args, "--node-os-distro=flatcar")
 			env = append(env, "KUBE_SSH_USER=core")
 		}
@@ -313,7 +318,7 @@ func cleanupBeforeGinkgo(
 ) error {
 	log.Info("Removing non-default webhooks...")
 
-	if err := wait.PollImmediate(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+	if err := wait.PollImmediate(ctx, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
 		if err := client.List(ctx, webhookList); err != nil {
 			return fmt.Errorf("failed to list webhooks: %w", err), nil

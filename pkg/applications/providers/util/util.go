@@ -49,7 +49,14 @@ func CleanUpHelmTempDir(cacheDir string, logger *zap.SugaredLogger) {
 }
 
 // StatusUpdater is a function that postpone the update of the applicationInstallation.
+// It used to set status's filed of a specific template Porvider (eg status.HelmRelease).
 type StatusUpdater func(status *appskubermaticv1.ApplicationInstallationStatus)
+
+// NoStatusUpdate is a StatusUpdater that does not update the status.
+// It useful in case an error happens and we don't have information to update the status.
+var NoStatusUpdate StatusUpdater = func(status *appskubermaticv1.ApplicationInstallationStatus) {
+	// NO OP
+}
 
 // GetCredentialFromSecret get the secret and returns secret.Data[key].
 func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Client, namespce string, name string, key string) (string, error) {
@@ -65,8 +72,8 @@ func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Clien
 	return string(cred), nil
 }
 
-// AuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
-func AuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
+// HelmAuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
+func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
 	auth := helmclient.AuthSettings{}
 	if source.Credentials != nil {
 		if source.Credentials.Username != nil {

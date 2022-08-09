@@ -31,6 +31,11 @@ import (
 )
 
 func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster) error {
+	if !opts.Tests.Has(ctypes.SecurityContextTests) {
+		log.Info("Security context tests disabled, skipping.")
+		return nil
+	}
+
 	log.Infof("Testing security context of control plane components in Seed cluster...")
 
 	pods := &corev1.PodList{}

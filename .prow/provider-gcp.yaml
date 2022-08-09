@@ -37,9 +37,11 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: PROVIDER
-              value: "gcp"
+              value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -80,13 +82,15 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: PROVIDER
-              value: "gcp"
+              value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: KUBERMATIC_PSP_ENABLED
               value: "true"
-            - name: ONLY_TEST_CREATION
-              value: "true"
+            - name: EXCLUDE_TESTS
+              value: "all"
+            - name: SETUP_MODE
+              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

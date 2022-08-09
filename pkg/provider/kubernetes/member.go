@@ -172,13 +172,11 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 }
 
 // MapUserToGroups returns the groups of the user in the project. It combines identity provider groups with
-// group from UserProjectBinding (if exists).
+// group from UserProjectBinding (if exists). Groups returned by this function are suffixed with project's ID to
+// avoid leaking permissions among projects having binding with the same group but different roles.
 // This function is unsafe in a sense that it uses privileged account to list all userProjectBindings in the system.
 func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error) {
 	groups := sets.NewString()
-
-	idpGroups := user.Spec.Groups
-	groups.Insert(idpGroups...)
 
 	userBindingGroup, err := getUserBindingRole(ctx, user.Spec.Email, projectID, p.clientPrivileged)
 	if err != nil {
@@ -187,25 +185,30 @@ func (p *ProjectMemberProvider) MapUserToGroups(ctx context.Context, user *kuber
 
 	if userBindingGroup != "" {
 		groups.Insert(userBindingGroup)
-		return groups, nil
-	} else {
-		// Check if one of idp groups is associated with a project
-		groupBindings, err := p.GroupMappingsFor(ctx, idpGroups)
-		if err != nil {
-			return nil, err
-		}
-		for _, binding := range groupBindings {
-			if binding.Spec.ProjectID == projectID {
-				return groups, nil
-			}
+	}
+
+	idpGroups := user.Spec.Groups
+
+	groupBindings, err := p.GroupMappingsFor(ctx, idpGroups)
+	if err != nil {
+		return nil, err
+	}
+	for _, binding := range groupBindings {
+		if binding.Spec.ProjectID == projectID {
+			suffixedGroupName := fmt.Sprintf("%s-%s", binding.Spec.Group, projectID)
+			groups.Insert(suffixedGroupName)
 		}
 	}
 
-	return nil, apierrors.NewForbidden(
-		schema.GroupResource{},
-		projectID,
-		fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
-	)
+	if groups.Len() > 0 {
+		return groups, nil
+	} else {
+		return nil, apierrors.NewForbidden(
+			schema.GroupResource{},
+			projectID,
+			fmt.Errorf("%q doesn't belong to project %s", user.Spec.Email, projectID),
+		)
+	}
 }
 
 func getUserBindingRole(ctx context.Context, userEmail, projectID string, client ctrlruntimeclient.Client) (string, error) {
@@ -240,7 +243,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 	return memberMappings, nil
 }
 
-// GroupMappingsFor returns the list of projects (bindings) for the given group
+// GroupMappingsFor returns the list of projects (bindings) for the given set of groups.
 // This function is unsafe in a sense that it uses privileged account to list all members in the system.
 func (p *ProjectMemberProvider) GroupMappingsFor(ctx context.Context, groups []string) ([]*kubermaticv1.GroupProjectBinding, error) {
 	groupSet := sets.NewString(groups...)
@@ -277,7 +280,7 @@ func (p *ProjectMemberProvider) MapUserToRoles(ctx context.Context, user *kuberm
 
 	roles := sets.NewString()
 	for _, gpb := range groupProjectBindings.Items {
-		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) {
+		if slice.ContainsString(user.Spec.Groups, gpb.Spec.Group, nil) && gpb.Spec.ProjectID == projectID {
 			roles.Insert(gpb.Spec.Role)
 		}
 	}

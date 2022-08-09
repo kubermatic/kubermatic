@@ -20873,6 +20873,9 @@
     },
     "/api/v2/seeds/{seed_name}/ipampools": {
       "get": {
+        "produces": [
+          "application/json"
+        ],
         "tags": [
           "ipampool"
         ],
@@ -21007,6 +21010,7 @@
         "tags": [
           "ipampool"
         ],
+        "summary": "Removes an existing IPAM pool.",
         "operationId": "deleteIPAMPool",
         "parameters": [
           {

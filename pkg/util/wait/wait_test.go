@@ -17,6 +17,7 @@ limitations under the License.
 package wait
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -28,7 +29,7 @@ import (
 func TestPollSuccess(t *testing.T) {
 	executions := 0
 
-	err := Poll(1*time.Millisecond, 100*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 100*time.Millisecond, func() (error, error) {
 		executions++
 		return nil, nil
 	})
@@ -43,7 +44,7 @@ func TestPollSuccess(t *testing.T) {
 }
 
 func TestPollTimeout(t *testing.T) {
-	err := Poll(1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
 		return errors.New("transient"), nil
 	})
 
@@ -64,7 +65,7 @@ func TestPollTerminalError(t *testing.T) {
 	executions := 0
 	terminal := errors.New("terminal")
 
-	err := Poll(1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
 		executions++
 		return nil, terminal
 	})

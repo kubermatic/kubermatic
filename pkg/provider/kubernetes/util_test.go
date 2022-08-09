@@ -285,6 +285,7 @@ func genGroupProjectBinding(name, projectID, group, role string) *kubermaticv1.G
 	gbp.Name = name
 	gbp.Spec.Role = role
 	gbp.Spec.Group = group
+	gbp.Spec.ProjectID = projectID
 	gbp.Labels = map[string]string{
 		kubermaticv1.ProjectIDLabelKey: projectID,
 	}

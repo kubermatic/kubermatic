@@ -255,8 +255,8 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
 	} else {
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
-		statusUpdater(&appInstallation.Status)
 	}
+	statusUpdater(&appInstallation.Status)
 
 	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
@@ -273,9 +273,9 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		oldAppInstallation := appInstallation.DeepCopy()
 		if uninstallErr != nil {
 			r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
-		} else {
-			statusUpdater(&appInstallation.Status)
 		}
+		statusUpdater(&appInstallation.Status)
+
 		if !equality.Semantic.DeepEqual(oldAppInstallation.Status, appInstallation.Status) { // avoid to send empty patch
 			if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 				return fmt.Errorf("failed to update status: %w", err)
