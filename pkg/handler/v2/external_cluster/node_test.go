@@ -93,7 +93,7 @@ func TestListNodesEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// validate if deletion was successful
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -177,7 +177,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// validate if deletion was successful
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes/%s", tc.ProjectToSync, tc.ClusterToSync, tc.NodeToSync), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes/%s", tc.ProjectToSync, tc.ClusterToSync, tc.NodeToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -307,7 +307,7 @@ func TestGetClusterNodesMetrics(t *testing.T) {
 			for _, node := range tc.ExistingNodes {
 				kubeObj = append(kubeObj, node)
 			}
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodesmetrics", test.ProjectName, tc.ClusterToGet), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodesmetrics", test.ProjectName, tc.ClusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)

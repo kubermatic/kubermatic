@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -197,7 +198,7 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		TTY:     true,
 	}, scheme.ParameterCodec)
 
-	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	exec, err := remotecommand.NewSPDYExecutor(cfg, http.MethodPost, req.URL())
 	if err != nil {
 		return err
 	}

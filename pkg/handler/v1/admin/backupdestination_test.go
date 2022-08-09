@@ -86,7 +86,7 @@ func TestDeleteBackupDestinationEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/admin/seeds/%s/backupdestinations/%s",
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/admin/seeds/%s/backupdestinations/%s",
 				test.GenTestSeed().Name, tc.backupDestinationName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object

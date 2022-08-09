@@ -137,7 +137,7 @@ func NewTemplateData(
 			Labels:            cluster.Labels,
 			Annotations:       cluster.Annotations,
 			Kubeconfig:        kubeconfig,
-			// nolint:staticcheck
+			//nolint:staticcheck
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.GetAddress(),

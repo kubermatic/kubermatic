@@ -247,7 +247,7 @@ func TestGetUsersForProject(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToGet), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToGet), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -410,7 +410,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToDelete), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToDelete), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -584,7 +584,7 @@ func TestEditUserInProject(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToUpdate), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToUpdate), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -816,7 +816,7 @@ func TestAddUserToProject(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -880,7 +880,7 @@ func TestGetCurrentUser(t *testing.T) {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
-			req := httptest.NewRequest("GET", "/api/v1/me", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
 			res := httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 
@@ -944,7 +944,7 @@ func TestNewUser(t *testing.T) {
 			}
 
 			// act
-			req := httptest.NewRequest("GET", "/api/v1/me", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
 			res := httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 
@@ -1041,7 +1041,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
-			req := httptest.NewRequest("POST", "/api/v1/me/logout", nil)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/me/logout", nil)
 			res := httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 

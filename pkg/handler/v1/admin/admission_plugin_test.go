@@ -93,7 +93,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", "/api/v1/admin/admission/plugins", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/admission/plugins", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -177,7 +177,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -261,7 +261,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -376,7 +376,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/admin/admission/plugins/%s", tc.plugin), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)

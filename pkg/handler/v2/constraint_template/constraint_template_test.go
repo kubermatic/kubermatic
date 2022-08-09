@@ -61,7 +61,7 @@ func TestListConstraintTemplates(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v2/constrainttemplates", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/constrainttemplates", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -121,7 +121,7 @@ func TestGetConstraintTemplates(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -217,7 +217,7 @@ func TestCreateConstraintTemplates(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error marshalling body into json: %v", err)
 			}
-			req := httptest.NewRequest("POST", "/api/v2/constrainttemplates", bytes.NewBuffer(body))
+			req := httptest.NewRequest(http.MethodPost, "/api/v2/constrainttemplates", bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}, nil, hack.NewTestRouting)
 			if err != nil {
@@ -306,7 +306,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
-			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(tc.RawPatch))
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(tc.RawPatch))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -363,7 +363,7 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTToDeleteName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTToDeleteName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {

@@ -177,7 +177,7 @@ func TestCreateMachineDeployment(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -310,7 +310,7 @@ func TestDeleteMachineDeploymentNode(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			machineObj := []ctrlruntimeclient.Object{}
@@ -519,7 +519,7 @@ func TestListMachineDeployments(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments",
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
@@ -700,7 +700,7 @@ func TestGetMachineDeployment(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/venus",
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/venus",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
@@ -912,7 +912,7 @@ func TestListMachineDeploymentNodes(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			machineObj := []ctrlruntimeclient.Object{}
@@ -1213,7 +1213,7 @@ func TestListNodesForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			machineObj := []ctrlruntimeclient.Object{}
@@ -1375,7 +1375,7 @@ func TestMachineDeploymentMetrics(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/metrics", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/metrics", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			machineObj := []ctrlruntimeclient.Object{}
@@ -1719,7 +1719,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/events%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID, tc.QueryParams), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/events%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID, tc.QueryParams), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			machineObj := []ctrlruntimeclient.Object{}
@@ -1850,7 +1850,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
 				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}

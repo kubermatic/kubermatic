@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -122,7 +123,7 @@ func (t *TestPodConfig) Exec(container string, command ...string) (string, strin
 	}, scheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
-	err := execute("POST", req.URL(), t.Config, nil, &stdout, &stderr, tty)
+	err := execute(http.MethodPost, req.URL(), t.Config, nil, &stdout, &stderr, tty)
 
 	return stdout.String(), stderr.String(), err
 }

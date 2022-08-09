@@ -268,7 +268,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", test.ProjectName), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", test.ProjectName), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
@@ -383,7 +383,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 	for _, tc := range testcases {
 		t.Logf("entering")
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
@@ -498,7 +498,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
@@ -569,7 +569,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			if len(testStruct.clusterType) > 0 {
 				testStruct.clusterType = fmt.Sprintf("?type=%s", testStruct.clusterType)
 			}
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/cluster%s", testStruct.clusterType), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/upgrades/cluster%s", testStruct.clusterType), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {

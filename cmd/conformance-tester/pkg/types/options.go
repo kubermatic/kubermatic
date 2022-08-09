@@ -215,8 +215,8 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	// periodics do not specify a version at all and just rely on us auto-determining
 	// the most recent stable (stable = latest-1) supported Kubernetes version
 	if len(o.Versions) == 0 {
-		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
 		o.Versions = append(o.Versions, test.LatestStableKubernetesVersion(nil))
+		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
 	}
 
 	o.Distributions, err = o.effectiveDistributions()

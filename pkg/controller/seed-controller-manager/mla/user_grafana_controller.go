@@ -202,7 +202,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 }
 
 func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User, grafanaClient *grafanasdk.Client) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", r.grafanaURL+"/api/user", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err
 	}

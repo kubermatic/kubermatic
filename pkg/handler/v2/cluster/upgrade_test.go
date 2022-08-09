@@ -258,7 +258,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/foo/upgrades", test.ProjectName), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/projects/%s/clusters/foo/upgrades", test.ProjectName), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
@@ -372,7 +372,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 	for _, tc := range testcases {
 		t.Logf("entering")
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes/upgrades",
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes/upgrades",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object

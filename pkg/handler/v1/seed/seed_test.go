@@ -17,6 +17,7 @@ limitations under the License.
 package seed_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -45,19 +46,19 @@ func TestSeedNamesListEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to list seed names",
 			expectedResponse: `["us-central1"]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list seed names",
 			expectedResponse: `["us-central1"]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/seed", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/seed", nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)

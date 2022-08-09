@@ -190,7 +190,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToRename), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToRename), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -412,7 +412,7 @@ func TestListProjectEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// test data
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects?displayAll=%v", tc.DisplayAll), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects?displayAll=%v", tc.DisplayAll), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -672,7 +672,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// test data
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -808,7 +808,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// test data
-			req := httptest.NewRequest("POST", "/api/v1/projects", strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/projects", strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -893,7 +893,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// test data
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1010,7 +1010,7 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.projectToSync), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s", tc.projectToSync), strings.NewReader(""))
 			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 			res := httptest.NewRecorder()
 			getEp.ServeHTTP(res, req)
@@ -1022,7 +1022,7 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 			test.CompareWithResult(t, res, tc.expectedGetProjectResponse)
 
 			// act 2 - create a new project using sa token
-			req = httptest.NewRequest("POST", "/api/v1/projects", strings.NewReader(tc.bodyCreate))
+			req = httptest.NewRequest(http.MethodPost, "/api/v1/projects", strings.NewReader(tc.bodyCreate))
 			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 			res = httptest.NewRecorder()
 			getEp.ServeHTTP(res, req)

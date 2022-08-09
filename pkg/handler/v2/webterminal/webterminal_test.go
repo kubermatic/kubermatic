@@ -152,7 +152,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v2/kubeconfig/secret?cluster_id=%s&project_id=%s&user_id=%s", tc.ClusterID, tc.ProjectID, tc.UserID)
-			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -214,7 +214,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 
 				// call kubeconfig endpoint after authentication
 				// exchange code phase
-				req = httptest.NewRequest("GET", urlExchangeCodePhase, strings.NewReader(""))
+				req = httptest.NewRequest(http.MethodGet, urlExchangeCodePhase, strings.NewReader(""))
 				res = httptest.NewRecorder()
 
 				// create secure cookie

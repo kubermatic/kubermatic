@@ -27,6 +27,7 @@ package handler_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -56,7 +57,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 	}{
 		{
 			name:            "scenario 1: list GroupProjectBindings in a project",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -66,7 +67,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				bindingList := &[]apiv2.GroupProjectBinding{}
 				err := json.Unmarshal(resp.Body.Bytes(), bindingList)
@@ -83,7 +84,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 2: list GroupProjectBindings in an illicit project",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -93,14 +94,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 3: get an existing GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -108,7 +109,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				binding := &apiv2.GroupProjectBinding{}
 				err := json.Unmarshal(resp.Body.Bytes(), binding)
@@ -124,21 +125,21 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 4: get a non-existing GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-DoesNotExist",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 404,
+			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 5: get an illicit GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -147,14 +148,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 6: create a new GroupProjectBinding",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/projects/foo-ID/groupbindings",
 			body: `{
 				"role": "viewers",
@@ -165,14 +166,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 201,
+			httpStatus: http.StatusCreated,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 7: create a new GroupProjectBinding with invalid role name",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/projects/foo-ID/groupbindings",
 			body: `{
 				"role": "invalid",
@@ -183,14 +184,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 400,
+			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 8: delete an existing GroupProjectBinding",
-			method:          "DELETE",
+			method:          http.MethodDelete,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -198,14 +199,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 9: patch an existing GroupProjectBinding",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"group": "testGroup",
 				"role": "owners"
@@ -217,14 +218,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 10: patch a non-existing GroupProjectBinding",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"group": "testGroup",
 				"role": "owners"
@@ -236,14 +237,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 404,
+			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 11: patch an existing GroupProjectBinding with illicit role",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"role": "invalid"
 			}`,
@@ -254,7 +255,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 400,
+			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},

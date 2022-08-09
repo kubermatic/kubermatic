@@ -72,7 +72,7 @@ func TestCreateAllowedRegistry(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error marshalling body into json: %v", err)
 			}
-			req := httptest.NewRequest("POST", "/api/v2/allowedregistries", bytes.NewBuffer(body))
+			req := httptest.NewRequest(http.MethodPost, "/api/v2/allowedregistries", bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}, nil, hack.NewTestRouting)
 			if err != nil {
@@ -139,7 +139,7 @@ func TestGetAllowedRegistry(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -187,7 +187,7 @@ func TestListAllowedRegistries(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
-			req := httptest.NewRequest("GET", "/api/v2/allowedregistries", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/allowedregistries", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -250,7 +250,7 @@ func TestDeleteAllowedRegistry(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRToDeleteName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRToDeleteName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -321,7 +321,7 @@ func TestPatchAllowedRegistry(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
-			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRName), strings.NewReader(tc.RawPatch))
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v2/allowedregistries/%s", tc.WRName), strings.NewReader(tc.RawPatch))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {

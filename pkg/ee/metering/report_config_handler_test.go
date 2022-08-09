@@ -118,7 +118,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 		if tc.reportName != "" {
 			reqURL += "/" + tc.reportName
 		}
-		req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
 		res := httptest.NewRecorder()
 
 		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
@@ -261,7 +261,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 		if tc.reportName != "" {
 			reqURL += "/" + tc.reportName
 		}
-		req := httptest.NewRequest("POST", reqURL, strings.NewReader(tc.body))
+		req := httptest.NewRequest(http.MethodPost, reqURL, strings.NewReader(tc.body))
 		res := httptest.NewRecorder()
 
 		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
@@ -385,7 +385,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
-		req := httptest.NewRequest("PUT", reqURL, strings.NewReader(tc.body))
+		req := httptest.NewRequest(http.MethodPut, reqURL, strings.NewReader(tc.body))
 		res := httptest.NewRecorder()
 
 		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
@@ -449,7 +449,7 @@ func TestDeleteMeteringReportConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
-		req := httptest.NewRequest("DELETE", reqURL, strings.NewReader(""))
+		req := httptest.NewRequest(http.MethodDelete, reqURL, strings.NewReader(""))
 		res := httptest.NewRecorder()
 
 		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)

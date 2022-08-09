@@ -87,7 +87,7 @@ func TestVsphereEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", tc.URL, nil)
+			req := httptest.NewRequest(http.MethodGet, tc.URL, nil)
 			req.Header.Add("DatacenterName", vSphereDatacenterName)
 			req.Header.Add("Username", "user")
 			req.Header.Add("Password", "pass")

@@ -117,7 +117,7 @@ func TestDeleteSSHKey(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			sshKeyID := tc.SSHKeyToDelete
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/sshkeys/%s", "my-first-project-ID", sshKeyID), nil)
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s/sshkeys/%s", "my-first-project-ID", sshKeyID), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -228,7 +228,7 @@ func TestListSSHKeys(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -332,7 +332,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)

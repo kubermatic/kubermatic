@@ -189,7 +189,7 @@ func TestListPresetEndpoint(t *testing.T) {
 		// KUBEVIRT PRESET LIST
 		{
 			Name:               "scenario 1: preset list- kubevirt kubeconfig provided",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
 			HTTPRequestHeaders: []KeyValue{{Key: "Kubeconfig", Value: fakeKvConfig}},
 			Body:               ``,
@@ -203,7 +203,7 @@ func TestListPresetEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "scenario 2: preset list- kubevirt kubeconfig from kubermatic preset",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
 			Body:               ``,
@@ -262,7 +262,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 		// KUBEVIRT PRESET LIST No Credentials
 		{
 			Name:              "scenario 1: preset list- kubevirt kubeconfig from cluster",
-			HTTPRequestMethod: "GET",
+			HTTPRequestMethod: http.MethodGet,
 			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmflavors", test.GenDefaultProject().Name, clusterId),
 			Body:              ``,
 			HTTPStatus:        http.StatusOK,
@@ -285,7 +285,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 		},
 		{
 			Name:              "scenario 2: preset list- kubevirt kubeconfig from credential reference (secret)",
-			HTTPRequestMethod: "GET",
+			HTTPRequestMethod: http.MethodGet,
 			HTTPRequestURL:    fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/vmflavors", test.GenDefaultProject().Name, clusterId),
 			Body:              ``,
 			HTTPStatus:        http.StatusOK,
@@ -372,7 +372,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 		// LIST Storage classes
 		{
 			Name:               "scenario 1: list storage classes- kubevirt kubeconfig provided",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/storageclasses",
 			HTTPRequestHeaders: []KeyValue{{Key: "Kubeconfig", Value: fakeKvConfig}},
 			Body:               ``,
@@ -386,7 +386,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "scenario 2: list storage classes- kubevirt from kubermatic preset",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/storageclasses",
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
 			Body:               ``,
@@ -445,7 +445,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 		// LIST Storage classes No Credentials
 		{
 			Name:               "scenario 1: list storage classes- kubevirt kubeconfig from cluster",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/storageclasses", test.GenDefaultProject().Name, clusterId),
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
 			Body:               ``,
@@ -469,7 +469,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 		},
 		{
 			Name:               "scenario 2: list storage classes- kubevirt kubeconfig from credential reference (secret)",
-			HTTPRequestMethod:  "GET",
+			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     fmt.Sprintf("/api/v2/projects/%s/clusters/%s/providers/kubevirt/storageclasses", test.GenDefaultProject().Name, clusterId),
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
 			Body:               ``,

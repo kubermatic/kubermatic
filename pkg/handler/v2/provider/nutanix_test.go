@@ -97,7 +97,7 @@ func TestNutanixClustersEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/providers/nutanix/%s/clusters", tc.dc), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/providers/nutanix/%s/clusters", tc.dc), strings.NewReader(""))
 
 			req.Header.Add("NutanixUsername", testNutanixUsername)
 			req.Header.Add("NutanixPassword", tc.password)
@@ -171,7 +171,7 @@ func TestNutanixProjectsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/providers/nutanix/%s/projects", tc.dc), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/providers/nutanix/%s/projects", tc.dc), strings.NewReader(""))
 
 			req.Header.Add("NutanixUsername", testNutanixUsername)
 			req.Header.Add("NutanixPassword", tc.password)

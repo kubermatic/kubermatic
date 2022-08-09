@@ -27,6 +27,7 @@ package resourcequota_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -96,11 +97,11 @@ func TestHandlerResourceQuotas(t *testing.T) {
 	}{
 		{
 			name:            "scenario 1: list all resource quotas with proper quota conversion",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/quotas",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
@@ -134,11 +135,11 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:            "scenario 2: list filtered resource quotas",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             fmt.Sprintf("/api/v2/quotas?subjectName=%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
@@ -155,11 +156,11 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:            "scenario 3: get a single resource quota",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuota := &apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
@@ -183,18 +184,18 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:            "scenario 4: get a non-existing single resource quota",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 5: create an existing resource quota",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/quotas",
 			body: `{
 		      "subjectKind": "project",
@@ -202,14 +203,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      409,
+			httpStatus:      http.StatusConflict,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 6: create a new resource quota",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/quotas",
 			body: `{
 		      "subjectKind": "project",
@@ -222,14 +223,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      201,
+			httpStatus:      http.StatusCreated,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 7: update an existing resource quota",
-			method: "PATCH",
+			method: http.MethodPatch,
 			url:    fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			body: `{
 				"cpu": 10,
@@ -238,14 +239,14 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:   "scenario 8: update a non-existing resource quota",
-			method: "PATCH",
+			method: http.MethodPatch,
 			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
 				"cpu": 10,
@@ -254,40 +255,40 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 9: delete an existing resource quota",
-			method:          "DELETE",
+			method:          http.MethodDelete,
 			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 10: delete a non-existing resource quota",
-			method:          "DELETE",
+			method:          http.MethodDelete,
 			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
 		},
 		{
 			name:            "scenario 11: get a project resource quota",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             fmt.Sprintf("/api/v2/projects/%s/quota", projectName),
 			existingAPIUser: test.GenDefaultAPIUser(),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuota := &apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
@@ -307,7 +308,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:            "scenario 12: user bob can't get a project resource quota from a project he doesn't belong to",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             fmt.Sprintf("/api/v2/projects/%s-2/quota", projectName),
 			existingAPIUser: test.GenDefaultAPIUser(),
 			existingObjects: append(existingObjects, func() *kubermaticv1.Project {
@@ -315,7 +316,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				p.Name = fmt.Sprintf("%s-2", projectName)
 				return p
 			}()),
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},

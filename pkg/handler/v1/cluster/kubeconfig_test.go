@@ -209,7 +209,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v1/kubeconfig?cluster_id=%s&project_id=%s&user_id=%s&datacenter=%s", tc.ClusterID, tc.ProjectID, tc.UserID, tc.Datacenter)
-			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
@@ -271,7 +271,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 
 				// call kubeconfig endpoint after authentication
 				// exchange code phase
-				req = httptest.NewRequest("GET", urlExchangeCodePhase, strings.NewReader(""))
+				req = httptest.NewRequest(http.MethodGet, urlExchangeCodePhase, strings.NewReader(""))
 				res = httptest.NewRecorder()
 
 				// create secure cookie
@@ -436,7 +436,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/kubeconfig", tc.ProjectToGet, tc.ClusterToGet), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/kubeconfig", tc.ProjectToGet, tc.ClusterToGet), nil)
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
