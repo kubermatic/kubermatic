@@ -101,7 +101,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             "/api/v2/quotas",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
@@ -139,7 +139,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             fmt.Sprintf("/api/v2/quotas?subjectName=%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuotaList := &[]apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuotaList)
@@ -160,7 +160,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuota := &apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
@@ -188,7 +188,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -203,7 +203,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      409,
+			httpStatus:      http.StatusConflict,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -223,7 +223,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      201,
+			httpStatus:      http.StatusCreated,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -239,7 +239,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -255,7 +255,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			}`,
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -266,7 +266,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -277,7 +277,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             "/api/v2/quotas/project-non-existing",
 			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			existingObjects: existingObjects,
-			httpStatus:      404,
+			httpStatus:      http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -288,7 +288,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 			url:             fmt.Sprintf("/api/v2/projects/%s/quota", projectName),
 			existingAPIUser: test.GenDefaultAPIUser(),
 			existingObjects: existingObjects,
-			httpStatus:      200,
+			httpStatus:      http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				resourceQuota := &apiv2.ResourceQuota{}
 				err := json.Unmarshal(resp.Body.Bytes(), resourceQuota)
@@ -316,7 +316,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 				p.Name = fmt.Sprintf("%s-2", projectName)
 				return p
 			}()),
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},

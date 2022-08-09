@@ -50,13 +50,13 @@ func TestDatacentersListEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to list dc without email filtering",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc with email filtering",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -93,35 +93,35 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 			name:             "admin should be able to get email restricted dc",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should not be able to get restricted dc if his email domain is restricted",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"restricted-fake-dc\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
 			name:             "regular user should be able to get restricted dc if his email domain is allowed",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
 		{
 			name:             "should get 404 for non-existent dc",
 			dc:               "idontexist",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"idontexist\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
 			name:             "should find dc",
 			dc:               "regular-do1",
 			expectedResponse: `{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -158,21 +158,21 @@ func TestDatacenterListForProviderEndpoint(t *testing.T) {
 			name:             "admin should be able to list dc per provider without email filtering",
 			provider:         "fake",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc per provider with email filtering",
 			provider:         "fake",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
 			name:             "should receive empty list for non-existent provider",
 			provider:         "idontexist",
 			expectedResponse: `[]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -211,7 +211,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "fake",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -219,7 +219,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "fake",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"restricted-fake-dc\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -227,7 +227,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "fake",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
 		{
@@ -235,7 +235,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "fake",
 			dc:               "idontexist",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"idontexist\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -243,7 +243,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "idontexist",
 			dc:               "regular-do1",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"regular-do1\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -251,7 +251,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			provider:         "digitalocean",
 			dc:               "regular-do1",
 			expectedResponse: `{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -288,21 +288,21 @@ func TestDatacenterListForSeedEndpoint(t *testing.T) {
 			name:             "admin should be able to list dc per seed without email filtering",
 			seed:             "us-central1",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc per seed with email filtering",
 			seed:             "us-central1",
 			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":false}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}}]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
 			name:             "should receive 404 for non-existing seed",
 			seed:             "idontexist",
 			expectedResponse: `{"error":{"code":404,"message":"seed \"idontexist\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -341,7 +341,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "us-central1",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -349,7 +349,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "us-central1",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"restricted-fake-dc\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -357,7 +357,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "us-central1",
 			dc:               "restricted-fake-dc",
 			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
 		{
@@ -365,7 +365,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "us-central1",
 			dc:               "idontexist",
 			expectedResponse: `{"error":{"code":404,"message":"datacenter \"idontexist\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -373,7 +373,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "idontexist",
 			dc:               "regular-do1",
 			expectedResponse: `{"error":{"code":404,"message":"seed \"idontexist\" not found"}}`,
-			httpStatus:       404,
+			httpStatus:       http.StatusNotFound,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -381,7 +381,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			seed:             "us-central1",
 			dc:               "regular-do1",
 			expectedResponse: `{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":true}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}
@@ -427,7 +427,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "do-correct",
 			seedName:         "us-central1",
 			expectedResponse: `{"metadata":{"name":"do-correct"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":""},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       201,
+			httpStatus:       http.StatusCreated,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -439,7 +439,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "do-correct",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
-			httpStatus:       403,
+			httpStatus:       http.StatusForbidden,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -451,7 +451,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"private-do1\" already exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -463,7 +463,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "idontexist",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -474,7 +474,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: []"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -487,7 +487,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: [digitalocean aws]"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -499,7 +499,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "different",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: path seed \"different\" and request seed \"us-central1\" not equal"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}
@@ -566,7 +566,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pauseImage":"pause-image"},"requiredEmails":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -589,7 +589,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pauseImage":"pause-image"},"requiredEmails":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -604,7 +604,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "do-correct",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
-			httpStatus:       403,
+			httpStatus:       http.StatusForbidden,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -619,7 +619,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "idontexist",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"idontexist\" does not exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -634,7 +634,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "regular-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: cannot change \"regular-do1\" datacenter name to \"private-do1\" as it already exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -649,7 +649,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "idontexist",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -661,7 +661,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: []"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -679,7 +679,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: [digitalocean aws]"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -694,7 +694,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "different",
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: path seed \"different\" and request seed \"us-central1\" not equal"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}
@@ -746,7 +746,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"aws","aws":{"region":"EU"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -755,7 +755,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true,"ipv6Enabled":true}}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -764,7 +764,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "do-correct",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
-			httpStatus:       403,
+			httpStatus:       http.StatusForbidden,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -773,7 +773,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "idontexist",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"idontexist\" does not exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -782,7 +782,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "regular-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: cannot change \"regular-do1\" datacenter name to \"private-do1\" as it already exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -791,7 +791,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "idontexist",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -800,7 +800,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"patched dc validation failed: one DC provider should be specified, got: []"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -809,7 +809,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"patched dc validation failed: one DC provider should be specified, got: [digitalocean aws]"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -818,7 +818,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"patched dc validation failed: path seed name \"us-central1\" has to be equal to patch seed name \"different\""}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}
@@ -858,7 +858,7 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{}`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -866,7 +866,7 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
-			httpStatus:       403,
+			httpStatus:       http.StatusForbidden,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -874,7 +874,7 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 			dcName:           "idontexist",
 			seedName:         "us-central1",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"idontexist\" does not exists"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
@@ -882,7 +882,7 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 			dcName:           "private-do1",
 			seedName:         "idontexist",
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
-			httpStatus:       400,
+			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}

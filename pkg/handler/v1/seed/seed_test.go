@@ -46,13 +46,13 @@ func TestSeedNamesListEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to list seed names",
 			expectedResponse: `["us-central1"]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list seed names",
 			expectedResponse: `["us-central1"]`,
-			httpStatus:       200,
+			httpStatus:       http.StatusOK,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
 	}

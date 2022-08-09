@@ -514,8 +514,8 @@ func (v tokenVerifier) Verify(token string) (*Identity, error) {
 		return nil, NewSTSError(fmt.Sprintf("error reading HTTP result: %v", err))
 	}
 
-	if response.StatusCode != 200 {
-		return nil, NewSTSError(fmt.Sprintf("error from AWS (expected 200, got %d). Body: %s", response.StatusCode, string(responseBody[:])))
+	if response.StatusCode != http.StatusOK {
+		return nil, NewSTSError(fmt.Sprintf("error from AWS (expected %d, got %d). Body: %s", http.StatusOK, response.StatusCode, string(responseBody[:])))
 	}
 
 	var callerIdentity getCallerIdentityWrapper

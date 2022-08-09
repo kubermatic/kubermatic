@@ -67,7 +67,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				bindingList := &[]apiv2.GroupProjectBinding{}
 				err := json.Unmarshal(resp.Body.Bytes(), bindingList)
@@ -94,7 +94,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -109,7 +109,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				binding := &apiv2.GroupProjectBinding{}
 				err := json.Unmarshal(resp.Body.Bytes(), binding)
@@ -132,7 +132,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 404,
+			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -148,7 +148,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
 			},
-			httpStatus: 403,
+			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -166,7 +166,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 201,
+			httpStatus: http.StatusCreated,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -184,7 +184,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 			},
-			httpStatus: 400,
+			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -199,7 +199,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -218,7 +218,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 200,
+			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -237,7 +237,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 404,
+			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},
@@ -255,7 +255,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
 			},
-			httpStatus: 400,
+			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
 				return nil
 			},

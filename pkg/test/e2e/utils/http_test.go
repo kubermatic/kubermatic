@@ -40,70 +40,70 @@ func TestHttpClientWithRetries(t *testing.T) {
 			name: "success at first attempt",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(200)
+					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, "success")
 				},
 			},
 
 			numRetries: 1,
-			expStatus:  200,
+			expStatus:  http.StatusOK,
 		},
 		{
 			name: "success after 2 allowed error codes",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(404)
+					w.WriteHeader(http.StatusNotFound)
 					fmt.Fprintln(w, "failed")
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(404)
+					w.WriteHeader(http.StatusNotFound)
 					fmt.Fprintln(w, "failed")
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(200)
+					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, "success")
 				},
 			},
 			retryInterval:     1 * time.Millisecond,
 			numRetries:        3,
-			allowedErrorCodes: []int{404},
-			expStatus:         200,
+			allowedErrorCodes: []int{http.StatusNotFound},
+			expStatus:         http.StatusOK,
 		},
 		{
 			name: "success after 5xx",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(500)
+					w.WriteHeader(http.StatusInternalServerError)
 					fmt.Fprintln(w, "temporary server error")
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(200)
+					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, "failed")
 				},
 			},
 			retryInterval: 1 * time.Millisecond,
 			numRetries:    2,
-			expStatus:     200,
+			expStatus:     http.StatusOK,
 		},
 		{
 			name: "do not retry after 501",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(501)
+					w.WriteHeader(http.StatusNotImplemented)
 					fmt.Fprintln(w, "not implemented")
 				},
 			},
-			expStatus: 501,
+			expStatus: http.StatusNotImplemented,
 		},
 		{
 			name: "Error after retry timeout",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(500)
+					w.WriteHeader(http.StatusInternalServerError)
 					fmt.Fprintln(w, "temporary server error")
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(503)
+					w.WriteHeader(http.StatusServiceUnavailable)
 					fmt.Fprintln(w, "temporary server error")
 				},
 			},
@@ -116,32 +116,32 @@ func TestHttpClientWithRetries(t *testing.T) {
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
 					time.AfterFunc(20*time.Millisecond, func() {
-						w.WriteHeader(200)
+						w.WriteHeader(http.StatusOK)
 						fmt.Fprintln(w, "success")
 					})
 				},
 				func(w http.ResponseWriter, r *http.Request) {
 					time.AfterFunc(20*time.Millisecond, func() {
-						w.WriteHeader(200)
+						w.WriteHeader(http.StatusOK)
 						fmt.Fprintln(w, "success")
 					})
 				},
 				func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(200)
+					w.WriteHeader(http.StatusOK)
 					fmt.Fprintln(w, "success")
 				},
 			},
 			retryInterval:  1 * time.Millisecond,
 			numRetries:     3,
 			requestTimeout: 10 * time.Millisecond,
-			expStatus:      200,
+			expStatus:      http.StatusOK,
 		},
 		{
 			name: "Failed due to request timeout",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
 					time.AfterFunc(20*time.Millisecond, func() {
-						w.WriteHeader(200)
+						w.WriteHeader(http.StatusOK)
 						fmt.Fprintln(w, "success")
 					})
 				},

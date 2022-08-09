@@ -131,9 +131,9 @@ func SetupOpenstackServer(t *testing.T) {
 
 			w.Header().Add("Content-Type", "application/json")
 			if r.Method == http.MethodPost {
-				w.WriteHeader(201)
+				w.WriteHeader(http.StatusCreated)
 			} else {
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 			}
 
 			_, err := w.Write(buf.Bytes())

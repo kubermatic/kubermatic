@@ -137,7 +137,7 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 		return urlString, nil
 	}
 
-	return "", utilerrors.New(404, "report not found")
+	return "", utilerrors.New(http.StatusNotFound, "report not found")
 }
 
 func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
@@ -179,7 +179,7 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 		return nil
 	}
 
-	return utilerrors.New(404, "report not found")
+	return utilerrors.New(http.StatusNotFound, "report not found")
 }
 
 func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
