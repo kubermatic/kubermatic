@@ -63,7 +63,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
-	auth, err := util.AuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.Source.Helm)
+	auth, err := util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.Source.Helm)
 	if err != nil {
 		return util.NoStatusUpdate, err
 	}
