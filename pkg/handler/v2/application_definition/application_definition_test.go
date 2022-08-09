@@ -70,7 +70,7 @@ func TestListApplicationDefinitions(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v2/applicationdefinitions", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/applicationdefinitions", nil)
 			res := httptest.NewRecorder()
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, hack.NewTestRouting)

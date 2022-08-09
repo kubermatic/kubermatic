@@ -32,7 +32,7 @@ import (
 )
 
 func TestKubermaticVersion(t *testing.T) {
-	req := httptest.NewRequest("GET", "/api/v1/version", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/version", nil)
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(*test.GenDefaultAPIUser(), []ctrlruntimeclient.Object{}, nil, nil, hack.NewTestRouting)
 	if err != nil {

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -61,7 +62,7 @@ func TestDatacentersListEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/dc", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/dc", nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -126,7 +127,7 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/dc/%s", tc.dc), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/dc/%s", tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -177,7 +178,7 @@ func TestDatacenterListForProviderEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc", tc.provider), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/providers/%s/dc", tc.provider), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -256,7 +257,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc/%s", tc.provider, tc.dc), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/providers/%s/dc/%s", tc.provider, tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -307,7 +308,7 @@ func TestDatacenterListForSeedEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seed), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/seed/%s/dc", tc.seed), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -386,7 +387,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seed, tc.dc), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seed, tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -515,7 +516,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error marshalling body into json: %v", err)
 			}
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seedName), bytes.NewBuffer(body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/seed/%s/dc", tc.seedName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
 				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
@@ -709,7 +710,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error marshalling body into json: %v", err)
 			}
-			req := httptest.NewRequest("PUT",
+			req := httptest.NewRequest(http.MethodPut,
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcPathName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
@@ -823,7 +824,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("PATCH",
+			req := httptest.NewRequest(http.MethodPatch,
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcPathName), strings.NewReader(tc.patch))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
@@ -887,7 +888,7 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE",
+			req := httptest.NewRequest(http.MethodDelete,
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcName), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},

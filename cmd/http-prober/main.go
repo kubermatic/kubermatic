@@ -108,7 +108,7 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", e.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.String(), nil)
 	if err != nil {
 		log.Fatalw("Failed to build request", zap.Error(err))
 	}

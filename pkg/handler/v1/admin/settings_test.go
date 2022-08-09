@@ -63,7 +63,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", "/api/v1/admin/settings", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/settings", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -128,7 +128,7 @@ func TestUpdateGlobalSettings(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("PATCH", "/api/v1/admin/settings", strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/settings", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)

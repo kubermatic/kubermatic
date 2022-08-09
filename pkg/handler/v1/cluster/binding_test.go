@@ -258,7 +258,7 @@ func TestBindUserToRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s/bindings", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s/bindings", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -374,7 +374,7 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s/bindings", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s/bindings", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -479,7 +479,7 @@ func TestListRoleBinding(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/bindings", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/bindings", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -718,7 +718,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -835,7 +835,7 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -936,7 +936,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterbindings", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterbindings", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)

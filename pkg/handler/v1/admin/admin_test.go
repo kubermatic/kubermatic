@@ -68,7 +68,7 @@ func TestGetAdmins(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", "/api/v1/admin", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/admin", strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			kubermaticObj := []ctrlruntimeclient.Object{test.GenTestSeed()}
@@ -142,7 +142,7 @@ func TestSetAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("PUT", "/api/v1/admin", strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPut, "/api/v1/admin", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
 			kubermaticObj := []ctrlruntimeclient.Object{test.GenTestSeed()}

@@ -495,7 +495,7 @@ func (v tokenVerifier) Verify(token string) (*Identity, error) {
 		return nil, FormatError{fmt.Sprintf("X-Amz-Date parameter is expired (%.f minute expiration) %s", presignedURLExpiration.Minutes(), dateParam)}
 	}
 
-	req, err := http.NewRequest("GET", parsedURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, parsedURL.String(), nil)
 	req.Header.Set(clusterIDHeader, v.clusterID)
 	req.Header.Set("accept", "application/json")
 

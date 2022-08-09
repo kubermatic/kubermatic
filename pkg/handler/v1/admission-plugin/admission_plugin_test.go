@@ -120,7 +120,7 @@ func TestCredentialEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/admission/plugins/%s", tc.version), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/admission/plugins/%s", tc.version), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			apiUser := test.GenDefaultAPIUser()

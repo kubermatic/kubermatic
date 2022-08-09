@@ -126,7 +126,7 @@ func (c *Client) fetchLoginURL(ctx context.Context, connector ConnectorType) (*u
 
 	c.log.Debugw("Fetching OIDC login page", "url", loginURL.String())
 
-	req, err := http.NewRequest("GET", loginURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, loginURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for login page: %w", err)
 	}
@@ -174,7 +174,7 @@ func (c *Client) authenticate(ctx context.Context, loginURL *url.URL, login stri
 	c.log.Debugw("Sending login request", "url", loginURL.String(), "login", login)
 
 	// prepare request
-	req, err := http.NewRequest("POST", loginURL.String(), buf)
+	req, err := http.NewRequest(http.MethodPost, loginURL.String(), buf)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}

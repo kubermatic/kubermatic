@@ -61,7 +61,7 @@ func TestListSeedsEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", "/api/v1/admin/seeds", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/seeds", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -123,7 +123,7 @@ func TestGetSeedEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -220,7 +220,7 @@ func TestUpdateSeedEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -283,7 +283,7 @@ func TestDeleteSeedEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/admin/seeds/%s", tc.seedName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
@@ -337,7 +337,7 @@ func TestCreateSeedEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			req := httptest.NewRequest("POST", "/api/v1/admin/seeds", strings.NewReader(tc.body))
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/seeds", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)

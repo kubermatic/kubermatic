@@ -87,7 +87,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/providers/azure/sizes", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/providers/azure/sizes", strings.NewReader(""))
 
 			req.Header.Add("SubscriptionID", testID)
 			req.Header.Add("ClientID", testID)

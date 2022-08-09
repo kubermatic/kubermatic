@@ -160,7 +160,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/providers/%s/versions", tc.provider), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/providers/%s/versions", tc.provider), nil)
 			res := httptest.NewRecorder()
 			var machineObj []ctrlruntimeclient.Object
 

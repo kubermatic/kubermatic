@@ -104,7 +104,7 @@ func setupOpenstackServer(t *testing.T) {
 			}
 
 			w.Header().Add("Content-Type", "application/json")
-			if r.Method == "POST" {
+			if r.Method == http.MethodPost {
 				w.WriteHeader(201)
 			} else {
 				w.WriteHeader(200)
@@ -191,7 +191,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", tc.URL, strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, tc.URL, strings.NewReader(""))
 			if tc.QueryParams != nil {
 				q := req.URL.Query()
 				for k, v := range tc.QueryParams {

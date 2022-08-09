@@ -153,7 +153,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 	hostURL := fmt.Sprintf("http://%s", net.JoinHostPort(host, "80"))
 	log.Debug("Waiting until the pod is available via the LoadBalancer...")
 	err = wait.Poll(ctx, 3*time.Second, opts.CustomTestTimeout, func() (transient error, terminal error) {
-		request, err := http.NewRequestWithContext(ctx, "GET", hostURL, nil)
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, hostURL, nil)
 		if err != nil {
 			return nil, err
 		}

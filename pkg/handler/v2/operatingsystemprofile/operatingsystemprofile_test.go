@@ -138,7 +138,7 @@ func TestListOperatingSystemProfiles(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.existingObjects = append(tc.existingObjects, test.APIUserToKubermaticUser(*tc.apiUser), test.GenTestSeed())
 
-			req := httptest.NewRequest("GET", "/api/v2/seeds/us-central1/operatingsystemprofiles", strings.NewReader(""))
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/seeds/us-central1/operatingsystemprofiles", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.apiUser, nil, tc.existingObjects, nil, hack.NewTestRouting)
 			assert.NoError(t, err)

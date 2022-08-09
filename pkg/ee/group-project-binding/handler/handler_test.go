@@ -27,6 +27,7 @@ package handler_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -56,7 +57,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 	}{
 		{
 			name:            "scenario 1: list GroupProjectBindings in a project",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -83,7 +84,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 2: list GroupProjectBindings in an illicit project",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -100,7 +101,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 3: get an existing GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -124,7 +125,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 4: get a non-existing GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-DoesNotExist",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -138,7 +139,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 5: get an illicit GroupProjectBinding",
-			method:          "GET",
+			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -154,7 +155,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:   "scenario 6: create a new GroupProjectBinding",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/projects/foo-ID/groupbindings",
 			body: `{
 				"role": "viewers",
@@ -172,7 +173,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:   "scenario 7: create a new GroupProjectBinding with invalid role name",
-			method: "POST",
+			method: http.MethodPost,
 			url:    "/api/v2/projects/foo-ID/groupbindings",
 			body: `{
 				"role": "invalid",
@@ -190,7 +191,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:            "scenario 8: delete an existing GroupProjectBinding",
-			method:          "DELETE",
+			method:          http.MethodDelete,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
 			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 			existingObjects: []ctrlruntimeclient.Object{
@@ -205,7 +206,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:   "scenario 9: patch an existing GroupProjectBinding",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"group": "testGroup",
 				"role": "owners"
@@ -224,7 +225,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:   "scenario 10: patch a non-existing GroupProjectBinding",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"group": "testGroup",
 				"role": "owners"
@@ -243,7 +244,7 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 		},
 		{
 			name:   "scenario 11: patch an existing GroupProjectBinding with illicit role",
-			method: "PATCH",
+			method: http.MethodPatch,
 			body: `{
 				"role": "invalid"
 			}`,

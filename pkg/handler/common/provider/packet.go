@@ -82,7 +82,7 @@ func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentV
 	}
 
 	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
-	req, err := client.NewRequest("GET", "/projects/"+projectID+"/plans", nil)
+	req, err := client.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
 	if err != nil {
 		return sizes, err
 	}
@@ -112,7 +112,7 @@ func DescribePacketSize(apiKey, projectID, instanceType string) (packngo.Plan, e
 	}
 
 	packetclient := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
-	req, err := packetclient.NewRequest("GET", "/projects/"+projectID+"/plans", nil)
+	req, err := packetclient.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
 	if err != nil {
 		return plan, err
 	}
