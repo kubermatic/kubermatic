@@ -102,13 +102,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	result, err := r.reconcile(ctx, log.With("provider", cluster.Spec.CloudSpec.ProviderName), cluster)
 	if err != nil {
-		if isHttpError(err, http.StatusNotFound) {
+		switch {
+		case isHttpError(err, http.StatusNotFound):
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
 			err = nil
-		} else if isHttpError(err, http.StatusForbidden) {
+		case isHttpError(err, http.StatusForbidden):
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 			err = nil
-		} else {
+		default:
 			log.Errorw("Reconciling failed", zap.Error(err))
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		}
