@@ -154,6 +154,14 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 }
 
 func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldAddon *kubermaticv1.Addon, newAddon *kubermaticv1.Addon) error {
+	// We only care about the APIVersion, Kind and Name to stay the same, the rest can be changed
+	// as they are irrelevant.
+
+	oldAddon.Spec.Cluster.UID = newAddon.Spec.Cluster.UID
+	oldAddon.Spec.Cluster.Namespace = newAddon.Spec.Cluster.Namespace
+	oldAddon.Spec.Cluster.ResourceVersion = newAddon.Spec.Cluster.ResourceVersion
+	oldAddon.Spec.Cluster.FieldPath = newAddon.Spec.Cluster.FieldPath
+
 	if !equality.Semantic.DeepEqual(oldAddon.Spec.Cluster, newAddon.Spec.Cluster) {
 		return errors.New("Cluster reference cannot be changed")
 	}
