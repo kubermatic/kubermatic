@@ -1603,5 +1603,7 @@ type ApplicationDefinition struct {
 
 // swagger:model OperatingSystemProfile
 type OperatingSystemProfile struct {
-	Name string `json:"name"`
+	Name                    string   `json:"name"`
+	OperatingSystem         string   `json:"operatingSystem"`
+	SupportedCloudProviders []string `json:"supportedCloudProviders,omitempty"`
 }

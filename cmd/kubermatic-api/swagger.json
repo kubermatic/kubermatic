@@ -30480,6 +30480,17 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "operatingSystem": {
+          "type": "string",
+          "x-go-name": "OperatingSystem"
+        },
+        "supportedCloudProviders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SupportedCloudProviders"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

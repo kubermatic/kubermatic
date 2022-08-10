@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 )
 
 // TODO: Find a way to populate these dynamically.
@@ -38,25 +39,39 @@ import (
 // Namespace is purposefully left empty since we cannot determine namespace of these resources before cluster creation.
 var defaultOperatingSystemProfiles = []apiv2.OperatingSystemProfile{
 	{
-		Name: "osp-amzn2",
+		Name:                    "osp-amzn2",
+		OperatingSystem:         "amzn2",
+		SupportedCloudProviders: []string{"aws"},
 	},
 	{
-		Name: "osp-centos",
+		Name:                    "osp-centos",
+		OperatingSystem:         "centos",
+		SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "nutanix", "openstack", "vsphere"},
 	},
 	{
-		Name: "osp-flatcar",
+		Name:                    "osp-flatcar",
+		OperatingSystem:         "flatcar",
+		SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 	},
 	{
-		Name: "osp-rhel",
+		Name:                    "osp-rhel",
+		OperatingSystem:         "rhel",
+		SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 	},
 	{
-		Name: "osp-rockylinux",
+		Name:                    "osp-rockylinux",
+		OperatingSystem:         "rockylinux",
+		SupportedCloudProviders: []string{"aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "openstack", "vsphere"},
 	},
 	{
-		Name: "osp-sles",
+		Name:                    "osp-sles",
+		OperatingSystem:         "sles",
+		SupportedCloudProviders: []string{"aws"},
 	},
 	{
-		Name: "osp-ubuntu",
+		Name:                    "osp-ubuntu",
+		OperatingSystem:         "ubuntu",
+		SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "gce", "hetzner", "kubevirt", "nutanix", "openstack", "vmware-cloud-director", "vsphere"},
 	},
 }
 
@@ -133,15 +148,7 @@ func ListOperatingSystemProfilesEndpointForCluster(userInfoGetter provider.UserI
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		var resp []*apiv2.OperatingSystemProfile
-		for _, osp := range ospList.Items {
-			ospModel := &apiv2.OperatingSystemProfile{
-				Name: osp.Name,
-			}
-			resp = append(resp, ospModel)
-		}
-
-		return resp, nil
+		return convertOperatingSystemProfileToAPIResponse(ospList), nil
 	}
 }
 
@@ -154,14 +161,7 @@ func ListOperatingSystemProfilesEndpoint(userInfoGetter provider.UserInfoGetter)
 			return nil, err
 		}
 
-		var resp []*apiv2.OperatingSystemProfile
-
-		for _, osp := range ospList.Items {
-			ospModel := &apiv2.OperatingSystemProfile{
-				Name: osp.Name,
-			}
-			resp = append(resp, ospModel)
-		}
+		resp := convertOperatingSystemProfileToAPIResponse(ospList)
 
 		for _, osp := range defaultOperatingSystemProfiles {
 			ospModel := osp
@@ -170,6 +170,24 @@ func ListOperatingSystemProfilesEndpoint(userInfoGetter provider.UserInfoGetter)
 
 		return resp, nil
 	}
+}
+
+func convertOperatingSystemProfileToAPIResponse(ospList *osmv1alpha1.OperatingSystemProfileList) []*apiv2.OperatingSystemProfile {
+	var resp []*apiv2.OperatingSystemProfile
+	for _, osp := range ospList.Items {
+		var supportedOperatingSystems []string
+		for _, os := range osp.Spec.SupportedCloudProviders {
+			supportedOperatingSystems = append(supportedOperatingSystems, string(os.Name))
+		}
+
+		ospModel := &apiv2.OperatingSystemProfile{
+			Name:                    osp.Name,
+			OperatingSystem:         string(osp.Spec.OSName),
+			SupportedCloudProviders: supportedOperatingSystems,
+		}
+		resp = append(resp, ospModel)
+	}
+	return resp
 }
 
 func clusterNamespaceFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (string, error) {

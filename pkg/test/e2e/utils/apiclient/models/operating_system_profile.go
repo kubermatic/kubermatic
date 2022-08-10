@@ -19,6 +19,12 @@ type OperatingSystemProfile struct {
 
 	// name
 	Name string `json:"name,omitempty"`
+
+	// operating system
+	OperatingSystem string `json:"operatingSystem,omitempty"`
+
+	// supported cloud providers
+	SupportedCloudProviders []string `json:"supportedCloudProviders"`
 }
 
 // Validate validates this operating system profile
