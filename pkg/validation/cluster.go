@@ -241,7 +241,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(path, newCluster.Spec.IsOperatingSystemManagerEnabled(), "OperatingSystemManager cannot be disabled once it's enabled"))
 	}
 
-	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, specPath.Child("clusterNetwork"))...)
+	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, newCluster.Labels, specPath.Child("clusterNetwork"))...)
 
 	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by
 	// stringifying them. A field.Error that is nil will panic when doing so, so one cannot simply
@@ -1023,7 +1023,7 @@ func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) *field.Err
 	return nil
 }
 
-func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
+func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, labels map[string]string, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if oldC.IPFamily != "" {
@@ -1051,11 +1051,13 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	}
 
 	if oldC.ProxyMode != "" {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.ProxyMode,
-			oldC.ProxyMode,
-			fldPath.Child("proxyMode"),
-		)...)
+		if _, ok := labels[UnsafeCNIMigrationLabel]; !ok { // allow proxy mode change by CNI migration
+			allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+				c.ProxyMode,
+				oldC.ProxyMode,
+				fldPath.Child("proxyMode"),
+			)...)
+		}
 	}
 
 	if oldC.DNSDomain != "" {
