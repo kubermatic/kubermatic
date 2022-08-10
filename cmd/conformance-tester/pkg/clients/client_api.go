@@ -193,7 +193,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
 	cluster.Cluster.Spec.EnableOperatingSystemManager = c.opts.OperatingSystemManagerEnabled
 	cluster.Cluster.Spec.ClusterNetwork = &models.ClusterNetworkingConfig{
-		KonnectivityEnabled: true,
+		KonnectivityEnabled: c.opts.KonnectivityEnabled,
 	}
 
 	if c.opts.DualStackEnabled {
