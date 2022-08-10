@@ -20,7 +20,7 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 if ! [ -x "$(command -v gimps)" ]; then
-  version=0.4.1
+  version=0.5.0
 
   echodate "Downloading gimps v$version..."
 
