@@ -70,7 +70,7 @@ func initApplicationOptions() (appOptions, error) {
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all user clusters")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 
-	c.webhook.AddFlags(flag.CommandLine)
+	c.webhook.AddFlags(flag.CommandLine, "webhook")
 	c.pprof.AddFlags(flag.CommandLine)
 	c.log.AddFlags(flag.CommandLine)
 
