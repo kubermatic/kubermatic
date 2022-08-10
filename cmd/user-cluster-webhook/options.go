@@ -29,13 +29,12 @@ import (
 )
 
 type appOptions struct {
-	seedWebhook                  webhook.Options
-	userWebhook                  webhook.Options
-	pprof                        pprof.Opts
-	log                          kubermaticlog.Options
-	caBundle                     *certificates.CABundle
-	projectID                    string
-	userClusterWebhookListenPort int
+	seedWebhook webhook.Options
+	userWebhook webhook.Options
+	pprof       pprof.Opts
+	log         kubermaticlog.Options
+	caBundle    *certificates.CABundle
+	projectID   string
 }
 
 func initApplicationOptions() (appOptions, error) {
