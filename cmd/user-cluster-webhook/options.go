@@ -45,8 +45,8 @@ func initApplicationOptions() (appOptions, error) {
 
 	klog.InitFlags(nil)
 
-	c.seedWebhook.AddFlags(flag.CommandLine, "user-webhook")
-	c.userWebhook.AddFlags(flag.CommandLine, "seed-webhook")
+	c.seedWebhook.AddFlags(flag.CommandLine, "seed-webhook")
+	c.userWebhook.AddFlags(flag.CommandLine, "user-webhook")
 
 	c.pprof.AddFlags(flag.CommandLine)
 	c.log.AddFlags(flag.CommandLine)
