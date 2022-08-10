@@ -86,6 +86,7 @@ func main() {
 		"tests", opts.Tests.List(),
 		"osm", opts.OperatingSystemManagerEnabled,
 		"dualstack", opts.DualStackEnabled,
+		"konnectivity", opts.KonnectivityEnabled,
 	)
 
 	// setup kube client, ctrl-runtime client, clientgetter, seedgetter etc.
