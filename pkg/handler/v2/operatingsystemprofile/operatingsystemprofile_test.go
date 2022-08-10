@@ -54,6 +54,7 @@ func TestListOperatingSystemProfiles(t *testing.T) {
 						Namespace: "kubermatic",
 					},
 					Spec: osmv1alpha1.OperatingSystemProfileSpec{
+						OSName: osmv1alpha1.OperatingSystemUbuntu,
 						ProvisioningConfig: osmv1alpha1.OSPConfig{
 							Units: nil,
 						},
@@ -65,6 +66,7 @@ func TestListOperatingSystemProfiles(t *testing.T) {
 						Namespace: "kubermatic",
 					},
 					Spec: osmv1alpha1.OperatingSystemProfileSpec{
+						OSName: osmv1alpha1.OperatingSystemUbuntu,
 						ProvisioningConfig: osmv1alpha1.OSPConfig{
 							Units: nil,
 						},
@@ -75,31 +77,47 @@ func TestListOperatingSystemProfiles(t *testing.T) {
 			expectedHTTPStatus: http.StatusOK,
 			expectedResult: []*apiv2.OperatingSystemProfile{
 				{
-					Name: "test-osp-1",
+					Name:            "test-osp-1",
+					OperatingSystem: "ubuntu",
 				},
 				{
-					Name: "test-osp-2",
+					Name:            "test-osp-2",
+					OperatingSystem: "ubuntu",
 				},
 				{
-					Name: "osp-amzn2",
+					Name:                    "osp-amzn2",
+					OperatingSystem:         "amzn2",
+					SupportedCloudProviders: []string{"aws"},
 				},
 				{
-					Name: "osp-centos",
+					Name:                    "osp-centos",
+					OperatingSystem:         "centos",
+					SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "nutanix", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-flatcar",
+					Name:                    "osp-flatcar",
+					OperatingSystem:         "flatcar",
+					SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-rhel",
+					Name:                    "osp-rhel",
+					OperatingSystem:         "rhel",
+					SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-rockylinux",
+					Name:                    "osp-rockylinux",
+					OperatingSystem:         "rockylinux",
+					SupportedCloudProviders: []string{"aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-sles",
+					Name:                    "osp-sles",
+					OperatingSystem:         "sles",
+					SupportedCloudProviders: []string{"aws"},
 				},
 				{
-					Name: "osp-ubuntu",
+					Name:                    "osp-ubuntu",
+					OperatingSystem:         "ubuntu",
+					SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "gce", "hetzner", "kubevirt", "nutanix", "openstack", "vmware-cloud-director", "vsphere"},
 				},
 			},
 		},
@@ -110,25 +128,39 @@ func TestListOperatingSystemProfiles(t *testing.T) {
 			expectedHTTPStatus: http.StatusOK,
 			expectedResult: []*apiv2.OperatingSystemProfile{
 				{
-					Name: "osp-amzn2",
+					Name:                    "osp-amzn2",
+					OperatingSystem:         "amzn2",
+					SupportedCloudProviders: []string{"aws"},
 				},
 				{
-					Name: "osp-centos",
+					Name:                    "osp-centos",
+					OperatingSystem:         "centos",
+					SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "nutanix", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-flatcar",
+					Name:                    "osp-flatcar",
+					OperatingSystem:         "flatcar",
+					SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-rhel",
+					Name:                    "osp-rhel",
+					OperatingSystem:         "rhel",
+					SupportedCloudProviders: []string{"aws", "azure", "equinixmetal", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-rockylinux",
+					Name:                    "osp-rockylinux",
+					OperatingSystem:         "rockylinux",
+					SupportedCloudProviders: []string{"aws", "azure", "digitalocean", "equinixmetal", "hetzner", "kubevirt", "openstack", "vsphere"},
 				},
 				{
-					Name: "osp-sles",
+					Name:                    "osp-sles",
+					OperatingSystem:         "sles",
+					SupportedCloudProviders: []string{"aws"},
 				},
 				{
-					Name: "osp-ubuntu",
+					Name:                    "osp-ubuntu",
+					OperatingSystem:         "ubuntu",
+					SupportedCloudProviders: []string{"alibaba", "aws", "azure", "digitalocean", "equinixmetal", "gce", "hetzner", "kubevirt", "nutanix", "openstack", "vmware-cloud-director", "vsphere"},
 				},
 			},
 		},
@@ -186,10 +218,14 @@ func TestListOperatingSystemProfilesEndpointForCluster(t *testing.T) {
 			expectedHTTPStatus: http.StatusOK,
 			expectedResult: []*apiv2.OperatingSystemProfile{
 				{
-					Name: "test-osp-1",
+					Name:                    "test-osp-1",
+					OperatingSystem:         "ubuntu",
+					SupportedCloudProviders: []string{"aws"},
 				},
 				{
-					Name: "test-osp-2",
+					Name:                    "test-osp-2",
+					OperatingSystem:         "ubuntu",
+					SupportedCloudProviders: []string{"aws"},
 				},
 			},
 		},
@@ -258,6 +294,12 @@ func genOperatingSystemProfile(name string) *osmv1alpha1.OperatingSystemProfile 
 			Namespace: test.GenDefaultCluster().Status.NamespaceName,
 		},
 		Spec: osmv1alpha1.OperatingSystemProfileSpec{
+			OSName: osmv1alpha1.OperatingSystemUbuntu,
+			SupportedCloudProviders: []osmv1alpha1.CloudProviderSpec{
+				{
+					Name: "aws",
+				},
+			},
 			ProvisioningConfig: osmv1alpha1.OSPConfig{
 				Units: nil,
 			},
