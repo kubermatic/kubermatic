@@ -33,12 +33,15 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,51 +50,57 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	LabelKey = "kubermatic-metering"
+const (
+
+	// legacy naming.
+	meteringToolName = "kubermatic-metering"
+	meteringDataName = "metering-data"
+
+	meteringName      = "metering"
+	meteringNamespace = "metering"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:6edff18"
-}
-
-func getMinioImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryDocker) + "/minio/mc:RELEASE.2021-07-27T06-46-19Z"
+	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:v1.0.0"
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
+	// ensure legacy components are removed
+	err := cleanupLegacyMeteringResources(ctx, client)
+	if err != nil {
+		return err
+	}
+
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
-		return cleanupAllMeteringResources(ctx, client, seed.Spec.Metering)
+		return undeploy(ctx, client)
 	}
 
-	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
-		return fmt.Errorf("failed to reconcile metering PVC: %w", err)
+	owner := common.OwnershipModifierFactory(seed, scheme)
+
+	if err := reconciling.ReconcileNamespaces(ctx, []reconciling.NamedNamespaceCreatorGetter{
+		meteringNamespaceCreator(),
+	}, meteringNamespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile metering namespace: %w", err)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
-		serviceAccountCreator(),
-	}, resources.KubermaticNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile metering ServiceAccounts: %w", err)
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{
+		meteringPullSecretCreator(ctx, client),
+		meterings3SecretCreator(ctx, client),
+	}, meteringNamespace, client, owner); err != nil {
+		return fmt.Errorf("failed to reconcile metering pull secret: %w", err)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
-		clusterRoleBindingCreator(resources.KubermaticNamespace),
-	}, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile metering ClusterRoleBindings: %w", err)
+	err = prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile metering prometheus: %w", err)
 	}
 
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
-		common.OwnershipModifierFactory(seed, scheme),
-	}
-
-	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
-		deploymentCreator(seed, overwriter),
-	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering Deployment: %w", err)
+		owner,
 	}
 
 	if err := reconcileMeteringReportConfigurations(ctx, client, seed, overwriter, modifiers...); err != nil {
@@ -107,17 +116,10 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	}
 
 	config := lifecycle.NewConfiguration()
+	var cronJobs []reconciling.NamedCronJobCreatorGetter
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		if err := reconciling.ReconcileCronJobs(
-			ctx,
-			[]reconciling.NamedCronJobCreatorGetter{cronJobCreator(seed.Name, reportName, reportConf, overwriter)},
-			resources.KubermaticNamespace,
-			client,
-			modifiers...,
-		); err != nil {
-			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
-		}
+		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, overwriter))
 
 		if reportConf.Retention != nil {
 			config.Rules = append(config.Rules, lifecycle.Rule{
@@ -131,6 +133,16 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 				},
 			})
 		}
+	}
+
+	if err := reconciling.ReconcileCronJobs(
+		ctx,
+		cronJobs,
+		resources.KubermaticNamespace,
+		client,
+		modifiers...,
+	); err != nil {
+		return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 	}
 
 	mc, bucket, err := getS3DataFromSeed(ctx, client)
@@ -179,35 +191,12 @@ func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimecli
 	return nil
 }
 
-// cleanupAllMeteringResources removes all active parts of the metering
-// components, in case the admin disables the feature.
-func cleanupAllMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, meteringConfig *kubermaticv1.MeteringConfiguration) error {
-	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
-	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
-	}
-
-	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
-	if err != nil {
-		return err
-	}
-
-	for _, cronJob := range existingReportingCronJobs.Items {
-		key = types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
-		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
-			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
-		}
-	}
-
-	return nil
-}
-
 // fetchExistingReportingCronJobs returns a list of all existing reporting cronjobs.
 func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client) (*batchv1.CronJobList, error) {
 	existingReportingCronJobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{LabelKey}),
+		ctrlruntimeclient.InNamespace(meteringNamespace),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{meteringName}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -215,6 +204,99 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 		}
 	}
 	return existingReportingCronJobs, nil
+}
+
+// undeploy removes all metering components expect the namespace and pvc.
+func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
+	var key types.NamespacedName
+
+	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
+	if err != nil {
+		return err
+	}
+
+	for _, cronJob := range existingReportingCronJobs.Items {
+		key := types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
+		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
+			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+		}
+	}
+
+	key.Namespace = meteringNamespace
+	key.Name = SecretName
+
+	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering s3 secret: %w", err)
+	}
+	key.Name = resources.ImagePullSecretName
+	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+
+	// prometheus resources
+	key.Name = prometheus.Name
+	if err := cleanupResource(ctx, client, key, &corev1.Service{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+
+	if err := cleanupResource(ctx, client, key, &appsv1.StatefulSet{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+
+	if err := cleanupResource(ctx, client, key, &corev1.ConfigMap{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRoleBinding{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRole{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+	if err := cleanupResource(ctx, client, key, &corev1.ServiceAccount{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+	}
+
+	return nil
+}
+
+// cleanupLegacyMeteringResources removes all active parts of the legacy metering installation.
+func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclient.Client) error {
+	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
+	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
+	}
+
+	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRoleBinding{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering ClusterRoleBinding: %w", err)
+	}
+
+	if err := cleanupResource(ctx, client, key, &corev1.ServiceAccount{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering ServiceAccount: %w", err)
+	}
+
+	legacyReportingCronJobs := &batchv1.CronJobList{}
+	listOpts := []ctrlruntimeclient.ListOption{
+		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{meteringToolName}),
+	}
+	if err := client.List(ctx, legacyReportingCronJobs, listOpts...); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to list reporting cronjobs: %w", err)
+		}
+	}
+
+	for _, cronJob := range legacyReportingCronJobs.Items {
+		key = types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
+		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
+			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+		}
+	}
+
+	if err := cleanupResource(ctx, client, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringDataName}, &corev1.PersistentVolumeClaim{}); err != nil {
+		return fmt.Errorf("failed to cleanup metering PersistentVolumeClaim: %w", err)
+	}
+
+	return nil
 }
 
 func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {

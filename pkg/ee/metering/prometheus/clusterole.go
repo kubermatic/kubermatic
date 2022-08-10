@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,33 +22,41 @@
    END OF TERMS AND CONDITIONS
 */
 
-package metering
+package prometheus
 
 import (
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // clusterRoleBindingCreator create a cluster role binding for the metering tool.
-func clusterRoleBindingCreator(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return meteringToolName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
+func prometheusClusterRole() reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return Name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			if cr.Labels == nil {
+				cr.Labels = make(map[string]string)
 			}
-
-			crb.Subjects = []rbacv1.Subject{
+			cr.Labels[common.NameLabel] = Name
+			cr.Rules = []rbacv1.PolicyRule{
 				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      meteringToolName,
-					Namespace: namespace,
+					Verbs:     []string{"get", "list", "watch"},
+					APIGroups: []string{""},
+					Resources: []string{"nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "pods", "ingresses", "configmaps"},
+				},
+				{
+					Verbs:     []string{"get", "list", "watch"},
+					APIGroups: []string{"extensions", "networking.k8s.io"},
+					Resources: []string{"ingresses", "ingresses/status"},
+				},
+				{
+					NonResourceURLs: []string{"/metrics"},
+					Verbs:           []string{"get"},
 				},
 			}
 
-			return crb, nil
+			return cr, nil
 		}
 	}
 }

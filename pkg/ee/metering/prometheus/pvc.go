@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,14 +22,14 @@
    END OF TERMS AND CONDITIONS
 */
 
-package metering
+package prometheus
 
 import (
 	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,12 +43,12 @@ import (
 // exporting it to the S3 bucket.
 func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
 	pvc := &corev1.PersistentVolumeClaim{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: seed.Namespace, Name: meteringDataName}, pvc); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: Name}, pvc); err != nil {
 		if apierrors.IsNotFound(err) {
-			pvc.ObjectMeta.Name = meteringDataName
-			pvc.ObjectMeta.Namespace = resources.KubermaticNamespace
+			pvc.ObjectMeta.Name = Name
+			pvc.ObjectMeta.Namespace = Namespace
 			pvc.ObjectMeta.Labels = map[string]string{
-				"app": meteringToolName,
+				common.NameLabel: Name,
 			}
 
 			if err := updatePVCStorageSizeAndName(pvc, seed); err != nil {
@@ -56,7 +56,7 @@ func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.
 			}
 
 			if err := client.Create(ctx, pvc); err != nil {
-				return fmt.Errorf("failed to create pvc %v for the metering tool: %w", meteringDataName, err)
+				return fmt.Errorf("failed to create pvc %v for the metering tool: %w", Name, err)
 			}
 
 			return nil
@@ -69,7 +69,7 @@ func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.
 }
 
 func updatePVCStorageSizeAndName(pvc *corev1.PersistentVolumeClaim, seed *kubermaticv1.Seed) error {
-	pvc.Spec.StorageClassName = pointer.StringPtr(seed.Spec.Metering.StorageClassName)
+	pvc.Spec.StorageClassName = pointer.String(seed.Spec.Metering.StorageClassName)
 	pvc.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{
 		corev1.ReadWriteOnce,
 	}

@@ -152,7 +152,7 @@ func DecodeMeteringSecretReq(r *http.Request) (interface{}, error) {
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
 func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
-		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+		return errors.New("parameter seedsGetter nor seedClientGetter must not be nil")
 	}
 
 	req, ok := request.(credentialReq)
@@ -166,7 +166,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 
 	seeds, err := getSeeds(seedsGetter, seedClientGetter)
 	if err != nil {
-		return fmt.Errorf("failed to gety seed clients: %w", err)
+		return fmt.Errorf("failed to get seed clients: %w", err)
 	}
 
 	data := map[string][]byte{
