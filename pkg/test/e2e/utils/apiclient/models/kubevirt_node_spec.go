@@ -41,6 +41,9 @@ type KubevirtNodeSpec struct {
 	PodAntiAffinityPreset string `json:"podAntiAffinityPreset,omitempty"`
 
 	// PrimaryDiskOSImage states the source from which the imported image will be downloaded.
+	// This field contains:
+	// a URL to download an Os Image from a HTTP source.
+	// a DataVolume Name as source for DataVolume cloning.
 	// Required: true
 	PrimaryDiskOSImage *string `json:"primaryDiskOSImage"`
 
