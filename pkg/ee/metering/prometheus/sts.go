@@ -106,7 +106,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "config-volume",
-							MountPath: "/etc/coinfig",
+							MountPath: "/etc/config",
 						},
 						{
 							Name:      "storage-volume",
@@ -131,6 +131,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 					Name: "config-volume",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
+							DefaultMode:          pointer.Int32(420),
 							LocalObjectReference: corev1.LocalObjectReference{Name: Name},
 						},
 					},
