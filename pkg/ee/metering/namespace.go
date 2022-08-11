@@ -33,8 +33,8 @@ import (
 // meteringNamespaceCreator creates the namespace used by all metering related components.
 func meteringNamespaceCreator() reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
-		return meteringName, func(sa *corev1.Namespace) (*corev1.Namespace, error) {
-			return sa, nil
+		return meteringName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			return ns, nil
 		}
 	}
 }

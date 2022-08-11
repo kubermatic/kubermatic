@@ -71,7 +71,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	// ensure legacy components are removed
 	err := cleanupLegacyMeteringResources(ctx, client)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to cleanup legacy metering components: %w", err)
 	}
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
@@ -82,7 +82,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 
 	if err := reconciling.ReconcileNamespaces(ctx, []reconciling.NamedNamespaceCreatorGetter{
 		meteringNamespaceCreator(),
-	}, meteringNamespace, client); err != nil {
+	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile metering namespace: %w", err)
 	}
 

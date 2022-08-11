@@ -19,8 +19,11 @@ package tests
 import (
 	"context"
 	"errors"
+
 	"go.uber.org/zap"
+
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -28,6 +31,7 @@ import (
 // TestMetering checks if metering components are deployed.
 // This test does not test metering reporting
 func TestMetering(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options) error {
+
 	log.Info("Testing metering availability...")
 
 	key := types.NamespacedName{
