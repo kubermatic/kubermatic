@@ -22,13 +22,13 @@ import (
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	ec2 "github.com/cristim/ec2-instances-info"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
