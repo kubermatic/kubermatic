@@ -90,6 +90,50 @@ func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, 
 	return name, nil
 }
 
+func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error {
+	project := &kubermaticv1.Project{}
+	if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, project); err != nil {
+		if apierrors.IsNotFound(err) {
+			c.log(log).Info("Project is gone already")
+			return nil
+		}
+
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+
+	// if there is no timeout, we do not wait for the project to be gone
+	if timeout == 0 {
+		c.log(log).Info("Deleting project now...")
+
+		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, project))
+	}
+
+	return wait.PollImmediate(ctx, 1*time.Second, timeout, func() (error, error) {
+		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), project)
+
+		// gone already!
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to get project: %w", err), nil
+		}
+
+		if project.DeletionTimestamp == nil {
+			c.log(log).Info("Deleting project now...")
+
+			if err := c.opts.SeedClusterClient.Delete(ctx, project); err != nil {
+				return fmt.Errorf("failed to delete project: %w", err), nil
+			}
+
+			return errors.New("project was deleted"), nil
+		}
+
+		return errors.New("project still exists"), nil
+	})
+}
+
 func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	creators := []reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter{}
 

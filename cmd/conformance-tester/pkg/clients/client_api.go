@@ -153,6 +153,63 @@ func (c *apiClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, n
 	return projectID, nil
 }
 
+func (c *apiClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error {
+	if timeout == 0 {
+		c.log(log).Info("Deleting project now...")
+
+		params := &project.DeleteProjectParams{
+			Context:   ctx,
+			ProjectID: id,
+		}
+		utils.SetupParams(nil, params, 3*time.Second, timeout, http.StatusConflict)
+
+		_, err := c.opts.KubermaticClient.Project.DeleteProject(params, c.opts.KubermaticAuthenticator)
+		return err
+	}
+
+	prj := &kubermaticv1.Project{}
+	if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, prj); err != nil {
+		if apierrors.IsNotFound(err) {
+			c.log(log).Info("Project is gone already")
+			return nil
+		}
+
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+
+	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(prj), prj)
+
+		// gone already!
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		if err != nil {
+			c.log(log).Errorw("Failed to get project object", zap.Error(err))
+			return false, nil
+		}
+
+		if prj.DeletionTimestamp == nil {
+			c.log(log).Info("Deleting project now...")
+
+			deleteParams := &project.DeleteProjectParams{
+				Context:   ctx,
+				ProjectID: id,
+			}
+			utils.SetupParams(nil, deleteParams, 3*time.Second, timeout)
+
+			if _, err := c.opts.KubermaticClient.Project.DeleteProject(deleteParams, c.opts.KubermaticAuthenticator); err != nil {
+				c.log(log).Warnw("Failed to delete project", zap.Error(err))
+			}
+
+			return false, nil
+		}
+
+		return false, nil
+	})
+}
+
 func (c *apiClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	for i, key := range c.opts.PublicKeys {
 		c.log(log).Infow("Creating UserSSHKey...", "pubkey", string(key))

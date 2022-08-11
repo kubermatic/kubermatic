@@ -55,6 +55,8 @@ type TestRunner struct {
 	log       *zap.SugaredLogger
 	opts      *ctypes.Options
 	kkpClient clients.Client
+
+	createdProject bool
 }
 
 func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
@@ -85,6 +87,7 @@ func (r *TestRunner) SetupProject(ctx context.Context) error {
 		}
 
 		r.opts.KubermaticProject = projectName
+		r.createdProject = true
 	}
 
 	if err := r.kkpClient.EnsureSSHKeys(ctx, r.log); err != nil {
@@ -264,13 +267,24 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		deleteTimeout = 0
 	}
 
-	deleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
+	clusterDeleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
 		// use a background context to ensure that when the test is cancelled using Ctrl-C,
 		// the cleanup is still happening
 		return r.kkpClient.DeleteCluster(context.Background(), log, cluster, deleteTimeout)
 	})
 
-	return report, kerrors.NewAggregate([]error{testError, deleteError})
+	errs := []error{testError, clusterDeleteError}
+
+	if r.createdProject {
+		projectDeleteError := util.JUnitWrapper("[KKP] Delete project", report, func() error {
+			// use a background context to ensure that when the test is cancelled using Ctrl-C,
+			// the cleanup is still happening
+			return r.kkpClient.DeleteProject(context.Background(), log, r.opts.KubermaticProject, deleteTimeout)
+		})
+		errs = append(errs, projectDeleteError)
+	}
+
+	return report, kerrors.NewAggregate(errs)
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {
