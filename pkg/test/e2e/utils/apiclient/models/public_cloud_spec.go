@@ -49,7 +49,7 @@ type PublicCloudSpec struct {
 	Hetzner PublicHetznerCloudSpec `json:"hetzner,omitempty"`
 
 	// kubevirt
-	Kubevirt PublicKubevirtCloudSpec `json:"kubevirt,omitempty"`
+	Kubevirt *PublicKubevirtCloudSpec `json:"kubevirt,omitempty"`
 
 	// nutanix
 	Nutanix PublicNutanixCloudSpec `json:"nutanix,omitempty"`
@@ -75,6 +75,10 @@ func (m *PublicCloudSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateKubevirt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOpenstack(formats); err != nil {
 		res = append(res, err)
 	}
@@ -96,6 +100,25 @@ func (m *PublicCloudSpec) validateAzure(formats strfmt.Registry) error {
 				return ve.ValidateName("azure")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PublicCloudSpec) validateKubevirt(formats strfmt.Registry) error {
+	if swag.IsZero(m.Kubevirt) { // not required
+		return nil
+	}
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
 			}
 			return err
 		}
@@ -131,6 +154,10 @@ func (m *PublicCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateKubevirt(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -149,6 +176,22 @@ func (m *PublicCloudSpec) contextValidateAzure(ctx context.Context, formats strf
 				return ve.ValidateName("azure")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("azure")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PublicCloudSpec) contextValidateKubevirt(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
 			}
 			return err
 		}
