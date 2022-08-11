@@ -16,7 +16,11 @@ limitations under the License.
 
 package common
 
-import "testing"
+import (
+	"testing"
+
+	semverlib "github.com/Masterminds/semver/v3"
+)
 
 func TestComparableVersionSuffix(t *testing.T) {
 	testcases := []struct {
@@ -68,5 +72,39 @@ func TestComparableVersionSuffix(t *testing.T) {
 				t.Fatalf("Expected %q, got %q.", testcase.expected, output)
 			}
 		})
+	}
+
+	a := "v2.21.0-alpha.1-12-ge5f502f5a"
+	b := "v2.21.0-alpha.1-9-g78b7db4bd"
+
+	av, err := semverlib.NewVersion(a)
+	if err != nil {
+		t.Fatalf("Failed to parse %q: %v", a, err)
+	}
+
+	bv, err := semverlib.NewVersion(b)
+	if err != nil {
+		t.Fatalf("Failed to parse %q: %v", b, err)
+	}
+
+	if av.GreaterThan(bv) {
+		t.Fatalf("Comparing %q > %q without patching should have yielded false.", a, b)
+	}
+
+	a = comparableVersionSuffix(a)
+	b = comparableVersionSuffix(b)
+
+	av, err = semverlib.NewVersion(a)
+	if err != nil {
+		t.Fatalf("Failed to parse %q: %v", a, err)
+	}
+
+	bv, err = semverlib.NewVersion(b)
+	if err != nil {
+		t.Fatalf("Failed to parse %q: %v", b, err)
+	}
+
+	if !av.GreaterThan(bv) {
+		t.Fatalf("Comparing %q > %q after patching should have yielded true.", a, b)
 	}
 }
