@@ -21,7 +21,6 @@ import (
 	"errors"
 	"go.uber.org/zap"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -32,8 +31,8 @@ func TestMetering(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Opti
 	log.Info("Testing metering availability...")
 
 	key := types.NamespacedName{
-		Namespace: prometheus.Namespace,
-		Name:      prometheus.Name + "-0",
+		Namespace: "metering",
+		Name:      "metering-prometheus-0",
 	}
 
 	prometheusPod := corev1.Pod{}

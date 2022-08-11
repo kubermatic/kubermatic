@@ -591,6 +591,7 @@ func (r *TestRunner) testCluster(
 	}); err != nil {
 		log.Errorf("failed to verify telemetry is working: %v", err)
 	}
+
 	// Check metering is working
 	if err := util.JUnitWrapper("[KKP] Test metering", report, func() error {
 		return util.RetryN(maxTestAttempts, func(attempt int) error {
