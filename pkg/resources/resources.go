@@ -933,6 +933,8 @@ const (
 	UserClusterWebhookDeploymentName        = "usercluster-webhook"
 	UserClusterWebhookServiceName           = "usercluster-webhook"
 	UserClusterWebhookServingCertSecretName = "usercluster-webhook-serving-cert"
+	UserClusterWebhookSeedListenPort        = 443
+	UserClusterWebhookUserListenPort        = 6443
 )
 
 const (

@@ -31,7 +31,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-const machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
+const (
+	machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
+)
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine CRD.
 func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
@@ -43,7 +45,11 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
 
-			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1alpha1-machine", resources.UserClusterWebhookServiceName, namespace)
+			url := fmt.Sprintf("https://%s.%s.svc.cluster.local.:%d/validate-cluster-k8s-io-v1alpha1-machine",
+				resources.UserClusterWebhookServiceName,
+				namespace,
+				resources.UserClusterWebhookUserListenPort,
+			)
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{

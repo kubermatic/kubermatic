@@ -34,6 +34,11 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	seedWebhookListenPort = 9443
+	userWebhookListenPort = 19443
+)
+
 var (
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
@@ -89,9 +94,14 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 
 			args := []string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"-webhook-cert-dir=/opt/webhook-serving-cert/",
-				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-seed-webhook-listen-port=%d", seedWebhookListenPort),
+				"-seed-webhook-cert-dir=/opt/webhook-serving-cert/",
+				fmt.Sprintf("-seed-webhook-cert-name=%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-user-webhook-listen-port=%d", userWebhookListenPort),
+				"-user-webhook-cert-dir=/opt/webhook-serving-cert/",
+				fmt.Sprintf("-user-webhook-cert-name=%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-user-webhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-project-id=%s", projectID),
 			}

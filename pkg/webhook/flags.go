@@ -34,12 +34,12 @@ type Options struct {
 	keyName    string
 }
 
-func (opts *Options) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&opts.listenHost, "webhook-listen-host", "", "The listen host for the admission/mutation webhooks.")
-	fs.IntVar(&opts.listenPort, "webhook-listen-port", 9443, "The listen port for the admission/mutation webhooks.")
-	fs.StringVar(&opts.certDir, "webhook-cert-dir", "", "The directory containing the webhook serving certificate files.")
-	fs.StringVar(&opts.certName, "webhook-cert-name", "", "The certificate file name.")
-	fs.StringVar(&opts.keyName, "webhook-key-name", "", "The key file name.")
+func (opts *Options) AddFlags(fs *flag.FlagSet, prefix string) {
+	fs.StringVar(&opts.listenHost, fmt.Sprintf("%s-listen-host", prefix), "", "The listen host for the admission/mutation webhooks.")
+	fs.IntVar(&opts.listenPort, fmt.Sprintf("%s-listen-port", prefix), 9443, "The listen port for the admission/mutation webhooks.")
+	fs.StringVar(&opts.certDir, fmt.Sprintf("%s-cert-dir", prefix), "", "The directory containing the webhook serving certificate files.")
+	fs.StringVar(&opts.certName, fmt.Sprintf("%s-cert-name", prefix), "", "The certificate file name.")
+	fs.StringVar(&opts.keyName, fmt.Sprintf("%s-key-name", prefix), "", "The key file name.")
 }
 
 func checkValidFile(directory, filename string) error {

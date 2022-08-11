@@ -65,7 +65,7 @@ func main() {
 	cli.Hello(log, "User Cluster Webhook", options.log.Debug, &versions)
 
 	// /////////////////////////////////////////
-	// get kubeconfig
+	// get kubeconfigs
 
 	seedCfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -76,9 +76,6 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to get user cluster kubeconfig")
 	}
-
-	// /////////////////////////////////////////
-	// create manager
 
 	ctx := ctrlruntime.SetupSignalHandler()
 
@@ -101,28 +98,32 @@ func main() {
 		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))
 	}
 
-	// apply the CLI flags for configuring the  webhook server to the manager
-	if err := options.webhook.Configure(seedMgr.GetWebhookServer()); err != nil {
+	// Apply the CLI flags for configuring the webhook servers.
+	if err := options.seedWebhook.Configure(seedMgr.GetWebhookServer()); err != nil {
+		log.Fatalw("Failed to configure webhook server", zap.Error(err))
+	}
+	if err := options.userWebhook.Configure(userMgr.GetWebhookServer()); err != nil {
 		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use
 	addAPIs(seedMgr.GetScheme(), log)
+	addAPIs(userMgr.GetScheme(), log)
 
 	// /////////////////////////////////////////
 	// add pprof runnable, which will start a websever if configured
 
 	if err := seedMgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
+		log.Fatalw("Failed to add the pprof handler (seed manager)", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////
 	// setup webhooks
 
-	// Setup the validation admission handler for ApplicationInstallation CRDs
+	// Setup the validation admission handler for ApplicationInstallation CRDs in seed manager.
 	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
 
-	// Setup Machine Webhook
+	// Setup Machine Webhook in user manager.
 	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID)
 	if err != nil {
 		log.Fatalw("Failed to setup Machine validator", zap.Error(err))
@@ -132,11 +133,18 @@ func main() {
 	}
 
 	// /////////////////////////////////////////
-	// Start manager
+	// Start managers
 
-	log.Info("Starting the webhook...")
+	go func() {
+		log.Info("Starting the user cluster manager in the background...")
+		if err := userMgr.Start(ctx); err != nil {
+			log.Fatalw("The user manager has failed", zap.Error(err))
+		}
+	}()
+
+	log.Info("Starting the seed manager...")
 	if err := seedMgr.Start(ctx); err != nil {
-		log.Fatalw("The webhook has failed", zap.Error(err))
+		log.Fatalw("The seed manager has failed", zap.Error(err))
 	}
 }
 
