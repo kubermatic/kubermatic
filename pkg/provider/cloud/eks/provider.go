@@ -472,6 +472,16 @@ func ConvertMDStatus(status string) apiv2.ExternalClusterMDState {
 	}
 }
 
+func ValidateCredentials(ctx context.Context, credential resources.EKSCredential) error {
+	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
+	if err != nil {
+		return err
+	}
+	_, err = ListClusters(client)
+
+	return DecodeError(err)
+}
+
 func DecodeError(err error) error {
 	// Generic AWS Error with Code, Message, and original error (if any).
 	var aerr awserr.Error

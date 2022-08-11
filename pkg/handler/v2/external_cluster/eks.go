@@ -299,11 +299,15 @@ func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 			return nil, err
 		}
 
-		return nil, providercommon.ValidateEKSCredentials(ctx, *credential)
+		err = eksprovider.ValidateCredentials(ctx, *credential)
+		if err != nil {
+			err = fmt.Errorf("invalid credentials!: %w", err)
+		}
+		return nil, err
 	}
 }
 
-func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*providercommon.EKSCredential, error) {
+func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*resources.EKSCredential, error) {
 	accessKeyID := req.AccessKeyID
 	secretAccessKey := req.SecretAccessKey
 	region := req.Region
@@ -326,7 +330,7 @@ func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGett
 		}
 	}
 
-	return &providercommon.EKSCredential{
+	return &resources.EKSCredential{
 		AccessKeyID:     accessKeyID,
 		SecretAccessKey: secretAccessKey,
 		Region:          region,
@@ -655,7 +659,7 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
-		credential := providercommon.EKSCredential{
+		credential := resources.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,
@@ -694,7 +698,7 @@ func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGette
 		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
-		credential := providercommon.EKSCredential{
+		credential := resources.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,
@@ -736,7 +740,7 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 		if cloudSpec.Region == "" {
 			return nil, errors.New("no region provided in externalcluter spec")
 		}
-		cred := providercommon.EKSCredential{
+		cred := resources.EKSCredential{
 			AccessKeyID:     accessKeyID,
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,

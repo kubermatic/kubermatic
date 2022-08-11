@@ -286,7 +286,11 @@ func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 			return nil, err
 		}
 
-		return nil, providercommon.ValidateAKSCredentials(ctx, *cred)
+		err = aks.ValidateCredentials(ctx, *cred)
+		if err != nil {
+			err = fmt.Errorf("invalid credentials!: %w", err)
+		}
+		return nil, err
 	}
 }
 

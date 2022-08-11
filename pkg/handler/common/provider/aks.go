@@ -101,22 +101,6 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) error {
-	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
-	if err != nil {
-		return err
-	}
-
-	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
-	if err != nil {
-		return aks.DecodeError(err)
-	}
-
-	_, err = aksClient.NewListPager(nil).NextPage(ctx)
-
-	return aks.DecodeError(err)
-}
-
 func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {
 	vmSizes, err := AKSAzureSize(ctx, cred, location)
 	if err != nil {

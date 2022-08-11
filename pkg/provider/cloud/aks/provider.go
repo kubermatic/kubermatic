@@ -325,6 +325,22 @@ func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGr
 	return upgrades, nil
 }
 
+func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	_, err = aksClient.NewListPager(nil).NextPage(ctx)
+
+	return DecodeError(err)
+}
+
 func DecodeError(err error) error {
 	var aerr *azcore.ResponseError
 	if errors.As(err, &aerr) {

@@ -22,6 +22,7 @@ import (
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	ec2 "github.com/cristim/ec2-instances-info"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -41,13 +42,7 @@ func init() {
 // Region must be provided before a service client request is made.
 const RegionEndpoint = "eu-central-1"
 
-type EKSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
-}
-
-func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
+func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
@@ -56,7 +51,7 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 	return eksprovider.ListClusters(client)
 }
 
-func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
+func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred resources.EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
 	var err error
 	var clusters apiv2.EKSClusterList
 
@@ -104,18 +99,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error {
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
-	if err != nil {
-		return err
-	}
-
-	_, err = eksprovider.ListClusters(client)
-
-	return err
-}
-
-func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
 	subnetIDs := apiv2.EKSSubnetIDList{}
 
 	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
@@ -129,7 +113,7 @@ func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (ap
 	return subnetIDs, nil
 }
 
-func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, error) {
+func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPCList, error) {
 	vpcs := apiv2.EKSVPCList{}
 
 	vpcResults, err := awsprovider.GetVPCS(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
@@ -147,7 +131,7 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSInstanceTypeList, error) {
 	instanceTypes := apiv2.EKSInstanceTypeList{}
 
 	if data == nil {
@@ -177,7 +161,7 @@ func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstan
 	return instanceTypes, nil
 }
 
-func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegionList, error) {
+func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSRegionList, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
@@ -200,7 +184,7 @@ func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegionLis
 	return regionList, nil
 }
 
-func ListEKSSecurityGroupIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
+func ListEKSSecurityGroupIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
 	securityGroupID := apiv2.EKSSecurityGroupIDList{}
 
 	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)

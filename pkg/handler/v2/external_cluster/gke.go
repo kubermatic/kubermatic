@@ -1033,7 +1033,12 @@ func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 				return nil, err
 			}
 		}
-		return nil, gkeprovider.ValidateCredentials(ctx, sa)
+
+		err = gkeprovider.ValidateCredentials(ctx, sa)
+		if err != nil {
+			err = fmt.Errorf("invalid credentials!: %w", err)
+		}
+		return nil, err
 	}
 }
 func getSAFromPreset(ctx context.Context,
