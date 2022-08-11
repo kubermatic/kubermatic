@@ -44,9 +44,11 @@ func prometheusConfigMap() reconciling.NamedConfigMapCreatorGetter {
 				cm.Data = map[string]string{}
 			}
 
-			cm.Data["alerting_rules.yaml"] = "{}"
-			cm.Data["alerts.yaml"] = "{}"
-			cm.Data["prometheus.yaml"] = prometheusConfig
+			cm.Data["alerting_rules.yml"] = "{}"
+			cm.Data["alerts"] = "{}"
+			cm.Data["recording_rules.yml"] = "{}"
+			cm.Data["rules"] = "{}"
+			cm.Data["prometheus.yml"] = prometheusConfig
 
 			return cm, nil
 		}
