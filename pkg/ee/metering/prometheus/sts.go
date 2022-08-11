@@ -57,6 +57,10 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 			sts.Spec.Replicas = pointer.Int32(1)
 			sts.Spec.ServiceName = Name + "-headless"
 
+			if sts.Spec.Template.Labels == nil {
+				sts.Spec.Template.Labels = make(map[string]string)
+			}
+
 			sts.Spec.Template.Labels[common.NameLabel] = Name
 
 			sts.Spec.Template.Spec.Containers = []corev1.Container{
