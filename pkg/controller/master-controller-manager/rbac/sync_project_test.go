@@ -48,11 +48,9 @@ func getFakeRestMapper(t *testing.T) meta.RESTMapper {
 	scheme := runtime.NewScheme()
 	if err := kubermaticv1.AddToScheme(scheme); err != nil {
 		t.Fatalf("getFakeRestMapper: %v", err)
-		t.FailNow()
 	}
 	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatalf("getFakeRestMapper: %v", err)
-		t.FailNow()
 	}
 	return testrestmapper.TestOnlyStaticRESTMapper(scheme)
 }
