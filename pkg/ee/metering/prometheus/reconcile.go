@@ -59,13 +59,13 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 
 	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleCreatorGetter{
 		prometheusClusterRole(),
-	}, "", client, seedOwner); err != nil {
+	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRole: %w", err)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		prometheusClusterRoleBinding(Namespace),
-	}, "", client, seedOwner); err != nil {
+	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
