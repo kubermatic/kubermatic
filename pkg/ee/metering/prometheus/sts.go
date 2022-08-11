@@ -126,6 +126,9 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 				RunAsGroup:   pointer.Int64(65534),
 				RunAsNonRoot: pointer.Bool(false),
 				RunAsUser:    pointer.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 
 			sts.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(300)
