@@ -27,6 +27,7 @@ package prometheus
 import (
 	"context"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -39,7 +40,7 @@ import (
 
 const (
 	Name      = "metering-prometheus"
-	Namespace = "metering"
+	Namespace = resources.KubermaticNamespace
 )
 
 // ReconcilePrometheus reconciles the prometheus instance used as a datasource for metering.

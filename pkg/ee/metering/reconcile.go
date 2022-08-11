@@ -57,7 +57,7 @@ const (
 	meteringDataName = "metering-data"
 
 	meteringName      = "metering"
-	meteringNamespace = "metering"
+	meteringNamespace = resources.KubermaticNamespace
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -86,12 +86,13 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		return fmt.Errorf("failed to reconcile metering namespace: %w", err)
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{
-		meteringPullSecretCreator(ctx, client),
-		meterings3SecretCreator(ctx, client),
-	}, meteringNamespace, client, owner); err != nil {
-		return fmt.Errorf("failed to reconcile metering pull secret: %w", err)
-	}
+	/*
+		if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{
+			meteringPullSecretCreator(ctx, client),
+			meterings3SecretCreator(ctx, client),
+		}, meteringNamespace, client); err != nil {
+			return fmt.Errorf("failed to reconcile metering pull secret: %w", err)
+		}*/
 
 	err = prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
 	if err != nil {
