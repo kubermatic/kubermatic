@@ -68,7 +68,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 					Name:            Name,
 					Image:           getPrometheusImage(getRegistry),
 					ImagePullPolicy: "IfNotPresent",
-					Args:            []string{"--storage.tsdb.retention.time=90", "--config.file=/etc/config/prometheus.yml", "--storage.tsdb.path=/data", "--web.console.libraries=/etc/prometheus/console_libraries", "--web.console.templates=/etc/prometheus/consoles", "--web.enable-lifecycle"},
+					Args:            []string{"--storage.tsdb.retention.time=90d", "--config.file=/etc/config/prometheus.yml", "--storage.tsdb.path=/data", "--web.console.libraries=/etc/prometheus/console_libraries", "--web.console.templates=/etc/prometheus/consoles", "--web.enable-lifecycle"},
 					Ports:           []corev1.ContainerPort{{ContainerPort: 9090}},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
