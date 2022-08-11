@@ -40,6 +40,7 @@ type Generator struct {
 	versions          sets.String
 	containerRuntimes sets.String
 	enableOSM         bool
+	enableDualstack   bool
 }
 
 func NewGenerator() *Generator {
@@ -84,6 +85,11 @@ func (g *Generator) WithOSM(enable bool) *Generator {
 	return g
 }
 
+func (g *Generator) WithDualstack(enable bool) *Generator {
+	g.enableDualstack = enable
+	return g
+}
+
 func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
 	scenarios := []Scenario{}
 
@@ -105,6 +111,8 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 					if err != nil {
 						return nil, err
 					}
+
+					scenario.SetDualstackEnabled(g.enableDualstack)
 
 					if isValidNewScenario(opts, log, scenario) {
 						scenarios = append(scenarios, scenario)

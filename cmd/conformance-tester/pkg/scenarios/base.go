@@ -25,6 +25,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -43,6 +44,7 @@ type Scenario interface {
 	CloudProvider() providerconfig.CloudProvider
 	OperatingSystem() providerconfig.OperatingSystem
 	ContainerRuntime() string
+	DualstackEnabled() bool
 	Version() semver.Semver
 	Datacenter() *kubermaticv1.Datacenter
 	Name() string
@@ -59,6 +61,8 @@ type Scenario interface {
 	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
 	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
 	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
+
+	SetDualstackEnabled(bool)
 }
 
 type baseScenario struct {
@@ -66,6 +70,7 @@ type baseScenario struct {
 	operatingSystem  providerconfig.OperatingSystem
 	version          semver.Semver
 	containerRuntime string
+	dualstackEnabled bool
 	datacenter       *kubermaticv1.Datacenter
 }
 
@@ -83,6 +88,10 @@ func (s *baseScenario) Version() semver.Semver {
 
 func (s *baseScenario) ContainerRuntime() string {
 	return s.containerRuntime
+}
+
+func (s *baseScenario) DualstackEnabled() bool {
+	return s.dualstackEnabled
 }
 
 func (s *baseScenario) Datacenter() *kubermaticv1.Datacenter {
@@ -116,7 +125,7 @@ func (s *baseScenario) createMachineDeployment(replicas int, providerSpec interf
 		return clusterv1alpha1.MachineDeployment{}, fmt.Errorf("failed to build OS spec: %w", err)
 	}
 
-	return createMachineDeployment(replicas, &s.version, s.operatingSystem, osSpec, s.cloudProvider, providerSpec)
+	return createMachineDeployment(replicas, &s.version, s.operatingSystem, osSpec, s.cloudProvider, providerSpec, s.dualstackEnabled)
 }
 
 func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec, error) {
@@ -206,7 +215,11 @@ func (s *baseScenario) OperatingSystemSpec() (*apiv1.OperatingSystemSpec, error)
 	}
 }
 
-func createMachineDeployment(replicas int, version *semver.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}) (clusterv1alpha1.MachineDeployment, error) {
+func (s *baseScenario) SetDualstackEnabled(enabled bool) {
+	s.dualstackEnabled = enabled
+}
+
+func createMachineDeployment(replicas int, version *semver.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}, dualstack bool) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
 	encodedOSSpec, err := json.Marshal(osSpec)
@@ -228,6 +241,12 @@ func createMachineDeployment(replicas int, version *semver.Semver, os providerco
 		OperatingSystemSpec: runtime.RawExtension{
 			Raw: encodedOSSpec,
 		},
+	}
+
+	if dualstack {
+		cfg.Network = &providerconfig.NetworkConfig{
+			IPFamily: util.DualStack,
+		}
 	}
 
 	encodedConfig, err := json.Marshal(cfg)

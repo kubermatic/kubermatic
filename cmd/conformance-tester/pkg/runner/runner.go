@@ -55,6 +55,8 @@ type TestRunner struct {
 	log       *zap.SugaredLogger
 	opts      *ctypes.Options
 	kkpClient clients.Client
+
+	createdProject bool
 }
 
 func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
@@ -85,6 +87,7 @@ func (r *TestRunner) SetupProject(ctx context.Context) error {
 		}
 
 		r.opts.KubermaticProject = projectName
+		r.createdProject = true
 	}
 
 	if err := r.kkpClient.EnsureSSHKeys(ctx, r.log); err != nil {
@@ -140,12 +143,14 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Println("")
 	fmt.Println("========================== RESULT ===========================")
 	fmt.Println("Parameters:")
-	fmt.Printf("  KKP Version.....: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
-	fmt.Printf("  Name Prefix.....: %q\n", r.opts.NamePrefix)
-	fmt.Printf("  OSM Enabled.....: %v\n", r.opts.OperatingSystemManagerEnabled)
-	fmt.Printf("  PSP Enabled.....: %v\n", r.opts.PspEnabled)
-	fmt.Printf("  Enabled Tests...: %v\n", r.opts.Tests.List())
-	fmt.Printf("  Scenario Options: %v\n", r.opts.ScenarioOptions.List())
+	fmt.Printf("  KKP Version.........: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
+	fmt.Printf("  Name Prefix.........: %q\n", r.opts.NamePrefix)
+	fmt.Printf("  OSM Enabled.........: %v\n", r.opts.OperatingSystemManagerEnabled)
+	fmt.Printf("  Dualstack Enabled...: %v\n", r.opts.DualStackEnabled)
+	fmt.Printf("  Konnectivity Enabled: %v\n", r.opts.KonnectivityEnabled)
+	fmt.Printf("  PSP Enabled.........: %v\n", r.opts.PspEnabled)
+	fmt.Printf("  Enabled Tests.......: %v\n", r.opts.Tests.List())
+	fmt.Printf("  Scenario Options....: %v\n", r.opts.ScenarioOptions.List())
 	fmt.Println("")
 	fmt.Println("Test results:")
 
@@ -262,13 +267,24 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		deleteTimeout = 0
 	}
 
-	deleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
+	clusterDeleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
 		// use a background context to ensure that when the test is cancelled using Ctrl-C,
 		// the cleanup is still happening
 		return r.kkpClient.DeleteCluster(context.Background(), log, cluster, deleteTimeout)
 	})
 
-	return report, kerrors.NewAggregate([]error{testError, deleteError})
+	errs := []error{testError, clusterDeleteError}
+
+	if r.createdProject {
+		projectDeleteError := util.JUnitWrapper("[KKP] Delete project", report, func() error {
+			// use a background context to ensure that when the test is cancelled using Ctrl-C,
+			// the cleanup is still happening
+			return r.kkpClient.DeleteProject(context.Background(), log, r.opts.KubermaticProject, deleteTimeout)
+		})
+		errs = append(errs, projectDeleteError)
+	}
+
+	return report, kerrors.NewAggregate(errs)
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {

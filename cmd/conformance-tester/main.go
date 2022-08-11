@@ -85,6 +85,8 @@ func main() {
 		"containerruntimes", opts.ContainerRuntimes.List(),
 		"tests", opts.Tests.List(),
 		"osm", opts.OperatingSystemManagerEnabled,
+		"dualstack", opts.DualStackEnabled,
+		"konnectivity", opts.KonnectivityEnabled,
 	)
 
 	// setup kube client, ctrl-runtime client, clientgetter, seedgetter etc.
@@ -120,6 +122,7 @@ func main() {
 		WithOperatingSystems(opts.Distributions.List()...).
 		WithContainerRuntimes(opts.ContainerRuntimes.List()...).
 		WithOSM(opts.OperatingSystemManagerEnabled).
+		WithDualstack(opts.DualStackEnabled).
 		WithVersions(opts.Versions...).
 		Scenarios(rootCtx, opts, log)
 	if err != nil {
