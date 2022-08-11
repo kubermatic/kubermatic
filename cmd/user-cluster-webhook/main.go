@@ -77,7 +77,6 @@ func main() {
 		log.Fatalw("Failed to get user cluster kubeconfig")
 	}
 
-	// This case unusual in a sense that we need to configure and start managers for both user and seed clusters.
 	ctx := ctrlruntime.SetupSignalHandler()
 
 	seedMgr, err := manager.New(seedCfg, manager.Options{
@@ -116,9 +115,6 @@ func main() {
 
 	if err := seedMgr.Add(&options.pprof); err != nil {
 		log.Fatalw("Failed to add the pprof handler (seed manager)", zap.Error(err))
-	}
-	if err := userMgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler (user-cluster manager)", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////
