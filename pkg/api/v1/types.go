@@ -1209,14 +1209,18 @@ func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicG
 }
 
 // PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
-type PublicKubevirtCloudSpec struct{}
+type PublicKubevirtCloudSpec struct {
+	PreAllocatedDataVolumes []kubermaticv1.PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+}
 
 func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (public *PublicKubevirtCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicKubevirtCloudSpec{}
+	return &PublicKubevirtCloudSpec{
+		PreAllocatedDataVolumes: internal.PreAllocatedDataVolumes,
+	}
 }
 
 // PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.

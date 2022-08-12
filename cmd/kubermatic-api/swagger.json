@@ -31268,6 +31268,15 @@
     "PublicKubevirtCloudSpec": {
       "type": "object",
       "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.",
+      "properties": {
+        "preAllocatedDataVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreAllocatedDataVolume"
+          },
+          "x-go-name": "PreAllocatedDataVolumes"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "PublicNutanixCloudSpec": {
