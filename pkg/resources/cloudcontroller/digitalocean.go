@@ -22,7 +22,6 @@ const DigitalOceanCCMDeploymentName = "digital-ocean-cloud-controller-manager"
 func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return DigitalOceanCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-
 			dep.Name = DigitalOceanCCMDeploymentName
 			dep.Labels = resources.BaseAppLabels(DigitalOceanCCMDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(1)
@@ -115,7 +114,6 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 			return dep, nil
 		}
 	}
-
 }
 
 func getDigitalOceanVersion(version semver.Semver) (string, error) {
