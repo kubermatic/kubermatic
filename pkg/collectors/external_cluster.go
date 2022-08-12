@@ -127,6 +127,8 @@ func (cc *ExternalClusterCollector) clusterLabels(cluster *kubermaticv1.External
 	providerName := ""
 
 	switch {
+	case cluster.Spec.CloudSpec == nil:
+		providerName = ""
 	case cluster.Spec.CloudSpec.AKS != nil:
 		providerName = "aks"
 	case cluster.Spec.CloudSpec.EKS != nil:
