@@ -28565,7 +28565,7 @@
           "x-go-name": "PodAntiAffinityPreset"
         },
         "primaryDiskOSImage": {
-          "description": "PrimaryDiskOSImage states the source from which the imported image will be downloaded.",
+          "description": "PrimaryDiskOSImage states the source from which the imported image will be downloaded.\nThis field contains:\na URL to download an Os Image from a HTTP source.\na DataVolume Name as source for DataVolume cloning.",
           "type": "string",
           "x-go-name": "PrimaryDiskOSImage"
         },

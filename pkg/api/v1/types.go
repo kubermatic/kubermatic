@@ -1942,6 +1942,9 @@ type KubevirtNodeSpec struct {
 	Memory string `json:"memory"`
 
 	// PrimaryDiskOSImage states the source from which the imported image will be downloaded.
+	// This field contains:
+	// - a URL to download an Os Image from a HTTP source.
+	// - a DataVolume Name as source for DataVolume cloning.
 	// required: true
 	PrimaryDiskOSImage string `json:"primaryDiskOSImage"`
 	// PrimaryDiskStorageClassName states the storage class name for the provisioned PVCs.

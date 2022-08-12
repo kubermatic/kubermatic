@@ -19,6 +19,8 @@ package machine
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
@@ -508,7 +510,7 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 	return EncodeAsRawExtension(config)
 }
 
-func GetKubevirtProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*kubevirt.RawConfig, error) {
+func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*kubevirt.RawConfig, error) {
 	config := &kubevirt.RawConfig{
 		VirtualMachine: kubevirt.VirtualMachine{
 			Flavor: kubevirt.Flavor{
@@ -523,7 +525,7 @@ func GetKubevirtProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec,
 						Size:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskSize},
 						StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskStorageClassName},
 					},
-					OsImage: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage},
+					OsImage: providerconfig.ConfigVarString{Value: extractKubeVirtOsImageURLOrDataVolumeNsName(cluster.Status.NamespaceName, nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage)},
 				},
 			},
 			DNSPolicy: providerconfig.ConfigVarString{Value: dc.Spec.Kubevirt.DNSPolicy},
@@ -554,8 +556,24 @@ func GetKubevirtProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec,
 	return config, nil
 }
 
-func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config, err := GetKubevirtProviderConfig(nil, nodeSpec, dc)
+func extractKubeVirtOsImageURLOrDataVolumeNsName(namespace string, osImage string) string {
+	// config.VirtualMachine.Template.PrimaryDisk.OsImage.Value contains:
+	// - a URL
+	// - or a DataVolume name
+	// If config.VirtualMachine.Template.PrimaryDisk.OsImage.Value is a DataVolume, we need to add the namespace prefix
+	if _, err := url.ParseRequestURI(osImage); err == nil {
+		return osImage
+	}
+	// It's a DataVolume
+	// If it's already a ns/name keep it.
+	if nameSpaceAndName := strings.Split(osImage, "/"); len(nameSpaceAndName) >= 2 {
+		return osImage
+	}
+	return fmt.Sprintf("%s/%s", namespace, osImage)
+}
+
+func getKubevirtProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetKubevirtProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
