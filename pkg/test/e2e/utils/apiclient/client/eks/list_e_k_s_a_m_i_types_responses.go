@@ -60,16 +60,16 @@ func NewListEKSAMITypesOK() *ListEKSAMITypesOK {
 
 /* ListEKSAMITypesOK describes a response with status code 200, with default header values.
 
-EKSAMITypes
+EKSAMITypeList
 */
 type ListEKSAMITypesOK struct {
-	Payload models.EKSAMITypes
+	Payload models.EKSAMITypeList
 }
 
 func (o *ListEKSAMITypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/eks/amitypes][%d] listEKSAMITypesOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSAMITypesOK) GetPayload() models.EKSAMITypes {
+func (o *ListEKSAMITypesOK) GetPayload() models.EKSAMITypeList {
 	return o.Payload
 }
 

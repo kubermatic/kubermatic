@@ -74,6 +74,12 @@ type AKSCredentials struct {
 	ClientSecret   string
 }
 
+type EKSCredential struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	Region          string
+}
+
 type DigitaloceanCredentials struct {
 	Token string
 }

@@ -821,21 +821,31 @@ type EKSCluster struct {
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents a list of EKS regions.
-// swagger:model EKSRegions
-type EKSRegions []string
+// EKSRegionList represents a list of EKS regions.
+// swagger:model EKSRegionList
+type EKSRegionList []string
 
-// EKSAMITypes represents a list of EKS AMI Types for node group.
-// swagger:model EKSAMITypes
-type EKSAMITypes []string
+// EKSAMITypeList represents a list of EKS AMI Types for node group.
+// swagger:model EKSAMITypeList
+type EKSAMITypeList []string
 
-// EKSCapacityTypes represents a list of EKS Capacity Types for node group.
-// swagger:model EKSCapacityTypes
-type EKSCapacityTypes []string
+// EKSCapacityTypeList represents a list of EKS Capacity Types for node group.
+// swagger:model EKSCapacityTypeList
+type EKSCapacityTypeList []string
 
-// EKSInstanceTypes represents a list of EKS Instance Types for node group.
-// swagger:model EKSInstanceTypes
-type EKSInstanceTypes []string
+// EKSInstanceTypeList represents a list of EKS InstanceType object for node group.
+// swagger:model EKSInstanceTypeList
+type EKSInstanceTypeList []EKSInstanceType
+
+// EKSInstanceType is the object representing EKS nodegroup instancetype..
+// swagger:model EKSInstanceType
+type EKSInstanceType struct {
+	Name       string  `json:"name"`
+	PrettyName string  `json:"pretty_name,omitempty"`
+	Memory     float32 `json:"memory,omitempty"`
+	VCPUs      int     `json:"vcpus,omitempty"`
+	GPUs       int     `json:"gpus,omitempty"`
+}
 
 // EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList
@@ -880,9 +890,30 @@ type AKSClusterList []AKSCluster
 // swagger:model AKSVMSizeList
 type AKSVMSizeList []AKSVMSize
 
+// AKSLocationList represents a list of AKS Location object for node group.
+// swagger:model AKSLocationList
+type AKSLocationList []AKSLocation
+
+// AKSLocation is the object representing Azure Location.
+// swagger:model AKSLocation
+type AKSLocation struct {
+	// The location name.
+	Name string `json:"name,omitempty"`
+	// READ-ONLY; The category of the region.
+	RegionCategory string `json:"regionCategory,omitempty"`
+}
+
 // AKSVMSize is the object representing Azure VM sizes.
 // swagger:model AKSVMSize
-type AKSVMSize string
+type AKSVMSize struct {
+	Name                 string `json:"name,omitempty"`
+	NumberOfCores        int32  `json:"numberOfCores,omitempty"`
+	NumberOfGPUs         int32  `json:"numberOfGPUs,omitempty"`
+	OsDiskSizeInMB       int32  `json:"osDiskSizeInMB,omitempty"`
+	ResourceDiskSizeInMB int32  `json:"resourceDiskSizeInMB,omitempty"`
+	MemoryInMB           int32  `json:"memoryInMB,omitempty"`
+	MaxDataDiskCount     int32  `json:"maxDataDiskCount,omitempty"`
+}
 
 // AKSNodePoolModes represents nodepool modes.
 // swagger:model AKSNodePoolModes

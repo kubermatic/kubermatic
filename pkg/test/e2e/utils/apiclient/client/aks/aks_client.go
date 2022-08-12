@@ -28,6 +28,8 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListAKSLocations(params *ListAKSLocationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSLocationsOK, error)
+
 	ListAKSNodePoolModes(params *ListAKSNodePoolModesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesOK, error)
 
 	ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error)
@@ -41,6 +43,44 @@ type ClientService interface {
 	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListAKSLocations lists a k s recommended locations
+*/
+func (a *Client) ListAKSLocations(params *ListAKSLocationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSLocationsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSLocationsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSLocations",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/aks/locations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSLocationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSLocationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSLocationsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

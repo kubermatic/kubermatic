@@ -23,6 +23,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
+	"github.com/Azure/go-autorest/autorest/to"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -100,24 +101,8 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) error {
-	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
-	if err != nil {
-		return err
-	}
-
-	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
-	if err != nil {
-		return aks.DecodeError(err)
-	}
-
-	_, err = aksClient.NewListPager(nil).NextPage(ctx)
-
-	return aks.DecodeError(err)
-}
-
 func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {
-	vmSizes, err := AKSAzureSize(ctx, cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cred.TenantID, location)
+	vmSizes, err := AKSAzureSize(ctx, cred, location)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get vmsizes: %w", err)
 	}
@@ -125,8 +110,8 @@ func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location
 	return vmSizes, nil
 }
 
-func AKSAzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv2.AKSVMSizeList, error) {
-	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+func AKSAzureSize(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {
+	sizesClient, err := NewAzureClientSet(cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cred.TenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
 	}
@@ -138,27 +123,39 @@ func AKSAzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, t
 
 	// prepare set of valid VM size types from SKU resources
 	validSKUSet := make(map[string]struct{}, len(skuList))
-	for _, v := range skuList {
-		if isValidVM(v, location) {
-			validSKUSet[*v.Name] = struct{}{}
+	for _, sku := range skuList {
+		if isValidVM(sku, location) {
+			validSKUSet[*sku.Name] = struct{}{}
 		}
 	}
 
 	// get all available VM size types for given location
 	listVMSize, err := sizesClient.ListVMSize(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sizes: %w", err)
+		return nil, fmt.Errorf("failed to list vmsizes: %w", err)
 	}
 
 	var sizeList apiv2.AKSVMSizeList
-	for _, v := range listVMSize {
+	for _, vm := range listVMSize {
 		// VM sizes with less than 2 CPUs may not be used with AKS.
-		if v.Name != nil && v.NumberOfCores != nil {
-			if *v.NumberOfCores >= MinimumVMCores {
-				vmName := *v.Name
-				_, okSKU := validSKUSet[vmName]
-				if okSKU {
-					sizeList = append(sizeList, apiv2.AKSVMSize(vmName))
+		if vm.Name != nil && vm.NumberOfCores != nil {
+			if *vm.NumberOfCores >= MinimumVMCores {
+				vmName := *vm.Name
+
+				if _, okSKU := validSKUSet[vmName]; okSKU {
+					s := apiv2.AKSVMSize{
+						Name:                 vmName,
+						NumberOfCores:        to.Int32(vm.NumberOfCores),
+						MemoryInMB:           to.Int32(vm.MemoryInMB),
+						MaxDataDiskCount:     to.Int32(vm.MaxDataDiskCount),
+						OsDiskSizeInMB:       to.Int32(vm.OSDiskSizeInMB),
+						ResourceDiskSizeInMB: to.Int32(vm.ResourceDiskSizeInMB),
+					}
+					if gpus, okGPU := gpuInstanceFamilies[vmName]; okGPU {
+						s.NumberOfGPUs = gpus
+					}
+
+					sizeList = append(sizeList, s)
 				}
 			}
 		}

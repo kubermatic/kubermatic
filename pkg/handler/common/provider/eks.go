@@ -21,27 +21,28 @@ import (
 	"fmt"
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+// Due to big amount of data we are loading AWS instance types only once. Do not edit it.
+func init() {
+	data, _ = ec2.Data()
+}
 
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
 const RegionEndpoint = "eu-central-1"
 
-type EKSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
-}
-
-func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
+func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
@@ -50,7 +51,7 @@ func listEKSClusters(cred EKSCredential, region string) ([]*string, error) {
 	return eksprovider.ListClusters(client)
 }
 
-func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
+func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred resources.EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
 	var err error
 	var clusters apiv2.EKSClusterList
 
@@ -98,18 +99,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error {
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
-	if err != nil {
-		return err
-	}
-
-	_, err = eksprovider.ListClusters(client)
-
-	return err
-}
-
-func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
 	subnetIDs := apiv2.EKSSubnetIDList{}
 
 	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
@@ -123,7 +113,7 @@ func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (ap
 	return subnetIDs, nil
 }
 
-func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, error) {
+func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPCList, error) {
 	vpcs := apiv2.EKSVPCList{}
 
 	vpcResults, err := awsprovider.GetVPCS(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
@@ -141,21 +131,37 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypes, error) {
-	instanceTypes := apiv2.EKSInstanceTypes{}
+func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+	instanceTypes := apiv2.EKSInstanceTypeList{}
+
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
+	}
 
 	instanceTypesResults, err := awsprovider.GetInstanceTypes(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, instanceTypeResult := range instanceTypesResults {
-		instanceTypes = append(instanceTypes, *instanceTypeResult.InstanceType)
+	for _, i := range *data {
+		for _, r := range instanceTypesResults {
+			if i.InstanceType == *r.InstanceType {
+				instanceTypes = append(instanceTypes, apiv2.EKSInstanceType{
+					Name:       i.InstanceType,
+					PrettyName: i.PrettyName,
+					Memory:     i.Memory,
+					VCPUs:      i.VCPU,
+					GPUs:       i.GPU,
+				})
+				break
+			}
+		}
 	}
+
 	return instanceTypes, nil
 }
 
-func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, error) {
+func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSRegionList, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
@@ -178,7 +184,7 @@ func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, 
 	return regionList, nil
 }
 
-func ListEKSSecurityGroupIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
+func ListEKSSecurityGroupIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
 	securityGroupID := apiv2.EKSSecurityGroupIDList{}
 
 	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)

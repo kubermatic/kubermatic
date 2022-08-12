@@ -60,16 +60,16 @@ func NewListEKSInstanceTypesNoCredentialsOK() *ListEKSInstanceTypesNoCredentials
 
 /* ListEKSInstanceTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
-EKSInstanceTypes
+EKSInstanceTypeList
 */
 type ListEKSInstanceTypesNoCredentialsOK struct {
-	Payload models.EKSInstanceTypes
+	Payload models.EKSInstanceTypeList
 }
 
 func (o *ListEKSInstanceTypesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes][%d] listEKSInstanceTypesNoCredentialsOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSInstanceTypesNoCredentialsOK) GetPayload() models.EKSInstanceTypes {
+func (o *ListEKSInstanceTypesNoCredentialsOK) GetPayload() models.EKSInstanceTypeList {
 	return o.Payload
 }
 

@@ -129,6 +129,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listAKSVMSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aks/locations").
+		Handler(r.listAKSLocations())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aks/modes").
 		Handler(r.listAKSNodePoolModes())
 
@@ -5952,7 +5956,7 @@ func (r Routing) validateEKSCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSInstanceTypes
+//       200: EKSInstanceTypeList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSInstanceTypesNoCredentials() http.Handler {
@@ -6056,6 +6060,28 @@ func (r Routing) listAKSVMSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListAKSVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
 		externalcluster.DecodeAKSVMSizesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/locations aks listAKSLocations
+//
+// List AKS recommended Locations.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//	 default: errorResponse
+//	 200: AKSLocationList
+func (r Routing) listAKSLocations() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListAKSLocationsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeAKSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6209,7 +6235,7 @@ func (r Routing) listEKSSecurityGroups() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []EKSRegions
+//       200: []EKSRegionList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSRegions() http.Handler {
@@ -6256,7 +6282,7 @@ func (r Routing) listEKSVersions() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSAMITypes
+//       200: EKSAMITypeList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSAMITypes() http.Handler {
@@ -6281,7 +6307,7 @@ func (r Routing) listEKSAMITypes() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSCapacityTypes
+//       200: EKSCapacityTypeList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSCapacityTypes() http.Handler {
@@ -6967,7 +6993,7 @@ func (r Routing) getProjectQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas/{quota_name} resourceQuota admin getResourceQuota
+// swagger:route GET /api/v2/quotas/{quota_name} resourceQuota admin getResourceQuota
 //
 //    Gets a specific Resource Quota.
 //
@@ -6991,7 +7017,7 @@ func (r Routing) getResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/quotas resourceQuota admin listResourceQuotas
+// swagger:route GET /api/v2/quotas resourceQuota admin listResourceQuotas
 //
 //    Gets a Resource Quota list.
 //
@@ -7015,7 +7041,7 @@ func (r Routing) listResourceQuotas() http.Handler {
 	)
 }
 
-//swagger:route POST /api/v2/quotas resourceQuota admin createResourceQuota
+// swagger:route POST /api/v2/quotas resourceQuota admin createResourceQuota
 //
 //    Creates a new Resource Quota.
 //
@@ -7039,7 +7065,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
+// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -7063,7 +7089,7 @@ func (r Routing) patchResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v2/quotas/{quota_name} resourceQuota admin deleteResourceQuota
+// swagger:route DELETE /api/v2/quotas/{quota_name} resourceQuota admin deleteResourceQuota
 //
 //    Removes an existing Resource Quota.
 //
@@ -7087,7 +7113,7 @@ func (r Routing) deleteResourceQuota() http.Handler {
 	)
 }
 
-//swagger:route get /api/v2/projects/{project_id}/groupbindings project listGroupProjectBinding
+// swagger:route get /api/v2/projects/{project_id}/groupbindings project listGroupProjectBinding
 //
 //    Lists project's group bindings.
 //
@@ -7116,7 +7142,7 @@ func (r Routing) listGroupProjectBindings() http.Handler {
 	)
 }
 
-//swagger:route get /api/v2/projects/{project_id}/groupbindings/{binding_name} project getGroupProjectBinding
+// swagger:route get /api/v2/projects/{project_id}/groupbindings/{binding_name} project getGroupProjectBinding
 //
 //    Get project group binding.
 //
@@ -7145,7 +7171,7 @@ func (r Routing) getGroupProjectBinding() http.Handler {
 	)
 }
 
-//swagger:route post /api/v2/projects/{project_id}/groupbindings project createGroupProjectBinding
+// swagger:route post /api/v2/projects/{project_id}/groupbindings project createGroupProjectBinding
 //
 //    Create project group binding.
 //
@@ -7174,7 +7200,7 @@ func (r Routing) createGroupProjectBinding() http.Handler {
 	)
 }
 
-//swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project deleteGroupProjectBinding
+// swagger:route delete /api/v2/projects/{project_id}/groupbindings/{binding_name} project deleteGroupProjectBinding
 //
 //    Delete project group binding.
 //
@@ -7203,7 +7229,7 @@ func (r Routing) deleteGroupProjectBinding() http.Handler {
 	)
 }
 
-//swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project patchGroupProjectBinding
+// swagger:route patch /api/v2/projects/{project_id}/groupbindings/{binding_name} project patchGroupProjectBinding
 //
 //    Patch project group binding.
 //
@@ -7390,7 +7416,7 @@ func (r Routing) listApplicationDefinitions() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/seeds/{seed_name}/ipampools ipampool listIPAMPools
+// swagger:route GET /api/v2/seeds/{seed_name}/ipampools ipampool listIPAMPools
 //
 //    Lists IPAM pools.
 //
@@ -7415,7 +7441,7 @@ func (r Routing) listIPAMPools() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool getIPAMPool
+// swagger:route GET /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool getIPAMPool
 //
 //    Gets a specific IPAM pool.
 //
@@ -7440,7 +7466,7 @@ func (r Routing) getIPAMPool() http.Handler {
 	)
 }
 
-//swagger:route POST /api/v2/seeds/{seed_name}/ipampools ipampool createIPAMPool
+// swagger:route POST /api/v2/seeds/{seed_name}/ipampools ipampool createIPAMPool
 //
 //    Creates a IPAM pool.
 //
@@ -7465,7 +7491,7 @@ func (r Routing) createIPAMPool() http.Handler {
 	)
 }
 
-//swagger:route PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool patchIPAMPool
+// swagger:route PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool patchIPAMPool
 //
 //    Patches a IPAM pool.
 //
@@ -7490,7 +7516,7 @@ func (r Routing) patchIPAMPool() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool deleteIPAMPool
+// swagger:route DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name} ipampool deleteIPAMPool
 //
 //    Removes an existing IPAM pool.
 //
@@ -7512,7 +7538,7 @@ func (r Routing) deleteIPAMPool() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v2/seeds/{seed_name}/operatingsystemprofiles operatingsystemprofile listOperatingSystemProfiles
+// swagger:route GET /api/v2/seeds/{seed_name}/operatingsystemprofiles operatingsystemprofile listOperatingSystemProfiles
 //
 //    Lists Operating System Profiles.
 //

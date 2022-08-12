@@ -344,7 +344,7 @@ func ListZones(ctx context.Context, sa string) (apiv2.GKEZoneList, error) {
 func ValidateCredentials(ctx context.Context, sa string) error {
 	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
-		return err
+		return DecodeError(err)
 	}
 	_, err = svc.Projects.Zones.Clusters.List(project, allZones).Context(ctx).Do()
 

@@ -23,8 +23,11 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	semverlib "github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -39,6 +42,40 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
+
+func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKSLocationList, error) {
+	var locationList apiv2.AKSLocationList
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+	client, err := armsubscriptions.NewClient(azcred, &arm.ClientOptions{})
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	pager := client.NewListLocationsPager(cred.SubscriptionID, &armsubscriptions.ClientListLocationsOptions{
+		IncludeExtendedLocations: to.BoolPtr(false),
+	})
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, DecodeError(err)
+		}
+		for _, v := range nextResult.Value {
+			if v.Name != nil && v.Metadata != nil && v.Metadata.RegionCategory != nil {
+				if *v.Metadata.RegionCategory == "Recommended" && *v.Name != "eastus2euap" {
+					locationList = append(locationList, apiv2.AKSLocation{
+						Name:           *v.Name,
+						RegionCategory: string(*v.Metadata.RegionCategory),
+					},
+					)
+				}
+			}
+		}
+	}
+	return locationList, nil
+}
 
 func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
 	aksClient, err := GetClusterClient(cred)
@@ -286,6 +323,22 @@ func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGr
 		})
 	}
 	return upgrades, nil
+}
+
+func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	_, err = aksClient.NewListPager(nil).NextPage(ctx)
+
+	return DecodeError(err)
 }
 
 func DecodeError(err error) error {

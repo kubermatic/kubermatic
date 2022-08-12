@@ -60,16 +60,16 @@ func NewListEKSRegionsOK() *ListEKSRegionsOK {
 
 /* ListEKSRegionsOK describes a response with status code 200, with default header values.
 
-EKSRegions
+EKSRegionList
 */
 type ListEKSRegionsOK struct {
-	Payload []models.EKSRegions
+	Payload []models.EKSRegionList
 }
 
 func (o *ListEKSRegionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSRegionsOK) GetPayload() []models.EKSRegions {
+func (o *ListEKSRegionsOK) GetPayload() []models.EKSRegionList {
 	return o.Payload
 }
 

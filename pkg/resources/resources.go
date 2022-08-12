@@ -711,7 +711,7 @@ const (
 )
 
 const (
-	ExternalClusterIsImported         = "isImported"
+	ExternalClusterIsImported         = "is-imported"
 	ExternalClusterIsImportedTrue     = "true"
 	ExternalClusterIsImportedFalse    = "false"
 	ExternalClusterKubeconfig         = "kubeconfig"

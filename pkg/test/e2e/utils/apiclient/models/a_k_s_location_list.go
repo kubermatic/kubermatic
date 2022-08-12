@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AKSVMSizeList AKSVMSizeList represents an array of AKS VM sizes.
+// AKSLocationList AKSLocationList represents a list of AKS Location object for node group.
 //
-// swagger:model AKSVMSizeList
-type AKSVMSizeList []*AKSVMSize
+// swagger:model AKSLocationList
+type AKSLocationList []*AKSLocation
 
-// Validate validates this a k s VM size list
-func (m AKSVMSizeList) Validate(formats strfmt.Registry) error {
+// Validate validates this a k s location list
+func (m AKSLocationList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m AKSVMSizeList) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this a k s VM size list based on the context it is used
-func (m AKSVMSizeList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this a k s location list based on the context it is used
+func (m AKSLocationList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
