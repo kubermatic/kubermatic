@@ -17,6 +17,9 @@ limitations under the License.
 package common
 
 import (
+	"fmt"
+	"regexp"
+
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
@@ -117,12 +120,12 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredL
 			if obj != nil {
 				existingVersion := obj.GetAnnotations()[resources.VersionLabel]
 				if existingVersion != "" {
-					existing, err := semverlib.NewVersion(existingVersion)
+					existing, err := semverlib.NewVersion(comparableVersionSuffix(existingVersion))
 					if err != nil {
 						log.Warnw("CRD has invalid version annotation", "annotation", existingVersion, zap.Error(err))
 						// continue to update the CRD
 					} else {
-						current, err := semverlib.NewVersion(currentVersion)
+						current, err := semverlib.NewVersion(comparableVersionSuffix(currentVersion))
 						if err != nil {
 							// This should never happen.
 							log.Warnw("Built-in CRD has invalid version annotation", "version", currentVersion, zap.Error(err))
@@ -155,4 +158,24 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredL
 			return obj, nil
 		}
 	}
+}
+
+var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-(g[0-9a-f]+)$`)
+
+// We compare versions when updating CRDs and this works fine when it comes
+// to "v2.20.1" vs. "v2.20.3". But during development our versions look like
+// git-describe output ("<last-tag>-<number of commits since tag>-g<hash>",
+// for example "v2.21.0-7-gfd517a". The semverlib does not treat this suffix
+// special, and so would say "v2.21.0-10-gfd517a" < "v2.21.0-7-gfd517a".
+// Semverlib correctly handles the version suffix, so alpha.4 is smaller than
+// alpha.12.
+// This function knows about the KKP versioning scheme and zerofills the
+// number of commits to allow a stable sorting order.
+func comparableVersionSuffix(version string) string {
+	match := versionRegex.FindStringSubmatch(version)
+	if match == nil {
+		return version
+	}
+
+	return fmt.Sprintf("%s-%09s", match[1], match[2])
 }
