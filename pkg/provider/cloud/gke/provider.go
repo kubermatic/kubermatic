@@ -509,7 +509,9 @@ func ListGKESizes(ctx context.Context, sa, zone string) (apiv1.GCPMachineSizeLis
 
 func ListGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv2.GKEDiskTypeList, error) {
 	diskTypes := apiv2.GKEDiskTypeList{}
-	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
+	// Currently accepted values: 'pd-standard', 'pd-ssd' or 'pd-balanced'
+	// Reference: https://pkg.go.dev/google.golang.org/api/container/v1#NodeConfig
+
 	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
 	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
