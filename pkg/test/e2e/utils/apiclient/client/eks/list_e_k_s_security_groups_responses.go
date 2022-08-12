@@ -60,16 +60,16 @@ func NewListEKSSecurityGroupsOK() *ListEKSSecurityGroupsOK {
 
 /* ListEKSSecurityGroupsOK describes a response with status code 200, with default header values.
 
-EKSSecurityGroupIDList
+EKSSecurityGroupList
 */
 type ListEKSSecurityGroupsOK struct {
-	Payload models.EKSSecurityGroupIDList
+	Payload models.EKSSecurityGroupList
 }
 
 func (o *ListEKSSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSSecurityGroupsOK) GetPayload() models.EKSSecurityGroupIDList {
+func (o *ListEKSSecurityGroupsOK) GetPayload() models.EKSSecurityGroupList {
 	return o.Payload
 }
 

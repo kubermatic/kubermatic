@@ -48,16 +48,16 @@ func NewListEKSSubnetsOK() *ListEKSSubnetsOK {
 
 /* ListEKSSubnetsOK describes a response with status code 200, with default header values.
 
-EKSSubnetIDList
+EKSSubnetList
 */
 type ListEKSSubnetsOK struct {
-	Payload models.EKSSubnetIDList
+	Payload models.EKSSubnetList
 }
 
 func (o *ListEKSSubnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/subnets][%d] listEKSSubnetsOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSSubnetsOK) GetPayload() models.EKSSubnetIDList {
+func (o *ListEKSSubnetsOK) GetPayload() models.EKSSubnetList {
 	return o.Payload
 }
 

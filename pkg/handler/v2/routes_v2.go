@@ -81,6 +81,14 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listGKEZones())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/gke/vmsizes").
+		Handler(r.listGKEVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/disktypes").
+		Handler(r.listGKEDiskTypes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gke/versions").
 		Handler(r.listGKEVersions())
 
@@ -5852,7 +5860,7 @@ func (r Routing) listGKEImages() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
-		externalcluster.DecodeGKEImagesReq,
+		externalcluster.DecodeGKEVMReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5875,6 +5883,50 @@ func (r Routing) listGKEZones() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
 		externalcluster.DecodeGKECommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/vmsizes gke listGKEVMSizes
+//
+// Lists GKE vmsizes
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPMachineSizeList
+func (r Routing) listGKEVMSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKEVMReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/disktypes gke listGKEDiskTypes
+//
+// Gets GKE machine disk types.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GKEDiskTypeList
+func (r Routing) listGKEDiskTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEDiskTypesEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeGKEVMReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5981,7 +6033,7 @@ func (r Routing) listEKSInstanceTypesNoCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSSubnetIDList
+//       200: EKSSubnetList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSSubnetsNoCredentials() http.Handler {
@@ -6180,14 +6232,14 @@ func (r Routing) listEKSVPCS() http.Handler {
 
 // swagger:route GET /api/v2/providers/eks/subnets eks listEKSSubnets
 //
-// Lists EKS subnet's ID list.
+// Lists EKS subnet list.
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSSubnetIDList
+//       200: EKSSubnetList
 func (r Routing) listEKSSubnets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6202,7 +6254,7 @@ func (r Routing) listEKSSubnets() http.Handler {
 
 // swagger:route GET /api/v2/providers/eks/securitygroups eks listEKSSecurityGroups
 //
-//     List EKS securitygroup's ID list.
+//     List EKS securitygroup list.
 //
 //
 //     Produces:
@@ -6210,7 +6262,7 @@ func (r Routing) listEKSSubnets() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSSecurityGroupIDList
+//       200: EKSSecurityGroupList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSSecurityGroups() http.Handler {

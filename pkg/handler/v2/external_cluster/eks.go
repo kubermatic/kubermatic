@@ -265,7 +265,7 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 			return nil, err
 		}
 
-		return providercommon.ListEKSSecurityGroupIDs(ctx, *credential, req.VpcId)
+		return providercommon.ListEKSSecurityGroup(ctx, *credential, req.VpcId)
 	}
 }
 

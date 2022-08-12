@@ -482,6 +482,59 @@ func createClient(ctx context.Context, serviceAccount string, scope string) (*ht
 	return client, projectID, nil
 }
 
+func ListGKESizes(ctx context.Context, sa, zone string) (apiv1.GCPMachineSizeList, error) {
+	sizes := apiv1.GCPMachineSizeList{}
+
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return sizes, err
+	}
+
+	req := computeService.MachineTypes.List(project, zone)
+	err = req.Pages(ctx, func(page *compute.MachineTypeList) error {
+		for _, machineType := range page.Items {
+			mt := apiv1.GCPMachineSize{
+				Name:        machineType.Name,
+				Description: machineType.Description,
+				Memory:      machineType.MemoryMb,
+				VCPUs:       machineType.GuestCpus,
+			}
+			sizes = append(sizes, mt)
+		}
+		return nil
+	})
+
+	return sizes, err
+}
+
+func ListGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv2.GKEDiskTypeList, error) {
+	diskTypes := apiv2.GKEDiskTypeList{}
+	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
+	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return diskTypes, err
+	}
+
+	req := computeService.DiskTypes.List(project, zone)
+	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
+		for _, diskType := range page.Items {
+			if !excludedDiskTypes.Has(diskType.Name) {
+				dt := apiv2.GKEDiskType{
+					Name:              diskType.Name,
+					Description:       diskType.Description,
+					DefaultDiskSizeGb: diskType.DefaultDiskSizeGb,
+					Kind:              diskType.Kind,
+				}
+				diskTypes = append(diskTypes, dt)
+			}
+		}
+		return nil
+	})
+
+	return diskTypes, err
+}
+
 func DecodeError(err error) error {
 	var apiErr *googleapi.Error
 	if errors.As(err, &apiErr) {
