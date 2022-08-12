@@ -7,7 +7,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	_ "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +16,10 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-const DigitalOceanCCMDeploymentName = "digital-ocean-cloud-controller-manager"
+const (
+	DigitalOceanCCMDeploymentName = "digital-ocean-cloud-controller-manager"
+	DigitalOceanVersion           = "0.1.37"
+)
 
 func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -47,11 +49,6 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 
-			version, err := getDigitalOceanVersion(data.Cluster().Status.Versions.ControlPlane)
-			if err != nil {
-				return nil, err
-			}
-
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
 					Name: resources.CloudConfigConfigMapName,
@@ -67,7 +64,7 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryMCR) + "/oss/kubernetes/digital-ocean-cloud-controller-manager:v" + version,
+					Image:   data.ImageRegistry(resources.RegistryMCR) + "/oss/kubernetes/digital-ocean-cloud-controller-manager:v" + DigitalOceanVersion,
 					Command: []string{"cloud-controller-manager"},
 					Args:    getDigitalOceanFlags(data),
 					VolumeMounts: append(getVolumeMounts(),
@@ -116,22 +113,6 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 	}
 }
 
-func getDigitalOceanVersion(version semver.Semver) (string, error) {
-	switch version.MajorMinor() {
-	case v121:
-		return "0.1.34", nil
-	case v122:
-		return "0.1.36", nil
-	// the digitalocean cloud controller only seems to support up to kubernetes v1.22
-	case v123:
-		fallthrough
-	case v124:
-		fallthrough
-	default:
-		return v1240, nil
-	}
-}
-
 func getDigitalOceanFlags(data *resources.TemplateData) []string {
 	flags := []string{
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
@@ -145,11 +126,4 @@ func getDigitalOceanFlags(data *resources.TemplateData) []string {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
 	}
 	return flags
-}
-
-func DigitalOceanCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getDigitalOceanVersion(version); err != nil {
-		return false
-	}
-	return true
 }
