@@ -74,8 +74,8 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 	}
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
-		return nil, raw, fmt.Errorf("failed to decode %s: %w", filename, err)
+	if err = yaml.UnmarshalStrict(content, config); err != nil {
+		return nil, nil, fmt.Errorf("%s is not a valid KubermaticConfiguration: %w", filename, err)
 	}
 
 	return config, raw, nil
