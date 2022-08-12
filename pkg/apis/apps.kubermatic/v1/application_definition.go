@@ -17,8 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	semverlib "github.com/Masterminds/semver/v3"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -181,30 +179,9 @@ type ApplicationTemplate struct {
 	FormSpec []FormField `json:"formSpec,omitempty"`
 }
 
-type VersionConstraints string
-
-func (c VersionConstraints) SemverConstraints() (*semverlib.Constraints, error) {
-	return semverlib.NewConstraint(string(c))
-}
-
-type ApplicationConstraints struct {
-	// Version of K8s version that a user cluster must satisfy for the application to be installed.
-	// Wildcards are allowed  e.g. "1.18.*"
-	// Range are allowed e.g." >= 1.19.0, < 1.19.15"
-	K8sVersion VersionConstraints `json:"k8sVersion,omitempty"`
-
-	// Version of KKP version that a user cluster must satisfy for the application to be installed.
-	// Wildcards are allowed  e.g. "2.18.*"
-	// Range are allowed e.g.">= 2.16, < 2.18.0"
-	KKPVersion VersionConstraints `json:"kkpVersion,omitempty"`
-}
-
 type ApplicationVersion struct {
 	// Version of the application (eg v1.2.3)
 	Version string `json:"version"`
-
-	// Constraints defined criteria that a user cluster must satisfy for the application to be installed
-	Constraints ApplicationConstraints `json:"constraints,omitempty"`
 
 	// Template defines how application is installed (source provenance, Method...)
 	Template ApplicationTemplate `json:"template"`

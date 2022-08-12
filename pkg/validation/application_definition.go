@@ -19,8 +19,6 @@ package validation
 import (
 	"fmt"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
@@ -62,12 +60,6 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 	lookup := make(map[string]struct{}, len(vs))
 	for i, v := range vs {
 		curVField := fmt.Sprintf("versions[%d]", i)
-		if e := validateSemverRange(string(v.Constraints.K8sVersion), parentFieldPath.Child(curVField+".constraints.k8sVersion")); e != nil {
-			allErrs = append(allErrs, e)
-		}
-		if e := validateSemverRange(string(v.Constraints.KKPVersion), parentFieldPath.Child(curVField+".constraints.kkpVersion")); e != nil {
-			allErrs = append(allErrs, e)
-		}
 
 		allErrs = append(allErrs, validateSource(v.Template.Source, parentFieldPath.Child(curVField+".template.source"))...)
 
@@ -172,14 +164,6 @@ func validateGitCredentials(credentials *appskubermaticv1.GitCredentials, f *fie
 		}
 	}
 	return allErrs
-}
-
-func validateSemverRange(v string, f *field.Path) *field.Error {
-	_, err := semverlib.NewConstraint(v)
-	if err != nil {
-		return field.Invalid(f, v, fmt.Sprintf("is not a valid semVer range: %q", err))
-	}
-	return nil
 }
 
 func ValidateApplicationDefinitionWithOpenAPI(ad appskubermaticv1.ApplicationDefinition, parentFieldPath *field.Path) field.ErrorList {

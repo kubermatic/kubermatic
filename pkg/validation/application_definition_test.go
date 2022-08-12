@@ -26,10 +26,9 @@ import (
 )
 
 var (
-	cs                = appskubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
 	secretKeySelector = &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "git-cred"}, Key: "thekey"}
-	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
-	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
+	helmv             = appskubermaticv1.ApplicationVersion{Version: "v1", Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
+	gitv              = appskubermaticv1.ApplicationVersion{Version: "v2", Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
 	spec              = appskubermaticv1.ApplicationDefinitionSpec{Method: appskubermaticv1.HelmTemplateMethod, Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
 )
 
@@ -776,20 +775,8 @@ func TestValidateApplicationVersions(t *testing.T) {
 	}{
 		"duplicate version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
-			},
-			1,
-		},
-		"invalid kkp version": {
-			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
-			},
-			1,
-		},
-		"invalid k8s version": {
-			[]appskubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
+				{Version: "v1", Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
+				{Version: "v1", Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
 			},
 			1,
 		},

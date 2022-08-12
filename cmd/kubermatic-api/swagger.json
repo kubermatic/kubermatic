@@ -23040,18 +23040,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "ApplicationConstraints": {
-      "type": "object",
-      "properties": {
-        "k8sVersion": {
-          "$ref": "#/definitions/VersionConstraints"
-        },
-        "kkpVersion": {
-          "$ref": "#/definitions/VersionConstraints"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-    },
     "ApplicationDefinition": {
       "type": "object",
       "title": "ApplicationDefinition is the object representing an ApplicationDefinition.",
@@ -23343,9 +23331,6 @@
     "ApplicationVersion": {
       "type": "object",
       "properties": {
-        "constraints": {
-          "$ref": "#/definitions/ApplicationConstraints"
-        },
         "template": {
           "$ref": "#/definitions/ApplicationTemplate"
         },
@@ -32921,10 +32906,6 @@
     "Version": {
       "description": "Version wraps semverlib.Version. It is needed because kubebuilder does not accept structs with non-tagged fields, even if they have custom marshallers\nWith this the CRD resource will have Version as string but operator code can work directly with the semverlib.Version struct\n(taken from https://github.com/kubernetes-sigs/controller-tools/blob/master/pkg/crd/testdata/cronjob_types.go#L283)",
       "type": "object",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-    },
-    "VersionConstraints": {
-      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "VersionList": {
