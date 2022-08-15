@@ -27,6 +27,12 @@ type OpenstackCloudSpec struct {
 	// domain
 	Domain string `json:"domain,omitempty"`
 
+	// Enable the `enable-ingress-hostname` cloud provider option on the Openstack CCM. Can only be used with the
+	// external CCM and might be deprecated and removed in future versions as it is considered a workaround for the PROXY
+	// protocol to preserve client IPs.
+	// +optional
+	EnableIngressHostname bool `json:"enableIngressHostname,omitempty"`
+
 	// FloatingIPPool holds the name of the public network
 	// The public network is reachable from the outside world
 	// and should provide the pool of IP addresses to choose from.
@@ -45,6 +51,11 @@ type OpenstackCloudSpec struct {
 	// If not provided, the default IPv6 subnet pool will be used.
 	// +optional
 	IPV6SubnetPool string `json:"ipv6SubnetPool,omitempty"`
+
+	// Set a specific suffix for the hostnames used for the PROXY protocol workaround that is enabled by EnableIngressHostname.
+	// The suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in
+	// future versions as it is considered a workaround only.
+	IngressHostnameSuffix string `json:"ingressHostnameSuffix,omitempty"`
 
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
