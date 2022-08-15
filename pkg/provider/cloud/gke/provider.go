@@ -147,7 +147,7 @@ func ListClusters(ctx context.Context, projectProvider provider.ProjectProvider,
 	gkeExternalClusterNames := sets.NewString()
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.GKE != nil {
+		if cloud.GKE != nil {
 			gkeExternalClusterNames.Insert(cloud.GKE.Name)
 		}
 	}
@@ -155,7 +155,7 @@ func ListClusters(ctx context.Context, projectProvider provider.ProjectProvider,
 	gkeExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.GKE != nil {
+		if cloud.GKE != nil {
 			zone := cloud.GKE.Zone
 			if _, ok := gkeExternalCluster[zone]; !ok {
 				gkeExternalCluster[zone] = make(sets.String)

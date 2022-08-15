@@ -853,7 +853,7 @@ func genExternalCluster(projectName, clusterName string) *kubermaticv1.ExternalC
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName:   clusterName,
 			KubeconfigReference: &providerconfig.GlobalSecretKeySelector{},
-			CloudSpec:           &kubermaticv1.ExternalClusterCloudSpec{},
+			CloudSpec:           kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }

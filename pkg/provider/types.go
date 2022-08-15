@@ -421,11 +421,7 @@ type ProjectMemberMapper interface {
 }
 
 // ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.
-func ExternalClusterCloudProviderName(spec *kubermaticv1.ExternalClusterCloudSpec) (string, error) {
-	if spec == nil {
-		return "", errors.New("cloud spec is nil")
-	}
-
+func ExternalClusterCloudProviderName(spec kubermaticv1.ExternalClusterCloudSpec) (string, error) {
 	var clouds []kubermaticv1.ExternalClusterProvider
 	if spec.AKS != nil {
 		clouds = append(clouds, kubermaticv1.ExternalClusterAKSProvider)

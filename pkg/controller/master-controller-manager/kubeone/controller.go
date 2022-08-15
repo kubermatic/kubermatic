@@ -260,7 +260,7 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 	}
 
 	cloud := externalCluster.Spec.CloudSpec
-	if cloud == nil || cloud.KubeOne == nil {
+	if cloud.KubeOne == nil {
 		return nil
 	}
 	clusterPhase := externalCluster.Status.Condition.Phase
