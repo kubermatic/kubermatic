@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -70,7 +71,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					Kubevirt: &apimodels.KubevirtCloudSpec{
-						Kubeconfig: secrets.Kubevirt.Kubeconfig,
+						Kubeconfig: base64.StdEncoding.EncodeToString([]byte(secrets.Kubevirt.Kubeconfig)),
 					},
 					DatacenterName: "kubevirt-europe-west3-c",
 				},
