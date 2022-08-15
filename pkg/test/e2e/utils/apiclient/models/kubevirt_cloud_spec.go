@@ -18,7 +18,7 @@ import (
 // swagger:model KubevirtCloudSpec
 type KubevirtCloudSpec struct {
 
-	// kubeconfig
+	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// credentials reference

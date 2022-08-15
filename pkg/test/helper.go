@@ -87,7 +87,7 @@ func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
 // because in older KKP releases, we sometimes had pre-base64-encoded secrets
 // in Vault, but during 2022 migrated to keeping plaintext in Vault.
 func SafeBase64Decoding(value string) string {
-	// If there was no error, the original value was already encoded.
+	// If there was no error, the original value was encoded with base64.
 	if decoded, err := base64.StdEncoding.DecodeString(value); err == nil {
 		return string(decoded)
 	}
