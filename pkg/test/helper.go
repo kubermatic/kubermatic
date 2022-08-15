@@ -18,6 +18,7 @@ package test
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -156,4 +157,28 @@ func LatestKubernetesVersionForRelease(release string, cfg *kubermaticv1.Kuberma
 	}
 
 	return stable
+}
+
+// SafeBase64Decoding takes a value and decodes it with base64, but only
+// if the given value can be decoded without errors. This primarily exists
+// because in older KKP releases, we sometimes had pre-base64-encoded secrets
+// in Vault, but during 2022 migrated to keeping plaintext in Vault.
+func SafeBase64Decoding(value string) string {
+	// If there was no error, the original value was already encoded.
+	if decoded, err := base64.StdEncoding.DecodeString(value); err == nil {
+		return string(decoded)
+	}
+
+	return value
+}
+
+// SafeBase64Encoding takes a value and encodes it with base64, but only
+// if the given value was not already base64-encoded.
+func SafeBase64Encoding(value string) string {
+	// If there was no error, the original value was already encoded.
+	if _, err := base64.StdEncoding.DecodeString(value); err == nil {
+		return value
+	}
+
+	return base64.StdEncoding.EncodeToString([]byte(value))
 }

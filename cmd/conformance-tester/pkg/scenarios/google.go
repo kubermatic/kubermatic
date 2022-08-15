@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -56,7 +57,7 @@ func (s *googleScenario) APICluster(secrets types.Secrets) *apimodels.CreateClus
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.GCP.KKPDatacenter,
 					Gcp: &apimodels.GCPCloudSpec{
-						ServiceAccount: secrets.GCP.ServiceAccount,
+						ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
 						Network:        secrets.GCP.Network,
 						Subnetwork:     secrets.GCP.Subnetwork,
 					},
@@ -73,7 +74,7 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{
-				ServiceAccount: secrets.GCP.ServiceAccount,
+				ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
 				Network:        secrets.GCP.Network,
 				Subnetwork:     secrets.GCP.Subnetwork,
 			},
