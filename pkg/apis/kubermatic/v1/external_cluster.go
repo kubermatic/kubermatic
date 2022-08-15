@@ -32,7 +32,7 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
-// +kubebuilder:validation:Enum=aks;bringyourown;eks;kubeone;gke
+// +kubebuilder:validation:Enum=aks;bringyourown;eks;gke;kubeone
 
 // ExternalClusterProvider is the identifier for the cloud provider that hosts
 // the external cluster control plane.
