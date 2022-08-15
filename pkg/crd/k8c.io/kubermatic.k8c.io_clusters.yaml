@@ -944,6 +944,13 @@ spec:
                         x-kubernetes-map-type: atomic
                       domain:
                         type: string
+                      enableIngressHostname:
+                        description: Enable the `enable-ingress-hostname` cloud provider
+                          option on the Openstack CCM. Can only be used with the external
+                          CCM and might be deprecated and removed in future versions
+                          as it is considered a workaround for the PROXY protocol
+                          to preserve client IPs.
+                        type: boolean
                       floatingIPPool:
                         description: "FloatingIPPool holds the name of the public
                           network The public network is reachable from the outside
@@ -951,6 +958,13 @@ spec:
                           from. \n When specified, all worker nodes will receive a
                           public ip from this floating ip pool \n Note that the network
                           is external if the \"External\" field is set to true"
+                        type: string
+                      ingressHostnameSuffix:
+                        description: Set a specific suffix for the hostnames used
+                          for the PROXY protocol workaround that is enabled by EnableIngressHostname.
+                          The suffix is set to `nip.io` by default. Can only be used
+                          with the external CCM and might be deprecated and removed
+                          in future versions as it is considered a workaround only.
                         type: string
                       ipv6SubnetID:
                         description: IPv6SubnetID holds the ID of the subnet used
