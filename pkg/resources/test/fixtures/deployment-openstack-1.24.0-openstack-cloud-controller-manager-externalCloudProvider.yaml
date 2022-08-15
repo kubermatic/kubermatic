@@ -120,9 +120,9 @@ spec:
       - name: openvpn-client-certificates
         secret:
           secretName: openvpn-client-certificates
-      - configMap:
-          name: cloud-config
-        name: cloud-config
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
       - configMap:
           name: ca-bundle
         name: ca-bundle
