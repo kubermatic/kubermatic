@@ -120,6 +120,8 @@ spec:
                     - subscriptionID
                     - tenantID
                     type: object
+                  bringyourown:
+                    type: object
                   eks:
                     properties:
                       accessKeyID:
@@ -435,6 +437,7 @@ spec:
                   the cluster.
                 type: string
             required:
+            - cloudSpec
             - humanReadableName
             - pause
             type: object

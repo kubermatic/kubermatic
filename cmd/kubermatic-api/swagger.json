@@ -23912,6 +23912,10 @@
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "BringYourOwnSpec": {
+      "type": "object",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ByPodStatus": {
       "description": "ByPodStatus defines the observed state of ConstraintTemplate as seen by\nan individual controller\n+kubebuilder:pruning:PreserveUnknownFields",
       "type": "object",
@@ -26463,6 +26467,9 @@
       "properties": {
         "aks": {
           "$ref": "#/definitions/AKSCloudSpec"
+        },
+        "bringYourOwn": {
+          "$ref": "#/definitions/BringYourOwnSpec"
         },
         "eks": {
           "$ref": "#/definitions/EKSCloudSpec"

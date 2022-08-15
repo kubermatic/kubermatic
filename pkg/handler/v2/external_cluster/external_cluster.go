@@ -183,6 +183,10 @@ func CreateEndpoint(
 		if cloud == nil {
 			isImported := resources.ExternalClusterIsImportedTrue
 			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
+			newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
+				BringYourOwn: &kubermaticv1.ExternalClusterBringYourOwnCloudSpec{},
+			}
+
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, utilerrors.NewBadRequest(err.Error())
@@ -315,27 +319,26 @@ func deleteProviderCluster(ctx context.Context,
 	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
 ) error {
 	cloud := cluster.Spec.CloudSpec
-	if cloud.ProviderName != "" {
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-		if cloud.AKS != nil {
-			err := deleteAKSCluster(ctx, secretKeySelector, cloud.AKS)
-			if err != nil {
-				return err
-			}
-		}
-		if cloud.EKS != nil {
-			err := deleteEKSCluster(ctx, secretKeySelector, cloud.EKS)
-			if err != nil {
-				return err
-			}
-		}
-		if cloud.GKE != nil {
-			err := deleteGKECluster(ctx, secretKeySelector, cloud.GKE)
-			if err != nil {
-				return err
-			}
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+	if cloud.AKS != nil {
+		if err := deleteAKSCluster(ctx, secretKeySelector, cloud.AKS); err != nil {
+			return err
 		}
 	}
+
+	if cloud.EKS != nil {
+		if err := deleteEKSCluster(ctx, secretKeySelector, cloud.EKS); err != nil {
+			return err
+		}
+	}
+
+	if cloud.GKE != nil {
+		if err := deleteGKECluster(ctx, secretKeySelector, cloud.GKE); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1025,6 +1028,9 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 	}
 	if cloud.KubeOne != nil {
 		cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{}
+	}
+	if cloud.BringYourOwn != nil {
+		cluster.Cloud.BringYourOwn = &apiv2.BringYourOwnSpec{}
 	}
 
 	return cluster

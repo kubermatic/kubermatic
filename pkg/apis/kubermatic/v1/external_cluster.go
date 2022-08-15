@@ -116,11 +116,12 @@ type ExternalClusterSpec struct {
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	ProviderName ExternalClusterProvider          `json:"providerName"`
-	GKE          *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
-	EKS          *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
-	AKS          *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
-	KubeOne      *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+	ProviderName ExternalClusterProvider               `json:"providerName"`
+	GKE          *ExternalClusterGKECloudSpec          `json:"gke,omitempty"`
+	EKS          *ExternalClusterEKSCloudSpec          `json:"eks,omitempty"`
+	AKS          *ExternalClusterAKSCloudSpec          `json:"aks,omitempty"`
+	KubeOne      *ExternalClusterKubeOneCloudSpec      `json:"kubeone,omitempty"`
+	BringYourOwn *ExternalClusterBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 }
 
 type ExternalClusterPhase string
@@ -170,6 +171,8 @@ const (
 	// `statusMessage` field.
 	ExternalClusterPhaseConfigError ExternalClusterPhase = "ConfigError"
 )
+
+type ExternalClusterBringYourOwnCloudSpec struct{}
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`

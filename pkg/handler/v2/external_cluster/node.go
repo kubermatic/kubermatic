@@ -768,7 +768,6 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 		var machineDeployment apiv2.ExternalClusterMachineDeployment
 
 		cloud := cluster.Spec.CloudSpec
-
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 		if cloud.EKS != nil {
