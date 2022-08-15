@@ -105,7 +105,7 @@ type ExternalClusterSpec struct {
 	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	// CloudSpec contains provider specific fields
-	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec,omitempty"`
+	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`

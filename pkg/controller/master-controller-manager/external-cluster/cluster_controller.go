@@ -81,7 +81,7 @@ func Add(
 	// Watch for changes to ExternalCluster except KubeOne and generic clusters.
 	skipKubeOneClusters := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		externalCluster, ok := object.(*kubermaticv1.ExternalCluster)
-		return ok && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterKubeOneProvider
+		return ok && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterKubeOneProvider && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterBringYourOwnProvider
 	})
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, skipKubeOneClusters, predicate.GenerationChangedPredicate{})
