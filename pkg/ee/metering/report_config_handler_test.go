@@ -238,7 +238,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusBadRequest,
-			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
+			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name must be valid rfc1035 label: a DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')"}}`,
 		},
 		// scenario 7
 		{
@@ -367,7 +367,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusBadRequest,
-			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
+			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name must be valid rfc1035 label: a DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')"}}`,
 		},
 		// scenario 6
 		{
