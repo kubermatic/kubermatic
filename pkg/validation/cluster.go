@@ -687,7 +687,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 		return errors.New("cannot enable ingress hostname feature without external CCM")
 	}
 
-	if spec.IngressHostnameSuffix != nil && *spec.IngressHostnameSuffix != "" && (spec.EnableIngressHostname != nil || !*spec.EnableIngressHostname) {
+	if spec.IngressHostnameSuffix != nil && *spec.IngressHostnameSuffix != "" && (spec.EnableIngressHostname == nil || !*spec.EnableIngressHostname) {
 		return errors.New("cannot set ingress hostname suffix if ingress hostname is not enabled")
 	}
 
