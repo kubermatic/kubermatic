@@ -101,12 +101,12 @@ digitalocean)
   ;;
 
 gce)
-  extraArgs="-gcp-service-account=\"$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")\"
+  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
   ;;
 
 gcp)
-  extraArgs="-gcp-service-account=\"$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")\"
+  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
   ;;
 

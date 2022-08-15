@@ -26693,6 +26693,7 @@
           "$ref": "#/definitions/NetworkRanges"
         },
         "serviceAccount": {
+          "description": "The Google Service Account (JSON format), encoded with base64.",
           "type": "string",
           "x-go-name": "ServiceAccount"
         },
@@ -28491,6 +28492,7 @@
           "x-go-name": "InfraStorageClasses"
         },
         "kubeconfig": {
+          "description": "The cluster's kubeconfig file, encoded with base64.",
           "type": "string",
           "x-go-name": "Kubeconfig"
         },

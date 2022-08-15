@@ -53,7 +53,7 @@ elif [[ $provider == "packet" ]]; then
     -packet-project-id=${PACKET_PROJECT_ID}
     -packet-kkp-datacenter=packet-am"
 elif [[ $provider == "gcp" ]] || [[ $provider == "gce" ]]; then
-  EXTRA_ARGS="-gcp-service-account=\"$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")\"
+  EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
 elif [[ $provider == "azure" ]]; then
   maxDuration=90
