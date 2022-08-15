@@ -215,12 +215,6 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 
 func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
-	cloudConfigConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.CloudConfigConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
 	caBundleConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.CABundleConfigMapName,
@@ -259,7 +253,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	}
 	configMapList := &corev1.ConfigMapList{
 		Items: []corev1.ConfigMap{
-			cloudConfigConfigMap,
 			caBundleConfigMap,
 			prometheusConfigMap,
 			dnsResolverConfigMap,
@@ -306,6 +299,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		},
 	}
 	secretList := createNamedSecrets([]string{
+		resources.CloudConfigSeedSecretName,
 		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,

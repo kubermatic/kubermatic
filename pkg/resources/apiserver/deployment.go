@@ -510,7 +510,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.CloudConfigConfigMapName,
+			Name:      resources.CloudConfigSeedSecretName,
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
@@ -630,12 +630,10 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 			},
 		},
 		{
-			Name: resources.CloudConfigConfigMapName,
+			Name: resources.CloudConfigSeedSecretName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
 				},
 			},
 		},

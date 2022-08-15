@@ -95,12 +95,10 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
+					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.CloudConfigSeedSecretName,
 						},
 					},
 				},
@@ -147,7 +145,7 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 		VolumeMounts: append(getVolumeMounts(),
 			corev1.VolumeMount{
 				MountPath: "/etc/cloud",
-				Name:      resources.CloudConfigConfigMapName,
+				Name:      resources.CloudConfigSeedSecretName,
 			},
 			corev1.VolumeMount{
 				Name:      resources.CABundleConfigMapName,

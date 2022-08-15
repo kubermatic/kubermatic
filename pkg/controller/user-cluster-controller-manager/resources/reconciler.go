@@ -82,7 +82,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %w", err)
 	}
-	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigConfigMapName)
+	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigSeedSecretName)
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %w", err)
 	}
@@ -95,7 +95,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
-		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
 		}
