@@ -806,8 +806,7 @@ type MeteringReportConfiguration struct {
 	Retention *uint32 `json:"retention,omitempty"`
 
 	// +optional
-	// +kubebuilder:default:={"cluster", "namespace"}
-	// +kubebuilder:validation:Enum=cluster;namespace
+	// +kubebuilder:default:={"cluster","namespace"}
 	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
 	Types []string `json:"type,omitempty"`
 }

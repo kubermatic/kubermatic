@@ -1180,9 +1180,6 @@ spec:
                           description: Types of reports to generate. Available report
                             types are cluster and namespace. By default, all types
                             of reports are generated.
-                          enum:
-                          - cluster
-                          - namespace
                           items:
                             type: string
                           type: array

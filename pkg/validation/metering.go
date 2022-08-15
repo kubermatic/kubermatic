@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+	"k8s.io/utils/strings/slices"
 	"strings"
 
 	"github.com/robfig/cron/v3"
@@ -26,6 +27,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/validation"
 )
+
+var reportTypes = []string{"cluster", "namespace"}
 
 func GetCronExpressionParser() cron.Parser {
 	return cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
@@ -41,6 +44,12 @@ func ValidateMeteringConfiguration(configuration *kubermaticv1.MeteringConfigura
 
 			if _, err := parser.Parse(reportConfig.Schedule); err != nil {
 				return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)
+			}
+
+			for _, t := range reportConfig.Types {
+				if !slices.Contains(reportTypes, t) {
+					return fmt.Errorf("invalid report type: %s", t)
+				}
 			}
 		}
 	}
