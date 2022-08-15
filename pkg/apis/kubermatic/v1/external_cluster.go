@@ -35,10 +35,11 @@ const (
 type ExternalClusterProvider string
 
 const (
-	ExternalClusterGKEProvider     ExternalClusterProvider = "gke"
-	ExternalClusterEKSProvider     ExternalClusterProvider = "eks"
-	ExternalClusterAKSProvider     ExternalClusterProvider = "aks"
-	ExternalClusterKubeOneProvider ExternalClusterProvider = "kubeone"
+	ExternalClusterGKEProvider          ExternalClusterProvider = "gke"
+	ExternalClusterEKSProvider          ExternalClusterProvider = "eks"
+	ExternalClusterAKSProvider          ExternalClusterProvider = "aks"
+	ExternalClusterKubeOneProvider      ExternalClusterProvider = "kubeone"
+	ExternalClusterBringYourOwnProvider ExternalClusterProvider = "bringyourown"
 )
 
 // +kubebuilder:resource:scope=Cluster
@@ -100,7 +101,7 @@ type ExternalClusterSpec struct {
 	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	// CloudSpec contains provider specific fields
-	CloudSpec *ExternalClusterCloudSpec `json:"cloudSpec,omitempty"`
+	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec,omitempty"`
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -207,7 +208,7 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		},
 	}
 	cloud := i.Spec.CloudSpec
-	if cloud == nil {
+	if cloud.ProviderName == ExternalClusterBringYourOwnProvider {
 		return ""
 	}
 	if cloud.GKE != nil {
