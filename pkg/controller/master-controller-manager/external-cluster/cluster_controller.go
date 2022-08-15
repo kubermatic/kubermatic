@@ -81,7 +81,7 @@ func Add(
 	// Watch for changes to ExternalCluster except KubeOne clusters.
 	skipKubeOneClusters := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		externalCluster, ok := object.(*kubermaticv1.ExternalCluster)
-		return ok && externalCluster.Spec.CloudSpec.KubeOne == nil
+		return ok && (externalCluster.Spec.CloudSpec == nil || externalCluster.Spec.CloudSpec.KubeOne == nil)
 	})
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, skipKubeOneClusters, predicate.GenerationChangedPredicate{})
