@@ -54,7 +54,7 @@ export AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=sub
 export AZURE_CLIENT_ID="${AZURE_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
 export AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET:-$(vault kv get -field=clientSecret dev/e2e-azure)}"
 
-export GOOGLE_SERVICE_ACCOUNT="${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}"
+export GOOGLE_SERVICE_ACCOUNT="$(safebase64 "${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}")"
 
 export OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
 export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
