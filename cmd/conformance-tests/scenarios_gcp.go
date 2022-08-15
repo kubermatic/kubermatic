@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -65,7 +66,7 @@ func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: "gcp-westeurope",
 					Gcp: &apimodels.GCPCloudSpec{
-						ServiceAccount: secrets.GCP.ServiceAccount,
+						ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
 						Network:        secrets.GCP.Network,
 						Subnetwork:     secrets.GCP.Subnetwork,
 					},
