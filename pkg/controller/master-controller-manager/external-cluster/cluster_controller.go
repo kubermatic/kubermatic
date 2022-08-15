@@ -88,7 +88,7 @@ func withKubeOnefilter(obj ctrlruntimeclient.Object) bool {
 	if !ok {
 		return false
 	}
-	return externalCluster.Spec.CloudSpec.KubeOne == nil
+	return externalCluster.Spec.CloudSpec == nil || externalCluster.Spec.CloudSpec.KubeOne == nil
 }
 
 // ExternalCluster controller doesn't process KubeOne clusters.
