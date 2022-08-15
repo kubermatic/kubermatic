@@ -78,14 +78,6 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		return undeploy(ctx, client)
 	}
 
-	owner := common.OwnershipModifierFactory(seed, scheme)
-
-	if err := reconciling.ReconcileNamespaces(ctx, []reconciling.NamedNamespaceCreatorGetter{
-		meteringNamespaceCreator(),
-	}, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile metering namespace: %w", err)
-	}
-
 	err = prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile metering prometheus: %w", err)
@@ -93,7 +85,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
-		owner,
+		common.OwnershipModifierFactory(seed, scheme),
 	}
 
 	if err := reconcileMeteringReportConfigurations(ctx, client, seed, overwriter, modifiers...); err != nil {
@@ -189,7 +181,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 	existingReportingCronJobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
 		ctrlruntimeclient.InNamespace(meteringNamespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{meteringName}),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.MatchingLabels{common.ComponentLabel: meteringName}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -220,10 +212,6 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
 
 	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering s3 secret: %w", err)
-	}
-	key.Name = resources.ImagePullSecretName
-	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
 	}
 
 	// prometheus resources
@@ -297,7 +285,6 @@ func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key t
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
-
 		return err
 	}
 

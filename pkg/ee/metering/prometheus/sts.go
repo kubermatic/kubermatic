@@ -55,6 +55,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 				MatchLabels: map[string]string{common.NameLabel: Name},
 			}
 			sts.Spec.Replicas = pointer.Int32(1)
+			sts.Spec.RevisionHistoryLimit = pointer.Int32(10)
 			sts.Spec.ServiceName = Name + "-headless"
 			sts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			sts.Spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
