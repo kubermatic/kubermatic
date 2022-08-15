@@ -43,8 +43,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-{{- $allocNames := list "metallb-ipv4" "metallb-ipv6" }}
-{{- range $allocName := $allocNames }}
+{{- range $allocName := list "metallb-ipv4" "metallb-ipv6" }}
 {{- $allocation := index $.Cluster.Network.IPAMAllocations $allocName }}
   {{- if eq $allocation.Type "prefix" }}
     - {{ $allocation.CIDR }}
