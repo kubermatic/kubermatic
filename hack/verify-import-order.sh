@@ -24,7 +24,8 @@ if ! [ -x "$(command -v gimps)" ]; then
 
   echodate "Downloading gimps v$version..."
 
-  curl -L https://github.com/xrstf/gimps/releases/download/v$version/gimps_${version}_linux_amd64.tar.gz | tar -xz gimps
+  curl -LO https://github.com/xrstf/gimps/releases/download/v$version/gimps_${version}_linux_amd64.zip
+  unzip gimps_${version}_linux_amd64.zip gimps
   mv gimps /usr/local/bin/
 
   echodate "Done!"
