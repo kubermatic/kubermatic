@@ -87,7 +87,7 @@ digitalocean)
   ;;
 
 gcp)
-  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT"
+  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
   ;;
 
 hetzner)

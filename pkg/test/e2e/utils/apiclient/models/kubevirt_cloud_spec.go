@@ -21,7 +21,7 @@ type KubevirtCloudSpec struct {
 	// c s i kubeconfig
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 
-	// kubeconfig
+	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// credentials reference
