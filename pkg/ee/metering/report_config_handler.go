@@ -30,6 +30,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -40,6 +41,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -72,8 +74,8 @@ type createReportConfigurationReq struct {
 }
 
 func (m createReportConfigurationReq) Validate() error {
-	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
-		return utilerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
+	if errs := k8svalidation.IsDNS1035Label(m.Name); len(errs) != 0 {
+		return utilerrors.NewBadRequest("metering report configuration name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 	}
 
 	cronExpressionParser := validation.GetCronExpressionParser()
@@ -109,8 +111,8 @@ type updateReportConfigurationReq struct {
 }
 
 func (m updateReportConfigurationReq) Validate() error {
-	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
-		return utilerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
+	if errs := k8svalidation.IsDNS1035Label(m.Name); len(errs) != 0 {
+		return utilerrors.NewBadRequest("metering report configuration name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 	}
 
 	if m.Body.Schedule != "" {
