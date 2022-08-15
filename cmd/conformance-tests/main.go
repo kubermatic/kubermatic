@@ -48,6 +48,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
@@ -141,12 +142,14 @@ type secrets struct {
 		ProjectID string
 	}
 	GCP struct {
+		// ServiceAccount is the plaintext Service account (as JSON) without any (base64) encoding.
 		ServiceAccount string
 		Network        string
 		Subnetwork     string
 		Zone           string
 	}
 	Kubevirt struct {
+		// Kubeconfig is the plaintext kubeconfig without any (base64) encoding.
 		Kubeconfig string
 	}
 	Alibaba struct {
@@ -288,7 +291,11 @@ func main() {
 			log.Fatalw("Failed to read kubevirt kubeconfig file", zap.Error(err))
 		}
 
-		opts.secrets.Kubevirt.Kubeconfig = string(content)
+		opts.secrets.Kubevirt.Kubeconfig = test.SafeBase64Decoding(string(content))
+	}
+
+	if opts.secrets.GCP.ServiceAccount != "" {
+		opts.secrets.GCP.ServiceAccount = test.SafeBase64Decoding(opts.secrets.GCP.ServiceAccount)
 	}
 
 	opts.distributions, err = getEffectiveDistributions(sdistributions, sexcludeDistributions)
