@@ -482,7 +482,7 @@ safebase64() {
   local value="$1"
 
   set +e
-  decoded="$(echo "$value" | base64 -d 2>/dev/null)"
+  decoded="$(echo "$value" | base64 -d 2> /dev/null)"
   if [ $? -eq 0 ]; then
     echo "$value"
     return 0
