@@ -368,6 +368,14 @@ spec:
                     - sshReference
                     type: object
                   providerName:
+                    description: ExternalClusterProvider is the identifier for the
+                      cloud provider that hosts the external cluster control plane.
+                    enum:
+                    - aks
+                    - bringyourown
+                    - eks
+                    - kubeone
+                    - gke
                     type: string
                 required:
                 - providerName
