@@ -804,6 +804,12 @@ type MeteringReportConfiguration struct {
 	// Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
 	// Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
 	Retention *uint32 `json:"retention,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:={"cluster", "namespace"}
+	// +kubebuilder:validation:Enum=cluster;namespace
+	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+	Types []string `json:"type,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

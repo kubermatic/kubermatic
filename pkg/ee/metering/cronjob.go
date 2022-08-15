@@ -43,12 +43,11 @@ import (
 func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
-			args := make([]string, 5)
-			args[0] = fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, prometheus.Namespace)
-			args[1] = fmt.Sprintf("--last-number-of-days=%d", mrc.Interval)
-			args[2] = fmt.Sprintf("--output-dir=%s", reportName)
-			args[3] = "cluster"
-			args[4] = "namespace"
+			var args []string
+			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, prometheus.Namespace))
+			args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
+			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
+			args = append(args, mrc.Types...)
 
 			if job.Labels == nil {
 				job.Labels = make(map[string]string)
