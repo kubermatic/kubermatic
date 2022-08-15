@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
@@ -259,7 +260,7 @@ func (a gcp) CloudSpec() models.CloudSpec {
 		DatacenterName: "gcp-westeurope",
 		Gcp: &models.GCPCloudSpec{
 			Network:        "global/networks/dualstack",
-			ServiceAccount: os.Getenv("GOOGLE_SERVICE_ACCOUNT"),
+			ServiceAccount: test.SafeBase64Encoding(os.Getenv("GOOGLE_SERVICE_ACCOUNT")),
 			Subnetwork:     "projects/kubermatic-dev/regions/europe-west3/subnetworks/dualstack-europe-west3",
 		},
 	}

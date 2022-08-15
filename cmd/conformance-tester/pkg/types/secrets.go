@@ -20,6 +20,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"k8c.io/kubermatic/v2/pkg/test"
 )
 
 type Secrets struct {
@@ -68,14 +70,16 @@ type Secrets struct {
 		ProjectID     string
 	}
 	GCP struct {
-		KKPDatacenter  string
+		KKPDatacenter string
+		// ServiceAccount is the plaintext Service account (as JSON) without any (base64) encoding.
 		ServiceAccount string
 		Network        string
 		Subnetwork     string
 	}
 	Kubevirt struct {
 		KKPDatacenter string
-		Kubeconfig    string
+		// Kubeconfig is the plaintext kubeconfig without any (base64) encoding.
+		Kubeconfig string
 	}
 	Alibaba struct {
 		KKPDatacenter   string
@@ -172,7 +176,11 @@ func (s *Secrets) ParseFlags() error {
 			return fmt.Errorf("failed to read kubevirt kubeconfig file: %w", err)
 		}
 
-		s.Kubevirt.Kubeconfig = string(content)
+		s.Kubevirt.Kubeconfig = test.SafeBase64Decoding(string(content))
+	}
+
+	if s.GCP.ServiceAccount != "" {
+		s.GCP.ServiceAccount = test.SafeBase64Decoding(s.GCP.ServiceAccount)
 	}
 
 	return nil
