@@ -115,7 +115,7 @@ func genExternalCluster(name string, isDelete bool) *kubermaticv1.ExternalCluste
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
-			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
+			CloudSpec:         kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
