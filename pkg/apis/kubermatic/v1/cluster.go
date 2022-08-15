@@ -1177,6 +1177,16 @@ type OpenstackCloudSpec struct {
 	// level if both are specified.
 	// +optional
 	UseOctavia *bool `json:"useOctavia,omitempty"`
+
+	// Enable the `enable-ingress-hostname` cloud provider option on the Openstack CCM. Can only be used with the
+	// external CCM and might be deprecated and removed in future versions as it is considered a workaround for the PROXY
+	// protocol to preserve client IPs.
+	// +optional
+	EnableIngressHostname *bool `json:"enableIngressHostname,omitempty"`
+	// Set a specific suffix for the hostnames used for the PROXY protocol workaround that is enabled by EnableIngressHostname.
+	// The suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in
+	// future versions as it is considered a workaround only.
+	IngressHostnameSuffix *string `json:"ingressHostnameSuffix,omitempty"`
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.
