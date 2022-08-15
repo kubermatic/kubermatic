@@ -75,17 +75,19 @@ func TestReconcile(t *testing.T) {
 				log:    kubermaticlog.Logger,
 			}
 
-			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
+			// finalizers are removed step by step and this takes multiple reconciliations
+			if _, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}}); err != nil {
+				t.Fatal(err)
+			}
 
-			// validate
-			if err != nil {
+			if _, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}}); err != nil {
 				t.Fatal(err)
 			}
 
 			// ensure the ExternalCluster is gone (the controller removed the finalizer, and since a
 			// DeletionTimestamp was set, it should now be gone)
 			cluster := &kubermaticv1.ExternalCluster{}
-			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
+			err := kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
 			if err == nil {
 				t.Fatal("expected ExternalCluster to be gone, but found it anyway")
 			}
