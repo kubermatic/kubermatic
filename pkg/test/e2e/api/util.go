@@ -152,7 +152,7 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 	}
 	namesSet = sets.NewString(tc.expectedClusterRoleNames...)
 	if !namesSet.HasAll(clusterRoleNames...) {
-		t.Fatalf("expected cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
+		t.Fatalf("expected cluster roles %v, got %v", tc.expectedClusterRoleNames, clusterRoleNames)
 	}
 
 	// test if default cluster role bindings were created
