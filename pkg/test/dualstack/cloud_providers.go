@@ -20,7 +20,6 @@ package dualstack
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 
