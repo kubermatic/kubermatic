@@ -36,15 +36,15 @@ type clusterNetworkingConfig models.ClusterNetworkingConfig
 
 func defaultClusterNetworkingConfig() clusterNetworkingConfig {
 	c := models.ClusterNetworkingConfig{
-		NodeCIDRMaskSizeIPV4: 20,
-		NodeCIDRMaskSizeIPV6: 100,
+		NodeCIDRMaskSizeIPV4: 24,
+		NodeCIDRMaskSizeIPV6: 64,
 		ProxyMode:            "ebpf",
 		IPFamily:             "IPv4+IPv6",
 		Pods: &models.NetworkRanges{
-			CIDRBlocks: []string{"172.25.0.0/16", "fd00::/99"},
+			CIDRBlocks: []string{"172.25.0.0/16", "fd01::/48"},
 		},
 		Services: &models.NetworkRanges{
-			CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
+			CIDRBlocks: []string{"10.240.16.0/20", "fd02::/120"},
 		},
 		KonnectivityEnabled: true,
 	}
