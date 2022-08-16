@@ -774,10 +774,7 @@ type SeedMLASettings struct {
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
 
-	// +kubebuilder:default=kubermatic-fast
-
-	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
-	// exporting it to s3 bucket. Default value is kubermatic-fast.
+	// StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
