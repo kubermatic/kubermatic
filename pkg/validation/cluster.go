@@ -121,8 +121,13 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 
+	externalCCM := false
+	if val, ok := spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
+		externalCCM = val
+	}
+
 	// general cloud spec logic
-	if errs := ValidateCloudSpec(spec.Cloud, dc, spec.ClusterNetwork.IPFamily, parentFieldPath.Child("cloud")); len(errs) > 0 {
+	if errs := ValidateCloudSpec(spec.Cloud, dc, spec.ClusterNetwork.IPFamily, parentFieldPath.Child("cloud"), externalCCM); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -547,7 +552,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 // ValidateCloudSpec validates if the cloud spec is valid
 // If this is not called from within another validation
 // routine, parentFieldPath can be nil.
-func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily, parentFieldPath *field.Path) field.ErrorList {
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter, ipFamily kubermaticv1.IPFamily, parentFieldPath *field.Path, externalCCM bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.DatacenterName == "" {
@@ -610,7 +615,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	case spec.Kubevirt != nil:
 		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
 	case spec.Openstack != nil:
-		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc)
+		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc, externalCCM)
 	case spec.Packet != nil:
 		providerErr = validatePacketCloudSpec(spec.Packet)
 	case spec.VSphere != nil:
@@ -630,7 +635,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	return allErrs
 }
 
-func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
+func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter, externalCCM bool) error {
 	// validate applicationCredentials
 	if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret == "" {
 		return errors.New("no applicationCredentialSecret specified")
@@ -676,6 +681,14 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 
 	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
+	}
+
+	if !externalCCM && (spec.EnableIngressHostname != nil || spec.IngressHostnameSuffix != nil) {
+		return errors.New("cannot enable ingress hostname feature without external CCM")
+	}
+
+	if spec.IngressHostnameSuffix != nil && *spec.IngressHostnameSuffix != "" && (spec.EnableIngressHostname == nil || !*spec.EnableIngressHostname) {
+		return errors.New("cannot set ingress hostname suffix if ingress hostname is not enabled")
 	}
 
 	return nil

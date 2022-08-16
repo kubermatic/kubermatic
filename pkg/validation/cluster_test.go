@@ -189,7 +189,7 @@ func TestValidateCloudSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateCloudSpec(test.spec, dc, kubermaticv1.IPFamilyIPv4, nil).ToAggregate()
+			err := ValidateCloudSpec(test.spec, dc, kubermaticv1.IPFamilyIPv4, nil, true).ToAggregate()
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)

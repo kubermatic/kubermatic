@@ -30247,10 +30247,20 @@
           "type": "string",
           "x-go-name": "Domain"
         },
+        "enableIngressHostname": {
+          "description": "Enable the `enable-ingress-hostname` cloud provider option on the Openstack CCM. Can only be used with the\nexternal CCM and might be deprecated and removed in future versions as it is considered a workaround for the PROXY\nprotocol to preserve client IPs.\n+optional",
+          "type": "boolean",
+          "x-go-name": "EnableIngressHostname"
+        },
         "floatingIPPool": {
           "description": "FloatingIPPool holds the name of the public network\nThe public network is reachable from the outside world\nand should provide the pool of IP addresses to choose from.\n\nWhen specified, all worker nodes will receive a public ip from this floating ip pool\n\nNote that the network is external if the \"External\" field is set to true",
           "type": "string",
           "x-go-name": "FloatingIPPool"
+        },
+        "ingressHostnameSuffix": {
+          "description": "Set a specific suffix for the hostnames used for the PROXY protocol workaround that is enabled by EnableIngressHostname.\nThe suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in\nfuture versions as it is considered a workaround only.",
+          "type": "string",
+          "x-go-name": "IngressHostnameSuffix"
         },
         "ipv6SubnetID": {
           "description": "IPv6SubnetID holds the ID of the subnet used for IPv6 networking.\nIf not provided, a new subnet will be created if IPv6 is enabled.\n+optional",
