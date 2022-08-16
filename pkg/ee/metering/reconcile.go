@@ -51,7 +51,6 @@ import (
 )
 
 const (
-
 	// legacy naming.
 	meteringToolName = "kubermatic-metering"
 	meteringDataName = "metering-data"
@@ -68,7 +67,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	// ensure legacy components are removed
-	err := cleanupLegacyMeteringResources(ctx, client)
+	err := cleanupLegacyMeteringResources(ctx, client, seed.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup legacy metering components: %w", err)
 	}
@@ -122,7 +121,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	if err := reconciling.ReconcileCronJobs(
 		ctx,
 		cronJobs,
-		resources.KubermaticNamespace,
+		seed.Namespace,
 		client,
 		modifiers...,
 	); err != nil {
@@ -133,7 +132,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 		return nil
 	}
 
-	mc, bucket, err := getS3DataFromSeed(ctx, client)
+	mc, bucket, err := getS3DataFromSeed(ctx, seed, client)
 	if err != nil {
 		return err
 	}
@@ -242,8 +241,8 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client, namespace st
 }
 
 // cleanupLegacyMeteringResources removes all active parts of the legacy metering installation.
-func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclient.Client) error {
-	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
+func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, namespace string) error {
+	key := types.NamespacedName{Namespace: namespace, Name: meteringToolName}
 	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
 	}
@@ -258,7 +257,7 @@ func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclien
 
 	legacyReportingCronJobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
+		ctrlruntimeclient.InNamespace(namespace),
 		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{meteringToolName}),
 	}
 	if err := client.List(ctx, legacyReportingCronJobs, listOpts...); err != nil {
@@ -274,7 +273,7 @@ func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclien
 		}
 	}
 
-	if err := cleanupResource(ctx, client, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringDataName}, &corev1.PersistentVolumeClaim{}); err != nil {
+	if err := cleanupResource(ctx, client, types.NamespacedName{Namespace: namespace, Name: meteringDataName}, &corev1.PersistentVolumeClaim{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering PersistentVolumeClaim: %w", err)
 	}
 

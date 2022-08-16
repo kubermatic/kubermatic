@@ -37,7 +37,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
@@ -263,7 +262,7 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 }
 
 // CreateMeteringReportConfiguration adds new metering report configuration to the existing map.
-func CreateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
+func CreateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(createReportConfigurationReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -273,13 +272,13 @@ func CreateMeteringReportConfiguration(ctx context.Context, request interface{},
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	seedList := &kubermaticv1.SeedList{}
-	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
+	seeds, err := seedsGetter()
+	if err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		if err := createMeteringReportConfiguration(ctx, req, &seed, masterClient); err != nil {
+	for _, seed := range seeds {
+		if err := createMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
 			return err
 		}
 	}
@@ -288,7 +287,7 @@ func CreateMeteringReportConfiguration(ctx context.Context, request interface{},
 }
 
 // UpdateMeteringReportConfiguration adds new metering report configuration to the existing map.
-func UpdateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
+func UpdateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(updateReportConfigurationReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -298,13 +297,13 @@ func UpdateMeteringReportConfiguration(ctx context.Context, request interface{},
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	seedList := &kubermaticv1.SeedList{}
-	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
+	seeds, err := seedsGetter()
+	if err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		if err := updateMeteringReportConfiguration(ctx, req, &seed, masterClient); err != nil {
+	for _, seed := range seeds {
+		if err := updateMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
 			return err
 		}
 	}
@@ -313,19 +312,19 @@ func UpdateMeteringReportConfiguration(ctx context.Context, request interface{},
 }
 
 // DeleteMeteringReportConfiguration removes metering report configuration from the existing map.
-func DeleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
+func DeleteMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(deleteMeteringReportConfig)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
 	}
 
-	seedList := &kubermaticv1.SeedList{}
-	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
+	seeds, err := seedsGetter()
+	if err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		if err := deleteMeteringReportConfiguration(ctx, req.Name, &seed, masterClient); err != nil {
+	for _, seed := range seeds {
+		if err := deleteMeteringReportConfiguration(ctx, req.Name, seed, masterClient); err != nil {
 			return err
 		}
 	}

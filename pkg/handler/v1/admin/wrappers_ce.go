@@ -33,7 +33,7 @@ func createOrUpdateMeteringCredentials(_ context.Context, _ interface{}, _ provi
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient ctrlruntimeclient.Client) error {
+func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, _ provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
 	return nil
 }
 
@@ -45,15 +45,15 @@ func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]apiv1.MeteringR
 	return nil, nil
 }
 
-func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
+func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
+func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
+func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 

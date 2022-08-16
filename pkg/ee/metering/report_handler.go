@@ -35,11 +35,13 @@ import (
 	"github.com/minio/minio-go/v7"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +76,7 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 			return nil, err
 		}
 
-		reports, err := getReportsForSeed(ctx, listOptions, seedClient)
+		reports, err := getReportsForSeed(ctx, listOptions, seed, seedClient)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +113,7 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 			return "", err
 		}
 
-		mc, bucket, err := getS3DataFromSeed(ctx, seedClient)
+		mc, bucket, err := getS3DataFromSeed(ctx, seed, seedClient)
 		if err != nil {
 			return "", err
 		}
@@ -159,7 +161,7 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 			return err
 		}
 
-		mc, bucket, err := getS3DataFromSeed(ctx, seedClient)
+		mc, bucket, err := getS3DataFromSeed(ctx, seed, seedClient)
 		if err != nil {
 			return err
 		}
@@ -175,8 +177,8 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 	return utilerrors.New(http.StatusNotFound, "report not found")
 }
 
-func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
-	mc, s3bucket, err := getS3DataFromSeed(ctx, seedClient)
+func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
+	mc, s3bucket, err := getS3DataFromSeed(ctx, seed, seedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -204,10 +206,9 @@ func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, se
 	return reports, nil
 }
 
-func getS3DataFromSeed(ctx context.Context, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
+func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
 	var s3secret corev1.Secret
-	err := seedClient.Get(ctx, secretNamespacedName, &s3secret)
-	if err != nil {
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: SecretName, Namespace: seed.Namespace}, &s3secret); err != nil {
 		return nil, "", err
 	}
 
