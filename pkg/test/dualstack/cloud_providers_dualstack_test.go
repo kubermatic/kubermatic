@@ -341,6 +341,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				}
 				t.Fatalf("failed to create cluster: %v", err)
 			}
+
 			defer func() {
 				mu.Lock()
 				cleanup()
@@ -513,21 +514,24 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expected
 
 func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
 	var teardowns []func() error
+	var once sync.Once
 	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			err := wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
-				err := teardowns[n-1-i]()
+		once.Do(func() {
+			n := len(teardowns)
+			for i := range teardowns {
+				err := wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
+					err := teardowns[n-1-i]()
+					if err != nil {
+						t.Log(err)
+						return false, nil
+					}
+					return true, nil
+				})
 				if err != nil {
-					t.Log(err)
-					return false, nil
+					t.Errorf("cleanup failed: %s", err)
 				}
-				return true, nil
-			})
-			if err != nil {
-				t.Errorf("cleanup failed: %s", err)
 			}
-		}
+		})
 	}
 
 	// create a project
