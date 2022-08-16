@@ -182,6 +182,7 @@ spec:
           images:
             centos: "CentOS 8 (2021-07-05)"
             ubuntu: "Ubuntu Focal 20.04 (2021-07-01)"
+            flatcar: "Flatcar Stable (2022-05-10)"
           nodeSizeRequirements:
             minimumMemory: 0
             minimumVCPUs: 0

@@ -270,19 +270,6 @@ type openstack struct{}
 
 var _ clusterSpec = openstack{}
 
-func (a openstack) getImage(osName string) string {
-	switch osName {
-	case "ubuntu":
-		return "Ubuntu Focal 20.04 (2021-07-01)"
-	case "centos":
-		return "CentOS 8 (2021-07-05)"
-	case "flatcar":
-		return "Flatcar Stable (2022-05-10)"
-	default:
-		return fmt.Sprintf("unknown os: %s", osName)
-	}
-}
-
 func (a openstack) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Openstack: &models.OpenstackNodeSpec{
