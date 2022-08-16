@@ -42,7 +42,7 @@ func getPrometheusImage(overwriter registry.WithOverwriteFunc) string {
 	return overwriter(resources.RegistryQuay) + "/prometheus/prometheus:v2.37.0"
 }
 
-// prometheusStatefulSe creates the service account used by prometheus.
+// prometheusStatefulSet creates a StatefulSet for prometheus.
 func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {

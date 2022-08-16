@@ -31,7 +31,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// clusterRoleBindingCreator create a cluster role binding for the metering tool.
+// prometheusClusterRoleBinding create a cluster role binding for prometheus.
 func prometheusClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return Name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

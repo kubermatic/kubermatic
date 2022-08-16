@@ -191,7 +191,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 	return existingReportingCronJobs, nil
 }
 
-// undeploy removes all metering components expect the namespace and pvc.
+// undeploy removes all metering components expect the pvc used by prometheus.
 func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
 	var key types.NamespacedName
 
@@ -217,24 +217,22 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
 	// prometheus resources
 	key.Name = prometheus.Name
 	if err := cleanupResource(ctx, client, key, &corev1.Service{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus Service: %w", err)
 	}
-
 	if err := cleanupResource(ctx, client, key, &appsv1.StatefulSet{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus StatefulSet: %w", err)
 	}
-
 	if err := cleanupResource(ctx, client, key, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus ConfigMap: %w", err)
 	}
 	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRoleBinding{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus ClusterRoleBinding: %w", err)
 	}
 	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRole{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus ClusterRole: %w", err)
 	}
 	if err := cleanupResource(ctx, client, key, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering pull secret: %w", err)
+		return fmt.Errorf("failed to cleanup metering prometheus ServiceAccount: %w", err)
 	}
 
 	return nil

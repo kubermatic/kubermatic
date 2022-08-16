@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// prometheusStatefulSe creates the service account used by prometheus.
+// prometheusService creates the service to connect to prometheus api.
 func prometheusService() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return Name, func(svc *corev1.Service) (*corev1.Service, error) {

@@ -31,7 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// prometheusStatefulSe creates the service account used by prometheus.
+// prometheusConfigMap creates the configmap for prometheus.
 func prometheusConfigMap() reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return Name, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {

@@ -39,8 +39,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// persistentVolumeClaimCreator creates a pvc for the metering tool where the processed data is being saved before
-// exporting it to the S3 bucket.
+// persistentVolumeClaimCreator creates a pvc for prometheus to use for the tsdb.
 func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: Name}, pvc); err != nil {
