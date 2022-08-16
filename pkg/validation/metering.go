@@ -18,14 +18,14 @@ package validation
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/robfig/cron/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-)
 
-var MeteringReportNameValidator = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
+	"k8s.io/apimachinery/pkg/util/validation"
+)
 
 func GetCronExpressionParser() cron.Parser {
 	return cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
@@ -35,9 +35,10 @@ func ValidateMeteringConfiguration(configuration *kubermaticv1.MeteringConfigura
 	if configuration != nil && len(configuration.ReportConfigurations) > 0 {
 		parser := GetCronExpressionParser()
 		for reportName, reportConfig := range configuration.ReportConfigurations {
-			if !MeteringReportNameValidator.MatchString(reportName) {
-				return fmt.Errorf("metering report configuration name can contain only alphanumeric characters or '-', got: %s", reportName)
+			if errs := validation.IsDNS1035Label(reportName); len(errs) != 0 {
+				return fmt.Errorf("metering report configuration name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 			}
+
 			if _, err := parser.Parse(reportConfig.Schedule); err != nil {
 				return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)
 			}
