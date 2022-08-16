@@ -782,7 +782,7 @@ type MeteringConfiguration struct {
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
 
-	// +kubebuilder:default:={kubermatic-metering-report-weekly: {schedule: "0 1 * * 6", interval: 7}}
+	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 
 	// ReportConfigurations is a map of report configuration definitions.
 	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
