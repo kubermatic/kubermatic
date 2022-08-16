@@ -155,6 +155,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileAddonConfigs(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	// Since the new standalone webhook, the old service is not required anymore.
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
@@ -442,6 +446,17 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Mutating Webhooks: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling AddonConfigs")
+
+	creators := kubermatic.AddonConfigsCreators()
+	if err := reconciling.ReconcileKubermaticV1AddonConfigs(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile AddonConfigs: %w", err)
 	}
 
 	return nil

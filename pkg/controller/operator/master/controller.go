@@ -143,13 +143,23 @@ func Add(
 		}
 	}
 
-	globalTypesToWatch := []ctrlruntimeclient.Object{
-		&rbacv1.ClusterRoleBinding{},
+	globalOwnedTypesToWatch := []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+
+	for _, t := range globalOwnedTypesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
+		}
+	}
+
+	globalTypesToWatch := []ctrlruntimeclient.Object{
+		&kubermaticv1.AddonConfig{},
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
