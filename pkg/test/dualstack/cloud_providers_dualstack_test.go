@@ -474,11 +474,18 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expected
 }
 
 func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
-	var teardowns []func()
+	var teardowns []func() error
 	cleanup := func() {
 		n := len(teardowns)
 		for i := range teardowns {
-			teardowns[n-1-i]()
+			wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
+				err := teardowns[n-1-i]()
+				if err != nil {
+					t.Log(err)
+					return false, nil
+				}
+				return true, nil
+			})
 		}
 	}
 
@@ -487,11 +494,12 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	if err != nil {
 		return nil, "", "", nil, err
 	}
-	teardowns = append(teardowns, func() {
+	teardowns = append(teardowns, func() error {
 		err := apicli.DeleteProject(proj.ID)
 		if err != nil {
-			t.Errorf("failed to delete project %s: %s", proj.ID, err)
+			return fmt.Errorf("failed to delete project %s: %s", proj.ID, err)
 		}
+		return nil
 	})
 
 	// create a usercluster on aws
@@ -506,7 +514,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	}
 
 	cluster := resp.Payload
-	teardowns = append(teardowns, func() {
+	teardowns = append(teardowns, func() error {
 		_, err := apicli.GetKKPAPIClient().Project.DeleteClusterV2(&project.DeleteClusterV2Params{
 			DeleteLoadBalancers: pointer.Bool(true),
 			DeleteVolumes:       pointer.Bool(true),
@@ -516,8 +524,9 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			HTTPClient:          http.DefaultClient,
 		}, apicli.GetBearerToken())
 		if err != nil {
-			t.Errorf("failed to delete cluster %s/%s: %s", proj.ID, cluster.ID, err)
+			return fmt.Errorf("failed to delete cluster %s/%s: %s", proj.ID, cluster.ID, err)
 		}
+		return nil
 	})
 
 	// try to get kubeconfig
