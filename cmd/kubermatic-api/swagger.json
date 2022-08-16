@@ -13916,13 +13916,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13934,6 +13927,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -28934,7 +28934,7 @@
           "x-go-name": "ReportConfigurations"
         },
         "storageClassName": {
-          "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",
+          "description": "StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.",
           "type": "string",
           "x-go-name": "StorageClassName"
         },

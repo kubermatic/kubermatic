@@ -1185,17 +1185,16 @@ spec:
                           type: array
                       type: object
                     default:
-                      kubermatic-metering-report-weekly:
+                      weekly:
                         interval: 7
                         schedule: 0 1 * * 6
                     description: ReportConfigurations is a map of report configuration
                       definitions.
                     type: object
                   storageClassName:
-                    default: kubermatic-fast
                     description: StorageClassName is the name of the storage class
-                      that the metering tool uses to save processed files before exporting
-                      it to s3 bucket. Default value is kubermatic-fast.
+                      that the metering prometheus instance uses to store metric data
+                      for reporting.
                     type: string
                   storageSize:
                     description: StorageSize is the size of the storage class. Default
