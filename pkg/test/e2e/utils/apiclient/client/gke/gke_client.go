@@ -36,7 +36,11 @@ type ClientService interface {
 
 	ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterZonesOK, error)
 
+	ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEDiskTypesOK, error)
+
 	ListGKEImages(params *ListGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEImagesOK, error)
+
+	ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVMSizesOK, error)
 
 	ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVersionsOK, error)
 
@@ -200,6 +204,44 @@ func (a *Client) ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo
 }
 
 /*
+  ListGKEDiskTypes gets g k e machine disk types
+*/
+func (a *Client) ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEDiskTypesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGKEDiskTypesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGKEDiskTypes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/gke/disktypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGKEDiskTypesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGKEDiskTypesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGKEDiskTypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListGKEImages Lists GKE image types
 */
 func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEImagesOK, error) {
@@ -234,6 +276,44 @@ func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListGKEImagesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGKEVMSizes Lists GKE vmsizes
+*/
+func (a *Client) ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVMSizesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGKEVMSizesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGKEVMSizes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/gke/vmsizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGKEVMSizesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGKEVMSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGKEVMSizesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -206,7 +206,7 @@ func (a *Client) ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.C
 }
 
 /*
-  ListEKSSecurityGroups lists e k s securitygroup s ID list
+  ListEKSSecurityGroups lists e k s securitygroup list
 */
 func (a *Client) ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -244,7 +244,7 @@ func (a *Client) ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, auth
 }
 
 /*
-  ListEKSSubnets lists e k s subnet s ID list
+  ListEKSSubnets lists e k s subnet list
 */
 func (a *Client) ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsOK, error) {
 	// TODO: Validate the params before sending

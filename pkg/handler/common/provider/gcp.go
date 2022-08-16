@@ -171,7 +171,9 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 
 func ListGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
 	diskTypes := apiv1.GCPDiskTypeList{}
-	// TODO: There are some issues at the moment with local-ssd and pd-balanced, that's why it is disabled at the moment.
+	// Currently accepted values: 'pd-standard', 'pd-ssd' or 'pd-balanced'
+	// Reference: https://pkg.go.dev/google.golang.org/api/container/v1#NodeConfig
+
 	excludedDiskTypes := sets.NewString("local-ssd", "pd-balanced")
 	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {

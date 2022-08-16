@@ -18086,9 +18086,9 @@
         ],
         "responses": {
           "200": {
-            "description": "EKSSubnetIDList",
+            "description": "EKSSubnetList",
             "schema": {
-              "$ref": "#/definitions/EKSSubnetIDList"
+              "$ref": "#/definitions/EKSSubnetList"
             }
           },
           "401": {
@@ -19149,7 +19149,7 @@
         "tags": [
           "eks"
         ],
-        "summary": "List EKS securitygroup's ID list.",
+        "summary": "List EKS securitygroup list.",
         "operationId": "listEKSSecurityGroups",
         "parameters": [
           {
@@ -19180,9 +19180,9 @@
         ],
         "responses": {
           "200": {
-            "description": "EKSSecurityGroupIDList",
+            "description": "EKSSecurityGroupList",
             "schema": {
-              "$ref": "#/definitions/EKSSecurityGroupIDList"
+              "$ref": "#/definitions/EKSSecurityGroupList"
             }
           },
           "401": {
@@ -19208,7 +19208,7 @@
         "tags": [
           "eks"
         ],
-        "summary": "Lists EKS subnet's ID list.",
+        "summary": "Lists EKS subnet list.",
         "operationId": "listEKSSubnets",
         "parameters": [
           {
@@ -19239,9 +19239,9 @@
         ],
         "responses": {
           "200": {
-            "description": "EKSSubnetIDList",
+            "description": "EKSSubnetList",
             "schema": {
-              "$ref": "#/definitions/EKSSubnetIDList"
+              "$ref": "#/definitions/EKSSubnetList"
             }
           },
           "default": {
@@ -19364,6 +19364,32 @@
             "description": "EKSVPCList",
             "schema": {
               "$ref": "#/definitions/EKSVPCList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/gke/disktypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Gets GKE machine disk types.",
+        "operationId": "listGKEDiskTypes",
+        "responses": {
+          "200": {
+            "description": "GKEDiskTypeList",
+            "schema": {
+              "$ref": "#/definitions/GKEDiskTypeList"
             }
           },
           "default": {
@@ -19508,6 +19534,52 @@
               "items": {
                 "$ref": "#/definitions/MasterVersion"
               }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/gke/vmsizes": {
+      "get": {
+        "description": "Lists GKE vmsizes",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "operationId": "listGKEVMSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPMachineSizeList",
+            "schema": {
+              "$ref": "#/definitions/GCPMachineSizeList"
             }
           },
           "default": {
@@ -25873,29 +25945,58 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSSecurityGroupID": {
-      "type": "string",
-      "title": "EKSSecurityGroupID represents a object of EKS securityGroupID.",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "EKSSecurityGroupIDList": {
-      "type": "array",
-      "title": "EKSSecurityGroupIDList represents an array of EKS securityGroupID.",
-      "items": {
-        "$ref": "#/definitions/EKSSecurityGroupID"
+    "EKSSecurityGroup": {
+      "type": "object",
+      "title": "EKSSecurityGroup represents a object of EKS securityGroup.",
+      "properties": {
+        "groupId": {
+          "description": "The ID of the security group.",
+          "type": "string",
+          "x-go-name": "GroupId"
+        },
+        "vpcId": {
+          "description": "[VPC only] The ID of the VPC for the security group.",
+          "type": "string",
+          "x-go-name": "VpcId"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSSubnetID": {
-      "type": "string",
-      "title": "EKSSubnetID represents a object of EKS subnetID.",
+    "EKSSecurityGroupList": {
+      "type": "array",
+      "title": "EKSSecurityGroupList represents an array of EKS securityGroup.",
+      "items": {
+        "$ref": "#/definitions/EKSSecurityGroup"
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSSubnetIDList": {
+    "EKSSubnet": {
+      "type": "object",
+      "title": "EKSSubnet represents a object of EKS subnet.",
+      "properties": {
+        "availabilityZone": {
+          "description": "The Availability Zone of the subnet.",
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
+        "subnetId": {
+          "description": "The ID of the subnet.",
+          "type": "string",
+          "x-go-name": "SubnetId"
+        },
+        "vpcId": {
+          "description": "The ID of the VPC the subnet is in.",
+          "type": "string",
+          "x-go-name": "VpcId"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSubnetList": {
       "type": "array",
-      "title": "EKSSubnetIDList represents an array of EKS subnetID.",
+      "title": "EKSSubnetList represents an array of EKS subnet.",
       "items": {
-        "$ref": "#/definitions/EKSSubnetID"
+        "$ref": "#/definitions/EKSSubnet"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -27151,6 +27252,42 @@
           "type": "boolean",
           "x-go-name": "VerticalPodAutoscaling"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEDiskType": {
+      "type": "object",
+      "title": "GKEDiskType represents a object of GKE disk type.",
+      "properties": {
+        "defaultDiskSizeGb": {
+          "description": "DefaultDiskSizeGb: Server-defined default disk size in GB.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DefaultDiskSizeGb"
+        },
+        "description": {
+          "description": "Description: An optional description of this resource.",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "kind": {
+          "description": "Kind: Type of the resource. Always compute#diskType for\ndisk types.",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the resource.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GKEDiskTypeList": {
+      "type": "array",
+      "title": "GKEDiskTypeList represents an array of GKE disk types.",
+      "items": {
+        "$ref": "#/definitions/GKEDiskType"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
