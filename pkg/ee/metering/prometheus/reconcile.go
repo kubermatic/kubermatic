@@ -30,7 +30,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -39,8 +38,7 @@ import (
 )
 
 const (
-	Name      = "metering-prometheus"
-	Namespace = resources.KubermaticNamespace
+	Name = "metering-prometheus"
 )
 
 // ReconcilePrometheus reconciles the prometheus instance used as a datasource for metering.
@@ -49,7 +47,7 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		prometheusServiceAccount(),
-	}, Namespace, client, seedOwner); err != nil {
+	}, seed.Namespace, client, seedOwner); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccount: %w", err)
 	}
 
@@ -60,26 +58,26 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
-		prometheusClusterRoleBinding(Namespace),
+		prometheusClusterRoleBinding(seed.Namespace),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, []reconciling.NamedConfigMapCreatorGetter{
 		prometheusConfigMap(),
-	}, Namespace, client, seedOwner); err != nil {
+	}, seed.Namespace, client, seedOwner); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMap: %w", err)
 	}
 
 	if err := reconciling.ReconcileStatefulSets(ctx, []reconciling.NamedStatefulSetCreatorGetter{
-		prometheusStatefulSet(getRegistry, seed.Spec.Metering),
-	}, Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner); err != nil {
+		prometheusStatefulSet(getRegistry, seed),
+	}, seed.Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner); err != nil {
 		return fmt.Errorf("failed to reconcile StatefuleSet: %w", err)
 	}
 
 	if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{
 		prometheusService(),
-	}, Namespace, client); err != nil {
+	}, seed.Namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Service: %w", err)
 	}
 

@@ -56,8 +56,7 @@ const (
 	meteringToolName = "kubermatic-metering"
 	meteringDataName = "metering-data"
 
-	meteringName      = "metering"
-	meteringNamespace = resources.KubermaticNamespace
+	meteringName = "metering"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -75,7 +74,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
-		return undeploy(ctx, client)
+		return undeploy(ctx, client, seed.Namespace)
 	}
 
 	err = prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
@@ -96,7 +95,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
-	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations); err != nil {
+	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Namespace); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
 
@@ -104,7 +103,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	var cronJobs []reconciling.NamedCronJobCreatorGetter
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, overwriter))
+		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, overwriter, seed.Namespace))
 
 		if reportConf.Retention != nil {
 			config.Rules = append(config.Rules, lifecycle.Rule{
@@ -147,8 +146,8 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 }
 
 // cleanupOrphanedReportingCronJobs compares defined metering reports with existing reporting cronjobs and removes cronjobs with missing report configuration.
-func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration) error {
-	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
+func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration, namespace string) error {
+	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client, namespace)
 	if err != nil {
 		return err
 	}
@@ -177,10 +176,10 @@ func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimecli
 }
 
 // fetchExistingReportingCronJobs returns a list of all existing reporting cronjobs.
-func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client) (*batchv1.CronJobList, error) {
+func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*batchv1.CronJobList, error) {
 	existingReportingCronJobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(meteringNamespace),
+		ctrlruntimeclient.InNamespace(namespace),
 		ctrlruntimeclient.ListOption(ctrlruntimeclient.MatchingLabels{common.ComponentLabel: meteringName}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
@@ -192,10 +191,10 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 }
 
 // undeploy removes all metering components expect the pvc used by prometheus.
-func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
+func undeploy(ctx context.Context, client ctrlruntimeclient.Client, namespace string) error {
 	var key types.NamespacedName
 
-	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
+	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client, namespace)
 	if err != nil {
 		return err
 	}
@@ -207,7 +206,7 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client) error {
 		}
 	}
 
-	key.Namespace = meteringNamespace
+	key.Namespace = namespace
 	key.Name = SecretName
 
 	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {

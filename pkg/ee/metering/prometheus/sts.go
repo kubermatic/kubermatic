@@ -46,7 +46,7 @@ func getPrometheusImage(overwriter registry.WithOverwriteFunc) string {
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
-func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, mcfg *kubermaticv1.MeteringConfiguration) reconciling.NamedStatefulSetCreatorGetter {
+func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			if sts.Labels == nil {
@@ -157,16 +157,16 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, mcfg *kuberma
 				},
 			}
 
-			pvcStorageSize, err := resource.ParseQuantity(mcfg.StorageSize)
+			pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", mcfg.StorageSize, err)
+				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
 			}
 
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      Name,
-						Namespace: Namespace,
+						Namespace: seed.Namespace,
 						Labels:    map[string]string{common.NameLabel: Name},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
@@ -178,7 +178,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, mcfg *kuberma
 								corev1.ResourceStorage: pvcStorageSize,
 							},
 						},
-						StorageClassName: pointer.String(mcfg.StorageClassName),
+						StorageClassName: pointer.String(seed.Spec.Metering.StorageClassName),
 					},
 				},
 			}

@@ -40,11 +40,11 @@ import (
 )
 
 // cronJobCreator returns the func to create/update the metering report cronjob.
-func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
+func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc, namespace string) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
-			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, prometheus.Namespace))
+			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, namespace))
 			args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
 			args = append(args, mrc.Types...)
