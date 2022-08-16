@@ -478,7 +478,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	cleanup := func() {
 		n := len(teardowns)
 		for i := range teardowns {
-			wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
+			err := wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
 				err := teardowns[n-1-i]()
 				if err != nil {
 					t.Log(err)
@@ -486,6 +486,9 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 				}
 				return true, nil
 			})
+			if err != nil {
+				t.Errorf("cleanup failed: %s", err)
+			}
 		}
 	}
 
@@ -497,7 +500,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	teardowns = append(teardowns, func() error {
 		err := apicli.DeleteProject(proj.ID)
 		if err != nil {
-			return fmt.Errorf("failed to delete project %s: %s", proj.ID, err)
+			return fmt.Errorf("failed to delete project %s: %w", proj.ID, err)
 		}
 		return nil
 	})
@@ -524,7 +527,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 			HTTPClient:          http.DefaultClient,
 		}, apicli.GetBearerToken())
 		if err != nil {
-			return fmt.Errorf("failed to delete cluster %s/%s: %s", proj.ID, cluster.ID, err)
+			return fmt.Errorf("failed to delete cluster %s/%s: %w", proj.ID, cluster.ID, err)
 		}
 		return nil
 	})
