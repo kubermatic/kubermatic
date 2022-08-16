@@ -28987,6 +28987,14 @@
           "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
           "type": "string",
           "x-go-name": "Schedule"
+        },
+        "type": {
+          "description": "Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Types"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"

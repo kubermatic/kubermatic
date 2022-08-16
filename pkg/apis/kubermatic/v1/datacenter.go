@@ -807,6 +807,7 @@ type MeteringReportConfiguration struct {
 
 	// +optional
 	// +kubebuilder:default:={"cluster","namespace"}
+
 	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
 	Types []string `json:"type,omitempty"`
 }
