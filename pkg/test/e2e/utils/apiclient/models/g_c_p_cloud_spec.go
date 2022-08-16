@@ -25,7 +25,7 @@ type GCPCloudSpec struct {
 	// If not specified, the default value is 0.0.0.0/0, i.e., no restriction.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
-	// The Google Service Account (JSON format), encoded with base64.
+	// service account
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 
 	// subnetwork
