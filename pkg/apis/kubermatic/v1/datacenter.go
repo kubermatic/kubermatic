@@ -773,6 +773,9 @@ type SeedMLASettings struct {
 // MeteringConfiguration contains all the configuration for the metering tool.
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:default=kubermatic-fast
+
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
 	// exporting it to s3 bucket. Default value is kubermatic-fast.
 	StorageClassName string `json:"storageClassName"`

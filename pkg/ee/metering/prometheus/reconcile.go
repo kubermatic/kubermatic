@@ -47,10 +47,6 @@ const (
 func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) error {
 	seedOwner := common.OwnershipModifierFactory(seed, scheme)
 
-	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
-		return fmt.Errorf("failed to reconcile PVC: %w", err)
-	}
-
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		prometheusServiceAccount(),
 	}, Namespace, client, seedOwner); err != nil {
@@ -76,7 +72,7 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 	}
 
 	if err := reconciling.ReconcileStatefulSets(ctx, []reconciling.NamedStatefulSetCreatorGetter{
-		prometheusStatefulSet(getRegistry),
+		prometheusStatefulSet(getRegistry, seed.Spec.Metering),
 	}, Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner); err != nil {
 		return fmt.Errorf("failed to reconcile StatefuleSet: %w", err)
 	}

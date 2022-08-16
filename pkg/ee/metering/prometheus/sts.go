@@ -25,6 +25,9 @@
 package prometheus
 
 import (
+	"fmt"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -43,7 +46,7 @@ func getPrometheusImage(overwriter registry.WithOverwriteFunc) string {
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
-func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.NamedStatefulSetCreatorGetter {
+func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, mcfg *kubermaticv1.MeteringConfiguration) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			if sts.Labels == nil {
@@ -150,6 +153,32 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc) reconciling.N
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 							ClaimName: Name,
 						},
+					},
+				},
+			}
+
+			pvcStorageSize, err := resource.ParseQuantity(mcfg.StorageSize)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", mcfg.StorageSize, err)
+			}
+
+			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      Name,
+						Namespace: Namespace,
+						Labels:    map[string]string{common.NameLabel: Name},
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceStorage: pvcStorageSize,
+							},
+						},
+						StorageClassName: pointer.String(mcfg.StorageClassName),
 					},
 				},
 			}
