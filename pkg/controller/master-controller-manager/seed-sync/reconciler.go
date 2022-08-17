@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	client, err := r.seedClientGetter(seed)
+	seedClient, err := r.seedClientGetter(seed)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create client for seed: %w", err)
 	}
@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// cleanup once a Seed was deleted in the master cluster
 	if seed.DeletionTimestamp != nil {
-		result, err := r.cleanupDeletedSeed(ctx, config, seed, client, logger)
+		result, err := r.cleanupDeletedSeed(ctx, config, seed, seedClient, logger)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to cleanup deleted Seed: %w", err)
 		}
@@ -87,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcile(ctx, config, seed, client, logger); err != nil {
+	if err := r.reconcile(ctx, config, seed, seedClient, logger); err != nil {
 		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %w", err)
 	}
@@ -119,7 +119,7 @@ func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace s
 	return &configList.Items[0], nil
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
 	if err := kubernetes.TryAddFinalizer(ctx, r, seed, CleanupFinalizer); err != nil {
@@ -130,12 +130,12 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		namespaceCreator(seed.Namespace),
 	}
 
-	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", client); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
 	seedInSeed := &kubermaticv1.Seed{}
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
@@ -145,7 +145,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 			seedCreator(seed),
 		}
 
-		if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
+		if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, seedClient); err != nil {
 			return fmt.Errorf("failed to reconcile seed: %w", err)
 		}
 	}
@@ -154,7 +154,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		configCreator(config),
 	}
 
-	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, client); err != nil {
+	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic configuration: %w", err)
 	}
 
