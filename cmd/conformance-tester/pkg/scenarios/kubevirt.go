@@ -18,7 +18,6 @@ package scenarios
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -27,6 +26,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
+	"k8c.io/kubermatic/v2/pkg/test"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	utilpointer "k8s.io/utils/pointer"
@@ -52,7 +52,7 @@ func (s *kubevirtScenario) APICluster(secrets types.Secrets) *apimodels.CreateCl
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Kubevirt.KKPDatacenter,
 					Kubevirt: &apimodels.KubevirtCloudSpec{
-						Kubeconfig: base64.StdEncoding.EncodeToString([]byte(secrets.Kubevirt.Kubeconfig)),
+						Kubeconfig: test.SafeBase64Encoding(secrets.Kubevirt.Kubeconfig),
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -67,7 +67,7 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-				Kubeconfig: base64.StdEncoding.EncodeToString([]byte(secrets.Kubevirt.Kubeconfig)),
+				Kubeconfig: test.SafeBase64Encoding(secrets.Kubevirt.Kubeconfig),
 			},
 		},
 		Version: s.version,
