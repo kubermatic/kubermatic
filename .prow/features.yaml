@@ -142,7 +142,7 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: all
-            - name: OS
+            - name: OSNAMES
               value: all
             - name: KUBERMATIC_EDITION
               value: ee
@@ -184,7 +184,7 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: all
-            - name: OS
+            - name: OSNAMES
               value: all
             - name: KUBERMATIC_EDITION
               value: ee
@@ -225,7 +225,7 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: aws
-            - name: OS
+            - name: OSNAMES
               value: ubuntu
             - name: KUBERMATIC_EDITION
               value: ee
