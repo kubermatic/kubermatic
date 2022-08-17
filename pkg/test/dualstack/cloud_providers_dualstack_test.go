@@ -354,7 +354,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			}
 
 			t.Logf("waiting for nodes to come up")
-			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
+			err = checkNodeReadiness(t, userclusterClient, len(testOSNames))
 			if err != nil {
 				go func() {
 					mu.Lock()
