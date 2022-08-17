@@ -267,6 +267,24 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			continue
 		}
 
+		var testOSNames []string
+		if osNames == "all" {
+			testOSNames = test.osNames
+			t.Logf("testing all os in %q", testOSNames)
+		} else {
+			for _, osName := range test.osNames {
+				if strings.Contains(osNames, osName) {
+					testOSNames = append(testOSNames, osName)
+				} else {
+					t.Logf("skipping %q because it is not in %q", osName, osNames)
+				}
+			}
+		}
+		if len(testOSNames) == 0 {
+			t.Logf("skipping because no OS specified to test (available %q)", strings.Join(test.osNames, ","))
+			continue
+		}
+
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		cniSpec := cnis[test.cni]
@@ -311,7 +329,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 			nodeSpec := cloud.NodeSpec()
 
-			for _, osName := range test.osNames {
+			for _, osName := range testOSNames {
 				// TODO: why don't we need to do this for other clouds?
 				if test.cloudName == "openstack" {
 					img := openstack{}.getImage(osName)

@@ -142,6 +142,8 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: all
+            - name: OS
+              value: all
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -182,6 +184,8 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: all
+            - name: OS
+              value: all
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -220,7 +224,9 @@ presubmits:
             - name: CNI
               value: canal,cilium
             - name: PROVIDER
-              value: azure
+              value: aws
+            - name: OS
+              value: ubuntu
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
