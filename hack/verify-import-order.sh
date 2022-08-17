@@ -19,13 +19,32 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+ARCH=$(uname -m)
+case $ARCH in
+armv6*) ARCH="armv6" ;;
+aarch64) ARCH="arm64" ;;
+x86) ARCH="386" ;;
+x86_64) ARCH="amd64" ;;
+i686) ARCH="386" ;;
+i386) ARCH="386" ;;
+esac
+
+version=0.5.0
+# Remove gimps if already installed but not with the right version
+if [ -x "$(command -v gimps)" ]; then
+  iversion="$(gimps --version | grep version)"
+  if [ ${iversion##version: } != $version ]; then
+    echodate "gimps version is not the expected one... removing it before re-install with the right version"
+    rm /usr/local/bin/gimps
+  fi
+fi
+
 if ! [ -x "$(command -v gimps)" ]; then
-  version=0.5.0
 
   echodate "Downloading gimps v$version..."
 
-  curl -LO https://github.com/xrstf/gimps/releases/download/v$version/gimps_${version}_linux_amd64.zip
-  unzip gimps_${version}_linux_amd64.zip gimps
+  curl -LO https://github.com/xrstf/gimps/releases/download/v$version/gimps_${version}_${OS}_${ARCH}.zip
+  unzip gimps_${version}_${OS}_${ARCH}.zip gimps
   mv gimps /usr/local/bin/
 
   echodate "Done!"
