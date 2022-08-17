@@ -55,7 +55,7 @@ var (
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
-	flag.StringVar(&osNames, "os", "", "Comma separated list of operating systems to test ubuntu,flatcar")
+	flag.StringVar(&osNames, "os", "", "Comma separated list of operating systems to test e.g. ubuntu,flatcar")
 	flag.StringVar(&cni, "cni", "", "CNI cilium|canal")
 	flag.StringVar(&provider, "provider", "", "Cloud providers like azure,aws,gcp")
 	flag.BoolVar(&skipNodes, "skipNodes", false, "If true, skips node IP address tests")
