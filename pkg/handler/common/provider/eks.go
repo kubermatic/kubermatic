@@ -19,8 +19,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -40,7 +42,10 @@ func init() {
 
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
-const RegionEndpoint = "eu-central-1"
+const (
+	RegionEndpoint   = "eu-central-1"
+	EKSClusterPolicy = "AmazonEKSClusterPolicy"
+)
 
 func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
@@ -182,6 +187,38 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 		regionList = append(regionList, *region.RegionName)
 	}
 	return regionList, nil
+}
+
+func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRolesList, error) {
+	var rolesList []string
+
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "eks.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSClusterPolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, *role.Arn)
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
 }
 
 func ListEKSSecurityGroupIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {

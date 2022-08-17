@@ -3977,6 +3977,11 @@
         "parameters": [
           {
             "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -3995,11 +4000,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "header"
           }
         ],
         "responses": {
@@ -25669,6 +25669,14 @@
       "title": "EKSClusterList represents a list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterRolesList": {
+      "type": "array",
+      "title": "EKSClusterRolesList represents a list of EKS Cluster Service Roles.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
