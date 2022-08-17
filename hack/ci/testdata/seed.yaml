@@ -33,6 +33,14 @@ spec:
     name: "__SEED_NAME__-kubeconfig"
     namespace: kubermatic
     fieldPath: kubeconfig
+  metering:
+    enabled: true
+    reports:
+      kubermatic-metering-report-weekly:
+        interval: 7
+        schedule: 0 1 * * 6
+    storageClassName: standard
+    storageSize: 75Gi
   datacenters:
     byo-kubernetes:
       location: Frankfurt

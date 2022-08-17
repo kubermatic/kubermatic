@@ -123,7 +123,7 @@ func TestMeteringReconciling(t *testing.T) {
 					}
 				}
 
-				return fmt.Errorf("failed to remove an orpahned reporting cron job")
+				return fmt.Errorf("failed to remove an orphaned reporting cron job")
 			},
 		},
 
@@ -147,12 +147,12 @@ func TestMeteringReconciling(t *testing.T) {
 				cronJob := batchv1.CronJob{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
 
-				// asserting that metering deployment exists
-				deployment := appsv1.Deployment{}
+				// asserting that metering statefulSet exists
+				statefulSet := appsv1.StatefulSet{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
-					Name:      "kubermatic-metering",
-				}, &deployment))
+					Name:      "metering-prometheus",
+				}, &statefulSet))
 
 				seed := &kubermaticv1.Seed{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
@@ -179,9 +179,9 @@ func TestMeteringReconciling(t *testing.T) {
 				if err := seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "kubermatic-metering",
-				}, &deployment); err != nil {
+				}, &statefulSet); err != nil {
 					if !apierrors.IsNotFound(err) {
-						return fmt.Errorf("failed to remove metering deployment")
+						return fmt.Errorf("failed to remove metering statefulSet")
 					}
 				}
 

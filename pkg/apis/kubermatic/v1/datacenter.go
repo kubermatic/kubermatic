@@ -773,13 +773,13 @@ type SeedMLASettings struct {
 // MeteringConfiguration contains all the configuration for the metering tool.
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
-	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
-	// exporting it to s3 bucket. Default value is kubermatic-fast.
+
+	// StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
 
-	// +kubebuilder:default:={kubermatic-metering-report-weekly: {schedule: "0 1 * * 6", interval: 7}}
+	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 
 	// ReportConfigurations is a map of report configuration definitions.
 	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
@@ -804,6 +804,12 @@ type MeteringReportConfiguration struct {
 	// Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
 	// Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
 	Retention *uint32 `json:"retention,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:={"cluster","namespace"}
+
+	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+	Types []string `json:"type,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

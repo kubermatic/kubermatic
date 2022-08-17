@@ -388,8 +388,9 @@ spec:
         # Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
         # only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
         schedule: 0 1 * * 6
-    # StorageClassName is the name of the storage class that the metering tool uses to save processed files before
-    # exporting it to s3 bucket. Default value is kubermatic-fast.
+        # Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+        type: null
+    # StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
     storageClassName: kubermatic-fast
     # StorageSize is the size of the storage class. Default value is 100Gi.
     storageSize: 100Gi

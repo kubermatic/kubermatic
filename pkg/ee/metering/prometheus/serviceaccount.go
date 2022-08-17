@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,33 +22,24 @@
    END OF TERMS AND CONDITIONS
 */
 
-package metering
+package prometheus
 
 import (
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	rbacv1 "k8s.io/api/rbac/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-// clusterRoleBindingCreator create a cluster role binding for the metering tool.
-func clusterRoleBindingCreator(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return meteringToolName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
+// prometheusServiceAccount creates the service account used by prometheus.
+func prometheusServiceAccount() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return Name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			if sa.Labels == nil {
+				sa.Labels = make(map[string]string)
 			}
-
-			crb.Subjects = []rbacv1.Subject{
-				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      meteringToolName,
-					Namespace: namespace,
-				},
-			}
-
-			return crb, nil
+			sa.Labels[common.NameLabel] = Name
+			return sa, nil
 		}
 	}
 }
