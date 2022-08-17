@@ -117,7 +117,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 							MountPath: "/etc/config",
 						},
 						{
-							Name:      "storage-volume",
+							Name:      "storage",
 							MountPath: "/data",
 						},
 					},
@@ -147,14 +147,6 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 						},
 					},
 				},
-				{
-					Name: "storage-volume",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: Name,
-						},
-					},
-				},
 			}
 
 			pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
@@ -165,7 +157,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      Name,
+						Name:      "storage",
 						Namespace: seed.Namespace,
 						Labels:    map[string]string{common.NameLabel: Name},
 					},
