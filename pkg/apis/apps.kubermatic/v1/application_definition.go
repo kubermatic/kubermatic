@@ -19,6 +19,7 @@ package v1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -138,33 +139,6 @@ type ApplicationSource struct {
 }
 
 const (
-	FormFieldTypeNumber   FormFieldType = "number"
-	FormFieldTypeBoolean  FormFieldType = "boolean"
-	FormFieldTypeText     FormFieldType = "text"
-	FormFieldTypeTextArea FormFieldType = "text-area"
-)
-
-// +kubebuilder:validation:Enum=number;boolean;text;text-area
-type FormFieldType string
-
-type FormField struct {
-	// Type of displayed control
-	Type FormFieldType `json:"type"`
-
-	// DisplayName is visible in the UI
-	DisplayName string `json:"displayName"`
-
-	// InternalName is used internally to save in the ApplicationInstallation object
-	InternalName string `json:"internalName"`
-
-	// HelpText is visible in the UI next to the field
-	HelpText string `json:"helpText,omitempty"`
-
-	// Required indicates if the control has to be set
-	Required bool `json:"required,omitempty"`
-}
-
-const (
 	HelmTemplateMethod TemplateMethod = "helm"
 )
 
@@ -174,9 +148,6 @@ type TemplateMethod string
 type ApplicationTemplate struct {
 	// Defined how the source of the application (e.g Helm chart) is retrieved
 	Source ApplicationSource `json:"source"`
-
-	// Define the valued that can be override for the installation
-	FormSpec []FormField `json:"formSpec,omitempty"`
 }
 
 type ApplicationVersion struct {
@@ -194,6 +165,10 @@ type ApplicationDefinitionSpec struct {
 
 	// Method used to install the application
 	Method TemplateMethod `json:"method"`
+
+	// DefaultValues describe overrides for manifest-rendering in UI when creating an application.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
 
 	// available version for this application
 	Versions []ApplicationVersion `json:"versions"`

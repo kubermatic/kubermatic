@@ -23156,6 +23156,9 @@
       "type": "object",
       "title": "ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.",
       "properties": {
+        "defaultValues": {
+          "$ref": "#/definitions/RawExtension"
+        },
         "description": {
           "description": "Description of the application. what is its purpose",
           "type": "string",
@@ -23386,14 +23389,6 @@
     "ApplicationTemplate": {
       "type": "object",
       "properties": {
-        "formSpec": {
-          "description": "Define the valued that can be override for the installation",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FormField"
-          },
-          "x-go-name": "FormSpec"
-        },
         "source": {
           "$ref": "#/definitions/ApplicationSource"
         }
@@ -26720,40 +26715,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "FormField": {
-      "type": "object",
-      "properties": {
-        "displayName": {
-          "description": "DisplayName is visible in the UI",
-          "type": "string",
-          "x-go-name": "DisplayName"
-        },
-        "helpText": {
-          "description": "HelpText is visible in the UI next to the field",
-          "type": "string",
-          "x-go-name": "HelpText"
-        },
-        "internalName": {
-          "description": "InternalName is used internally to save in the ApplicationInstallation object",
-          "type": "string",
-          "x-go-name": "InternalName"
-        },
-        "required": {
-          "description": "Required indicates if the control has to be set",
-          "type": "boolean",
-          "x-go-name": "Required"
-        },
-        "type": {
-          "$ref": "#/definitions/FormFieldType"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-    },
-    "FormFieldType": {
-      "description": "+kubebuilder:validation:Enum=number;boolean;text;text-area",
-      "type": "string",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "GCP": {
       "type": "object",

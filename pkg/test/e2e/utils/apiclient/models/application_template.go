@@ -7,7 +7,6 @@ package models
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,9 +18,6 @@ import (
 // swagger:model ApplicationTemplate
 type ApplicationTemplate struct {
 
-	// Define the valued that can be override for the installation
-	FormSpec []*FormField `json:"formSpec"`
-
 	// source
 	Source *ApplicationSource `json:"source,omitempty"`
 }
@@ -30,10 +26,6 @@ type ApplicationTemplate struct {
 func (m *ApplicationTemplate) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateFormSpec(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateSource(formats); err != nil {
 		res = append(res, err)
 	}
@@ -41,32 +33,6 @@ func (m *ApplicationTemplate) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ApplicationTemplate) validateFormSpec(formats strfmt.Registry) error {
-	if swag.IsZero(m.FormSpec) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.FormSpec); i++ {
-		if swag.IsZero(m.FormSpec[i]) { // not required
-			continue
-		}
-
-		if m.FormSpec[i] != nil {
-			if err := m.FormSpec[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("formSpec" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
-					return ce.ValidateName("formSpec" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 
@@ -93,10 +59,6 @@ func (m *ApplicationTemplate) validateSource(formats strfmt.Registry) error {
 func (m *ApplicationTemplate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateFormSpec(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateSource(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -104,26 +66,6 @@ func (m *ApplicationTemplate) ContextValidate(ctx context.Context, formats strfm
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ApplicationTemplate) contextValidateFormSpec(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.FormSpec); i++ {
-
-		if m.FormSpec[i] != nil {
-			if err := m.FormSpec[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("formSpec" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
-					return ce.ValidateName("formSpec" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 
