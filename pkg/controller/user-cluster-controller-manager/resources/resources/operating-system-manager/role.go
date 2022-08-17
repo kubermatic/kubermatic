@@ -128,6 +128,7 @@ func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 							"list",
 							"create",
 							"delete",
+							"update",
 						},
 					},
 				}
