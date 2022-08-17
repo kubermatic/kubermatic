@@ -130,7 +130,7 @@ metadata:
   namespace: kubermatic
 spec:
   gcp:
-    serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+    serviceAccount: "$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")"
 EOF
 cat << EOF > preset-gcp-datacenter.yaml
 apiVersion: kubermatic.k8c.io/v1
@@ -140,7 +140,7 @@ metadata:
   namespace: kubermatic
 spec:
   gcp:
-    serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+    serviceAccount: "$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")"
     datacenter: gcp-westeurope
 EOF
 retry 2 kubectl apply -f preset-gcp.yaml

@@ -70,6 +70,9 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 	}
 
 	if len(projectBindings.Items) > 0 {
+		if userInfo.IsAdmin {
+			return projectBindings.Items, nil
+		}
 		// TODO: once we merge group support, instead of kube api request, read permissions from userInfo.
 		// Fetch first binding with kube API to ensure user has permissions
 		_, err := p.Get(ctx, userInfo, projectBindings.Items[0].Name)

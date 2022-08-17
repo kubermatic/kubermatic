@@ -120,6 +120,8 @@ spec:
                     - subscriptionID
                     - tenantID
                     type: object
+                  bringyourown:
+                    type: object
                   eks:
                     properties:
                       accessKeyID:
@@ -368,6 +370,14 @@ spec:
                     - sshReference
                     type: object
                   providerName:
+                    description: ExternalClusterProvider is the identifier for the
+                      cloud provider that hosts the external cluster control plane.
+                    enum:
+                    - aks
+                    - bringyourown
+                    - eks
+                    - gke
+                    - kubeone
                     type: string
                 required:
                 - providerName
@@ -427,6 +437,7 @@ spec:
                   the cluster.
                 type: string
             required:
+            - cloudSpec
             - humanReadableName
             - pause
             type: object

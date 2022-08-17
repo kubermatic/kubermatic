@@ -421,11 +421,7 @@ type ProjectMemberMapper interface {
 }
 
 // ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.
-func ExternalClusterCloudProviderName(spec *kubermaticv1.ExternalClusterCloudSpec) (string, error) {
-	if spec == nil {
-		return "", errors.New("cloud spec is nil")
-	}
-
+func ExternalClusterCloudProviderName(spec kubermaticv1.ExternalClusterCloudSpec) (string, error) {
 	var clouds []kubermaticv1.ExternalClusterProvider
 	if spec.AKS != nil {
 		clouds = append(clouds, kubermaticv1.ExternalClusterAKSProvider)
@@ -439,11 +435,14 @@ func ExternalClusterCloudProviderName(spec *kubermaticv1.ExternalClusterCloudSpe
 	if spec.KubeOne != nil {
 		clouds = append(clouds, kubermaticv1.ExternalClusterKubeOneProvider)
 	}
+	if spec.BringYourOwn != nil {
+		clouds = append(clouds, kubermaticv1.ExternalClusterBringYourOwnProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
 	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in ExternalClusterCloudSpec: %+v", spec)
+		return "", fmt.Errorf("only one cloud provider can be set in ExternalClusterCloudSpec, but found the following providers: %v", clouds)
 	}
 	return string(clouds[0]), nil
 }
@@ -500,7 +499,7 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 		return "", nil
 	}
 	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
+		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec, but found the following providers: %v", clouds)
 	}
 	return string(clouds[0]), nil
 }

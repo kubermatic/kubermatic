@@ -21,6 +21,9 @@ type ExternalClusterCloudSpec struct {
 	// aks
 	Aks *AKSCloudSpec `json:"aks,omitempty"`
 
+	// bring your own
+	BringYourOwn BringYourOwnSpec `json:"bringYourOwn,omitempty"`
+
 	// eks
 	Eks *EKSCloudSpec `json:"eks,omitempty"`
 

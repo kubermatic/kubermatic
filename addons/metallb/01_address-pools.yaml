@@ -13,6 +13,7 @@
 # limitations under the License.
 
 {{- if not .Variables.disableAutoIPAMAllocation }}
+
 {{- if .Cluster.Network.IPAMAllocations.metallb }}
 {{- $allocation := .Cluster.Network.IPAMAllocations.metallb }}
 ---
@@ -32,12 +33,36 @@ spec:
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- if and (index .Cluster.Network.IPAMAllocations "metallb-ipv4") (index .Cluster.Network.IPAMAllocations "metallb-ipv6") }}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: kkp-managed-pool-dualstack
+  namespace: metallb-system
+spec:
+  addresses:
+{{- range $allocName := list "metallb-ipv4" "metallb-ipv6" }}
+{{- $allocation := index $.Cluster.Network.IPAMAllocations $allocName }}
+  {{- if eq $allocation.Type "prefix" }}
+    - {{ $allocation.CIDR }}
+  {{- end }}
+  {{- if eq $allocation.Type "range" }}
+    {{- range $allocation.Addresses }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
 {{- end }}
 
 {{- if .Variables.addressPoolYaml }}
 ---
 {{ .Variables.addressPoolYaml }}
 {{- end }}
+
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement

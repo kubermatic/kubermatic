@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/go-autorest/autorest/to"
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	ec2 "github.com/cristim/ec2-instances-info"
@@ -73,7 +74,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	eksExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.EKS != nil {
+		if cloud.EKS != nil {
 			region := cloud.EKS.Region
 			if _, ok := eksExternalCluster[region]; !ok {
 				eksExternalCluster[region] = make(sets.String)
@@ -104,8 +105,8 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
-	subnetIDs := apiv2.EKSSubnetIDList{}
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetList, error) {
+	subnetIDs := apiv2.EKSSubnetList{}
 
 	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
 	if err != nil {
@@ -113,7 +114,11 @@ func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID s
 	}
 
 	for _, subnet := range subnetResults {
-		subnetIDs = append(subnetIDs, apiv2.EKSSubnetID(*subnet.SubnetId))
+		subnetIDs = append(subnetIDs, apiv2.EKSSubnet{
+			SubnetId:         to.String(subnet.SubnetId),
+			VpcId:            to.String(subnet.VpcId),
+			AvailabilityZone: to.String(subnet.AvailabilityZone),
+		})
 	}
 	return subnetIDs, nil
 }
@@ -128,8 +133,8 @@ func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPC
 
 	for _, v := range vpcResults {
 		vpc := apiv2.EKSVPC{
-			ID:        *v.VpcId,
-			IsDefault: *v.IsDefault,
+			ID:        to.String(v.VpcId),
+			IsDefault: to.Bool(v.IsDefault),
 		}
 		vpcs = append(vpcs, vpc)
 	}
@@ -221,8 +226,8 @@ func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (api
 	return rolesList, nil
 }
 
-func ListEKSSecurityGroupIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
-	securityGroupID := apiv2.EKSSecurityGroupIDList{}
+func ListEKSSecurityGroup(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupList, error) {
+	securityGroupID := apiv2.EKSSecurityGroupList{}
 
 	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
 	if err != nil {
@@ -230,7 +235,10 @@ func ListEKSSecurityGroupIDs(ctx context.Context, cred resources.EKSCredential, 
 	}
 
 	for _, group := range securityGroups {
-		securityGroupID = append(securityGroupID, apiv2.EKSSecurityGroupID(*group.GroupId))
+		securityGroupID = append(securityGroupID, apiv2.EKSSecurityGroup{
+			GroupId: to.String(group.GroupId),
+			VpcId:   to.String(group.VpcId),
+		})
 	}
 	return securityGroupID, nil
 }

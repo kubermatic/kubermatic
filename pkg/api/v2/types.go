@@ -477,11 +477,14 @@ type ExternalClusterSpec struct {
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
-	GKE     *GKECloudSpec `json:"gke,omitempty"`
-	EKS     *EKSCloudSpec `json:"eks,omitempty"`
-	AKS     *AKSCloudSpec `json:"aks,omitempty"`
-	KubeOne *KubeOneSpec  `json:"kubeOne,omitempty"`
+	GKE          *GKECloudSpec     `json:"gke,omitempty"`
+	EKS          *EKSCloudSpec     `json:"eks,omitempty"`
+	AKS          *AKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne      *KubeOneSpec      `json:"kubeOne,omitempty"`
+	BringYourOwn *BringYourOwnSpec `json:"bringYourOwn,omitempty"`
 }
+
+type BringYourOwnSpec struct{}
 
 type KubeOneSpec struct {
 	// Manifest Base64 encoded manifest
@@ -798,6 +801,24 @@ type GKEImage struct {
 // swagger:model GKEImageList
 type GKEImageList []GKEImage
 
+// GKEDiskTypeList represents an array of GKE disk types.
+// swagger:model GKEDiskTypeList
+type GKEDiskTypeList []GKEDiskType
+
+// GKEDiskType represents a object of GKE disk type.
+// swagger:model GKEDiskType
+type GKEDiskType struct {
+	// Name of the resource.
+	Name string `json:"name"`
+	// Description: An optional description of this resource.
+	Description string `json:"description,omitempty"`
+	// DefaultDiskSizeGb: Server-defined default disk size in GB.
+	DefaultDiskSizeGb int64 `json:"defaultDiskSizeGb,omitempty"`
+	// Kind: Type of the resource. Always compute#diskType for
+	// disk types.
+	Kind string `json:"kind,omitempty"`
+}
+
 // GKEZone represents a object of GKE zone.
 // swagger:model GKEZone
 type GKEZone struct {
@@ -851,21 +872,33 @@ type EKSInstanceType struct {
 	GPUs       int     `json:"gpus,omitempty"`
 }
 
-// EKSSubnetIDList represents an array of EKS subnetID.
-// swagger:model EKSSubnetIDList
-type EKSSubnetIDList []EKSSubnetID
+// EKSSubnetList represents an array of EKS subnet.
+// swagger:model EKSSubnetList
+type EKSSubnetList []EKSSubnet
 
-// EKSSubnetID represents a object of EKS subnetID.
-// swagger:model EKSSubnetID
-type EKSSubnetID string
+// EKSSubnet represents a object of EKS subnet.
+// swagger:model EKSSubnet
+type EKSSubnet struct {
+	// The Availability Zone of the subnet.
+	AvailabilityZone string `json:"availabilityZone"`
+	// The ID of the subnet.
+	SubnetId string `json:"subnetId"`
+	// The ID of the VPC the subnet is in.
+	VpcId string `json:"vpcId"`
+}
 
-// EKSSecurityGroupIDList represents an array of EKS securityGroupID.
-// swagger:model EKSSecurityGroupIDList
-type EKSSecurityGroupIDList []EKSSecurityGroupID
+// EKSSecurityGroupList represents an array of EKS securityGroup.
+// swagger:model EKSSecurityGroupList
+type EKSSecurityGroupList []EKSSecurityGroup
 
-// EKSSecurityGroupID represents a object of EKS securityGroupID.
-// swagger:model EKSSecurityGroupID
-type EKSSecurityGroupID string
+// EKSSecurityGroup represents a object of EKS securityGroup.
+// swagger:model EKSSecurityGroup
+type EKSSecurityGroup struct {
+	// The ID of the security group.
+	GroupId string `json:"groupId"`
+	// [VPC only] The ID of the VPC for the security group.
+	VpcId string `json:"vpcId"`
+}
 
 // EKSVPCList represents an array of EKS VPC.
 // swagger:model EKSVPCList

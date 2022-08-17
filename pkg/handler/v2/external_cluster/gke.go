@@ -32,7 +32,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -190,12 +189,7 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, err
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings(ctx)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return providercommon.ListGCPSizes(ctx, settings.Spec.MachineDeploymentVMResourceQuota, sa, cluster.Spec.CloudSpec.GKE.Zone)
+		return gkeprovider.ListGKESizes(ctx, sa, cluster.Spec.CloudSpec.GKE.Zone)
 	}
 }
 
@@ -228,34 +222,8 @@ func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfo
 			return nil, err
 		}
 
-		return listGKEDiskTypes(ctx, sa, cluster.Spec.CloudSpec.GKE.Zone)
+		return gkeprovider.ListGKEDiskTypes(ctx, sa, cluster.Spec.CloudSpec.GKE.Zone)
 	}
-}
-
-func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
-	diskTypes := apiv1.GCPDiskTypeList{}
-	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
-	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
-	computeService, project, err := gcpprovider.ConnectToComputeService(ctx, sa)
-	if err != nil {
-		return diskTypes, err
-	}
-
-	req := computeService.DiskTypes.List(project, zone)
-	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
-		for _, diskType := range page.Items {
-			if !excludedDiskTypes.Has(diskType.Name) {
-				dt := apiv1.GCPDiskType{
-					Name:        diskType.Name,
-					Description: diskType.Description,
-				}
-				diskTypes = append(diskTypes, dt)
-			}
-		}
-		return nil
-	})
-
-	return diskTypes, err
 }
 
 func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -273,7 +241,7 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 	}
 
 	newCluster := genExternalCluster(name, project.Name, isImported)
-	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
+	newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
 		GKE: &kubermaticv1.ExternalClusterGKECloudSpec{
 			Name: cloud.GKE.Name,
 			Zone: cloud.GKE.Zone,
@@ -767,9 +735,9 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 	return nil
 }
 
-// GKEImagesReq represent a request for GKE images.
-// swagger:parameters listGKEImages
-type GKEImagesReq struct {
+// GKEVMReq represent a request for GKE VM.
+// swagger:parameters listGKEImages listGKEVMSizes
+type GKEVMReq struct {
 	GKECommonReq
 	// The zone name
 	// in: header
@@ -827,8 +795,8 @@ func (req GKECommonReq) Validate() error {
 	return nil
 }
 
-// Validate validates GKEImagesReq request.
-func (req GKEImagesReq) Validate() error {
+// Validate validates GKEVMReq request.
+func (req GKEVMReq) Validate() error {
 	if err := req.GKECommonReq.Validate(); err != nil {
 		return err
 	}
@@ -864,8 +832,8 @@ func (req GKEVersionsReq) Validate() error {
 	return nil
 }
 
-func DecodeGKEImagesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GKEImagesReq
+func DecodeGKEVMReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEVMReq
 
 	commonReq, err := DecodeGKECommonReq(c, r)
 	if err != nil {
@@ -958,7 +926,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 
 func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GKEImagesReq)
+		req, ok := request.(GKEVMReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
@@ -1060,6 +1028,7 @@ func getSAFromPreset(ctx context.Context,
 	}
 	return credentials.ServiceAccount, nil
 }
+
 func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string) ([]*apiv1.MasterVersion, error) {
 	svc, project, err := gkeprovider.ConnectToContainerService(ctx, sa)
 	if err != nil {
@@ -1104,4 +1073,48 @@ func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string)
 	}
 
 	return versions, err
+}
+
+func GKEVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKEVMReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gkeprovider.ListGKESizes(ctx, sa, req.Zone)
+	}
+}
+
+func GKEDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(GKEVMReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		sa := req.ServiceAccount
+		var err error
+		if len(req.Credential) > 0 {
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return gkeprovider.ListGKEDiskTypes(ctx, sa, req.Zone)
+	}
 }

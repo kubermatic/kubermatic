@@ -17,18 +17,15 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -73,69 +70,26 @@ func (p *SeedProvider) CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context
 func (p *SeedProvider) ensureKubeconfigSecret(ctx context.Context, seed *kubermaticv1.Seed, secretData map[string][]byte) (*corev1.ObjectReference, error) {
 	name := fmt.Sprintf("kubeconfig-%s", seed.Name)
 
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
-	existingSecret := &corev1.Secret{}
-
-	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
-		}
-		return createSeedKubeconfigSecret(ctx, p.clientPrivileged, name, secretData)
+	creators := []reconciling.NamedSecretCreatorGetter{
+		seedKubeconfigSecretCreatorGetter(name, secretData),
 	}
 
-	return updateSeedKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, secretData)
-}
-
-func createSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name string, secretData map[string][]byte) (*corev1.ObjectReference, error) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: secretData,
-	}
-	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
+	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, p.clientPrivileged); err != nil {
+		return nil, err
 	}
 
 	return &corev1.ObjectReference{
-		Kind:            secret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            secret.Name,
-		UID:             secret.UID,
-		APIVersion:      secret.APIVersion,
-		ResourceVersion: secret.ResourceVersion,
+		Kind:      "Secret",
+		Namespace: seed.Namespace,
+		Name:      name,
 	}, nil
 }
 
-func updateSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*corev1.ObjectReference, error) {
-	if existingSecret.Data == nil {
-		existingSecret.Data = map[string][]byte{}
-	}
-
-	requiresUpdate := false
-
-	for k, v := range secretData {
-		if !bytes.Equal(v, existingSecret.Data[k]) {
-			requiresUpdate = true
-			break
+func seedKubeconfigSecretCreatorGetter(name string, secretData map[string][]byte) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return name, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			existing.Data = secretData
+			return existing, nil
 		}
 	}
-
-	if requiresUpdate {
-		existingSecret.Data = secretData
-		if err := client.Update(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to update kubeconfig secret: %w", err)
-		}
-	}
-
-	return &corev1.ObjectReference{
-		Kind:            existingSecret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            existingSecret.Name,
-		UID:             existingSecret.UID,
-		APIVersion:      existingSecret.APIVersion,
-		ResourceVersion: existingSecret.ResourceVersion,
-	}, nil
 }

@@ -1621,3 +1621,40 @@ func ReconcileKubermaticV1Addons(ctx context.Context, namedGetters []NamedKuberm
 
 	return nil
 }
+
+// KubermaticV1AddonConfigCreator defines an interface to create/update AddonConfigs
+type KubermaticV1AddonConfigCreator = func(existing *kubermaticv1.AddonConfig) (*kubermaticv1.AddonConfig, error)
+
+// NamedKubermaticV1AddonConfigCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1AddonConfigCreatorGetter = func() (name string, create KubermaticV1AddonConfigCreator)
+
+// KubermaticV1AddonConfigObjectWrapper adds a wrapper so the KubermaticV1AddonConfigCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1AddonConfigObjectWrapper(create KubermaticV1AddonConfigCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.AddonConfig))
+		}
+		return create(&kubermaticv1.AddonConfig{})
+	}
+}
+
+// ReconcileKubermaticV1AddonConfigs will create and update the KubermaticV1AddonConfigs coming from the passed KubermaticV1AddonConfigCreator slice
+func ReconcileKubermaticV1AddonConfigs(ctx context.Context, namedGetters []NamedKubermaticV1AddonConfigCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1AddonConfigObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.AddonConfig{}, false); err != nil {
+			return fmt.Errorf("failed to ensure AddonConfig %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}

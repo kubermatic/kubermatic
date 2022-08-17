@@ -160,3 +160,27 @@ func (*MasterStack) migrateUserProjects(ctx context.Context, client ctrlruntimec
 
 	return nil
 }
+
+// migrateExternalClusterProviders takes care of setting the providername to BYO
+// and adding the BYOCloudSpec to every ExternalCluster that is not using one of
+// the other providers.
+// This function can be removed in KKP 2.22.
+func (*MasterStack) migrateExternalClusterProviders(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	clusters := &kubermaticv1.ExternalClusterList{}
+	if err := client.List(ctx, clusters); err != nil {
+		return fmt.Errorf("failed to list ExternalClusters: %w", err)
+	}
+
+	for _, cluster := range clusters.Items {
+		if cluster.Spec.CloudSpec.ProviderName == "" {
+			cluster.Spec.CloudSpec.ProviderName = kubermaticv1.ExternalClusterBringYourOwnProvider
+			cluster.Spec.CloudSpec.BringYourOwn = &kubermaticv1.ExternalClusterBringYourOwnCloudSpec{}
+
+			if err := client.Update(ctx, &cluster); err != nil {
+				return fmt.Errorf("failed to update external cluster %s: %w", cluster.Name, err)
+			}
+		}
+	}
+
+	return nil
+}

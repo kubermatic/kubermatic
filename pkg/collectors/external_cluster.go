@@ -110,39 +110,13 @@ func (cc *ExternalClusterCollector) collectCluster(ch chan<- prometheus.Metric, 
 		)
 	}
 
-	labels, err := cc.clusterLabels(c)
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %w", c.Name, err))
-	} else {
-		ch <- prometheus.MustNewConstMetric(
-			cc.clusterInfo,
-			prometheus.GaugeValue,
-			1,
-			labels...,
-		)
-	}
-}
-
-func (cc *ExternalClusterCollector) clusterLabels(cluster *kubermaticv1.ExternalCluster) ([]string, error) {
-	providerName := ""
-
-	switch {
-	case cluster.Spec.CloudSpec == nil:
-		providerName = ""
-	case cluster.Spec.CloudSpec.AKS != nil:
-		providerName = "aks"
-	case cluster.Spec.CloudSpec.EKS != nil:
-		providerName = "eks"
-	case cluster.Spec.CloudSpec.GKE != nil:
-		providerName = "gke"
-	case cluster.Spec.CloudSpec.KubeOne != nil:
-		providerName = "kubeone"
-	}
-
-	return []string{
-		cluster.Name,
-		cluster.Spec.HumanReadableName,
-		providerName,
-		string(cluster.Status.Condition.Phase),
-	}, nil
+	ch <- prometheus.MustNewConstMetric(
+		cc.clusterInfo,
+		prometheus.GaugeValue,
+		1,
+		c.Name,
+		c.Spec.HumanReadableName,
+		string(c.Spec.CloudSpec.ProviderName),
+		string(c.Status.Condition.Phase),
+	)
 }

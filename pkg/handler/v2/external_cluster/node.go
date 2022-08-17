@@ -240,35 +240,33 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 		}
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-			if cloud.GKE != nil {
-				np, err := getGKENodePools(ctx, cluster, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployments = np
+		if cloud.GKE != nil {
+			np, err := getGKENodePools(ctx, cluster, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.EKS != nil {
-				np, err := getEKSNodeGroups(ctx, cluster, secretKeySelector, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployments = np
+			machineDeployments = np
+		}
+		if cloud.EKS != nil {
+			np, err := getEKSNodeGroups(ctx, cluster, secretKeySelector, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.AKS != nil {
-				np, err := getAKSNodePools(ctx, cluster, secretKeySelector, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployments = np
+			machineDeployments = np
+		}
+		if cloud.AKS != nil {
+			np, err := getAKSNodePools(ctx, cluster, secretKeySelector, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.KubeOne != nil {
-				machineDeployments, err = getKubeOneAPIMachineDeployments(ctx, cluster, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+			machineDeployments = np
+		}
+		if cloud.KubeOne != nil {
+			machineDeployments, err = getKubeOneAPIMachineDeployments(ctx, cluster, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 
@@ -337,30 +335,29 @@ func getMachineDeploymentNodes(ctx context.Context,
 		return clusterNodes, nil
 	}
 	cloud := cluster.Spec.CloudSpec
-	if cloud != nil {
-		if cloud.GKE != nil {
-			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.GKENodepoolNameLabel, machineDeploymentID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+
+	if cloud.GKE != nil {
+		clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.GKENodepoolNameLabel, machineDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if cloud.EKS != nil {
-			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.EKSNodeGroupNameLabel, machineDeploymentID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+	}
+	if cloud.EKS != nil {
+		clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.EKSNodeGroupNameLabel, machineDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if cloud.AKS != nil {
-			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.AKSNodepoolNameLabel, machineDeploymentID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+	}
+	if cloud.AKS != nil {
+		clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, resources.AKSNodepoolNameLabel, machineDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if cloud.KubeOne != nil {
-			clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, NodeWorkerLabel, machineDeploymentID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+	}
+	if cloud.KubeOne != nil {
+		clusterNodes, err = clusterProvider.GetProviderPoolNodes(ctx, cluster, NodeWorkerLabel, machineDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 	}
 
@@ -384,26 +381,25 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 		}
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-			if cloud.GKE != nil {
-				err := deleteGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		if cloud.GKE != nil {
+			err := deleteGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.EKS != nil {
-				err := deleteEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+		}
+		if cloud.EKS != nil {
+			err := deleteEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.AKS != nil {
-				err := deleteAKSNodeGroup(ctx, cloud.AKS, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+		}
+		if cloud.AKS != nil {
+			err := deleteAKSNodeGroup(ctx, cloud.AKS, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
 
@@ -772,37 +768,35 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 		var machineDeployment apiv2.ExternalClusterMachineDeployment
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-			if cloud.EKS != nil {
-				np, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployment = *np
+		if cloud.EKS != nil {
+			np, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.GKE != nil {
-				np, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployment = *np
+			machineDeployment = *np
+		}
+		if cloud.GKE != nil {
+			np, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.AKS != nil {
-				np, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployment = *np
+			machineDeployment = *np
+		}
+		if cloud.AKS != nil {
+			np, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.KubeOne != nil {
-				md, err := getKubeOneAPIMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				machineDeployment = *md
+			machineDeployment = *np
+		}
+		if cloud.KubeOne != nil {
+			md, err := getKubeOneAPIMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
+			machineDeployment = *md
 		}
 
 		return machineDeployment, nil
@@ -831,57 +825,57 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 		}
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-			mdToPatch := apiv2.ExternalClusterMachineDeployment{}
-			patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
-			if cloud.EKS != nil {
-				md, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
-				if err != nil {
-					return nil, err
-				}
-				mdToPatch.NodeDeployment = md.NodeDeployment
-				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchEKSMachineDeployment(&mdToPatch, &patchedMD, secretKeySelector, cluster)
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		mdToPatch := apiv2.ExternalClusterMachineDeployment{}
+		patchedMD := apiv2.ExternalClusterMachineDeployment{}
+
+		if cloud.EKS != nil {
+			md, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+			if err != nil {
+				return nil, err
 			}
-			if cloud.GKE != nil {
-				md, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, err
-				}
-				mdToPatch.NodeDeployment = md.NodeDeployment
-				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference)
+			mdToPatch.NodeDeployment = md.NodeDeployment
+			if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+				return nil, err
 			}
-			if cloud.AKS != nil {
-				md, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
-				if err != nil {
-					return nil, err
-				}
-				mdToPatch.NodeDeployment = md.NodeDeployment
-				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cloud.AKS)
-			}
-			if cloud.KubeOne != nil {
-				machineDeployment, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
-				if err != nil {
-					return nil, err
-				}
-				md := createAPIMachineDeployment(*machineDeployment)
-				mdToPatch.NodeDeployment = md.NodeDeployment
-				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchKubeOneMachineDeployment(ctx, machineDeployment, &mdToPatch, &patchedMD, cluster, clusterProvider)
-			}
+			return patchEKSMachineDeployment(&mdToPatch, &patchedMD, secretKeySelector, cluster)
 		}
+		if cloud.GKE != nil {
+			md, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			mdToPatch.NodeDeployment = md.NodeDeployment
+			if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference)
+		}
+		if cloud.AKS != nil {
+			md, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			mdToPatch.NodeDeployment = md.NodeDeployment
+			if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cloud.AKS)
+		}
+		if cloud.KubeOne != nil {
+			machineDeployment, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			md := createAPIMachineDeployment(*machineDeployment)
+			mdToPatch.NodeDeployment = md.NodeDeployment
+			if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchKubeOneMachineDeployment(ctx, machineDeployment, &mdToPatch, &patchedMD, cluster, clusterProvider)
+		}
+
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
 	}
 }
@@ -903,18 +897,16 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 		}
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
-			if cloud.GKE != nil {
-				return createGKENodePool(ctx, cloud.GKE, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
-			}
-			if cloud.AKS != nil {
-				return createAKSNodePool(ctx, cloud.AKS, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
-			}
-			if cloud.EKS != nil {
-				return createEKSNodePool(cloud.EKS, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
-			}
+		if cloud.GKE != nil {
+			return createGKENodePool(ctx, cloud.GKE, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
+		}
+		if cloud.AKS != nil {
+			return createAKSNodePool(ctx, cloud.AKS, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
+		}
+		if cloud.EKS != nil {
+			return createEKSNodePool(cloud.EKS, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
 		}
 
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")

@@ -25,7 +25,7 @@ type GCPCloudSpec struct {
 	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
-	// service account
+	// The Google Service Account (JSON format), encoded with base64.
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 
 	// subnetwork

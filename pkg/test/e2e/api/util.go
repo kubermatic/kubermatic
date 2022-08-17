@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -26,10 +27,10 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type createCluster struct {
@@ -118,54 +119,47 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 	}
 
 	// wait for controller to provision the roles
-	var roleErr error
-	roleNameList := []apiv1.RoleName{}
-	if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		roleNameList, roleErr = testClient.GetRoles(project.ID, tc.dc, cluster.ID)
-		return len(roleNameList) >= len(tc.expectedRoleNames), nil
-	}); err != nil {
-		t.Fatalf("failed to wait for roles to be created (final list of roles before giving up: %v): %v", roleNameList, roleErr)
-	}
+	if err := wait.PollImmediate(ctx, 3*time.Second, 3*time.Minute, func() (error, error) {
+		roleNameList, err := testClient.GetRoles(project.ID, tc.dc, cluster.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get Roles: %w", err), nil
+		}
 
-	roleNames := []string{}
-	for _, roleName := range roleNameList {
-		roleNames = append(roleNames, roleName.Name)
-	}
-	namesSet := sets.NewString(tc.expectedRoleNames...)
-	if !namesSet.HasAll(roleNames...) {
-		t.Fatalf("expected roles %v, got %v", tc.expectedRoleNames, roleNames)
+		existing := sets.NewString()
+		for _, roleName := range roleNameList {
+			existing.Insert(roleName.Name)
+		}
+
+		expected := sets.NewString(tc.expectedRoleNames...)
+		if !existing.IsSuperset(expected) {
+			return fmt.Errorf("expected Roles %v, got %v", expected.List(), existing.List()), nil
+		}
+
+		return nil, nil
+	}); err != nil {
+		t.Fatalf("failed to wait for Roles to be created: %v", err)
 	}
 
 	// wait for controller to provision the cluster roles
-	var clusterRoleErr error
-	clusterRoleNameList := []apiv1.ClusterRoleName{}
-	if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		clusterRoleNameList, clusterRoleErr = testClient.GetClusterRoles(project.ID, tc.dc, cluster.ID)
-		return len(clusterRoleNameList) >= len(tc.expectedClusterRoleNames), nil
-	}); err != nil {
-		t.Fatalf("failed to wait for cluster roles to be created (final list of roles before giving up: %v): %v", clusterRoleNameList, clusterRoleErr)
-	}
-
-	clusterRoleNames := []string{}
-	for _, clusterRoleName := range clusterRoleNameList {
-		clusterRoleNames = append(clusterRoleNames, clusterRoleName.Name)
-	}
-	namesSet = sets.NewString(tc.expectedClusterRoleNames...)
-	if !namesSet.HasAll(clusterRoleNames...) {
-		t.Fatalf("expected cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
-	}
-
-	// test if default cluster role bindings were created
-	clusterBindings, err := testClient.GetClusterBindings(project.ID, tc.dc, cluster.ID)
-	if err != nil {
-		t.Fatalf("failed to get cluster bindings: %v", err)
-	}
-
-	namesSet = sets.NewString(tc.expectedClusterRoleNames...)
-	for _, clusterBinding := range clusterBindings {
-		if !namesSet.Has(clusterBinding.RoleRefName) {
-			t.Fatalf("expected role reference name %s in the cluster binding", clusterBinding.RoleRefName)
+	if err := wait.PollImmediate(ctx, 3*time.Second, 3*time.Minute, func() (error, error) {
+		clusterRoleNameList, err := testClient.GetClusterRoles(project.ID, tc.dc, cluster.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get ClusterRoles: %w", err), nil
 		}
+
+		existing := sets.NewString()
+		for _, roleName := range clusterRoleNameList {
+			existing.Insert(roleName.Name)
+		}
+
+		expected := sets.NewString(tc.expectedClusterRoleNames...)
+		if !existing.IsSuperset(expected) {
+			return fmt.Errorf("expected ClusterRoles %v, got %v", expected.List(), existing.List()), nil
+		}
+
+		return nil, nil
+	}); err != nil {
+		t.Fatalf("failed to wait for ClusterRoles to be created: %v", err)
 	}
 
 	// change for admin user

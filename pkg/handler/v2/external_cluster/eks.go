@@ -265,7 +265,7 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 			return nil, err
 		}
 
-		return providercommon.ListEKSSecurityGroupIDs(ctx, *credential, req.VpcId)
+		return providercommon.ListEKSSecurityGroup(ctx, *credential, req.VpcId)
 	}
 }
 
@@ -412,7 +412,7 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 	}
 
 	newCluster := genExternalCluster(name, project.Name, isImported)
-	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
+	newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
 		EKS: &kubermaticv1.ExternalClusterEKSCloudSpec{
 			Name:   cloud.EKS.Name,
 			Region: cloud.EKS.Region,
