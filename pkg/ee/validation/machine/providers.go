@@ -26,6 +26,7 @@ package machine
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -81,6 +82,8 @@ const (
 	// Packet credential env.
 	envPacketToken     = "PACKET_API_KEY"
 	envPacketProjectID = "PACKET_PROJECT_ID"
+	// KubeVirt credential env.
+	envKubeVirtKubeConfig = "KUBEVIRT_KUBECONFIG"
 )
 
 func GetMachineResourceUsage(ctx context.Context,
@@ -303,11 +306,11 @@ func getKubeVirtResourceRequirements(ctx context.Context,
 	var cpuReq, memReq resource.Quantity
 	// if flavor is set, then take the resource details from the vmi preset, otherwise take it from the config
 	if len(flavor) != 0 {
-		kubeconfig, err := configVarResolver.GetConfigVarStringValue(rawConfig.Auth.Kubeconfig)
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}
-		preset, err := provider.KubeVirtVMIPreset(ctx, kubeconfig, flavor)
+		preset, err := provider.KubeVirtVMIPreset(ctx, base64.StdEncoding.EncodeToString([]byte(kubeconfig)), flavor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset, error: %w", err)
 		}
