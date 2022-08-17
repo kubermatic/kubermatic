@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
+	seedinit "k8c.io/kubermatic/v2/pkg/controller/operator/seed-init"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
@@ -118,8 +119,14 @@ func main() {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
+	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
+
 	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
+	}
+
+	if err := seedinit.Add(ctx, log, opt.namespace, mgr, seedClientGetter, opt.workerCount, opt.workerName); err != nil {
+		log.Fatalw("Failed to add seed-init controller", zap.Error(err))
 	}
 
 	seedOperatorControllerFactory := func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
