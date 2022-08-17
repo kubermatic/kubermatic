@@ -451,7 +451,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		isImported = resources.ExternalClusterIsImportedFalse
 	}
 	newCluster := genExternalCluster(name, project.Name, isImported)
-	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
+	newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,

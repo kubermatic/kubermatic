@@ -183,6 +183,10 @@ func CreateEndpoint(
 		if cloud == nil {
 			isImported := resources.ExternalClusterIsImportedTrue
 			newCluster := genExternalCluster(req.Body.Name, project.Name, isImported)
+			newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
+				BringYourOwn: &kubermaticv1.ExternalClusterBringYourOwnCloudSpec{},
+			}
+
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, utilerrors.NewBadRequest(err.Error())
@@ -315,27 +319,26 @@ func deleteProviderCluster(ctx context.Context,
 	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
 ) error {
 	cloud := cluster.Spec.CloudSpec
-	if cloud != nil && cloud.ProviderName != "" {
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-		if cloud.AKS != nil {
-			err := deleteAKSCluster(ctx, secretKeySelector, cloud.AKS)
-			if err != nil {
-				return err
-			}
-		}
-		if cloud.EKS != nil {
-			err := deleteEKSCluster(ctx, secretKeySelector, cloud.EKS)
-			if err != nil {
-				return err
-			}
-		}
-		if cloud.GKE != nil {
-			err := deleteGKECluster(ctx, secretKeySelector, cloud.GKE)
-			if err != nil {
-				return err
-			}
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+	if cloud.AKS != nil {
+		if err := deleteAKSCluster(ctx, secretKeySelector, cloud.AKS); err != nil {
+			return err
 		}
 	}
+
+	if cloud.EKS != nil {
+		if err := deleteEKSCluster(ctx, secretKeySelector, cloud.EKS); err != nil {
+			return err
+		}
+	}
+
+	if cloud.GKE != nil {
+		if err := deleteGKECluster(ctx, secretKeySelector, cloud.GKE); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -474,28 +477,28 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
 			return apiCluster, nil
 		}
+
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-			if cloud.AKS != nil {
-				apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.AKS)
-				if err != nil {
-					return nil, err
-				}
-			}
-			if cloud.EKS != nil {
-				apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.EKS)
-				if err != nil {
-					return nil, err
-				}
-			}
-			if cloud.GKE != nil {
-				apiCluster, err = getGKEClusterDetails(ctx, apiCluster, secretKeySelector, cloud.GKE)
-				if err != nil {
-					return nil, err
-				}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		if cloud.AKS != nil {
+			apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.AKS)
+			if err != nil {
+				return nil, err
 			}
 		}
+		if cloud.EKS != nil {
+			apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.EKS)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if cloud.GKE != nil {
+			apiCluster, err = getGKEClusterDetails(ctx, apiCluster, secretKeySelector, cloud.GKE)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		// get version for running cluster
 		version, err := clusterProvider.GetVersion(ctx, cluster)
 		if err != nil {
@@ -625,40 +628,39 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 
 		cloud := cluster.Spec.CloudSpec
-		if cloud != nil {
-			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
-			patchedCluster := &apiv2.ExternalCluster{}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		patchedCluster := &apiv2.ExternalCluster{}
 
-			if cloud.GKE != nil {
-				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
+		if cloud.GKE != nil {
+			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+				return nil, err
 			}
-			if cloud.EKS != nil {
-				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
-			}
-			if cloud.AKS != nil {
-				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.AKS)
-			}
-			if cloud.KubeOne != nil {
-				containerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, cluster, clusterProvider)
-				if err != nil {
-					return nil, err
-				}
-				clusterToPatch.Cloud.KubeOne.ContainerRuntime = containerRuntime
-				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
-					return nil, err
-				}
-				return patchKubeOneCluster(ctx, cluster, clusterToPatch, patchedCluster, secretKeySelector, clusterProvider, privilegedClusterProvider.GetMasterClient())
-			}
+			return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
 		}
+		if cloud.EKS != nil {
+			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
+		}
+		if cloud.AKS != nil {
+			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.AKS)
+		}
+		if cloud.KubeOne != nil {
+			containerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, cluster, clusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			clusterToPatch.Cloud.KubeOne.ContainerRuntime = containerRuntime
+			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+				return nil, err
+			}
+			return patchKubeOneCluster(ctx, cluster, clusterToPatch, patchedCluster, secretKeySelector, clusterProvider, privilegedClusterProvider.GetMasterClient())
+		}
+
 		return convertClusterToAPI(cluster), nil
 	}
 }
@@ -967,7 +969,7 @@ func genExternalCluster(name, projectID, isImported string) *kubermaticv1.Extern
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
-			CloudSpec:         &kubermaticv1.ExternalClusterCloudSpec{},
+			CloudSpec:         kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
 }
@@ -1004,29 +1006,31 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 		Labels: internalCluster.Labels,
 	}
 	cloud := internalCluster.Spec.CloudSpec
-	if cloud != nil {
-		cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
-		if cloud.EKS != nil {
-			cluster.Cloud.EKS = &apiv2.EKSCloudSpec{
-				Name:   cloud.EKS.Name,
-				Region: cloud.EKS.Region,
-			}
+
+	cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
+	if cloud.EKS != nil {
+		cluster.Cloud.EKS = &apiv2.EKSCloudSpec{
+			Name:   cloud.EKS.Name,
+			Region: cloud.EKS.Region,
 		}
-		if cloud.GKE != nil {
-			cluster.Cloud.GKE = &apiv2.GKECloudSpec{
-				Name: cloud.GKE.Name,
-				Zone: cloud.GKE.Zone,
-			}
+	}
+	if cloud.GKE != nil {
+		cluster.Cloud.GKE = &apiv2.GKECloudSpec{
+			Name: cloud.GKE.Name,
+			Zone: cloud.GKE.Zone,
 		}
-		if cloud.AKS != nil {
-			cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
-				Name:          cloud.AKS.Name,
-				ResourceGroup: cloud.AKS.ResourceGroup,
-			}
+	}
+	if cloud.AKS != nil {
+		cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
+			Name:          cloud.AKS.Name,
+			ResourceGroup: cloud.AKS.ResourceGroup,
 		}
-		if cloud.KubeOne != nil {
-			cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{}
-		}
+	}
+	if cloud.KubeOne != nil {
+		cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{}
+	}
+	if cloud.BringYourOwn != nil {
+		cluster.Cloud.BringYourOwn = &apiv2.BringYourOwnSpec{}
 	}
 
 	return cluster

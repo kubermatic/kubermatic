@@ -32,13 +32,18 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
+// +kubebuilder:validation:Enum=aks;bringyourown;eks;gke;kubeone
+
+// ExternalClusterProvider is the identifier for the cloud provider that hosts
+// the external cluster control plane.
 type ExternalClusterProvider string
 
 const (
-	ExternalClusterGKEProvider     ExternalClusterProvider = "gke"
-	ExternalClusterEKSProvider     ExternalClusterProvider = "eks"
-	ExternalClusterAKSProvider     ExternalClusterProvider = "aks"
-	ExternalClusterKubeOneProvider ExternalClusterProvider = "kubeone"
+	ExternalClusterAKSProvider          ExternalClusterProvider = "aks"
+	ExternalClusterBringYourOwnProvider ExternalClusterProvider = "bringyourown"
+	ExternalClusterEKSProvider          ExternalClusterProvider = "eks"
+	ExternalClusterGKEProvider          ExternalClusterProvider = "gke"
+	ExternalClusterKubeOneProvider      ExternalClusterProvider = "kubeone"
 )
 
 // +kubebuilder:resource:scope=Cluster
@@ -100,7 +105,7 @@ type ExternalClusterSpec struct {
 	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	// CloudSpec contains provider specific fields
-	CloudSpec *ExternalClusterCloudSpec `json:"cloudSpec,omitempty"`
+	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -111,11 +116,12 @@ type ExternalClusterSpec struct {
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	ProviderName ExternalClusterProvider          `json:"providerName"`
-	GKE          *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
-	EKS          *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
-	AKS          *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
-	KubeOne      *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+	ProviderName ExternalClusterProvider               `json:"providerName"`
+	GKE          *ExternalClusterGKECloudSpec          `json:"gke,omitempty"`
+	EKS          *ExternalClusterEKSCloudSpec          `json:"eks,omitempty"`
+	AKS          *ExternalClusterAKSCloudSpec          `json:"aks,omitempty"`
+	KubeOne      *ExternalClusterKubeOneCloudSpec      `json:"kubeone,omitempty"`
+	BringYourOwn *ExternalClusterBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 }
 
 type ExternalClusterPhase string
@@ -166,6 +172,8 @@ const (
 	ExternalClusterPhaseConfigError ExternalClusterPhase = "ConfigError"
 )
 
+type ExternalClusterBringYourOwnCloudSpec struct{}
+
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
 	ServiceAccount       string                                  `json:"serviceAccount"`
@@ -207,7 +215,7 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		},
 	}
 	cloud := i.Spec.CloudSpec
-	if cloud == nil {
+	if cloud.ProviderName == ExternalClusterBringYourOwnProvider {
 		return ""
 	}
 	if cloud.GKE != nil {

@@ -477,11 +477,14 @@ type ExternalClusterSpec struct {
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
-	GKE     *GKECloudSpec `json:"gke,omitempty"`
-	EKS     *EKSCloudSpec `json:"eks,omitempty"`
-	AKS     *AKSCloudSpec `json:"aks,omitempty"`
-	KubeOne *KubeOneSpec  `json:"kubeOne,omitempty"`
+	GKE          *GKECloudSpec     `json:"gke,omitempty"`
+	EKS          *EKSCloudSpec     `json:"eks,omitempty"`
+	AKS          *AKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne      *KubeOneSpec      `json:"kubeOne,omitempty"`
+	BringYourOwn *BringYourOwnSpec `json:"bringYourOwn,omitempty"`
 }
+
+type BringYourOwnSpec struct{}
 
 type KubeOneSpec struct {
 	// Manifest Base64 encoded manifest

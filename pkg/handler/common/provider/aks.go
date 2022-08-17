@@ -52,7 +52,7 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	aksExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.AKS != nil {
+		if cloud.AKS != nil {
 			resourceGroup := cloud.AKS.ResourceGroup
 			if _, ok := aksExternalCluster[resourceGroup]; !ok {
 				aksExternalCluster[resourceGroup] = make(sets.String)

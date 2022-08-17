@@ -69,7 +69,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	eksExternalCluster := make(map[string]sets.String)
 	for _, externalCluster := range clusterList.Items {
 		cloud := externalCluster.Spec.CloudSpec
-		if cloud != nil && cloud.EKS != nil {
+		if cloud.EKS != nil {
 			region := cloud.EKS.Region
 			if _, ok := eksExternalCluster[region]; !ok {
 				eksExternalCluster[region] = make(sets.String)

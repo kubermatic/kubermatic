@@ -254,6 +254,11 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to migrate users: %w", err)
 	}
 
+	sublogger.Info("Migrating ExternalClusters…")
+	if err := s.migrateExternalClusterProviders(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to migrate external clusters: %w", err)
+	}
+
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}

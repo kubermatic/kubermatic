@@ -49,7 +49,7 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 
 	isImported := resources.ExternalClusterIsImportedTrue
 	newCluster := genExternalCluster(kubeOneCluster.Name, project.Name, isImported)
-	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
+	newCluster.Spec.CloudSpec = kubermaticv1.ExternalClusterCloudSpec{
 		KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{},
 	}
 
