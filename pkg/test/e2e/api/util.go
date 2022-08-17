@@ -119,7 +119,7 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 	}
 
 	// wait for controller to provision the roles
-	if err := wait.PollImmediate(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	if err := wait.PollImmediate(ctx, 3*time.Second, 3*time.Minute, func() (error, error) {
 		roleNameList, err := testClient.GetRoles(project.ID, tc.dc, cluster.ID)
 		if err != nil {
 			return fmt.Errorf("failed to get Roles: %w", err), nil
@@ -141,7 +141,7 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 	}
 
 	// wait for controller to provision the cluster roles
-	if err := wait.PollImmediate(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	if err := wait.PollImmediate(ctx, 3*time.Second, 3*time.Minute, func() (error, error) {
 		clusterRoleNameList, err := testClient.GetClusterRoles(project.ID, tc.dc, cluster.ID)
 		if err != nil {
 			return fmt.Errorf("failed to get ClusterRoles: %w", err), nil
@@ -160,19 +160,6 @@ func testCluster(ctx context.Context, token string, project *apiv1.Project, clus
 		return nil, nil
 	}); err != nil {
 		t.Fatalf("failed to wait for ClusterRoles to be created: %v", err)
-	}
-
-	// test if default cluster role bindings were created
-	clusterBindings, err := testClient.GetClusterBindings(project.ID, tc.dc, cluster.ID)
-	if err != nil {
-		t.Fatalf("failed to get cluster bindings: %v", err)
-	}
-
-	namesSet := sets.NewString(tc.expectedClusterRoleNames...)
-	for _, clusterBinding := range clusterBindings {
-		if !namesSet.Has(clusterBinding.RoleRefName) {
-			t.Fatalf("expected role reference name %s in the cluster binding", clusterBinding.RoleRefName)
-		}
 	}
 
 	// change for admin user
