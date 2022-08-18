@@ -66,8 +66,9 @@ func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
-	// ensure legacy components are removed
-	err := cleanupLegacyMeteringResources(ctx, client, seed.Namespace)
+	// ensure legacy components are removed (as they were hardcoded to be in the KKP
+	// namespace, for the cleanup we must not use the Seed's namespace)
+	err := cleanupLegacyMeteringResources(ctx, client, resources.KubermaticNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup legacy metering components: %w", err)
 	}
