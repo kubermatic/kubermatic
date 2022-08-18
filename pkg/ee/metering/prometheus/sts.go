@@ -77,7 +77,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 					Image:           getPrometheusImage(getRegistry),
 					ImagePullPolicy: "IfNotPresent",
 					Args:            []string{"--storage.tsdb.retention.time=90d", "--config.file=/etc/config/prometheus.yml", "--storage.tsdb.path=/data", "--web.console.libraries=/etc/prometheus/console_libraries", "--web.console.templates=/etc/prometheus/consoles", "--web.enable-lifecycle"},
-					Ports:           []corev1.ContainerPort{{ContainerPort: 9090}},
+					Ports:           []corev1.ContainerPort{{ContainerPort: 9090, Protocol: corev1.ProtocolTCP}},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("250m"),
