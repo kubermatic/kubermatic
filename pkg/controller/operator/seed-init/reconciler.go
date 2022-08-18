@@ -88,7 +88,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// Once we've down our initial setup, we never have to do anything again,
 	// as the regular seed-operator takes care of keeping things up-to-date.
-	if seed.Status.Conditions[kubermaticv1.SeedConditionClusterInitialized].Status == corev1.ConditionTrue {
+	if seed.Status.IsInitialized() {
 		log.Debugw("Seed already has been initialized", "condition", kubermaticv1.SeedConditionClusterInitialized)
 		return nil
 	}

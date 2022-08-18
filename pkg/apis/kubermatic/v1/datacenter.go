@@ -251,6 +251,12 @@ func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditi
 	return condition.Status == conditionStatus
 }
 
+// IsInitialized returns true if the seed cluster was successfully initialized and
+// is ready for controllers to operate on it.
+func (ss *SeedStatus) IsInitialized() bool {
+	return ss.Conditions[SeedConditionClusterInitialized].Status == corev1.ConditionTrue
+}
+
 // The spec for a seed cluster.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.

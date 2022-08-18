@@ -83,6 +83,12 @@ func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.Su
 		return fmt.Errorf("didn't find seed %q", seedName)
 	}
 
+	// do nothing until the seed-status-controller has validated the kubeconfig
+	if !seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionTrue) {
+		log.Debug("Seed cluster has not yet been initialized, skipping.")
+		return nil
+	}
+
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
 		return fmt.Errorf("failed to get seed client: %w", err)

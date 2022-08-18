@@ -45,12 +45,10 @@ const (
 	SeedKubeconfigUnavailableReason = "KubeconfigUnavailable"
 	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionKubeconfigValid
 	// in case the seed cluster was not yet prepared by the admin to be a seed (i.e. a
-	// manual step is missing).
+	// manual step is missing). This condition is not used anymore since KKP 2.21.
 	SeedClusterUninitializedReason = "ClusterUninitialized"
 	// SeedKubeconfigInvalidReason is the reason for the SeedConditionKubeconfigValid
-	// in case the KKP namespace could not be queried for (i.e. an error other than NotFound).
-	// If a NotFound error occurred instead, SeedClusterUninitializedReason is the reason
-	// on the condition.
+	// in case no functioning client could be constructed using the given kubeconfig.
 	SeedKubeconfigInvalidReason = "KubeconfigInvalid"
 	// SeedKubeconfigValidReason is the reason for the SeedConditionKubeconfigValid
 	// in case everything is OK.
@@ -126,20 +124,14 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 		return
 	}
 
-	// check that the kubermatic namespace exists, the one thing admins need to do to
-	// mark a cluster as intended for a seed
+	// Check that we can at least read namespaces; we choose the seed's
+	// namespace because ultimately this is where we guaranteed need to
+	// have permissions.
 	ns := corev1.Namespace{}
 	key := types.NamespacedName{Name: seed.Namespace}
 	if err := client.Get(ctx, key, &ns); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Debugw("KKP namespace does not exist", "namespace", seed.Namespace)
-			reason := fmt.Sprintf("namespace %q does not exist and must be created manually", seed.Namespace)
-			kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedClusterUninitializedReason, reason)
-		} else {
-			log.Debugw("failed to check for KKP namespace", zap.Error(err))
-			kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigInvalidReason, err.Error())
-		}
-
+		log.Errorw("Failed to retrieve KKP namespace", "namespace", seed.Namespace, zap.Error(err))
+		kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigInvalidReason, err.Error())
 		return
 	}
 
