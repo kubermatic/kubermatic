@@ -232,7 +232,7 @@ spec:
     spec:
       containers:
         - name: hubble-relay
-          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.12.0@sha256:ca8033ea8a3112d838f958862fa76c8d895e3c8d0f5590de849b91745af5ac4d"
+          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.12.1@sha256:646582b22bf41ad29dd7739b12aae77455ee5757b9ee087f2d45d684afef5fa1"
           imagePullPolicy: IfNotPresent
           command:
             - hubble-relay
@@ -319,7 +319,7 @@ spec:
       serviceAccountName: "hubble-ui"
       containers:
       - name: frontend
-        image: "{{ Registry "quay.io" }}/cilium/hubble-ui:v0.9.0@sha256:0ef04e9a29212925da6bdfd0ba5b581765e41a01f1cc30563cef9b30b457fea0"
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui:v0.9.1@sha256:baff611b975cb12307a163c0e547e648da211384eabdafd327707ff2ec31cc24"
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -331,7 +331,7 @@ spec:
           - name: tmp-dir
             mountPath: /tmp
       - name: backend
-        image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.9.0@sha256:000df6b76719f607a9edefb9af94dfd1811a6f1b6a8a9c537cba90bf12df474b"
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.9.1@sha256:c4b86e0d7a38d52c6ea3d9d7b17809e5212efd97494e8bd37c8466ddd68d42d0"
         imagePullPolicy: IfNotPresent
         env:
         - name: EVENTS_SERVER_PORT

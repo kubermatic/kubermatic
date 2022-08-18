@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.12.0 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
+#   helm template cilium cilium/cilium --version 1.12.1 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
 #     --set hubble.tls.auto.method=cronJob --set hubble.relay.enabled=true --set hubble.ui.enabled=true \
 #     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 #
@@ -573,7 +573,7 @@ spec:
     spec:
       containers:
       - name: cilium-agent
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.0@sha256:079baa4fa1b9fe638f96084f4e0297c84dd4fb215d29d2321dcbe54273f63ade"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.1@sha256:ea2db1ee21b88127b5c18a96ad155c25485d0815a667ef77c2b7c7f31cab601b"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -739,7 +739,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.0@sha256:079baa4fa1b9fe638f96084f4e0297c84dd4fb215d29d2321dcbe54273f63ade"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.1@sha256:ea2db1ee21b88127b5c18a96ad155c25485d0815a667ef77c2b7c7f31cab601b"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -780,7 +780,7 @@ spec:
               - SYS_CHROOT
               - SYS_PTRACE
       - name: apply-sysctl-overwrites
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.0@sha256:079baa4fa1b9fe638f96084f4e0297c84dd4fb215d29d2321dcbe54273f63ade"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.1@sha256:ea2db1ee21b88127b5c18a96ad155c25485d0815a667ef77c2b7c7f31cab601b"
         imagePullPolicy: IfNotPresent
         env:
         - name: BIN_PATH
@@ -822,7 +822,7 @@ spec:
       # from a privileged container because the mount propagation bidirectional
       # only works from privileged containers.
       - name: mount-bpf-fs
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.0@sha256:079baa4fa1b9fe638f96084f4e0297c84dd4fb215d29d2321dcbe54273f63ade"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.1@sha256:ea2db1ee21b88127b5c18a96ad155c25485d0815a667ef77c2b7c7f31cab601b"
         imagePullPolicy: IfNotPresent
         args:
         - 'mount | grep "/sys/fs/bpf type bpf" || mount -t bpf bpf /sys/fs/bpf'
@@ -837,7 +837,7 @@ spec:
           mountPath: /sys/fs/bpf
           mountPropagation: Bidirectional
       - name: clean-cilium-state
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.0@sha256:079baa4fa1b9fe638f96084f4e0297c84dd4fb215d29d2321dcbe54273f63ade"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.1@sha256:ea2db1ee21b88127b5c18a96ad155c25485d0815a667ef77c2b7c7f31cab601b"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -1026,7 +1026,7 @@ spec:
     spec:
       containers:
       - name: cilium-operator
-        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.12.0@sha256:bb2a42eda766e5d4a87ee8a5433f089db81b72dd04acf6b59fcbb445a95f9410"
+        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.12.1@sha256:93d5aaeda37d59e6c4325ff05030d7b48fabde6576478e3fdbfb9bb4a68ec4a1"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
