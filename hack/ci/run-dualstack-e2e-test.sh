@@ -74,6 +74,6 @@ export VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER
+go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER --os $OSNAMES
 
 echodate "Dualstack tests done."
