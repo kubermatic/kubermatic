@@ -255,8 +255,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				Flatcar,
 				RockyLinux,
 			},
-			cni:      Canal,
-			ipFamily: util.DualStack,
+			cni:       Canal,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
 		},
 		{
 			cloudName: Equinix,
@@ -265,8 +266,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				Flatcar,
 				RockyLinux,
 			},
-			cni:      Cilium,
-			ipFamily: util.DualStack,
+			cni:       Cilium,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
 		},
 		{
 			cloudName: VSphere,
