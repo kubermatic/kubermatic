@@ -18,7 +18,7 @@ metadata:
   namespace: kubermatic
 type: Opaque
 data:
-  accessKey: d2hhdGV2ZXJ5b3VsaWtlCg==
-  bucket: a2twLW1ldGVyaW5nLWUyZQo=
+  accessKey: d2hhdGV2ZXJ5b3VsaWtl
+  bucket: a2twLW1ldGVyaW5nLWUyZQ==
   endpoint: aHR0cHM6Ly9zMy5hbWF6b25hd3MuY29t
-  secretKey: ZHVtbXkK
+  secretKey: ZHVtbXk=
