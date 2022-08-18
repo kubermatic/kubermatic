@@ -376,8 +376,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 			nodeSpec := cloud.NodeSpec()
 
-			for _, osName := range testOSNames {
-				// TODO: why don't we need to do this for other clouds?
+			for _, osName := range test.osNames {
+				// This is needed because node spec for OpenStack requires image.
 				if test.cloudName == "openstack" {
 					img := openstack{}.getImage(osName)
 					nodeSpec.Openstack.Image = &img
