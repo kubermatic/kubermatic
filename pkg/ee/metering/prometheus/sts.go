@@ -77,7 +77,7 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 					Image:           getPrometheusImage(getRegistry),
 					ImagePullPolicy: "IfNotPresent",
 					Args:            []string{"--storage.tsdb.retention.time=90d", "--config.file=/etc/config/prometheus.yml", "--storage.tsdb.path=/data", "--web.console.libraries=/etc/prometheus/console_libraries", "--web.console.templates=/etc/prometheus/consoles", "--web.enable-lifecycle"},
-					Ports:           []corev1.ContainerPort{{ContainerPort: 9090}},
+					Ports:           []corev1.ContainerPort{{ContainerPort: 9090, Protocol: corev1.ProtocolTCP}},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("250m"),
@@ -154,6 +154,8 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
 			}
 
+			volumeMode := corev1.PersistentVolumeFilesystem
+
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -170,7 +172,11 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 								corev1.ResourceStorage: pvcStorageSize,
 							},
 						},
+						VolumeMode:       &volumeMode,
 						StorageClassName: pointer.String(seed.Spec.Metering.StorageClassName),
+					},
+					Status: corev1.PersistentVolumeClaimStatus{
+						Phase: corev1.ClaimPending,
 					},
 				},
 			}

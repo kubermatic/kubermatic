@@ -129,6 +129,10 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 		return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 	}
 
+	if len(config.Rules) == 0 {
+		return nil
+	}
+
 	mc, bucket, err := getS3DataFromSeed(ctx, client)
 	if err != nil {
 		return err
