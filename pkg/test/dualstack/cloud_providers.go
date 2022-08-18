@@ -280,7 +280,7 @@ func (a openstack) getImage(osName string) string {
 	case "centos":
 		return "CentOS 8 (2021-07-05)"
 	case "flatcar":
-		return "Flatcar Stable (2022-05-10)"
+		return "Flatcar Stable (2022-08-05)"
 	default:
 		return fmt.Sprintf("unknown os: %s", osName)
 	}
