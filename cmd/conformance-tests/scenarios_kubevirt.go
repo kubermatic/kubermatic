@@ -83,7 +83,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 
 func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
-	registryAddr := "http://10.244.1.19"
+	registryAddr := "http://image-repo.kube-system.svc.cluster.local/images"
 
 	switch {
 	case s.nodeOsSpec.Ubuntu != nil:
