@@ -36,7 +36,7 @@ spec:
   metering:
     enabled: true
     reports:
-      kubermatic-metering-report-weekly:
+      e2e-weekly:
         interval: 7
         schedule: 0 1 * * 6
     storageClassName: standard
