@@ -59,17 +59,17 @@ import (
 // Reconciler (re)stores all components required for running a Kubermatic
 // seed cluster.
 type Reconciler struct {
-	log            *zap.SugaredLogger
-	scheme         *runtime.Scheme
-	namespace      string
-	masterClient   ctrlruntimeclient.Client
-	masterRecorder record.EventRecorder
-	configGetter   provider.KubermaticConfigurationGetter
-	seedClients    map[string]ctrlruntimeclient.Client
-	seedRecorders  map[string]record.EventRecorder
-	seedsGetter    provider.SeedsGetter
-	workerName     string
-	versions       kubermaticversion.Versions
+	log                    *zap.SugaredLogger
+	scheme                 *runtime.Scheme
+	namespace              string
+	masterClient           ctrlruntimeclient.Client
+	masterRecorder         record.EventRecorder
+	configGetter           provider.KubermaticConfigurationGetter
+	seedClients            map[string]ctrlruntimeclient.Client
+	seedRecorders          map[string]record.EventRecorder
+	initializedSeedsGetter provider.SeedsGetter
+	workerName             string
+	versions               kubermaticversion.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -77,6 +77,7 @@ type Reconciler struct {
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("seed", request.Name)
+	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, request.Name)
 	if err != nil {
@@ -87,17 +88,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seedName string) error {
-	log.Debug("reconciling")
-
 	// find requested seed
-	seeds, err := r.seedsGetter()
+	seeds, err := r.initializedSeedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %w", err)
 	}
 
 	seed, exists := seeds[seedName]
 	if !exists {
-		log.Debug("ignoring request for non-existing seed")
+		log.Debug("ignoring request for non-existing / uninitialized seed")
 		return nil
 	}
 
@@ -131,7 +130,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// As the Seed CR is the owner for all resources managed by this controller,
 	// we wait for the seed-sync controller to do its job and mirror the Seed CR
-	// into the seed cluster.
+	// into the seed cluster. Since syncing the seed to its cluster is something
+	// relevant for _running_ KKP and not just during setups, this sync is not
+	// performed by the operator itself, but a regular KKP controller.
 	seedCopy := &kubermaticv1.Seed{}
 	name := types.NamespacedName{
 		Name:      seed.Name,
@@ -144,7 +145,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
 			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
-			seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 
 			if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingSkipped", err.Error()); err != nil {
 				log.Errorw("Failed to update seed status", zap.Error(err))

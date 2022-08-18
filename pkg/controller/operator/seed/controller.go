@@ -69,18 +69,23 @@ func Add(
 	workerNamePredicate := workerlabel.Predicates(workerName)
 	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
+	// As the seedlifecyclecontroller skips uninitialized seeds, we do
+	// the same so that we do not reconcile clusters for which we technically
+	// should not do anything yet.
+	seedsGetter = initializedSeedsGetter(seedsGetter)
+
 	reconciler := &Reconciler{
-		log:            log.Named(ControllerName),
-		scheme:         masterManager.GetScheme(),
-		namespace:      namespace,
-		masterClient:   masterManager.GetClient(),
-		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
-		seedClients:    map[string]ctrlruntimeclient.Client{},
-		seedRecorders:  map[string]record.EventRecorder{},
-		seedsGetter:    seedsGetter,
-		configGetter:   configGetter,
-		workerName:     workerName,
-		versions:       kubermatic.NewDefaultVersions(),
+		log:                    log.Named(ControllerName),
+		scheme:                 masterManager.GetScheme(),
+		namespace:              namespace,
+		masterClient:           masterManager.GetClient(),
+		masterRecorder:         masterManager.GetEventRecorderFor(ControllerName),
+		seedClients:            map[string]ctrlruntimeclient.Client{},
+		seedRecorders:          map[string]record.EventRecorder{},
+		initializedSeedsGetter: seedsGetter,
+		configGetter:           configGetter,
+		workerName:             workerName,
+		versions:               kubermatic.NewDefaultVersions(),
 	}
 
 	ctrlOpts := controller.Options{
@@ -174,7 +179,9 @@ func Add(
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
-	// watch all resources we manage inside all configured seeds
+	// watch all resources we manage inside all configured seeds (note that the seedManagers
+	// map does not necessarily contain a manager for every seed, as uninitialized seeds
+	// are automatically skipped by the seedlifecyclecontroller).
 	for key, manager := range seedManagers {
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
@@ -282,4 +289,23 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	return nil
+}
+
+// initializedSeedsGetter returns a seedsgetter that only returns
+// initialized seeds.
+func initializedSeedsGetter(seedsGetter provider.SeedsGetter) provider.SeedsGetter {
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, err
+		}
+
+		for name, seed := range seeds {
+			if !seed.Status.IsInitialized() {
+				delete(seeds, name)
+			}
+		}
+
+		return seeds, nil
+	}
 }

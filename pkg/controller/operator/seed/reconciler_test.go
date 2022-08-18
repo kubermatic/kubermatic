@@ -484,14 +484,14 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 	}
 
 	return &Reconciler{
-		log:            zap.NewNop().Sugar(),
-		scheme:         scheme.Scheme,
-		namespace:      "kubermatic",
-		masterClient:   masterClient,
-		masterRecorder: masterRecorder,
-		seedClients:    seedClients,
-		seedRecorders:  seedRecorders,
-		seedsGetter:    seedsGetter,
-		versions:       versions,
+		log:                    zap.NewNop().Sugar(),
+		scheme:                 scheme.Scheme,
+		namespace:              "kubermatic",
+		masterClient:           masterClient,
+		masterRecorder:         masterRecorder,
+		seedClients:            seedClients,
+		seedRecorders:          seedRecorders,
+		initializedSeedsGetter: seedsGetter,
+		versions:               versions,
 	}
 }
