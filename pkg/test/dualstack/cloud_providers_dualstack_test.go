@@ -46,29 +46,53 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	// operating systems
+	CentOS     string = "centos"
+	Flatcar    string = "flatcar"
+	RHEL       string = "rhel"
+	SLES       string = "sles"
+	Ubuntu     string = "ubuntu"
+	RockyLinux string = "rockylinux"
+
+	// cni
+	Canal  string = "canal"
+	Cilium string = "cilium"
+
+	// providers
+	Azure        string = "azure"
+	GCP          string = "gcp"
+	AWS          string = "aws"
+	OpenStack    string = "openstack"
+	Hetzner      string = "hetzner"
+	DigitalOcean string = "do"
+	Equinix      string = "equinix"
+	VSphere      string = "vsphere"
+)
+
 var operatingSystems = map[string]models.OperatingSystemSpec{
-	"centos":     centos(),
-	"flatcar":    flatcar(),
-	"rhel":       rhel(),
-	"sles":       sles(),
-	"ubuntu":     ubuntu(),
-	"rockylinux": rockyLinux(),
+	CentOS:     centos(),
+	Flatcar:    flatcar(),
+	RHEL:       rhel(),
+	SLES:       sles(),
+	Ubuntu:     ubuntu(),
+	RockyLinux: rockyLinux(),
 }
 
 var cloudProviders = map[string]clusterSpec{
-	"azure":     azure{},
-	"gcp":       gcp{},
-	"aws":       aws{},
-	"openstack": openstack{},
-	"hetzner":   hetzner{},
-	"do":        do{},
-	"equinix":   equinix{},
-	"vsphere":   vsphere{},
+	Azure:        azure{},
+	GCP:          gcp{},
+	AWS:          aws{},
+	OpenStack:    openstack{},
+	Hetzner:      hetzner{},
+	DigitalOcean: do{},
+	Equinix:      equinix{},
+	VSphere:      vsphere{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
-	"cilium": cilium(),
-	"canal":  canal(),
+	Cilium: cilium(),
+	Canal:  canal(),
 }
 
 // TestCloudClusterIPFamily creates clusters and runs dualstack tests against them.
@@ -101,164 +125,164 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	tests := []testCase{
 		{
-			cloudName: "azure",
+			cloudName: Azure,
 			osNames: []string{
-				"flatcar",
-				"rockylinux",
-				"ubuntu",
+				Flatcar,
+				RockyLinux,
+				Ubuntu,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "azure",
+			cloudName: Azure,
 			osNames: []string{
-				"centos",
-				"flatcar",
-				"rockylinux",
-				"ubuntu",
+				CentOS,
+				Flatcar,
+				RockyLinux,
+				Ubuntu,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "aws",
+			cloudName: AWS,
 			osNames: []string{
-				"rhel",
-				"ubuntu",
-				"flatcar",
-				"rockylinux",
+				RHEL,
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:                 "cilium",
+			cni:                 Cilium,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "aws",
+			cloudName: AWS,
 			osNames: []string{
-				"rhel",
-				"ubuntu",
-				"flatcar",
-				"rockylinux",
+				RHEL,
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:                 "canal",
+			cni:                 Canal,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
+			cloudName: GCP,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                 "cilium",
+			cni:                 Cilium,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
+			cloudName: GCP,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                 "canal",
+			cni:                 Canal,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "openstack",
+			cloudName: OpenStack,
 			osNames: []string{
-				"ubuntu",
-				"flatcar",
+				Ubuntu,
+				Flatcar,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "openstack",
+			cloudName: OpenStack,
 			osNames: []string{
-				"centos",
-				"ubuntu",
-				"flatcar",
+				CentOS,
+				Ubuntu,
+				Flatcar,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "hetzner",
+			cloudName: Hetzner,
 			osNames: []string{
-				"ubuntu",
-				"rockylinux",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "hetzner",
+			cloudName: Hetzner,
 			osNames: []string{
-				"ubuntu",
-				"rockylinux",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "do",
+			cloudName: DigitalOcean,
 			osNames: []string{
-				"ubuntu",
-				"rockylinux",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "do",
+			cloudName: DigitalOcean,
 			osNames: []string{
-				"ubuntu",
-				"centos",
-				"rocklinux",
+				Ubuntu,
+				CentOS,
+				RockyLinux,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "equinix",
+			cloudName: Equinix,
 			osNames: []string{
-				"ubuntu",
-				"centos",
-				"flatcar",
-				"rockylinux",
+				Ubuntu,
+				CentOS,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "equinix",
+			cloudName: Equinix,
 			osNames: []string{
-				"ubuntu",
-				"flatcar",
-				"rockylinux",
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "vsphere",
+			cloudName: VSphere,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                    "canal",
+			cni:                    Canal,
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
-			cloudName: "vsphere",
+			cloudName: VSphere,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                    "cilium",
+			cni:                    Cilium,
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
@@ -310,9 +334,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		cniSpec := cnis[test.cni]
 		netConfig := defaultClusterNetworkingConfig()
 		switch test.cni {
-		case "canal":
+		case Canal:
 			netConfig = netConfig.WithProxyMode("ipvs")
-		case "cilium":
+		case Cilium:
 			netConfig = netConfig.WithProxyMode("ebpf")
 		}
 
