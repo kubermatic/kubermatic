@@ -47,7 +47,7 @@ import (
 )
 
 const (
-	// operating systems
+	// Operating Systems.
 	CentOS     string = "centos"
 	Flatcar    string = "flatcar"
 	RHEL       string = "rhel"
@@ -55,11 +55,11 @@ const (
 	Ubuntu     string = "ubuntu"
 	RockyLinux string = "rockylinux"
 
-	// cni
+	// CNI.
 	Canal  string = "canal"
 	Cilium string = "cilium"
 
-	// providers
+	// Providers.
 	Azure        string = "azure"
 	GCP          string = "gcp"
 	AWS          string = "aws"
@@ -508,7 +508,7 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 }
 
 func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expectedNodes int) error {
-	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
+	return wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
