@@ -170,9 +170,15 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 								corev1.ResourceStorage: pvcStorageSize,
 							},
 						},
-						StorageClassName: pointer.String(seed.Spec.Metering.StorageClassName),
+					},
+					Status: corev1.PersistentVolumeClaimStatus{
+						Phase: corev1.ClaimPending,
 					},
 				},
+			}
+
+			if seed.Spec.Metering.StorageClassName != "" {
+				sts.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = pointer.String(seed.Spec.Metering.StorageClassName)
 			}
 
 			return sts, nil
