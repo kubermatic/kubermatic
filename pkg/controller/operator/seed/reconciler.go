@@ -64,6 +64,7 @@ type Reconciler struct {
 	namespace      string
 	masterClient   ctrlruntimeclient.Client
 	masterRecorder record.EventRecorder
+	configGetter   provider.KubermaticConfigurationGetter
 	seedClients    map[string]ctrlruntimeclient.Client
 	seedRecorders  map[string]record.EventRecorder
 	seedsGetter    provider.SeedsGetter
@@ -123,15 +124,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	seedRecorder := r.seedRecorders[seed.Name]
 
 	// find the owning KubermaticConfiguration
-	config, err := getKubermaticConfigurationForNamespace(ctx, r.masterClient, r.namespace, log)
+	config, err := r.configGetter(ctx)
 	if err != nil || config == nil {
 		return err
-	}
-
-	// create a copy of the configuration with default values applied
-	defaulted, err := defaults.DefaultConfiguration(config, log)
-	if err != nil {
-		return fmt.Errorf("failed to apply defaults to KubermaticConfiguration: %w", err)
 	}
 
 	// As the Seed CR is the owner for all resources managed by this controller,
@@ -163,11 +158,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// Seed CR inside the seed cluster was deleted
 	if seedCopy.DeletionTimestamp != nil {
-		return r.cleanupDeletedSeed(ctx, defaulted, seedCopy, seedClient, log)
+		return r.cleanupDeletedSeed(ctx, config, seedCopy, seedClient, log)
 	}
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	if err := r.reconcileResources(ctx, defaulted, seedCopy, seedClient, log); err != nil {
+	if err := r.reconcileResources(ctx, config, seedCopy, seedClient, log); err != nil {
 		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seed.Name, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
