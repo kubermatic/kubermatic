@@ -154,6 +154,8 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
 			}
 
+			volumeMode := corev1.PersistentVolumeFilesystem
+
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -170,15 +172,13 @@ func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kuberma
 								corev1.ResourceStorage: pvcStorageSize,
 							},
 						},
+						VolumeMode:       &volumeMode,
+						StorageClassName: pointer.String(seed.Spec.Metering.StorageClassName),
 					},
 					Status: corev1.PersistentVolumeClaimStatus{
 						Phase: corev1.ClaimPending,
 					},
 				},
-			}
-
-			if seed.Spec.Metering.StorageClassName != "" {
-				sts.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = pointer.String(seed.Spec.Metering.StorageClassName)
 			}
 
 			return sts, nil

@@ -46,6 +46,7 @@ func prometheusService() reconciling.NamedServiceCreatorGetter {
 					Name:       Name,
 					Port:       80,
 					TargetPort: intstr.FromInt(9090),
+					Protocol:   corev1.ProtocolTCP,
 				},
 			}
 			svc.Spec.Selector = map[string]string{common.NameLabel: Name}
