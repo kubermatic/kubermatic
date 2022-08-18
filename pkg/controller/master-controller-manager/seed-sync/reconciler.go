@@ -135,7 +135,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	seedInSeed := &kubermaticv1.Seed{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
