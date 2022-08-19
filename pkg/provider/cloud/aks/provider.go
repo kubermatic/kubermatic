@@ -347,13 +347,12 @@ func DecodeError(err error) error {
 		type response struct {
 			Code    string `json:"code,omitempty"`
 			Message string `json:"message,omitempty"`
-			SubCode string `json:"subcode,omitempty"`
 		}
-		responseMap := map[string]response{}
-		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&responseMap); err != nil {
+		var resp response
+		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&resp); err != nil {
 			return err
 		}
-		return utilerrors.New(aerr.StatusCode, responseMap["error"].Message)
+		return utilerrors.New(aerr.StatusCode, resp.Message)
 	}
 	return err
 }

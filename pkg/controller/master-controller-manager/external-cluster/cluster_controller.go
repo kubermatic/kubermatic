@@ -130,8 +130,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	cloud := cluster.Spec.CloudSpec
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 
-	// if no provider is set, we are dealing with a generic kubernetes cluster
-	if cloud.ProviderName == "" {
+	if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 		if cluster.Spec.KubeconfigReference != nil {
 			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add kubeconfig secret finalizer: %w", err)
