@@ -3,22 +3,29 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	appsv1 "k8s.io/api/apps/v1"
-	_ "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
-	_ "k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
 
 const (
-	DigitalOceanCCMDeploymentName = "digital-ocean-cloud-controller-manager"
-	DigitalOceanVersion           = "0.1.37"
+	DigitalOceanCCMDeploymentName = "digitalocean-cloud-controller-manager"
+	DigitalOceanVersion           = "0.1.39"
+)
+
+var (
+	digitalOceanResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("50Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
@@ -49,31 +56,13 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
-				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
-						},
-					},
-				})
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryMCR) + "/oss/kubernetes/digital-ocean-cloud-controller-manager:v" + DigitalOceanVersion,
-					Command: []string{"cloud-controller-manager"},
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:v" + DigitalOceanVersion,
+					Command: []string{"/bin/digitalocean-cloud-controller-manager"},
 					Args:    getDigitalOceanFlags(data),
-					VolumeMounts: append(getVolumeMounts(),
-						corev1.VolumeMount{
-							Name:      resources.CloudConfigConfigMapName,
-							MountPath: "/etc/kubernetes/cloud",
-							ReadOnly:  true,
-						},
-					),
+					// Env: data.toke
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -92,7 +81,7 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName: azureResourceRequirements.DeepCopy(),
+				ccmContainerName: digitalOceanResourceRequirements.DeepCopy(),
 			}
 
 			if !data.IsKonnectivityEnabled() {
@@ -117,13 +106,7 @@ func getDigitalOceanFlags(data *resources.TemplateData) []string {
 	flags := []string{
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--leader-elect=true",
-		"--v=5",
-		"--cloud-config=/etc/kubernetes/cloud/config",
-		"--cloud-provider=digitalocean",
 	}
 
-	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
-		flags = append(flags, "--cluster-name", data.Cluster().Name)
-	}
 	return flags
 }

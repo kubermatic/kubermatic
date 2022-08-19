@@ -126,13 +126,6 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		}
 		return versionSupported && AzureCloudControllerSupported(v)
 
-	case cluster.Spec.Cloud.Digitalocean != nil:
-		versionSupported, err := version.IsSupported(v.Semver(), kubermaticv1.DigitaloceanCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
-		if err != nil {
-			return false
-		}
-		return versionSupported && DigitalOceanCloudControllerSupported(v)
-
 	default:
 		return false
 	}
