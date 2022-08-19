@@ -179,7 +179,7 @@ func getNodeAddresses(node corev1.Node) []string {
 	addresses := []string{}
 	for _, addressType := range addressTypes {
 		for _, address := range node.Status.Addresses {
-			if address.Type == addressType {
+			if address.Type == addressType && isIPv4(address.Address) {
 				addresses = append(addresses, address.Address)
 			}
 		}
