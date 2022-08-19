@@ -117,7 +117,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 								Credentials:  nil,
 							},
 						},
-						FormSpec: nil,
 					},
 				},
 				{
@@ -131,7 +130,6 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 								Credentials: nil,
 							},
 						},
-						FormSpec: nil,
 					},
 				},
 			},

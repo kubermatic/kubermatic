@@ -181,7 +181,6 @@ var _ = Describe("application Installation controller", func() {
 								Credentials:  nil,
 							},
 						},
-						FormSpec: nil,
 					},
 				}}
 			Expect(userClient.Update(ctx, def)).To(Succeed())

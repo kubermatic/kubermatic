@@ -103,40 +103,6 @@ spec:
                     description: Template defines how application is installed (source
                       provenance, Method...)
                     properties:
-                      formSpec:
-                        description: Define the valued that can be override for the
-                          installation
-                        items:
-                          properties:
-                            displayName:
-                              description: DisplayName is visible in the UI
-                              type: string
-                            helpText:
-                              description: HelpText is visible in the UI next to the
-                                field
-                              type: string
-                            internalName:
-                              description: InternalName is used internally to save
-                                in the ApplicationInstallation object
-                              type: string
-                            required:
-                              description: Required indicates if the control has to
-                                be set
-                              type: boolean
-                            type:
-                              description: Type of displayed control
-                              enum:
-                              - number
-                              - boolean
-                              - text
-                              - text-area
-                              type: string
-                          required:
-                          - displayName
-                          - internalName
-                          - type
-                          type: object
-                        type: array
                       source:
                         description: Defined how the source of the application (e.g
                           Helm chart) is retrieved

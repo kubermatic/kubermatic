@@ -25,6 +25,9 @@ type ApplicationDefinitionSpec struct {
 	// available version for this application
 	Versions []*ApplicationVersion `json:"versions"`
 
+	// default values
+	DefaultValues RawExtension `json:"defaultValues,omitempty"`
+
 	// method
 	Method TemplateMethod `json:"method,omitempty"`
 }
