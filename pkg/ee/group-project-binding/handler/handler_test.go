@@ -44,6 +44,8 @@ import (
 func TestHandlerGroupProjectBindings(t *testing.T) {
 	t.Parallel()
 
+	testUser := test.GenAPIUser("bob", "bob@acme.com")
+
 	testcases := []struct {
 		name             string
 		method           string
@@ -59,13 +61,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 1: list GroupProjectBindings in a project",
 			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -86,13 +89,14 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 2: list GroupProjectBindings in an illicit project",
 			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "TestGroup", "owners"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -103,11 +107,12 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 3: get an existing GroupProjectBinding",
 			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-xxxxxxxxxx",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -127,10 +132,11 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 4: get a non-existing GroupProjectBinding",
 			method:          http.MethodGet,
 			url:             "/api/v2/projects/boo-ID/groupbindings/boo-ID-DoesNotExist",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -141,12 +147,13 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 5: get an illicit GroupProjectBinding",
 			method:          http.MethodGet,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenProject("boo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("boo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("boo-ID", "TestGroup", "owners"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusForbidden,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -161,10 +168,11 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				"role": "viewers",
 				"group": "viewers-test"
 			}`,
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusCreated,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -179,10 +187,11 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				"role": "invalid",
 				"group": "viewers-test"
 			}`,
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -193,11 +202,12 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 			name:            "scenario 8: delete an existing GroupProjectBinding",
 			method:          http.MethodDelete,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -212,11 +222,12 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				"role": "owners"
 			}`,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusOK,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -231,11 +242,12 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				"role": "owners"
 			}`,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-nonexisting",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusNotFound,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
@@ -249,11 +261,12 @@ func TestHandlerGroupProjectBindings(t *testing.T) {
 				"role": "invalid"
 			}`,
 			url:             "/api/v2/projects/foo-ID/groupbindings/foo-ID-xxxxxxxxxx",
-			existingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+			existingAPIUser: testUser,
 			existingObjects: []ctrlruntimeclient.Object{
 				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
 				test.GenGroupBinding("foo-ID", "viewers-test", "viewers"),
+				test.APIUserToKubermaticUser(*testUser),
 			},
 			httpStatus: http.StatusBadRequest,
 			validateResp: func(resp *httptest.ResponseRecorder) error {
