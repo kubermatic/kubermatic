@@ -312,13 +312,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
-	// This is a migration that is required to ensure that with the release of KKP v2.21
-	// we don't enable OSM for existing clusters.
-	// TODO: Remove this with KKP 2.22 release.
-	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
-		return err
-	}
-
 	if err := r.reconcileServiceAccounts(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -368,6 +361,13 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
 
 	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
+		return err
+	}
+
+	// This is a migration that is required to ensure that with the release of KKP v2.21
+	// we don't enable OSM for existing clusters.
+	// TODO: Remove this with KKP 2.22 release.
+	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
 		return err
 	}
 
