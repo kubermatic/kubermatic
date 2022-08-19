@@ -203,7 +203,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-dualstack-e2e-azure
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
+    optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -243,7 +243,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-gcp
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -282,7 +281,6 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-dualstack-e2e-aws
-    optional: true
     run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -323,7 +321,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-openstack-canal
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -363,7 +360,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-openstack-cilium
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -403,7 +399,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-vsphere
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -443,7 +438,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-do
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -483,7 +477,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-equinix-ubuntu
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -525,7 +518,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-equinix-flatcar
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -567,7 +559,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-equinix-rockylinux
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -609,7 +600,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-equinix-centos
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -651,7 +641,6 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-hetzner
     optional: true
-    run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
