@@ -64,10 +64,21 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 		return nil, err
 	}
 
+	// Setting / at the end prevents from listing reports having each other`s prefix. Eg: daily would list daily-report.
+	// The configuration name "report-" is exclusively used by the dashboards legacy report listing.
+	// Those were saved in the root directory and are prefixed with "report-" to distinguish from raw data csv files.
+	// A configuration with the same name cannot be created by the user due to DNS-1035 validation.
+	var prefix string
+	if request.ConfigurationName == "report-" {
+		prefix = request.ConfigurationName
+	} else {
+		prefix = request.ConfigurationName + "/"
+	}
+
 	listOptions := minio.ListObjectsOptions{
 		MaxKeys:    request.MaxKeys,
 		StartAfter: request.StartAfter,
-		Prefix:     request.ConfigurationName,
+		Prefix:     prefix,
 	}
 
 	for _, seed := range seedsMap {
