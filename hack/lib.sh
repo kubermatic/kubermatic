@@ -391,3 +391,20 @@ start_docker_daemon() {
   retry 5 docker stats --no-stream
   echodate "Docker became ready"
 }
+
+# safebase64 ensures the given value is base64-encoded.
+# If the given value is already encoded, it will be echoed
+# unchanged.
+safebase64() {
+  local value="$1"
+
+  set +e
+  decoded="$(echo "$value" | base64 -d 2> /dev/null)"
+  if [ $? -eq 0 ]; then
+    echo "$value"
+    return 0
+  fi
+
+  echo "$value" | base64 -w0
+  echo
+}
