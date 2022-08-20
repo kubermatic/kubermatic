@@ -187,12 +187,12 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 }
 
 func (r *Reconciler) createOnSeed(ctx context.Context, obj ctrlruntimeclient.Object, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	copy := obj.DeepCopyObject().(ctrlruntimeclient.Object)
-	copy.SetResourceVersion("")
-	copy.SetUID("")
-	copy.SetGeneration(0)
+	objCopy := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+	objCopy.SetResourceVersion("")
+	objCopy.SetUID("")
+	objCopy.SetGeneration(0)
 
-	err := client.Create(ctx, copy)
+	err := client.Create(ctx, objCopy)
 	if apierrors.IsAlreadyExists(err) {
 		// An AlreadyExists error can occur on shared master/seed systems.
 		return nil
