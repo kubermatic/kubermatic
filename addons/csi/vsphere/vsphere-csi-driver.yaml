@@ -21,6 +21,7 @@
 #   - template function to replace base registry
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
+#   - set "improved-csi-idempotency": "false"
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -178,7 +179,7 @@ data:
   "online-volume-extend": "true"
   "trigger-csi-fullsync": "false"
   "async-query-volume": "true"
-  "improved-csi-idempotency": "true"
+  "improved-csi-idempotency": "false"
   "improved-volume-topology": "false"
   "block-volume-snapshot": "false"
   "csi-windows-support": "false"
