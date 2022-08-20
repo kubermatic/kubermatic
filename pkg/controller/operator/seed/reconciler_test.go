@@ -32,6 +32,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -290,21 +291,6 @@ func TestBasicReconciling(t *testing.T) {
 		},
 
 		{
-			name:            "seeds without KubermaticConfiguration are ignored",
-			seedToReconcile: "europe",
-			configuration:   nil,
-			seedsOnMaster:   []string{"europe"},
-			syncedSeeds:     sets.NewString("europe"),
-			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %w", err)
-				}
-
-				return nil
-			},
-		},
-
-		{
 			name:            "nodeport-proxy annotations are carried over to the loadbalancer service",
 			seedToReconcile: "seed-with-nodeport-proxy-annotations",
 			configuration:   &k8cConfig,
@@ -489,6 +475,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 		namespace:              "kubermatic",
 		masterClient:           masterClient,
 		masterRecorder:         masterRecorder,
+		configGetter:           test.NewConfigGetter(cfg),
 		seedClients:            seedClients,
 		seedRecorders:          seedRecorders,
 		initializedSeedsGetter: seedsGetter,

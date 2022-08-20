@@ -17,6 +17,7 @@ limitations under the License.
 package defaults
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -321,6 +322,10 @@ var (
 )
 
 func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
+	if config == nil {
+		return nil, errors.New("config must not be nil")
+	}
+
 	logger.Debug("Applying defaults to Kubermatic configuration")
 
 	configCopy := config.DeepCopy()
