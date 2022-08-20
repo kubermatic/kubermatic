@@ -587,6 +587,7 @@ spec:
                           enum:
                           - always
                           - externalCloudProvider
+                          - nonAMD64WithCanalAndIPVS
                           type: string
                         operation:
                           description: Operation is the operation triggering the compatibility

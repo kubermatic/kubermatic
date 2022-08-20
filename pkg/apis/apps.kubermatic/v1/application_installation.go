@@ -185,7 +185,7 @@ type ApplicationInstallationCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
+// +kubebuilder:validation:Enum=ManifestsRetrieved;Ready
 
 // swagger:enum ApplicationInstallationConditionType
 // All condition types must be registered within the `AllApplicationInstallationConditionTypes` variable.
