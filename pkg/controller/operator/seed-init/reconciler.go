@@ -108,12 +108,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to create CRDs: %w", err)
 	}
 
+	ns := &corev1.Namespace{}
+	ns.SetName(seed.Namespace)
+
+	if err := r.createOnSeed(ctx, ns, seedClient, log.With("kind", "namespace")); err != nil {
+		return fmt.Errorf("failed to create KKP namespace: %w", err)
+	}
+
 	if err := r.createOnSeed(ctx, seed, seedClient, log.With("kind", "config")); err != nil {
 		return fmt.Errorf("failed to create Seed resource copy: %w", err)
 	}
 
 	if err := r.createOnSeed(ctx, config, seedClient, log.With("kind", "seed")); err != nil {
-		return fmt.Errorf("failed to create Seed resource copy: %w", err)
+		return fmt.Errorf("failed to create KubermaticConfiguration resource copy: %w", err)
 	}
 
 	if err := r.setSeedCondition(ctx, seed); err != nil {
