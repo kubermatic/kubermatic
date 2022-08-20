@@ -439,6 +439,8 @@ spec:
                       nodePortsAllowedIPRange:
                         type: string
                       serviceAccount:
+                        description: The Google Service Account (JSON format), encoded
+                          with base64.
                         type: string
                       subnetwork:
                         type: string
@@ -548,6 +550,7 @@ spec:
                       csiKubeconfig:
                         type: string
                       kubeconfig:
+                        description: The cluster's kubeconfig file, encoded with base64.
                         type: string
                     type: object
                   nutanix:

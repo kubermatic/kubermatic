@@ -40,7 +40,7 @@ if [ -z "${VAULT_ADDR:-}" ]; then
   export VAULT_ADDR=https://vault.kubermatic.com/
 fi
 
-GOOGLE_SERVICE_ACCOUNT="${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}"
+GOOGLE_SERVICE_ACCOUNT="$(safebase64 "${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}")"
 
 DO_E2E_TESTS_TOKEN="${DO_E2E_TESTS_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 
@@ -111,7 +111,7 @@ metadata:
   namespace: kubermatic
 spec:
   gcp:
-    serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+    serviceAccount: "${GOOGLE_SERVICE_ACCOUNT}"
 EOF
 
 cat << EOF > "$TMP"/preset-gcp-datacenter.yaml
@@ -122,7 +122,7 @@ metadata:
   namespace: kubermatic
 spec:
   gcp:
-    serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+    serviceAccount: "${GOOGLE_SERVICE_ACCOUNT}"
     datacenter: gcp-westeurope
 EOF
 
