@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// do nothing until the operator has prepared the seed cluster
-	if seed.Status.IsInitialized() {
+	if !seed.Status.IsInitialized() {
 		logger.Debug("Seed cluster has not yet been initialized, skipping.")
 		return reconcile.Result{}, nil
 	}
