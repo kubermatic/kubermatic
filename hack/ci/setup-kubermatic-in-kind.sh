@@ -229,15 +229,16 @@ if [[ ! -z "${VCD_URL:-}" ]]; then
   sed -i "s#__VCD_URL__#$VCD_URL#g" $SEED_MANIFEST
 fi
 
-retry 8 kubectl apply -f $SEED_MANIFEST
+kubectl apply --filename hack/ci/testdata/metering_s3_creds.yaml
+
+retry 8 kubectl apply --filename $SEED_MANIFEST
+kubectl --namespace kubermatic wait --for="condition=ResourcesReconciled" "seed/$SEED_NAME"
 echodate "Finished installing Seed"
 
-kubectl apply -f hack/ci/testdata/metering_s3_creds.yaml
-
 sleep 5
-echodate "Waiting for Kubermatic Operator to deploy Seed components..."
-retry 8 check_all_deployments_ready kubermatic
-echodate "Kubermatic Seed is ready."
+echodate "Waiting for Deployments to roll out..."
+retry 9 check_all_deployments_ready kubermatic
+echodate "Kubermatic is ready."
 
 echodate "Waiting for VPA to be ready..."
 retry 8 check_all_deployments_ready kube-system
