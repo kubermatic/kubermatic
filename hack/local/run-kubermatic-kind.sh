@@ -223,7 +223,7 @@ sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
 retry 8 kubectl apply --filename $SEED_MANIFEST
-kubectl --namespace kubermatic wait --for="condition=ResourcesReconciled" "seed/$SEED_NAME"
+retry 5 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5

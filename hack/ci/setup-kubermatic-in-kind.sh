@@ -232,7 +232,7 @@ fi
 kubectl apply --filename hack/ci/testdata/metering_s3_creds.yaml
 
 retry 8 kubectl apply --filename $SEED_MANIFEST
-kubectl --namespace kubermatic wait --for="condition=ResourcesReconciled" "seed/$SEED_NAME"
+retry 5 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5
