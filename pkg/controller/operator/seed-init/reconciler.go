@@ -44,6 +44,7 @@ type Reconciler struct {
 	log              *zap.SugaredLogger
 	masterClient     ctrlruntimeclient.Client
 	masterRecorder   record.EventRecorder
+	configGetter     provider.KubermaticConfigurationGetter
 	seedClientGetter provider.SeedClientGetter
 	workerName       string
 	versions         kubermaticversion.Versions
@@ -98,8 +99,21 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to create seed cluster client: %w", err)
 	}
 
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
 	if err := r.createInitialCRDs(ctx, seed, seedClient, log); err != nil {
-		return err
+		return fmt.Errorf("failed to create CRDs: %w", err)
+	}
+
+	if err := r.createOnSeed(ctx, seed, seedClient, log.With("kind", "config")); err != nil {
+		return fmt.Errorf("failed to create Seed resource copy: %w", err)
+	}
+
+	if err := r.createOnSeed(ctx, config, seedClient, log.With("kind", "seed")); err != nil {
+		return fmt.Errorf("failed to create Seed resource copy: %w", err)
 	}
 
 	if err := r.setSeedCondition(ctx, seed); err != nil {
@@ -152,12 +166,10 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 			}
 			crd.Annotations[resources.VersionLabel] = r.versions.Kubermatic
 
-			err := client.Create(ctx, &crd)
+			err := r.createOnSeed(ctx, &crd, client, crdLog)
 			if err == nil {
 				crdLog.Info("Created CRD")
-			} else if !apierrors.IsAlreadyExists(err) {
-				// An AlreadyExists error can occur on shared master/seed systems
-				// where the KKP installer has already setup the CRDs.
+			} else {
 				crdLog.Errorw("Failed to create CRD", zap.Error(err))
 				overallErr = errFailedToCreateCRD
 			}
@@ -165,4 +177,19 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 	}
 
 	return overallErr
+}
+
+func (r *Reconciler) createOnSeed(ctx context.Context, obj ctrlruntimeclient.Object, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	copy := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+	copy.SetResourceVersion("")
+	copy.SetUID("")
+	copy.SetGeneration(0)
+
+	err := client.Create(ctx, copy)
+	if apierrors.IsAlreadyExists(err) {
+		// An AlreadyExists error can occur on shared master/seed systems.
+		return nil
+	}
+
+	return err
 }

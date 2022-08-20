@@ -18,7 +18,6 @@ package seed
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -129,10 +128,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// As the Seed CR is the owner for all resources managed by this controller,
-	// we wait for the seed-sync controller to do its job and mirror the Seed CR
-	// into the seed cluster. Since syncing the seed to its cluster is something
-	// relevant for _running_ KKP and not just during setups, this sync is not
-	// performed by the operator itself, but a regular KKP controller.
+	// we need the copy of the Seed resource from the master cluster on the seed cluster.
 	seedCopy := &kubermaticv1.Seed{}
 	name := types.NamespacedName{
 		Name:      seed.Name,
@@ -141,7 +137,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	if err := seedClient.Get(ctx, name, seedCopy); err != nil {
 		if apierrors.IsNotFound(err) {
-			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
+			err = fmt.Errorf("cannot find copy of Seed resource on seed cluster: %w", err)
 
 			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
 			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
