@@ -130,7 +130,7 @@ func main() {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
-	if err := seedinit.Add(ctx, log, opt.namespace, mgr, configGetter, seedClientGetter, opt.workerCount, opt.workerName); err != nil {
+	if err := seedinit.Add(ctx, log, opt.namespace, mgr, seedClientGetter, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add seed-init controller", zap.Error(err))
 	}
 

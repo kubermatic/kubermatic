@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -28,11 +29,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// KubermaticConfigurationGetter is a function to retrieve the currently relevant
-// KubermaticConfiguration. That is the one in the same namespace as the
-// running application (e.g. the seed-controller-manager). It's an error
-// if there are none or more than one KubermaticConfiguration objects in
-// a single namespace.
+// NonDefaultingKubermaticConfigurationGetter is a function to retrieve the
+// currently relevant KubermaticConfiguration. That is the one in the same
+// namespace as the running application (e.g. the seed-controller-manager).
+// It's an error if there are none or more than one KubermaticConfiguration
+// objects in a single namespace.
 type KubermaticConfigurationGetter = func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error)
 
 // DynamicKubermaticConfigurationGetterFactory returns a dynamic KubermaticConfigurationGetter,
@@ -44,26 +45,48 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 	}
 
 	return func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
-		configList := kubermaticv1.KubermaticConfigurationList{}
-		if err := client.List(ctx, &configList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
-			return nil, fmt.Errorf("failed to list KubermaticConfigurations in namespace %q: %w", namespace, err)
+		config, err := GetRawKubermaticConfiguration(ctx, client, namespace)
+		if err != nil {
+			return nil, err
 		}
 
-		if len(configList.Items) == 0 {
-			return nil, fmt.Errorf("no KubermaticConfiguration resource found in namespace %q", namespace)
-		}
-
-		if len(configList.Items) > 1 {
-			return nil, fmt.Errorf("more than one KubermaticConfiguration resource found in namespace %q", namespace)
-		}
-
-		config, err := defaults.DefaultConfiguration(&configList.Items[0], zap.NewNop().Sugar())
+		config, err = defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply default values: %w", err)
 		}
 
 		return config, nil
 	}, nil
+}
+
+var (
+	ErrNoKubermaticConfigurationFound      = errors.New("no KubermaticConfiguration resource found")
+	ErrTooManyKubermaticConfigurationFound = errors.New("more than one KubermaticConfiguration resource found")
+)
+
+// GetRawKubermaticConfiguration will list all Configurations in the given namespace and
+// return the found config or an error if 0 or more Configurations where found.
+// Most code should use a KubermaticConfigurationGetter instead of calling this function
+// directly. This function does not apply the default values.
+func GetRawKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient.Reader, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
+	if len(namespace) == 0 {
+		return nil, fmt.Errorf("a namespace must be provided")
+	}
+
+	configList := kubermaticv1.KubermaticConfigurationList{}
+	if err := client.List(ctx, &configList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		return nil, fmt.Errorf("failed to list KubermaticConfigurations in namespace %q: %w", namespace, err)
+	}
+
+	if len(configList.Items) == 0 {
+		return nil, ErrNoKubermaticConfigurationFound
+	}
+
+	if len(configList.Items) > 1 {
+		return nil, ErrTooManyKubermaticConfigurationFound
+	}
+
+	return &configList.Items[0], nil
 }
 
 // StaticKubermaticConfigurationGetterFactory returns a KubermaticConfigurationGetter that

@@ -44,7 +44,6 @@ type Reconciler struct {
 	log              *zap.SugaredLogger
 	masterClient     ctrlruntimeclient.Client
 	masterRecorder   record.EventRecorder
-	configGetter     provider.KubermaticConfigurationGetter
 	seedClientGetter provider.SeedClientGetter
 	workerName       string
 	versions         kubermaticversion.Versions
@@ -99,7 +98,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to create seed cluster client: %w", err)
 	}
 
-	config, err := r.configGetter(ctx)
+	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
+	config, err := provider.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}

@@ -18,6 +18,7 @@ package seedsync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -103,26 +104,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
-	configList := &kubermaticv1.KubermaticConfigurationList{}
-	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace: namespace,
-	}
+	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
+	config, err := provider.GetRawKubermaticConfiguration(ctx, r, namespace)
 
-	if err := r.List(ctx, configList, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %w", err)
-	}
-
-	if len(configList.Items) == 0 {
+	if errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
 		r.log.Debug("ignoring request for namespace without KubermaticConfiguration")
 		return nil, nil
 	}
 
-	if len(configList.Items) > 1 {
+	if errors.Is(err, provider.ErrTooManyKubermaticConfigurationFound) {
 		r.log.Warnw("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", namespace)
 		return nil, nil
 	}
 
-	return &configList.Items[0], nil
+	return config, nil
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
