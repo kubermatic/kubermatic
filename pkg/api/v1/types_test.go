@@ -781,53 +781,85 @@ func TestAnexiaNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 1: should fail when required parameters are not provided",
 			&apiv1.AnexiaNodeSpec{},
-			"missing or invalid required parameter(s): vlanID, cpus, memory, diskSize, templateID",
+			"missing or invalid required parameter(s): vlanID missing, cpus missing, memory missing, templateID missing, disks missing",
 		},
 		{
 			"case 2: should fail when only vlanID is provided",
 			&apiv1.AnexiaNodeSpec{
 				VlanID: "test-vlan",
 			},
-			"missing or invalid required parameter(s): cpus, memory, diskSize, templateID",
+			"missing or invalid required parameter(s): cpus missing, memory missing, templateID missing, disks missing",
 		},
 		{
 			"case 3: should fail when only templateID is provided",
 			&apiv1.AnexiaNodeSpec{
 				TemplateID: "test-template",
 			},
-			"missing or invalid required parameter(s): vlanID, cpus, memory, diskSize",
+			"missing or invalid required parameter(s): vlanID missing, cpus missing, memory missing, disks missing",
 		},
 		{
 			"case 4: should fail when only cpus is provided",
 			&apiv1.AnexiaNodeSpec{
 				CPUs: 1,
 			},
-			"missing or invalid required parameter(s): vlanID, memory, diskSize, templateID",
+			"missing or invalid required parameter(s): vlanID missing, memory missing, templateID missing, disks missing",
 		},
 		{
 			"case 5: should fail when only memory is provided",
 			&apiv1.AnexiaNodeSpec{
 				Memory: 1,
 			},
-			"missing or invalid required parameter(s): vlanID, cpus, diskSize, templateID",
+			"missing or invalid required parameter(s): vlanID missing, cpus missing, templateID missing, disks missing",
 		},
 		{
 			"case 6: should fail when only diskSize is provided",
 			&apiv1.AnexiaNodeSpec{
-				DiskSize: 1,
+				DiskSize: &[]int64{1}[0],
 			},
-			"missing or invalid required parameter(s): vlanID, cpus, memory, templateID",
+			"missing or invalid required parameter(s): vlanID missing, cpus missing, memory missing, templateID missing",
 		},
 		{
-			"case 8: should marshal when instance type is provided",
+			"case 7: should fail with diskSize and disks provided",
 			&apiv1.AnexiaNodeSpec{
 				VlanID:     "test-vlan",
 				TemplateID: "test-template",
 				CPUs:       1,
 				Memory:     1,
-				DiskSize:   1,
+				DiskSize:   &[]int64{1}[0],
+				Disks: []apiv1.AnexiaDiskConfig{
+					{
+						Size: 1,
+					},
+				},
+			},
+			"missing or invalid required parameter(s): both disks and diskSize configured but only one of those allowed",
+		},
+		{
+			"case 8: should marshal when everything is provided, using the old diskSize attribute",
+			&apiv1.AnexiaNodeSpec{
+				VlanID:     "test-vlan",
+				TemplateID: "test-template",
+				CPUs:       1,
+				Memory:     1,
+				DiskSize:   &[]int64{1}[0],
 			},
 			"{\"vlanID\":\"test-vlan\",\"templateID\":\"test-template\",\"cpus\":1,\"memory\":1,\"diskSize\":1}",
+		},
+		{
+			"case 9: should marshal when everything is provided, using the new disks attribute",
+			&apiv1.AnexiaNodeSpec{
+				VlanID:     "test-vlan",
+				TemplateID: "test-template",
+				CPUs:       1,
+				Memory:     1,
+				Disks: []apiv1.AnexiaDiskConfig{
+					{
+						Size:            1,
+						PerformanceType: &[]string{"ENT6"}[0],
+					},
+				},
+			},
+			`{"vlanID":"test-vlan","templateID":"test-template","cpus":1,"memory":1,"disks":[{"size":1,"performanceType":"ENT6"}]}`,
 		},
 	}
 

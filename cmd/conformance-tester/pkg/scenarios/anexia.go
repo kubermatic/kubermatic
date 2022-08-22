@@ -101,7 +101,31 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Anexia: &apimodels.AnexiaNodeSpec{
-							DiskSize:   pointer.Int64(nodeDiskSize),
+							DiskSize:   nodeDiskSize,
+							CPUs:       pointer.Int64(nodeCpu),
+							Memory:     pointer.Int64(nodeMemory),
+							TemplateID: &secrets.Anexia.TemplateID,
+							VlanID:     &secrets.Anexia.VlanID,
+						},
+					},
+					Versions: &apimodels.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: osSpec,
+				},
+			},
+		},
+		{
+			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Anexia: &apimodels.AnexiaNodeSpec{
+							Disks: []*apimodels.AnexiaDiskConfig{
+								{
+									Size: pointer.Int64(nodeDiskSize),
+								},
+							},
 							CPUs:       pointer.Int64(nodeCpu),
 							Memory:     pointer.Int64(nodeMemory),
 							TemplateID: &secrets.Anexia.TemplateID,
@@ -130,7 +154,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 			Anexia: &apiv1.AnexiaNodeSpec{
 				CPUs:       nodeCpu,
 				Memory:     nodeMemory,
-				DiskSize:   nodeDiskSize,
+				DiskSize:   pointer.Int64(nodeDiskSize),
 				TemplateID: secrets.Anexia.TemplateID,
 				VlanID:     secrets.Anexia.VlanID,
 			},
