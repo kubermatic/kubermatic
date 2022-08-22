@@ -1889,6 +1889,19 @@ func (spec *AlibabaNodeSpec) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&res)
 }
 
+// AnexiaDiskConfig defines a single disk for a node at anexia
+// swagger:model AnexiaDiskConfig
+type AnexiaDiskConfig struct {
+	// Disks configures this disk of each node will have.
+	// required: true
+	Size int64 `json:"size"`
+
+	// PerformanceType configures the performance type this disks of each node will have.
+	// Known values are something like "ENT3" or "HPC2".
+	// required: false
+	PerformanceType *string `json:"performanceType,omitempty"`
+}
+
 // AnexiaNodeSpec anexia specific node settings
 // swagger:model AnexiaNodeSpec
 type AnexiaNodeSpec struct {
@@ -1904,36 +1917,44 @@ type AnexiaNodeSpec struct {
 	// Memory states the memory that node will have.
 	// required: true
 	Memory int64 `json:"memory"`
+
 	// DiskSize states the disk size that node will have.
-	// required: true
-	DiskSize int64 `json:"diskSize"`
+	// Deprecated: please use the new Disks attribute instead.
+	// required: false
+	DiskSize *int64 `json:"diskSize"`
+
+	// Disks configures the disks each node will have.
+	// required: false
+	Disks []AnexiaDiskConfig `json:"disks"`
 }
 
 func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
+	errors := make([]string, 0)
 
 	if len(spec.VlanID) == 0 {
-		missing = append(missing, "vlanID")
+		errors = append(errors, "vlanID missing")
 	}
 
 	if spec.CPUs < 1 {
-		missing = append(missing, "cpus")
+		errors = append(errors, "cpus missing")
 	}
 
 	if spec.Memory < 1 {
-		missing = append(missing, "memory")
-	}
-
-	if spec.DiskSize < 1 {
-		missing = append(missing, "diskSize")
+		errors = append(errors, "memory missing")
 	}
 
 	if len(spec.TemplateID) == 0 {
-		missing = append(missing, "templateID")
+		errors = append(errors, "templateID missing")
 	}
 
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
+	if len(spec.Disks) == 0 && spec.DiskSize == nil {
+		errors = append(errors, "disks missing")
+	} else if len(spec.Disks) > 0 && spec.DiskSize != nil {
+		errors = append(errors, "both disks and diskSize configured but only one of those allowed")
+	}
+
+	if len(errors) > 0 {
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(errors, ", "))
 	}
 
 	res := struct {
@@ -1941,13 +1962,21 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 		TemplateID string `json:"templateID"`
 		CPUs       int    `json:"cpus"`
 		Memory     int64  `json:"memory"`
-		DiskSize   int64  `json:"diskSize"`
+		DiskSize   *int64 `json:"diskSize,omitempty"`
+
+		// we can reuse this type here, as it does not have a MarshalJSON() method
+		Disks []AnexiaDiskConfig `json:"disks,omitempty"`
 	}{
 		VlanID:     spec.VlanID,
 		TemplateID: spec.TemplateID,
-		DiskSize:   spec.DiskSize,
 		CPUs:       spec.CPUs,
 		Memory:     spec.Memory,
+	}
+
+	if len(spec.Disks) != 0 {
+		res.Disks = spec.Disks
+	} else {
+		res.DiskSize = spec.DiskSize
 	}
 
 	return json.Marshal(&res)

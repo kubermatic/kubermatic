@@ -278,7 +278,23 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				TemplateID: config.TemplateID.Value,
 				CPUs:       config.CPUs,
 				Memory:     int64(config.Memory),
-				DiskSize:   int64(config.DiskSize),
+				DiskSize:   &[]int64{int64(config.DiskSize)}[0],
+			}
+
+			if config.DiskSize > 0 {
+				cloudSpec.Anexia.DiskSize = &[]int64{int64(config.DiskSize)}[0]
+			}
+
+			if diskCount := len(config.Disks); diskCount > 0 {
+				cloudSpec.Anexia.Disks = make([]apiv1.AnexiaDiskConfig, diskCount)
+
+				for diskIndex, diskConfig := range config.Disks {
+					cloudSpec.Anexia.Disks[diskIndex].Size = int64(diskConfig.Size)
+
+					if diskConfig.PerformanceType.Value != "" {
+						cloudSpec.Anexia.Disks[diskIndex].PerformanceType = &[]string{diskConfig.PerformanceType.Value}[0]
+					}
+				}
 			}
 		}
 	case providerconfig.CloudProviderNutanix:

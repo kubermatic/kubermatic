@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -24,8 +25,11 @@ type AnexiaNodeSpec struct {
 	CPUs *int64 `json:"cpus"`
 
 	// DiskSize states the disk size that node will have.
-	// Required: true
-	DiskSize *int64 `json:"diskSize"`
+	// Deprecated: please use the new Disks attribute instead.
+	DiskSize int64 `json:"diskSize,omitempty"`
+
+	// Disks configures the disks each node will have.
+	Disks []*AnexiaDiskConfig `json:"disks"`
 
 	// Memory states the memory that node will have.
 	// Required: true
@@ -48,7 +52,7 @@ func (m *AnexiaNodeSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateDiskSize(formats); err != nil {
+	if err := m.validateDisks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,10 +83,25 @@ func (m *AnexiaNodeSpec) validateCPUs(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AnexiaNodeSpec) validateDiskSize(formats strfmt.Registry) error {
+func (m *AnexiaNodeSpec) validateDisks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Disks) { // not required
+		return nil
+	}
 
-	if err := validate.Required("diskSize", "body", m.DiskSize); err != nil {
-		return err
+	for i := 0; i < len(m.Disks); i++ {
+		if swag.IsZero(m.Disks[i]) { // not required
+			continue
+		}
+
+		if m.Disks[i] != nil {
+			if err := m.Disks[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("disks" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -115,8 +134,35 @@ func (m *AnexiaNodeSpec) validateVlanID(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this anexia node spec based on context it is used
+// ContextValidate validate this anexia node spec based on the context it is used
 func (m *AnexiaNodeSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDisks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AnexiaNodeSpec) contextValidateDisks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Disks); i++ {
+
+		if m.Disks[i] != nil {
+			if err := m.Disks[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("disks" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
