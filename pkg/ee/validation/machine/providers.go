@@ -37,7 +37,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	packetypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	equinixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
@@ -124,7 +124,9 @@ func GetMachineResourceUsage(ctx context.Context,
 		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderPacket:
+	case types.CloudProviderEquinixMetal, types.CloudProviderPacket:
+		// Name Packet has been replaced at some point by Equinix Metal.
+		// We are in the process of migration to the new name, meaning that both names appear in our sourcecode.
 		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
 	default:
 		return nil, fmt.Errorf("Provider %s not supported", config.CloudProvider)
@@ -738,7 +740,7 @@ func getPacketResourceRequirements(ctx context.Context,
 	config *types.Config,
 ) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
-	rawConfig, err := packetypes.GetConfig(*config)
+	rawConfig, err := equinixtypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get packet raw config, error: %w", err)
 	}
