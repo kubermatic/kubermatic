@@ -40,8 +40,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return machineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
-			// TODO - change to Fail when the resource quotas are fully implemented and tested
-			failurePolicy := admissionregistrationv1.Ignore
+			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
 
