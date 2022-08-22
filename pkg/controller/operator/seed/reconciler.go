@@ -821,7 +821,7 @@ func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client 
 func deleteAddon(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	addon := &kubermaticv1.Addon{}
 	key := types.NamespacedName{
-		Name:      "aws-node-termination-addon",
+		Name:      "aws-node-termination-handler",
 		Namespace: cluster.Status.NamespaceName,
 	}
 	if err := client.Get(ctx, key, addon); err != nil {
