@@ -308,6 +308,13 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	// This is a migration that is required to ensure that with the release of KKP v2.21
+	// we don't enable OSM for existing clusters.
+	// TODO: Remove this with KKP 2.22 release.
+	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -361,13 +368,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
 
 	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
-		return err
-	}
-
-	// This is a migration that is required to ensure that with the release of KKP v2.21
-	// we don't enable OSM for existing clusters.
-	// TODO: Remove this with KKP 2.22 release.
-	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
 		return err
 	}
 
@@ -698,7 +698,17 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 }
 
 func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling Clusters")
+	log.Debug("performing migration for .Spec.EnableOperatingSystemManager field in Clusters")
+
+	// Master operator removes `cluster-webhook` service and at the time of execution of this piece of code, these webhook are effectively dead.
+	// Any request to create, update, or delete the clusters will be rejected by the admission webhooks. Therefore, we need to remove the validating and mutating webhooks for clusters.
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
+	}
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusterList); err != nil {
