@@ -206,6 +206,10 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		return nil, err
 	}
 
+	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureStandardLBSKU {
+		config.PublicIPSKU = pointer.String("standard")
+	}
+
 	return EncodeAsRawExtension(config)
 }
 

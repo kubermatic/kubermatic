@@ -51,7 +51,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.35.1
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.53.0
+	github.com/kubermatic/machine-controller v1.53.1-0.20220815141641-d24cab926eb2
 	github.com/minio/minio-go/v7 v7.0.31
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
