@@ -289,6 +289,17 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 	if err := util.DeleteOldApplicationInstallationCrd(ctx, client); err != nil {
 		return err
 	}
+
+	// in 2.19 applicationDefinition.spec.versions.template.source.git.ref was a string. In 2.21 it becomes an object.
+	// Moreover in 2.19 no validating webhook where installed to validate application. So potentially invalid applicationDefinition
+	// may exist on the cluster.
+	// To simplify the migration we remove old applicationDefinitions from the cluster. As feature was not released yet,
+	// and controller handling application have been developed in 2.21, it's not a problem.
+	// TODO REMOVE AFTER release v2.21.
+	if err := util.RemoveOldApplicationDefinition(ctx, client); err != nil {
+		return err
+	}
+
 	// install KKP CRDs
 	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
 		return err
