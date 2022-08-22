@@ -111,7 +111,7 @@ const (
 	NodePortProxyEnvoyContainerName = "envoy"
 
 	// AWSNodeTerminationHandlerMigrationAnnotation is set on Cluster objects that have completed
-	// the KKP 2.20->2.21 migration for the aws-node-termination-handler addon. This annoation should
+	// the KKP 2.20->2.21 migration for the aws-node-termination-handler addon. This annotation should
 	// not be used by external controllers and will be removed once the need for the migration has gone.
 	// TODO: Remove this in KKP 2.22.
 	AWSNodeTerminationHandlerMigrationAnnotation = "kubermatic.k8c.io/migrated-aws-node-termination-handler-addon"

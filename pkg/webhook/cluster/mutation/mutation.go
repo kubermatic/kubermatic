@@ -160,7 +160,6 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 }
 
 // mutateCreate is an addition to regular defaulting for new clusters.
-// at the time of writing it handles features that should only be enabled for new clusters.
 func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
 	if newCluster.Spec.Features == nil {
 		newCluster.Spec.Features = map[string]bool{}
