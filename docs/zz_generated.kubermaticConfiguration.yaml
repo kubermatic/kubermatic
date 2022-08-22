@@ -524,7 +524,7 @@ spec:
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.22.11
+        to: 1.22.12
       - from: 1.22.*
         to: 1.22.*
       - automatic: true

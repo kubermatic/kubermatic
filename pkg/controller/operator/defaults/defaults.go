@@ -228,7 +228,7 @@ var (
 			{
 				// Auto-upgrade unsupported clusters.
 				From:      "1.21.*",
-				To:        "1.22.11",
+				To:        "1.22.12",
 				Automatic: pointer.BoolPtr(true),
 			},
 
