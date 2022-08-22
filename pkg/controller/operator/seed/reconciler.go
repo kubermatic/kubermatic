@@ -775,12 +775,10 @@ func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client 
 		return fmt.Errorf("failed to list clusters: %w", err)
 	}
 
-	annotation := "kubermatic.k8c.io/migrated-aws-node-termination-handler-addon"
-
 	var errors []error
 	for _, cluster := range clusterList.Items {
 		// Have we already migrated this cluster?
-		if _, exists := cluster.Annotations[annotation]; exists {
+		if _, exists := cluster.Annotations[resources.AWSNodeTerminationHandlerMigrationAnnotation]; exists {
 			continue
 		}
 
@@ -797,7 +795,7 @@ func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client 
 		// Here we go!
 		err := deleteAddon(ctx, client, &cluster)
 
-		// Something bad happened when trying to get the addon.
+		// Something bad happened when trying to delete the addon.
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -809,7 +807,7 @@ func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client 
 		if cluster.Annotations == nil {
 			cluster.Annotations = map[string]string{}
 		}
-		cluster.Annotations[annotation] = "yes"
+		cluster.Annotations[resources.AWSNodeTerminationHandlerMigrationAnnotation] = "yes"
 
 		patchOpts := ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
 		if err := client.Patch(ctx, &cluster, patchOpts); err != nil {
