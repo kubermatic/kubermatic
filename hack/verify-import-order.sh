@@ -19,16 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-ARCH=$(uname -m)
-case $ARCH in
-armv6*) ARCH="armv6" ;;
-aarch64) ARCH="arm64" ;;
-x86) ARCH="386" ;;
-x86_64) ARCH="amd64" ;;
-i686) ARCH="386" ;;
-i386) ARCH="386" ;;
-esac
-
 if ! [ -x "$(command -v gimps)" ]; then
   echodate "You need to have gimps installed before running this script. Please install it: https://github.com/xrstf/gimps"
   exit 1
