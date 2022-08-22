@@ -192,6 +192,38 @@ func MachineControllerWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedN
 	}
 }
 
+func UserClusterWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return resources.NetworkPolicyMachineControllerWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										resources.AppLabelKey: "usercluster-webhook",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
+
 func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return resources.NetworkPolicyMetricsServerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
