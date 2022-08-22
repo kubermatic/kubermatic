@@ -202,14 +202,12 @@ func GetAzureProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 
 func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config, err := GetAzureProviderConfig(c, nodeSpec, dc)
-	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureStandardLBSKU {
-		config.PublicIPSKU = pointer.String("standard")
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
+	}
+
+	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureStandardLBSKU {
+		config.PublicIPSKU = pointer.String("standard")
 	}
 
 	return EncodeAsRawExtension(config)

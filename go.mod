@@ -51,7 +51,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.35.1
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.53.0
+	github.com/kubermatic/machine-controller v1.53.1-0.20220815141641-d24cab926eb2
 	github.com/minio/minio-go/v7 v7.0.31
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
@@ -115,8 +115,6 @@ require (
 
 replace (
 	github.com/envoyproxy/go-control-plane => github.com/envoyproxy/go-control-plane v0.10.1
-
-	github.com/kubermatic/machine-controller => github.com/kubermatic/machine-controller v1.53.1-0.20220804112942-7dbd142f06e7
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	// the opentelemetry overrides are for OPA constraints
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0
