@@ -210,7 +210,7 @@ func UserClusterWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 							{
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
-										resources.AppLabelKey: "usercluster-webhook",
+										resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
 									},
 								},
 							},
