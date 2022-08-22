@@ -42,6 +42,7 @@ import (
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -369,6 +370,12 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 
 	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
 		return err
+	}
+
+	// During the KKP 2.20->2.21 upgrade we must delete the aws-node-termination-handler addon exactly once.
+	// TODO: Remove this with KKP 2.22 release.
+	if err := r.migrateAWSNodeTerminationAddon(ctx, client, log); err != nil {
+		return fmt.Errorf("failed to migrate AWS node-termination handler addon: %w", err)
 	}
 
 	return nil
@@ -732,4 +739,101 @@ func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client c
 	}
 
 	return kerrors.NewAggregate(errors)
+}
+
+func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("Migrating addons...")
+
+	// Before we can migrate we need to ensure that the seed-ctrl-mgr is actually up-to-date,
+	// otherwise it could happen that an old seed-ctrl-mgr is re-installing an old aws-node
+	// addon.
+	seedCtrlMgrDeployment := &appsv1.Deployment{}
+	key := types.NamespacedName{
+		Name:      common.SeedControllerManagerDeploymentName,
+		Namespace: r.namespace,
+	}
+	if err := client.Get(ctx, key, seedCtrlMgrDeployment); err != nil {
+		return fmt.Errorf("failed to retrieve seed-controller-manager Deployment: %w", err)
+	}
+
+	ready, err := kubernetes.IsDeploymentRolloutComplete(seedCtrlMgrDeployment, -1)
+	if err != nil {
+		return err
+	}
+
+	if !ready {
+		log.Debug("seed-controller-manager Deployment is not yet ready")
+		return nil
+	}
+
+	// Now that we're sure the current seed-ctrl-mgr is running, we can tell it to
+	// delete the affected addons and rely on the addoninstaller controller to bring
+	// it back later.
+
+	clusterList := &kubermaticv1.ClusterList{}
+	if err := client.List(ctx, clusterList); err != nil {
+		return fmt.Errorf("failed to list clusters: %w", err)
+	}
+
+	annotation := "kubermatic.k8c.io/migrated-aws-node-termination-handler-addon"
+
+	var errors []error
+	for _, cluster := range clusterList.Items {
+		// Have we already migrated this cluster?
+		if _, exists := cluster.Annotations[annotation]; exists {
+			continue
+		}
+
+		// Not yet reconciled.
+		if cluster.Status.NamespaceName == "" {
+			continue
+		}
+
+		// Not an AWS cluster, so there's nothing to do.
+		if cluster.Spec.Cloud.ProviderName != string(kubermaticv1.AWSCloudProvider) {
+			continue
+		}
+
+		// Here we go!
+		err := deleteAddon(ctx, client, &cluster)
+
+		// Something bad happened when trying to get the addon.
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		// Addon was deleted, let's mark the cluster accordingly.
+		oldCluster := cluster.DeepCopy()
+
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[annotation] = "yes"
+
+		patchOpts := ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
+		if err := client.Patch(ctx, &cluster, patchOpts); err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	return kerrors.NewAggregate(errors)
+}
+
+func deleteAddon(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	addon := &kubermaticv1.Addon{}
+	key := types.NamespacedName{
+		Name:      "aws-node-termination-addon",
+		Namespace: cluster.Status.NamespaceName,
+	}
+	if err := client.Get(ctx, key, addon); err != nil {
+		return ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	// Addon already in deletion.
+	if addon.DeletionTimestamp != nil {
+		return nil
+	}
+
+	return client.Delete(ctx, addon)
 }
