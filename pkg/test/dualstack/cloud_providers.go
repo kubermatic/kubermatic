@@ -275,12 +275,14 @@ var _ clusterSpec = openstack{}
 // image specified.
 func (a openstack) getImage(osName string) string {
 	switch osName {
-	case "ubuntu":
+	case Ubuntu:
 		return "Ubuntu Focal 20.04 (2021-07-01)"
-	case "centos":
+	case CentOS:
 		return "CentOS 8 (2021-07-05)"
-	case "flatcar":
+	case Flatcar:
 		return "Flatcar Stable (2022-08-05)"
+	case RHEL:
+		return "kubermatic-e2e-rhel"
 	default:
 		return fmt.Sprintf("unknown os: %s", osName)
 	}

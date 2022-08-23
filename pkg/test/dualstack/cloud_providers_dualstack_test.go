@@ -196,6 +196,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				Ubuntu,
 				Flatcar,
+				RHEL,
 			},
 			cni:      Cilium,
 			ipFamily: util.DualStack,
@@ -206,6 +207,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				CentOS,
 				Ubuntu,
 				Flatcar,
+				RHEL,
 			},
 			cni:      Canal,
 			ipFamily: util.DualStack,
