@@ -56,11 +56,14 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:" + DigitalOceanCCMTag,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/digitalocean/digitalocean-cloud-controller-manager:" + DigitalOceanCCMTag,
 					Command: []string{"/bin/digitalocean-cloud-controller-manager"},
+					Args:    getDigitalOceanFlags(data),
 
 					Env: []corev1.EnvVar{
 						{
@@ -75,6 +78,7 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 							},
 						},
 					},
+					VolumeMounts: getVolumeMounts(),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
