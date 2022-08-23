@@ -269,13 +269,19 @@ func (p *ClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, 
 	if options == nil {
 		options = &provider.ClusterGetOptions{}
 	}
-	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
-	if err != nil {
-		return nil, err
+
+	client := p.client
+
+	if !userInfo.IsAdmin {
+		var err error
+		client, err = createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := seedImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 	if options.CheckInitStatus {

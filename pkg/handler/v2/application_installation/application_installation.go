@@ -158,21 +158,36 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 
 func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-	userInfo, err := userInfoGetter(ctx, projectID)
+
+	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !userInfo.IsAdmin {
+		userInfo, err = userInfoGetter(ctx, projectID)
+		if err != nil {
+			return nil, err
+		}
+		cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return client, nil
 	}
 
 	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-
-	client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
+	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-
 	return client, nil
 }
 
