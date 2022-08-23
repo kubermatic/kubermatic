@@ -924,6 +924,7 @@ const (
 	NetworkPolicyDNSAllow                      = "dns-allow"
 	NetworkPolicyOpenVPNServerAllow            = "openvpn-server-allow"
 	NetworkPolicyMachineControllerWebhookAllow = "machine-controller-webhook-allow"
+	NetworkPolicyUserClusterWebhookAllow       = "usercluster-webhook-allow"
 	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
