@@ -27205,6 +27205,11 @@
         "nodeConfig": {
           "$ref": "#/definitions/GKENodeConfig"
         },
+        "releaseChannel": {
+          "description": "ReleaseChannel: channel specifies which release channel the cluster is\nsubscribed to.\n\nPossible values:\n\"UNSPECIFIED\" - No channel specified.\n\"RAPID\" - RAPID channel is offered on an early access basis for\ncustomers who want to test new releases. WARNING: Versions available\nin the RAPID Channel may be subject to unresolved issues with no\nknown workaround and are not subject to any SLAs.\n\"REGULAR\" - Clusters subscribed to REGULAR receive versions that\nare considered GA quality. REGULAR is intended for production users\nwho want to take advantage of new features.\n\"STABLE\" - Clusters subscribed to STABLE receive versions that are\nknown to be stable and reliable in production.",
+          "type": "string",
+          "x-go-name": "ReleaseChannel"
+        },
         "subnetwork": {
           "description": "Subnetwork: The name of the Google Compute Engine subnetwork\n(https://cloud.google.com/compute/docs/subnetworks) to which the\ncluster is connected.",
           "type": "string",
