@@ -30,8 +30,8 @@ type OperatingSystemSpec struct {
 	// rhel
 	Rhel *RHELSpec `json:"rhel,omitempty"`
 
-	// rocky linux
-	RockyLinux *RockyLinuxSpec `json:"rockyLinux,omitempty"`
+	// rockylinux
+	Rockylinux *RockyLinuxSpec `json:"rockylinux,omitempty"`
 
 	// sles
 	Sles *SLESSpec `json:"sles,omitempty"`
@@ -60,7 +60,7 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateRockyLinux(formats); err != nil {
+	if err := m.validateRockylinux(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -154,17 +154,17 @@ func (m *OperatingSystemSpec) validateRhel(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *OperatingSystemSpec) validateRockyLinux(formats strfmt.Registry) error {
-	if swag.IsZero(m.RockyLinux) { // not required
+func (m *OperatingSystemSpec) validateRockylinux(formats strfmt.Registry) error {
+	if swag.IsZero(m.Rockylinux) { // not required
 		return nil
 	}
 
-	if m.RockyLinux != nil {
-		if err := m.RockyLinux.Validate(formats); err != nil {
+	if m.Rockylinux != nil {
+		if err := m.Rockylinux.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("rockyLinux")
+				return ve.ValidateName("rockylinux")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("rockyLinux")
+				return ce.ValidateName("rockylinux")
 			}
 			return err
 		}
@@ -231,7 +231,7 @@ func (m *OperatingSystemSpec) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateRockyLinux(ctx, formats); err != nil {
+	if err := m.contextValidateRockylinux(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -313,14 +313,14 @@ func (m *OperatingSystemSpec) contextValidateRhel(ctx context.Context, formats s
 	return nil
 }
 
-func (m *OperatingSystemSpec) contextValidateRockyLinux(ctx context.Context, formats strfmt.Registry) error {
+func (m *OperatingSystemSpec) contextValidateRockylinux(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.RockyLinux != nil {
-		if err := m.RockyLinux.ContextValidate(ctx, formats); err != nil {
+	if m.Rockylinux != nil {
+		if err := m.Rockylinux.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("rockyLinux")
+				return ve.ValidateName("rockylinux")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("rockyLinux")
+				return ce.ValidateName("rockylinux")
 			}
 			return err
 		}
