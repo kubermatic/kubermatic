@@ -278,7 +278,7 @@ func (a openstack) getImage(osName string) string {
 	case Ubuntu:
 		return "Ubuntu Focal 20.04 (2021-07-01)"
 	case CentOS:
-		return "CentOS 8 (2021-07-05)"
+		return "CentOS 7 (2021-07-05)"
 	case Flatcar:
 		return "Flatcar Stable (2022-08-05)"
 	case RHEL:
