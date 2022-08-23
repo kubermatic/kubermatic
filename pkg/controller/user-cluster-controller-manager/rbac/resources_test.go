@@ -32,13 +32,11 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 		resourceName      string
 		expectError       bool
 		expectedResources []string
-		expectedVerbs     []string
 	}{
 		{
 			name:              "scenario 1: check resources for owners",
 			resourceName:      genResourceName(rbac.OwnerGroupNamePrefix),
 			expectedResources: []string{"*"},
-			expectedVerbs:     []string{"*"},
 			expectError:       false,
 		},
 		{
@@ -82,7 +80,7 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 						break
 					}
 				}
-				if found == false {
+				if !found {
 					t.Errorf("Expected resource %q was not found in rulegroup %+v\n", resource, cr.Rules)
 				}
 			}
