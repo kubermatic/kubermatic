@@ -164,9 +164,11 @@ func findDistributionLabel(osImage string) string {
 	matchedLabel := ""
 	matchedValue := ""
 	for k, v := range api.OSLabelMatchValues {
-		if strings.Contains(osImage, v) && len(v) > len(matchedValue) {
-			matchedLabel = k
-			matchedValue = v
+		for _, substring := range v {
+			if strings.Contains(osImage, substring) && len(substring) > len(matchedValue) {
+				matchedLabel = k
+				matchedValue = substring
+			}
 		}
 	}
 
