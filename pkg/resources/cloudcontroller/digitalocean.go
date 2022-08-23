@@ -16,7 +16,7 @@ import (
 
 const (
 	DigitalOceanCCMDeploymentName = "digitalocean-cloud-controller-manager"
-	DigitalOceanVersion           = "0.1.39"
+	DigitalOceanCCMTag            = "v0.1.39"
 )
 
 var (
@@ -59,10 +59,22 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:v" + DigitalOceanVersion,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:v" + DigitalOceanCCMTag,
 					Command: []string{"/bin/digitalocean-cloud-controller-manager"},
-					Args:    getDigitalOceanFlags(data),
-					// Env: data.toke
+
+					Env: []corev1.EnvVar{
+						{
+							Name: "DO_ACCESS_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.ClusterCloudCredentialsSecretName,
+									},
+									Key: resources.DigitaloceanToken,
+								},
+							},
+						},
+					},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
