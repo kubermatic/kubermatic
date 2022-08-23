@@ -23,6 +23,7 @@ import (
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -31,16 +32,23 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(listApplicationInstallationsReq)
 
-		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		installList := &appskubermaticv1.ApplicationInstallationList{}
@@ -57,13 +65,21 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter) endpoi
 	}
 }
 
-func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(createApplicationInstallationReq)
 
-		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// check if namespace for CR already exists and create it if not
@@ -83,13 +99,21 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	}
 }
 
-func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(deleteApplicationInstallationReq)
 
-		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		delObj := &appskubermaticv1.ApplicationInstallation{
@@ -111,13 +135,21 @@ func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 	}
 }
 
-func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getApplicationInstallationReq)
 
-		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		applicationInstallation := &appskubermaticv1.ApplicationInstallation{}
@@ -129,13 +161,21 @@ func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint
 	}
 }
 
-func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(updateApplicationInstallationReq)
 
-		client, err := userClusterClientFromContext(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// first fetch the currentAppInstall to make sure it exists
@@ -154,41 +194,6 @@ func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter) endpo
 
 		return convertInternalToAPIApplicationInstallation(currentAppInstall), nil
 	}
-}
-
-func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	if !userInfo.IsAdmin {
-		userInfo, err = userInfoGetter(ctx, projectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-	}
-
-	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	if !userInfo.IsAdmin {
-		client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		return client, nil
-	}
-
-	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	return client, nil
 }
 
 func genericNamespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
