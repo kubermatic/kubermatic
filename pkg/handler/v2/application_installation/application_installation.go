@@ -169,10 +169,14 @@ func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.U
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+	}
+
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !userInfo.IsAdmin {
 		client, err := clusterProvider.GetClientForUserCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -180,10 +184,6 @@ func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.U
 		return client, nil
 	}
 
-	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
 	client, err := clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
