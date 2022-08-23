@@ -167,7 +167,7 @@ func userClusterClientFromContext(ctx context.Context, userInfoGetter provider.U
 	if !userInfo.IsAdmin {
 		userInfo, err = userInfoGetter(ctx, projectID)
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
 		if err != nil {
