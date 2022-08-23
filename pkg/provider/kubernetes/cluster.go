@@ -269,6 +269,7 @@ func (p *ClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, 
 	if options == nil {
 		options = &provider.ClusterGetOptions{}
 	}
+
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
