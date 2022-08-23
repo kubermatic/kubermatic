@@ -204,9 +204,6 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 		return nil, err
 	}
 	releaseChannel := ""
-	if cluster.ReleaseChannel != nil {
-		releaseChannel = cluster.ReleaseChannel.Channel
-	}
 
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
@@ -214,21 +211,36 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 		return nil, DecodeError(err)
 	}
 	upgradesMap := map[string]bool{}
-	for _, channel := range resp.Channels {
-		// select versions from the current channel
-		if releaseChannel == channel.Channel {
-			for _, v := range channel.ValidVersions {
-				validVersion, err := semverlib.NewVersion(v)
-				if err != nil {
-					return nil, err
-				}
-				// select the correct version from the channel
-				if isValidVersion(currentClusterVer, validVersion) {
-					upgradesMap[v] = v == channel.DefaultVersion
+
+	if cluster.ReleaseChannel != nil {
+		releaseChannel = cluster.ReleaseChannel.Channel
+		for _, channel := range resp.Channels {
+			// select versions from the current channel
+			if releaseChannel == channel.Channel {
+				for _, v := range channel.ValidVersions {
+					validVersion, err := semverlib.NewVersion(v)
+					if err != nil {
+						return nil, err
+					}
+					// select the correct version from the channel
+					if isValidVersion(currentClusterVer, validVersion) {
+						upgradesMap[v] = v == channel.DefaultVersion
+					}
 				}
 			}
 		}
+	} else {
+		for _, v := range resp.ValidMasterVersions {
+			validVersion, err := semverlib.NewVersion(v)
+			if err != nil {
+				return nil, err
+			}
+			if isValidVersion(currentClusterVer, validVersion) {
+				upgradesMap[v] = v == resp.DefaultClusterVersion
+			}
+		}
 	}
+
 	for version, isDefault := range upgradesMap {
 		v, err := ksemver.NewSemver(version)
 		if err != nil {
