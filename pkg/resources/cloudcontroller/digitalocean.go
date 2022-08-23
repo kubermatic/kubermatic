@@ -59,7 +59,7 @@ func digitalOceanDeploymentCreator(data *resources.TemplateData) reconciling.Nam
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:v" + DigitalOceanCCMTag,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/oss/kubernetes/digitalocean-cloud-controller-manager:" + DigitalOceanCCMTag,
 					Command: []string{"/bin/digitalocean-cloud-controller-manager"},
 
 					Env: []corev1.EnvVar{
