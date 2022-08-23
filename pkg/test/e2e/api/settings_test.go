@@ -49,7 +49,7 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 					Enabled:  false,
 					Enforced: false,
 				},
-				DefaultNodeCount:            10,
+				DefaultNodeCount:            2,
 				DisplayDemoInfo:             false,
 				DisplayAPIDocs:              false,
 				DisplayTermsOfService:       false,

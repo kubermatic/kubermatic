@@ -76,7 +76,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings(ctx context.Context) (*ku
 				Enabled:  false,
 				Enforced: false,
 			},
-			DefaultNodeCount:            10,
+			DefaultNodeCount:            2,
 			DisplayDemoInfo:             false,
 			DisplayAPIDocs:              false,
 			DisplayTermsOfService:       false,
