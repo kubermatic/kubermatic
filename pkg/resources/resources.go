@@ -110,6 +110,12 @@ const (
 	// NodePortProxyEnvoyContainerName is the name of the envoy container in the nodeport-proxy deployment.
 	NodePortProxyEnvoyContainerName = "envoy"
 
+	// AWSNodeTerminationHandlerMigrationAnnotation is set on Cluster objects that have completed
+	// the KKP 2.20->2.21 migration for the aws-node-termination-handler addon. This annotation should
+	// not be used by external controllers and will be removed once the need for the migration has gone.
+	// TODO: Remove this in KKP 2.22.
+	AWSNodeTerminationHandlerMigrationAnnotation = "kubermatic.k8c.io/migrated-aws-node-termination-handler-addon"
+
 	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything

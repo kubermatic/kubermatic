@@ -279,6 +279,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			},
 		},
 		{
@@ -336,6 +337,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -381,7 +383,10 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: defaultPatches,
+			wantPatches: append(
+				defaultPatches,
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
+			),
 		},
 		{
 			name: "Default features",
@@ -424,6 +429,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -563,6 +569,7 @@ func TestHandle(t *testing.T) {
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -817,6 +824,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -862,6 +870,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -904,6 +913,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -943,6 +953,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -990,6 +1001,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
