@@ -380,16 +380,20 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 			for _, osName := range test.osNames {
 				// This is needed because node spec for OpenStack requires image.
+				operatingSystem := operatingSystems[osName]
 				if test.cloudName == "openstack" {
 					img := openstack{}.getImage(osName)
 					nodeSpec.Openstack.Image = &img
+					if osName == RHEL {
+						operatingSystem = openstack{}.addRHELSubscriptionInfo(operatingSystem)
+					}
 				}
 
 				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
 					WithClusterID(clusterID).
-					WithOS(operatingSystems[osName]).
+					WithOS(operatingSystem).
 					WithNodeSpec(nodeSpec),
 				)
 				if err != nil {
