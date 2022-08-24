@@ -794,7 +794,7 @@ func getPacketResourceRequirements(ctx context.Context,
 	}
 
 	if plan.Specs.Memory.Total != "" {
-		memReq, err = resource.ParseQuantity(plan.Specs.Memory.Total)
+		memReq, err = resource.ParseQuantity(strings.TrimSuffix(plan.Specs.Memory.Total, "B"))
 		if err != nil {
 			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 		}
