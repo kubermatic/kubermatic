@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -138,7 +140,7 @@ func generateApplicationDef(name string, deleted bool) *appskubermaticv1.Applica
 			Description: "sample app",
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
-					Version: "version 1",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{

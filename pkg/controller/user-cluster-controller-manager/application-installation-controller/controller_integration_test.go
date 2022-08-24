@@ -20,6 +20,7 @@ package applicationinstallationcontroller
 import (
 	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -171,7 +172,7 @@ var _ = Describe("application Installation controller", func() {
 			By("removing applicationVersion from applicationDefinition")
 			def.Spec.Versions = []appskubermaticv1.ApplicationVersion{
 				{
-					Version: "3.0.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("3.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{

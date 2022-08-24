@@ -36,12 +36,12 @@ import (
 )
 
 const (
-	defaultAppName    = "app"
-	defaultAppVersion = "1.2.3"
+	defaultAppName = "app"
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme        = runtime.NewScheme()
+	defaultAppVersion = appskubermaticv1.Version{Version: *semverlib.MustParse("1.2.3")}
 )
 
 func init() {
@@ -174,7 +174,7 @@ func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+func getApplicationInstallation(name string, appName string, appVersion appskubermaticv1.Version) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -187,7 +187,7 @@ func getApplicationInstallation(name string, appName string, appVersion string) 
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appVersion,
 			},
 		},
 	}

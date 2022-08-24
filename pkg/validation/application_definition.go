@@ -63,10 +63,10 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 
 		allErrs = append(allErrs, validateSource(v.Template.Source, parentFieldPath.Child(curVField+".template.source"))...)
 
-		if _, ok := lookup[v.Version]; ok {
+		if _, ok := lookup[v.Version.String()]; ok {
 			allErrs = append(allErrs, field.Duplicate(parentFieldPath.Child(curVField+".Version"), v.Version))
 		} else {
-			lookup[v.Version] = struct{}{}
+			lookup[v.Version.String()] = struct{}{}
 		}
 	}
 

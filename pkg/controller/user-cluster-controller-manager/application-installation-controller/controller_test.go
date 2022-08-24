@@ -107,7 +107,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
-					Version: "1.0.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
@@ -120,7 +120,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 					},
 				},
 				{
-					Version: "2.0.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("2.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{

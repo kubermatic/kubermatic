@@ -2195,7 +2195,7 @@ func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
-					Version: "v1.0.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 
 						Source: appskubermaticv1.ApplicationSource{
@@ -2208,7 +2208,7 @@ func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 					},
 				},
 				{
-					Version: "v1.1.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1.1.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{
@@ -2235,7 +2235,7 @@ func GenApiApplicationDefinition(name string) apiv2.ApplicationDefinition {
 			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
-					Version: "v1.0.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 
 						Source: appskubermaticv1.ApplicationSource{
@@ -2248,7 +2248,7 @@ func GenApiApplicationDefinition(name string) apiv2.ApplicationDefinition {
 					},
 				},
 				{
-					Version: "v1.1.0",
+					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1.0.0")},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{

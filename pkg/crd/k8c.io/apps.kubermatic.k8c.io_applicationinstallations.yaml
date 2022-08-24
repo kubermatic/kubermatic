@@ -353,7 +353,9 @@ spec:
                     - source
                     type: object
                   version:
-                    description: Version of the application (eg v1.2.3)
+                    description: Version of the Application. Must be a valid SemVer
+                      version
+                    pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
                     type: string
                 required:
                 - template

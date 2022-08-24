@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	semverlib "github.com/Masterminds/semver/v3"
 	"helm.sh/helm/v3/pkg/release"
 
 	corev1 "k8s.io/api/core/v1"
@@ -111,15 +110,6 @@ type ApplicationRef struct {
 	// Version of the Application. Must be a valid SemVer version
 	Version Version `json:"version"`
 	// (pattern taken from masterminds/semver we use https://github.com/Masterminds/semver/blob/master/version.go#L42)
-}
-
-// +kubebuilder:validation:Type=string
-
-// Version wraps semverlib.Version. It is needed because kubebuilder does not accept structs with non-tagged fields, even if they have custom marshallers
-// With this the CRD resource will have Version as string but operator code can work directly with the semverlib.Version struct
-// (taken from https://github.com/kubernetes-sigs/controller-tools/blob/master/pkg/crd/testdata/cronjob_types.go#L283)
-type Version struct {
-	semverlib.Version
 }
 
 // ApplicationInstallationStatus denotes status information about an ApplicationInstallation.
