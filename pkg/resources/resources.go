@@ -724,6 +724,7 @@ const (
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	GKEUnspecifiedReleaseChannel      = "UNSPECIFIED"
 	GKERapidReleaseChannel            = "RAPID"
 	GKERegularReleaseChannel          = "REGULAR"
 	GKEStableReleaseChannel           = "STABLE"

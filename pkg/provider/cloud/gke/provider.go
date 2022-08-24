@@ -212,7 +212,7 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	}
 	upgradesMap := map[string]bool{}
 
-	if cluster.ReleaseChannel != nil {
+	if cluster.ReleaseChannel != nil && len(cluster.ReleaseChannel.Channel) > 0 && cluster.ReleaseChannel.Channel != resources.GKEUnspecifiedReleaseChannel {
 		releaseChannel = cluster.ReleaseChannel.Channel
 		for _, channel := range resp.Channels {
 			// select versions from the current channel
