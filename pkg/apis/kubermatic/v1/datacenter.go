@@ -518,7 +518,6 @@ type DatacenterSpecOpenstack struct {
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
@@ -526,7 +525,6 @@ type DatacenterSpecOpenstack struct {
 	// default with the in-tree cloud provider.
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
@@ -617,7 +615,7 @@ type DatacenterSpecBringYourOwn struct {
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://support.packet.com/kb/articles/data-centers
+	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
 	Facilities []string `json:"facilities,omitempty"`
 	// Metros are facilities that are grouped together geographically and share capacity
 	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/

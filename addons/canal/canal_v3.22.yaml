@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Source: https://projectcalico.docs.tigera.io/v3.22/manifests/canal.yaml
+# Source: https://projectcalico.docs.tigera.io/archive/v3.22/manifests/canal.yaml
 # Modifications:
 #   - templated cni_network_config ipam for dual-stack
 #   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR + CALICO_IPV6POOL_CIDR
@@ -3946,7 +3946,7 @@ rules:
     resources:
       - endpointslices
     verbs:
-      - watch 
+      - watch
       - list
   - apiGroups: [""]
     resources:
@@ -4052,7 +4052,7 @@ rules:
 
 ---
 # Flannel ClusterRole
-# Pulled from https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel-rbac.yml
+# Pulled from https://github.com/flannel-io/flannel/blob/master/Documentation/kube-flannel.yml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
