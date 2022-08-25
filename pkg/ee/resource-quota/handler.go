@@ -74,6 +74,18 @@ type createResourceQuota struct {
 	}
 }
 
+//nolint
+// swagger:parameters patchResourceQuota
+type patchResourceQuota struct {
+	// in: path
+	// required: true
+	Name string `json:"quota_name"`
+
+	// in: body
+	// required: true
+	Body apiv2.Quota
+}
+
 // swagger:parameters putResourceQuota
 type putResourceQuota struct {
 	// in: path

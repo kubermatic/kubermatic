@@ -7121,7 +7121,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin putResourceQuota
+// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -7129,7 +7129,7 @@ func (r Routing) createResourceQuota() http.Handler {
 //    - application/json
 //
 //    Deprecated: true
-
+//
 //    Responses:
 //      default: errorResponse
 //      200: empty
