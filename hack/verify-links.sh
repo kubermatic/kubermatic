@@ -28,11 +28,11 @@ docker run \
   --rm \
   --tty \
   lycheeverse/lychee \
-    --config .lychee.toml \
-    "**/*.go" \
-    "**/*.yaml" \
-    "**/*.yml" \
-    "**/*.md" \
-    "**/*.txt" \
-    "**/*.sh" \
-    "**/Dockerfile"
+  --config .lychee.toml \
+  "**/*.go" \
+  "**/*.yaml" \
+  "**/*.yml" \
+  "**/*.md" \
+  "**/*.txt" \
+  "**/*.sh" \
+  "**/Dockerfile"
