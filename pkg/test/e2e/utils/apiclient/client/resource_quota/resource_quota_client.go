@@ -38,6 +38,8 @@ type ClientService interface {
 
 	PatchResourceQuota(params *PatchResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchResourceQuotaOK, error)
 
+	PutResourceQuota(params *PutResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutResourceQuotaOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -228,6 +230,44 @@ func (a *Client) PatchResourceQuota(params *PatchResourceQuotaParams, authInfo r
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchResourceQuotaDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PutResourceQuota updates an existing resource quota
+*/
+func (a *Client) PutResourceQuota(params *PutResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutResourceQuotaOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPutResourceQuotaParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "putResourceQuota",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/quotas/{quota_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PutResourceQuotaReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PutResourceQuotaOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PutResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -354,10 +354,15 @@ func genQuota(cpu resource.Quantity, mem resource.Quantity, storage resource.Qua
 	}
 }
 
-func genAPIQuota(cpu int64, mem float64, storage float64) apiv2.Quota {
-	return apiv2.Quota{
-		CPU:     cpu,
-		Memory:  mem,
-		Storage: storage,
+func genAPIQuota(cpu int64, mem, storage float64) apiv2.Quota {
+	quota := apiv2.Quota{
+		CPU: &cpu,
 	}
+	if mem != 0 {
+		quota.Memory = &mem
+	}
+	if storage != 0 {
+		quota.Storage = &storage
+	}
+	return quota
 }
