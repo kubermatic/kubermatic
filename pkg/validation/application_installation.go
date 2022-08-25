@@ -49,7 +49,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 	exists := false
 	desiredVersion := spec.ApplicationRef.Version
 	for _, version := range ad.Spec.Versions {
-		if version.Version == desiredVersion {
+		if *version.Version == *desiredVersion {
 			exists = true
 		}
 	}

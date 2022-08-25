@@ -21,9 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,8 +36,8 @@ const (
 
 var (
 	testScheme                 = runtime.NewScheme()
-	defaultAppVersion          = appskubermaticv1.Version{Version: *semverlib.MustParse("1.2.3")}
-	defaultAppSecondaryVersion = appskubermaticv1.Version{Version: *semverlib.MustParse("1.2.4")}
+	defaultAppVersion          = semver.NewSemverOrDie("1.2.3")
+	defaultAppSecondaryVersion = semver.NewSemverOrDie("1.2.4")
 )
 
 func init() {
@@ -67,7 +66,7 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 			expectedError: "[]",
 		},
 		{
-			name: "Create ApplicationInstallation Failure - ApplicationDefinitation doesn't exist",
+			name: "Create ApplicationInstallation Failure - ApplicationDefinition doesn't exist",
 			ai: &appskubermaticv1.ApplicationInstallation{
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
@@ -81,10 +80,10 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 			ai: &appskubermaticv1.ApplicationInstallation{
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
-					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse("3.2.3")}
+					spec.ApplicationRef.Version = semver.NewSemverOrDie("3.2.3")
 					return *spec
 				}(),
-			}, expectedError: `[spec.applicationRef.version: Not found: 3.2.3]`,
+			}, expectedError: `[spec.applicationRef.version: Not found: "3.2.3"]`,
 		},
 	}
 
@@ -190,7 +189,7 @@ func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion appskubermaticv1.Version) *appskubermaticv1.ApplicationInstallation {
+func getApplicationInstallation(name string, appName string, appVersion *semver.Semver) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

@@ -20,10 +20,10 @@ import (
 	"context"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/onsi/gomega"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -107,7 +107,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 			Method: appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
-					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+					Version: semver.NewSemverOrDie("1.0.0"),
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
@@ -120,7 +120,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 					},
 				},
 				{
-					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("2.0.0")},
+					Version: semver.NewSemverOrDie("2.0.0"),
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Git: &appskubermaticv1.GitSource{
@@ -151,7 +151,7 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: semver.NewSemverOrDie(appVersion),
 			},
 		},
 		Status: appskubermaticv1.ApplicationInstallationStatus{},

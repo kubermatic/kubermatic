@@ -25,13 +25,13 @@ import (
 	"os"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	. "k8c.io/kubermatic/v2/pkg/test/gomegautil"
 
 	corev1 "k8s.io/api/core/v1"
@@ -87,7 +87,7 @@ var _ = Describe("helm template", func() {
 			Status: appskubermaticv1.ApplicationInstallationStatus{
 				Method: appskubermaticv1.HelmTemplateMethod,
 				ApplicationVersion: &appskubermaticv1.ApplicationVersion{
-					Version: appskubermaticv1.Version{Version: *semverlib.MustParse("0.1.0")},
+					Version: semver.NewSemverOrDie("0.1.0"),
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{

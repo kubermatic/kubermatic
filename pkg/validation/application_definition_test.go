@@ -19,9 +19,8 @@ package validation
 import (
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,8 +28,8 @@ import (
 
 var (
 	secretKeySelector = &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "git-cred"}, Key: "thekey"}
-	helmv             = appskubermaticv1.ApplicationVersion{Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1")}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
-	gitv              = appskubermaticv1.ApplicationVersion{Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v2")}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
+	helmv             = appskubermaticv1.ApplicationVersion{Version: semver.NewSemverOrDie("v1"), Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}}
+	gitv              = appskubermaticv1.ApplicationVersion{Version: semver.NewSemverOrDie("v2"), Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Git: validGitSource()}}}
 	spec              = appskubermaticv1.ApplicationDefinitionSpec{Method: appskubermaticv1.HelmTemplateMethod, Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
 )
 
@@ -777,8 +776,8 @@ func TestValidateApplicationVersions(t *testing.T) {
 	}{
 		"duplicate version": {
 			[]appskubermaticv1.ApplicationVersion{
-				{Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1")}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
-				{Version: appskubermaticv1.Version{Version: *semverlib.MustParse("v1")}, Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
+				{Version: semver.NewSemverOrDie("v1"), Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
+				{Version: semver.NewSemverOrDie("v1"), Template: appskubermaticv1.ApplicationTemplate{Source: appskubermaticv1.ApplicationSource{Helm: validHelmSource()}}},
 			},
 			1,
 		},

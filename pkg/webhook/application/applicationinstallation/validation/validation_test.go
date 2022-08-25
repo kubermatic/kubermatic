@@ -21,10 +21,10 @@ import (
 	"context"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +41,7 @@ const (
 
 var (
 	testScheme        = runtime.NewScheme()
-	defaultAppVersion = appskubermaticv1.Version{Version: *semverlib.MustParse("1.2.3")}
+	defaultAppVersion = semver.NewSemverOrDie("1.2.3")
 )
 
 func init() {
@@ -174,7 +174,7 @@ func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion appskubermaticv1.Version) *appskubermaticv1.ApplicationInstallation {
+func getApplicationInstallation(name string, appName string, appVersion *semver.Semver) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

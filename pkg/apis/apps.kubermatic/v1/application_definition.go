@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"k8c.io/kubermatic/v2/pkg/semver"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -155,7 +157,7 @@ type ApplicationVersion struct {
 	// +kubebuilder:validation:Type=string
 
 	// Version of the Application. Must be a valid SemVer version
-	Version Version `json:"version"`
+	Version *semver.Semver `json:"version"`
 	// (pattern taken from masterminds/semver we use https://github.com/Masterminds/semver/blob/master/version.go#L42)
 
 	// Template defines how application is installed (source provenance, Method...)

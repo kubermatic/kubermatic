@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -32,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -300,7 +300,7 @@ func generateApplication(name string) apiv1.Application {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    name,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: semver.NewSemverOrDie("1.0.0"),
 			},
 			Values: values,
 		},

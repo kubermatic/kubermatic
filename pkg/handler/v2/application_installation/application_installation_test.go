@@ -26,13 +26,12 @@ import (
 	"strings"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -79,10 +78,8 @@ func TestListApplicationInstallations(t *testing.T) {
 							Create: true,
 						},
 						ApplicationRef: appskubermaticv1.ApplicationRef{
-							Name: "sample-app",
-							Version: appskubermaticv1.Version{
-								Version: *semverlib.MustParse("v1.0.0"),
-							},
+							Name:    "sample-app",
+							Version: semver.NewSemverOrDie("v1.0.0"),
 						},
 					},
 					Status: &apiv2.ApplicationInstallationStatus{},
@@ -98,10 +95,8 @@ func TestListApplicationInstallations(t *testing.T) {
 							Create: true,
 						},
 						ApplicationRef: appskubermaticv1.ApplicationRef{
-							Name: "sample-app",
-							Version: appskubermaticv1.Version{
-								Version: *semverlib.MustParse("v1.0.0"),
-							},
+							Name:    "sample-app",
+							Version: semver.NewSemverOrDie("v1.0.0"),
 						},
 					},
 					Status: &apiv2.ApplicationInstallationStatus{},
@@ -175,10 +170,8 @@ func TestCreateApplicationInstallation(t *testing.T) {
 						Create: true,
 					},
 					ApplicationRef: appskubermaticv1.ApplicationRef{
-						Name: "sample-app",
-						Version: appskubermaticv1.Version{
-							Version: *semverlib.MustParse("v1.0.0"),
-						},
+						Name:    "sample-app",
+						Version: semver.NewSemverOrDie("v1.0.0"),
 					},
 				},
 				Status: &apiv2.ApplicationInstallationStatus{},
@@ -353,10 +346,8 @@ func TestGetApplication(t *testing.T) {
 						Create: true,
 					},
 					ApplicationRef: appskubermaticv1.ApplicationRef{
-						Name: "sample-app",
-						Version: appskubermaticv1.Version{
-							Version: *semverlib.MustParse("v1.0.0"),
-						},
+						Name:    "sample-app",
+						Version: semver.NewSemverOrDie("v1.0.0"),
 					},
 				},
 				Status: &apiv2.ApplicationInstallationStatus{},
@@ -432,10 +423,8 @@ func TestUpdateApplicationInstallation(t *testing.T) {
 						Create: true,
 					},
 					ApplicationRef: appskubermaticv1.ApplicationRef{
-						Name: "sample-app",
-						Version: appskubermaticv1.Version{
-							Version: *semverlib.MustParse("v1.0.0"),
-						},
+						Name:    "sample-app",
+						Version: semver.NewSemverOrDie("v1.0.0"),
 					},
 					Values: *test.CreateRawVariables(t, map[string]interface{}{"key": "val"}),
 				},
