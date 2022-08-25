@@ -18,7 +18,7 @@ import (
 // swagger:model ApplicationVersion
 type ApplicationVersion struct {
 
-	// Version of the application (eg v1.2.3)
+	// Version of the application (e.g. v1.2.3)
 	Version string `json:"version,omitempty"`
 
 	// template

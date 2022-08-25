@@ -31,17 +31,20 @@ const (
 )
 
 type HelmCredentials struct {
-	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// Username holds the ref and key in the secret for the username credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
-	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// Password holds the ref and key in the secret for the Password credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
 	// RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
 	// file that follows the same format rules as ~/.docker/config.json
-	// The Secret must exist in the namespace where KKP is installed.
+	// The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }
 
@@ -51,15 +54,16 @@ type HelmSource struct {
 	// +kubebuilder:validation:Pattern="^(http|https|oci)://.+"
 	URL string `json:"url"`
 
-	// Name of the Chart
+	// Name of the Chart.
 	// +kubebuilder:validation:MinLength=1
 	ChartName string `json:"chartName"`
 
-	// Version of the Chart
+	// Version of the Chart.
 	// +kubebuilder:validation:MinLength=1
 	ChartVersion string `json:"chartVersion"`
 
-	// Credentials hold the ref to the secret with helm credentials
+	// Credentials are optional and hold the ref to the secret with helm credentials.
+	// Either username / Password or registryConfigFile can be defined.
 	Credentials *HelmCredentials `json:"credentials,omitempty"`
 }
 
@@ -73,23 +77,30 @@ const (
 type GitAuthMethod string
 
 type GitCredentials struct {
-	// Authentication method
+	// Authentication method. Either password or token or ssh-key.
+	// if method is password then username and password must be defined.
+	// if method is token then token must be defined.
+	// if method is ssh-key then ssh-key must be defined.
 	Method GitAuthMethod `json:"method"`
 
-	// Username holds the ref and key in the secret for the username credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// Username holds the ref and key in the secret for the username credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
-	// Password holds the ref and key in the secret for the Password credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// Password holds the ref and key in the secret for the Password credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
-	// Token holds the ref and key in the secret for the token credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// Token holds the ref and key in the secret for the token credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	Token *corev1.SecretKeySelector `json:"token,omitempty"`
 
-	// SSHKey holds the ref and key in the secret for the SshKey credential. Secret must exist in the namespace where
-	// KKP is installed.
+	// SSHKey holds the ref and key in the secret for the SshKey credential.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	SSHKey *corev1.SecretKeySelector `json:"sshKey,omitempty"`
 }
 
@@ -114,27 +125,26 @@ type GitReference struct {
 }
 
 type GitSource struct {
-	// URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+	// URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
 	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
 	// Git reference to checkout.
-	//
 	// For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
 	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root
 	Path string `json:"path,omitempty"`
 
-	// Credentials holds the git credentials
+	// Credentials are optional and holds the git credentials
 	Credentials *GitCredentials `json:"credentials,omitempty"`
 }
 
 type ApplicationSource struct {
-	// Get application to install from a Helm repository
+	// Install Application from a Helm repository
 	Helm *HelmSource `json:"helm,omitempty"`
 
-	// Get application to install from a Git repository
+	// Install application from a Git repository
 	Git *GitSource `json:"git,omitempty"`
 }
 
@@ -146,12 +156,13 @@ const (
 type TemplateMethod string
 
 type ApplicationTemplate struct {
-	// Defined how the source of the application (e.g Helm chart) is retrieved
+	// Defined how the source of the application (e.g Helm chart) is retrieved.
+	// Exactly one type of source must be defined.
 	Source ApplicationSource `json:"source"`
 }
 
 type ApplicationVersion struct {
-	// Version of the application (eg v1.2.3)
+	// Version of the application (e.g. v1.2.3)
 	Version string `json:"version"`
 
 	// Template defines how application is installed (source provenance, Method...)
@@ -170,7 +181,7 @@ type ApplicationDefinitionSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
 
-	// available version for this application
+	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }
 

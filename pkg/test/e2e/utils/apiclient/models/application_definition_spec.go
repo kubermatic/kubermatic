@@ -22,7 +22,7 @@ type ApplicationDefinitionSpec struct {
 	// Description of the application. what is its purpose
 	Description string `json:"description,omitempty"`
 
-	// available version for this application
+	// Available version for this application
 	Versions []*ApplicationVersion `json:"versions"`
 
 	// default values
