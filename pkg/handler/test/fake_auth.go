@@ -92,18 +92,17 @@ func (o *IssuerVerifier) Extract(_ *http.Request) (string, error) {
 	return IDToken, nil
 }
 
-func (o *IssuerVerifier) SetRedirectPath(path string) error {
+func (o *IssuerVerifier) GetRedirectURI(path string) (string, error) {
 	u, err := url.Parse(o.redirectURI)
 	if err != nil {
-		return err
+		return "", err
 	}
-	o.redirectURI = fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path)
-	return nil
+	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path), nil
 }
 
 // AuthCodeURL returns a URL to OpenID provider's consent page.
-func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
-	oauth2Config := o.oauth2Config(scopes...)
+func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, overwriteRedirectURI string, scopes ...string) string {
+	oauth2Config := o.oauth2Config(overwriteRedirectURI, scopes...)
 	options := oauth2.AccessTypeOnline
 	if !offlineAsScope {
 		options = oauth2.AccessTypeOffline
@@ -112,18 +111,23 @@ func (o *IssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes .
 }
 
 // oauth2Config return a oauth2Config.
-func (o *IssuerVerifier) oauth2Config(scopes ...string) *oauth2.Config {
+func (o *IssuerVerifier) oauth2Config(overwriteRedirectURI string, scopes ...string) *oauth2.Config {
+	redirectURI := o.redirectURI
+	if overwriteRedirectURI != "" {
+		redirectURI = overwriteRedirectURI
+	}
+
 	return &oauth2.Config{
 		ClientID:     o.clientID,
 		ClientSecret: o.clientSecret,
 		Endpoint:     o.provider.Endpoint(),
 		Scopes:       scopes,
-		RedirectURL:  o.redirectURI,
+		RedirectURL:  redirectURI,
 	}
 }
 
 // Exchange converts an authorization code into a token.
-func (o *IssuerVerifier) Exchange(ctx context.Context, code string) (auth.OIDCToken, error) {
+func (o *IssuerVerifier) Exchange(ctx context.Context, code, overwriteRedirectURI string) (auth.OIDCToken, error) {
 	if code != AuthorizationCode {
 		return auth.OIDCToken{}, errors.New("incorrect code")
 	}

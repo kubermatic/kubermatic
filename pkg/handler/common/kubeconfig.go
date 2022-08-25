@@ -190,7 +190,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 		if req.decodedState.Nonce != req.cookieNonceValue {
 			return nil, utilerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
 		}
-		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
+		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code, "")
 		if err != nil {
 			return nil, utilerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 		}
@@ -288,7 +288,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	}
 	encodedState := base64.StdEncoding.EncodeToString(rawState)
 	urlSafeState := url.QueryEscape(encodedState)
-	rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, oidcCfg.OfflineAccessAsScope, scopes...)
+	rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, oidcCfg.OfflineAccessAsScope, "", scopes...)
 
 	return rsp, nil
 }
@@ -307,6 +307,12 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	// Override default redirect uri
+	redirectURI, err := oidcIssuerVerifier.GetRedirectURI(req.request.URL.Path)
+	if err != nil {
+		return nil, err
+	}
+
 	// PHASE exchangeCode handles callback response from OIDC provider
 	// and generates kubeconfig
 	if req.phase == exchangeCodePhase {
@@ -314,7 +320,7 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 		if req.decodedState.Nonce != req.cookieNonceValue {
 			return nil, utilerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
 		}
-		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
+		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code, redirectURI)
 		if err != nil {
 			return nil, utilerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 		}
@@ -401,11 +407,6 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 		scopes = append(scopes, "offline_access")
 	}
 
-	// Override default redirect uri
-	if err := oidcIssuerVerifier.SetRedirectPath(req.request.URL.Path); err != nil {
-		return nil, err
-	}
-
 	// pass nonce
 	nonce := rand.String(rand.IntnRange(10, 15))
 	rsp.nonce = nonce
@@ -423,7 +424,7 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 	}
 	encodedState := base64.StdEncoding.EncodeToString(rawState)
 	urlSafeState := url.QueryEscape(encodedState)
-	rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, oidcCfg.OfflineAccessAsScope, scopes...)
+	rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, oidcCfg.OfflineAccessAsScope, redirectURI, scopes...)
 
 	return rsp, nil
 }
