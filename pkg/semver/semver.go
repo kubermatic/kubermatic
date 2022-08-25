@@ -117,6 +117,7 @@ func (s *Semver) GreaterThan(b *Semver) bool {
 }
 
 // String returns string representation of Semver version.
+// Note, if the original version contained a leading v this version will not.
 func (s *Semver) String() string {
 	sver := s.Semver()
 	if sver == nil {
@@ -141,7 +142,9 @@ func (s Semver) DeepCopy() Semver {
 		return ""
 	}
 
-	return *NewSemverOrDie(s.String())
+	// we need to use string() instead of s.String here, so that leading 'v'
+	// characters in the version are being preserved
+	return *NewSemverOrDie(string(s))
 }
 
 func (in *Semver) DeepCopyInto(out *Semver) {
