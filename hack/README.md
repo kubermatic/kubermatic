@@ -146,6 +146,10 @@ TBD
 
 TBD
 
+## run-tests.sh
+
+TBD
+
 ## run-user-cluster-controller-manager.sh
 
 TBD
@@ -224,6 +228,11 @@ TBD
 ## verify-licenses.sh
 
 TBD
+
+## verify-links.sh
+
+This script runs the lychee link checker against all Markdown, HTML,
+Go and YAML files. This script is not part of the pre-verify Prowjob.
 
 ## verify-prometheus-rules.sh
 
