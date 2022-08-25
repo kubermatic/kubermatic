@@ -128,6 +128,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: Azure,
 			osNames: []string{
 				Flatcar,
+				RHEL,
 				RockyLinux,
 				Ubuntu,
 			},
@@ -139,6 +140,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			osNames: []string{
 				CentOS,
 				Flatcar,
+				RHEL,
 				RockyLinux,
 				Ubuntu,
 			},
