@@ -1085,6 +1085,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/quotas/{quota_name}").
 		Handler(r.patchResourceQuota())
 
+	mux.Methods(http.MethodPut).
+		Path("/quotas/{quota_name}").
+		Handler(r.putResourceQuota())
+
 	mux.Methods(http.MethodDelete).
 		Path("/quotas/{quota_name}").
 		Handler(r.deleteResourceQuota())
@@ -7117,7 +7121,33 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
+// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin putResourceQuota
+//
+//    Updates an existing Resource Quota.
+//
+//    Produces:
+//    - application/json
+//
+//    Deprecated: true
+
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) patchResourceQuota() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(resourcequota.PutResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodePutResourceQuotasReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/quotas/{quota_name} resourceQuota admin putResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -7129,13 +7159,13 @@ func (r Routing) createResourceQuota() http.Handler {
 //      200: empty
 //      401: empty
 //      403: empty
-func (r Routing) patchResourceQuota() http.Handler {
+func (r Routing) putResourceQuota() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(resourcequota.PatchResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		resourcequota.DecodePatchResourceQuotasReq,
+		)(resourcequota.PutResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodePutResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

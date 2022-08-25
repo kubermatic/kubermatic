@@ -1591,11 +1591,11 @@ type ResourceQuotaStatus struct {
 // swagger:model Quota
 type Quota struct {
 	// CPU holds the quantity of CPU.
-	CPU int64 `json:"cpu,omitempty"`
+	CPU *int64 `json:"cpu,omitempty"`
 	// Memory represents the RAM amount. Denoted in GB, rounded to 2 decimal places.
-	Memory float64 `json:"memory,omitempty"`
+	Memory *float64 `json:"memory,omitempty"`
 	// Storage represents the disk size. Denoted in GB, rounded to 2 decimal places.
-	Storage float64 `json:"storage,omitempty"`
+	Storage *float64 `json:"storage,omitempty"`
 }
 
 // swagger:model GroupProjectBinding

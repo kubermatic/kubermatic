@@ -45,8 +45,8 @@ func createResourceQuota(ctx context.Context, request interface{}, provider prov
 	return resourcequota.CreateResourceQuota(ctx, request, provider)
 }
 
-func patchResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
-	return resourcequota.PatchResourceQuota(ctx, request, provider)
+func putResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
+	return resourcequota.PutResourceQuota(ctx, request, provider)
 }
 
 func deleteResourceQuota(ctx context.Context, request interface{}, provider provider.ResourceQuotaProvider) error {
@@ -65,6 +65,6 @@ func DecodeCreateResourceQuotasReq(_ context.Context, r *http.Request) (interfac
 	return resourcequota.DecodeCreateResourceQuotaReq(r)
 }
 
-func DecodePatchResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return resourcequota.DecodePatchResourceQuotaReq(r)
+func DecodePutResourceQuotasReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return resourcequota.DecodePutResourceQuotaReq(r)
 }
