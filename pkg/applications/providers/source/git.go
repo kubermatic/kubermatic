@@ -18,7 +18,9 @@ package source
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os/exec"
 	"path"
 
 	"github.com/go-git/go-git/v5"
@@ -56,6 +58,9 @@ func (g GitSource) DownloadSource(destination string) (string, error) {
 
 	checkout := g.getCheckoutStrategy()
 	if err := checkout(g.Ctx, destination, g.Source, auth); err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			return "", errors.New("failed to clone repository: file protocol not supported, please check git remote url")
+		}
 		return "", fmt.Errorf("failed to clone repository: %w", err)
 	}
 
