@@ -416,7 +416,7 @@ var _ clusterSpec = vsphere{}
 func (a vsphere) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Vsphere: &models.VSphereNodeSpec{
-			Template:   "ubuntu-20.04",
+			Template:   "kkp-ubuntu-20.04",
 			CPUs:       2,
 			Memory:     4096,
 			DiskSizeGB: 10,
