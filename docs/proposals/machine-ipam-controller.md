@@ -44,7 +44,7 @@ spec:
 ```
 
 The machine-controller will use this information when generating the cloud-init/ignition data to configure the network of the instance.
-`machine.Spec.ProviderConfig.Network` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#optional-vs-required
+`machine.Spec.ProviderConfig.Network` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#optional-vs-required
 
 ### cluster-controller
 
@@ -66,7 +66,7 @@ spec:
 The user will be able to specify the CIDR's during cluster creation.
 It should be possible to add additional CIDR's later. Removing or modifying must be forbidden.
 
-`cluster.Spec.machineNetwork` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#optional-vs-required
+`cluster.Spec.machineNetwork` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#optional-vs-required
 
 ### kubermatic-api
 

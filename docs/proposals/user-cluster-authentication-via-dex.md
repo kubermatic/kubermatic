@@ -89,7 +89,7 @@ users:
 ```
 
 #### Example code via a CLI tool:
-Dex provides a CLI tool to execute the initial flow: https://github.com/coreos/dex/tree/master/cmd/example-app
+Dex provides a CLI tool to execute the initial flow: https://github.com/dexidp/dex/tree/master/examples/example-app
 It must be called via:
 ```bash
 ./example-app -client-id=kubermatic -client-secret=<SOME_SUPER_SECRET_STRING> -issuer=https://auth.example.com/dex -issuer-root-ca=ca.pem

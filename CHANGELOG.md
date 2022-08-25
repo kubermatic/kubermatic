@@ -279,7 +279,7 @@ Please be aware we do not recommend enabling `etcd-launcher` on existing Kuberne
 
 ## [v2.19.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.0)
 
-Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
 
 Several vulnerabilities were identified in Kubernetes (CVE-2021-44716, CVE-2021-44717, CVE-2021-3711, CVE-2021-3712, CVE-2021-33910) which have been fixed in Kubernetes 1.20.13, 1.21.8, 1.22.5.
 Because of these updates, this KKP release includes automatic update rules for all 1.20/1.21/1.22 clusters older than these patch releases. This release also removes all affected Kubernetes versions from the list of supported versions. Once the automated controlplane updates have completed, an administrator must manually patch all vulnerable `MachineDeployment`s in all affected userclusters.
@@ -721,7 +721,7 @@ This release primarily improves support for Kubernetes 1.22 master/seed clusters
 
 ## [v2.18.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.0)
 
-Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.18/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.18/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhausting on seed clusters.
 
 Two vulnerabilities were identified in Kubernetes ([CVE-2021-25741](https://github.com/kubernetes/kubernetes/issues/104980) and [CVE-2020-8561](https://github.com/kubernetes/kubernetes/issues/104720)) of which one (CVE-2021-25741) was fixed in Kubernetes 1.19.15 / 1.20.11 / 1.21.5 / 1.22.2. CVE-2020-8561 is mitigated by Kubermatic not allowing users to reconfigure the kube-apiserver.
 
@@ -755,7 +755,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
   to use the `kubermatic-operator` Helm chart or, even better, use the KKP installer. The KKP operator will automatically manage the
   nodeport-proxy, so the chart is not required anymore.
 - The `cert-manager` Helm chart requires admins to set the Let's Encrypt account email explicitly ([#7184](https://github.com/kubermatic/kubermatic/issues/7184))
-- The experimental new backup mechanism was updated and available as an opt-in option per Seed. If enabled, it will replace the old backups and is not backwards compatible. Users that are already using the experimental backup mechanism, be aware that to prepare it for regular use, we made some changes, admins please check the [documentation](https://docs.kubermatic.com/kubermatic/master/cheat_sheets/etcd/backup-and-restore/).
+- The experimental new backup mechanism was updated and available as an opt-in option per Seed. If enabled, it will replace the old backups and is not backwards compatible. Users that are already using the experimental backup mechanism, be aware that to prepare it for regular use, we made some changes, admins please check the [documentation](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/backup-and-restore/).
 
 ### Supported Kubernetes Versions
 
@@ -1094,7 +1094,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Provide the possibility of configuring leader election parameters for user cluster components. ([#6641](https://github.com/kubermatic/kubermatic/issues/6641))
 - Remove unused deprecated `certs` chart ([#6656](https://github.com/kubermatic/kubermatic/issues/6656))
 - Add `registry_mirrors` to Seed node settings ([#6667](https://github.com/kubermatic/kubermatic/issues/6667))
-- Upgrad Gatekeeper from 3.1.0-beta-9 to 3.1.3. NOTICE: this change also moves the Gatekeeper deployment from the Seed to the User clusters. This means that the user clusters will need some additional resources to run the Gatekeeper Pods. Admins please refer to the upgrade guidelines in the documentation. ([#6706](https://github.)com/kubermatic/kubermatic/issues/6706)
+- Upgrad Gatekeeper from 3.1.0-beta-9 to 3.1.3. NOTICE: this change also moves the Gatekeeper deployment from the Seed to the User clusters. This means that the user clusters will need some additional resources to run the Gatekeeper Pods. Admins please refer to the upgrade guidelines in the documentation. ([#6706](https://github.com/kubermatic/kubermatic/issues/6706))
 - Add spot instances as an option for the aws machines in the API  ([#6726](https://github.com/kubermatic/kubermatic/issues/6726))
 - Add Multus-CNI to accessible addons. ([#6731](https://github.com/kubermatic/kubermatic/issues/6731))
 - Allow to disable the s3-credentials Secret in the Minio chart ([#6760](https://github.com/kubermatic/kubermatic/issues/6760))
@@ -1889,7 +1889,7 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 This release includes an important change to the Docker registry used for fetching the Kubernetes control plane
 components. The change will require that all user-clusters reconcile their control planes, which can cause
 significant load on the seed clusters. Refer to the
-[general upgrade guidelines](https://docs.kubermatic.com/kubermatic/master/upgrading/guidelines/) for more
+[general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.14/upgrading/) for more
 information on how to limit the impact of such changes during KKP upgrades.
 
 ### Misc
@@ -2841,7 +2841,7 @@ This release contains only improvements to the image build process.
 * The cleanup of services of type LoadBalancer on cluster deletion was fixed and re-enabled ([#2780](https://github.com/kubermatic/kubermatic/pull/2780))
 * The Kubernetes Dashboard addon was updated to 1.10.1 ([#2848](https://github.com/kubermatic/kubermatic/pull/2848))
 * Joining of nodes via the BYO functionality was fixed ([#2835](https://github.com/kubermatic/kubermatic/pull/2835))
-* It is now possible to configure whether Openstack security groups for LoadBalancers should be managed by Kubernetes, [check the sample `datacenters.yaml` in the docs for details](https://docs.kubermatic.io/installation/install_kubermatic/_manual/#defining-the-datacenters) ([#2878](https://github.com/kubermatic/kubermatic/pull/2878))
+* It is now possible to configure whether Openstack security groups for LoadBalancers should be managed by Kubernetes, [check the sample `datacenters.yaml` in the docs for details](https://docs.kubermatic.com/kubermatic/v2.12/installation/install_kubermatic/manual/#defining-the-datacenters) ([#2878](https://github.com/kubermatic/kubermatic/pull/2878))
 * A bug that resulted in clusters being twice in the UI overview got resolved ([#1088](https://github.com/kubermatic/dashboard/pull/1088))
 * A bug that could cause the image of a NodeDeployment to be set to the default when the NodeDeployment gets edited got resolved ([#1076](https://github.com/kubermatic/dashboard/pull/1076))
 * A bug that caused the version of the UI to not be shown in the footer got resolved ([#1096](https://github.com/kubermatic/dashboard/pull/1096))
@@ -2887,8 +2887,7 @@ This release contains only improvements to the image build process.
 - Machine Networks for VSphere can now be set in the UI ([#829](https://github.com/kubermatic/dashboard/issues/829))
 - VSphere: Setting a dedicated VSphere user for cloud provider functionalities is now possible. ([#834](https://github.com/kubermatic/dashboard/issues/834))
 - Fixed that the cluster upgrade link did not appear directly when the details page is loaded ([#836](https://github.com/kubermatic/dashboard/issues/836))
-- Kubeconfig can now be shared via a generated link from the UI ([#857](https://github.com/kubermatic/dashboard/issues/857))
-  - See https://docs.kubermatic.io/advanced/oidc_auth/ for more information.
+- Kubeconfig can now be shared via a generated link from the UI; see https://docs.kubermatic.com/ for more information. ([#857](https://github.com/kubermatic/dashboard/issues/857))
 - Fixed duplicated SSH keys in summary view during cluster creation. ([#879](https://github.com/kubermatic/dashboard/issues/879))
 - On project change, the user will stay on the same page, if he has the corresponding rights. ([#889](https://github.com/kubermatic/dashboard/issues/889))
 - Fixed issues with caching the main page. ([#893](https://github.com/kubermatic/dashboard/issues/893))
@@ -2941,7 +2940,7 @@ This release contains only improvements to the image build process.
 - Updated machine controller to v0.10.5 ([#2490](https://github.com/kubermatic/kubermatic/issues/2490))
 - Updated dex to 2.12.0 ([#2318](https://github.com/kubermatic/kubermatic/issues/2318))
 - Updated nginx-ingress-controller to v0.22.0 ([#2668](https://github.com/kubermatic/kubermatic/issues/2668))
-- **ACTION REQUIRED:** Updated cert-manager to v0.6.0 (see https://cert-manager.readthedocs.io/en/latest/admin/upgrading/index.html) ([#2674](https://github.com/kubermatic/kubermatic/issues/2674))
+- **ACTION REQUIRED:** Updated cert-manager to v0.6.0 (see https://cert-manager.io/docs/installation/upgrading/upgrading-0.5-0.6) ([#2674](https://github.com/kubermatic/kubermatic/issues/2674))
 
 ### Monitoring
 

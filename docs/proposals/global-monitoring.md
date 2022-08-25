@@ -77,7 +77,7 @@ We evaluated the following products:
 
 VictoriaMetrics is out because of the wrong query results and the need for a backup job.
 Thanos beats Cortex because of its architecture around an object store, even though the
-missing remote-write receiver ([proposal](https://thanos.io/proposals/201812_thanos-remote-receive.md/))
+missing remote-write receiver ([proposal](https://thanos.io/tip/proposals-done/201812-thanos-remote-receive.md/))
 is making user-cluster aggregation harder. Also, Cortex's architecture is much more
 complicated than Thanos's.
 
