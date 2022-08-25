@@ -206,7 +206,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: OpenStack,
 			osNames: []string{
-				CentOS,
 				Ubuntu,
 				Flatcar,
 				RHEL,
