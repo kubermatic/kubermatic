@@ -259,7 +259,6 @@ type ClusterSpec struct {
 	ApplicationSettings *ApplicationSettings `json:"applicationSettings,omitempty"`
 
 	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
-	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 
 	// If this is set to true, the cluster will not be reconciled by KKP.

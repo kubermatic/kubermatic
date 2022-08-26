@@ -1868,8 +1868,7 @@ spec:
                 type: boolean
               encryptionConfiguration:
                 description: 'Optional: Configures encryption-at-rest for Kubernetes
-                  API data. This needs the `encryptionAtRest` feature gate. THIS IS
-                  A PLACEHOLDER AND NOT FUNCTIONAL YET.'
+                  API data. This needs the `encryptionAtRest` feature gate.'
                 properties:
                   enabled:
                     description: Enables encryption-at-rest on this cluster.
