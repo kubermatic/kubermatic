@@ -25,7 +25,10 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// AddonConfig specifies addon configuration.
+// AddonConfig specifies addon configuration. Addons can be installed without
+// a matching AddonConfig, but they will be missing a logo, description and
+// the potentially necessary form fields in the KKP dashboard to make the
+// addon comfortable to use.
 type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

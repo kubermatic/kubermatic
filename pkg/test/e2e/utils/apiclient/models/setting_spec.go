@@ -18,19 +18,19 @@ import (
 // swagger:model SettingSpec
 type SettingSpec struct {
 
-	// default node count
+	// DefaultNodeCount is the default number of replicas for the initial MachineDeployment.
 	DefaultNodeCount int8 `json:"defaultNodeCount,omitempty"`
 
-	// display API docs
+	// DisplayDemoInfo controls whether a a link to the KKP API documentaiton is shown in the footer.
 	DisplayAPIDocs bool `json:"displayAPIDocs,omitempty"`
 
-	// display demo info
+	// DisplayDemoInfo controls whether a "Demo System" hint is shown in the footer.
 	DisplayDemoInfo bool `json:"displayDemoInfo,omitempty"`
 
-	// display terms of service
+	// DisplayDemoInfo controls whether a a link to TOS is shown in the footer.
 	DisplayTermsOfService bool `json:"displayTermsOfService,omitempty"`
 
-	// enable dashboard
+	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluser.
 	EnableDashboard bool `json:"enableDashboard,omitempty"`
 
 	// enable external cluster import
@@ -48,7 +48,7 @@ type SettingSpec struct {
 	// restrict project creation
 	RestrictProjectCreation bool `json:"restrictProjectCreation,omitempty"`
 
-	// user projects limit
+	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit int64 `json:"userProjectsLimit,omitempty"`
 
 	// cleanup options

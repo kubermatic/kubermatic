@@ -104,11 +104,17 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster represents a Kubermatic Kubernetes Platform user cluster.
+// Cluster objects exist on Seed clusters and each user cluster consists
+// of a namespace containing the Kubernetes control plane, additional
+// pods (like Prometheus).
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterSpec   `json:"spec,omitempty"`
+	// Spec describes the desired cluster state.
+	Spec ClusterSpec `json:"spec,omitempty"`
+
+	// Status contains reconciliation information for the cluster.
 	Status ClusterStatus `json:"status,omitempty"`
 
 	// Address contains the IPs/URLs to access the cluster control plane.
@@ -172,6 +178,8 @@ type ClusterSpec struct {
 	// Version defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
+	// Cloud contains information regarding the cloud provider that
+	// is responsible for hosting the cluster's workload.
 	Cloud CloudSpec `json:"cloud"`
 
 	// +kubebuilder:validation:Enum=docker;containerd
@@ -188,6 +196,7 @@ type ClusterSpec struct {
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
+	// ExposeStrategy is the strategy used to expose a cluster control plane.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
 
 	// Optional: Component specific overrides that allow customization of control plane components.

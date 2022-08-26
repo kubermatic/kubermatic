@@ -175,7 +175,8 @@ type SeedList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed cluster.
+// Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+// for KKP user clusters.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

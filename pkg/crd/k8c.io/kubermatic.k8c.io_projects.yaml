@@ -28,7 +28,9 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Project is the type describing a project.
+        description: Project is the type describing a project. A project is a collection
+          of SSH keys, clusters and members. Members are assigned by creating UserProjectBinding
+          objects.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -55,6 +57,9 @@ spec:
             description: ProjectStatus represents the current status of a project.
             properties:
               phase:
+                description: Phase describes the project phase. New projects are in
+                  the `Inactive` phase; after being reconciled they move to `Active`
+                  and during deletion they are `Terminating`.
                 enum:
                 - Active
                 - Inactive

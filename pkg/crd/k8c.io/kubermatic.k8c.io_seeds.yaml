@@ -37,7 +37,8 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Seed is the type representing a Seed cluster.
+        description: Seed is the type representing a Seed cluster. Seed clusters host
+          the the control planes for KKP user clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

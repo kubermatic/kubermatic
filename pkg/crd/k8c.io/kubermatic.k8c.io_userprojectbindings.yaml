@@ -52,7 +52,8 @@ spec:
             properties:
               group:
                 description: Group is the user's group, determining their permissions
-                  within the project.
+                  within the project. Must be one of `owners`, `editors`, `viewers`
+                  or `projectmanagers`.
                 type: string
               projectID:
                 description: ProjectID is the name of the target project.

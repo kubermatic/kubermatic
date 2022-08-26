@@ -149,8 +149,8 @@ spec:
                     type: object
                 type: object
               cloud:
-                description: CloudSpec stores configuration options for a given cloud
-                  provider. Provider specs are mutually exclusive.
+                description: Cloud contains information regarding the cloud provider
+                  that is responsible for hosting the cluster's workload.
                 properties:
                   alibaba:
                     description: AlibabaCloudSpec specifies the access data to Alibaba.
@@ -2011,8 +2011,7 @@ spec:
                 type: object
               exposeStrategy:
                 description: ExposeStrategy is the strategy used to expose a cluster
-                  control plane. Possible values are `NodePort`, `LoadBalancer` or
-                  `Tunneling` (requires a feature gate).
+                  control plane.
                 enum:
                 - NodePort
                 - LoadBalancer

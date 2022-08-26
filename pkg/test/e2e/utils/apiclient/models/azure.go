@@ -24,10 +24,11 @@ type Azure struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// resource group

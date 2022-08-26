@@ -31,7 +31,8 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: User specifies a user.
+        description: User specifies a KKP user. Users can be either humans or KKP
+          service accounts.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -70,8 +71,9 @@ spec:
                   this field anymore.'
                 type: string
               invalidTokensReference:
-                description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
-                  because it is not cross namespace.
+                description: InvalidTokensReference is a reference to a Secret that
+                  contains invalidated login tokens. The tokens are used to provide
+                  a safe logout mechanism.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -118,7 +120,8 @@ spec:
                   accounts and regular users must not set this field.
                 type: string
               settings:
-                description: UserSettings represent an user settings.
+                description: Settings contains both user-configurable and system-owned
+                  configuration for the KKP dashboard.
                 properties:
                   collapseSidenav:
                     type: boolean
