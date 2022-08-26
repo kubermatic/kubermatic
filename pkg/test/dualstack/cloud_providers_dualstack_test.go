@@ -382,11 +382,18 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			for _, osName := range testOSNames {
 				// This is needed because node spec for OpenStack requires image.
 				operatingSystem := operatingSystems[osName]
-				if test.cloudName == "openstack" {
+
+				if test.cloudName == OpenStack {
 					img := openstack{}.getImage(osName)
 					nodeSpec.Openstack.Image = &img
 					if osName == RHEL {
-						operatingSystem = openstack{}.addRHELSubscriptionInfo(operatingSystem)
+						operatingSystem = addRHELSubscriptionInfo(operatingSystem)
+					}
+				}
+
+				if test.cloudName == Azure {
+					if osName == RHEL {
+						operatingSystem = addRHELSubscriptionInfo(operatingSystem)
 					}
 				}
 

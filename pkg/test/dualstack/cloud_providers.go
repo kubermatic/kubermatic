@@ -288,7 +288,7 @@ func (a openstack) getImage(osName string) string {
 	}
 }
 
-func (a openstack) addRHELSubscriptionInfo(o models.OperatingSystemSpec) models.OperatingSystemSpec {
+func addRHELSubscriptionInfo(o models.OperatingSystemSpec) models.OperatingSystemSpec {
 	o.Rhel.RHELSubscriptionManagerUser = os.Getenv("OS_RHEL_USERNAME")
 	o.Rhel.RHELSubscriptionManagerPassword = os.Getenv("OS_RHEL_PASSWORD")
 	o.Rhel.RHSMOfflineToken = os.Getenv("OS_RHEL_OFFLINE_TOKEN")
