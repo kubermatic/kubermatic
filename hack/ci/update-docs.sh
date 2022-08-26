@@ -48,6 +48,8 @@ cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondat
 cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/master/data/prometheusdata.go
 cp ../cmd/kubermatic-api/swagger.json content/kubermatic/master/data/swagger.json
 cp ../addonresources.json content/kubermatic/master/data/addonresources.json
+cp ../docs/zz_generated.applicationDefinition.yaml content/kubermatic/master/data/applicationDefinition.yaml
+cp ../docs/zz_generated.applicationInstallation.yaml content/kubermatic/master/data/applicationInstallation.yaml
 
 # re-create Prometheus runbook
 make runbook
