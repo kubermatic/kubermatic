@@ -46,10 +46,6 @@ func putResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuota
 	return nil
 }
 
-func patchResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) error {
-	return nil
-}
-
 func deleteResourceQuota(_ context.Context, _ interface{}, _ provider.ResourceQuotaProvider) error {
 	return nil
 }
@@ -63,10 +59,6 @@ func DecodeListResourceQuotasReq(_ context.Context, _ *http.Request) (interface{
 }
 
 func DecodeCreateResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func DecodePatchResourceQuotasReq(_ context.Context, _ *http.Request) (interface{}, error) {
 	return nil, nil
 }
 

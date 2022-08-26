@@ -230,7 +230,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 7: update an existing resource quota",
-			method: http.MethodPatch,
+			method: http.MethodPut,
 			url:    fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			body: `{
 				"cpu": 10,
@@ -246,7 +246,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 8: update a non-existing resource quota",
-			method: http.MethodPatch,
+			method: http.MethodPut,
 			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
 				"cpu": 10,
