@@ -1,0 +1,24 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationInstallations
+metadata:
+  name: <<appInstallation-name>>
+spec:
+  # ApplicationRef is a reference to identify which Application should be deployed
+  applicationRef:
+    # Name of the Application.
+    # Should be a valid lowercase RFC1123 domain name
+    name: apache
+    # Version of the Application. Must be a valid SemVer version
+    version: 1.2.3
+  # Namespace describe the desired state of the namespace where application will be created.
+  namespace:
+    annotations:
+      project-code: azerty
+    create: true
+    labels:
+      env: dev
+    name: my-namespace
+  # Values describe overrides for manifest-rendering. It's a free yaml field.
+  values:
+    commonLabels:
+      owner: somebody

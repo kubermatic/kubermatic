@@ -21,7 +21,7 @@ type GitSource struct {
 	// Path of the "source" in the repository. default is repository root
 	Path string `json:"path,omitempty"`
 
-	// URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+	// URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
 	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote,omitempty"`
 

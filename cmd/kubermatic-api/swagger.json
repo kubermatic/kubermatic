@@ -13916,13 +13916,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13934,6 +13927,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -23214,7 +23214,7 @@
           "$ref": "#/definitions/TemplateMethod"
         },
         "versions": {
-          "description": "available version for this application",
+          "description": "Available version for this application",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ApplicationVersion"
@@ -23448,7 +23448,7 @@
           "$ref": "#/definitions/ApplicationTemplate"
         },
         "version": {
-          "description": "Version of the application (eg v1.2.3)",
+          "description": "Version of the application (e.g. v1.2.3)",
           "type": "string",
           "x-go-name": "Version"
         }
@@ -27648,7 +27648,7 @@
           "$ref": "#/definitions/GitReference"
         },
         "remote": {
-          "description": "URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)\n+kubebuilder:validation:MinLength=1",
+          "description": "URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)\n+kubebuilder:validation:MinLength=1",
           "type": "string",
           "x-go-name": "Remote"
         }
@@ -27759,12 +27759,12 @@
       "type": "object",
       "properties": {
         "chartName": {
-          "description": "Name of the Chart\n+kubebuilder:validation:MinLength=1",
+          "description": "Name of the Chart.\n+kubebuilder:validation:MinLength=1",
           "type": "string",
           "x-go-name": "ChartName"
         },
         "chartVersion": {
-          "description": "Version of the Chart\n+kubebuilder:validation:MinLength=1",
+          "description": "Version of the Chart.\n+kubebuilder:validation:MinLength=1",
           "type": "string",
           "x-go-name": "ChartVersion"
         },
