@@ -24,6 +24,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -147,6 +148,8 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 	if err != nil {
 		return nil, fmt.Errorf("failed to build OS spec: %w", err)
 	}
+
+	osSpec.Flatcar.ProvisioningUtility = flatcar.CloudInit
 
 	nodeSpec := apiv1.NodeSpec{
 		OperatingSystem: *osSpec,
