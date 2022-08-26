@@ -1081,10 +1081,6 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/quotas").
 		Handler(r.createResourceQuota())
 
-	mux.Methods(http.MethodPatch).
-		Path("/quotas/{quota_name}").
-		Handler(r.patchResourceQuota())
-
 	mux.Methods(http.MethodPut).
 		Path("/quotas/{quota_name}").
 		Handler(r.putResourceQuota())
@@ -7117,32 +7113,6 @@ func (r Routing) createResourceQuota() http.Handler {
 		)(resourcequota.CreateResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
 		resourcequota.DecodeCreateResourceQuotasReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
-//
-//    Updates an existing Resource Quota.
-//
-//    Produces:
-//    - application/json
-//
-//    Deprecated: true
-//
-//    Responses:
-//      default: errorResponse
-//      200: empty
-//      401: empty
-//      403: empty
-func (r Routing) patchResourceQuota() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(resourcequota.PutResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		resourcequota.DecodePutResourceQuotasReq,
-		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
