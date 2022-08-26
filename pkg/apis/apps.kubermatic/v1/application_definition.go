@@ -162,8 +162,12 @@ type ApplicationTemplate struct {
 }
 
 type ApplicationVersion struct {
+	// +kubebuilder:validation:Pattern:=v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+	// +kubebuilder:validation:Type=string
+
 	// Version of the application (e.g. v1.2.3)
 	Version string `json:"version"`
+	// (pattern taken from masterminds/semver we use https://github.com/Masterminds/semver/blob/master/version.go#L42)
 
 	// Template defines how application is installed (source provenance, Method...)
 	Template ApplicationTemplate `json:"template"`
