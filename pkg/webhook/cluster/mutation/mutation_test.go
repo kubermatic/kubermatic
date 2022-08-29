@@ -27,7 +27,7 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -80,13 +80,13 @@ var (
 	// inherit defaulting done for the KubermaticConfiguration and Seed. They are
 	// collected here for brevity sake.
 	defaultPatches = []jsonpatch.JsonPatchOperation{
-		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaults.DefaultEtcdVolumeSize),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaults.DefaultAPIServerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaults.DefaultNodePortRange),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaults.DefaultControllerManagerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaulting.DefaultNodePortRange),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultControllerManagerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultSchedulerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 	}
@@ -277,7 +277,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
-				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			},

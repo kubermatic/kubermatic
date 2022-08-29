@@ -26,7 +26,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
@@ -42,7 +42,7 @@ func TestVersionSkewIsRespected(t *testing.T) {
 		t.Skip("No KUBECTL_TEST_IMAGE set, skipping kubectl version skew tests.")
 	}
 
-	for _, v := range defaults.DefaultKubernetesVersioning.Versions {
+	for _, v := range defaulting.DefaultKubernetesVersioning.Versions {
 		t.Run(v.String(), func(t *testing.T) {
 			if err := testVersionSkew(v, dockerImage); err != nil {
 				t.Errorf("Failed to get a kubectl version that's compatible to cluster version %q: %v", v, err)

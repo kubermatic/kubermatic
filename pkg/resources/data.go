@@ -33,7 +33,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -293,7 +293,7 @@ func (d *TemplateData) NodePortRange() string {
 func (d *TemplateData) NodePorts() (int, int) {
 	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
 	if err != nil {
-		portrange, _ = kubenetutil.ParsePortRange(defaults.DefaultNodePortRange)
+		portrange, _ = kubenetutil.ParsePortRange(defaulting.DefaultNodePortRange)
 	}
 
 	return portrange.Base, portrange.Base + portrange.Size - 1
@@ -304,7 +304,7 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	nodePortRange := d.NodePortRange()
 
 	if nodePortRange == "" {
-		nodePortRange = defaults.DefaultNodePortRange
+		nodePortRange = defaulting.DefaultNodePortRange
 	}
 
 	if cluster := d.Cluster(); cluster != nil {

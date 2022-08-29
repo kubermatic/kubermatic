@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -67,7 +67,7 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func TestEnsureBackupCronJob(t *testing.T) {
-	version := *defaults.DefaultKubernetesVersioning.Default
+	version := *defaulting.DefaultKubernetesVersioning.Default
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",

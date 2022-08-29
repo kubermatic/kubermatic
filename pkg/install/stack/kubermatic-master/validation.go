@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -56,7 +56,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 
 	// we need the actual, effective versioning configuration, which most users will
 	// probably not override
-	defaulted, err := defaults.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
 	if err != nil {
 		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
 	}
@@ -221,7 +221,7 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		}
 	}
 
-	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading

@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -65,7 +65,7 @@ func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
 }
 
 func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.KubermaticConfigurationGetter {
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	return func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
 		return defaulted, err
 	}
@@ -95,7 +95,7 @@ func ObjectYAMLDiff(t *testing.T, expectedObj, actualObj interface{}) error {
 
 func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []semver.Semver {
 	if cfg == nil {
-		return defaults.DefaultKubernetesVersioning.Versions
+		return defaulting.DefaultKubernetesVersioning.Versions
 	}
 
 	return cfg.Spec.Versions.Versions

@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -1724,7 +1724,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: defaults.DefaultKubernetesVersioning.Default,
+				Version: defaulting.DefaultKubernetesVersioning.Default,
 			}.BuildPtr(),
 			wantAllowed: false,
 		},
@@ -1791,7 +1791,7 @@ func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {
 func (r rawClusterGen) Build() kubermaticv1.Cluster {
 	version := r.Version
 	if version == nil {
-		version = defaults.DefaultKubernetesVersioning.Default
+		version = defaulting.DefaultKubernetesVersioning.Default
 	}
 
 	c := kubermaticv1.Cluster{

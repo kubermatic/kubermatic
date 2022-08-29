@@ -24,7 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -110,7 +110,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}()
 
 	caBundle := certificates.NewFakeCABundle()
-	version := defaults.DefaultKubernetesVersioning.Default
+	version := defaulting.DefaultKubernetesVersioning.Default
 
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -240,9 +240,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
-		kubermaticImage:      defaults.DefaultKubermaticImage,
-		dnatControllerImage:  defaults.DefaultDNATControllerImage,
-		etcdLauncherImage:    defaults.DefaultEtcdLauncherImage,
+		kubermaticImage:      defaulting.DefaultKubermaticImage,
+		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
+		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{

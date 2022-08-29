@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -50,7 +50,7 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 			return nil, err
 		}
 
-		config, err = defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		config, err = defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply default values: %w", err)
 		}
@@ -99,7 +99,7 @@ func StaticKubermaticConfigurationGetterFactory(config *kubermaticv1.KubermaticC
 	}
 
 	return func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
-		defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply default values: %w", err)
 		}

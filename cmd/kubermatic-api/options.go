@@ -26,7 +26,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/controller/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -208,7 +208,7 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to process: %w", err)
 	}

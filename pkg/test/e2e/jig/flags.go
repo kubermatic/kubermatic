@@ -29,7 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -94,7 +94,7 @@ func ClusterVersion(log *zap.SugaredLogger) string {
 		log.Infow("Defaulting cluster version to VERSION_TO_TEST", "version", vv)
 		v = vv
 	} else {
-		v = defaults.DefaultKubernetesVersioning.Default.String()
+		v = defaulting.DefaultKubernetesVersioning.Default.String()
 		log.Infow("Defaulting cluster version to DefaultKubernetesVersioning", "version", v)
 	}
 

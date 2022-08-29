@@ -29,7 +29,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
@@ -205,7 +205,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		// default the interval to a safe value
 		interval := datacenter.Spec.ProviderReconciliationInterval
 		if interval == nil || interval.Duration == 0 {
-			interval = &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval}
+			interval = &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval}
 		}
 
 		// reconcile if the lastTime isn't set (= first time init or a forced reconciliation) or too long ago
