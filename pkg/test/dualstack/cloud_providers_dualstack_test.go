@@ -70,13 +70,13 @@ const (
 	VSphere      string = "vsphere"
 )
 
-var operatingSystems = map[string]models.OperatingSystemSpec{
-	CentOS:     centos(),
-	Flatcar:    flatcar(),
-	RHEL:       rhel(),
-	SLES:       sles(),
-	Ubuntu:     ubuntu(),
-	RockyLinux: rockyLinux(),
+var operatingSystems = map[string]func() models.OperatingSystemSpec{
+	CentOS:     centos,
+	Flatcar:    flatcar,
+	RHEL:       rhel,
+	SLES:       sles,
+	Ubuntu:     ubuntu,
+	RockyLinux: rockyLinux,
 }
 
 var cloudProviders = map[string]clusterSpec{
@@ -381,7 +381,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 			for _, osName := range testOSNames {
 				// This is needed because node spec for OpenStack requires image.
-				operatingSystem := operatingSystems[osName]
+				operatingSystem := operatingSystems[osName]()
 
 				if test.cloudName == OpenStack {
 					img := openstack{}.getImage(osName)
