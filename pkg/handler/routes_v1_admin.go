@@ -701,6 +701,8 @@ func (r Routing) listMeteringReports() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
+//
 // Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
 //
 // Produces:
@@ -712,8 +714,6 @@ func (r Routing) listMeteringReports() http.Handler {
 //	200: MeteringReportURL
 //	401: empty
 //	403: empty
-//
-//swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
 func (r Routing) getMeteringReport() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -726,6 +726,8 @@ func (r Routing) getMeteringReport() http.Handler {
 	)
 }
 
+// swagger:route DELETE /api/v1/admin/metering/reports/{report_name} metering report deleteMeteringReport
+//
 // Removes a specific metering report. Only available in Kubermatic Enterprise Edition
 //
 // Produces:
@@ -737,8 +739,6 @@ func (r Routing) getMeteringReport() http.Handler {
 //	200: empty
 //	401: empty
 //	403: empty
-//
-//swagger:route DELETE /api/v1/admin/metering/reports/{report_name} metering report deleteMeteringReport
 func (r Routing) deleteMeteringReport() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
