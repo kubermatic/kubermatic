@@ -57,8 +57,8 @@ spec:
                   type: string
                 type: array
               fingerprint:
-                description: Fingerprint is calculated on the server-side and doesn't
-                  need to be set by clients.
+                description: Fingerprint is calculated server-side based on the supplied
+                  public key and doesn't need to be set by clients.
                 type: string
               name:
                 description: Name is the human readable name for this SSH key.

@@ -21629,10 +21629,12 @@
           "x-go-name": "ClientSecret"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -21947,6 +21949,7 @@
       "type": "object",
       "properties": {
         "accessKeyID": {
+          "description": "Access Key ID to authenticate against AWS.",
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
@@ -21959,34 +21962,42 @@
           "x-go-name": "AssumeRoleExternalID"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
         "instanceProfileName": {
+          "description": "Instance profile to use. This can be configured, but if left empty will be\nautomatically filled in during reconciliation.",
           "type": "string",
           "x-go-name": "InstanceProfileName"
         },
         "roleARN": {
+          "description": "ARN to use. This can be configured, but if left empty will be\nautomatically filled in during reconciliation.",
           "type": "string",
           "x-go-name": "ControlPlaneRoleARN"
         },
         "routeTableID": {
+          "description": "Route table to use. This can be configured, but if left empty will be\nautomatically filled in during reconciliation.",
           "type": "string",
           "x-go-name": "RouteTableID"
         },
         "secretAccessKey": {
+          "description": "Secret Access Key to authenticate against AWS.",
           "type": "string",
           "x-go-name": "SecretAccessKey"
         },
         "securityGroupID": {
+          "description": "Security group to use. This can be configured, but if left empty will be\nautomatically filled in during reconciliation.",
           "type": "string",
           "x-go-name": "SecurityGroupID"
         },
         "vpcID": {
+          "description": "AWS VPC to use. Must be configured.",
           "type": "string",
           "x-go-name": "VPCID"
         }
@@ -22775,18 +22786,22 @@
       "type": "object",
       "properties": {
         "accessKeyID": {
+          "description": "Access Key ID to authenticate against Alibaba.",
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
         "accessKeySecret": {
+          "description": "Access Key Secret to authenticate against Alibaba.",
           "type": "string",
           "x-go-name": "AccessKeySecret"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         }
@@ -22963,10 +22978,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -23491,10 +23508,12 @@
           "x-go-name": "ClientSecret"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -24013,10 +24032,12 @@
       "type": "object",
       "properties": {
         "enabled": {
+          "description": "Enable checkboxes that allow the user to ask for LoadBalancers and PVCs\nto be deleted in order to not leave potentially expensive resources behind.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
         "enforced": {
+          "description": "If enforced is set to true, the cleanup of LoadBalancers and PVCs is\nenforced.",
           "type": "boolean",
           "x-go-name": "Enforced"
         }
@@ -25512,10 +25533,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -25660,10 +25683,12 @@
           "x-go-name": "AccessKeyID"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -26660,10 +26685,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -26720,10 +26747,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -27000,10 +27029,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -27737,10 +27768,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -28568,10 +28601,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -29806,10 +29841,12 @@
           "x-go-name": "CSIUsername"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -30280,6 +30317,7 @@
           "x-go-name": "ApplicationCredentialSecret"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
@@ -30288,6 +30326,7 @@
           "x-go-name": "Domain"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -30745,10 +30784,12 @@
           "x-go-name": "BillingCycle"
         },
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -31102,6 +31143,7 @@
           "$ref": "#/definitions/EKS"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -31130,6 +31172,7 @@
           "$ref": "#/definitions/Packet"
         },
         "requiredEmails": {
+          "description": "RequiredEmails is a list of e-mail addresses that this presets should\nbe restricted to. Each item in the list can be either a full e-mail\naddress or just a domain name. This restriction is only enforced in the\nKKP API.",
           "type": "array",
           "items": {
             "type": "string"
@@ -31242,10 +31285,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         }
@@ -32205,23 +32250,28 @@
           "$ref": "#/definitions/CustomLinks"
         },
         "defaultNodeCount": {
+          "description": "DefaultNodeCount is the default number of replicas for the initial MachineDeployment.",
           "type": "integer",
           "format": "int8",
           "x-go-name": "DefaultNodeCount"
         },
         "displayAPIDocs": {
+          "description": "DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.",
           "type": "boolean",
           "x-go-name": "DisplayAPIDocs"
         },
         "displayDemoInfo": {
+          "description": "DisplayDemoInfo controls whether a \"Demo System\" hint is shown in the footer.",
           "type": "boolean",
           "x-go-name": "DisplayDemoInfo"
         },
         "displayTermsOfService": {
+          "description": "DisplayDemoInfo controls whether a a link to TOS is shown in the footer.",
           "type": "boolean",
           "x-go-name": "DisplayTermsOfService"
         },
         "enableDashboard": {
+          "description": "EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.",
           "type": "boolean",
           "x-go-name": "EnableDashboard"
         },
@@ -32255,6 +32305,7 @@
           "x-go-name": "RestrictProjectCreation"
         },
         "userProjectsLimit": {
+          "description": "UserProjectsLimit is the maximum number of projects a user can create.",
           "type": "integer",
           "format": "int64",
           "x-go-name": "UserProjectsLimit"
@@ -32548,10 +32599,12 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -32780,6 +32833,7 @@
       "type": "object",
       "properties": {
         "datacenter": {
+          "description": "If datacenter is set, this preset is only applicable to the\nconfigured datacenter.",
           "type": "string",
           "x-go-name": "Datacenter"
         },
@@ -32792,6 +32846,7 @@
           "x-go-name": "DatastoreCluster"
         },
         "enabled": {
+          "description": "Only enabled presets will be available in the KKP dashboard.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },

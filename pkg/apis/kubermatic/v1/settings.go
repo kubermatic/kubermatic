@@ -28,6 +28,8 @@ const GlobalSettingsName = "globalsettings"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticSetting is the type representing a KubermaticSetting.
+// These settings affect the KKP dashboard and are not relevant when
+// using the Kube API on the master/seed clusters directly.
 type KubermaticSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -36,17 +38,25 @@ type KubermaticSetting struct {
 }
 
 type SettingSpec struct {
-	CustomLinks                 CustomLinks `json:"customLinks"`
-	DefaultNodeCount            int8        `json:"defaultNodeCount"`
-	DisplayDemoInfo             bool        `json:"displayDemoInfo"`
-	DisplayAPIDocs              bool        `json:"displayAPIDocs"`
-	DisplayTermsOfService       bool        `json:"displayTermsOfService"`
-	EnableDashboard             bool        `json:"enableDashboard"`
-	EnableOIDCKubeconfig        bool        `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
-	UserProjectsLimit           int64       `json:"userProjectsLimit"`
-	RestrictProjectCreation     bool        `json:"restrictProjectCreation"`
-	EnableExternalClusterImport bool        `json:"enableExternalClusterImport"`
+	// CustomLinks are additional links that can be shown the dashboard's footer.
+	CustomLinks CustomLinks `json:"customLinks"`
+	// DefaultNodeCount is the default number of replicas for the initial MachineDeployment.
+	DefaultNodeCount int8 `json:"defaultNodeCount"`
+	// DisplayDemoInfo controls whether a "Demo System" hint is shown in the footer.
+	DisplayDemoInfo bool `json:"displayDemoInfo"`
+	// DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
+	DisplayAPIDocs bool `json:"displayAPIDocs"`
+	// DisplayDemoInfo controls whether a a link to TOS is shown in the footer.
+	DisplayTermsOfService bool `json:"displayTermsOfService"`
+	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.
+	EnableDashboard      bool `json:"enableDashboard"`
+	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
+	// UserProjectsLimit is the maximum number of projects a user can create.
+	UserProjectsLimit           int64 `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
+	EnableExternalClusterImport bool  `json:"enableExternalClusterImport"`
 
+	// CleanupOptions control what happens when a cluster is deleted via the dashboard.
 	// +optional
 	CleanupOptions CleanupOptions `json:"cleanupOptions,omitempty"`
 	// +optional
@@ -72,7 +82,11 @@ type CustomLink struct {
 }
 
 type CleanupOptions struct {
-	Enabled  bool `json:"enabled,omitempty"`
+	// Enable checkboxes that allow the user to ask for LoadBalancers and PVCs
+	// to be deleted in order to not leave potentially expensive resources behind.
+	Enabled bool `json:"enabled,omitempty"`
+	// If enforced is set to true, the cleanup of LoadBalancers and PVCs is
+	// enforced.
 	Enforced bool `json:"enforced,omitempty"`
 }
 

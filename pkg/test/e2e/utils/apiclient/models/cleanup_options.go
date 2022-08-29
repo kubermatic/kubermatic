@@ -17,10 +17,12 @@ import (
 // swagger:model CleanupOptions
 type CleanupOptions struct {
 
-	// enabled
+	// Enable checkboxes that allow the user to ask for LoadBalancers and PVCs
+	// to be deleted in order to not leave potentially expensive resources behind.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// enforced
+	// If enforced is set to true, the cleanup of LoadBalancers and PVCs is
+	// enforced.
 	Enforced bool `json:"enforced,omitempty"`
 }
 

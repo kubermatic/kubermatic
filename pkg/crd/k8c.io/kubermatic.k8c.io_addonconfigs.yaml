@@ -22,7 +22,10 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: AddonConfig specifies addon configuration.
+        description: AddonConfig specifies addon configuration. Addons can be installed
+          without a matching AddonConfig, but they will be missing a logo, description
+          and the potentially necessary form fields in the KKP dashboard to make the
+          addon comfortable to use.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

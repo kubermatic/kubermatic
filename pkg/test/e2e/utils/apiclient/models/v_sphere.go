@@ -17,7 +17,8 @@ import (
 // swagger:model VSphere
 type VSphere struct {
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
 	// datastore
@@ -26,7 +27,7 @@ type VSphere struct {
 	// datastore cluster
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// password

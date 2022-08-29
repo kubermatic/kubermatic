@@ -44,6 +44,9 @@ spec:
     schema:
       openAPIV3Schema:
         description: Cluster represents a Kubermatic Kubernetes Platform user cluster.
+          Cluster objects exist on Seed clusters and each user cluster consists of
+          a namespace containing the Kubernetes control plane and additional pods
+          (like Prometheus or the machine-controller).
         properties:
           address:
             description: Address contains the IPs/URLs to access the cluster control
@@ -85,7 +88,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterSpec describes the desired state of a user cluster.
+            description: Spec describes the desired cluster state.
             properties:
               admissionPlugins:
                 description: A list of arbitrary admission plugin names that are passed
@@ -181,8 +184,8 @@ spec:
                     type: object
                 type: object
               cloud:
-                description: CloudSpec stores configuration options for a given cloud
-                  provider. Provider specs are mutually exclusive.
+                description: Cloud contains information regarding the cloud provider
+                  that is responsible for hosting the cluster's workload.
                 properties:
                   alibaba:
                     description: AlibabaCloudSpec specifies the access data to Alibaba.
@@ -2043,8 +2046,7 @@ spec:
                 type: object
               exposeStrategy:
                 description: ExposeStrategy is the strategy used to expose a cluster
-                  control plane. Possible values are `NodePort`, `LoadBalancer` or
-                  `Tunneling` (requires a feature gate).
+                  control plane.
                 enum:
                 - NodePort
                 - LoadBalancer
@@ -2354,7 +2356,7 @@ spec:
             - version
             type: object
           status:
-            description: ClusterStatus stores status information about a cluster.
+            description: Status contains reconciliation information for the cluster.
             properties:
               address:
                 description: Address contains the IPs/URLs to access the cluster control

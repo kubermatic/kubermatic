@@ -23,6 +23,8 @@ spec:
     schema:
       openAPIV3Schema:
         description: KubermaticSetting is the type representing a KubermaticSetting.
+          These settings affect the KKP dashboard and are not relevant when using
+          the Kube API on the master/seed clusters directly.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -39,13 +41,22 @@ spec:
           spec:
             properties:
               cleanupOptions:
+                description: CleanupOptions control what happens when a cluster is
+                  deleted via the dashboard.
                 properties:
                   enabled:
+                    description: Enable checkboxes that allow the user to ask for
+                      LoadBalancers and PVCs to be deleted in order to not leave potentially
+                      expensive resources behind.
                     type: boolean
                   enforced:
+                    description: If enforced is set to true, the cleanup of LoadBalancers
+                      and PVCs is enforced.
                     type: boolean
                 type: object
               customLinks:
+                description: CustomLinks are additional links that can be shown the
+                  dashboard's footer.
                 items:
                   properties:
                     icon:
@@ -64,14 +75,24 @@ spec:
                   type: object
                 type: array
               defaultNodeCount:
+                description: DefaultNodeCount is the default number of replicas for
+                  the initial MachineDeployment.
                 type: integer
               displayAPIDocs:
+                description: DisplayDemoInfo controls whether a a link to the KKP
+                  API documentation is shown in the footer.
                 type: boolean
               displayDemoInfo:
+                description: DisplayDemoInfo controls whether a "Demo System" hint
+                  is shown in the footer.
                 type: boolean
               displayTermsOfService:
+                description: DisplayDemoInfo controls whether a a link to TOS is shown
+                  in the footer.
                 type: boolean
               enableDashboard:
+                description: EnableDashboard enables the link to the Kubernetes dashboard
+                  for a user cluster.
                 type: boolean
               enableExternalClusterImport:
                 type: boolean
@@ -125,6 +146,8 @@ spec:
               restrictProjectCreation:
                 type: boolean
               userProjectsLimit:
+                description: UserProjectsLimit is the maximum number of projects a
+                  user can create.
                 format: int64
                 type: integer
             required:

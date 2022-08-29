@@ -17,7 +17,7 @@ import (
 // swagger:model AWS
 type AWS struct {
 
-	// access key ID
+	// Access Key ID to authenticate against AWS.
 	AccessKeyID string `json:"accessKeyID,omitempty"`
 
 	// assume role a r n
@@ -26,28 +26,33 @@ type AWS struct {
 	// assume role external ID
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 
-	// control plane role a r n
+	// ARN to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// instance profile name
+	// Instance profile to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
-	// route table ID
+	// Route table to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	RouteTableID string `json:"routeTableID,omitempty"`
 
-	// secret access key
+	// Secret Access Key to authenticate against AWS.
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 
-	// security group ID
+	// Security group to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	SecurityGroupID string `json:"securityGroupID,omitempty"`
 
-	// v p c ID
+	// AWS VPC to use. Must be configured.
 	VPCID string `json:"vpcID,omitempty"`
 }
 
