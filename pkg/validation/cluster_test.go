@@ -886,3 +886,63 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateEncryptionConfiguration(t *testing.T) {
+	tests := []struct {
+		name        string
+		clusterSpec *kubermaticv1.ClusterSpec
+		expectErr   bool
+	}{
+		{
+			name: "small key",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "small-key",
+								Value: "cmLcMbw6gdxPHQ==",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "good key",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "good-key",
+								Value: "RGolflgAc+eBbm1lys87pTNQZVf0i67rlpPZGtTkVjQ=",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Log(test.name)
+			err := validateEncryptionConfiguration(test.clusterSpec, field.NewPath("spec", "encryptionConfiguration"))
+			t.Logf("%+v", err)
+			if (err != nil) != test.expectErr {
+				t.Logf("expected error: %t, got: %+v", test.expectErr, err)
+			}
+		})
+	}
+}
