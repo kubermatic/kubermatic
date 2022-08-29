@@ -21,7 +21,7 @@ type SettingSpec struct {
 	// DefaultNodeCount is the default number of replicas for the initial MachineDeployment.
 	DefaultNodeCount int8 `json:"defaultNodeCount,omitempty"`
 
-	// DisplayDemoInfo controls whether a a link to the KKP API documentaiton is shown in the footer.
+	// DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
 	DisplayAPIDocs bool `json:"displayAPIDocs,omitempty"`
 
 	// DisplayDemoInfo controls whether a "Demo System" hint is shown in the footer.
@@ -30,7 +30,7 @@ type SettingSpec struct {
 	// DisplayDemoInfo controls whether a a link to TOS is shown in the footer.
 	DisplayTermsOfService bool `json:"displayTermsOfService,omitempty"`
 
-	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluser.
+	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.
 	EnableDashboard bool `json:"enableDashboard,omitempty"`
 
 	// enable external cluster import

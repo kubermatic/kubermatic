@@ -80,7 +80,7 @@ spec:
                 type: integer
               displayAPIDocs:
                 description: DisplayDemoInfo controls whether a a link to the KKP
-                  API documentaiton is shown in the footer.
+                  API documentation is shown in the footer.
                 type: boolean
               displayDemoInfo:
                 description: DisplayDemoInfo controls whether a "Demo System" hint
@@ -92,7 +92,7 @@ spec:
                 type: boolean
               enableDashboard:
                 description: EnableDashboard enables the link to the Kubernetes dashboard
-                  for a user cluser.
+                  for a user cluster.
                 type: boolean
               enableExternalClusterImport:
                 type: boolean

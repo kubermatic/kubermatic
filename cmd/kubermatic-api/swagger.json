@@ -32256,7 +32256,7 @@
           "x-go-name": "DefaultNodeCount"
         },
         "displayAPIDocs": {
-          "description": "DisplayDemoInfo controls whether a a link to the KKP API documentaiton is shown in the footer.",
+          "description": "DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.",
           "type": "boolean",
           "x-go-name": "DisplayAPIDocs"
         },
@@ -32271,7 +32271,7 @@
           "x-go-name": "DisplayTermsOfService"
         },
         "enableDashboard": {
-          "description": "EnableDashboard enables the link to the Kubernetes dashboard for a user cluser.",
+          "description": "EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.",
           "type": "boolean",
           "x-go-name": "EnableDashboard"
         },
