@@ -52,10 +52,12 @@ func NewListServiceAccountTokensParamsWithHTTPClient(client *http.Client) *ListS
 	}
 }
 
-/* ListServiceAccountTokensParams contains all the parameters to send to the API endpoint
-   for the list service account tokens operation.
+/*
+ListServiceAccountTokensParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list service account tokens operation.
+
+	Typically these are written to a http.Request.
 */
 type ListServiceAccountTokensParams struct {
 

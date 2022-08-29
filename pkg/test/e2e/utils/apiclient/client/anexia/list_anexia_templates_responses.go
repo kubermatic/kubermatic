@@ -46,7 +46,8 @@ func NewListAnexiaTemplatesOK() *ListAnexiaTemplatesOK {
 	return &ListAnexiaTemplatesOK{}
 }
 
-/* ListAnexiaTemplatesOK describes a response with status code 200, with default header values.
+/*
+ListAnexiaTemplatesOK describes a response with status code 200, with default header values.
 
 AnexiaTemplateList
 */
@@ -108,7 +109,8 @@ func NewListAnexiaTemplatesDefault(code int) *ListAnexiaTemplatesDefault {
 	}
 }
 
-/* ListAnexiaTemplatesDefault describes a response with status code -1, with default header values.
+/*
+ListAnexiaTemplatesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

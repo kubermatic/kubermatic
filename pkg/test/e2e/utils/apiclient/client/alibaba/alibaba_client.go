@@ -48,7 +48,7 @@ type ClientService interface {
 }
 
 /*
-  ListAlibabaInstanceTypes lists available alibaba instance types
+ListAlibabaInstanceTypes lists available alibaba instance types
 */
 func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -86,7 +86,7 @@ func (a *Client) ListAlibabaInstanceTypes(params *ListAlibabaInstanceTypesParams
 }
 
 /*
-  ListAlibabaInstanceTypesNoCredentials Lists available Alibaba Instance Types
+ListAlibabaInstanceTypesNoCredentials Lists available Alibaba Instance Types
 */
 func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -124,7 +124,7 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstan
 }
 
 /*
-  ListAlibabaInstanceTypesNoCredentialsV2 Lists available Alibaba Instance Types
+ListAlibabaInstanceTypesNoCredentialsV2 Lists available Alibaba Instance Types
 */
 func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -162,7 +162,7 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInst
 }
 
 /*
-  ListAlibabaVSwitches lists available alibaba v switches
+ListAlibabaVSwitches lists available alibaba v switches
 */
 func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesOK, error) {
 	// TODO: Validate the params before sending
@@ -200,7 +200,7 @@ func (a *Client) ListAlibabaVSwitches(params *ListAlibabaVSwitchesParams, authIn
 }
 
 /*
-  ListAlibabaVSwitchesNoCredentialsV2 Lists available Alibaba vSwitches
+ListAlibabaVSwitchesNoCredentialsV2 Lists available Alibaba vSwitches
 */
 func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitchesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaVSwitchesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -238,7 +238,7 @@ func (a *Client) ListAlibabaVSwitchesNoCredentialsV2(params *ListAlibabaVSwitche
 }
 
 /*
-  ListAlibabaZones lists available alibaba zones
+ListAlibabaZones lists available alibaba zones
 */
 func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -276,7 +276,7 @@ func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runti
 }
 
 /*
-  ListAlibabaZonesNoCredentials Lists available Alibaba Instance Types
+ListAlibabaZonesNoCredentials Lists available Alibaba Instance Types
 */
 func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -314,7 +314,7 @@ func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredent
 }
 
 /*
-  ListAlibabaZonesNoCredentialsV2 Lists available Alibaba Instance Types
+ListAlibabaZonesNoCredentialsV2 Lists available Alibaba Instance Types
 */
 func (a *Client) ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAlibabaZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

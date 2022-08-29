@@ -23,12 +23,10 @@ type ApplicationInstallationCondition struct {
 	// Last time we got an update on a given condition.
 	// +optional
 	// Format: date-time
-	LastHeartbeatTime strfmt.DateTime `json:"lastHeartbeatTime,omitempty"`
 
 	// Last time the condition transit from one status to another.
 	// +optional
 	// Format: date-time
-	LastTransitionTime strfmt.DateTime `json:"lastTransitionTime,omitempty"`
 
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
@@ -51,14 +49,8 @@ func (m *ApplicationInstallationCondition) Validate(formats strfmt.Registry) err
 	var res []error
 
 	if err := m.validateLastHeartbeatTime(formats); err != nil {
-		res = append(res, err)
-	}
-
+	if err := m.validateLastHeartbeatTime(formats); err != nil {
 	if err := m.validateLastTransitionTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
 

@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  CreateResourceQuota creates a new resource quota
+CreateResourceQuota creates a new resource quota
 */
 func (a *Client) CreateResourceQuota(params *CreateResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateResourceQuotaCreated, error) {
 	// TODO: Validate the params before sending
@@ -80,7 +80,7 @@ func (a *Client) CreateResourceQuota(params *CreateResourceQuotaParams, authInfo
 }
 
 /*
-  DeleteResourceQuota removes an existing resource quota
+DeleteResourceQuota removes an existing resource quota
 */
 func (a *Client) DeleteResourceQuota(params *DeleteResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteResourceQuotaOK, error) {
 	// TODO: Validate the params before sending
@@ -118,7 +118,7 @@ func (a *Client) DeleteResourceQuota(params *DeleteResourceQuotaParams, authInfo
 }
 
 /*
-  GetResourceQuota gets a specific resource quota
+GetResourceQuota gets a specific resource quota
 */
 func (a *Client) GetResourceQuota(params *GetResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetResourceQuotaOK, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) GetResourceQuota(params *GetResourceQuotaParams, authInfo runti
 }
 
 /*
-  ListResourceQuotas gets a resource quota list
+ListResourceQuotas gets a resource quota list
 */
 func (a *Client) ListResourceQuotas(params *ListResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListResourceQuotasOK, error) {
 	// TODO: Validate the params before sending
@@ -194,7 +194,7 @@ func (a *Client) ListResourceQuotas(params *ListResourceQuotasParams, authInfo r
 }
 
 /*
-  PutResourceQuota updates an existing resource quota
+PutResourceQuota updates an existing resource quota
 */
 func (a *Client) PutResourceQuota(params *PutResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutResourceQuotaOK, error) {
 	// TODO: Validate the params before sending

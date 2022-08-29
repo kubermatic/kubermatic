@@ -53,10 +53,12 @@ func NewListPresetsParamsWithHTTPClient(client *http.Client) *ListPresetsParams 
 	}
 }
 
-/* ListPresetsParams contains all the parameters to send to the API endpoint
-   for the list presets operation.
+/*
+ListPresetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list presets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListPresetsParams struct {
 

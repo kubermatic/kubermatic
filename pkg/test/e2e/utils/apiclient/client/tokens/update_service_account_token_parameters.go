@@ -54,10 +54,12 @@ func NewUpdateServiceAccountTokenParamsWithHTTPClient(client *http.Client) *Upda
 	}
 }
 
-/* UpdateServiceAccountTokenParams contains all the parameters to send to the API endpoint
-   for the update service account token operation.
+/*
+UpdateServiceAccountTokenParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update service account token operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateServiceAccountTokenParams struct {
 

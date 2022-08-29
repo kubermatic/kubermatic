@@ -58,7 +58,8 @@ func NewListExternalClusterEventsOK() *ListExternalClusterEventsOK {
 	return &ListExternalClusterEventsOK{}
 }
 
-/* ListExternalClusterEventsOK describes a response with status code 200, with default header values.
+/*
+ListExternalClusterEventsOK describes a response with status code 200, with default header values.
 
 Event
 */
@@ -118,7 +119,8 @@ func NewListExternalClusterEventsUnauthorized() *ListExternalClusterEventsUnauth
 	return &ListExternalClusterEventsUnauthorized{}
 }
 
-/* ListExternalClusterEventsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListExternalClusterEventsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListExternalClusterEventsForbidden() *ListExternalClusterEventsForbidden
 	return &ListExternalClusterEventsForbidden{}
 }
 
-/* ListExternalClusterEventsForbidden describes a response with status code 403, with default header values.
+/*
+ListExternalClusterEventsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListExternalClusterEventsDefault(code int) *ListExternalClusterEventsDef
 	}
 }
 
-/* ListExternalClusterEventsDefault describes a response with status code -1, with default header values.
+/*
+ListExternalClusterEventsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

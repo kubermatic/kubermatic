@@ -45,7 +45,6 @@ type User struct {
 
 	// LastSeen holds a time in UTC format when the user has been using the API last time
 	// Format: date-time
-	LastSeen strfmt.DateTime `json:"lastSeen,omitempty"`
 
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
@@ -71,10 +70,7 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLastSeen(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateProjects(formats); err != nil {
+	if err := m.validateLastSeen(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -145,11 +141,6 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 			}
 		}
 
-	}
-
-	return nil
-}
-
 func (m *User) validateUserSettings(formats strfmt.Registry) error {
 	if swag.IsZero(m.UserSettings) { // not required
 		return nil
@@ -174,9 +165,6 @@ func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 	var res []error
 
 	if err := m.contextValidateProjects(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateUserSettings(ctx, formats); err != nil {
 		res = append(res, err)
 	}

@@ -60,12 +60,38 @@ func NewCreateMeteringReportConfigurationCreated() *CreateMeteringReportConfigur
 	return &CreateMeteringReportConfigurationCreated{}
 }
 
-/* CreateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
+/*
+CreateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
 
 MeteringReportConfiguration
 */
 type CreateMeteringReportConfigurationCreated struct {
 	Payload *models.MeteringReportConfiguration
+}
+
+// IsSuccess returns true when this create metering report configuration created response has a 2xx status code
+func (o *CreateMeteringReportConfigurationCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create metering report configuration created response has a 3xx status code
+func (o *CreateMeteringReportConfigurationCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create metering report configuration created response has a 4xx status code
+func (o *CreateMeteringReportConfigurationCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create metering report configuration created response has a 5xx status code
+func (o *CreateMeteringReportConfigurationCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create metering report configuration created response a status code equal to that given
+func (o *CreateMeteringReportConfigurationCreated) IsCode(code int) bool {
+	return code == 201
 }
 
 // IsSuccess returns true when this create metering report configuration created response has a 2xx status code
@@ -105,6 +131,10 @@ func (o *CreateMeteringReportConfigurationCreated) GetPayload() *models.Metering
 	return o.Payload
 }
 
+func (o *CreateMeteringReportConfigurationCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationCreated ", 201)
+}
+
 func (o *CreateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.MeteringReportConfiguration)
@@ -122,7 +152,8 @@ func NewCreateMeteringReportConfigurationUnauthorized() *CreateMeteringReportCon
 	return &CreateMeteringReportConfigurationUnauthorized{}
 }
 
-/* CreateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -172,7 +203,8 @@ func NewCreateMeteringReportConfigurationForbidden() *CreateMeteringReportConfig
 	return &CreateMeteringReportConfigurationForbidden{}
 }
 
-/* CreateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
+/*
+CreateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -224,7 +256,8 @@ func NewCreateMeteringReportConfigurationDefault(code int) *CreateMeteringReport
 	}
 }
 
-/* CreateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
+/*
+CreateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -288,7 +321,8 @@ func (o *CreateMeteringReportConfigurationDefault) readResponse(response runtime
 	return nil
 }
 
-/*CreateMeteringReportConfigurationBody create metering report configuration body
+/*
+CreateMeteringReportConfigurationBody create metering report configuration body
 swagger:model CreateMeteringReportConfigurationBody
 */
 type CreateMeteringReportConfigurationBody struct {

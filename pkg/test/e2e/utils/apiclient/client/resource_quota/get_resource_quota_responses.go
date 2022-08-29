@@ -58,7 +58,8 @@ func NewGetResourceQuotaOK() *GetResourceQuotaOK {
 	return &GetResourceQuotaOK{}
 }
 
-/* GetResourceQuotaOK describes a response with status code 200, with default header values.
+/*
+GetResourceQuotaOK describes a response with status code 200, with default header values.
 
 ResourceQuota
 */
@@ -120,7 +121,8 @@ func NewGetResourceQuotaUnauthorized() *GetResourceQuotaUnauthorized {
 	return &GetResourceQuotaUnauthorized{}
 }
 
-/* GetResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+GetResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetResourceQuotaForbidden() *GetResourceQuotaForbidden {
 	return &GetResourceQuotaForbidden{}
 }
 
-/* GetResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+GetResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetResourceQuotaDefault(code int) *GetResourceQuotaDefault {
 	}
 }
 
-/* GetResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+GetResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

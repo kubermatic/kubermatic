@@ -58,7 +58,8 @@ func NewGetClusterOidcOK() *GetClusterOidcOK {
 	return &GetClusterOidcOK{}
 }
 
-/* GetClusterOidcOK describes a response with status code 200, with default header values.
+/*
+GetClusterOidcOK describes a response with status code 200, with default header values.
 
 OIDCSpec
 */
@@ -120,7 +121,8 @@ func NewGetClusterOidcUnauthorized() *GetClusterOidcUnauthorized {
 	return &GetClusterOidcUnauthorized{}
 }
 
-/* GetClusterOidcUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterOidcUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetClusterOidcForbidden() *GetClusterOidcForbidden {
 	return &GetClusterOidcForbidden{}
 }
 
-/* GetClusterOidcForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterOidcForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetClusterOidcDefault(code int) *GetClusterOidcDefault {
 	}
 }
 
-/* GetClusterOidcDefault describes a response with status code -1, with default header values.
+/*
+GetClusterOidcDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

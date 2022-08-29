@@ -52,10 +52,12 @@ func NewListClusterRoleNamesParamsWithHTTPClient(client *http.Client) *ListClust
 	}
 }
 
-/* ListClusterRoleNamesParams contains all the parameters to send to the API endpoint
-   for the list cluster role names operation.
+/*
+ListClusterRoleNamesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list cluster role names operation.
+
+	Typically these are written to a http.Request.
 */
 type ListClusterRoleNamesParams struct {
 

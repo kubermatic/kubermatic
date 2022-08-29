@@ -46,7 +46,8 @@ func NewListGKEVersionsOK() *ListGKEVersionsOK {
 	return &ListGKEVersionsOK{}
 }
 
-/* ListGKEVersionsOK describes a response with status code 200, with default header values.
+/*
+ListGKEVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -108,7 +109,8 @@ func NewListGKEVersionsDefault(code int) *ListGKEVersionsDefault {
 	}
 }
 
-/* ListGKEVersionsDefault describes a response with status code -1, with default header values.
+/*
+ListGKEVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

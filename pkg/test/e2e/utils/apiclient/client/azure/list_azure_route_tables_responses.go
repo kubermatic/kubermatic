@@ -46,7 +46,8 @@ func NewListAzureRouteTablesOK() *ListAzureRouteTablesOK {
 	return &ListAzureRouteTablesOK{}
 }
 
-/* ListAzureRouteTablesOK describes a response with status code 200, with default header values.
+/*
+ListAzureRouteTablesOK describes a response with status code 200, with default header values.
 
 AzureRouteTablesList
 */
@@ -110,7 +111,8 @@ func NewListAzureRouteTablesDefault(code int) *ListAzureRouteTablesDefault {
 	}
 }
 
-/* ListAzureRouteTablesDefault describes a response with status code -1, with default header values.
+/*
+ListAzureRouteTablesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewGetClusterV2ParamsWithHTTPClient(client *http.Client) *GetClusterV2Param
 	}
 }
 
-/* GetClusterV2Params contains all the parameters to send to the API endpoint
-   for the get cluster v2 operation.
+/*
+GetClusterV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get cluster v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type GetClusterV2Params struct {
 

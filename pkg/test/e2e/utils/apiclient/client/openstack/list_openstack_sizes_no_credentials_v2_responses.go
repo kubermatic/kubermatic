@@ -46,7 +46,8 @@ func NewListOpenstackSizesNoCredentialsV2OK() *ListOpenstackSizesNoCredentialsV2
 	return &ListOpenstackSizesNoCredentialsV2OK{}
 }
 
-/* ListOpenstackSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackSize
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSizesNoCredentialsV2Default(code int) *ListOpenstackSizesNo
 	}
 }
 
-/* ListOpenstackSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListOpenstackSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

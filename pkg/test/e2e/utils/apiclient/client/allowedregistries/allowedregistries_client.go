@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  DeleteAllowedRegistry deletes the given allowed registry
+DeleteAllowedRegistry deletes the given allowed registry
 */
 func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) DeleteAllowedRegistry(params *DeleteAllowedRegistryParams, auth
 }
 
 /*
-  GetAllowedRegistry Get allowed registries specified by name
+GetAllowedRegistry Get allowed registries specified by name
 */
 func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) GetAllowedRegistry(params *GetAllowedRegistryParams, authInfo r
 }
 
 /*
-  PatchAllowedRegistry Patch a specified allowed registry
+PatchAllowedRegistry Patch a specified allowed registry
 */
 func (a *Client) PatchAllowedRegistry(params *PatchAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchAllowedRegistryOK, error) {
 	// TODO: Validate the params before sending

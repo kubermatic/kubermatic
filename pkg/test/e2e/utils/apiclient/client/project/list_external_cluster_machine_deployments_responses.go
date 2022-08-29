@@ -58,7 +58,8 @@ func NewListExternalClusterMachineDeploymentsOK() *ListExternalClusterMachineDep
 	return &ListExternalClusterMachineDeploymentsOK{}
 }
 
-/* ListExternalClusterMachineDeploymentsOK describes a response with status code 200, with default header values.
+/*
+ListExternalClusterMachineDeploymentsOK describes a response with status code 200, with default header values.
 
 ExternalClusterMachineDeployment
 */
@@ -118,7 +119,8 @@ func NewListExternalClusterMachineDeploymentsUnauthorized() *ListExternalCluster
 	return &ListExternalClusterMachineDeploymentsUnauthorized{}
 }
 
-/* ListExternalClusterMachineDeploymentsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListExternalClusterMachineDeploymentsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListExternalClusterMachineDeploymentsForbidden() *ListExternalClusterMac
 	return &ListExternalClusterMachineDeploymentsForbidden{}
 }
 
-/* ListExternalClusterMachineDeploymentsForbidden describes a response with status code 403, with default header values.
+/*
+ListExternalClusterMachineDeploymentsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListExternalClusterMachineDeploymentsDefault(code int) *ListExternalClus
 	}
 }
 
-/* ListExternalClusterMachineDeploymentsDefault describes a response with status code -1, with default header values.
+/*
+ListExternalClusterMachineDeploymentsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

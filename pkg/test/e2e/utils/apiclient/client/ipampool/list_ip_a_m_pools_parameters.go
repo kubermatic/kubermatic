@@ -52,10 +52,12 @@ func NewListIPAMPoolsParamsWithHTTPClient(client *http.Client) *ListIPAMPoolsPar
 	}
 }
 
-/* ListIPAMPoolsParams contains all the parameters to send to the API endpoint
-   for the list IP a m pools operation.
+/*
+ListIPAMPoolsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list IP a m pools operation.
+
+	Typically these are written to a http.Request.
 */
 type ListIPAMPoolsParams struct {
 

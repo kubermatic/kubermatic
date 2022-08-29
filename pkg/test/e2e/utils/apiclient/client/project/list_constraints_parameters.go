@@ -52,10 +52,12 @@ func NewListConstraintsParamsWithHTTPClient(client *http.Client) *ListConstraint
 	}
 }
 
-/* ListConstraintsParams contains all the parameters to send to the API endpoint
-   for the list constraints operation.
+/*
+ListConstraintsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list constraints operation.
+
+	Typically these are written to a http.Request.
 */
 type ListConstraintsParams struct {
 

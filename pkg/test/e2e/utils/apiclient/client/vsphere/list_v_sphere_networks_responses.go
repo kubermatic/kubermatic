@@ -46,7 +46,8 @@ func NewListVSphereNetworksOK() *ListVSphereNetworksOK {
 	return &ListVSphereNetworksOK{}
 }
 
-/* ListVSphereNetworksOK describes a response with status code 200, with default header values.
+/*
+ListVSphereNetworksOK describes a response with status code 200, with default header values.
 
 VSphereNetwork
 */
@@ -108,7 +109,8 @@ func NewListVSphereNetworksDefault(code int) *ListVSphereNetworksDefault {
 	}
 }
 
-/* ListVSphereNetworksDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

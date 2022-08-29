@@ -52,10 +52,12 @@ func NewListEtcdRestoreParamsWithHTTPClient(client *http.Client) *ListEtcdRestor
 	}
 }
 
-/* ListEtcdRestoreParams contains all the parameters to send to the API endpoint
-   for the list etcd restore operation.
+/*
+ListEtcdRestoreParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list etcd restore operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEtcdRestoreParams struct {
 

@@ -58,7 +58,8 @@ func NewGetMachineDeploymentOK() *GetMachineDeploymentOK {
 	return &GetMachineDeploymentOK{}
 }
 
-/* GetMachineDeploymentOK describes a response with status code 200, with default header values.
+/*
+GetMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -120,7 +121,8 @@ func NewGetMachineDeploymentUnauthorized() *GetMachineDeploymentUnauthorized {
 	return &GetMachineDeploymentUnauthorized{}
 }
 
-/* GetMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+GetMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetMachineDeploymentForbidden() *GetMachineDeploymentForbidden {
 	return &GetMachineDeploymentForbidden{}
 }
 
-/* GetMachineDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+GetMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetMachineDeploymentDefault(code int) *GetMachineDeploymentDefault {
 	}
 }
 
-/* GetMachineDeploymentDefault describes a response with status code -1, with default header values.
+/*
+GetMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

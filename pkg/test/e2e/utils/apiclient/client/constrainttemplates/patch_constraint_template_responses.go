@@ -58,7 +58,8 @@ func NewPatchConstraintTemplateOK() *PatchConstraintTemplateOK {
 	return &PatchConstraintTemplateOK{}
 }
 
-/* PatchConstraintTemplateOK describes a response with status code 200, with default header values.
+/*
+PatchConstraintTemplateOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -120,7 +121,8 @@ func NewPatchConstraintTemplateUnauthorized() *PatchConstraintTemplateUnauthoriz
 	return &PatchConstraintTemplateUnauthorized{}
 }
 
-/* PatchConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchConstraintTemplateForbidden() *PatchConstraintTemplateForbidden {
 	return &PatchConstraintTemplateForbidden{}
 }
 
-/* PatchConstraintTemplateForbidden describes a response with status code 403, with default header values.
+/*
+PatchConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchConstraintTemplateDefault(code int) *PatchConstraintTemplateDefault
 	}
 }
 
-/* PatchConstraintTemplateDefault describes a response with status code -1, with default header values.
+/*
+PatchConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

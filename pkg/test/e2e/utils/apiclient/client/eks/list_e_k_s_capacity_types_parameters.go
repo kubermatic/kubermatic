@@ -52,10 +52,12 @@ func NewListEKSCapacityTypesParamsWithHTTPClient(client *http.Client) *ListEKSCa
 	}
 }
 
-/* ListEKSCapacityTypesParams contains all the parameters to send to the API endpoint
-   for the list e k s capacity types operation.
+/*
+ListEKSCapacityTypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s capacity types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSCapacityTypesParams struct {
 	timeout    time.Duration

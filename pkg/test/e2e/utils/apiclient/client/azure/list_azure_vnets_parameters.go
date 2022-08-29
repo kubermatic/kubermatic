@@ -52,10 +52,12 @@ func NewListAzureVnetsParamsWithHTTPClient(client *http.Client) *ListAzureVnetsP
 	}
 }
 
-/* ListAzureVnetsParams contains all the parameters to send to the API endpoint
-   for the list azure vnets operation.
+/*
+ListAzureVnetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure vnets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureVnetsParams struct {
 

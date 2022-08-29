@@ -48,7 +48,7 @@ type ClientService interface {
 }
 
 /*
-  ListNutanixCategories List category keys from Nutanix
+ListNutanixCategories List category keys from Nutanix
 */
 func (a *Client) ListNutanixCategories(params *ListNutanixCategoriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesOK, error) {
 	// TODO: Validate the params before sending
@@ -86,7 +86,7 @@ func (a *Client) ListNutanixCategories(params *ListNutanixCategoriesParams, auth
 }
 
 /*
-  ListNutanixCategoriesNoCredentials Lists available Nutanix categories
+ListNutanixCategoriesNoCredentials Lists available Nutanix categories
 */
 func (a *Client) ListNutanixCategoriesNoCredentials(params *ListNutanixCategoriesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -124,7 +124,7 @@ func (a *Client) ListNutanixCategoriesNoCredentials(params *ListNutanixCategorie
 }
 
 /*
-  ListNutanixCategoryValues List available category values for a specific category from Nutanix
+ListNutanixCategoryValues List available category values for a specific category from Nutanix
 */
 func (a *Client) ListNutanixCategoryValues(params *ListNutanixCategoryValuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesOK, error) {
 	// TODO: Validate the params before sending
@@ -162,7 +162,7 @@ func (a *Client) ListNutanixCategoryValues(params *ListNutanixCategoryValuesPara
 }
 
 /*
-  ListNutanixCategoryValuesNoCredentials Lists available Nutanix category values for a specific category
+ListNutanixCategoryValuesNoCredentials Lists available Nutanix category values for a specific category
 */
 func (a *Client) ListNutanixCategoryValuesNoCredentials(params *ListNutanixCategoryValuesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -200,7 +200,7 @@ func (a *Client) ListNutanixCategoryValuesNoCredentials(params *ListNutanixCateg
 }
 
 /*
-  ListNutanixClusters List clusters from Nutanix
+ListNutanixClusters List clusters from Nutanix
 */
 func (a *Client) ListNutanixClusters(params *ListNutanixClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -238,7 +238,7 @@ func (a *Client) ListNutanixClusters(params *ListNutanixClustersParams, authInfo
 }
 
 /*
-  ListNutanixProjects List projects from Nutanix
+ListNutanixProjects List projects from Nutanix
 */
 func (a *Client) ListNutanixProjects(params *ListNutanixProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixProjectsOK, error) {
 	// TODO: Validate the params before sending
@@ -276,7 +276,7 @@ func (a *Client) ListNutanixProjects(params *ListNutanixProjectsParams, authInfo
 }
 
 /*
-  ListNutanixSubnets List subnets from Nutanix
+ListNutanixSubnets List subnets from Nutanix
 */
 func (a *Client) ListNutanixSubnets(params *ListNutanixSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixSubnetsOK, error) {
 	// TODO: Validate the params before sending
@@ -314,7 +314,7 @@ func (a *Client) ListNutanixSubnets(params *ListNutanixSubnetsParams, authInfo r
 }
 
 /*
-  ListNutanixSubnetsNoCredentials Lists available Nutanix Subnets
+ListNutanixSubnetsNoCredentials Lists available Nutanix Subnets
 */
 func (a *Client) ListNutanixSubnetsNoCredentials(params *ListNutanixSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixSubnetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending

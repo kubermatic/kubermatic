@@ -52,10 +52,12 @@ func NewGetClusterHealthParamsWithHTTPClient(client *http.Client) *GetClusterHea
 	}
 }
 
-/* GetClusterHealthParams contains all the parameters to send to the API endpoint
-   for the get cluster health operation.
+/*
+GetClusterHealthParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get cluster health operation.
+
+	Typically these are written to a http.Request.
 */
 type GetClusterHealthParams struct {
 

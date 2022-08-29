@@ -54,10 +54,12 @@ func NewCreateClusterV2ParamsWithHTTPClient(client *http.Client) *CreateClusterV
 	}
 }
 
-/* CreateClusterV2Params contains all the parameters to send to the API endpoint
-   for the create cluster v2 operation.
+/*
+CreateClusterV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create cluster v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateClusterV2Params struct {
 

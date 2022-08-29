@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  ListVersionsByProvider Lists all versions which don't result in automatic updates for a given provider
+ListVersionsByProvider Lists all versions which don't result in automatic updates for a given provider
 */
 func (a *Client) ListVersionsByProvider(params *ListVersionsByProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVersionsByProviderOK, error) {
 	// TODO: Validate the params before sending

@@ -46,7 +46,8 @@ func NewListGCPSubnetworksOK() *ListGCPSubnetworksOK {
 	return &ListGCPSubnetworksOK{}
 }
 
-/* ListGCPSubnetworksOK describes a response with status code 200, with default header values.
+/*
+ListGCPSubnetworksOK describes a response with status code 200, with default header values.
 
 GCPSubnetworkList
 */
@@ -108,7 +109,8 @@ func NewListGCPSubnetworksDefault(code int) *ListGCPSubnetworksDefault {
 	}
 }
 
-/* ListGCPSubnetworksDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSubnetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

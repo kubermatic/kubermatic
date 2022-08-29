@@ -54,10 +54,12 @@ func NewUnbindUserFromClusterRoleBindingParamsWithHTTPClient(client *http.Client
 	}
 }
 
-/* UnbindUserFromClusterRoleBindingParams contains all the parameters to send to the API endpoint
-   for the unbind user from cluster role binding operation.
+/*
+UnbindUserFromClusterRoleBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the unbind user from cluster role binding operation.
+
+	Typically these are written to a http.Request.
 */
 type UnbindUserFromClusterRoleBindingParams struct {
 

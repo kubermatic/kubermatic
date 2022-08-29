@@ -52,10 +52,12 @@ func NewListGCPNetworksNoCredentialsV2ParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* ListGCPNetworksNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list g c p networks no credentials v2 operation.
+/*
+ListGCPNetworksNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p networks no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPNetworksNoCredentialsV2Params struct {
 

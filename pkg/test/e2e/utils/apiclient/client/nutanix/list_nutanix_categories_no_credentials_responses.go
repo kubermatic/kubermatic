@@ -46,7 +46,8 @@ func NewListNutanixCategoriesNoCredentialsOK() *ListNutanixCategoriesNoCredentia
 	return &ListNutanixCategoriesNoCredentialsOK{}
 }
 
-/* ListNutanixCategoriesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixCategoriesNoCredentialsOK describes a response with status code 200, with default header values.
 
 NutanixCategoryList
 */
@@ -108,7 +109,8 @@ func NewListNutanixCategoriesNoCredentialsDefault(code int) *ListNutanixCategori
 	}
 }
 
-/* ListNutanixCategoriesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixCategoriesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

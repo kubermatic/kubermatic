@@ -46,7 +46,8 @@ func NewListOpenstackAvailabilityZonesNoCredentialsV2OK() *ListOpenstackAvailabi
 	return &ListOpenstackAvailabilityZonesNoCredentialsV2OK{}
 }
 
-/* ListOpenstackAvailabilityZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListOpenstackAvailabilityZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackAvailabilityZone
 */
@@ -108,7 +109,8 @@ func NewListOpenstackAvailabilityZonesNoCredentialsV2Default(code int) *ListOpen
 	}
 }
 
-/* ListOpenstackAvailabilityZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListOpenstackAvailabilityZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

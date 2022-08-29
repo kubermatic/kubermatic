@@ -53,10 +53,12 @@ func NewListOpenstackSizesParamsWithHTTPClient(client *http.Client) *ListOpensta
 	}
 }
 
-/* ListOpenstackSizesParams contains all the parameters to send to the API endpoint
-   for the list openstack sizes operation.
+/*
+ListOpenstackSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSizesParams struct {
 

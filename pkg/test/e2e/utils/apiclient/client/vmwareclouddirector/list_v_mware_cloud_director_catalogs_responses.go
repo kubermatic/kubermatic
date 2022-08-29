@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorCatalogsOK() *ListVMwareCloudDirectorCatalogsOK {
 	return &ListVMwareCloudDirectorCatalogsOK{}
 }
 
-/* ListVMwareCloudDirectorCatalogsOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorCatalogsOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorCatalogList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorCatalogsDefault(code int) *ListVMwareCloudDirecto
 	}
 }
 
-/* ListVMwareCloudDirectorCatalogsDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorCatalogsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

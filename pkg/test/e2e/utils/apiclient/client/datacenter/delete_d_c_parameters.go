@@ -52,10 +52,12 @@ func NewDeleteDCParamsWithHTTPClient(client *http.Client) *DeleteDCParams {
 	}
 }
 
-/* DeleteDCParams contains all the parameters to send to the API endpoint
-   for the delete d c operation.
+/*
+DeleteDCParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete d c operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteDCParams struct {
 

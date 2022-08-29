@@ -46,7 +46,8 @@ func NewListAKSClustersOK() *ListAKSClustersOK {
 	return &ListAKSClustersOK{}
 }
 
-/* ListAKSClustersOK describes a response with status code 200, with default header values.
+/*
+ListAKSClustersOK describes a response with status code 200, with default header values.
 
 AKSClusterList
 */
@@ -108,7 +109,8 @@ func NewListAKSClustersDefault(code int) *ListAKSClustersDefault {
 	}
 }
 
-/* ListAKSClustersDefault describes a response with status code -1, with default header values.
+/*
+ListAKSClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewPatchMachineDeploymentParamsWithHTTPClient(client *http.Client) *PatchMa
 	}
 }
 
-/* PatchMachineDeploymentParams contains all the parameters to send to the API endpoint
-   for the patch machine deployment operation.
+/*
+PatchMachineDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch machine deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchMachineDeploymentParams struct {
 

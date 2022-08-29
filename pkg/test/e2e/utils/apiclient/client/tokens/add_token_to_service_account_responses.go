@@ -58,7 +58,8 @@ func NewAddTokenToServiceAccountCreated() *AddTokenToServiceAccountCreated {
 	return &AddTokenToServiceAccountCreated{}
 }
 
-/* AddTokenToServiceAccountCreated describes a response with status code 201, with default header values.
+/*
+AddTokenToServiceAccountCreated describes a response with status code 201, with default header values.
 
 ServiceAccountToken
 */
@@ -120,7 +121,8 @@ func NewAddTokenToServiceAccountUnauthorized() *AddTokenToServiceAccountUnauthor
 	return &AddTokenToServiceAccountUnauthorized{}
 }
 
-/* AddTokenToServiceAccountUnauthorized describes a response with status code 401, with default header values.
+/*
+AddTokenToServiceAccountUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewAddTokenToServiceAccountForbidden() *AddTokenToServiceAccountForbidden {
 	return &AddTokenToServiceAccountForbidden{}
 }
 
-/* AddTokenToServiceAccountForbidden describes a response with status code 403, with default header values.
+/*
+AddTokenToServiceAccountForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewAddTokenToServiceAccountDefault(code int) *AddTokenToServiceAccountDefau
 	}
 }
 
-/* AddTokenToServiceAccountDefault describes a response with status code -1, with default header values.
+/*
+AddTokenToServiceAccountDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

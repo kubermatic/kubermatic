@@ -52,7 +52,8 @@ func NewPatchCurrentUserSettingsOK() *PatchCurrentUserSettingsOK {
 	return &PatchCurrentUserSettingsOK{}
 }
 
-/* PatchCurrentUserSettingsOK describes a response with status code 200, with default header values.
+/*
+PatchCurrentUserSettingsOK describes a response with status code 200, with default header values.
 
 UserSettings
 */
@@ -114,7 +115,8 @@ func NewPatchCurrentUserSettingsUnauthorized() *PatchCurrentUserSettingsUnauthor
 	return &PatchCurrentUserSettingsUnauthorized{}
 }
 
-/* PatchCurrentUserSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchCurrentUserSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -166,7 +168,8 @@ func NewPatchCurrentUserSettingsDefault(code int) *PatchCurrentUserSettingsDefau
 	}
 }
 
-/* PatchCurrentUserSettingsDefault describes a response with status code -1, with default header values.
+/*
+PatchCurrentUserSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

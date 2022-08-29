@@ -22,12 +22,10 @@ type EtcdBackupConfigCondition struct {
 	// Last time we got an update on a given condition.
 	// +optional
 	// Format: date-time
-	LastHeartbeatTime strfmt.DateTime `json:"lastHeartbeatTime,omitempty"`
 
 	// Last time the condition transit from one status to another.
 	// +optional
 	// Format: date-time
-	LastTransitionTime strfmt.DateTime `json:"lastTransitionTime,omitempty"`
 
 	// Human readable message indicating details about last transition.
 	// +optional
@@ -48,14 +46,6 @@ type EtcdBackupConfigCondition struct {
 func (m *EtcdBackupConfigCondition) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLastHeartbeatTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastTransitionTime(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -67,30 +57,8 @@ func (m *EtcdBackupConfigCondition) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastHeartbeatTime) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("lastHeartbeatTime", "body", "date-time", m.LastHeartbeatTime.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastTransitionTime) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("lastTransitionTime", "body", "date-time", m.LastTransitionTime.String(), formats); err != nil {
-		return err
-	}
-
+	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
+	if err := m.LastTransitionTime.Validate(formats); err != nil {
 	return nil
 }
 

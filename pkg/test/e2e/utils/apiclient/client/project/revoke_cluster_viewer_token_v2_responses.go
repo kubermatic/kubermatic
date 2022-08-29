@@ -58,7 +58,8 @@ func NewRevokeClusterViewerTokenV2OK() *RevokeClusterViewerTokenV2OK {
 	return &RevokeClusterViewerTokenV2OK{}
 }
 
-/* RevokeClusterViewerTokenV2OK describes a response with status code 200, with default header values.
+/*
+RevokeClusterViewerTokenV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewRevokeClusterViewerTokenV2Unauthorized() *RevokeClusterViewerTokenV2Unau
 	return &RevokeClusterViewerTokenV2Unauthorized{}
 }
 
-/* RevokeClusterViewerTokenV2Unauthorized describes a response with status code 401, with default header values.
+/*
+RevokeClusterViewerTokenV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewRevokeClusterViewerTokenV2Forbidden() *RevokeClusterViewerTokenV2Forbidd
 	return &RevokeClusterViewerTokenV2Forbidden{}
 }
 
-/* RevokeClusterViewerTokenV2Forbidden describes a response with status code 403, with default header values.
+/*
+RevokeClusterViewerTokenV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewRevokeClusterViewerTokenV2Default(code int) *RevokeClusterViewerTokenV2D
 	}
 }
 
-/* RevokeClusterViewerTokenV2Default describes a response with status code -1, with default header values.
+/*
+RevokeClusterViewerTokenV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

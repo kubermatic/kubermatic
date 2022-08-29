@@ -52,10 +52,12 @@ func NewListVSphereNetworksNoCredentialsParamsWithHTTPClient(client *http.Client
 	}
 }
 
-/* ListVSphereNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list v sphere networks no credentials operation.
+/*
+ListVSphereNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list v sphere networks no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVSphereNetworksNoCredentialsParams struct {
 

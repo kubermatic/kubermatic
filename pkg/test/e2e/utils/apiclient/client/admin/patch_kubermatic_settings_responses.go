@@ -58,7 +58,8 @@ func NewPatchKubermaticSettingsOK() *PatchKubermaticSettingsOK {
 	return &PatchKubermaticSettingsOK{}
 }
 
-/* PatchKubermaticSettingsOK describes a response with status code 200, with default header values.
+/*
+PatchKubermaticSettingsOK describes a response with status code 200, with default header values.
 
 GlobalSettings
 */
@@ -120,7 +121,8 @@ func NewPatchKubermaticSettingsUnauthorized() *PatchKubermaticSettingsUnauthoriz
 	return &PatchKubermaticSettingsUnauthorized{}
 }
 
-/* PatchKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchKubermaticSettingsForbidden() *PatchKubermaticSettingsForbidden {
 	return &PatchKubermaticSettingsForbidden{}
 }
 
-/* PatchKubermaticSettingsForbidden describes a response with status code 403, with default header values.
+/*
+PatchKubermaticSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchKubermaticSettingsDefault(code int) *PatchKubermaticSettingsDefault
 	}
 }
 
-/* PatchKubermaticSettingsDefault describes a response with status code -1, with default header values.
+/*
+PatchKubermaticSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

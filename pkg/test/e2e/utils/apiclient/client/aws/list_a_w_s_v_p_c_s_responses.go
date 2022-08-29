@@ -46,7 +46,8 @@ func NewListAWSVPCSOK() *ListAWSVPCSOK {
 	return &ListAWSVPCSOK{}
 }
 
-/* ListAWSVPCSOK describes a response with status code 200, with default header values.
+/*
+ListAWSVPCSOK describes a response with status code 200, with default header values.
 
 AWSVPCList
 */
@@ -108,7 +109,8 @@ func NewListAWSVPCSDefault(code int) *ListAWSVPCSDefault {
 	}
 }
 
-/* ListAWSVPCSDefault describes a response with status code -1, with default header values.
+/*
+ListAWSVPCSDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

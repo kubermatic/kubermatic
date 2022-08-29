@@ -52,10 +52,12 @@ func NewListGCPNetworksParamsWithHTTPClient(client *http.Client) *ListGCPNetwork
 	}
 }
 
-/* ListGCPNetworksParams contains all the parameters to send to the API endpoint
-   for the list g c p networks operation.
+/*
+ListGCPNetworksParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p networks operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPNetworksParams struct {
 	timeout    time.Duration

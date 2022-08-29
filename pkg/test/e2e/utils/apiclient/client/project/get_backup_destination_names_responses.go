@@ -58,7 +58,8 @@ func NewGetBackupDestinationNamesOK() *GetBackupDestinationNamesOK {
 	return &GetBackupDestinationNamesOK{}
 }
 
-/* GetBackupDestinationNamesOK describes a response with status code 200, with default header values.
+/*
+GetBackupDestinationNamesOK describes a response with status code 200, with default header values.
 
 BackupDestinationNames
 */
@@ -118,7 +119,8 @@ func NewGetBackupDestinationNamesUnauthorized() *GetBackupDestinationNamesUnauth
 	return &GetBackupDestinationNamesUnauthorized{}
 }
 
-/* GetBackupDestinationNamesUnauthorized describes a response with status code 401, with default header values.
+/*
+GetBackupDestinationNamesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetBackupDestinationNamesForbidden() *GetBackupDestinationNamesForbidden
 	return &GetBackupDestinationNamesForbidden{}
 }
 
-/* GetBackupDestinationNamesForbidden describes a response with status code 403, with default header values.
+/*
+GetBackupDestinationNamesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetBackupDestinationNamesDefault(code int) *GetBackupDestinationNamesDef
 	}
 }
 
-/* GetBackupDestinationNamesDefault describes a response with status code -1, with default header values.
+/*
+GetBackupDestinationNamesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

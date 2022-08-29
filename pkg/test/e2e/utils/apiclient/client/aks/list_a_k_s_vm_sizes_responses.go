@@ -46,7 +46,8 @@ func NewListAKSVMSizesOK() *ListAKSVMSizesOK {
 	return &ListAKSVMSizesOK{}
 }
 
-/* ListAKSVMSizesOK describes a response with status code 200, with default header values.
+/*
+ListAKSVMSizesOK describes a response with status code 200, with default header values.
 
 AKSVMSizeList
 */
@@ -108,7 +109,8 @@ func NewListAKSVMSizesDefault(code int) *ListAKSVMSizesDefault {
 	}
 }
 
-/* ListAKSVMSizesDefault describes a response with status code -1, with default header values.
+/*
+ListAKSVMSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

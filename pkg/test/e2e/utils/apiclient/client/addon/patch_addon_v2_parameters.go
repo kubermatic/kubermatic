@@ -54,10 +54,12 @@ func NewPatchAddonV2ParamsWithHTTPClient(client *http.Client) *PatchAddonV2Param
 	}
 }
 
-/* PatchAddonV2Params contains all the parameters to send to the API endpoint
-   for the patch addon v2 operation.
+/*
+PatchAddonV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch addon v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchAddonV2Params struct {
 

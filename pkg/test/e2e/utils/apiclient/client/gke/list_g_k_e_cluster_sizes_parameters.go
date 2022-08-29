@@ -52,10 +52,12 @@ func NewListGKEClusterSizesParamsWithHTTPClient(client *http.Client) *ListGKEClu
 	}
 }
 
-/* ListGKEClusterSizesParams contains all the parameters to send to the API endpoint
-   for the list g k e cluster sizes operation.
+/*
+ListGKEClusterSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e cluster sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEClusterSizesParams struct {
 

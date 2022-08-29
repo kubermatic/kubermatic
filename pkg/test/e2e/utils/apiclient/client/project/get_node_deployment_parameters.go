@@ -52,10 +52,12 @@ func NewGetNodeDeploymentParamsWithHTTPClient(client *http.Client) *GetNodeDeplo
 	}
 }
 
-/* GetNodeDeploymentParams contains all the parameters to send to the API endpoint
-   for the get node deployment operation.
+/*
+GetNodeDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get node deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type GetNodeDeploymentParams struct {
 

@@ -23454,7 +23454,8 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
+          "type": "string",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
@@ -24079,7 +24080,7 @@
         },
         "backupStartTime": {
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
           "x-go-name": "BackupStartTime"
         },
         "deleteFinishedTime": {
@@ -24100,7 +24101,7 @@
         },
         "deleteStartTime": {
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
           "x-go-name": "DeleteStartTime"
         },
         "jobName": {
@@ -24110,7 +24111,8 @@
         "scheduledTime": {
           "description": "ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil",
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
+          "type": "string",
           "x-go-name": "ScheduledTime"
         }
       },
@@ -26375,7 +26377,8 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
+          "type": "string",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
@@ -32792,7 +32795,7 @@
         "lastSeen": {
           "description": "LastSeen holds a time in UTC format when the user has been using the API last time",
           "type": "string",
-          "format": "date-time",
+          "$ref": "#/definitions/Time"
           "x-go-name": "LastSeen"
         },
         "name": {

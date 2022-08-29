@@ -52,10 +52,12 @@ func NewListVMwareCloudDirectorNetworksNoCredentialsParamsWithHTTPClient(client 
 	}
 }
 
-/* ListVMwareCloudDirectorNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list v mware cloud director networks no credentials operation.
+/*
+ListVMwareCloudDirectorNetworksNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list v mware cloud director networks no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVMwareCloudDirectorNetworksNoCredentialsParams struct {
 

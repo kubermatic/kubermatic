@@ -58,7 +58,8 @@ func NewGetGroupProjectBindingOK() *GetGroupProjectBindingOK {
 	return &GetGroupProjectBindingOK{}
 }
 
-/* GetGroupProjectBindingOK describes a response with status code 200, with default header values.
+/*
+GetGroupProjectBindingOK describes a response with status code 200, with default header values.
 
 GroupProjectBinding
 */
@@ -120,7 +121,8 @@ func NewGetGroupProjectBindingUnauthorized() *GetGroupProjectBindingUnauthorized
 	return &GetGroupProjectBindingUnauthorized{}
 }
 
-/* GetGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+GetGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetGroupProjectBindingForbidden() *GetGroupProjectBindingForbidden {
 	return &GetGroupProjectBindingForbidden{}
 }
 
-/* GetGroupProjectBindingForbidden describes a response with status code 403, with default header values.
+/*
+GetGroupProjectBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetGroupProjectBindingDefault(code int) *GetGroupProjectBindingDefault {
 	}
 }
 
-/* GetGroupProjectBindingDefault describes a response with status code -1, with default header values.
+/*
+GetGroupProjectBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

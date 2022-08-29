@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  ListDigitaloceanSizes Lists sizes from digitalocean
+ListDigitaloceanSizes Lists sizes from digitalocean
 */
 func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, auth
 }
 
 /*
-  ListDigitaloceanSizesNoCredentials Lists sizes from digitalocean
+ListDigitaloceanSizesNoCredentials Lists sizes from digitalocean
 */
 func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSize
 }
 
 /*
-  ListDigitaloceanSizesNoCredentialsV2 Lists sizes from digitalocean
+ListDigitaloceanSizesNoCredentialsV2 Lists sizes from digitalocean
 */
 func (a *Client) ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDigitaloceanSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

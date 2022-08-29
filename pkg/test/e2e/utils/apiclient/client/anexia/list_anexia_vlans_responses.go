@@ -46,7 +46,8 @@ func NewListAnexiaVlansOK() *ListAnexiaVlansOK {
 	return &ListAnexiaVlansOK{}
 }
 
-/* ListAnexiaVlansOK describes a response with status code 200, with default header values.
+/*
+ListAnexiaVlansOK describes a response with status code 200, with default header values.
 
 AnexiaVlanList
 */
@@ -108,7 +109,8 @@ func NewListAnexiaVlansDefault(code int) *ListAnexiaVlansDefault {
 	}
 }
 
-/* ListAnexiaVlansDefault describes a response with status code -1, with default header values.
+/*
+ListAnexiaVlansDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

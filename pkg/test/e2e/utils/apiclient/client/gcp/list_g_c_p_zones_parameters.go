@@ -52,10 +52,12 @@ func NewListGCPZonesParamsWithHTTPClient(client *http.Client) *ListGCPZonesParam
 	}
 }
 
-/* ListGCPZonesParams contains all the parameters to send to the API endpoint
-   for the list g c p zones operation.
+/*
+ListGCPZonesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p zones operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPZonesParams struct {
 

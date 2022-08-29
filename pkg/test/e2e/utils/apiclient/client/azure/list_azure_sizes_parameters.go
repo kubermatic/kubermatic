@@ -52,10 +52,12 @@ func NewListAzureSizesParamsWithHTTPClient(client *http.Client) *ListAzureSizesP
 	}
 }
 
-/* ListAzureSizesParams contains all the parameters to send to the API endpoint
-   for the list azure sizes operation.
+/*
+ListAzureSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureSizesParams struct {
 

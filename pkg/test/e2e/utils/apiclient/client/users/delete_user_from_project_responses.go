@@ -58,7 +58,8 @@ func NewDeleteUserFromProjectOK() *DeleteUserFromProjectOK {
 	return &DeleteUserFromProjectOK{}
 }
 
-/* DeleteUserFromProjectOK describes a response with status code 200, with default header values.
+/*
+DeleteUserFromProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -120,7 +121,8 @@ func NewDeleteUserFromProjectUnauthorized() *DeleteUserFromProjectUnauthorized {
 	return &DeleteUserFromProjectUnauthorized{}
 }
 
-/* DeleteUserFromProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteUserFromProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewDeleteUserFromProjectForbidden() *DeleteUserFromProjectForbidden {
 	return &DeleteUserFromProjectForbidden{}
 }
 
-/* DeleteUserFromProjectForbidden describes a response with status code 403, with default header values.
+/*
+DeleteUserFromProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewDeleteUserFromProjectDefault(code int) *DeleteUserFromProjectDefault {
 	}
 }
 
-/* DeleteUserFromProjectDefault describes a response with status code -1, with default header values.
+/*
+DeleteUserFromProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -20,8 +20,9 @@ import (
 type EtcdRestoreStatus struct {
 
 	// restore time
-	// Format: date-time
-	RestoreTime strfmt.DateTime `json:"restoreTime,omitempty"`
+	RestoreTime string `json:"restoreTime,omitempty"`
+
+	RestoreTime Time `json:"restoreTime,omitempty"`
 
 	// phase
 	Phase EtcdRestorePhase `json:"phase,omitempty"`
@@ -32,10 +33,7 @@ func (m *EtcdRestoreStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateRestoreTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePhase(formats); err != nil {
+	if err := m.validateRestoreTime(formats); err != nil {
 		res = append(res, err)
 	}
 

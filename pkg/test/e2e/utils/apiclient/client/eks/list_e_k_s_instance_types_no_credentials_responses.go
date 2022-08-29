@@ -58,7 +58,8 @@ func NewListEKSInstanceTypesNoCredentialsOK() *ListEKSInstanceTypesNoCredentials
 	return &ListEKSInstanceTypesNoCredentialsOK{}
 }
 
-/* ListEKSInstanceTypesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListEKSInstanceTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
 EKSInstanceTypeList
 */
@@ -118,7 +119,8 @@ func NewListEKSInstanceTypesNoCredentialsUnauthorized() *ListEKSInstanceTypesNoC
 	return &ListEKSInstanceTypesNoCredentialsUnauthorized{}
 }
 
-/* ListEKSInstanceTypesNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSInstanceTypesNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSInstanceTypesNoCredentialsForbidden() *ListEKSInstanceTypesNoCred
 	return &ListEKSInstanceTypesNoCredentialsForbidden{}
 }
 
-/* ListEKSInstanceTypesNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSInstanceTypesNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSInstanceTypesNoCredentialsDefault(code int) *ListEKSInstanceTypes
 	}
 }
 
-/* ListEKSInstanceTypesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSInstanceTypesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewGetAdmissionPluginsParamsWithHTTPClient(client *http.Client) *GetAdmissi
 	}
 }
 
-/* GetAdmissionPluginsParams contains all the parameters to send to the API endpoint
-   for the get admission plugins operation.
+/*
+GetAdmissionPluginsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get admission plugins operation.
+
+	Typically these are written to a http.Request.
 */
 type GetAdmissionPluginsParams struct {
 

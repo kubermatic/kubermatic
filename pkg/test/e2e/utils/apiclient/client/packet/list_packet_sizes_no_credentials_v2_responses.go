@@ -46,7 +46,8 @@ func NewListPacketSizesNoCredentialsV2OK() *ListPacketSizesNoCredentialsV2OK {
 	return &ListPacketSizesNoCredentialsV2OK{}
 }
 
-/* ListPacketSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListPacketSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -108,7 +109,8 @@ func NewListPacketSizesNoCredentialsV2Default(code int) *ListPacketSizesNoCreden
 	}
 }
 
-/* ListPacketSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListPacketSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

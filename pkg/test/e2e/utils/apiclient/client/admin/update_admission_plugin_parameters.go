@@ -54,10 +54,12 @@ func NewUpdateAdmissionPluginParamsWithHTTPClient(client *http.Client) *UpdateAd
 	}
 }
 
-/* UpdateAdmissionPluginParams contains all the parameters to send to the API endpoint
-   for the update admission plugin operation.
+/*
+UpdateAdmissionPluginParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update admission plugin operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateAdmissionPluginParams struct {
 

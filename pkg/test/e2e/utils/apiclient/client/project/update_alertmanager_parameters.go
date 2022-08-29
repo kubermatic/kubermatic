@@ -54,10 +54,12 @@ func NewUpdateAlertmanagerParamsWithHTTPClient(client *http.Client) *UpdateAlert
 	}
 }
 
-/* UpdateAlertmanagerParams contains all the parameters to send to the API endpoint
-   for the update alertmanager operation.
+/*
+UpdateAlertmanagerParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update alertmanager operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateAlertmanagerParams struct {
 

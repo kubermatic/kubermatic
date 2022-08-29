@@ -54,10 +54,12 @@ func NewCreateOrUpdateBackupCredentialsParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* CreateOrUpdateBackupCredentialsParams contains all the parameters to send to the API endpoint
-   for the create or update backup credentials operation.
+/*
+CreateOrUpdateBackupCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create or update backup credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateOrUpdateBackupCredentialsParams struct {
 

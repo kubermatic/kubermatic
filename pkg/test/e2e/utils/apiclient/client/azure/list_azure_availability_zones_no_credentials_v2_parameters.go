@@ -52,10 +52,12 @@ func NewListAzureAvailabilityZonesNoCredentialsV2ParamsWithHTTPClient(client *ht
 	}
 }
 
-/* ListAzureAvailabilityZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list azure availability zones no credentials v2 operation.
+/*
+ListAzureAvailabilityZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure availability zones no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureAvailabilityZonesNoCredentialsV2Params struct {
 

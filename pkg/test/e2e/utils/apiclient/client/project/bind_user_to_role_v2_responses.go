@@ -58,7 +58,8 @@ func NewBindUserToRoleV2OK() *BindUserToRoleV2OK {
 	return &BindUserToRoleV2OK{}
 }
 
-/* BindUserToRoleV2OK describes a response with status code 200, with default header values.
+/*
+BindUserToRoleV2OK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -120,7 +121,8 @@ func NewBindUserToRoleV2Unauthorized() *BindUserToRoleV2Unauthorized {
 	return &BindUserToRoleV2Unauthorized{}
 }
 
-/* BindUserToRoleV2Unauthorized describes a response with status code 401, with default header values.
+/*
+BindUserToRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewBindUserToRoleV2Forbidden() *BindUserToRoleV2Forbidden {
 	return &BindUserToRoleV2Forbidden{}
 }
 
-/* BindUserToRoleV2Forbidden describes a response with status code 403, with default header values.
+/*
+BindUserToRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewBindUserToRoleV2Default(code int) *BindUserToRoleV2Default {
 	}
 }
 
-/* BindUserToRoleV2Default describes a response with status code -1, with default header values.
+/*
+BindUserToRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

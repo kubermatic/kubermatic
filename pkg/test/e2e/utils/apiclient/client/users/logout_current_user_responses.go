@@ -52,7 +52,8 @@ func NewLogoutCurrentUserOK() *LogoutCurrentUserOK {
 	return &LogoutCurrentUserOK{}
 }
 
-/* LogoutCurrentUserOK describes a response with status code 200, with default header values.
+/*
+LogoutCurrentUserOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -102,7 +103,8 @@ func NewLogoutCurrentUserUnauthorized() *LogoutCurrentUserUnauthorized {
 	return &LogoutCurrentUserUnauthorized{}
 }
 
-/* LogoutCurrentUserUnauthorized describes a response with status code 401, with default header values.
+/*
+LogoutCurrentUserUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -154,7 +156,8 @@ func NewLogoutCurrentUserDefault(code int) *LogoutCurrentUserDefault {
 	}
 }
 
-/* LogoutCurrentUserDefault describes a response with status code -1, with default header values.
+/*
+LogoutCurrentUserDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

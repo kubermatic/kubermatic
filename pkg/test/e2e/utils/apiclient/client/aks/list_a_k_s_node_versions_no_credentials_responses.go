@@ -58,7 +58,8 @@ func NewListAKSNodeVersionsNoCredentialsOK() *ListAKSNodeVersionsNoCredentialsOK
 	return &ListAKSNodeVersionsNoCredentialsOK{}
 }
 
-/* ListAKSNodeVersionsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAKSNodeVersionsNoCredentialsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -118,7 +119,8 @@ func NewListAKSNodeVersionsNoCredentialsUnauthorized() *ListAKSNodeVersionsNoCre
 	return &ListAKSNodeVersionsNoCredentialsUnauthorized{}
 }
 
-/* ListAKSNodeVersionsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAKSNodeVersionsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListAKSNodeVersionsNoCredentialsForbidden() *ListAKSNodeVersionsNoCreden
 	return &ListAKSNodeVersionsNoCredentialsForbidden{}
 }
 
-/* ListAKSNodeVersionsNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListAKSNodeVersionsNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListAKSNodeVersionsNoCredentialsDefault(code int) *ListAKSNodeVersionsNo
 	}
 }
 
-/* ListAKSNodeVersionsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAKSNodeVersionsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

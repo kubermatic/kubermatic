@@ -58,7 +58,8 @@ func NewGetEtcdRestoreOK() *GetEtcdRestoreOK {
 	return &GetEtcdRestoreOK{}
 }
 
-/* GetEtcdRestoreOK describes a response with status code 200, with default header values.
+/*
+GetEtcdRestoreOK describes a response with status code 200, with default header values.
 
 EtcdRestore
 */
@@ -120,7 +121,8 @@ func NewGetEtcdRestoreUnauthorized() *GetEtcdRestoreUnauthorized {
 	return &GetEtcdRestoreUnauthorized{}
 }
 
-/* GetEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
+/*
+GetEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetEtcdRestoreForbidden() *GetEtcdRestoreForbidden {
 	return &GetEtcdRestoreForbidden{}
 }
 
-/* GetEtcdRestoreForbidden describes a response with status code 403, with default header values.
+/*
+GetEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetEtcdRestoreDefault(code int) *GetEtcdRestoreDefault {
 	}
 }
 
-/* GetEtcdRestoreDefault describes a response with status code -1, with default header values.
+/*
+GetEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

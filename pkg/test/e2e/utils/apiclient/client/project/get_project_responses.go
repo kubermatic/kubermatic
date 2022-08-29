@@ -58,7 +58,8 @@ func NewGetProjectOK() *GetProjectOK {
 	return &GetProjectOK{}
 }
 
-/* GetProjectOK describes a response with status code 200, with default header values.
+/*
+GetProjectOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -120,7 +121,8 @@ func NewGetProjectUnauthorized() *GetProjectUnauthorized {
 	return &GetProjectUnauthorized{}
 }
 
-/* GetProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+GetProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetProjectConflict() *GetProjectConflict {
 	return &GetProjectConflict{}
 }
 
-/* GetProjectConflict describes a response with status code 409, with default header values.
+/*
+GetProjectConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetProjectDefault(code int) *GetProjectDefault {
 	}
 }
 
-/* GetProjectDefault describes a response with status code -1, with default header values.
+/*
+GetProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

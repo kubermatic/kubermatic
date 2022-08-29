@@ -52,10 +52,12 @@ func NewGetIPAMPoolParamsWithHTTPClient(client *http.Client) *GetIPAMPoolParams 
 	}
 }
 
-/* GetIPAMPoolParams contains all the parameters to send to the API endpoint
-   for the get IP a m pool operation.
+/*
+GetIPAMPoolParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get IP a m pool operation.
+
+	Typically these are written to a http.Request.
 */
 type GetIPAMPoolParams struct {
 

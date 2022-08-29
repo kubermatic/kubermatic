@@ -52,10 +52,12 @@ func NewGetExternalClusterKubeconfigParamsWithHTTPClient(client *http.Client) *G
 	}
 }
 
-/* GetExternalClusterKubeconfigParams contains all the parameters to send to the API endpoint
-   for the get external cluster kubeconfig operation.
+/*
+GetExternalClusterKubeconfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get external cluster kubeconfig operation.
+
+	Typically these are written to a http.Request.
 */
 type GetExternalClusterKubeconfigParams struct {
 

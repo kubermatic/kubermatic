@@ -52,10 +52,12 @@ func NewListAlibabaVSwitchesNoCredentialsV2ParamsWithHTTPClient(client *http.Cli
 	}
 }
 
-/* ListAlibabaVSwitchesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list alibaba v switches no credentials v2 operation.
+/*
+ListAlibabaVSwitchesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba v switches no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaVSwitchesNoCredentialsV2Params struct {
 

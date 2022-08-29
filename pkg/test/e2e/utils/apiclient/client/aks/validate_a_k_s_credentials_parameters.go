@@ -52,10 +52,12 @@ func NewValidateAKSCredentialsParamsWithHTTPClient(client *http.Client) *Validat
 	}
 }
 
-/* ValidateAKSCredentialsParams contains all the parameters to send to the API endpoint
-   for the validate a k s credentials operation.
+/*
+ValidateAKSCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the validate a k s credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ValidateAKSCredentialsParams struct {
 

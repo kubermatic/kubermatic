@@ -58,7 +58,8 @@ func NewCreateSSHKeyCreated() *CreateSSHKeyCreated {
 	return &CreateSSHKeyCreated{}
 }
 
-/* CreateSSHKeyCreated describes a response with status code 201, with default header values.
+/*
+CreateSSHKeyCreated describes a response with status code 201, with default header values.
 
 SSHKey
 */
@@ -120,7 +121,8 @@ func NewCreateSSHKeyUnauthorized() *CreateSSHKeyUnauthorized {
 	return &CreateSSHKeyUnauthorized{}
 }
 
-/* CreateSSHKeyUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateSSHKeyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateSSHKeyForbidden() *CreateSSHKeyForbidden {
 	return &CreateSSHKeyForbidden{}
 }
 
-/* CreateSSHKeyForbidden describes a response with status code 403, with default header values.
+/*
+CreateSSHKeyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateSSHKeyDefault(code int) *CreateSSHKeyDefault {
 	}
 }
 
-/* CreateSSHKeyDefault describes a response with status code -1, with default header values.
+/*
+CreateSSHKeyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

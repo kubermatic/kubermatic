@@ -58,7 +58,8 @@ func NewDeleteClusterRoleOK() *DeleteClusterRoleOK {
 	return &DeleteClusterRoleOK{}
 }
 
-/* DeleteClusterRoleOK describes a response with status code 200, with default header values.
+/*
+DeleteClusterRoleOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteClusterRoleUnauthorized() *DeleteClusterRoleUnauthorized {
 	return &DeleteClusterRoleUnauthorized{}
 }
 
-/* DeleteClusterRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteClusterRoleForbidden() *DeleteClusterRoleForbidden {
 	return &DeleteClusterRoleForbidden{}
 }
 
-/* DeleteClusterRoleForbidden describes a response with status code 403, with default header values.
+/*
+DeleteClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteClusterRoleDefault(code int) *DeleteClusterRoleDefault {
 	}
 }
 
-/* DeleteClusterRoleDefault describes a response with status code -1, with default header values.
+/*
+DeleteClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

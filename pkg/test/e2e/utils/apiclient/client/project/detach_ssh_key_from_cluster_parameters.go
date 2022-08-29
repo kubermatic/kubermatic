@@ -52,10 +52,12 @@ func NewDetachSSHKeyFromClusterParamsWithHTTPClient(client *http.Client) *Detach
 	}
 }
 
-/* DetachSSHKeyFromClusterParams contains all the parameters to send to the API endpoint
-   for the detach SSH key from cluster operation.
+/*
+DetachSSHKeyFromClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the detach SSH key from cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type DetachSSHKeyFromClusterParams struct {
 

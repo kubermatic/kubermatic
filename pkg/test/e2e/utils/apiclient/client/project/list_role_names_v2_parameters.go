@@ -52,10 +52,12 @@ func NewListRoleNamesV2ParamsWithHTTPClient(client *http.Client) *ListRoleNamesV
 	}
 }
 
-/* ListRoleNamesV2Params contains all the parameters to send to the API endpoint
-   for the list role names v2 operation.
+/*
+ListRoleNamesV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list role names v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListRoleNamesV2Params struct {
 

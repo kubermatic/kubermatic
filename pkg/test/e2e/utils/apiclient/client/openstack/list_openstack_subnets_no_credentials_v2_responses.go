@@ -46,7 +46,8 @@ func NewListOpenstackSubnetsNoCredentialsV2OK() *ListOpenstackSubnetsNoCredentia
 	return &ListOpenstackSubnetsNoCredentialsV2OK{}
 }
 
-/* ListOpenstackSubnetsNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSubnetsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackSubnet
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSubnetsNoCredentialsV2Default(code int) *ListOpenstackSubne
 	}
 }
 
-/* ListOpenstackSubnetsNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListOpenstackSubnetsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

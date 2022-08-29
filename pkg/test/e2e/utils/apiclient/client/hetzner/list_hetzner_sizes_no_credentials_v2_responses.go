@@ -46,7 +46,8 @@ func NewListHetznerSizesNoCredentialsV2OK() *ListHetznerSizesNoCredentialsV2OK {
 	return &ListHetznerSizesNoCredentialsV2OK{}
 }
 
-/* ListHetznerSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListHetznerSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 HetznerSizeList
 */
@@ -110,7 +111,8 @@ func NewListHetznerSizesNoCredentialsV2Default(code int) *ListHetznerSizesNoCred
 	}
 }
 
-/* ListHetznerSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListHetznerSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

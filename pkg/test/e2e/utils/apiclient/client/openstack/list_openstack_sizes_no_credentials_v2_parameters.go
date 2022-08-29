@@ -52,10 +52,12 @@ func NewListOpenstackSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* ListOpenstackSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list openstack sizes no credentials v2 operation.
+/*
+ListOpenstackSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack sizes no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSizesNoCredentialsV2Params struct {
 

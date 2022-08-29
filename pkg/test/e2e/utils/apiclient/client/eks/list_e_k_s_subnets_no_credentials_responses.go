@@ -58,7 +58,8 @@ func NewListEKSSubnetsNoCredentialsOK() *ListEKSSubnetsNoCredentialsOK {
 	return &ListEKSSubnetsNoCredentialsOK{}
 }
 
-/* ListEKSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListEKSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 EKSSubnetList
 */
@@ -118,7 +119,8 @@ func NewListEKSSubnetsNoCredentialsUnauthorized() *ListEKSSubnetsNoCredentialsUn
 	return &ListEKSSubnetsNoCredentialsUnauthorized{}
 }
 
-/* ListEKSSubnetsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSSubnetsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSSubnetsNoCredentialsForbidden() *ListEKSSubnetsNoCredentialsForbi
 	return &ListEKSSubnetsNoCredentialsForbidden{}
 }
 
-/* ListEKSSubnetsNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSSubnetsNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSSubnetsNoCredentialsDefault(code int) *ListEKSSubnetsNoCredential
 	}
 }
 
-/* ListEKSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewUnbindUserFromRoleBindingV2OK() *UnbindUserFromRoleBindingV2OK {
 	return &UnbindUserFromRoleBindingV2OK{}
 }
 
-/* UnbindUserFromRoleBindingV2OK describes a response with status code 200, with default header values.
+/*
+UnbindUserFromRoleBindingV2OK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -120,7 +121,8 @@ func NewUnbindUserFromRoleBindingV2Unauthorized() *UnbindUserFromRoleBindingV2Un
 	return &UnbindUserFromRoleBindingV2Unauthorized{}
 }
 
-/* UnbindUserFromRoleBindingV2Unauthorized describes a response with status code 401, with default header values.
+/*
+UnbindUserFromRoleBindingV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewUnbindUserFromRoleBindingV2Forbidden() *UnbindUserFromRoleBindingV2Forbi
 	return &UnbindUserFromRoleBindingV2Forbidden{}
 }
 
-/* UnbindUserFromRoleBindingV2Forbidden describes a response with status code 403, with default header values.
+/*
+UnbindUserFromRoleBindingV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewUnbindUserFromRoleBindingV2Default(code int) *UnbindUserFromRoleBindingV
 	}
 }
 
-/* UnbindUserFromRoleBindingV2Default describes a response with status code -1, with default header values.
+/*
+UnbindUserFromRoleBindingV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

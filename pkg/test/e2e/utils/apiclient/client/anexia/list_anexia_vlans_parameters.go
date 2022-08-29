@@ -52,10 +52,12 @@ func NewListAnexiaVlansParamsWithHTTPClient(client *http.Client) *ListAnexiaVlan
 	}
 }
 
-/* ListAnexiaVlansParams contains all the parameters to send to the API endpoint
-   for the list anexia vlans operation.
+/*
+ListAnexiaVlansParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list anexia vlans operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAnexiaVlansParams struct {
 

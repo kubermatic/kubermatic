@@ -52,10 +52,12 @@ func NewPatchGroupProjectBindingParamsWithHTTPClient(client *http.Client) *Patch
 	}
 }
 
-/* PatchGroupProjectBindingParams contains all the parameters to send to the API endpoint
-   for the patch group project binding operation.
+/*
+PatchGroupProjectBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch group project binding operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchGroupProjectBindingParams struct {
 

@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  GetKubermaticVersion gets versions of running kubermatic components
+GetKubermaticVersion gets versions of running kubermatic components
 */
 func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authIn
 }
 
 /*
-  GetMasterVersions Lists all versions which don't result in automatic updates
+GetMasterVersions Lists all versions which don't result in automatic updates
 */
 func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMasterVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo run
 }
 
 /*
-  GetNodeUpgrades Gets possible node upgrades for a specific control plane version
+GetNodeUpgrades Gets possible node upgrades for a specific control plane version
 */
 func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeUpgradesOK, error) {
 	// TODO: Validate the params before sending

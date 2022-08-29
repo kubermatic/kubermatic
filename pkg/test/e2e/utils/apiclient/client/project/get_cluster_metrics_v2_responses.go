@@ -58,7 +58,8 @@ func NewGetClusterMetricsV2OK() *GetClusterMetricsV2OK {
 	return &GetClusterMetricsV2OK{}
 }
 
-/* GetClusterMetricsV2OK describes a response with status code 200, with default header values.
+/*
+GetClusterMetricsV2OK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -120,7 +121,8 @@ func NewGetClusterMetricsV2Unauthorized() *GetClusterMetricsV2Unauthorized {
 	return &GetClusterMetricsV2Unauthorized{}
 }
 
-/* GetClusterMetricsV2Unauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterMetricsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetClusterMetricsV2Forbidden() *GetClusterMetricsV2Forbidden {
 	return &GetClusterMetricsV2Forbidden{}
 }
 
-/* GetClusterMetricsV2Forbidden describes a response with status code 403, with default header values.
+/*
+GetClusterMetricsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetClusterMetricsV2Default(code int) *GetClusterMetricsV2Default {
 	}
 }
 
-/* GetClusterMetricsV2Default describes a response with status code -1, with default header values.
+/*
+GetClusterMetricsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

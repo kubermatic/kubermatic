@@ -46,7 +46,8 @@ func NewListOpenstackSizesOK() *ListOpenstackSizesOK {
 	return &ListOpenstackSizesOK{}
 }
 
-/* ListOpenstackSizesOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSizesOK describes a response with status code 200, with default header values.
 
 OpenstackSize
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSizesDefault(code int) *ListOpenstackSizesDefault {
 	}
 }
 
-/* ListOpenstackSizesDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

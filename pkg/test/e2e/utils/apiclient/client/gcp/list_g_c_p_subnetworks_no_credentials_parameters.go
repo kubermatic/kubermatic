@@ -52,10 +52,12 @@ func NewListGCPSubnetworksNoCredentialsParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListGCPSubnetworksNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list g c p subnetworks no credentials operation.
+/*
+ListGCPSubnetworksNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p subnetworks no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPSubnetworksNoCredentialsParams struct {
 

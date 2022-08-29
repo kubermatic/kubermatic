@@ -58,7 +58,8 @@ func NewGetKubermaticCustomLinksOK() *GetKubermaticCustomLinksOK {
 	return &GetKubermaticCustomLinksOK{}
 }
 
-/* GetKubermaticCustomLinksOK describes a response with status code 200, with default header values.
+/*
+GetKubermaticCustomLinksOK describes a response with status code 200, with default header values.
 
 GlobalCustomLinks
 */
@@ -118,7 +119,8 @@ func NewGetKubermaticCustomLinksUnauthorized() *GetKubermaticCustomLinksUnauthor
 	return &GetKubermaticCustomLinksUnauthorized{}
 }
 
-/* GetKubermaticCustomLinksUnauthorized describes a response with status code 401, with default header values.
+/*
+GetKubermaticCustomLinksUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetKubermaticCustomLinksForbidden() *GetKubermaticCustomLinksForbidden {
 	return &GetKubermaticCustomLinksForbidden{}
 }
 
-/* GetKubermaticCustomLinksForbidden describes a response with status code 403, with default header values.
+/*
+GetKubermaticCustomLinksForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetKubermaticCustomLinksDefault(code int) *GetKubermaticCustomLinksDefau
 	}
 }
 
-/* GetKubermaticCustomLinksDefault describes a response with status code -1, with default header values.
+/*
+GetKubermaticCustomLinksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

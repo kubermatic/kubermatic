@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  CreateAllowedRegistry Creates a allowed registry
+CreateAllowedRegistry Creates a allowed registry
 */
 func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAllowedRegistryCreated, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) CreateAllowedRegistry(params *CreateAllowedRegistryParams, auth
 }
 
 /*
-  ListAllowedRegistries lists allowed registries
+ListAllowedRegistries lists allowed registries
 */
 func (a *Client) ListAllowedRegistries(params *ListAllowedRegistriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAllowedRegistriesOK, error) {
 	// TODO: Validate the params before sending

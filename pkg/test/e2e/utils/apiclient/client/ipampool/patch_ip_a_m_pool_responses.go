@@ -58,7 +58,8 @@ func NewPatchIPAMPoolOK() *PatchIPAMPoolOK {
 	return &PatchIPAMPoolOK{}
 }
 
-/* PatchIPAMPoolOK describes a response with status code 200, with default header values.
+/*
+PatchIPAMPoolOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewPatchIPAMPoolUnauthorized() *PatchIPAMPoolUnauthorized {
 	return &PatchIPAMPoolUnauthorized{}
 }
 
-/* PatchIPAMPoolUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchIPAMPoolUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewPatchIPAMPoolForbidden() *PatchIPAMPoolForbidden {
 	return &PatchIPAMPoolForbidden{}
 }
 
-/* PatchIPAMPoolForbidden describes a response with status code 403, with default header values.
+/*
+PatchIPAMPoolForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewPatchIPAMPoolDefault(code int) *PatchIPAMPoolDefault {
 	}
 }
 
-/* PatchIPAMPoolDefault describes a response with status code -1, with default header values.
+/*
+PatchIPAMPoolDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

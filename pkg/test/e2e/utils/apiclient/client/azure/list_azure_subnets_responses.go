@@ -46,7 +46,8 @@ func NewListAzureSubnetsOK() *ListAzureSubnetsOK {
 	return &ListAzureSubnetsOK{}
 }
 
-/* ListAzureSubnetsOK describes a response with status code 200, with default header values.
+/*
+ListAzureSubnetsOK describes a response with status code 200, with default header values.
 
 AzureSubnetsList
 */
@@ -110,7 +111,8 @@ func NewListAzureSubnetsDefault(code int) *ListAzureSubnetsDefault {
 	}
 }
 
-/* ListAzureSubnetsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

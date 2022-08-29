@@ -58,7 +58,8 @@ func NewPatchRoleOK() *PatchRoleOK {
 	return &PatchRoleOK{}
 }
 
-/* PatchRoleOK describes a response with status code 200, with default header values.
+/*
+PatchRoleOK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -120,7 +121,8 @@ func NewPatchRoleUnauthorized() *PatchRoleUnauthorized {
 	return &PatchRoleUnauthorized{}
 }
 
-/* PatchRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchRoleForbidden() *PatchRoleForbidden {
 	return &PatchRoleForbidden{}
 }
 
-/* PatchRoleForbidden describes a response with status code 403, with default header values.
+/*
+PatchRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchRoleDefault(code int) *PatchRoleDefault {
 	}
 }
 
-/* PatchRoleDefault describes a response with status code -1, with default header values.
+/*
+PatchRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

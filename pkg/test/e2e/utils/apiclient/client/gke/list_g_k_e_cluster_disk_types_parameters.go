@@ -52,10 +52,12 @@ func NewListGKEClusterDiskTypesParamsWithHTTPClient(client *http.Client) *ListGK
 	}
 }
 
-/* ListGKEClusterDiskTypesParams contains all the parameters to send to the API endpoint
-   for the list g k e cluster disk types operation.
+/*
+ListGKEClusterDiskTypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e cluster disk types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEClusterDiskTypesParams struct {
 

@@ -58,7 +58,8 @@ func NewGetKubermaticSettingsOK() *GetKubermaticSettingsOK {
 	return &GetKubermaticSettingsOK{}
 }
 
-/* GetKubermaticSettingsOK describes a response with status code 200, with default header values.
+/*
+GetKubermaticSettingsOK describes a response with status code 200, with default header values.
 
 GlobalSettings
 */
@@ -120,7 +121,8 @@ func NewGetKubermaticSettingsUnauthorized() *GetKubermaticSettingsUnauthorized {
 	return &GetKubermaticSettingsUnauthorized{}
 }
 
-/* GetKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetKubermaticSettingsForbidden() *GetKubermaticSettingsForbidden {
 	return &GetKubermaticSettingsForbidden{}
 }
 
-/* GetKubermaticSettingsForbidden describes a response with status code 403, with default header values.
+/*
+GetKubermaticSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetKubermaticSettingsDefault(code int) *GetKubermaticSettingsDefault {
 	}
 }
 
-/* GetKubermaticSettingsDefault describes a response with status code -1, with default header values.
+/*
+GetKubermaticSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

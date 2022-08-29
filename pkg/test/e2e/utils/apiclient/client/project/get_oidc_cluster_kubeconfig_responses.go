@@ -58,7 +58,8 @@ func NewGetOidcClusterKubeconfigOK() *GetOidcClusterKubeconfigOK {
 	return &GetOidcClusterKubeconfigOK{}
 }
 
-/* GetOidcClusterKubeconfigOK describes a response with status code 200, with default header values.
+/*
+GetOidcClusterKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -118,7 +119,8 @@ func NewGetOidcClusterKubeconfigUnauthorized() *GetOidcClusterKubeconfigUnauthor
 	return &GetOidcClusterKubeconfigUnauthorized{}
 }
 
-/* GetOidcClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
+/*
+GetOidcClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetOidcClusterKubeconfigForbidden() *GetOidcClusterKubeconfigForbidden {
 	return &GetOidcClusterKubeconfigForbidden{}
 }
 
-/* GetOidcClusterKubeconfigForbidden describes a response with status code 403, with default header values.
+/*
+GetOidcClusterKubeconfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetOidcClusterKubeconfigDefault(code int) *GetOidcClusterKubeconfigDefau
 	}
 }
 
-/* GetOidcClusterKubeconfigDefault describes a response with status code -1, with default header values.
+/*
+GetOidcClusterKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

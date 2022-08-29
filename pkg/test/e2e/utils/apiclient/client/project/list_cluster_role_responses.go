@@ -58,7 +58,8 @@ func NewListClusterRoleOK() *ListClusterRoleOK {
 	return &ListClusterRoleOK{}
 }
 
-/* ListClusterRoleOK describes a response with status code 200, with default header values.
+/*
+ListClusterRoleOK describes a response with status code 200, with default header values.
 
 ClusterRole
 */
@@ -118,7 +119,8 @@ func NewListClusterRoleUnauthorized() *ListClusterRoleUnauthorized {
 	return &ListClusterRoleUnauthorized{}
 }
 
-/* ListClusterRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+ListClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListClusterRoleForbidden() *ListClusterRoleForbidden {
 	return &ListClusterRoleForbidden{}
 }
 
-/* ListClusterRoleForbidden describes a response with status code 403, with default header values.
+/*
+ListClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListClusterRoleDefault(code int) *ListClusterRoleDefault {
 	}
 }
 
-/* ListClusterRoleDefault describes a response with status code -1, with default header values.
+/*
+ListClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

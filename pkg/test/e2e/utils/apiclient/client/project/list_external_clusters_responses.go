@@ -58,7 +58,8 @@ func NewListExternalClustersOK() *ListExternalClustersOK {
 	return &ListExternalClustersOK{}
 }
 
-/* ListExternalClustersOK describes a response with status code 200, with default header values.
+/*
+ListExternalClustersOK describes a response with status code 200, with default header values.
 
 ExternalCluster
 */
@@ -118,7 +119,8 @@ func NewListExternalClustersUnauthorized() *ListExternalClustersUnauthorized {
 	return &ListExternalClustersUnauthorized{}
 }
 
-/* ListExternalClustersUnauthorized describes a response with status code 401, with default header values.
+/*
+ListExternalClustersUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListExternalClustersForbidden() *ListExternalClustersForbidden {
 	return &ListExternalClustersForbidden{}
 }
 
-/* ListExternalClustersForbidden describes a response with status code 403, with default header values.
+/*
+ListExternalClustersForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListExternalClustersDefault(code int) *ListExternalClustersDefault {
 	}
 }
 
-/* ListExternalClustersDefault describes a response with status code -1, with default header values.
+/*
+ListExternalClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

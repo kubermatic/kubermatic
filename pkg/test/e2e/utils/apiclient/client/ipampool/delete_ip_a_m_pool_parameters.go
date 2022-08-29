@@ -52,10 +52,12 @@ func NewDeleteIPAMPoolParamsWithHTTPClient(client *http.Client) *DeleteIPAMPoolP
 	}
 }
 
-/* DeleteIPAMPoolParams contains all the parameters to send to the API endpoint
-   for the delete IP a m pool operation.
+/*
+DeleteIPAMPoolParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete IP a m pool operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteIPAMPoolParams struct {
 

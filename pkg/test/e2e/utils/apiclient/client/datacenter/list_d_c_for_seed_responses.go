@@ -58,7 +58,8 @@ func NewListDCForSeedOK() *ListDCForSeedOK {
 	return &ListDCForSeedOK{}
 }
 
-/* ListDCForSeedOK describes a response with status code 200, with default header values.
+/*
+ListDCForSeedOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -118,7 +119,8 @@ func NewListDCForSeedUnauthorized() *ListDCForSeedUnauthorized {
 	return &ListDCForSeedUnauthorized{}
 }
 
-/* ListDCForSeedUnauthorized describes a response with status code 401, with default header values.
+/*
+ListDCForSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListDCForSeedForbidden() *ListDCForSeedForbidden {
 	return &ListDCForSeedForbidden{}
 }
 
-/* ListDCForSeedForbidden describes a response with status code 403, with default header values.
+/*
+ListDCForSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListDCForSeedDefault(code int) *ListDCForSeedDefault {
 	}
 }
 
-/* ListDCForSeedDefault describes a response with status code -1, with default header values.
+/*
+ListDCForSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

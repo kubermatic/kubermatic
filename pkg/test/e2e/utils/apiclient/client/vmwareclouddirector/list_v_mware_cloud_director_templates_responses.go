@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorTemplatesOK() *ListVMwareCloudDirectorTemplatesOK
 	return &ListVMwareCloudDirectorTemplatesOK{}
 }
 
-/* ListVMwareCloudDirectorTemplatesOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorTemplatesOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorTemplateList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorTemplatesDefault(code int) *ListVMwareCloudDirect
 	}
 }
 
-/* ListVMwareCloudDirectorTemplatesDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorTemplatesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

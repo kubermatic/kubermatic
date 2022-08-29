@@ -58,7 +58,8 @@ func NewListNamespaceOK() *ListNamespaceOK {
 	return &ListNamespaceOK{}
 }
 
-/* ListNamespaceOK describes a response with status code 200, with default header values.
+/*
+ListNamespaceOK describes a response with status code 200, with default header values.
 
 Namespace
 */
@@ -118,7 +119,8 @@ func NewListNamespaceUnauthorized() *ListNamespaceUnauthorized {
 	return &ListNamespaceUnauthorized{}
 }
 
-/* ListNamespaceUnauthorized describes a response with status code 401, with default header values.
+/*
+ListNamespaceUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListNamespaceForbidden() *ListNamespaceForbidden {
 	return &ListNamespaceForbidden{}
 }
 
-/* ListNamespaceForbidden describes a response with status code 403, with default header values.
+/*
+ListNamespaceForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListNamespaceDefault(code int) *ListNamespaceDefault {
 	}
 }
 
-/* ListNamespaceDefault describes a response with status code -1, with default header values.
+/*
+ListNamespaceDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewRevokeClusterAdminTokenV2ParamsWithHTTPClient(client *http.Client) *Revo
 	}
 }
 
-/* RevokeClusterAdminTokenV2Params contains all the parameters to send to the API endpoint
-   for the revoke cluster admin token v2 operation.
+/*
+RevokeClusterAdminTokenV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the revoke cluster admin token v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type RevokeClusterAdminTokenV2Params struct {
 

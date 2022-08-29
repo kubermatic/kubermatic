@@ -52,10 +52,12 @@ func NewGetSeedSettingsParamsWithHTTPClient(client *http.Client) *GetSeedSetting
 	}
 }
 
-/* GetSeedSettingsParams contains all the parameters to send to the API endpoint
-   for the get seed settings operation.
+/*
+GetSeedSettingsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get seed settings operation.
+
+	Typically these are written to a http.Request.
 */
 type GetSeedSettingsParams struct {
 

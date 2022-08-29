@@ -58,7 +58,8 @@ func NewDeleteNodeDeploymentOK() *DeleteNodeDeploymentOK {
 	return &DeleteNodeDeploymentOK{}
 }
 
-/* DeleteNodeDeploymentOK describes a response with status code 200, with default header values.
+/*
+DeleteNodeDeploymentOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteNodeDeploymentUnauthorized() *DeleteNodeDeploymentUnauthorized {
 	return &DeleteNodeDeploymentUnauthorized{}
 }
 
-/* DeleteNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteNodeDeploymentForbidden() *DeleteNodeDeploymentForbidden {
 	return &DeleteNodeDeploymentForbidden{}
 }
 
-/* DeleteNodeDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+DeleteNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteNodeDeploymentDefault(code int) *DeleteNodeDeploymentDefault {
 	}
 }
 
-/* DeleteNodeDeploymentDefault describes a response with status code -1, with default header values.
+/*
+DeleteNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

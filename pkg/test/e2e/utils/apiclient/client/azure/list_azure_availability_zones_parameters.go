@@ -52,10 +52,12 @@ func NewListAzureAvailabilityZonesParamsWithHTTPClient(client *http.Client) *Lis
 	}
 }
 
-/* ListAzureAvailabilityZonesParams contains all the parameters to send to the API endpoint
-   for the list azure availability zones operation.
+/*
+ListAzureAvailabilityZonesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure availability zones operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureAvailabilityZonesParams struct {
 	timeout    time.Duration

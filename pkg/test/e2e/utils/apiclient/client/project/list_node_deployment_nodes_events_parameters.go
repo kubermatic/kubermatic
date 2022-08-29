@@ -52,10 +52,12 @@ func NewListNodeDeploymentNodesEventsParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* ListNodeDeploymentNodesEventsParams contains all the parameters to send to the API endpoint
-   for the list node deployment nodes events operation.
+/*
+ListNodeDeploymentNodesEventsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list node deployment nodes events operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNodeDeploymentNodesEventsParams struct {
 

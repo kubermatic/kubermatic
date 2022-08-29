@@ -52,10 +52,12 @@ func NewListExternalClusterNodesParamsWithHTTPClient(client *http.Client) *ListE
 	}
 }
 
-/* ListExternalClusterNodesParams contains all the parameters to send to the API endpoint
-   for the list external cluster nodes operation.
+/*
+ListExternalClusterNodesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list external cluster nodes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListExternalClusterNodesParams struct {
 

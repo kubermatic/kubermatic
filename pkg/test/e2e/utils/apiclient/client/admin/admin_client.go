@@ -76,7 +76,7 @@ type ClientService interface {
 }
 
 /*
-  CreateMeteringReportConfiguration Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+CreateMeteringReportConfiguration Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) CreateMeteringReportConfiguration(params *CreateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMeteringReportConfigurationCreated, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) CreateMeteringReportConfiguration(params *CreateMeteringReportC
 }
 
 /*
-  CreateOrUpdateMeteringConfigurations Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
+CreateOrUpdateMeteringConfigurations Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error) {
 	// TODO: Validate the params before sending
@@ -152,7 +152,7 @@ func (a *Client) CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMete
 }
 
 /*
-  CreateOrUpdateMeteringCredentials Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
+CreateOrUpdateMeteringCredentials Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -190,7 +190,7 @@ func (a *Client) CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeterin
 }
 
 /*
-  CreateSeed creates a new seed object
+CreateSeed creates a new seed object
 */
 func (a *Client) CreateSeed(params *CreateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSeedOK, error) {
 	// TODO: Validate the params before sending
@@ -228,7 +228,7 @@ func (a *Client) CreateSeed(params *CreateSeedParams, authInfo runtime.ClientAut
 }
 
 /*
-  DeleteAdmissionPlugin deletes the admission plugin
+DeleteAdmissionPlugin deletes the admission plugin
 */
 func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
@@ -266,7 +266,7 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 }
 
 /*
-  DeleteBackupDestination deletes a backup destination from the seed
+DeleteBackupDestination deletes a backup destination from the seed
 */
 func (a *Client) DeleteBackupDestination(params *DeleteBackupDestinationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBackupDestinationOK, error) {
 	// TODO: Validate the params before sending
@@ -304,7 +304,7 @@ func (a *Client) DeleteBackupDestination(params *DeleteBackupDestinationParams, 
 }
 
 /*
-  DeleteMeteringReportConfiguration Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+DeleteMeteringReportConfiguration Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) DeleteMeteringReportConfiguration(params *DeleteMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportConfigurationOK, error) {
 	// TODO: Validate the params before sending
@@ -342,7 +342,7 @@ func (a *Client) DeleteMeteringReportConfiguration(params *DeleteMeteringReportC
 }
 
 /*
-  DeleteSeed deletes the seed c r d object from the kubermatic
+DeleteSeed deletes the seed c r d object from the kubermatic
 */
 func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error) {
 	// TODO: Validate the params before sending
@@ -380,7 +380,7 @@ func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAut
 }
 
 /*
-  GetAdmins returns list of admin users
+GetAdmins returns list of admin users
 */
 func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminsOK, error) {
 	// TODO: Validate the params before sending
@@ -418,7 +418,7 @@ func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  GetAdmissionPlugin gets the admission plugin
+GetAdmissionPlugin gets the admission plugin
 */
 func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
@@ -456,7 +456,7 @@ func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo r
 }
 
 /*
-  GetKubermaticCustomLinks gets the custom links
+GetKubermaticCustomLinks gets the custom links
 */
 func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticCustomLinksOK, error) {
 	// TODO: Validate the params before sending
@@ -494,7 +494,7 @@ func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams
 }
 
 /*
-  GetKubermaticSettings gets the global settings
+GetKubermaticSettings gets the global settings
 */
 func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -532,7 +532,7 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 }
 
 /*
-  GetMeteringReportConfiguration Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+GetMeteringReportConfiguration Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) GetMeteringReportConfiguration(params *GetMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportConfigurationOK, error) {
 	// TODO: Validate the params before sending
@@ -570,7 +570,7 @@ func (a *Client) GetMeteringReportConfiguration(params *GetMeteringReportConfigu
 }
 
 /*
-  GetSeed returns the seed object
+GetSeed returns the seed object
 */
 func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedOK, error) {
 	// TODO: Validate the params before sending
@@ -608,7 +608,7 @@ func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  ListAdmissionPlugins returns all admission plugins from the c r ds
+ListAdmissionPlugins returns all admission plugins from the c r ds
 */
 func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdmissionPluginsOK, error) {
 	// TODO: Validate the params before sending
@@ -646,7 +646,7 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 }
 
 /*
-  ListMeteringReportConfigurations Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
+ListMeteringReportConfigurations Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) ListMeteringReportConfigurations(params *ListMeteringReportConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportConfigurationsOK, error) {
 	// TODO: Validate the params before sending
@@ -684,7 +684,7 @@ func (a *Client) ListMeteringReportConfigurations(params *ListMeteringReportConf
 }
 
 /*
-  ListSeeds returns all seeds from the c r ds
+ListSeeds returns all seeds from the c r ds
 */
 func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedsOK, error) {
 	// TODO: Validate the params before sending
@@ -722,7 +722,7 @@ func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  PatchKubermaticSettings patches the global settings
+PatchKubermaticSettings patches the global settings
 */
 func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchKubermaticSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -760,7 +760,7 @@ func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, 
 }
 
 /*
-  SetAdmin allows setting and clearing admin role for users
+SetAdmin allows setting and clearing admin role for users
 */
 func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminOK, error) {
 	// TODO: Validate the params before sending
@@ -798,7 +798,7 @@ func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  UpdateAdmissionPlugin updates the admission plugin
+UpdateAdmissionPlugin updates the admission plugin
 */
 func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
@@ -836,7 +836,7 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 }
 
 /*
-  UpdateMeteringReportConfiguration Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+UpdateMeteringReportConfiguration Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationOK, error) {
 	// TODO: Validate the params before sending
@@ -874,7 +874,7 @@ func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportC
 }
 
 /*
-  UpdateSeed updates the seed
+UpdateSeed updates the seed
 */
 func (a *Client) UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error) {
 	// TODO: Validate the params before sending

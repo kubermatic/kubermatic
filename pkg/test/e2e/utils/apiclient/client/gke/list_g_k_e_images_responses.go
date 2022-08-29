@@ -46,7 +46,8 @@ func NewListGKEImagesOK() *ListGKEImagesOK {
 	return &ListGKEImagesOK{}
 }
 
-/* ListGKEImagesOK describes a response with status code 200, with default header values.
+/*
+ListGKEImagesOK describes a response with status code 200, with default header values.
 
 GKEImageList
 */
@@ -108,7 +109,8 @@ func NewListGKEImagesDefault(code int) *ListGKEImagesDefault {
 	}
 }
 
-/* ListGKEImagesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEImagesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

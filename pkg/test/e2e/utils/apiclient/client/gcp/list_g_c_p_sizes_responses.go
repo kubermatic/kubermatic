@@ -46,7 +46,8 @@ func NewListGCPSizesOK() *ListGCPSizesOK {
 	return &ListGCPSizesOK{}
 }
 
-/* ListGCPSizesOK describes a response with status code 200, with default header values.
+/*
+ListGCPSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -108,7 +109,8 @@ func NewListGCPSizesDefault(code int) *ListGCPSizesDefault {
 	}
 }
 
-/* ListGCPSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

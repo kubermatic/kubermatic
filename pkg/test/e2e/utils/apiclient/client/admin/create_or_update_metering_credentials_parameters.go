@@ -52,10 +52,12 @@ func NewCreateOrUpdateMeteringCredentialsParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* CreateOrUpdateMeteringCredentialsParams contains all the parameters to send to the API endpoint
-   for the create or update metering credentials operation.
+/*
+CreateOrUpdateMeteringCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create or update metering credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateOrUpdateMeteringCredentialsParams struct {
 	timeout    time.Duration

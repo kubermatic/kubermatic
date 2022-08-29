@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorTemplatesNoCredentialsOK() *ListVMwareCloudDirect
 	return &ListVMwareCloudDirectorTemplatesNoCredentialsOK{}
 }
 
-/* ListVMwareCloudDirectorTemplatesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorTemplatesNoCredentialsOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorTemplateList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorTemplatesNoCredentialsDefault(code int) *ListVMwa
 	}
 }
 
-/* ListVMwareCloudDirectorTemplatesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorTemplatesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListPacketSizesOK() *ListPacketSizesOK {
 	return &ListPacketSizesOK{}
 }
 
-/* ListPacketSizesOK describes a response with status code 200, with default header values.
+/*
+ListPacketSizesOK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -108,7 +109,8 @@ func NewListPacketSizesDefault(code int) *ListPacketSizesDefault {
 	}
 }
 
-/* ListPacketSizesDefault describes a response with status code -1, with default header values.
+/*
+ListPacketSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListKubevirtStorageClassesNoCredentialsOK() *ListKubevirtStorageClassesN
 	return &ListKubevirtStorageClassesNoCredentialsOK{}
 }
 
-/* ListKubevirtStorageClassesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListKubevirtStorageClassesNoCredentialsOK describes a response with status code 200, with default header values.
 
 StorageClassList
 */
@@ -108,7 +109,8 @@ func NewListKubevirtStorageClassesNoCredentialsDefault(code int) *ListKubevirtSt
 	}
 }
 
-/* ListKubevirtStorageClassesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListKubevirtStorageClassesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

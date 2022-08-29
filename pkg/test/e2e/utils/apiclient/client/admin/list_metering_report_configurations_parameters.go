@@ -52,10 +52,12 @@ func NewListMeteringReportConfigurationsParamsWithHTTPClient(client *http.Client
 	}
 }
 
-/* ListMeteringReportConfigurationsParams contains all the parameters to send to the API endpoint
-   for the list metering report configurations operation.
+/*
+ListMeteringReportConfigurationsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list metering report configurations operation.
+
+	Typically these are written to a http.Request.
 */
 type ListMeteringReportConfigurationsParams struct {
 	timeout    time.Duration

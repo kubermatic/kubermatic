@@ -52,10 +52,12 @@ func NewListEKSVPCSParamsWithHTTPClient(client *http.Client) *ListEKSVPCSParams 
 	}
 }
 
-/* ListEKSVPCSParams contains all the parameters to send to the API endpoint
-   for the list e k s v p c s operation.
+/*
+ListEKSVPCSParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s v p c s operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSVPCSParams struct {
 

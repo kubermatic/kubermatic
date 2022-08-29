@@ -46,7 +46,8 @@ func NewListAlibabaVSwitchesNoCredentialsV2OK() *ListAlibabaVSwitchesNoCredentia
 	return &ListAlibabaVSwitchesNoCredentialsV2OK{}
 }
 
-/* ListAlibabaVSwitchesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAlibabaVSwitchesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AlibabaVSwitchList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaVSwitchesNoCredentialsV2Default(code int) *ListAlibabaVSwitch
 	}
 }
 
-/* ListAlibabaVSwitchesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAlibabaVSwitchesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -54,10 +54,12 @@ func NewUpdatePresetParamsWithHTTPClient(client *http.Client) *UpdatePresetParam
 	}
 }
 
-/* UpdatePresetParams contains all the parameters to send to the API endpoint
-   for the update preset operation.
+/*
+UpdatePresetParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update preset operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdatePresetParams struct {
 

@@ -70,7 +70,7 @@ type ClientService interface {
 }
 
 /*
-  ListOpenstackAvailabilityZones Lists availability zones from openstack
+ListOpenstackAvailabilityZones Lists availability zones from openstack
 */
 func (a *Client) ListOpenstackAvailabilityZones(params *ListOpenstackAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackAvailabilityZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -108,7 +108,7 @@ func (a *Client) ListOpenstackAvailabilityZones(params *ListOpenstackAvailabilit
 }
 
 /*
-  ListOpenstackAvailabilityZonesNoCredentials Lists availability zones from openstack
+ListOpenstackAvailabilityZonesNoCredentials Lists availability zones from openstack
 */
 func (a *Client) ListOpenstackAvailabilityZonesNoCredentials(params *ListOpenstackAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackAvailabilityZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -146,7 +146,7 @@ func (a *Client) ListOpenstackAvailabilityZonesNoCredentials(params *ListOpensta
 }
 
 /*
-  ListOpenstackAvailabilityZonesNoCredentialsV2 Lists availability zones from openstack
+ListOpenstackAvailabilityZonesNoCredentialsV2 Lists availability zones from openstack
 */
 func (a *Client) ListOpenstackAvailabilityZonesNoCredentialsV2(params *ListOpenstackAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackAvailabilityZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -184,7 +184,7 @@ func (a *Client) ListOpenstackAvailabilityZonesNoCredentialsV2(params *ListOpens
 }
 
 /*
-  ListOpenstackNetworks Lists networks from openstack
+ListOpenstackNetworks Lists networks from openstack
 */
 func (a *Client) ListOpenstackNetworks(params *ListOpenstackNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackNetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -222,7 +222,7 @@ func (a *Client) ListOpenstackNetworks(params *ListOpenstackNetworksParams, auth
 }
 
 /*
-  ListOpenstackNetworksNoCredentials Lists networks from openstack
+ListOpenstackNetworksNoCredentials Lists networks from openstack
 */
 func (a *Client) ListOpenstackNetworksNoCredentials(params *ListOpenstackNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -260,7 +260,7 @@ func (a *Client) ListOpenstackNetworksNoCredentials(params *ListOpenstackNetwork
 }
 
 /*
-  ListOpenstackNetworksNoCredentialsV2 Lists networks from openstack
+ListOpenstackNetworksNoCredentialsV2 Lists networks from openstack
 */
 func (a *Client) ListOpenstackNetworksNoCredentialsV2(params *ListOpenstackNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackNetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -298,7 +298,7 @@ func (a *Client) ListOpenstackNetworksNoCredentialsV2(params *ListOpenstackNetwo
 }
 
 /*
-  ListOpenstackSecurityGroups Lists security groups from openstack
+ListOpenstackSecurityGroups Lists security groups from openstack
 */
 func (a *Client) ListOpenstackSecurityGroups(params *ListOpenstackSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -336,7 +336,7 @@ func (a *Client) ListOpenstackSecurityGroups(params *ListOpenstackSecurityGroups
 }
 
 /*
-  ListOpenstackSecurityGroupsNoCredentials Lists security groups from openstack
+ListOpenstackSecurityGroupsNoCredentials Lists security groups from openstack
 */
 func (a *Client) ListOpenstackSecurityGroupsNoCredentials(params *ListOpenstackSecurityGroupsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSecurityGroupsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -374,7 +374,7 @@ func (a *Client) ListOpenstackSecurityGroupsNoCredentials(params *ListOpenstackS
 }
 
 /*
-  ListOpenstackSecurityGroupsNoCredentialsV2 Lists security groups from openstack
+ListOpenstackSecurityGroupsNoCredentialsV2 Lists security groups from openstack
 */
 func (a *Client) ListOpenstackSecurityGroupsNoCredentialsV2(params *ListOpenstackSecurityGroupsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSecurityGroupsNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -412,7 +412,7 @@ func (a *Client) ListOpenstackSecurityGroupsNoCredentialsV2(params *ListOpenstac
 }
 
 /*
-  ListOpenstackSizes Lists sizes from openstack
+ListOpenstackSizes Lists sizes from openstack
 */
 func (a *Client) ListOpenstackSizes(params *ListOpenstackSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -450,7 +450,7 @@ func (a *Client) ListOpenstackSizes(params *ListOpenstackSizesParams, authInfo r
 }
 
 /*
-  ListOpenstackSizesNoCredentials Lists sizes from openstack
+ListOpenstackSizesNoCredentials Lists sizes from openstack
 */
 func (a *Client) ListOpenstackSizesNoCredentials(params *ListOpenstackSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -488,7 +488,7 @@ func (a *Client) ListOpenstackSizesNoCredentials(params *ListOpenstackSizesNoCre
 }
 
 /*
-  ListOpenstackSizesNoCredentialsV2 Lists sizes from openstack
+ListOpenstackSizesNoCredentialsV2 Lists sizes from openstack
 */
 func (a *Client) ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -526,7 +526,7 @@ func (a *Client) ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoC
 }
 
 /*
-  ListOpenstackSubnetPools Lists subnet pools from openstack
+ListOpenstackSubnetPools Lists subnet pools from openstack
 */
 func (a *Client) ListOpenstackSubnetPools(params *ListOpenstackSubnetPoolsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetPoolsOK, error) {
 	// TODO: Validate the params before sending
@@ -564,7 +564,7 @@ func (a *Client) ListOpenstackSubnetPools(params *ListOpenstackSubnetPoolsParams
 }
 
 /*
-  ListOpenstackSubnets Lists subnets from openstack
+ListOpenstackSubnets Lists subnets from openstack
 */
 func (a *Client) ListOpenstackSubnets(params *ListOpenstackSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetsOK, error) {
 	// TODO: Validate the params before sending
@@ -602,7 +602,7 @@ func (a *Client) ListOpenstackSubnets(params *ListOpenstackSubnetsParams, authIn
 }
 
 /*
-  ListOpenstackSubnetsNoCredentials Lists subnets from openstack
+ListOpenstackSubnetsNoCredentials Lists subnets from openstack
 */
 func (a *Client) ListOpenstackSubnetsNoCredentials(params *ListOpenstackSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -640,7 +640,7 @@ func (a *Client) ListOpenstackSubnetsNoCredentials(params *ListOpenstackSubnetsN
 }
 
 /*
-  ListOpenstackSubnetsNoCredentialsV2 Lists subnets from openstack
+ListOpenstackSubnetsNoCredentialsV2 Lists subnets from openstack
 */
 func (a *Client) ListOpenstackSubnetsNoCredentialsV2(params *ListOpenstackSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetsNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -678,7 +678,7 @@ func (a *Client) ListOpenstackSubnetsNoCredentialsV2(params *ListOpenstackSubnet
 }
 
 /*
-  ListOpenstackTenants Lists tenants from openstack
+ListOpenstackTenants Lists tenants from openstack
 */
 func (a *Client) ListOpenstackTenants(params *ListOpenstackTenantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackTenantsOK, error) {
 	// TODO: Validate the params before sending
@@ -716,7 +716,7 @@ func (a *Client) ListOpenstackTenants(params *ListOpenstackTenantsParams, authIn
 }
 
 /*
-  ListOpenstackTenantsNoCredentials Lists tenants from openstack
+ListOpenstackTenantsNoCredentials Lists tenants from openstack
 */
 func (a *Client) ListOpenstackTenantsNoCredentials(params *ListOpenstackTenantsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackTenantsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -754,7 +754,7 @@ func (a *Client) ListOpenstackTenantsNoCredentials(params *ListOpenstackTenantsN
 }
 
 /*
-  ListOpenstackTenantsNoCredentialsV2 Lists tenants from openstack
+ListOpenstackTenantsNoCredentialsV2 Lists tenants from openstack
 */
 func (a *Client) ListOpenstackTenantsNoCredentialsV2(params *ListOpenstackTenantsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackTenantsNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

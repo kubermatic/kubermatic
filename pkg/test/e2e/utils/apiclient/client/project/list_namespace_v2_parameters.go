@@ -52,10 +52,12 @@ func NewListNamespaceV2ParamsWithHTTPClient(client *http.Client) *ListNamespaceV
 	}
 }
 
-/* ListNamespaceV2Params contains all the parameters to send to the API endpoint
-   for the list namespace v2 operation.
+/*
+ListNamespaceV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list namespace v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNamespaceV2Params struct {
 

@@ -46,7 +46,8 @@ func NewListAzureAvailabilityZonesOK() *ListAzureAvailabilityZonesOK {
 	return &ListAzureAvailabilityZonesOK{}
 }
 
-/* ListAzureAvailabilityZonesOK describes a response with status code 200, with default header values.
+/*
+ListAzureAvailabilityZonesOK describes a response with status code 200, with default header values.
 
 AzureAvailabilityZonesList
 */
@@ -110,7 +111,8 @@ func NewListAzureAvailabilityZonesDefault(code int) *ListAzureAvailabilityZonesD
 	}
 }
 
-/* ListAzureAvailabilityZonesDefault describes a response with status code -1, with default header values.
+/*
+ListAzureAvailabilityZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

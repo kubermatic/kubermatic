@@ -46,7 +46,8 @@ func NewListDigitaloceanSizesOK() *ListDigitaloceanSizesOK {
 	return &ListDigitaloceanSizesOK{}
 }
 
-/* ListDigitaloceanSizesOK describes a response with status code 200, with default header values.
+/*
+ListDigitaloceanSizesOK describes a response with status code 200, with default header values.
 
 DigitaloceanSizeList
 */
@@ -110,7 +111,8 @@ func NewListDigitaloceanSizesDefault(code int) *ListDigitaloceanSizesDefault {
 	}
 }
 
-/* ListDigitaloceanSizesDefault describes a response with status code -1, with default header values.
+/*
+ListDigitaloceanSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

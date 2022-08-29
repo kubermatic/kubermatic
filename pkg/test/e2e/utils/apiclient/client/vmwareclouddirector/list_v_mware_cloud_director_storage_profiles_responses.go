@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorStorageProfilesOK() *ListVMwareCloudDirectorStora
 	return &ListVMwareCloudDirectorStorageProfilesOK{}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorStorageProfileList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorStorageProfilesDefault(code int) *ListVMwareCloud
 	}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

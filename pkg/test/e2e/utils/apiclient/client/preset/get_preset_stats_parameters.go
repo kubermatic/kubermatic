@@ -52,10 +52,12 @@ func NewGetPresetStatsParamsWithHTTPClient(client *http.Client) *GetPresetStatsP
 	}
 }
 
-/* GetPresetStatsParams contains all the parameters to send to the API endpoint
-   for the get preset stats operation.
+/*
+GetPresetStatsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get preset stats operation.
+
+	Typically these are written to a http.Request.
 */
 type GetPresetStatsParams struct {
 

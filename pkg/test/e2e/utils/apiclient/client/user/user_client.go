@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  ListUser List users
+ListUser List users
 */
 func (a *Client) ListUser(params *ListUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListUserOK, error) {
 	// TODO: Validate the params before sending

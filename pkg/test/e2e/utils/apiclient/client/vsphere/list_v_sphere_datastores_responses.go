@@ -46,7 +46,8 @@ func NewListVSphereDatastoresOK() *ListVSphereDatastoresOK {
 	return &ListVSphereDatastoresOK{}
 }
 
-/* ListVSphereDatastoresOK describes a response with status code 200, with default header values.
+/*
+ListVSphereDatastoresOK describes a response with status code 200, with default header values.
 
 VSphereDatastoreList
 */
@@ -110,7 +111,8 @@ func NewListVSphereDatastoresDefault(code int) *ListVSphereDatastoresDefault {
 	}
 }
 
-/* ListVSphereDatastoresDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereDatastoresDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

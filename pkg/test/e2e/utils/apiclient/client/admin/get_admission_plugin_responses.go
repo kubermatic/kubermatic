@@ -58,7 +58,8 @@ func NewGetAdmissionPluginOK() *GetAdmissionPluginOK {
 	return &GetAdmissionPluginOK{}
 }
 
-/* GetAdmissionPluginOK describes a response with status code 200, with default header values.
+/*
+GetAdmissionPluginOK describes a response with status code 200, with default header values.
 
 AdmissionPlugin
 */
@@ -120,7 +121,8 @@ func NewGetAdmissionPluginUnauthorized() *GetAdmissionPluginUnauthorized {
 	return &GetAdmissionPluginUnauthorized{}
 }
 
-/* GetAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetAdmissionPluginForbidden() *GetAdmissionPluginForbidden {
 	return &GetAdmissionPluginForbidden{}
 }
 
-/* GetAdmissionPluginForbidden describes a response with status code 403, with default header values.
+/*
+GetAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetAdmissionPluginDefault(code int) *GetAdmissionPluginDefault {
 	}
 }
 
-/* GetAdmissionPluginDefault describes a response with status code -1, with default header values.
+/*
+GetAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

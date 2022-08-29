@@ -46,7 +46,8 @@ func NewGetMasterVersionsOK() *GetMasterVersionsOK {
 	return &GetMasterVersionsOK{}
 }
 
-/* GetMasterVersionsOK describes a response with status code 200, with default header values.
+/*
+GetMasterVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -108,7 +109,8 @@ func NewGetMasterVersionsDefault(code int) *GetMasterVersionsDefault {
 	}
 }
 
-/* GetMasterVersionsDefault describes a response with status code -1, with default header values.
+/*
+GetMasterVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

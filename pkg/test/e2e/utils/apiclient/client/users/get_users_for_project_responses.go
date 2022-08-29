@@ -58,7 +58,8 @@ func NewGetUsersForProjectOK() *GetUsersForProjectOK {
 	return &GetUsersForProjectOK{}
 }
 
-/* GetUsersForProjectOK describes a response with status code 200, with default header values.
+/*
+GetUsersForProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -118,7 +119,8 @@ func NewGetUsersForProjectUnauthorized() *GetUsersForProjectUnauthorized {
 	return &GetUsersForProjectUnauthorized{}
 }
 
-/* GetUsersForProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+GetUsersForProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetUsersForProjectForbidden() *GetUsersForProjectForbidden {
 	return &GetUsersForProjectForbidden{}
 }
 
-/* GetUsersForProjectForbidden describes a response with status code 403, with default header values.
+/*
+GetUsersForProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetUsersForProjectDefault(code int) *GetUsersForProjectDefault {
 	}
 }
 
-/* GetUsersForProjectDefault describes a response with status code -1, with default header values.
+/*
+GetUsersForProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

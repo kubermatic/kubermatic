@@ -58,7 +58,8 @@ func NewCreateExternalClusterCreated() *CreateExternalClusterCreated {
 	return &CreateExternalClusterCreated{}
 }
 
-/* CreateExternalClusterCreated describes a response with status code 201, with default header values.
+/*
+CreateExternalClusterCreated describes a response with status code 201, with default header values.
 
 ExternalCluster
 */
@@ -120,7 +121,8 @@ func NewCreateExternalClusterUnauthorized() *CreateExternalClusterUnauthorized {
 	return &CreateExternalClusterUnauthorized{}
 }
 
-/* CreateExternalClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateExternalClusterForbidden() *CreateExternalClusterForbidden {
 	return &CreateExternalClusterForbidden{}
 }
 
-/* CreateExternalClusterForbidden describes a response with status code 403, with default header values.
+/*
+CreateExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateExternalClusterDefault(code int) *CreateExternalClusterDefault {
 	}
 }
 
-/* CreateExternalClusterDefault describes a response with status code -1, with default header values.
+/*
+CreateExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

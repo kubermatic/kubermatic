@@ -54,10 +54,12 @@ func NewCreateClusterRoleParamsWithHTTPClient(client *http.Client) *CreateCluste
 	}
 }
 
-/* CreateClusterRoleParams contains all the parameters to send to the API endpoint
-   for the create cluster role operation.
+/*
+CreateClusterRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create cluster role operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateClusterRoleParams struct {
 

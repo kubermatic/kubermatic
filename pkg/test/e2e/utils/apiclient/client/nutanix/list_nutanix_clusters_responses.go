@@ -46,7 +46,8 @@ func NewListNutanixClustersOK() *ListNutanixClustersOK {
 	return &ListNutanixClustersOK{}
 }
 
-/* ListNutanixClustersOK describes a response with status code 200, with default header values.
+/*
+ListNutanixClustersOK describes a response with status code 200, with default header values.
 
 NutanixClusterList
 */
@@ -108,7 +109,8 @@ func NewListNutanixClustersDefault(code int) *ListNutanixClustersDefault {
 	}
 }
 
-/* ListNutanixClustersDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

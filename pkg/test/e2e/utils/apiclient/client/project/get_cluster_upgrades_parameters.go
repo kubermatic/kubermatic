@@ -52,10 +52,12 @@ func NewGetClusterUpgradesParamsWithHTTPClient(client *http.Client) *GetClusterU
 	}
 }
 
-/* GetClusterUpgradesParams contains all the parameters to send to the API endpoint
-   for the get cluster upgrades operation.
+/*
+GetClusterUpgradesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get cluster upgrades operation.
+
+	Typically these are written to a http.Request.
 */
 type GetClusterUpgradesParams struct {
 

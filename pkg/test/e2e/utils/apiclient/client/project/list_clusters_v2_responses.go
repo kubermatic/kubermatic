@@ -58,7 +58,8 @@ func NewListClustersV2OK() *ListClustersV2OK {
 	return &ListClustersV2OK{}
 }
 
-/* ListClustersV2OK describes a response with status code 200, with default header values.
+/*
+ListClustersV2OK describes a response with status code 200, with default header values.
 
 ClusterList
 */
@@ -118,7 +119,8 @@ func NewListClustersV2Unauthorized() *ListClustersV2Unauthorized {
 	return &ListClustersV2Unauthorized{}
 }
 
-/* ListClustersV2Unauthorized describes a response with status code 401, with default header values.
+/*
+ListClustersV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListClustersV2Forbidden() *ListClustersV2Forbidden {
 	return &ListClustersV2Forbidden{}
 }
 
-/* ListClustersV2Forbidden describes a response with status code 403, with default header values.
+/*
+ListClustersV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListClustersV2Default(code int) *ListClustersV2Default {
 	}
 }
 
-/* ListClustersV2Default describes a response with status code -1, with default header values.
+/*
+ListClustersV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

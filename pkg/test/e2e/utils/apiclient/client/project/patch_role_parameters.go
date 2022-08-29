@@ -52,10 +52,12 @@ func NewPatchRoleParamsWithHTTPClient(client *http.Client) *PatchRoleParams {
 	}
 }
 
-/* PatchRoleParams contains all the parameters to send to the API endpoint
-   for the patch role operation.
+/*
+PatchRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch role operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchRoleParams struct {
 

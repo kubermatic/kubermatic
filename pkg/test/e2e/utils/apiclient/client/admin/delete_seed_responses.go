@@ -58,7 +58,8 @@ func NewDeleteSeedOK() *DeleteSeedOK {
 	return &DeleteSeedOK{}
 }
 
-/* DeleteSeedOK describes a response with status code 200, with default header values.
+/*
+DeleteSeedOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteSeedUnauthorized() *DeleteSeedUnauthorized {
 	return &DeleteSeedUnauthorized{}
 }
 
-/* DeleteSeedUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteSeedForbidden() *DeleteSeedForbidden {
 	return &DeleteSeedForbidden{}
 }
 
-/* DeleteSeedForbidden describes a response with status code 403, with default header values.
+/*
+DeleteSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteSeedDefault(code int) *DeleteSeedDefault {
 	}
 }
 
-/* DeleteSeedDefault describes a response with status code -1, with default header values.
+/*
+DeleteSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewListSystemLabelsOK() *ListSystemLabelsOK {
 	return &ListSystemLabelsOK{}
 }
 
-/* ListSystemLabelsOK describes a response with status code 200, with default header values.
+/*
+ListSystemLabelsOK describes a response with status code 200, with default header values.
 
 ResourceLabelMap
 */
@@ -118,7 +119,8 @@ func NewListSystemLabelsUnauthorized() *ListSystemLabelsUnauthorized {
 	return &ListSystemLabelsUnauthorized{}
 }
 
-/* ListSystemLabelsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListSystemLabelsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListSystemLabelsForbidden() *ListSystemLabelsForbidden {
 	return &ListSystemLabelsForbidden{}
 }
 
-/* ListSystemLabelsForbidden describes a response with status code 403, with default header values.
+/*
+ListSystemLabelsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListSystemLabelsDefault(code int) *ListSystemLabelsDefault {
 	}
 }
 
-/* ListSystemLabelsDefault describes a response with status code -1, with default header values.
+/*
+ListSystemLabelsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

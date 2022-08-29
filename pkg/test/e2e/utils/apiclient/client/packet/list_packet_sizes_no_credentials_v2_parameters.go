@@ -52,10 +52,12 @@ func NewListPacketSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* ListPacketSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list packet sizes no credentials v2 operation.
+/*
+ListPacketSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list packet sizes no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListPacketSizesNoCredentialsV2Params struct {
 

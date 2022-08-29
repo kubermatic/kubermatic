@@ -58,7 +58,8 @@ func NewGetDCForProviderOK() *GetDCForProviderOK {
 	return &GetDCForProviderOK{}
 }
 
-/* GetDCForProviderOK describes a response with status code 200, with default header values.
+/*
+GetDCForProviderOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -120,7 +121,8 @@ func NewGetDCForProviderUnauthorized() *GetDCForProviderUnauthorized {
 	return &GetDCForProviderUnauthorized{}
 }
 
-/* GetDCForProviderUnauthorized describes a response with status code 401, with default header values.
+/*
+GetDCForProviderUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetDCForProviderForbidden() *GetDCForProviderForbidden {
 	return &GetDCForProviderForbidden{}
 }
 
-/* GetDCForProviderForbidden describes a response with status code 403, with default header values.
+/*
+GetDCForProviderForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetDCForProviderDefault(code int) *GetDCForProviderDefault {
 	}
 }
 
-/* GetDCForProviderDefault describes a response with status code -1, with default header values.
+/*
+GetDCForProviderDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

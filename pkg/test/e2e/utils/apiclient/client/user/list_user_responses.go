@@ -58,7 +58,8 @@ func NewListUserOK() *ListUserOK {
 	return &ListUserOK{}
 }
 
-/* ListUserOK describes a response with status code 200, with default header values.
+/*
+ListUserOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -118,7 +119,8 @@ func NewListUserUnauthorized() *ListUserUnauthorized {
 	return &ListUserUnauthorized{}
 }
 
-/* ListUserUnauthorized describes a response with status code 401, with default header values.
+/*
+ListUserUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListUserForbidden() *ListUserForbidden {
 	return &ListUserForbidden{}
 }
 
-/* ListUserForbidden describes a response with status code 403, with default header values.
+/*
+ListUserForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListUserDefault(code int) *ListUserDefault {
 	}
 }
 
-/* ListUserDefault describes a response with status code -1, with default header values.
+/*
+ListUserDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

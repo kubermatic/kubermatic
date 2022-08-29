@@ -58,7 +58,8 @@ func NewSetAdminOK() *SetAdminOK {
 	return &SetAdminOK{}
 }
 
-/* SetAdminOK describes a response with status code 200, with default header values.
+/*
+SetAdminOK describes a response with status code 200, with default header values.
 
 Admin
 */
@@ -120,7 +121,8 @@ func NewSetAdminUnauthorized() *SetAdminUnauthorized {
 	return &SetAdminUnauthorized{}
 }
 
-/* SetAdminUnauthorized describes a response with status code 401, with default header values.
+/*
+SetAdminUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewSetAdminForbidden() *SetAdminForbidden {
 	return &SetAdminForbidden{}
 }
 
-/* SetAdminForbidden describes a response with status code 403, with default header values.
+/*
+SetAdminForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewSetAdminDefault(code int) *SetAdminDefault {
 	}
 }
 
-/* SetAdminDefault describes a response with status code -1, with default header values.
+/*
+SetAdminDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,7 @@ type ClientService interface {
 }
 
 /*
-  ListEKSAMITypes gets the e k s a m i types for node group
+ListEKSAMITypes gets the e k s a m i types for node group
 */
 func (a *Client) ListEKSAMITypes(params *ListEKSAMITypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesOK, error) {
 	// TODO: Validate the params before sending
@@ -96,7 +96,7 @@ func (a *Client) ListEKSAMITypes(params *ListEKSAMITypesParams, authInfo runtime
 }
 
 /*
-  ListEKSCapacityTypes gets the e k s capacity types for node group
+ListEKSCapacityTypes gets the e k s capacity types for node group
 */
 func (a *Client) ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -172,7 +172,7 @@ func (a *Client) ListEKSClusterRoles(params *ListEKSClusterRolesParams, authInfo
 }
 
 /*
-  ListEKSInstanceTypesNoCredentials gets the e k s instance types for node group
+ListEKSInstanceTypesNoCredentials gets the e k s instance types for node group
 */
 func (a *Client) ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSInstanceTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -248,7 +248,7 @@ func (a *Client) ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runti
 }
 
 /*
-  ListEKSRegions lists e k s regions
+ListEKSRegions lists e k s regions
 */
 func (a *Client) ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error) {
 	// TODO: Validate the params before sending
@@ -286,7 +286,7 @@ func (a *Client) ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.C
 }
 
 /*
-  ListEKSSecurityGroups lists e k s securitygroup list
+ListEKSSecurityGroups lists e k s securitygroup list
 */
 func (a *Client) ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -324,7 +324,7 @@ func (a *Client) ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, auth
 }
 
 /*
-  ListEKSSubnets lists e k s subnet list
+ListEKSSubnets lists e k s subnet list
 */
 func (a *Client) ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsOK, error) {
 	// TODO: Validate the params before sending
@@ -362,7 +362,7 @@ func (a *Client) ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.C
 }
 
 /*
-  ListEKSSubnetsNoCredentials gets the e k s subnets for node group
+ListEKSSubnetsNoCredentials gets the e k s subnets for node group
 */
 func (a *Client) ListEKSSubnetsNoCredentials(params *ListEKSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -400,7 +400,7 @@ func (a *Client) ListEKSSubnetsNoCredentials(params *ListEKSSubnetsNoCredentials
 }
 
 /*
-  ListEKSVPCS Lists EKS vpc's
+ListEKSVPCS Lists EKS vpc's
 */
 func (a *Client) ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCSOK, error) {
 	// TODO: Validate the params before sending
@@ -438,7 +438,7 @@ func (a *Client) ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientA
 }
 
 /*
-  ListEKSVPCsNoCredentials gets the e k s vpc s for node group
+ListEKSVPCsNoCredentials gets the e k s vpc s for node group
 */
 func (a *Client) ListEKSVPCsNoCredentials(params *ListEKSVPCsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -476,7 +476,7 @@ func (a *Client) ListEKSVPCsNoCredentials(params *ListEKSVPCsNoCredentialsParams
 }
 
 /*
-  ListEKSVersions Lists EKS versions
+ListEKSVersions Lists EKS versions
 */
 func (a *Client) ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -514,7 +514,7 @@ func (a *Client) ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime
 }
 
 /*
-  ValidateEKSCredentials Validates EKS credentials
+ValidateEKSCredentials Validates EKS credentials
 */
 func (a *Client) ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error) {
 	// TODO: Validate the params before sending

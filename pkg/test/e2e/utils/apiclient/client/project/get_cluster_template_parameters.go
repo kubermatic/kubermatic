@@ -52,10 +52,12 @@ func NewGetClusterTemplateParamsWithHTTPClient(client *http.Client) *GetClusterT
 	}
 }
 
-/* GetClusterTemplateParams contains all the parameters to send to the API endpoint
-   for the get cluster template operation.
+/*
+GetClusterTemplateParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get cluster template operation.
+
+	Typically these are written to a http.Request.
 */
 type GetClusterTemplateParams struct {
 

@@ -58,7 +58,8 @@ func NewListEKSAMITypesOK() *ListEKSAMITypesOK {
 	return &ListEKSAMITypesOK{}
 }
 
-/* ListEKSAMITypesOK describes a response with status code 200, with default header values.
+/*
+ListEKSAMITypesOK describes a response with status code 200, with default header values.
 
 EKSAMITypeList
 */
@@ -118,7 +119,8 @@ func NewListEKSAMITypesUnauthorized() *ListEKSAMITypesUnauthorized {
 	return &ListEKSAMITypesUnauthorized{}
 }
 
-/* ListEKSAMITypesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSAMITypesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSAMITypesForbidden() *ListEKSAMITypesForbidden {
 	return &ListEKSAMITypesForbidden{}
 }
 
-/* ListEKSAMITypesForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSAMITypesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSAMITypesDefault(code int) *ListEKSAMITypesDefault {
 	}
 }
 
-/* ListEKSAMITypesDefault describes a response with status code -1, with default header values.
+/*
+ListEKSAMITypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

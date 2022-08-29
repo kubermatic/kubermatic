@@ -46,7 +46,8 @@ func NewListAzureSecurityGroupsOK() *ListAzureSecurityGroupsOK {
 	return &ListAzureSecurityGroupsOK{}
 }
 
-/* ListAzureSecurityGroupsOK describes a response with status code 200, with default header values.
+/*
+ListAzureSecurityGroupsOK describes a response with status code 200, with default header values.
 
 AzureSecurityGroupsList
 */
@@ -110,7 +111,8 @@ func NewListAzureSecurityGroupsDefault(code int) *ListAzureSecurityGroupsDefault
 	}
 }
 
-/* ListAzureSecurityGroupsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

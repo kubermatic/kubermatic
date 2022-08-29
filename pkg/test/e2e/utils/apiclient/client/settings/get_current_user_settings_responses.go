@@ -52,7 +52,8 @@ func NewGetCurrentUserSettingsOK() *GetCurrentUserSettingsOK {
 	return &GetCurrentUserSettingsOK{}
 }
 
-/* GetCurrentUserSettingsOK describes a response with status code 200, with default header values.
+/*
+GetCurrentUserSettingsOK describes a response with status code 200, with default header values.
 
 UserSettings
 */
@@ -114,7 +115,8 @@ func NewGetCurrentUserSettingsUnauthorized() *GetCurrentUserSettingsUnauthorized
 	return &GetCurrentUserSettingsUnauthorized{}
 }
 
-/* GetCurrentUserSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetCurrentUserSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -166,7 +168,8 @@ func NewGetCurrentUserSettingsDefault(code int) *GetCurrentUserSettingsDefault {
 	}
 }
 
-/* GetCurrentUserSettingsDefault describes a response with status code -1, with default header values.
+/*
+GetCurrentUserSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

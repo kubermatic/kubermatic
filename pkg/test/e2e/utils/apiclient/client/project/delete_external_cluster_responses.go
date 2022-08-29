@@ -58,7 +58,8 @@ func NewDeleteExternalClusterOK() *DeleteExternalClusterOK {
 	return &DeleteExternalClusterOK{}
 }
 
-/* DeleteExternalClusterOK describes a response with status code 200, with default header values.
+/*
+DeleteExternalClusterOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteExternalClusterUnauthorized() *DeleteExternalClusterUnauthorized {
 	return &DeleteExternalClusterUnauthorized{}
 }
 
-/* DeleteExternalClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteExternalClusterForbidden() *DeleteExternalClusterForbidden {
 	return &DeleteExternalClusterForbidden{}
 }
 
-/* DeleteExternalClusterForbidden describes a response with status code 403, with default header values.
+/*
+DeleteExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteExternalClusterDefault(code int) *DeleteExternalClusterDefault {
 	}
 }
 
-/* DeleteExternalClusterDefault describes a response with status code -1, with default header values.
+/*
+DeleteExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

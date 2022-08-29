@@ -58,7 +58,8 @@ func NewCreateRuleGroupCreated() *CreateRuleGroupCreated {
 	return &CreateRuleGroupCreated{}
 }
 
-/* CreateRuleGroupCreated describes a response with status code 201, with default header values.
+/*
+CreateRuleGroupCreated describes a response with status code 201, with default header values.
 
 RuleGroup
 */
@@ -120,7 +121,8 @@ func NewCreateRuleGroupUnauthorized() *CreateRuleGroupUnauthorized {
 	return &CreateRuleGroupUnauthorized{}
 }
 
-/* CreateRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateRuleGroupForbidden() *CreateRuleGroupForbidden {
 	return &CreateRuleGroupForbidden{}
 }
 
-/* CreateRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+CreateRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateRuleGroupDefault(code int) *CreateRuleGroupDefault {
 	}
 }
 
-/* CreateRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+CreateRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

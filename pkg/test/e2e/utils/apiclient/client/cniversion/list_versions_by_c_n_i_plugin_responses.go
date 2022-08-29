@@ -58,7 +58,8 @@ func NewListVersionsByCNIPluginOK() *ListVersionsByCNIPluginOK {
 	return &ListVersionsByCNIPluginOK{}
 }
 
-/* ListVersionsByCNIPluginOK describes a response with status code 200, with default header values.
+/*
+ListVersionsByCNIPluginOK describes a response with status code 200, with default header values.
 
 CNIVersions
 */
@@ -120,7 +121,8 @@ func NewListVersionsByCNIPluginUnauthorized() *ListVersionsByCNIPluginUnauthoriz
 	return &ListVersionsByCNIPluginUnauthorized{}
 }
 
-/* ListVersionsByCNIPluginUnauthorized describes a response with status code 401, with default header values.
+/*
+ListVersionsByCNIPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewListVersionsByCNIPluginForbidden() *ListVersionsByCNIPluginForbidden {
 	return &ListVersionsByCNIPluginForbidden{}
 }
 
-/* ListVersionsByCNIPluginForbidden describes a response with status code 403, with default header values.
+/*
+ListVersionsByCNIPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewListVersionsByCNIPluginDefault(code int) *ListVersionsByCNIPluginDefault
 	}
 }
 
-/* ListVersionsByCNIPluginDefault describes a response with status code -1, with default header values.
+/*
+ListVersionsByCNIPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

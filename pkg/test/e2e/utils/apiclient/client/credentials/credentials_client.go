@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  ListCredentials Lists credential names for the provider
+ListCredentials Lists credential names for the provider
 */
 func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCredentialsOK, error) {
 	// TODO: Validate the params before sending

@@ -58,7 +58,8 @@ func NewListEKSSecurityGroupsOK() *ListEKSSecurityGroupsOK {
 	return &ListEKSSecurityGroupsOK{}
 }
 
-/* ListEKSSecurityGroupsOK describes a response with status code 200, with default header values.
+/*
+ListEKSSecurityGroupsOK describes a response with status code 200, with default header values.
 
 EKSSecurityGroupList
 */
@@ -118,7 +119,8 @@ func NewListEKSSecurityGroupsUnauthorized() *ListEKSSecurityGroupsUnauthorized {
 	return &ListEKSSecurityGroupsUnauthorized{}
 }
 
-/* ListEKSSecurityGroupsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSSecurityGroupsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSSecurityGroupsForbidden() *ListEKSSecurityGroupsForbidden {
 	return &ListEKSSecurityGroupsForbidden{}
 }
 
-/* ListEKSSecurityGroupsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSSecurityGroupsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSSecurityGroupsDefault(code int) *ListEKSSecurityGroupsDefault {
 	}
 }
 
-/* ListEKSSecurityGroupsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

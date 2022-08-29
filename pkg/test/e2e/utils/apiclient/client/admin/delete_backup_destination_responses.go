@@ -58,7 +58,8 @@ func NewDeleteBackupDestinationOK() *DeleteBackupDestinationOK {
 	return &DeleteBackupDestinationOK{}
 }
 
-/* DeleteBackupDestinationOK describes a response with status code 200, with default header values.
+/*
+DeleteBackupDestinationOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteBackupDestinationUnauthorized() *DeleteBackupDestinationUnauthoriz
 	return &DeleteBackupDestinationUnauthorized{}
 }
 
-/* DeleteBackupDestinationUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteBackupDestinationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteBackupDestinationForbidden() *DeleteBackupDestinationForbidden {
 	return &DeleteBackupDestinationForbidden{}
 }
 
-/* DeleteBackupDestinationForbidden describes a response with status code 403, with default header values.
+/*
+DeleteBackupDestinationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteBackupDestinationDefault(code int) *DeleteBackupDestinationDefault
 	}
 }
 
-/* DeleteBackupDestinationDefault describes a response with status code -1, with default header values.
+/*
+DeleteBackupDestinationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

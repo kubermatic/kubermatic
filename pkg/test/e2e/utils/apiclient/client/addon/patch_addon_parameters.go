@@ -54,10 +54,12 @@ func NewPatchAddonParamsWithHTTPClient(client *http.Client) *PatchAddonParams {
 	}
 }
 
-/* PatchAddonParams contains all the parameters to send to the API endpoint
-   for the patch addon operation.
+/*
+PatchAddonParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch addon operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchAddonParams struct {
 

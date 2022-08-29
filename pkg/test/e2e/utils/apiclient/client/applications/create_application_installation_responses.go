@@ -58,7 +58,8 @@ func NewCreateApplicationInstallationCreated() *CreateApplicationInstallationCre
 	return &CreateApplicationInstallationCreated{}
 }
 
-/* CreateApplicationInstallationCreated describes a response with status code 201, with default header values.
+/*
+CreateApplicationInstallationCreated describes a response with status code 201, with default header values.
 
 ApplicationInstallation
 */
@@ -120,7 +121,8 @@ func NewCreateApplicationInstallationUnauthorized() *CreateApplicationInstallati
 	return &CreateApplicationInstallationUnauthorized{}
 }
 
-/* CreateApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateApplicationInstallationForbidden() *CreateApplicationInstallationF
 	return &CreateApplicationInstallationForbidden{}
 }
 
-/* CreateApplicationInstallationForbidden describes a response with status code 403, with default header values.
+/*
+CreateApplicationInstallationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateApplicationInstallationDefault(code int) *CreateApplicationInstall
 	}
 }
 
-/* CreateApplicationInstallationDefault describes a response with status code -1, with default header values.
+/*
+CreateApplicationInstallationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

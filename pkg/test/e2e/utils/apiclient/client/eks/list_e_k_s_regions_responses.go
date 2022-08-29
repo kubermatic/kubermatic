@@ -58,7 +58,8 @@ func NewListEKSRegionsOK() *ListEKSRegionsOK {
 	return &ListEKSRegionsOK{}
 }
 
-/* ListEKSRegionsOK describes a response with status code 200, with default header values.
+/*
+ListEKSRegionsOK describes a response with status code 200, with default header values.
 
 EKSRegionList
 */
@@ -118,7 +119,8 @@ func NewListEKSRegionsUnauthorized() *ListEKSRegionsUnauthorized {
 	return &ListEKSRegionsUnauthorized{}
 }
 
-/* ListEKSRegionsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSRegionsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSRegionsForbidden() *ListEKSRegionsForbidden {
 	return &ListEKSRegionsForbidden{}
 }
 
-/* ListEKSRegionsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSRegionsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSRegionsDefault(code int) *ListEKSRegionsDefault {
 	}
 }
 
-/* ListEKSRegionsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSRegionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

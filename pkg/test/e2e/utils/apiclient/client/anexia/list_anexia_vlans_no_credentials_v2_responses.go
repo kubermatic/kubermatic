@@ -46,7 +46,8 @@ func NewListAnexiaVlansNoCredentialsV2OK() *ListAnexiaVlansNoCredentialsV2OK {
 	return &ListAnexiaVlansNoCredentialsV2OK{}
 }
 
-/* ListAnexiaVlansNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAnexiaVlansNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AnexiaVlanList
 */
@@ -108,7 +109,8 @@ func NewListAnexiaVlansNoCredentialsV2Default(code int) *ListAnexiaVlansNoCreden
 	}
 }
 
-/* ListAnexiaVlansNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAnexiaVlansNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

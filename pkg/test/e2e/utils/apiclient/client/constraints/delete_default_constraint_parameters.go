@@ -52,10 +52,12 @@ func NewDeleteDefaultConstraintParamsWithHTTPClient(client *http.Client) *Delete
 	}
 }
 
-/* DeleteDefaultConstraintParams contains all the parameters to send to the API endpoint
-   for the delete default constraint operation.
+/*
+DeleteDefaultConstraintParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete default constraint operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteDefaultConstraintParams struct {
 

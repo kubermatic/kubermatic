@@ -46,7 +46,8 @@ func NewListEKSClustersOK() *ListEKSClustersOK {
 	return &ListEKSClustersOK{}
 }
 
-/* ListEKSClustersOK describes a response with status code 200, with default header values.
+/*
+ListEKSClustersOK describes a response with status code 200, with default header values.
 
 EKSClusterList
 */
@@ -108,7 +109,8 @@ func NewListEKSClustersDefault(code int) *ListEKSClustersDefault {
 	}
 }
 
-/* ListEKSClustersDefault describes a response with status code -1, with default header values.
+/*
+ListEKSClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

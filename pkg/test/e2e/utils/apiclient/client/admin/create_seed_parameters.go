@@ -52,10 +52,12 @@ func NewCreateSeedParamsWithHTTPClient(client *http.Client) *CreateSeedParams {
 	}
 }
 
-/* CreateSeedParams contains all the parameters to send to the API endpoint
-   for the create seed operation.
+/*
+CreateSeedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create seed operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateSeedParams struct {
 

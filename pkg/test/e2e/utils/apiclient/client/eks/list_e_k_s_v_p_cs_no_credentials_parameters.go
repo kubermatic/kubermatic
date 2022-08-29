@@ -52,10 +52,12 @@ func NewListEKSVPCsNoCredentialsParamsWithHTTPClient(client *http.Client) *ListE
 	}
 }
 
-/* ListEKSVPCsNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list e k s v p cs no credentials operation.
+/*
+ListEKSVPCsNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s v p cs no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSVPCsNoCredentialsParams struct {
 

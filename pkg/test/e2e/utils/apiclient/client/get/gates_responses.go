@@ -58,7 +58,8 @@ func NewGatesOK() *GatesOK {
 	return &GatesOK{}
 }
 
-/* GatesOK describes a response with status code 200, with default header values.
+/*
+GatesOK describes a response with status code 200, with default header values.
 
 FeatureGates
 */
@@ -120,7 +121,8 @@ func NewGatesUnauthorized() *GatesUnauthorized {
 	return &GatesUnauthorized{}
 }
 
-/* GatesUnauthorized describes a response with status code 401, with default header values.
+/*
+GatesUnauthorized describes a response with status code 401, with default header values.
 
 errorResponse
 */
@@ -182,7 +184,8 @@ func NewGatesForbidden() *GatesForbidden {
 	return &GatesForbidden{}
 }
 
-/* GatesForbidden describes a response with status code 403, with default header values.
+/*
+GatesForbidden describes a response with status code 403, with default header values.
 
 errorResponse
 */
@@ -246,7 +249,8 @@ func NewGatesDefault(code int) *GatesDefault {
 	}
 }
 
-/* GatesDefault describes a response with status code -1, with default header values.
+/*
+GatesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

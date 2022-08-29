@@ -58,7 +58,8 @@ func NewDetachSSHKeyFromClusterOK() *DetachSSHKeyFromClusterOK {
 	return &DetachSSHKeyFromClusterOK{}
 }
 
-/* DetachSSHKeyFromClusterOK describes a response with status code 200, with default header values.
+/*
+DetachSSHKeyFromClusterOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDetachSSHKeyFromClusterUnauthorized() *DetachSSHKeyFromClusterUnauthoriz
 	return &DetachSSHKeyFromClusterUnauthorized{}
 }
 
-/* DetachSSHKeyFromClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+DetachSSHKeyFromClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDetachSSHKeyFromClusterForbidden() *DetachSSHKeyFromClusterForbidden {
 	return &DetachSSHKeyFromClusterForbidden{}
 }
 
-/* DetachSSHKeyFromClusterForbidden describes a response with status code 403, with default header values.
+/*
+DetachSSHKeyFromClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDetachSSHKeyFromClusterDefault(code int) *DetachSSHKeyFromClusterDefault
 	}
 }
 
-/* DetachSSHKeyFromClusterDefault describes a response with status code -1, with default header values.
+/*
+DetachSSHKeyFromClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
