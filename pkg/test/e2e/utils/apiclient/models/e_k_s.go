@@ -27,9 +27,6 @@ type EKS struct {
 	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// region
-	Region string `json:"region,omitempty"`
-
 	// secret access key
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 }
