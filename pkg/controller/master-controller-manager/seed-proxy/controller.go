@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -114,7 +115,7 @@ func Add(
 		namespace:            namespace,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
-		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		seedClientGetter:     kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter),
 		configGetter:         configGetter,
 	}
 

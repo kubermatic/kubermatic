@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/validation"
@@ -149,7 +150,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 	// check if all DCs have exactly one provider and that the provider
 	// is never changed after it has been set once
 	for dcName, dc := range subject.Spec.Datacenters {
-		providerName, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		providerName, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
 		if err != nil {
 			return fmt.Errorf("datacenter %q is invalid: %w", dcName, err)
 		}
@@ -166,7 +167,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 			continue
 		}
 
-		existingProvider, _ := provider.DatacenterCloudProviderName(&existingDC.Spec)
+		existingProvider, _ := kubermaticv1helper.DatacenterCloudProviderName(&existingDC.Spec)
 		if providerName != existingProvider {
 			return fmt.Errorf("cannot change datacenter %q provider from %q to %q", dcName, existingProvider, providerName)
 		}

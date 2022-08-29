@@ -26,7 +26,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/defaulting"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"

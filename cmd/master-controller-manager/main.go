@@ -36,6 +36,7 @@ import (
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -164,9 +165,9 @@ func main() {
 	ctrlCtx.mgr = mgr
 
 	if config != nil {
-		ctrlCtx.configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(config)
+		ctrlCtx.configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(config)
 	} else {
-		ctrlCtx.configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
+		ctrlCtx.configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))

@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -108,7 +108,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
-	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
+	configGetter, err := kubernetesprovider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:   encodeContainerAsYAML(t, &testStoreContainer),

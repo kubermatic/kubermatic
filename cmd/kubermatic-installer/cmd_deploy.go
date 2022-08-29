@@ -36,7 +36,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -296,7 +296,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		deployOptions.KubeClient = kubeClient
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
-		deployOptions.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 

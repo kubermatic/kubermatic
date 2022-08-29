@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -34,9 +35,11 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// All Default* constants live here, except for those used by other reconciling
+// code, for which those constants live in pkg/resources.
+
 const (
 	DefaultPProfEndpoint                          = ":6600"
-	DefaultNodePortRange                          = "30000-32767"
 	DefaultEtcdVolumeSize                         = "5Gi"
 	DefaultAuthClientID                           = "kubermatic"
 	DefaultIngressClass                           = "nginx"
@@ -402,7 +405,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UserCluster.NodePortRange == "" {
-		configCopy.Spec.UserCluster.NodePortRange = DefaultNodePortRange
+		configCopy.Spec.UserCluster.NodePortRange = resources.DefaultNodePortRange
 		logger.Debugw("Defaulting field", "field", "userCluster.nodePortRange", "value", configCopy.Spec.UserCluster.NodePortRange)
 	}
 

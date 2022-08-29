@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -53,7 +54,7 @@ func Add(
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		log:                  log.Named(ControllerName),
 		seedKubeconfigGetter: seedKubeconfigGetter,
-		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		seedClientGetter:     kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter),
 		versions:             versions,
 	}
 

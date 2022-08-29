@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package provider
+package kubernetes
 
 import (
 	"context"
@@ -25,21 +25,15 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NonDefaultingKubermaticConfigurationGetter is a function to retrieve the
-// currently relevant KubermaticConfiguration. That is the one in the same
-// namespace as the running application (e.g. the seed-controller-manager).
-// It's an error if there are none or more than one KubermaticConfiguration
-// objects in a single namespace.
-type KubermaticConfigurationGetter = func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error)
-
 // DynamicKubermaticConfigurationGetterFactory returns a dynamic KubermaticConfigurationGetter,
 // which will list all Configurations in the given namespace and return the found config or
 // an error if 0 or more Configurations where found.
-func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader, namespace string) (KubermaticConfigurationGetter, error) {
+func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader, namespace string) (provider.KubermaticConfigurationGetter, error) {
 	if len(namespace) == 0 {
 		return nil, fmt.Errorf("a namespace must be provided")
 	}
@@ -93,7 +87,7 @@ func GetRawKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient
 // returns the same Configuration on every call. This is mostly used for local development
 // in order to provide an easy to modify configuration file. Actual production use will use
 // the dynamic getter instead.
-func StaticKubermaticConfigurationGetterFactory(config *kubermaticv1.KubermaticConfiguration) (KubermaticConfigurationGetter, error) {
+func StaticKubermaticConfigurationGetterFactory(config *kubermaticv1.KubermaticConfiguration) (provider.KubermaticConfigurationGetter, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}

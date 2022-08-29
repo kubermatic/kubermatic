@@ -489,7 +489,7 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
 		return fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
+	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
 	if err != nil {
 		return fmt.Errorf("failed to create configGetter: %w", err)
 	}

@@ -213,7 +213,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			log.Info("Reconciling cloud provider for cluster")
 
 			// update metrics
-			providerName, _ := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+			providerName, _ := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile

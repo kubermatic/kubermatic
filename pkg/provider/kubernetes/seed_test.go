@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package provider
+package kubernetes
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,7 +33,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      DefaultSeedName,
+			Name:      provider.DefaultSeedName,
 			Namespace: "my-ns",
 		},
 		Spec: kubermaticv1.SeedSpec{
@@ -49,7 +50,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 		WithObjects(initSeed).
 		Build()
 
-	seedGetter, err := SeedGetterFactory(context.Background(), client, DefaultSeedName, "my-ns")
+	seedGetter, err := SeedGetterFactory(context.Background(), client, provider.DefaultSeedName, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedGetter: %v", err)
 	}
@@ -72,7 +73,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      DefaultSeedName,
+			Name:      provider.DefaultSeedName,
 			Namespace: "my-ns",
 		},
 		Spec: kubermaticv1.SeedSpec{
@@ -96,11 +97,11 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed calling seedsGetter: %v", err)
 	}
-	if _, exists := seeds[DefaultSeedName]; !exists || len(seeds) != 1 {
+	if _, exists := seeds[provider.DefaultSeedName]; !exists || len(seeds) != 1 {
 		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
 	}
 
-	seed := seeds[DefaultSeedName]
+	seed := seeds[provider.DefaultSeedName]
 	nodeSettings := seed.Spec.Datacenters["a"].Node
 	if nodeSettings == nil {
 		t.Fatal("expected the datacenter's node setting to be set, but it's nil")

@@ -28,7 +28,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
@@ -84,7 +84,7 @@ var (
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaulting.DefaultNodePortRange),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", resources.DefaultNodePortRange),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultControllerManagerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultSchedulerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
@@ -1240,7 +1240,7 @@ func TestHandle(t *testing.T) {
 			dummySeedClient := builder.Build()
 
 			// this getter, as do all KubermaticConfigurationGetters, performs defaulting on the config
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(&config)
 			if err != nil {
 				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
 			}
