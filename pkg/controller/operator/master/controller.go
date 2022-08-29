@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -96,7 +97,7 @@ func Add(
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		config, err := provider.GetRawKubermaticConfiguration(ctx, mgr.GetClient(), namespace)
+		config, err := kubernetes.GetRawKubermaticConfiguration(ctx, mgr.GetClient(), namespace)
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get KubermaticConfiguration: %w", err))
 			return nil

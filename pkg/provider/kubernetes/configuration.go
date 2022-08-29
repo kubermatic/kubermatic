@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -53,11 +52,6 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 	}, nil
 }
 
-var (
-	ErrNoKubermaticConfigurationFound      = errors.New("no KubermaticConfiguration resource found")
-	ErrTooManyKubermaticConfigurationFound = errors.New("more than one KubermaticConfiguration resource found")
-)
-
 // GetRawKubermaticConfiguration will list all Configurations in the given namespace and
 // return the found config or an error if 0 or more Configurations where found.
 // Most code should use a KubermaticConfigurationGetter instead of calling this function
@@ -73,11 +67,11 @@ func GetRawKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient
 	}
 
 	if len(configList.Items) == 0 {
-		return nil, ErrNoKubermaticConfigurationFound
+		return nil, provider.ErrNoKubermaticConfigurationFound
 	}
 
 	if len(configList.Items) > 1 {
-		return nil, ErrTooManyKubermaticConfigurationFound
+		return nil, provider.ErrTooManyKubermaticConfigurationFound
 	}
 
 	return &configList.Items[0], nil

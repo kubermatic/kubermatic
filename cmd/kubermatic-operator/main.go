@@ -109,7 +109,7 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1.SchemeGroupVersion), zap.Error(err))
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
+	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
 	if err != nil {
 		log.Fatalw("Failed to construct configGetter", zap.Error(err))
 	}
@@ -124,7 +124,7 @@ func main() {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))

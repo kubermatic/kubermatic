@@ -48,6 +48,9 @@ var (
 	ErrNotFound = errors.New("the given resource was not found")
 	// ErrAlreadyExists tells that the given resource already exists.
 	ErrAlreadyExists = errors.New("the given resource already exists")
+
+	ErrNoKubermaticConfigurationFound      = errors.New("no KubermaticConfiguration resource found")
+	ErrTooManyKubermaticConfigurationFound = errors.New("more than one KubermaticConfiguration resource found")
 )
 
 const (
