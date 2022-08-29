@@ -17,6 +17,5 @@ limitations under the License.
 /*
 Package seedconstraintsynchronizer contains a controller that is responsible for ensuring that the
 kubermatic constraints are synced to the user cluster namespace.
-
 */
 package seedconstraintsynchronizer

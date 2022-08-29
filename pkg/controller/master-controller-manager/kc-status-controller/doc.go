@@ -18,8 +18,7 @@ limitations under the License.
 Package kcstatuscontroller contains a controller that is responsible
 for managing the basic parts of the KubermaticConfigurationStatus:
 
-  * status.kubermaticVersion
-  * status.kubermaticEdition
-
+  - status.kubermaticVersion
+  - status.kubermaticEdition
 */
 package kcstatuscontroller

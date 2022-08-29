@@ -31,7 +31,8 @@ import (
 // the cloud providers to by dynamically initialized when needed instead once we support datacenters as CRDs.
 //
 // TODO: Find a way to lift the current requirement of unique datacenter names. It is needed only because we put
-// 	 the datacenter name in the cluster object but not the seed name.
+//
+//	the datacenter name in the cluster object but not the seed name.
 func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {

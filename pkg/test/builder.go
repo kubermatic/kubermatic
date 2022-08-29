@@ -159,6 +159,7 @@ func (b *EndpointsBuilder) WithResourceVersion(rs string) *EndpointsBuilder {
 // WithEndpointsSubset starts the creation of an Endpoints Subset, the creation
 // must me terminated with a call to DoneWithEndpointSubset, after ports and
 // addresses are added.
+//
 //nolint:golint
 func (b *EndpointsBuilder) WithEndpointsSubset() *epsSubsetBuilder {
 	return &epsSubsetBuilder{eb: b}

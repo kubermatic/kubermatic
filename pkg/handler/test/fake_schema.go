@@ -63,7 +63,7 @@ type RequiredLabelList struct {
 	Items []runtime.RawExtension `json:"items"`
 }
 
-//+genclient
+// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type UniqueLabel struct {
 	metav1.TypeMeta   `json:",inline"`

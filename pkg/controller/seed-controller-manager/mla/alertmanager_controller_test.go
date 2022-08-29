@@ -79,10 +79,10 @@ type alertmanagerConfigStatus struct {
 
 // getAlertmanagerConfigStatusUp returns the needed information when the alertmanager config status is OK:
 // - Cluster CR: HealthStatusUp
-// - Alertmanager CR :
-//    - Status True
-//    - No Error message
-//    - LastUpdated to now
+// - Alertmanager CR:
+//   - Status True
+//   - No Error message
+//   - LastUpdated to now
 func getAlertmanagerConfigStatusUp() alertmanagerConfigStatus {
 	return alertmanagerConfigStatus{
 		clusterStatus: kubermaticv1.HealthStatusUp,
@@ -95,10 +95,10 @@ func getAlertmanagerConfigStatusUp() alertmanagerConfigStatus {
 
 // getAlertmanagerConfigStatusDown returns the needed information when the alertmanager config status is KO:
 // - Cluster CR: HealthStatusDown
-// - Alertmanager CR :
-//    - Status False
-//    - Error message
-//    - No LastUpdated
+// - Alertmanager CR:
+//   - Status False
+//   - Error message
+//   - No LastUpdated
 func getAlertmanagerConfigStatusDown() alertmanagerConfigStatus {
 	return alertmanagerConfigStatus{
 		clusterStatus: kubermaticv1.HealthStatusDown,

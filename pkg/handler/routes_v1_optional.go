@@ -40,15 +40,15 @@ func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, 
 
 // swagger:route GET /api/v1/kubeconfig createOIDCKubeconfig
 //
-//     Starts OIDC flow and generates kubeconfig, the generated config
-//     contains OIDC provider authentication info
+//	Starts OIDC flow and generates kubeconfig, the generated config
+//	contains OIDC provider authentication info
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Kubeconfig
+//	Responses:
+//	  default: errorResponse
+//	  200: Kubeconfig
 func (r Routing) createOIDCKubeconfig(oidcCfg common.OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

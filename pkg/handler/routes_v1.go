@@ -661,17 +661,17 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project listSSHKeys
 //
-//     Lists SSH Keys that belong to the given project.
-//     The returned collection is sorted by creation timestamp.
+//	Lists SSH Keys that belong to the given project.
+//	The returned collection is sorted by creation timestamp.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []SSHKey
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []SSHKey
+//	  401: empty
+//	  403: empty
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -686,19 +686,19 @@ func (r Routing) listSSHKeys() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/sshkeys project createSSHKey
 //
-//    Adds the given SSH key to the specified project.
+//	Adds the given SSH key to the specified project.
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: SSHKey
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   201: SSHKey
+//	   401: empty
+//	   403: empty
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -713,16 +713,16 @@ func (r Routing) createSSHKey() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_id} project deleteSSHKey
 //
-//     Removes the given SSH Key from the system.
+//	Removes the given SSH Key from the system.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -739,12 +739,12 @@ func (r Routing) deleteSSHKey() http.Handler {
 //
 // Lists credential names for the provider
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
+//	Responses:
+//	  default: errorResponse
+//	  200: CredentialList
 func (r Routing) listCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -761,12 +761,12 @@ func (r Routing) listCredentials() http.Handler {
 //
 // Lists available AWS sizes.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSSizeList
 func (r Routing) listAWSSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -783,12 +783,12 @@ func (r Routing) listAWSSizes() http.Handler {
 //
 // Lists available AWS subnets
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSSubnetList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSSubnetList
 func (r Routing) listAWSSubnets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -805,12 +805,12 @@ func (r Routing) listAWSSubnets() http.Handler {
 //
 // Lists available AWS vpc's
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSVPCList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSVPCList
 func (r Routing) listAWSVPCS() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -827,12 +827,12 @@ func (r Routing) listAWSVPCS() http.Handler {
 //
 // Lists available AWS Security Groups
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSSecurityGroupList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSSecurityGroupList
 func (r Routing) listAWSSecurityGroups() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -849,12 +849,12 @@ func (r Routing) listAWSSecurityGroups() http.Handler {
 //
 // Lists disk types from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPDiskTypeList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPDiskTypeList
 func (r Routing) listGCPDiskTypes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -871,12 +871,12 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 //
 // Lists machine sizes from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPMachineSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPMachineSizeList
 func (r Routing) listGCPSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -893,12 +893,12 @@ func (r Routing) listGCPSizes() http.Handler {
 //
 // Lists available GCP zones
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPZoneList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPZoneList
 func (r Routing) listGCPZones() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -915,12 +915,12 @@ func (r Routing) listGCPZones() http.Handler {
 //
 // Lists networks from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPNetworkList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPNetworkList
 func (r Routing) listGCPNetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -937,12 +937,12 @@ func (r Routing) listGCPNetworks() http.Handler {
 //
 // Lists subnetworks from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPSubnetworkList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPSubnetworkList
 func (r Routing) listGCPSubnetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -959,12 +959,12 @@ func (r Routing) listGCPSubnetworks() http.Handler {
 //
 // Lists sizes from digitalocean
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: DigitaloceanSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: DigitaloceanSizeList
 func (r Routing) listDigitaloceanSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -981,12 +981,12 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 //
 // Lists available VM sizes in an Azure region
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AzureSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AzureSizeList
 func (r Routing) listAzureSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1003,12 +1003,12 @@ func (r Routing) listAzureSizes() http.Handler {
 //
 // Lists VM availability zones in an Azure region
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AzureAvailabilityZonesList
+//	Responses:
+//	  default: errorResponse
+//	  200: AzureAvailabilityZonesList
 func (r Routing) listAzureSKUAvailabilityZones() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1025,12 +1025,12 @@ func (r Routing) listAzureSKUAvailabilityZones() http.Handler {
 //
 // Lists sizes from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSize
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSize
 func (r Routing) listOpenstackSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1047,12 +1047,12 @@ func (r Routing) listOpenstackSizes() http.Handler {
 //
 // Lists networks from vsphere datacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []VSphereNetwork
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereNetwork
 func (r Routing) listVSphereNetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1069,12 +1069,12 @@ func (r Routing) listVSphereNetworks() http.Handler {
 //
 // Lists folders from vsphere datacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []VSphereFolder
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereFolder
 func (r Routing) listVSphereFolders() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1091,12 +1091,12 @@ func (r Routing) listVSphereFolders() http.Handler {
 //
 // Lists sizes from packet
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []PacketSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: []PacketSizeList
 func (r Routing) listPacketSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1113,12 +1113,12 @@ func (r Routing) listPacketSizes() http.Handler {
 //
 // Lists sizes from packet
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []PacketSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: []PacketSizeList
 func (r Routing) listPacketSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1137,12 +1137,12 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 //
 // Lists tenants from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackTenant
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackTenant
 func (r Routing) listOpenstackTenants() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1159,12 +1159,12 @@ func (r Routing) listOpenstackTenants() http.Handler {
 //
 // Lists networks from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackNetwork
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackNetwork
 func (r Routing) listOpenstackNetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1181,12 +1181,12 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 //
 // Lists subnets from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSubnet
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSubnet
 func (r Routing) listOpenstackSubnets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1203,12 +1203,12 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 //
 // Lists security groups from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSecurityGroup
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSecurityGroup
 func (r Routing) listOpenstackSecurityGroups() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1225,12 +1225,12 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 //
 // Lists availability zones from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackAvailabilityZone
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackAvailabilityZone
 func (r Routing) listOpenstackAvailabilityZones() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1247,12 +1247,12 @@ func (r Routing) listOpenstackAvailabilityZones() http.Handler {
 //
 // Lists sizes from hetzner
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: HetznerSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: HetznerSizeList
 func (r Routing) listHetznerSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1269,12 +1269,12 @@ func (r Routing) listHetznerSizes() http.Handler {
 //
 // Lists available Alibaba instance types.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AlibabaInstanceTypeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AlibabaInstanceTypeList
 func (r Routing) listAlibabaInstanceTypes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1291,12 +1291,12 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 //
 // Lists available Alibaba zones.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AlibabaZoneList
+//	Responses:
+//	  default: errorResponse
+//	  200: AlibabaZoneList
 func (r Routing) listAlibabaZones() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1313,12 +1313,12 @@ func (r Routing) listAlibabaZones() http.Handler {
 //
 // Lists available Alibaba vSwitches.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AlibabaVSwitchList
+//	Responses:
+//	  default: errorResponse
+//	  200: AlibabaVSwitchList
 func (r Routing) listAlibabaVSwitches() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1335,12 +1335,12 @@ func (r Routing) listAlibabaVSwitches() http.Handler {
 //
 // Lists vlans from anexia
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AnexiaVlanList
+//	Responses:
+//	  default: errorResponse
+//	  200: AnexiaVlanList
 func (r Routing) listAnexiaVlans() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1357,12 +1357,12 @@ func (r Routing) listAnexiaVlans() http.Handler {
 //
 // Lists templates from anexia
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AnexiaTemplateList
+//	Responses:
+//	  default: errorResponse
+//	  200: AnexiaTemplateList
 func (r Routing) listAnexiaTemplates() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1377,12 +1377,12 @@ func (r Routing) listAnexiaTemplates() http.Handler {
 
 // swagger:route GET /api/v1/dc datacenter listDatacenters
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: DatacenterList
+//	Responses:
+//	  default: errorResponse
+//	  200: DatacenterList
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1398,12 +1398,12 @@ func (r Routing) datacentersHandler() http.Handler {
 // Get the datacenter
 // swagger:route GET /api/v1/dc/{dc} datacenter getDatacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Datacenter
+//	Responses:
+//	  default: errorResponse
+//	  200: Datacenter
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1418,16 +1418,16 @@ func (r Routing) datacenterHandler() http.Handler {
 
 // swagger:route GET /api/v1/providers/{provider_name}/dc datacenter listDCForProvider
 //
-//     Returns all datacenters for the specified provider.
+//	Returns all datacenters for the specified provider.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) listDCForProvider() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1442,16 +1442,16 @@ func (r Routing) listDCForProvider() http.Handler {
 
 // swagger:route GET /api/v1/providers/{provider_name}/dc/{dc} datacenter getDCForProvider
 //
-//     Get the datacenter for the specified provider.
+//	Get the datacenter for the specified provider.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) getDCForProvider() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1466,16 +1466,16 @@ func (r Routing) getDCForProvider() http.Handler {
 
 // swagger:route GET /api/v1/seed/{seed_name}/dc datacenter listDCForSeed
 //
-//     Returns all datacenters for the specified seed.
+//	Returns all datacenters for the specified seed.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) listDCForSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1490,16 +1490,16 @@ func (r Routing) listDCForSeed() http.Handler {
 
 // swagger:route GET /api/v1/seed/{seed_name}/dc/{dc} datacenter getDCForSeed
 //
-//     Returns the specified datacenter for the specified seed.
+//	Returns the specified datacenter for the specified seed.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) getDCForSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1514,19 +1514,19 @@ func (r Routing) getDCForSeed() http.Handler {
 
 // swagger:route POST /api/v1/seed/{seed_name}/dc datacenter createDC
 //
-//     Create the datacenter for a specified seed.
+//	Create the datacenter for a specified seed.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) createDC() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1541,19 +1541,19 @@ func (r Routing) createDC() http.Handler {
 
 // swagger:route PUT /api/v1/seed/{seed_name}/dc/{dc} datacenter updateDC
 //
-//     Update the datacenter. The datacenter spec will be overwritten with the one provided in the request.
+//	Update the datacenter. The datacenter spec will be overwritten with the one provided in the request.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) updateDC() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1568,19 +1568,19 @@ func (r Routing) updateDC() http.Handler {
 
 // swagger:route PATCH /api/v1/seed/{seed_name}/dc/{dc} datacenter patchDC
 //
-//     Patch the datacenter.
+//	Patch the datacenter.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Datacenter
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Datacenter
+//	  401: empty
+//	  403: empty
 func (r Routing) patchDC() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1595,16 +1595,16 @@ func (r Routing) patchDC() http.Handler {
 
 // swagger:route DELETE /api/v1/seed/{seed_name}/dc/{dc} datacenter deleteDC
 //
-//     Delete the datacenter.
+//	Delete the datacenter.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteDC() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1619,12 +1619,12 @@ func (r Routing) deleteDC() http.Handler {
 
 // swagger:route GET /api/v1/seed seed listSeedNames
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: SeedNamesList
+//	Responses:
+//	  default: errorResponse
+//	  200: SeedNamesList
 func (r Routing) listSeedNames() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1642,12 +1642,12 @@ func (r Routing) listSeedNames() http.Handler {
 //
 // Lists all versions which don't result in automatic updates
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []MasterVersion
+//	Responses:
+//	  default: errorResponse
+//	  200: []MasterVersion
 func (r Routing) getMasterVersions() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1664,12 +1664,12 @@ func (r Routing) getMasterVersions() http.Handler {
 //
 // Get versions of running Kubermatic components.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: KubermaticVersions
+//	Responses:
+//	  default: errorResponse
+//	  200: KubermaticVersions
 func (r Routing) getKubermaticVersion() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1684,16 +1684,16 @@ func (r Routing) getKubermaticVersion() http.Handler {
 
 // swagger:route GET /api/v1/projects project listProjects
 //
-//     Lists projects that an authenticated user is a member of.
+//	Lists projects that an authenticated user is a member of.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Project
-//       401: empty
-//       409: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Project
+//	  401: empty
+//	  409: empty
 func (r Routing) listProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1708,16 +1708,16 @@ func (r Routing) listProjects() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id} project getProject
 //
-//     Gets the project with the given ID
+//	Gets the project with the given ID
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Project
-//       401: empty
-//       409: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Project
+//	  401: empty
+//	  409: empty
 func (r Routing) getProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1732,21 +1732,21 @@ func (r Routing) getProject() http.Handler {
 
 // swagger:route POST /api/v1/projects project createProject
 //
-//     Creates a brand new project.
+//	Creates a brand new project.
 //
-//     Note that this endpoint can be consumed by every authenticated user.
+//	Note that this endpoint can be consumed by every authenticated user.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: Project
-//       401: empty
-//       409: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: Project
+//	  401: empty
+//	  409: empty
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1761,18 +1761,18 @@ func (r Routing) createProject() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id} project updateProject
 //
-//    Updates the given project
+//	Updates the given project
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Project
-//       400: empty
-//       404: empty
-//       500: empty
-//       501: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: Project
+//	   400: empty
+//	   404: empty
+//	   500: empty
+//	   501: empty
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1787,17 +1787,17 @@ func (r Routing) updateProject() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id} project deleteProject
 //
-//    Deletes the project with the given ID.
+//	Deletes the project with the given ID.
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: empty
+//	   401: empty
+//	   403: empty
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1812,19 +1812,19 @@ func (r Routing) deleteProject() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters project createCluster
 //
-//     Creates a cluster for the given project.
+//	Creates a cluster for the given project.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: Cluster
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: Cluster
+//	  401: empty
+//	  403: empty
 func (r Routing) createCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1842,16 +1842,16 @@ func (r Routing) createCluster() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters project listClusters
 //
-//     Lists clusters for the specified project and data center.
+//	Lists clusters for the specified project and data center.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterList
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ClusterList
+//	  401: empty
+//	  403: empty
 func (r Routing) listClusters() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1867,16 +1867,16 @@ func (r Routing) listClusters() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/clusters project listClustersForProject
 //
-//     Lists clusters for the specified project.
+//	Lists clusters for the specified project.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterList
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ClusterList
+//	  401: empty
+//	  403: empty
 func (r Routing) listClustersForProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1891,16 +1891,16 @@ func (r Routing) listClustersForProject() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project getCluster
 //
-//     Gets the cluster with the given name
+//	Gets the cluster with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Cluster
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Cluster
+//	  401: empty
+//	  403: empty
 func (r Routing) getCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1917,16 +1917,16 @@ func (r Routing) getCluster() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project patchCluster
 //
-//     Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
+//	Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Cluster
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Cluster
+//	  401: empty
+//	  403: empty
 func (r Routing) patchCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1944,16 +1944,16 @@ func (r Routing) patchCluster() http.Handler {
 // getClusterEvents returns events related to the cluster.
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events project getClusterEvents
 //
-//     Gets the events related to the specified cluster.
+//	Gets the events related to the specified cluster.
 //
-//     Produces:
-//     - application/yaml
+//	Produces:
+//	- application/yaml
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Event
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Event
+//	  401: empty
+//	  403: empty
 func (r Routing) getClusterEvents() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1971,16 +1971,16 @@ func (r Routing) getClusterEvents() http.Handler {
 // getClusterKubeconfig returns the kubeconfig for the cluster.
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig project getClusterKubeconfig
 //
-//     Gets the kubeconfig for the specified cluster.
+//	Gets the kubeconfig for the specified cluster.
 //
-//     Produces:
-//     - application/octet-stream
+//	Produces:
+//	- application/octet-stream
 //
-//     Responses:
-//       default: errorResponse
-//       200: Kubeconfig
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Kubeconfig
+//	  401: empty
+//	  403: empty
 func (r Routing) getClusterKubeconfig() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -1998,16 +1998,16 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 // getOidcClusterKubeconfig returns the oidc kubeconfig for the cluster.
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig project getOidcClusterKubeconfig
 //
-//     Gets the kubeconfig for the specified cluster with oidc authentication.
+//	Gets the kubeconfig for the specified cluster with oidc authentication.
 //
-//     Produces:
-//     - application/yaml
+//	Produces:
+//	- application/yaml
 //
-//     Responses:
-//       default: errorResponse
-//       200: Kubeconfig
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Kubeconfig
+//	  401: empty
+//	  403: empty
 func (r Routing) getOidcClusterKubeconfig() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2025,16 +2025,16 @@ func (r Routing) getOidcClusterKubeconfig() http.Handler {
 // Delete the cluster
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project deleteCluster
 //
-//     Deletes the specified cluster
+//	Deletes the specified cluster
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2051,16 +2051,16 @@ func (r Routing) deleteCluster() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health project getClusterHealth
 //
-//     Returns the cluster's component health status
+//	Returns the cluster's component health status
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterHealth
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ClusterHealth
+//	  401: empty
+//	  403: empty
 func (r Routing) getClusterHealth() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2077,19 +2077,19 @@ func (r Routing) getClusterHealth() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project assignSSHKeyToCluster
 //
-//     Assigns an existing ssh key to the given cluster
+//	Assigns an existing ssh key to the given cluster
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: SSHKey
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: SSHKey
+//	  401: empty
+//	  403: empty
 func (r Routing) assignSSHKeyToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2106,20 +2106,20 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys project listSSHKeysAssignedToCluster
 //
-//     Lists ssh keys that are assigned to the cluster
-//     The returned collection is sorted by creation timestamp.
+//	Lists ssh keys that are assigned to the cluster
+//	The returned collection is sorted by creation timestamp.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []SSHKey
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []SSHKey
+//	  401: empty
+//	  403: empty
 func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2136,19 +2136,19 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project detachSSHKeyFromCluster
 //
-//     Unassignes an ssh key from the given cluster
+//	Unassignes an ssh key from the given cluster
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) detachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2165,16 +2165,16 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token project revokeClusterAdminToken
 //
-//     Revokes the current admin token
+//	Revokes the current admin token
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) revokeClusterAdminToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2191,16 +2191,16 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken project revokeClusterViewerToken
 //
-//     Revokes the current viewer token
+//	Revokes the current viewer token
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) revokeClusterViewerToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2217,16 +2217,16 @@ func (r Routing) revokeClusterViewerToken() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades project getClusterUpgrades
 //
-//    Gets possible cluster upgrades
+//	Gets possible cluster upgrades
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []MasterVersion
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: []MasterVersion
+//	   401: empty
+//	   403: empty
 func (r Routing) getClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2243,16 +2243,16 @@ func (r Routing) getClusterUpgrades() http.Handler {
 
 // swagger:route GET /api/v1/upgrades/node versions getNodeUpgrades
 //
-//    Gets possible node upgrades for a specific control plane version
+//	Gets possible node upgrades for a specific control plane version
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []MasterVersion
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: []MasterVersion
+//	   401: empty
+//	   403: empty
 func (r Routing) getNodeUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2267,16 +2267,16 @@ func (r Routing) getNodeUpgrades() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades project upgradeClusterNodeDeployments
 //
-//    Upgrades node deployments in a cluster
+//	Upgrades node deployments in a cluster
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: empty
+//	   401: empty
+//	   403: empty
 func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2293,19 +2293,19 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/users users addUserToProject
 //
-//     Adds the given user to the given project
+//	Adds the given user to the given project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: User
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: User
+//	  401: empty
+//	  403: empty
 func (r Routing) addUserToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2320,19 +2320,19 @@ func (r Routing) addUserToProject() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/users users getUsersForProject
 //
-//     Get list of users for the given project
+//	Get list of users for the given project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []User
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []User
+//	  401: empty
+//	  403: empty
 func (r Routing) getUsersForProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2347,19 +2347,19 @@ func (r Routing) getUsersForProject() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/users/{user_id} users editUserInProject
 //
-//     Changes membership of the given user for the given project
+//	Changes membership of the given user for the given project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: User
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: User
+//	  401: empty
+//	  403: empty
 func (r Routing) editUserInProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2374,19 +2374,19 @@ func (r Routing) editUserInProject() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/users/{user_id} users deleteUserFromProject
 //
-//     Removes the given member from the project
+//	Removes the given member from the project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: User
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: User
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteUserFromProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2401,15 +2401,15 @@ func (r Routing) deleteUserFromProject() http.Handler {
 
 // swagger:route GET /api/v1/me users getCurrentUser
 //
-//     Returns information about the current user.
+//	Returns information about the current user.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: User
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: User
+//	  401: empty
 func (r Routing) getCurrentUser() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2424,16 +2424,16 @@ func (r Routing) getCurrentUser() http.Handler {
 
 // swagger:route POST /api/v1/me/logout users logoutCurrentUser
 //
-//     Adds current authorization bearer token to the blacklist.
-//     Enforces user to login again with the new token.
+//	Adds current authorization bearer token to the blacklist.
+//	Enforces user to login again with the new token.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
 func (r Routing) logoutCurrentUser() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2448,15 +2448,15 @@ func (r Routing) logoutCurrentUser() http.Handler {
 
 // swagger:route GET /api/v1/me/settings settings getCurrentUserSettings
 //
-//     Returns settings of the current user.
+//	Returns settings of the current user.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: UserSettings
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: UserSettings
+//	  401: empty
 func (r Routing) getCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2471,18 +2471,18 @@ func (r Routing) getCurrentUserSettings() http.Handler {
 
 // swagger:route PATCH /api/v1/me/settings settings patchCurrentUserSettings
 //
-//     Updates settings of the current user.
+//	    Updates settings of the current user.
 //
-//	   Consumes:
-//     - application/json
+//		   Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: UserSettings
-//       401: empty
+//	    Responses:
+//	      default: errorResponse
+//	      200: UserSettings
+//	      401: empty
 func (r Routing) patchCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2497,19 +2497,19 @@ func (r Routing) patchCurrentUserSettings() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/serviceaccounts serviceaccounts addServiceAccountToProject
 //
-//     Adds the given service account to the given project
+//	Adds the given service account to the given project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: ServiceAccount
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: ServiceAccount
+//	  401: empty
+//	  403: empty
 func (r Routing) addServiceAccountToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2524,16 +2524,16 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/serviceaccounts serviceaccounts listServiceAccounts
 //
-//     List Service Accounts for the given project
+//	List Service Accounts for the given project
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []ServiceAccount
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []ServiceAccount
+//	  401: empty
+//	  403: empty
 func (r Routing) listServiceAccounts() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2548,19 +2548,19 @@ func (r Routing) listServiceAccounts() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id} serviceaccounts updateServiceAccount
 //
-//     Updates service account for the given project
+//	Updates service account for the given project
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ServiceAccount
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ServiceAccount
+//	  401: empty
+//	  403: empty
 func (r Routing) updateServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2575,17 +2575,17 @@ func (r Routing) updateServiceAccount() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id} serviceaccounts deleteServiceAccount
 //
-//     Deletes service account for the given project
+//	Deletes service account for the given project
 //
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2600,19 +2600,19 @@ func (r Routing) deleteServiceAccount() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens tokens addTokenToServiceAccount
 //
-//     Generates a token for the given service account
+//	Generates a token for the given service account
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: ServiceAccountToken
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: ServiceAccountToken
+//	  401: empty
+//	  403: empty
 func (r Routing) addTokenToServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2627,16 +2627,16 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens tokens listServiceAccountTokens
 //
-//     List tokens for the given service account
+//	List tokens for the given service account
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []PublicServiceAccountToken
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []PublicServiceAccountToken
+//	  401: empty
+//	  403: empty
 func (r Routing) listServiceAccountTokens() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2651,19 +2651,19 @@ func (r Routing) listServiceAccountTokens() http.Handler {
 
 // swagger:route PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens updateServiceAccountToken
 //
-//     Updates and regenerates the token
+//	Updates and regenerates the token
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ServiceAccountToken
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ServiceAccountToken
+//	  401: empty
+//	  403: empty
 func (r Routing) updateServiceAccountToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2678,19 +2678,19 @@ func (r Routing) updateServiceAccountToken() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens patchServiceAccountToken
 //
-//     Patches the token name
+//	Patches the token name
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: PublicServiceAccountToken
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: PublicServiceAccountToken
+//	  401: empty
+//	  403: empty
 func (r Routing) patchServiceAccountToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2705,16 +2705,16 @@ func (r Routing) patchServiceAccountToken() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens deleteServiceAccountToken
 //
-//     Deletes the token
+//	Deletes the token
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteServiceAccountToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2731,12 +2731,12 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 //
 // Lists available AWS sizes
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSSizeList
 func (r Routing) listAWSSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2755,12 +2755,12 @@ func (r Routing) listAWSSizesNoCredentials() http.Handler {
 //
 // Lists available AWS subnets
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AWSSubnetList
+//	Responses:
+//	  default: errorResponse
+//	  200: AWSSubnetList
 func (r Routing) listAWSSubnetsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2779,12 +2779,12 @@ func (r Routing) listAWSSubnetsNoCredentials() http.Handler {
 //
 // Lists machine sizes from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPMachineSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPMachineSizeList
 func (r Routing) listGCPSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2803,12 +2803,12 @@ func (r Routing) listGCPSizesNoCredentials() http.Handler {
 //
 // Lists disk types from GCP
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPDiskTypeList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPDiskTypeList
 func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2827,12 +2827,12 @@ func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
 //
 // Lists available GCP zones
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPZoneList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPZoneList
 func (r Routing) listGCPZonesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2851,12 +2851,12 @@ func (r Routing) listGCPZonesNoCredentials() http.Handler {
 //
 // Lists available GCP networks
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPNetworkList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPNetworkList
 func (r Routing) listGCPNetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2875,12 +2875,12 @@ func (r Routing) listGCPNetworksNoCredentials() http.Handler {
 //
 // Lists available GCP subnetworks
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GCPSubnetworkList
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPSubnetworkList
 func (r Routing) listGCPSubnetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2899,12 +2899,12 @@ func (r Routing) listGCPSubnetworksNoCredentials() http.Handler {
 //
 // Lists sizes from hetzner
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: HetznerSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: HetznerSizeList
 func (r Routing) listHetznerSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2923,12 +2923,12 @@ func (r Routing) listHetznerSizesNoCredentials() http.Handler {
 //
 // Lists sizes from digitalocean
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: DigitaloceanSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: DigitaloceanSizeList
 func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2947,12 +2947,12 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 //
 // Lists available VM sizes in an Azure region
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AzureSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AzureSizeList
 func (r Routing) listAzureSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2971,12 +2971,12 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 //
 // Lists available VM availability zones in an Azure region
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AzureAvailabilityZonesList
+//	Responses:
+//	  default: errorResponse
+//	  200: AzureAvailabilityZonesList
 func (r Routing) listAzureAvailabilityZonesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2995,12 +2995,12 @@ func (r Routing) listAzureAvailabilityZonesNoCredentials() http.Handler {
 //
 // Lists sizes from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSize
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSize
 func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3020,12 +3020,12 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 //
 // Lists tenants from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackTenant
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackTenant
 func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3045,12 +3045,12 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 //
 // Lists networks from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackNetwork
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackNetwork
 func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3070,12 +3070,12 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 //
 // Lists security groups from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSecurityGroup
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSecurityGroup
 func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3095,12 +3095,12 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 //
 // Lists subnets from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackSubnet
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackSubnet
 func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3120,12 +3120,12 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 //
 // Lists availability zones from openstack
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []OpenstackAvailabilityZone
+//	Responses:
+//	  default: errorResponse
+//	  200: []OpenstackAvailabilityZone
 func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3145,12 +3145,12 @@ func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
 //
 // Lists networks from vsphere datacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []VSphereNetwork
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereNetwork
 func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3169,12 +3169,12 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 //
 // Lists folders from vsphere datacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []VSphereFolder
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereFolder
 func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3193,12 +3193,12 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 //
 // Lists available Alibaba Instance Types
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AlibabaInstanceTypeList
+//	Responses:
+//	  default: errorResponse
+//	  200: AlibabaInstanceTypeList
 func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3217,12 +3217,12 @@ func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
 //
 // Lists available Alibaba Instance Types
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AlibabaZoneList
+//	Responses:
+//	  default: errorResponse
+//	  200: AlibabaZoneList
 func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3239,19 +3239,19 @@ func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project createNodeDeployment
 //
-//     Creates a node deployment that will belong to the given cluster
+//	Creates a node deployment that will belong to the given cluster
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: NodeDeployment
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: NodeDeployment
+//	  401: empty
+//	  403: empty
 func (r Routing) createNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3268,16 +3268,16 @@ func (r Routing) createNodeDeployment() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project listNodeDeployments
 //
-//     Lists node deployments that belong to the given cluster
+//	Lists node deployments that belong to the given cluster
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []NodeDeployment
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []NodeDeployment
+//	  401: empty
+//	  403: empty
 func (r Routing) listNodeDeployments() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3294,16 +3294,16 @@ func (r Routing) listNodeDeployments() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project getNodeDeployment
 //
-//     Gets a node deployment that is assigned to the given cluster.
+//	Gets a node deployment that is assigned to the given cluster.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: NodeDeployment
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: NodeDeployment
+//	  401: empty
+//	  403: empty
 func (r Routing) getNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3320,16 +3320,16 @@ func (r Routing) getNodeDeployment() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes project listNodeDeploymentNodes
 //
-//     Lists nodes that belong to the given node deployment.
+//	Lists nodes that belong to the given node deployment.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Node
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Node
+//	  401: empty
+//	  403: empty
 func (r Routing) listNodeDeploymentNodes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3346,16 +3346,16 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics metric listNodeDeploymentMetrics
 //
-//     Lists metrics that belong to the given node deployment.
+//	Lists metrics that belong to the given node deployment.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []NodeMetric
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []NodeMetric
+//	  401: empty
+//	  403: empty
 func (r Routing) listNodeDeploymentMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3372,17 +3372,17 @@ func (r Routing) listNodeDeploymentMetrics() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events project listNodeDeploymentNodesEvents
 //
-//     Lists node deployment events. If query parameter `type` is set to `warning` then only warning events are retrieved.
-//     If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
+//	Lists node deployment events. If query parameter `type` is set to `warning` then only warning events are retrieved.
+//	If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Event
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Event
+//	  401: empty
+//	  403: empty
 func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3399,20 +3399,20 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project patchNodeDeployment
 //
-//     Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
-//	   node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
+//	    Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
+//		   node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 //
-//     Consumes:
-//     - application/json
+//	    Consumes:
+//	    - application/json
 //
-//     Produces:
-//     - application/json
+//	    Produces:
+//	    - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: NodeDeployment
-//       401: empty
-//       403: empty
+//	    Responses:
+//	      default: errorResponse
+//	      200: NodeDeployment
+//	      401: empty
+//	      403: empty
 func (r Routing) patchNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3429,16 +3429,16 @@ func (r Routing) patchNodeDeployment() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project deleteNodeDeployment
 //
-//    Deletes the given node deployment that belongs to the cluster.
+//	Deletes the given node deployment that belongs to the cluster.
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: empty
+//	   401: empty
+//	   403: empty
 func (r Routing) deleteNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3455,19 +3455,19 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 
 // swagger:route POST /api/v1/addons addon listAccessibleAddons
 //
-//     Lists names of addons that can be configured inside the user clusters
+//	Lists names of addons that can be configured inside the user clusters
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AccessibleAddons
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AccessibleAddons
+//	  401: empty
+//	  403: empty
 func (r Routing) listAccessibleAddons() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3482,16 +3482,16 @@ func (r Routing) listAccessibleAddons() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons addon listInstallableAddons
 //
-//     Lists names of addons that can be installed inside the user cluster
+//	Lists names of addons that can be installed inside the user cluster
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AccessibleAddons
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AccessibleAddons
+//	  401: empty
+//	  403: empty
 func (r Routing) listInstallableAddons() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3510,19 +3510,19 @@ func (r Routing) listInstallableAddons() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon createAddon
 //
-//     Creates an addon that will belong to the given cluster
+//	Creates an addon that will belong to the given cluster
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: Addon
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: Addon
+//	  401: empty
+//	  403: empty
 func (r Routing) createAddon() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3541,16 +3541,16 @@ func (r Routing) createAddon() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon listAddons
 //
-//     Lists addons that belong to the given cluster
+//	Lists addons that belong to the given cluster
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Addon
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Addon
+//	  401: empty
+//	  403: empty
 func (r Routing) listAddons() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3569,16 +3569,16 @@ func (r Routing) listAddons() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon getAddon
 //
-//     Gets an addon that is assigned to the given cluster.
+//	Gets an addon that is assigned to the given cluster.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Addon
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Addon
+//	  401: empty
+//	  403: empty
 func (r Routing) getAddon() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3597,19 +3597,19 @@ func (r Routing) getAddon() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon patchAddon
 //
-//     Patches an addon that is assigned to the given cluster.
+//	Patches an addon that is assigned to the given cluster.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Addon
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Addon
+//	  401: empty
+//	  403: empty
 func (r Routing) patchAddon() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3628,16 +3628,16 @@ func (r Routing) patchAddon() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon deleteAddon
 //
-//    Deletes the given addon that belongs to the cluster.
+//	Deletes the given addon that belongs to the cluster.
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: empty
+//	   401: empty
+//	   403: empty
 func (r Routing) deleteAddon() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3656,16 +3656,16 @@ func (r Routing) deleteAddon() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project getClusterMetrics
 //
-//    Gets cluster metrics
+//	Gets cluster metrics
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterMetrics
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: ClusterMetrics
+//	   401: empty
+//	   403: empty
 func (r Routing) getClusterMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3682,19 +3682,19 @@ func (r Routing) getClusterMetrics() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles project createClusterRole
 //
-//    Creates cluster role
+//	Creates cluster role
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: ClusterRole
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   201: ClusterRole
+//	   401: empty
+//	   403: empty
 func (r Routing) createClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3710,19 +3710,19 @@ func (r Routing) createClusterRole() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles project createRole
 //
-//    Creates cluster role
+//	Creates cluster role
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: Role
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   201: Role
+//	   401: empty
+//	   403: empty
 func (r Routing) createRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3738,16 +3738,16 @@ func (r Routing) createRole() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles project listClusterRole
 //
-//     Lists all ClusterRoles
+//	Lists all ClusterRoles
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []ClusterRole
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []ClusterRole
+//	  401: empty
+//	  403: empty
 func (r Routing) listClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3763,16 +3763,16 @@ func (r Routing) listClusterRole() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames project listClusterRoleNames
 //
-//     Lists all ClusterRoles
+//	Lists all ClusterRoles
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []ClusterRoleName
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []ClusterRoleName
+//	  401: empty
+//	  403: empty
 func (r Routing) listClusterRoleNames() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3788,16 +3788,16 @@ func (r Routing) listClusterRoleNames() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles project listRole
 //
-//     Lists all Roles
+//	Lists all Roles
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Role
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Role
+//	  401: empty
+//	  403: empty
 func (r Routing) listRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3813,16 +3813,16 @@ func (r Routing) listRole() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames project listRoleNames
 //
-//     Lists all Role names with namespaces
+//	Lists all Role names with namespaces
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []RoleName
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []RoleName
+//	  401: empty
+//	  403: empty
 func (r Routing) listRoleNames() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3838,16 +3838,16 @@ func (r Routing) listRoleNames() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id} project getClusterRole
 //
-//     Gets the cluster role with the given name
+//	Gets the cluster role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRole
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ClusterRole
+//	  401: empty
+//	  403: empty
 func (r Routing) getClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3863,16 +3863,16 @@ func (r Routing) getClusterRole() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project getRole
 //
-//     Gets the role with the given name
+//	Gets the role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Role
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Role
+//	  401: empty
+//	  403: empty
 func (r Routing) getRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3888,16 +3888,16 @@ func (r Routing) getRole() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id} project deleteClusterRole
 //
-//     Delete the cluster role with the given name
+//	Delete the cluster role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3913,16 +3913,16 @@ func (r Routing) deleteClusterRole() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project deleteRole
 //
-//     Delete the cluster role with the given name
+//	Delete the cluster role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3938,16 +3938,16 @@ func (r Routing) deleteRole() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces project listNamespace
 //
-//     Lists all namespaces in the cluster
+//	Lists all namespaces in the cluster
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Namespace
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Namespace
+//	  401: empty
+//	  403: empty
 func (r Routing) listNamespace() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3964,16 +3964,16 @@ func (r Routing) listNamespace() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project patchRole
 //
-//     Patch the role with the given name
+//	Patch the role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Role
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Role
+//	  401: empty
+//	  403: empty
 func (r Routing) patchRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -3989,16 +3989,16 @@ func (r Routing) patchRole() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id} project patchClusterRole
 //
-//     Patch the cluster role with the given name
+//	Patch the cluster role with the given name
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRole
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: ClusterRole
+//	  401: empty
+//	  403: empty
 func (r Routing) patchClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4014,19 +4014,19 @@ func (r Routing) patchClusterRole() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project bindUserToRole
 //
-//    Binds user to the role
+//	Binds user to the role
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: RoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: RoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) bindUserToRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4043,19 +4043,19 @@ func (r Routing) bindUserToRole() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project unbindUserFromRoleBinding
 //
-//    Unbinds user from the role binding
+//	Unbinds user from the role binding
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: RoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: RoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) unbindUserFromRoleBinding() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4072,17 +4072,17 @@ func (r Routing) unbindUserFromRoleBinding() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings project listRoleBinding
 //
-//    List role binding
+//	List role binding
 //
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []RoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: []RoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) listRoleBinding() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4099,19 +4099,19 @@ func (r Routing) listRoleBinding() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project bindUserToClusterRole
 //
-//    Binds user to cluster role
+//	Binds user to cluster role
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: ClusterRoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) bindUserToClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4128,19 +4128,19 @@ func (r Routing) bindUserToClusterRole() http.Handler {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project unbindUserFromClusterRoleBinding
 //
-//    Unbinds user from cluster role binding
+//	Unbinds user from cluster role binding
 //
-//     Consumes:
-//     - application/json
+//	 Consumes:
+//	 - application/json
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: ClusterRoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4157,17 +4157,17 @@ func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings project listClusterRoleBinding
 //
-//    List cluster role binding
+//	List cluster role binding
 //
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []ClusterRoleBinding
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: []ClusterRoleBinding
+//	   401: empty
+//	   403: empty
 func (r Routing) listClusterRoleBinding() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4184,17 +4184,17 @@ func (r Routing) listClusterRoleBinding() http.Handler {
 
 // swagger:route GET /api/v1/labels/system listSystemLabels
 //
-//    List restricted system labels
+//	List restricted system labels
 //
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: ResourceLabelMap
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: ResourceLabelMap
+//	   401: empty
+//	   403: empty
 func (r Routing) listSystemLabels() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4208,15 +4208,15 @@ func (r Routing) listSystemLabels() http.Handler {
 
 // swagger:route GET /api/v1/addonconfigs/{addon_id} getAddonConfig
 //
-//     Returns specified addon config.
+//	Returns specified addon config.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AddonConfig
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AddonConfig
+//	  401: empty
 func (r Routing) getAddonConfig() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4231,15 +4231,15 @@ func (r Routing) getAddonConfig() http.Handler {
 
 // swagger:route GET /api/v1/addonconfigs listAddonConfigs
 //
-//     Returns all available addon configs.
+//	Returns all available addon configs.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []AddonConfig
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []AddonConfig
+//	  401: empty
 func (r Routing) listAddonConfigs() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4254,15 +4254,15 @@ func (r Routing) listAddonConfigs() http.Handler {
 
 // swagger:route GET /api/v1/admission/plugins/{version} getAdmissionPlugins
 //
-//     Returns specified addon config.
+//	Returns specified addon config.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AdmissionPluginList
-//       401: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AdmissionPluginList
+//	  401: empty
 func (r Routing) getAdmissionPlugins() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

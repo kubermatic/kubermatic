@@ -62,7 +62,7 @@ var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) 
 })
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
-// for groups: `owners`, `editors` and `viewers``.
+// for groups: `owners`, `editors` and `viewers`.
 func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	reconcile := &reconciler{
 		Client:          mgr.GetClient(),
