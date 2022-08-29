@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
-	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
@@ -125,7 +125,7 @@ func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfigurat
 	return upgradeConstraints, errs
 }
 
-func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
+func clusterVersionIsConfigured(version k8csemverv1.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
 	// is this version still straight up supported?
 	for _, configured := range defaultedConfig.Spec.Versions.Versions {
 		if configured.Equal(&version) {

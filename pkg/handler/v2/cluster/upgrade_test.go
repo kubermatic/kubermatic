@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemver "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

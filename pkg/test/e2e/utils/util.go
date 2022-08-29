@@ -26,7 +26,7 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -62,7 +62,7 @@ func KubernetesVersion() string {
 	version := defaulting.DefaultKubernetesVersioning.Default
 
 	if v := os.Getenv("VERSION_TO_TEST"); v != "" {
-		version = semver.NewSemverOrDie(v)
+		version = k8csemverv1.NewSemverOrDie(v)
 	}
 
 	return "v" + version.String()

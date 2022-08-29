@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
@@ -150,7 +150,7 @@ func TestController_combineManifests(t *testing.T) {
 }
 
 func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
-	version := *semver.NewSemverOrDie("v1.11.1")
+	version := *k8csemverv1.NewSemverOrDie("v1.11.1")
 
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

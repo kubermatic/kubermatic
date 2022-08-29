@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +48,7 @@ func TestCreateConfigMap(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: TestDC,
 					},
-					Version: *semver.NewSemverOrDie("v1.11.3"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.11.3"),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-nico1",
@@ -66,7 +66,7 @@ func TestCreateConfigMap(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: TestDC,
 					},
-					Version: *semver.NewSemverOrDie("v1.11.3"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.11.3"),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-nico1",

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 // support v1.2.x and v1.0.x, to ship only mandatory variants for kubectl.
 // See https://kubernetes.io/releases/version-skew-policy/#kubectl for
 // more information.
-func BinaryForClusterVersion(version *semver.Semver) (string, error) {
+func BinaryForClusterVersion(version *k8csemverv1.Semver) (string, error) {
 	var binary string
 
 	switch version.MajorMinor() {
@@ -55,7 +55,7 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	return filepath.Join("/usr/local/bin/", binary), nil
 }
 
-func VerifyVersionSkew(clusterVersion, kubectlVersion semver.Semver) error {
+func VerifyVersionSkew(clusterVersion, kubectlVersion k8csemverv1.Semver) error {
 	clusterMajor := clusterVersion.Semver().Major()
 	kubectlMajor := kubectlVersion.Semver().Major()
 

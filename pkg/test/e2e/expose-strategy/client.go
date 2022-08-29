@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +69,7 @@ type clientJig struct {
 	e2eutils.TestPodConfig
 }
 
-func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, expectServerVersion semver.Semver, retries, minSuccess int) bool {
+func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, expectServerVersion k8csemverv1.Semver, retries, minSuccess int) bool {
 	c := []string{
 		"kubectl",
 		"version",

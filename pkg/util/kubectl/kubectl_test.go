@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 func TestKubectlForAllSupportedVersions(t *testing.T) {
@@ -57,7 +57,7 @@ func TestVerifyVersionSkew(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(fmt.Sprintf("%s vs. %s", testcase.cluster, testcase.kubectl), func(t *testing.T) {
-			err := VerifyVersionSkew(*semver.NewSemverOrDie(testcase.cluster), *semver.NewSemverOrDie(testcase.kubectl))
+			err := VerifyVersionSkew(*k8csemverv1.NewSemverOrDie(testcase.cluster), *k8csemverv1.NewSemverOrDie(testcase.kubectl))
 
 			if testcase.valid && err != nil {
 				t.Fatalf("kubectl %s should have been compatible to cluster %s, but got error: %v", testcase.kubectl, testcase.cluster, err)

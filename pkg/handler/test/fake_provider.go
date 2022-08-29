@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -141,6 +141,10 @@ type FakeExternalClusterProvider struct {
 
 var _ provider.ExternalClusterProvider = &FakeExternalClusterProvider{}
 
+func (p *FakeExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
+	return p.Provider.VersionsEndpoint(ctx, configGetter, providerType)
+}
+
 func (p *FakeExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
 	return p.Provider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, projectID, clusterID)
 }
@@ -171,12 +175,8 @@ func (p *FakeExternalClusterProvider) Update(ctx context.Context, userInfo *prov
 	return p.Provider.Update(ctx, userInfo, cluster)
 }
 
-func (p *FakeExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*semver.Semver, error) {
+func (p *FakeExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*k8csemverv1.Semver, error) {
 	return defaulting.DefaultKubernetesVersioning.Default, nil
-}
-
-func (p *FakeExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
-	return p.Provider.VersionsEndpoint(ctx, configGetter, providerType)
 }
 
 func (p *FakeExternalClusterProvider) GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {

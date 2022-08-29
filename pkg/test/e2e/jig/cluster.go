@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -131,7 +131,7 @@ func (j *ClusterJig) WithAddons(addons ...Addon) *ClusterJig {
 }
 
 func (j *ClusterJig) WithVersion(version string) *ClusterJig {
-	j.spec.Version = *semver.NewSemverOrDie(version)
+	j.spec.Version = *k8csemverv1.NewSemverOrDie(version)
 	return j
 }
 

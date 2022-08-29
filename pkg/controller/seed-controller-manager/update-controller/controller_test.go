@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,7 +54,7 @@ func TestGetOldestAvailableVersion(t *testing.T) {
 
 	testcases := []struct {
 		sets     []appsv1.ReplicaSet
-		expected *semver.Semver
+		expected *k8csemverv1.Semver
 	}{
 		{
 			sets: []appsv1.ReplicaSet{
@@ -84,28 +84,28 @@ func TestGetOldestAvailableVersion(t *testing.T) {
 			sets: []appsv1.ReplicaSet{
 				makeSet(1, "1.2.3"),
 			},
-			expected: semver.NewSemverOrDie("1.2.3"),
+			expected: k8csemverv1.NewSemverOrDie("1.2.3"),
 		},
 		{
 			sets: []appsv1.ReplicaSet{
 				makeSet(1, "1.2.3"),
 				makeSet(1, "1.2.4"),
 			},
-			expected: semver.NewSemverOrDie("1.2.3"),
+			expected: k8csemverv1.NewSemverOrDie("1.2.3"),
 		},
 		{
 			sets: []appsv1.ReplicaSet{
 				makeSet(0, "1.2.3"),
 				makeSet(1, "1.2.4"),
 			},
-			expected: semver.NewSemverOrDie("1.2.4"),
+			expected: k8csemverv1.NewSemverOrDie("1.2.4"),
 		},
 		{
 			sets: []appsv1.ReplicaSet{
 				makeSet(1, "1.2.4"),
 				makeSet(0, "1.2.3"),
 			},
-			expected: semver.NewSemverOrDie("1.2.4"),
+			expected: k8csemverv1.NewSemverOrDie("1.2.4"),
 		},
 	}
 
@@ -189,15 +189,15 @@ func TestGetNextApiserverVersion(t *testing.T) {
 	// This test (and this controller, really) is not about unit testing
 	// all the possible incompatibility options, so we skip them here.
 	versions := kubermaticv1.KubermaticVersioningConfiguration{
-		Versions: []semver.Semver{
-			*semver.NewSemverOrDie("1.20.0"),
-			*semver.NewSemverOrDie("1.20.1"),
-			*semver.NewSemverOrDie("1.20.2"),
-			*semver.NewSemverOrDie("1.21.0"),
-			*semver.NewSemverOrDie("1.21.3"),
-			*semver.NewSemverOrDie("1.22.5"),
-			*semver.NewSemverOrDie("1.23.0"),
-			*semver.NewSemverOrDie("1.24.0"),
+		Versions: []k8csemverv1.Semver{
+			*k8csemverv1.NewSemverOrDie("1.20.0"),
+			*k8csemverv1.NewSemverOrDie("1.20.1"),
+			*k8csemverv1.NewSemverOrDie("1.20.2"),
+			*k8csemverv1.NewSemverOrDie("1.21.0"),
+			*k8csemverv1.NewSemverOrDie("1.21.3"),
+			*k8csemverv1.NewSemverOrDie("1.22.5"),
+			*k8csemverv1.NewSemverOrDie("1.23.0"),
+			*k8csemverv1.NewSemverOrDie("1.24.0"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -238,57 +238,57 @@ func TestGetNextApiserverVersion(t *testing.T) {
 
 	testcases := []struct {
 		name             string
-		specVersion      semver.Semver
-		apiserverVersion semver.Semver
-		expected         *semver.Semver
+		specVersion      k8csemverv1.Semver
+		apiserverVersion k8csemverv1.Semver
+		expected         *k8csemverv1.Semver
 		expectedErr      bool
 	}{
 		{
 			name:             "allow simple patch release update",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.0"),
-			specVersion:      *semver.NewSemverOrDie("1.20.1"),
-			expected:         semver.NewSemverOrDie("1.20.1"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.0"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+			expected:         k8csemverv1.NewSemverOrDie("1.20.1"),
 		},
 		{
 			name:             "allow updating to the next minor",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.2"),
-			specVersion:      *semver.NewSemverOrDie("1.21.0"),
-			expected:         semver.NewSemverOrDie("1.21.0"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.2"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+			expected:         k8csemverv1.NewSemverOrDie("1.21.0"),
 		},
 		{
 			name:             "allow updating to the max next minor",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.2"),
-			specVersion:      *semver.NewSemverOrDie("1.21.3"),
-			expected:         semver.NewSemverOrDie("1.21.3"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.2"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.21.3"),
+			expected:         k8csemverv1.NewSemverOrDie("1.21.3"),
 		},
 		{
 			name:             "take the highest patch release of the next minor when upgrading across multiple minors",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.2"),
-			specVersion:      *semver.NewSemverOrDie("1.23.0"),
-			expected:         semver.NewSemverOrDie("1.21.3"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.2"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.23.0"),
+			expected:         k8csemverv1.NewSemverOrDie("1.21.3"),
 		},
 		{
 			name:             "currently active version is not configured anymore",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.7"),
-			specVersion:      *semver.NewSemverOrDie("1.21.0"),
-			expected:         semver.NewSemverOrDie("1.21.0"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.7"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+			expected:         k8csemverv1.NewSemverOrDie("1.21.0"),
 		},
 		{
 			name:             "no path configured",
-			apiserverVersion: *semver.NewSemverOrDie("1.23.0"),
-			specVersion:      *semver.NewSemverOrDie("1.24.0"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.23.0"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.24.0"),
 			expectedErr:      true,
 		},
 		{
 			name:             "unsupported target version",
-			apiserverVersion: *semver.NewSemverOrDie("1.20.0"),
-			specVersion:      *semver.NewSemverOrDie("1.20.9"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.20.0"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.20.9"),
 			expectedErr:      true,
 		},
 		{
 			name:             "unsupported target version across a minor release",
-			apiserverVersion: *semver.NewSemverOrDie("1.21.3"),
-			specVersion:      *semver.NewSemverOrDie("1.22.0"),
+			apiserverVersion: *k8csemverv1.NewSemverOrDie("1.21.3"),
+			specVersion:      *k8csemverv1.NewSemverOrDie("1.22.0"),
 			expectedErr:      true,
 		},
 	}
@@ -335,15 +335,15 @@ func TestGetNextApiserverVersion(t *testing.T) {
 
 func TestReconcile(t *testing.T) {
 	versions := kubermaticv1.KubermaticVersioningConfiguration{
-		Versions: []semver.Semver{
-			*semver.NewSemverOrDie("1.20.0"),
-			*semver.NewSemverOrDie("1.20.1"),
-			*semver.NewSemverOrDie("1.20.2"),
-			*semver.NewSemverOrDie("1.21.0"),
-			*semver.NewSemverOrDie("1.21.3"),
-			*semver.NewSemverOrDie("1.22.5"),
-			*semver.NewSemverOrDie("1.23.0"),
-			*semver.NewSemverOrDie("1.24.0"),
+		Versions: []k8csemverv1.Semver{
+			*k8csemverv1.NewSemverOrDie("1.20.0"),
+			*k8csemverv1.NewSemverOrDie("1.20.1"),
+			*k8csemverv1.NewSemverOrDie("1.20.2"),
+			*k8csemverv1.NewSemverOrDie("1.21.0"),
+			*k8csemverv1.NewSemverOrDie("1.21.3"),
+			*k8csemverv1.NewSemverOrDie("1.22.5"),
+			*k8csemverv1.NewSemverOrDie("1.23.0"),
+			*k8csemverv1.NewSemverOrDie("1.24.0"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -384,7 +384,7 @@ func TestReconcile(t *testing.T) {
 
 	testcases := []struct {
 		name           string
-		specVersion    semver.Semver
+		specVersion    k8csemverv1.Semver
 		clusterStatus  kubermaticv1.ClusterVersionsStatus
 		currentStatus  controlPlaneStatus
 		healthy        bool
@@ -398,212 +398,212 @@ func TestReconcile(t *testing.T) {
 
 		{
 			name:          "new cluster created, set the initial status",
-			specVersion:   *semver.NewSemverOrDie("1.23.0"),
+			specVersion:   *k8csemverv1.NewSemverOrDie("1.23.0"),
 			healthy:       false,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.23.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.23.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.23.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.23.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.23.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.23.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.23.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.23.0"),
 			},
 		},
 		{
 			name:        "cluster is healthy and up-to-date, nothing to do",
-			specVersion: *semver.NewSemverOrDie("1.20.1"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.20.1"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.20.1"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.20.1"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.20.1"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.20.1"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.20.1"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.20.1"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 		},
 		{
 			name:        "cluster up-to-date, but not yet healthy, do nothing and wait for it to be come healthy",
-			specVersion: *semver.NewSemverOrDie("1.20.1"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.20.1"),
 			healthy:     false,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.20.1"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.20.1"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.20.1"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.20.1"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.20.1"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.20.1"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 		},
 		{
 			name:        "vanilla cluster that was just told to be updated by changing its spec",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.20.1"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.20.1"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.20.1"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.20.1"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"), // this should be updated to the spec
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"), // this should be updated to the spec
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 		},
 		{
 			name:        "waiting for the new apiserver to become healthy before updating the controlplanne version, i.e. do nothing yet",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     false,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.20.1"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.20.1"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 		},
 		{
 			name:        "apiserver is updated, but control plane is still rolling out (e.g. etcd is still updating), do nothing and wait for healthy",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     false,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 		},
 		{
 			name:        "apiserver became healthy, mark control plane as updated and mark cm/scheduler to be updated",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.20.1"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.20.1"),
-				Scheduler:         *semver.NewSemverOrDie("1.20.1"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.20.1"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 		{
 			name:        "wait for control plane to come up, do nothing",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     false,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.20.1"),
-				scheduler:         semver.NewSemverOrDie("1.20.1"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.20.1"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.20.1"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 		{
 			name:        "update completed, back to a vanilla cluster",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.21.0"),
-				scheduler:         semver.NewSemverOrDie("1.21.0"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.21.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 		{
 			name:        "update to 1.23 and ensure we jump to 1.22",
-			specVersion: *semver.NewSemverOrDie("1.23.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.23.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.21.0"),
-				scheduler:         semver.NewSemverOrDie("1.21.0"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.21.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.22.5"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.22.5"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 
@@ -613,76 +613,76 @@ func TestReconcile(t *testing.T) {
 
 		{
 			name:        "cluster still has ancient nodes, cannot progress with updates",
-			specVersion: *semver.NewSemverOrDie("1.23.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.23.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.22.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.22.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.22.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.22.0"),
-				OldestNodeVersion: semver.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				OldestNodeVersion: k8csemverv1.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.22.0"),
-				controllerManager: semver.NewSemverOrDie("1.22.0"),
-				scheduler:         semver.NewSemverOrDie("1.22.0"),
-				nodes:             semver.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
+				apiserver:         k8csemverv1.NewSemverOrDie("1.22.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.22.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.22.0"),
+				nodes:             k8csemverv1.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.22.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.22.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.22.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.22.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.22.0"),
 			},
 		},
 
 		{
 			name:        "cluster still has ancient nodes, but is (erroneously) on its way to update and so we should allow this to complete",
-			specVersion: *semver.NewSemverOrDie("1.23.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.23.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.22.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.23.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.22.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.22.0"),
-				OldestNodeVersion: semver.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.23.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				OldestNodeVersion: k8csemverv1.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.23.0"),
-				controllerManager: semver.NewSemverOrDie("1.22.0"),
-				scheduler:         semver.NewSemverOrDie("1.22.0"),
-				nodes:             semver.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
+				apiserver:         k8csemverv1.NewSemverOrDie("1.23.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.22.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.22.0"),
+				nodes:             k8csemverv1.NewSemverOrDie("1.20.0"), // allows max 1.22.* control plane
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.23.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.23.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.23.0"), // allow them to follow the apiserver's version
-				Scheduler:         *semver.NewSemverOrDie("1.23.0"), // allow them to follow the apiserver's version
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.23.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.23.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.23.0"), // allow them to follow the apiserver's version
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.23.0"), // allow them to follow the apiserver's version
 			},
 		},
 
 		{
 			name:        "cluster still has old nodes, but young enough to permit an update",
-			specVersion: *semver.NewSemverOrDie("1.23.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.23.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.22.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.22.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.22.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.22.0"),
-				OldestNodeVersion: semver.NewSemverOrDie("1.21.0"), // allows max 1.23.* control plane
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.22.0"),
+				OldestNodeVersion: k8csemverv1.NewSemverOrDie("1.21.0"), // allows max 1.23.* control plane
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.22.0"),
-				controllerManager: semver.NewSemverOrDie("1.22.0"),
-				scheduler:         semver.NewSemverOrDie("1.22.0"),
-				nodes:             semver.NewSemverOrDie("1.21.0"), // allows max 1.23.* control plane
+				apiserver:         k8csemverv1.NewSemverOrDie("1.22.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.22.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.22.0"),
+				nodes:             k8csemverv1.NewSemverOrDie("1.21.0"), // allows max 1.23.* control plane
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.22.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.23.0"), // updated!
-				ControllerManager: *semver.NewSemverOrDie("1.22.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.22.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.23.0"), // updated!
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.22.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.22.0"),
 			},
 		},
 
@@ -691,68 +691,68 @@ func TestReconcile(t *testing.T) {
 
 		{
 			name:        "vanilla cluster that was just told to be downgraded by changing its spec",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.3"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.3"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.3"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.3"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.3"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.3"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.3"),
-				controllerManager: semver.NewSemverOrDie("1.21.3"),
-				scheduler:         semver.NewSemverOrDie("1.21.3"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.3"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.21.3"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.21.3"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.3"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"), // this should be updated to the spec
-				ControllerManager: *semver.NewSemverOrDie("1.21.3"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.3"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"), // this should be updated to the spec
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.3"),
 			},
 		},
 		{
 			name:        "downgraded apiserver came alive, rest of control plane should downgrade as well",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.3"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.3"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.3"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.3"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.3"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.21.3"),
-				scheduler:         semver.NewSemverOrDie("1.21.3"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.21.3"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.21.3"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 		{
 			name:        "downgrade completes",
-			specVersion: *semver.NewSemverOrDie("1.21.0"),
+			specVersion: *k8csemverv1.NewSemverOrDie("1.21.0"),
 			healthy:     true,
 			clusterStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			currentStatus: controlPlaneStatus{
-				apiserver:         semver.NewSemverOrDie("1.21.0"),
-				controllerManager: semver.NewSemverOrDie("1.21.0"),
-				scheduler:         semver.NewSemverOrDie("1.21.0"),
+				apiserver:         k8csemverv1.NewSemverOrDie("1.21.0"),
+				controllerManager: k8csemverv1.NewSemverOrDie("1.21.0"),
+				scheduler:         k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 			expectedStatus: kubermaticv1.ClusterVersionsStatus{
-				ControlPlane:      *semver.NewSemverOrDie("1.21.0"),
-				Apiserver:         *semver.NewSemverOrDie("1.21.0"),
-				ControllerManager: *semver.NewSemverOrDie("1.21.0"),
-				Scheduler:         *semver.NewSemverOrDie("1.21.0"),
+				ControlPlane:      *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Apiserver:         *k8csemverv1.NewSemverOrDie("1.21.0"),
+				ControllerManager: *k8csemverv1.NewSemverOrDie("1.21.0"),
+				Scheduler:         *k8csemverv1.NewSemverOrDie("1.21.0"),
 			},
 		},
 	}

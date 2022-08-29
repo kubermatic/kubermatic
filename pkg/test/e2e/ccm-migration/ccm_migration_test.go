@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -51,7 +51,7 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	logOptions        log.Options
-	kubernetesVersion semver.Semver
+	kubernetesVersion k8csemverv1.Semver
 
 	provider string
 

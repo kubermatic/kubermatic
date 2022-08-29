@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -675,7 +675,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.0.0"),
+				Version: k8csemverv1.NewSemverOrDie("1.0.0"),
 			}.Build(),
 			wantAllowed: false,
 		},
@@ -731,7 +731,7 @@ type rawTemplateGen struct {
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
 	CNIPlugin             *kubermaticv1.CNIPluginSettings
-	Version               *semver.Semver
+	Version               *k8csemverv1.Semver
 }
 
 func (r rawTemplateGen) BuildPtr() *kubermaticv1.ClusterTemplate {

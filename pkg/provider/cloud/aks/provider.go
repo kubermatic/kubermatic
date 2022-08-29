@@ -35,7 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -314,7 +314,7 @@ func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGr
 	}
 
 	for _, upgradesItem := range upgradeProperties.ControlPlaneProfile.Upgrades {
-		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
+		v, err := k8csemverv1.NewSemver(*upgradesItem.KubernetesVersion)
 		if err != nil {
 			return nil, err
 		}

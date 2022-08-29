@@ -30,7 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
@@ -93,7 +93,7 @@ func ObjectYAMLDiff(t *testing.T, expectedObj, actualObj interface{}) error {
 	return nil
 }
 
-func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []semver.Semver {
+func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []k8csemverv1.Semver {
 	if cfg == nil {
 		return defaulting.DefaultKubernetesVersioning.Versions
 	}
@@ -104,10 +104,10 @@ func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []semver.Semv
 // LatestKubernetesVersion returns the most recent supported patch release. Passing nil
 // for the KubermaticConfiguration is fine and in this case the compiled-in defaults will
 // be used.
-func LatestKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+func LatestKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *k8csemverv1.Semver {
 	versions := kubernetesVersions(cfg)
 
-	var latest *semver.Semver
+	var latest *k8csemverv1.Semver
 	for i, version := range versions {
 		if latest == nil || version.GreaterThan(latest) {
 			latest = &versions[i]
@@ -121,7 +121,7 @@ func LatestKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.
 // which are latest-1 (i.e. if KKP is configured to support up to 1.29.7, then the stable
 // releases would be all in the  1.28.x line). Passing nil for the KubermaticConfiguration
 // is fine and in this case the compiled-in defaults will be used.
-func LatestStableKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+func LatestStableKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *k8csemverv1.Semver {
 	latest := LatestKubernetesVersion(cfg)
 	if latest == nil {
 		return nil
@@ -136,8 +136,8 @@ func LatestStableKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *s
 // LatestKubernetesVersionForRelease returns the most recent supported patch release
 // for a given release branch (i.e. release="1.24" might return "1.24.7"). Passing nil for the
 // KubermaticConfiguration is fine and in this case the compiled-in defaults will be used.
-func LatestKubernetesVersionForRelease(release string, cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
-	parsed, err := semver.NewSemver(release)
+func LatestKubernetesVersionForRelease(release string, cfg *kubermaticv1.KubermaticConfiguration) *k8csemverv1.Semver {
+	parsed, err := k8csemverv1.NewSemver(release)
 	if err != nil {
 		return nil
 	}
@@ -145,7 +145,7 @@ func LatestKubernetesVersionForRelease(release string, cfg *kubermaticv1.Kuberma
 	versions := kubernetesVersions(cfg)
 	minor := parsed.Semver().Minor()
 
-	var stable *semver.Semver
+	var stable *k8csemverv1.Semver
 	for i, version := range versions {
 		if version.Semver().Minor() != minor {
 			continue

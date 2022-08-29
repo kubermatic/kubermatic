@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +51,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -77,7 +77,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -99,12 +99,12 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
-					Version: *semver.NewSemverOrDie("1.23.5"),
+					Version: *k8csemverv1.NewSemverOrDie("1.23.5"),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("1.23.5"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("1.23.5"),
 					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
@@ -125,12 +125,12 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						AWS: &kubermaticv1.AWSCloudSpec{},
 					},
-					Version: *semver.NewSemverOrDie("1.23.5"),
+					Version: *k8csemverv1.NewSemverOrDie("1.23.5"),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("1.23.5"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("1.23.5"),
 					},
 				},
 			},

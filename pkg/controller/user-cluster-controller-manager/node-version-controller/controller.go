@@ -25,7 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -88,9 +88,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to get nodes: %w", err)
 	}
 
-	var oldestVersion *semver.Semver
+	var oldestVersion *k8csemverv1.Semver
 	for _, node := range nodes.Items {
-		parsed, err := semver.NewSemver(node.Status.NodeInfo.KubeletVersion)
+		parsed, err := k8csemverv1.NewSemver(node.Status.NodeInfo.KubeletVersion)
 		if err != nil {
 			return fmt.Errorf("failed to get nodes: %w", err)
 		}
@@ -103,7 +103,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	// parse the version again to reliably get rid of the "v" prefix, otherwise
 	// this could lead to reconcile loops; our semver types are weird when marshalled.
 	if oldestVersion != nil {
-		parsed, err := semver.NewSemver(oldestVersion.String())
+		parsed, err := k8csemverv1.NewSemver(oldestVersion.String())
 		if err != nil {
 			return fmt.Errorf("failed to parse version %v: %w", oldestVersion, err)
 		}

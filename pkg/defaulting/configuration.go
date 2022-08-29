@@ -28,7 +28,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -71,8 +71,8 @@ const (
 	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
 )
 
-func newSemver(s string) semver.Semver {
-	sv := semver.NewSemverOrDie(s)
+func newSemver(s string) k8csemverv1.Semver {
+	sv := k8csemverv1.NewSemverOrDie(s)
 	return *sv
 }
 
@@ -216,8 +216,8 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.23.9"),
-		Versions: []semver.Semver{
+		Default: k8csemverv1.NewSemverOrDie("v1.23.9"),
+		Versions: []k8csemverv1.Semver{
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			newSemver("v1.22.9"),
@@ -298,8 +298,8 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.22"),
-		Versions: []semver.Semver{
+		Default: k8csemverv1.NewSemverOrDie("v1.22"),
+		Versions: []k8csemverv1.Semver{
 			newSemver("v1.23"),
 			newSemver("v1.22"),
 			newSemver("v1.21"),
@@ -310,8 +310,8 @@ var (
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.22"),
-		Versions: []semver.Semver{
+		Default: k8csemverv1.NewSemverOrDie("v1.22"),
+		Versions: []k8csemverv1.Semver{
 			newSemver("v1.24"),
 			newSemver("v1.23"),
 			newSemver("v1.22"),

@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -1419,7 +1419,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.23.9"),
+				Version: k8csemverv1.NewSemverOrDie("1.23.9"),
 			}.Build(),
 			oldCluster: rawClusterGen{
 				Name:      "foo",
@@ -1444,7 +1444,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.22.12"),
+				Version: k8csemverv1.NewSemverOrDie("1.22.12"),
 			}.BuildPtr(),
 			wantAllowed: true,
 		},
@@ -1647,7 +1647,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.0.0"),
+				Version: k8csemverv1.NewSemverOrDie("1.0.0"),
 			}.Build(),
 			wantAllowed: false,
 		},
@@ -1673,7 +1673,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.0.0"),
+				Version: k8csemverv1.NewSemverOrDie("1.0.0"),
 			}.Build(),
 			wantAllowed: false,
 		},
@@ -1699,7 +1699,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.99.99"),
+				Version: k8csemverv1.NewSemverOrDie("1.99.99"),
 			}.Build(),
 			oldCluster: rawClusterGen{
 				Name:      "foo",
@@ -1780,7 +1780,7 @@ type rawClusterGen struct {
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
 	CNIPlugin             *kubermaticv1.CNIPluginSettings
-	Version               *semver.Semver
+	Version               *k8csemverv1.Semver
 }
 
 func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {

@@ -29,7 +29,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,7 +54,7 @@ type ClusterJig struct {
 	Log            *zap.SugaredLogger
 	Name           string
 	DatacenterName string
-	Version        semver.Semver
+	Version        k8csemverv1.Semver
 	SeedClient     ctrlruntimeclient.Client
 	Cluster        *kubermaticv1.Cluster
 }

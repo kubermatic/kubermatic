@@ -32194,7 +32194,7 @@
     "Semver": {
       "type": "string",
       "title": "Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API.",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/semver"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/semver/v1"
     },
     "ServiceAccount": {
       "description": "ServiceAccount represent an API service account",

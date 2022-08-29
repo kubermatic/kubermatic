@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	semverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -3051,7 +3051,7 @@ func (in *ExternalClusterProviderVersioningConfiguration) DeepCopyInto(out *Exte
 	*out = *in
 	if in.Versions != nil {
 		in, out := &in.Versions, &out.Versions
-		*out = make([]semver.Semver, len(*in))
+		*out = make([]semverv1.Semver, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -3063,7 +3063,7 @@ func (in *ExternalClusterProviderVersioningConfiguration) DeepCopyInto(out *Exte
 	}
 	if in.Updates != nil {
 		in, out := &in.Updates, &out.Updates
-		*out = make([]semver.Semver, len(*in))
+		*out = make([]semverv1.Semver, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -4033,7 +4033,7 @@ func (in *KubermaticVersioningConfiguration) DeepCopyInto(out *KubermaticVersion
 	*out = *in
 	if in.Versions != nil {
 		in, out := &in.Versions, &out.Versions
-		*out = make([]semver.Semver, len(*in))
+		*out = make([]semverv1.Semver, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

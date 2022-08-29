@@ -20,7 +20,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +86,7 @@ func DefaultProject(projectName string) *kubermaticv1.Project {
 	}
 }
 
-func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kubermaticv1.CloudSpec, projectID string) *kubermaticv1.Cluster {
+func DefaultCluster(clusterName string, version k8csemverv1.Semver, cloudSpec kubermaticv1.CloudSpec, projectID string) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterName,

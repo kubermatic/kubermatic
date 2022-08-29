@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -212,7 +212,7 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, log *zap.SugaredLo
 	}
 	oldCluster := cluster.DeepCopy()
 
-	sver, err := semver.NewSemver(update.Version.String())
+	sver, err := k8csemverv1.NewSemver(update.Version.String())
 	if err != nil {
 		return fmt.Errorf("failed to parse version %q: %w", update.Version.String(), err)
 	}

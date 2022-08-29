@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -176,7 +176,7 @@ type ClusterSpec struct {
 	HumanReadableName string `json:"humanReadableName"`
 
 	// Version defines the wanted version of the control plane.
-	Version semver.Semver `json:"version"`
+	Version k8csemverv1.Semver `json:"version"`
 
 	// Cloud contains information regarding the cloud provider that
 	// is responsible for hosting the cluster's workload.
@@ -578,23 +578,23 @@ type ClusterStatus struct {
 type ClusterVersionsStatus struct {
 	// ControlPlane is the currently active cluster version. This can lag behind the apiserver
 	// version if an update is currently rolling out.
-	ControlPlane semver.Semver `json:"controlPlane"`
+	ControlPlane k8csemverv1.Semver `json:"controlPlane"`
 	// Apiserver is the currently desired version of the kube-apiserver. During
 	// upgrades across multiple minor versions (e.g. from 1.20 to 1.23), this will gradually
 	// be increased by the update-controller until the desired cluster version (spec.version)
 	// is reached.
-	Apiserver semver.Semver `json:"apiserver"`
+	Apiserver k8csemverv1.Semver `json:"apiserver"`
 	// ControllerManager is the currently desired version of the kube-controller-manager. This
 	// field behaves the same as the apiserver field.
-	ControllerManager semver.Semver `json:"controllerManager"`
+	ControllerManager k8csemverv1.Semver `json:"controllerManager"`
 	// Scheduler is the currently desired version of the kube-scheduler. This field behaves the
 	// same as the apiserver field.
-	Scheduler semver.Semver `json:"scheduler"`
+	Scheduler k8csemverv1.Semver `json:"scheduler"`
 	// OldestNodeVersion is the oldest node version currently in use inside the cluster. This can be
 	// nil if there are no nodes. This field is primarily for speeding up reconciling, so that
 	// the controller doesn't have to re-fetch to the usercluster and query its node on every
 	// reconciliation.
-	OldestNodeVersion *semver.Semver `json:"oldestNodeVersion,omitempty"`
+	OldestNodeVersion *k8csemverv1.Semver `json:"oldestNodeVersion,omitempty"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.

@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	corev1 "k8s.io/api/core/v1"
@@ -379,11 +379,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
 					},
@@ -415,11 +415,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
 					},
@@ -459,11 +459,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},
@@ -515,11 +515,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
 					},
@@ -551,11 +551,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
 					},
@@ -595,11 +595,11 @@ func TestListClusters(t *testing.T) {
 							Type:    kubermaticv1.CNIPluginTypeCanal,
 							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
-						Version:               *semver.NewSemverOrDie("9.9.9"),
+						Version:               *k8csemverv1.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 					Status: apiv1.ClusterStatus{
-						Version:              *semver.NewSemverOrDie("9.9.9"),
+						Version:              *k8csemverv1.NewSemverOrDie("9.9.9"),
 						URL:                  "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 						ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
 					},

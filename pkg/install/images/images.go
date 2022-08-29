@@ -43,7 +43,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -348,7 +348,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
-	clusterSemver, err := ksemver.NewSemver(clusterVersion.Version.String())
+	clusterSemver, err := k8csemverv1.NewSemver(clusterVersion.Version.String())
 	if err != nil {
 		return nil, err
 	}

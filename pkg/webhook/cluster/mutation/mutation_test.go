@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
@@ -647,7 +647,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.24"),
+							Version: *k8csemverv1.NewSemverOrDie("1.24"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -676,7 +676,7 @@ func TestHandle(t *testing.T) {
 					OldObject: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.23"),
+							Version: *k8csemverv1.NewSemverOrDie("1.23"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -722,7 +722,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.23"),
+							Version: *k8csemverv1.NewSemverOrDie("1.23"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -751,7 +751,7 @@ func TestHandle(t *testing.T) {
 					OldObject: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:    "foo",
-							Version: *semver.NewSemverOrDie("1.22"),
+							Version: *k8csemverv1.NewSemverOrDie("1.22"),
 							CloudSpec: kubermaticv1.CloudSpec{
 								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 								DatacenterName: "openstack-dc",
@@ -1268,7 +1268,7 @@ func TestHandle(t *testing.T) {
 
 type rawClusterGen struct {
 	Name                  string
-	Version               semver.Semver
+	Version               k8csemverv1.Semver
 	CloudSpec             kubermaticv1.CloudSpec
 	CNIPluginSpec         *kubermaticv1.CNIPluginSettings
 	ExternalCloudProvider bool

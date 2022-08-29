@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
@@ -1102,7 +1102,7 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	return allErrs
 }
 
-func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string, k8sVersion semver.Semver) *field.Error {
+func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermaticv1.CNIPluginSettings, labels map[string]string, k8sVersion k8csemverv1.Semver) *field.Error {
 	basePath := field.NewPath("spec", "cniPlugin")
 
 	// if there was no CNI setting, we allow the mutation to happen

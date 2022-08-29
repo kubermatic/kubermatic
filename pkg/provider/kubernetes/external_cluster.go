@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
@@ -223,7 +223,7 @@ func (p *ExternalClusterProvider) GetClient(ctx context.Context, cluster *kuberm
 	return p.GenerateClient(cfg)
 }
 
-func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error) {
+func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*k8csemverv1.Semver, error) {
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, p.clientPrivileged)
 	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
@@ -246,7 +246,7 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	if err != nil {
 		return nil, err
 	}
-	v, err := ksemver.NewSemver(version.GitVersion)
+	v, err := k8csemverv1.NewSemver(version.GitVersion)
 	if err != nil {
 		return nil, err
 	}

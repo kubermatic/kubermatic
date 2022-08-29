@@ -27,7 +27,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
@@ -45,7 +45,7 @@ const (
 	azureCCMDeploymentName = "azure-cloud-controller-manager"
 )
 
-func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
+func NewClusterJigAzure(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version k8csemverv1.Semver, seedDatacenter string, credentials AzureCredentialsType) *AzureClusterJig {
 	return &AzureClusterJig{
 		CommonClusterJig: CommonClusterJig{
 			name:           utilcluster.MakeClusterName(),

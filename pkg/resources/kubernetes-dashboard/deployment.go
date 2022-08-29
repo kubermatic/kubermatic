@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -178,7 +178,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
+func getDashboardVersion(clusterVersion v1.Semver) (string, error) {
 	// check the GitHub releases for find compat info on the dashboard:
 	// https://github.com/kubernetes/dashboard/releases
 

@@ -34,7 +34,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
@@ -56,7 +56,7 @@ type Options struct {
 
 	Providers            sets.String
 	Releases             sets.String
-	Versions             []*kubermativsemver.Semver
+	Versions             []*k8csemverv1.Semver
 	EnableDistributions  sets.String
 	ExcludeDistributions sets.String
 	Distributions        sets.String
@@ -304,7 +304,7 @@ func combineSets(include, exclude, all sets.String, flagname string) (sets.Strin
 	return chosen, nil
 }
 
-func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
+func getLatestMinorVersions(versions []k8csemverv1.Semver) []string {
 	minorMap := map[uint64]*semverlib.Version{}
 
 	for _, version := range versions {

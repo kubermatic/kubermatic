@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -147,7 +147,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 	}
 }
 
-func getAzureVersion(version semver.Semver) (string, error) {
+func getAzureVersion(version k8csemverv1.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
 	case v121:
@@ -186,7 +186,7 @@ func getAzureFlags(data *resources.TemplateData) []string {
 
 // AzureCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
-func AzureCloudControllerSupported(version semver.Semver) bool {
+func AzureCloudControllerSupported(version k8csemverv1.Semver) bool {
 	if _, err := getAzureVersion(version); err != nil {
 		return false
 	}

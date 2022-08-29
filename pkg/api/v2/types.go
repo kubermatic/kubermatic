@@ -24,7 +24,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -468,7 +468,7 @@ type ExternalClusterStatus struct {
 // ExternalClusterSpec defines the external cluster specification.
 type ExternalClusterSpec struct {
 	// Version desired version of the kubernetes master components
-	Version ksemver.Semver `json:"version,omitempty"`
+	Version k8csemverv1.Semver `json:"version,omitempty"`
 
 	GKEClusterSpec *GKEClusterSpec `json:"gkeclusterSpec,omitempty"`
 	EKSClusterSpec *EKSClusterSpec `json:"eksclusterSpec,omitempty"`

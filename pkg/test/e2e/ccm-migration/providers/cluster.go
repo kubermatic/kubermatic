@@ -27,7 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -54,7 +54,7 @@ type ClusterJigInterface interface {
 type CommonClusterJig struct {
 	name           string
 	DatacenterName string
-	Version        semver.Semver
+	Version        k8csemverv1.Semver
 	log            *zap.SugaredLogger
 
 	SeedClient ctrlruntimeclient.Client

@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +45,7 @@ type Scenario interface {
 	OperatingSystem() providerconfig.OperatingSystem
 	ContainerRuntime() string
 	DualstackEnabled() bool
-	Version() semver.Semver
+	Version() k8csemverv1.Semver
 	Datacenter() *kubermaticv1.Datacenter
 	Name() string
 	Log(log *zap.SugaredLogger) *zap.SugaredLogger
@@ -68,7 +68,7 @@ type Scenario interface {
 type baseScenario struct {
 	cloudProvider    providerconfig.CloudProvider
 	operatingSystem  providerconfig.OperatingSystem
-	version          semver.Semver
+	version          k8csemverv1.Semver
 	containerRuntime string
 	dualstackEnabled bool
 	datacenter       *kubermaticv1.Datacenter
@@ -82,7 +82,7 @@ func (s *baseScenario) OperatingSystem() providerconfig.OperatingSystem {
 	return s.operatingSystem
 }
 
-func (s *baseScenario) Version() semver.Semver {
+func (s *baseScenario) Version() k8csemverv1.Semver {
 	return s.version
 }
 
@@ -219,7 +219,7 @@ func (s *baseScenario) SetDualstackEnabled(enabled bool) {
 	s.dualstackEnabled = enabled
 }
 
-func createMachineDeployment(replicas int, version *semver.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}, dualstack bool) (clusterv1alpha1.MachineDeployment, error) {
+func createMachineDeployment(replicas int, version *k8csemverv1.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}, dualstack bool) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
 	var encodedOSSpec json.RawMessage

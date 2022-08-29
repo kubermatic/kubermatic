@@ -40,7 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -290,7 +290,7 @@ func TestLoadFiles(t *testing.T) {
 							Features:       features,
 							ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 							Cloud:          cloudspec,
-							Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
+							Version:        *k8csemverv1.NewSemverOrDie(ver.Version.String()),
 							ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 								Services: kubermaticv1.NetworkRanges{
 									CIDRBlocks: []string{"10.240.16.0/20"},
@@ -326,10 +326,10 @@ func TestLoadFiles(t *testing.T) {
 						Status: kubermaticv1.ClusterStatus{
 							NamespaceName: "cluster-de-test-01",
 							Versions: kubermaticv1.ClusterVersionsStatus{
-								ControlPlane:      *ksemver.NewSemverOrDie(ver.Version.String()),
-								Apiserver:         *ksemver.NewSemverOrDie(ver.Version.String()),
-								ControllerManager: *ksemver.NewSemverOrDie(ver.Version.String()),
-								Scheduler:         *ksemver.NewSemverOrDie(ver.Version.String()),
+								ControlPlane:      *k8csemverv1.NewSemverOrDie(ver.Version.String()),
+								Apiserver:         *k8csemverv1.NewSemverOrDie(ver.Version.String()),
+								ControllerManager: *k8csemverv1.NewSemverOrDie(ver.Version.String()),
+								Scheduler:         *k8csemverv1.NewSemverOrDie(ver.Version.String()),
 							},
 							Address: kubermaticv1.ClusterAddress{
 								ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",

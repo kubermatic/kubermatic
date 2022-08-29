@@ -35,7 +35,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -488,7 +488,7 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion semver.Semver) (*exec.Cmd, error) {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion k8csemverv1.Semver) (*exec.Cmd, error) {
 	binary, err := kubectl.BinaryForClusterVersion(&clusterVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)

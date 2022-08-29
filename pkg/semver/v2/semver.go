@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package semver
+package v2
 
 import (
 	"flag"
-	"fmt"
 
 	semverlib "github.com/Masterminds/semver/v3"
 )
@@ -28,6 +27,9 @@ var (
 )
 
 // Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API.
+//
+// v2 differs from  v1 in the following manner:
+//  - Running DeepCopy(), String() will preserve the original manner the version was provided in as opposed to normalizing the string. Instead a Normalize() func is introduced
 type Semver string
 
 // NewSemver creates new Semver version struct and returns pointer to it.
@@ -116,8 +118,12 @@ func (s *Semver) GreaterThan(b *Semver) bool {
 	return sver.GreaterThan(bver)
 }
 
-// String returns string representation of Semver version.
-func (s *Semver) String() string {
+// Normalize returns a normalized string representation of Semver version.
+// Note that the following transformations are being made to the original version:
+//  - any leading 'v' is trimmed off -> e.g. 'v1.0.0' -> '1.0.0'
+//  - expansion to major.minor.patch format -> e.g. '1' -> '1.0.0'
+// To retrieve the original value, see Original() func.
+func (s *Semver) Normalize() string {
 	sver := s.Semver()
 	if sver == nil {
 		return ""
@@ -126,14 +132,11 @@ func (s *Semver) String() string {
 	return sver.String()
 }
 
-// MajorMinor returns a string like "Major.Minor".
-func (s *Semver) MajorMinor() string {
-	sver := s.Semver()
-	if sver == nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%d.%d", sver.Major(), sver.Minor())
+// String returns string representation of Semver version.
+// Unlike semver/v1, no normalization is being done. See Normalize() for normalization.
+// By overriding String() in semver/v2, we ensure compatibility with consumers like fmt.
+func (s Semver) String() string {
+	return string(s)
 }
 
 func (s Semver) DeepCopy() Semver {

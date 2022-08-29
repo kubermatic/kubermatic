@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,7 +66,7 @@ func (g *Generator) WithOperatingSystems(operatingSystems ...string) *Generator 
 	return g
 }
 
-func (g *Generator) WithVersions(versions ...*semver.Semver) *Generator {
+func (g *Generator) WithVersions(versions ...*k8csemverv1.Semver) *Generator {
 	for _, version := range versions {
 		g.versions.Insert(version.String())
 	}
@@ -94,7 +94,7 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 	scenarios := []Scenario{}
 
 	for _, version := range g.versions.List() {
-		s, err := semver.NewSemver(version)
+		s, err := k8csemverv1.NewSemver(version)
 		if err != nil {
 			return nil, fmt.Errorf("invalid version %q: %w", version, err)
 		}
@@ -166,7 +166,7 @@ func providerScenario(
 	opts *types.Options,
 	provider providerconfig.CloudProvider,
 	os providerconfig.OperatingSystem,
-	version semver.Semver,
+	version k8csemverv1.Semver,
 	containerRuntime string,
 	datacenter *kubermaticv1.Datacenter,
 ) (Scenario, error) {
@@ -233,7 +233,7 @@ func isValidNewScenario(opts *types.Options, log *zap.SugaredLogger, scenario Sc
 
 	// apply static filters
 	clusterVersion := scenario.Version()
-	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
+	dockerSupported := clusterVersion.LessThan(k8csemverv1.NewSemverOrDie("1.24"))
 	if !dockerSupported && scenario.ContainerRuntime() == resources.ContainerRuntimeDocker {
 		scenario.Log(log).Infow("Skipping because CRI is not supported in this Kubernetes version.")
 		return false

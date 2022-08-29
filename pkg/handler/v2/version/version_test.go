@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,7 +44,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		existingKubermaticObjs []ctrlruntimeclient.Object
 		apiUser                apiv1.User
 		provider               kubermaticv1.ProviderType
-		versions               []k8csemver.Semver
+		versions               []k8csemverv1.Semver
 		updates                []kubermaticv1.Update
 		incompatibilities      []kubermaticv1.Incompatibility
 		wantVersions           []*apiv1.MasterVersion
@@ -70,11 +70,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semverlib.MustParse("1.22.1"),
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.21.0"),
-				*k8csemver.NewSemverOrDie("1.21.1"),
-				*k8csemver.NewSemverOrDie("1.22.0"),
-				*k8csemver.NewSemverOrDie("1.22.1"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.21.0"),
+				*k8csemverv1.NewSemverOrDie("1.21.1"),
+				*k8csemverv1.NewSemverOrDie("1.22.0"),
+				*k8csemverv1.NewSemverOrDie("1.22.1"),
 			},
 			updates: []kubermaticv1.Update{
 				{
@@ -114,11 +114,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semverlib.MustParse("1.21.1"),
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.21.0"),
-				*k8csemver.NewSemverOrDie("1.21.1"),
-				*k8csemver.NewSemverOrDie("1.22.0"),
-				*k8csemver.NewSemverOrDie("1.22.1"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.21.0"),
+				*k8csemverv1.NewSemverOrDie("1.21.1"),
+				*k8csemverv1.NewSemverOrDie("1.22.0"),
+				*k8csemverv1.NewSemverOrDie("1.22.1"),
 			},
 			updates: []kubermaticv1.Update{
 				{

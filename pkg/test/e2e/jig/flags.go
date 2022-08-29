@@ -30,7 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -106,8 +106,8 @@ func ClusterVersion(log *zap.SugaredLogger) string {
 	return v
 }
 
-func ClusterSemver(log *zap.SugaredLogger) semver.Semver {
-	return *semver.NewSemverOrDie(ClusterVersion(log))
+func ClusterSemver(log *zap.SugaredLogger) k8csemverv1.Semver {
+	return *k8csemverv1.NewSemverOrDie(ClusterVersion(log))
 }
 
 func DatacenterName() string {

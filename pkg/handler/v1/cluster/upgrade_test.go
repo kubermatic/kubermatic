@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -50,7 +50,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 		existingKubermaticObjs     []ctrlruntimeclient.Object
 		existingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		apiUser                    apiv1.User
-		versions                   []k8csemver.Semver
+		versions                   []k8csemverv1.Semver
 		updates                    []kubermaticv1.Update
 		incompatibilities          []kubermaticv1.Incompatibility
 		wantUpdates                []*apiv1.MasterVersion
@@ -60,7 +60,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemverv1.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -76,10 +76,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semverlib.MustParse("1.7.0"),
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.6.0"),
-				*k8csemver.NewSemverOrDie("1.6.1"),
-				*k8csemver.NewSemverOrDie("1.7.0"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.6.0"),
+				*k8csemverv1.NewSemverOrDie("1.6.1"),
+				*k8csemverv1.NewSemverOrDie("1.7.0"),
 			},
 			updates: []kubermaticv1.Update{
 				{
@@ -99,7 +99,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemverv1.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -122,10 +122,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 					RestrictedByKubeletVersion: true,
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.6.0"),
-				*k8csemver.NewSemverOrDie("1.6.1"),
-				*k8csemver.NewSemverOrDie("1.7.0"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.6.0"),
+				*k8csemverv1.NewSemverOrDie("1.6.1"),
+				*k8csemverv1.NewSemverOrDie("1.7.0"),
 			},
 			updates: []kubermaticv1.Update{
 				{
@@ -148,7 +148,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					cluster.Spec.Cloud.Fake = nil
 				})
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *k8csemver.NewSemverOrDie("1.21.0")
+				c.Spec.Version = *k8csemverv1.NewSemverOrDie("1.21.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -160,11 +160,11 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semverlib.MustParse("1.21.1"),
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.21.0"),
-				*k8csemver.NewSemverOrDie("1.21.1"),
-				*k8csemver.NewSemverOrDie("1.22.0"),
-				*k8csemver.NewSemverOrDie("1.22.1"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.21.0"),
+				*k8csemverv1.NewSemverOrDie("1.21.1"),
+				*k8csemverv1.NewSemverOrDie("1.22.0"),
+				*k8csemverv1.NewSemverOrDie("1.22.1"),
 			},
 			updates: []kubermaticv1.Update{
 				{
@@ -197,7 +197,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemverv1.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -206,8 +206,8 @@ func TestGetClusterUpgrades(t *testing.T) {
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.6.0"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.6.0"),
 			},
 			updates: []kubermaticv1.Update{},
 		},
@@ -216,7 +216,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName, kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"}
-				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemverv1.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -233,10 +233,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semverlib.MustParse("1.7.0"),
 				},
 			},
-			versions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.6.0"),
-				*k8csemver.NewSemverOrDie("1.6.1"),
-				*k8csemver.NewSemverOrDie("1.7.0"),
+			versions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.6.0"),
+				*k8csemverv1.NewSemverOrDie("1.6.1"),
+				*k8csemverv1.NewSemverOrDie("1.7.0"),
 			},
 			updates: []kubermaticv1.Update{
 				{
@@ -325,7 +325,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				test.GenTestSeed(),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenDefaultCluster()
-					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					cluster.Spec.Version = *k8csemverv1.NewSemverOrDie("1.12.1")
 					return cluster
 				}(),
 			),
@@ -346,7 +346,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				test.GenTestSeed(),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenDefaultCluster()
-					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+					cluster.Spec.Version = *k8csemverv1.NewSemverOrDie("1.1.1")
 					return cluster
 				}(),
 			),
@@ -367,7 +367,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				test.GenTestSeed(),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenDefaultCluster()
-					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					cluster.Spec.Version = *k8csemverv1.NewSemverOrDie("1.12.1")
 					return cluster
 				}(),
 				genUser("John", "john@acme.com", true),
@@ -423,7 +423,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 		controlPlaneVersion    string
 		apiUser                apiv1.User
 		existingUpdates        []kubermaticv1.Update
-		existingVersions       []k8csemver.Semver
+		existingVersions       []k8csemverv1.Semver
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
@@ -447,19 +447,19 @@ func TestGetNodeUpgrades(t *testing.T) {
 					Automatic: pointer.BoolPtr(false),
 				},
 			},
-			existingVersions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("0.0.1"),
-				*k8csemver.NewSemverOrDie("0.1.0"),
-				*k8csemver.NewSemverOrDie("1.0.0"),
-				*k8csemver.NewSemverOrDie("1.4.0"),
-				*k8csemver.NewSemverOrDie("1.4.1"),
-				*k8csemver.NewSemverOrDie("1.5.0"),
-				*k8csemver.NewSemverOrDie("1.5.1"),
-				*k8csemver.NewSemverOrDie("1.6.0"),
-				*k8csemver.NewSemverOrDie("1.6.1"),
-				*k8csemver.NewSemverOrDie("1.7.0"),
-				*k8csemver.NewSemverOrDie("1.7.1"),
-				*k8csemver.NewSemverOrDie("2.0.0"),
+			existingVersions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("0.0.1"),
+				*k8csemverv1.NewSemverOrDie("0.1.0"),
+				*k8csemverv1.NewSemverOrDie("1.0.0"),
+				*k8csemverv1.NewSemverOrDie("1.4.0"),
+				*k8csemverv1.NewSemverOrDie("1.4.1"),
+				*k8csemverv1.NewSemverOrDie("1.5.0"),
+				*k8csemverv1.NewSemverOrDie("1.5.1"),
+				*k8csemverv1.NewSemverOrDie("1.6.0"),
+				*k8csemverv1.NewSemverOrDie("1.6.1"),
+				*k8csemverv1.NewSemverOrDie("1.7.0"),
+				*k8csemverv1.NewSemverOrDie("1.7.1"),
+				*k8csemverv1.NewSemverOrDie("2.0.0"),
 			},
 			expectedOutput: []*apiv1.MasterVersion{
 				{
@@ -527,7 +527,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 		clusterType            string
 		apiUser                apiv1.User
 		existingUpdates        []kubermaticv1.Update
-		existingVersions       []k8csemver.Semver
+		existingVersions       []k8csemverv1.Semver
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
@@ -537,9 +537,9 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
 			existingUpdates:        []kubermaticv1.Update{},
-			existingVersions: []k8csemver.Semver{
-				*k8csemver.NewSemverOrDie("1.13.5"),
-				*k8csemver.NewSemverOrDie("3.11.5"),
+			existingVersions: []k8csemverv1.Semver{
+				*k8csemverv1.NewSemverOrDie("1.13.5"),
+				*k8csemverv1.NewSemverOrDie("3.11.5"),
 			},
 			expectedOutput: []*apiv1.MasterVersion{
 				{

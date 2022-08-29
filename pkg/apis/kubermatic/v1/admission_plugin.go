@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -52,5 +52,5 @@ type AdmissionPluginSpec struct {
 	PluginName string `json:"pluginName"`
 
 	// FromVersion flag can be empty. It means the plugin fit to all k8s versions
-	FromVersion *semver.Semver `json:"fromVersion,omitempty"`
+	FromVersion *k8csemverv1.Semver `json:"fromVersion,omitempty"`
 }

@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -350,9 +350,9 @@ type KubermaticProjectsMigratorConfiguration struct {
 // KubermaticVersioningConfiguration configures the available and default Kubernetes versions.
 type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.
-	Versions []semver.Semver `json:"versions,omitempty"`
+	Versions []k8csemverv1.Semver `json:"versions,omitempty"`
 	// Default is the default version to offer users.
-	Default *semver.Semver `json:"default,omitempty"`
+	Default *k8csemverv1.Semver `json:"default,omitempty"`
 
 	// Updates is a list of available and automatic upgrades.
 	// All 'to' versions must be configured in the version list for this orchestrator.
@@ -384,11 +384,11 @@ const (
 // ExternalClusterProviderVersioningConfiguration configures the available and default Kubernetes versions for ExternalCluster Providers.
 type ExternalClusterProviderVersioningConfiguration struct {
 	// Versions lists the available versions.
-	Versions []semver.Semver `json:"versions,omitempty"`
+	Versions []k8csemverv1.Semver `json:"versions,omitempty"`
 	// Default is the default version to offer users.
-	Default *semver.Semver `json:"default,omitempty"`
+	Default *k8csemverv1.Semver `json:"default,omitempty"`
 	// Updates is a list of available upgrades.
-	Updates []semver.Semver `json:"updates,omitempty"`
+	Updates []k8csemverv1.Semver `json:"updates,omitempty"`
 }
 
 // Update represents an update option for a user cluster.

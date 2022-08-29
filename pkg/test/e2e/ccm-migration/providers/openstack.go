@@ -27,7 +27,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
@@ -49,7 +49,7 @@ type OpenstackClusterJig struct {
 	Credentials OpenstackCredentialsType
 }
 
-func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
+func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version k8csemverv1.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
 			name:           utilcluster.MakeClusterName(),

@@ -23,7 +23,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 func TestNewClusterSpec_MarshalJSON(t *testing.T) {
@@ -38,7 +38,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 1: filter username and password from OpenStack",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					DatacenterName: "OpenstackDatacenter",
 					Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -58,7 +58,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 2: client ID and client secret from Azure",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Azure: &kubermaticv1.AzureCloudSpec{
 						ClientID:        valueToBeFiltered,
@@ -78,7 +78,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 3: filter token from Hetzner",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Hetzner: &kubermaticv1.HetznerCloudSpec{
 						Token: valueToBeFiltered,
@@ -89,7 +89,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 4: filter token from DigitalOcean",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 						Token: valueToBeFiltered,
@@ -100,7 +100,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 5: filter usernames and passwords from VSphere",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					VSphere: &kubermaticv1.VSphereCloudSpec{
 						Password: valueToBeFiltered,
@@ -118,7 +118,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 6: filter access key ID and secret access key from AWS",
 			apiv1.ClusterSpec{
-				Version: *semver.NewSemverOrDie("1.2.3"),
+				Version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					AWS: &kubermaticv1.AWSCloudSpec{
 						AccessKeyID:         valueToBeFiltered,

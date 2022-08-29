@@ -33,7 +33,7 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -60,7 +60,7 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func genTestCluster() *kubermaticv1.Cluster {
-	version := *semver.NewSemverOrDie("1.16.3")
+	version := *k8csemverv1.NewSemverOrDie("1.16.3")
 
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -242,7 +242,7 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	}
 
 	for version, isDefault := range upgradesMap {
-		v, err := ksemver.NewSemver(version)
+		v, err := k8csemverv1.NewSemver(version)
 		if err != nil {
 			return nil, err
 		}

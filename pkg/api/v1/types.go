@@ -29,7 +29,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -914,7 +914,7 @@ type ClusterSpec struct {
 	MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// Version desired version of the kubernetes master components
-	Version ksemver.Semver `json:"version"`
+	Version k8csemverv1.Semver `json:"version"`
 
 	// OIDC settings
 	OIDC kubermaticv1.OIDCSettings `json:"oidc,omitempty"`
@@ -992,7 +992,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
 		Cloud                                PublicCloudSpec                        `json:"cloud"`
 		MachineNetworks                      []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
-		Version                              ksemver.Semver                         `json:"version"`
+		Version                              k8csemverv1.Semver                     `json:"version"`
 		OIDC                                 kubermaticv1.OIDCSettings              `json:"oidc"`
 		UpdateWindow                         *kubermaticv1.UpdateWindow             `json:"updateWindow,omitempty"`
 		UsePodSecurityPolicyAdmissionPlugin  bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
@@ -1270,7 +1270,7 @@ func newPublicVMwareCloudDirectorCloudSpec(internal *kubermaticv1.VMwareCloudDir
 // ClusterStatus defines the cluster status.
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
-	Version ksemver.Semver `json:"version"`
+	Version k8csemverv1.Semver `json:"version"`
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
 	// ExternalCCMMigration represents the migration status to the external CCM
@@ -2633,7 +2633,7 @@ type AdmissionPlugin struct {
 	Name   string `json:"name"`
 	Plugin string `json:"plugin"`
 	// FromVersion flag can be empty. It means the plugin fit to all k8s versions
-	FromVersion *ksemver.Semver `json:"fromVersion,omitempty"`
+	FromVersion *k8csemverv1.Semver `json:"fromVersion,omitempty"`
 }
 
 // Seed represents a seed object

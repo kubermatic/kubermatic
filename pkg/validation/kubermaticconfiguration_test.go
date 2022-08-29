@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 func TestValidateKubermaticConfigurationVersions(t *testing.T) {
@@ -84,11 +84,11 @@ func TestValidateKubermaticConfigurationVersions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := kubermaticv1.KubermaticVersioningConfiguration{}
 			if tt.defaultVersion != "" {
-				config.Default = semver.NewSemverOrDie(tt.defaultVersion)
+				config.Default = k8csemverv1.NewSemverOrDie(tt.defaultVersion)
 			}
 
 			for _, v := range tt.versions {
-				version := semver.NewSemverOrDie(v)
+				version := k8csemverv1.NewSemverOrDie(v)
 				config.Versions = append(config.Versions, *version)
 			}
 

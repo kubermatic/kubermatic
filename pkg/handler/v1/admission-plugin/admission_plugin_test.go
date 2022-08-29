@@ -30,7 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +46,7 @@ func init() {
 func TestCredentialEndpoint(t *testing.T) {
 	t.Parallel()
 
-	v114, err := semver.NewSemver("1.14")
+	v114, err := k8csemverv1.NewSemver("1.14")
 	if err != nil {
 		t.Fatal(err)
 	}

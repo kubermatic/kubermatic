@@ -27,7 +27,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -363,13 +363,13 @@ func setInitialClusterVersions(ctx context.Context, client ctrlruntimeclient.Cli
 }
 
 type controlPlaneStatus struct {
-	apiserver         *semver.Semver
-	controllerManager *semver.Semver
-	scheduler         *semver.Semver
-	nodes             *semver.Semver
+	apiserver         *k8csemverv1.Semver
+	controllerManager *k8csemverv1.Semver
+	scheduler         *k8csemverv1.Semver
+	nodes             *k8csemverv1.Semver
 }
 
-func (s *controlPlaneStatus) Equal(b *semver.Semver) bool {
+func (s *controlPlaneStatus) Equal(b *k8csemverv1.Semver) bool {
 	return s.apiserver.Equal(b) && s.controllerManager.Equal(b) && s.scheduler.Equal(b)
 }
 
@@ -388,23 +388,23 @@ func getCurrentControlPlaneVersions(ctx context.Context, client ctrlruntimeclien
 
 	tasks := []struct {
 		name    string
-		updater func(*semver.Semver)
+		updater func(*k8csemverv1.Semver)
 	}{
 		{
 			name: resources.ApiserverDeploymentName,
-			updater: func(v *semver.Semver) {
+			updater: func(v *k8csemverv1.Semver) {
 				result.apiserver = v
 			},
 		},
 		{
 			name: resources.ControllerManagerDeploymentName,
-			updater: func(v *semver.Semver) {
+			updater: func(v *k8csemverv1.Semver) {
 				result.controllerManager = v
 			},
 		},
 		{
 			name: resources.SchedulerDeploymentName,
-			updater: func(v *semver.Semver) {
+			updater: func(v *k8csemverv1.Semver) {
 				result.scheduler = v
 			},
 		},
@@ -428,8 +428,8 @@ func getCurrentControlPlaneVersions(ctx context.Context, client ctrlruntimeclien
 }
 
 // getOldestAvailableVersion finds the ReplicaSet with at least one replica and with the lowest version and returns that version.
-func getOldestAvailableVersion(log *zap.SugaredLogger, replicaSets []appsv1.ReplicaSet) *semver.Semver {
-	var oldest *semver.Semver
+func getOldestAvailableVersion(log *zap.SugaredLogger, replicaSets []appsv1.ReplicaSet) *k8csemverv1.Semver {
+	var oldest *k8csemverv1.Semver
 	for _, rs := range replicaSets {
 		// ignore ReplicaSets with no active pods (note, do not consider the "Ready" status,
 		// as even pods that are not Ready anymore during shutdown can still be active and
@@ -444,7 +444,7 @@ func getOldestAvailableVersion(log *zap.SugaredLogger, replicaSets []appsv1.Repl
 			continue
 		}
 
-		parsedVersion, err := semver.NewSemver(versionLabel)
+		parsedVersion, err := k8csemverv1.NewSemver(versionLabel)
 		if versionLabel == "" {
 			log.Warnw("ReplicaSet has invalid version label", "replicaset", rs.Name, "label", versionLabel, zap.Error(err))
 			continue
@@ -489,7 +489,7 @@ func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames
 	return false
 }
 
-func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*semver.Semver, error) {
+func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*k8csemverv1.Semver, error) {
 	var updateConditions []kubermaticv1.ConditionType
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
@@ -508,7 +508,7 @@ func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.Kubermati
 		return nil, err
 	}
 
-	var newTarget *semver.Semver
+	var newTarget *k8csemverv1.Semver
 
 	if currentVersion.Minor() == targetVersion.Minor() {
 		// When jumping from x.y.0 to x.y.7, we only care if this specific
@@ -516,7 +516,7 @@ func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.Kubermati
 		// update to x.y.5, even if that is the only supported x.y update.
 		for _, version := range versions {
 			if version.Version.Equal(targetVersion) {
-				newTarget = semver.NewSemverOrDie(version.Version.String())
+				newTarget = k8csemverv1.NewSemverOrDie(version.Version.String())
 			}
 		}
 	} else {
@@ -534,7 +534,7 @@ func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.Kubermati
 			}
 
 			if newTarget == nil || version.Version.GreaterThan(newTarget.Semver()) {
-				newTarget = semver.NewSemverOrDie(version.Version.String())
+				newTarget = k8csemverv1.NewSemverOrDie(version.Version.String())
 			}
 		}
 	}
@@ -549,10 +549,10 @@ func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.Kubermati
 }
 
 // normalize ensures that the string representation for semvers is always consistent.
-func normalize(s *semver.Semver) *semver.Semver {
+func normalize(s *k8csemverv1.Semver) *k8csemverv1.Semver {
 	if s == nil {
 		return nil
 	}
 
-	return semver.NewSemverOrDie(s.String())
+	return k8csemverv1.NewSemverOrDie(s.String())
 }

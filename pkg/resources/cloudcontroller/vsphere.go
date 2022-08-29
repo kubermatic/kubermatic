@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -170,7 +170,7 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	return c
 }
 
-func getVsphereCPIVersion(version semver.Semver) string {
+func getVsphereCPIVersion(version k8csemverv1.Semver) string {
 	switch version.MajorMinor() {
 	case v121:
 		return "1.21.3"

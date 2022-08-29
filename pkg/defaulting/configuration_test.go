@@ -19,7 +19,7 @@ package defaulting
 import (
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 func TestAutomaticUpdateRulesMatchVersions(t *testing.T) {
@@ -29,7 +29,7 @@ func TestAutomaticUpdateRulesMatchVersions(t *testing.T) {
 			continue
 		}
 
-		toVersion, err := semver.NewSemver(update.To)
+		toVersion, err := k8csemverv1.NewSemver(update.To)
 		if err != nil {
 			t.Errorf("Version %q in update rule %d is not a valid version: %v", update.To, i, err)
 			continue

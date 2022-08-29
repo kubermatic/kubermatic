@@ -54,7 +54,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -258,11 +258,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 					AccessibleAddons: []string{"addon1", "addon2"},
 				},
 				Versions: kubermaticv1.KubermaticVersioningConfiguration{
-					Versions: []semver.Semver{
-						*semver.NewSemverOrDie("8.8.8"),
-						*semver.NewSemverOrDie("9.9.9"),
-						*semver.NewSemverOrDie("9.9.10"),
-						*semver.NewSemverOrDie("9.11.3"),
+					Versions: []k8csemverv1.Semver{
+						*k8csemverv1.NewSemverOrDie("8.8.8"),
+						*k8csemverv1.NewSemverOrDie("9.9.9"),
+						*k8csemverv1.NewSemverOrDie("9.9.10"),
+						*k8csemverv1.NewSemverOrDie("9.11.3"),
 					},
 				},
 			},
@@ -1034,7 +1034,7 @@ func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntime
 }
 
 func GenCluster(id string, name string, projectID string, creationTime time.Time, modifiers ...func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
-	version := *semver.NewSemverOrDie("9.9.9") // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
+	version := *k8csemverv1.NewSemverOrDie("9.9.9") // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   id,
@@ -1323,10 +1323,10 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 	}
 }
 
-func GenDefaultVersions() []semver.Semver {
-	return []semver.Semver{
-		*semver.NewSemverOrDie("1.22.12"),
-		*semver.NewSemverOrDie("1.23.9"),
+func GenDefaultVersions() []k8csemverv1.Semver {
+	return []k8csemverv1.Semver{
+		*k8csemverv1.NewSemverOrDie("1.22.12"),
+		*k8csemverv1.NewSemverOrDie("1.23.9"),
 	}
 }
 

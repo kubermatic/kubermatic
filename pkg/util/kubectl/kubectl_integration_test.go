@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 )
 
 type kubectlVersionOutput struct {
@@ -51,7 +51,7 @@ func TestVersionSkewIsRespected(t *testing.T) {
 	}
 }
 
-func testVersionSkew(clusterVersison semver.Semver, dockerImage string) error {
+func testVersionSkew(clusterVersison k8csemverv1.Semver, dockerImage string) error {
 	binary, err := BinaryForClusterVersion(&clusterVersison)
 	if err != nil {
 		return fmt.Errorf("no kubectl binary found: %w", err)
@@ -80,7 +80,7 @@ func testVersionSkew(clusterVersison semver.Semver, dockerImage string) error {
 		return fmt.Errorf("failed to decode kubectl output: %w", err)
 	}
 
-	kubectlVersion, err := semver.NewSemver(data.ClientVersion.GitVersion)
+	kubectlVersion, err := k8csemverv1.NewSemver(data.ClientVersion.GitVersion)
 	if err != nil {
 		return fmt.Errorf("failed to parse %q as a semver: %w", data.ClientVersion.GitVersion, err)
 	}

@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -172,7 +172,7 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-func getOSVersion(version semver.Semver) (string, error) {
+func getOSVersion(version k8csemverv1.Semver) (string, error) {
 	switch version.MajorMinor() {
 	case v121:
 		return "1.21.0", nil
@@ -189,7 +189,7 @@ func getOSVersion(version semver.Semver) (string, error) {
 
 // OpenStackCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
-func OpenStackCloudControllerSupported(version semver.Semver) bool {
+func OpenStackCloudControllerSupported(version k8csemverv1.Semver) bool {
 	if _, err := getOSVersion(version); err != nil {
 		return false
 	}

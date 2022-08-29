@@ -25,7 +25,7 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -244,7 +244,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			name: "use-octavia enabled at cluster level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
-					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							UseOctavia: pointer.BoolPtr(true),
@@ -253,7 +253,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -277,14 +277,14 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			name: "use-octavia enabled at seed level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
-					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -310,7 +310,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			name: "use-octavia not set",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
-					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							UseOctavia: pointer.BoolPtr(false),
@@ -319,7 +319,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -345,14 +345,14 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			name: "use-octavia not set",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
-					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Version: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+						ControlPlane: *k8csemverv1.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},

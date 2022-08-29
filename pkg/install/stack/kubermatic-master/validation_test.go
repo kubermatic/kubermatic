@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -28,33 +28,33 @@ import (
 func TestClusterVersionIsConfigured(t *testing.T) {
 	testcases := []struct {
 		name       string
-		version    semver.Semver
+		version    k8csemverv1.Semver
 		versions   kubermaticv1.KubermaticVersioningConfiguration
 		configured bool
 	}{
 		{
 			name:    "version is directly supported",
-			version: *semver.NewSemverOrDie("1.0.0"),
+			version: *k8csemverv1.NewSemverOrDie("1.0.0"),
 			versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: []semver.Semver{
-					*semver.NewSemverOrDie("1.0.0"),
+				Versions: []k8csemverv1.Semver{
+					*k8csemverv1.NewSemverOrDie("1.0.0"),
 				},
 			},
 			configured: true,
 		},
 		{
 			name:    "version is not configured",
-			version: *semver.NewSemverOrDie("1.0.0"),
+			version: *k8csemverv1.NewSemverOrDie("1.0.0"),
 			versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: []semver.Semver{
-					*semver.NewSemverOrDie("2.0.0"),
+				Versions: []k8csemverv1.Semver{
+					*k8csemverv1.NewSemverOrDie("2.0.0"),
 				},
 			},
 			configured: false,
 		},
 		{
 			name:    "update constraint matches because it's auto update",
-			version: *semver.NewSemverOrDie("1.0.0"),
+			version: *k8csemverv1.NewSemverOrDie("1.0.0"),
 			versions: kubermaticv1.KubermaticVersioningConfiguration{
 				Updates: []kubermaticv1.Update{
 					{
@@ -68,7 +68,7 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 		},
 		{
 			name:    "constraint expression matches",
-			version: *semver.NewSemverOrDie("1.2.3"),
+			version: *k8csemverv1.NewSemverOrDie("1.2.3"),
 			versions: kubermaticv1.KubermaticVersioningConfiguration{
 				Updates: []kubermaticv1.Update{
 					{
@@ -82,7 +82,7 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 		},
 		{
 			name:    "update constraint does not match because it's no auto update",
-			version: *semver.NewSemverOrDie("1.0.0"),
+			version: *k8csemverv1.NewSemverOrDie("1.0.0"),
 			versions: kubermaticv1.KubermaticVersioningConfiguration{
 				Updates: []kubermaticv1.Update{
 					{

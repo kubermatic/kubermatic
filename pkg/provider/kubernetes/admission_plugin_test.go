@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	k8csemverv1 "k8c.io/kubermatic/v2/pkg/semver/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,11 +35,11 @@ import (
 func TestListAdmissionPluginsFromVersion(t *testing.T) {
 	t.Parallel()
 
-	version113, err := semver.NewSemver("v1.13")
+	version113, err := k8csemverv1.NewSemver("v1.13")
 	if err != nil {
 		t.Fatal(err)
 	}
-	version116, err := semver.NewSemver("v1.16")
+	version116, err := k8csemverv1.NewSemver("v1.16")
 	if err != nil {
 		t.Fatal(err)
 	}
