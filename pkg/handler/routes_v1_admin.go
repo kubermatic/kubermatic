@@ -611,7 +611,7 @@ func (r Routing) ListMeteringReportConfigurations() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: empty
+//       201: MeteringReportConfiguration
 //       401: empty
 //       403: empty
 func (r Routing) CreateMeteringReportConfiguration() http.Handler {
@@ -638,7 +638,7 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: empty
+//       200: MeteringReportConfiguration
 //       401: empty
 //       403: empty
 func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
@@ -648,7 +648,7 @@ func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeUpdateMeteringReportConfigurationReq,
-		SetStatusCreatedHeader(EncodeJSON),
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

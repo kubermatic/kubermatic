@@ -62,16 +62,27 @@ func NewCreateMeteringReportConfigurationCreated() *CreateMeteringReportConfigur
 
 /* CreateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
 
-EmptyResponse is a empty response
+MeteringReportConfiguration
 */
 type CreateMeteringReportConfigurationCreated struct {
+	Payload *models.MeteringReportConfiguration
 }
 
 func (o *CreateMeteringReportConfigurationCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationCreated ", 201)
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationCreated  %+v", 201, o.Payload)
+}
+func (o *CreateMeteringReportConfigurationCreated) GetPayload() *models.MeteringReportConfiguration {
+	return o.Payload
 }
 
 func (o *CreateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.MeteringReportConfiguration)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
@@ -172,6 +183,9 @@ type CreateMeteringReportConfigurationBody struct {
 
 	// schedule
 	Schedule string `json:"schedule,omitempty"`
+
+	// types
+	Types []string `json:"types"`
 }
 
 // Validate validates this create metering report configuration body

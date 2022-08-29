@@ -33,6 +33,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -53,6 +54,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 					Schedule:  "0 1 * * 6",
 					Interval:  7,
 					Retention: &retention,
+					Types:     []string{"cluster"},
 				},
 			},
 		}
@@ -73,7 +75,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusOK,
-			expectedResponse:       `[{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14}]`,
+			expectedResponse:       `[{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14,"types":["cluster"]}]`,
 		},
 		// scenario 2
 		{
@@ -82,7 +84,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusOK,
-			expectedResponse:       `{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14}`,
+			expectedResponse:       `{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14,"types":["cluster"]}`,
 		},
 		// scenario 3
 		{
@@ -114,24 +116,26 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		reqURL := "/api/v1/admin/metering/configurations/reports"
-		if tc.reportName != "" {
-			reqURL += "/" + tc.reportName
-		}
-		req := httptest.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
-		res := httptest.NewRecorder()
+		t.Run(tc.name, func(t *testing.T) {
+			reqURL := "/api/v1/admin/metering/configurations/reports"
+			if tc.reportName != "" {
+				reqURL += "/" + tc.reportName
+			}
+			req := httptest.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
+			res := httptest.NewRecorder()
 
-		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
-		if err != nil {
-			t.Fatalf("failed to create test endpoint")
-		}
-		router.ServeHTTP(res, req)
+			router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint")
+			}
+			router.ServeHTTP(res, req)
 
-		if res.Code != tc.httpStatus {
-			t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
-		}
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
 
-		test.CompareWithResult(t, res, tc.expectedResponse)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
 	}
 }
 
@@ -147,6 +151,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 				"weekly": {
 					Schedule: "0 1 * * 6",
 					Interval: 7,
+					Types:    metering.ReportTypes.List(),
 				},
 			},
 		}
@@ -173,7 +178,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusCreated,
-			expectedResponse:       `{}`,
+			expectedResponse:       `{"name":"monthly","schedule":"1 1 1 * *","interval":30,"retention":60,"types":["cluster","namespace"]}`,
 		},
 		// scenario 2
 		{
@@ -254,27 +259,43 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			httpStatus:             http.StatusBadRequest,
 			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be smaller than 1."}}`,
 		},
+		// scenario 8
+		{
+			name:       "Create new metering report configuration. Invalid report type.",
+			reportName: "monthly",
+			body: `{
+				"interval": 30,
+				"schedule": "1 1 1 * *",
+				"types": ["cluster","invalid_type"]
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"invalid metering type: invalid_type"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
-		reqURL := "/api/v1/admin/metering/configurations/reports"
-		if tc.reportName != "" {
-			reqURL += "/" + tc.reportName
-		}
-		req := httptest.NewRequest(http.MethodPost, reqURL, strings.NewReader(tc.body))
-		res := httptest.NewRecorder()
+		t.Run(tc.name, func(t *testing.T) {
+			reqURL := "/api/v1/admin/metering/configurations/reports"
+			if tc.reportName != "" {
+				reqURL += "/" + tc.reportName
+			}
+			req := httptest.NewRequest(http.MethodPost, reqURL, strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
 
-		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
-		if err != nil {
-			t.Fatalf("failed to create test endpoint")
-		}
-		router.ServeHTTP(res, req)
+			router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint")
+			}
+			router.ServeHTTP(res, req)
 
-		if res.Code != tc.httpStatus {
-			t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
-		}
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
 
-		test.CompareWithResult(t, res, tc.expectedResponse)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
 	}
 }
 
@@ -292,6 +313,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 					Schedule:  "0 1 * * 6",
 					Interval:  7,
 					Retention: &retention,
+					Types:     metering.ReportTypes.List(),
 				},
 			},
 		}
@@ -317,8 +339,8 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
-			httpStatus:             http.StatusCreated,
-			expectedResponse:       `{}`,
+			httpStatus:             http.StatusOK,
+			expectedResponse:       `{"name":"weekly","schedule":"1 1 1 * *","interval":30,"retention":180,"types":["cluster","namespace"]}`,
 		},
 		// scenario 2
 		{
@@ -381,24 +403,62 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			httpStatus:             http.StatusNotFound,
 			expectedResponse:       `{"error":{"code":404,"message":"report configuration \"monthly\" does not exists"}}`,
 		},
+		// scenario 7
+		{
+			name:       "Update report types of metering report configuration.",
+			reportName: "weekly",
+			body: `{
+				"types": ["namespace"] 
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusOK,
+			expectedResponse:       `{"name":"weekly","schedule":"0 1 * * 6","interval":7,"types":["namespace"]}`,
+		},
+		// scenario 8
+		{
+			name:       "Update report types of metering report configuration. Empty types list.",
+			reportName: "weekly",
+			body: `{
+				"types": [] 
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"at least one report type is required"}}`,
+		},
+		// scenario 9
+		{
+			name:       "Update report types of metering report configuration. Invalid type.",
+			reportName: "weekly",
+			body: `{
+				"types": ["invalid"] 
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"invalid metering type: invalid"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
-		reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
-		req := httptest.NewRequest(http.MethodPut, reqURL, strings.NewReader(tc.body))
-		res := httptest.NewRecorder()
+		t.Run(tc.name, func(t *testing.T) {
+			reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
+			req := httptest.NewRequest(http.MethodPut, reqURL, strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
 
-		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
-		if err != nil {
-			t.Fatalf("failed to create test endpoint")
-		}
-		router.ServeHTTP(res, req)
+			router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint")
+			}
+			router.ServeHTTP(res, req)
 
-		if res.Code != tc.httpStatus {
-			t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
-		}
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
 
-		test.CompareWithResult(t, res, tc.expectedResponse)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
 	}
 }
 
@@ -414,6 +474,7 @@ func TestDeleteMeteringReportConfigEndpoint(t *testing.T) {
 				"weekly": {
 					Schedule: "0 1 * * 6",
 					Interval: 7,
+					Types:    metering.ReportTypes.List(),
 				},
 			},
 		}
@@ -448,20 +509,22 @@ func TestDeleteMeteringReportConfigEndpoint(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
-		req := httptest.NewRequest(http.MethodDelete, reqURL, strings.NewReader(""))
-		res := httptest.NewRecorder()
+		t.Run(tc.name, func(t *testing.T) {
+			reqURL := fmt.Sprintf("/api/v1/admin/metering/configurations/reports/%s", tc.reportName)
+			req := httptest.NewRequest(http.MethodDelete, reqURL, strings.NewReader(""))
+			res := httptest.NewRecorder()
 
-		router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
-		if err != nil {
-			t.Fatalf("failed to create test endpoint")
-		}
-		router.ServeHTTP(res, req)
+			router, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint")
+			}
+			router.ServeHTTP(res, req)
 
-		if res.Code != tc.httpStatus {
-			t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
-		}
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
 
-		test.CompareWithResult(t, res, tc.expectedResponse)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
 	}
 }

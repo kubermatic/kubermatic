@@ -45,11 +45,11 @@ func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 	return metering.ListMeteringReportConfigurations(seedsGetter)
 }
 
-func createMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	return metering.CreateMeteringReportConfiguration(ctx, request, seedsGetter, masterClient)
 }
 
-func updateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
+func updateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	return metering.UpdateMeteringReportConfiguration(ctx, request, seedsGetter, masterClient)
 }
 
