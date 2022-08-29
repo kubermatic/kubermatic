@@ -26,7 +26,6 @@ import (
 	"k8s.io/client-go/tools/metrics"
 )
 
-// Copied from https://github.com/kubernetes/kubernetes/blob/master/pkg/client/metrics/prometheus/prometheus.go
 var (
 	// requestLatency is a Prometheus Summary metric type partitioned by
 	// "verb" and "url" labels. It is used for the rest client latency metrics.

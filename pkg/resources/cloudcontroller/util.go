@@ -53,9 +53,7 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
 		// Falling back to the in-tree CloudProvider mitigates the problem, even if
 		// not all features are expected to work properly (e.g.
-		// `manage-security-groups` should be set to false in cloud config, see
-		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-		// for more details).
+		// `manage-security-groups` should be set to false in cloud config).
 		//
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
@@ -103,9 +101,7 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
 		// Falling back to the in-tree CloudProvider mitigates the problem, even if
 		// not all features are expected to work properly (e.g.
-		// `manage-security-groups` should be set to false in cloud config, see
-		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-		// for more details).
+		// `manage-security-groups` should be set to false in cloud config).
 		//
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is

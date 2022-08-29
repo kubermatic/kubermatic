@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,20 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: prometheus
-version: v9.9.9-dev
-appVersion: v2.37.0
-description: Prometheus Monitoring for Kubernetes
-keywords:
-  - kubermatic
-  - monitoring
-  - prometheus
-  - thanos
-home: https://prometheus.io/
-sources:
-  - https://github.com/helm/charts/tree/master/stable/prometheus
-  - https://github.com/thanos-io/thanos/tree/main/tutorials/kubernetes-helm
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+### This script runs the lychee link checker against all Markdown, HTML,
+### Go and YAML files. This script is not part of the pre-verify Prowjob.
+
+set -euo pipefail
+
+cd $(dirname $0)/..
+source hack/lib.sh
+
+docker run \
+  --volume $(pwd):/test \
+  --workdir /test \
+  --rm \
+  --tty \
+  lycheeverse/lychee \
+  --config .lychee.toml \
+  "**/*.go" \
+  "**/*.yaml" \
+  "**/*.yml" \
+  "**/*.md" \
+  "**/*.txt" \
+  "**/*.sh" \
+  "**/Dockerfile"

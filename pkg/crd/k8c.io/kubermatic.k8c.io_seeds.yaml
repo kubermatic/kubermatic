@@ -381,8 +381,8 @@ spec:
                               type: boolean
                             manageSecurityGroups:
                               description: 'Optional: Gets mapped to the "manage-security-groups"
-                                setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-                                This setting defaults to true.'
+                                setting in the cloud config. This setting defaults
+                                to true.'
                               type: boolean
                             nodeSizeRequirements:
                               properties:
@@ -402,8 +402,8 @@ spec:
                               type: string
                             trustDevicePath:
                               description: 'Optional: Gets mapped to the "trust-device-path"
-                                setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
-                                This setting defaults to false.'
+                                setting in the cloud config. This setting defaults
+                                to false.'
                               type: boolean
                             useOctavia:
                               description: 'Optional: Gets mapped to the "use-octavia"
@@ -425,7 +425,7 @@ spec:
                             facilities:
                               description: The list of enabled facilities, for example
                                 "ams1", for a full list of available facilities see
-                                https://support.packet.com/kb/articles/data-centers
+                                https://metal.equinix.com/developers/docs/locations/facilities/
                               items:
                                 type: string
                               type: array

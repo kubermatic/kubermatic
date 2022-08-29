@@ -25382,7 +25382,7 @@
           "x-go-name": "IPv6Enabled"
         },
         "manageSecurityGroups": {
-          "description": "Optional: Gets mapped to the \"manage-security-groups\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer\nThis setting defaults to true.",
+          "description": "Optional: Gets mapped to the \"manage-security-groups\" setting in the cloud config.\nThis setting defaults to true.",
           "type": "boolean",
           "x-go-name": "ManageSecurityGroups"
         },
@@ -25394,7 +25394,7 @@
           "x-go-name": "Region"
         },
         "trustDevicePath": {
-          "description": "Optional: Gets mapped to the \"trust-device-path\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage\nThis setting defaults to false.",
+          "description": "Optional: Gets mapped to the \"trust-device-path\" setting in the cloud config.\nThis setting defaults to false.",
           "type": "boolean",
           "x-go-name": "TrustDevicePath"
         },
@@ -25411,7 +25411,7 @@
       "title": "DatacenterSpecPacket describes a Packet datacenter.",
       "properties": {
         "facilities": {
-          "description": "The list of enabled facilities, for example \"ams1\", for a full list of available\nfacilities see https://support.packet.com/kb/articles/data-centers",
+          "description": "The list of enabled facilities, for example \"ams1\", for a full list of available\nfacilities see https://metal.equinix.com/developers/docs/locations/facilities/",
           "type": "array",
           "items": {
             "type": "string"
