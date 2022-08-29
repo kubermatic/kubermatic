@@ -45,8 +45,8 @@ spec:
       openAPIV3Schema:
         description: Cluster represents a Kubermatic Kubernetes Platform user cluster.
           Cluster objects exist on Seed clusters and each user cluster consists of
-          a namespace containing the Kubernetes control plane, additional pods (like
-          Prometheus).
+          a namespace containing the Kubernetes control plane and additional pods
+          (like Prometheus or the machine-controller).
         properties:
           address:
             description: Address contains the IPs/URLs to access the cluster control

@@ -37,10 +37,9 @@ type PresetList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Preset is the type representing a Preset. Presets are preconfigured
-// cloud provider credentials that can be applied to new clusters. This
-// frees end users from having to know the actual credentials used for
-// their clusters.
+// Presets are preconfigured cloud provider credentials that can be applied
+// to new clusters. This frees end users from having to know the actual
+// credentials used for their clusters.
 type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

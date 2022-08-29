@@ -18,9 +18,9 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Preset is the type representing a Preset. Presets are preconfigured
-          cloud provider credentials that can be applied to new clusters. This frees
-          end users from having to know the actual credentials used for their clusters.
+        description: Presets are preconfigured cloud provider credentials that can
+          be applied to new clusters. This frees end users from having to know the
+          actual credentials used for their clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

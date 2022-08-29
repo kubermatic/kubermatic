@@ -105,8 +105,8 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 
 // Cluster represents a Kubermatic Kubernetes Platform user cluster.
 // Cluster objects exist on Seed clusters and each user cluster consists
-// of a namespace containing the Kubernetes control plane, additional
-// pods (like Prometheus).
+// of a namespace containing the Kubernetes control plane and additional
+// pods (like Prometheus or the machine-controller).
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
