@@ -184,7 +184,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 			Annotations: application.Annotations,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:        application.Spec.Namespace.Name,
 				Create:      application.Spec.Namespace.Create,
 				Labels:      application.Spec.Namespace.Labels,

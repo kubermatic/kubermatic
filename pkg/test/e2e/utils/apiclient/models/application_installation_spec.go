@@ -22,7 +22,7 @@ type ApplicationInstallationSpec struct {
 	ApplicationRef *ApplicationRef `json:"applicationRef,omitempty"`
 
 	// namespace
-	Namespace *NamespaceSpec `json:"namespace,omitempty"`
+	Namespace *AppNamespaceSpec `json:"namespace,omitempty"`
 
 	// values
 	Values RawExtension `json:"values,omitempty"`
