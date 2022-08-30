@@ -75,7 +75,7 @@ func ListGroupProjectBindings(ctx context.Context, request interface{},
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	userInfo, err := getUserInfo(ctx, userInfoGetter, kubermaticProject.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -153,7 +153,7 @@ func GetGroupProjectBinding(ctx context.Context, request interface{},
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	userInfo, err := getUserInfo(ctx, userInfoGetter, kubermaticProject.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -228,7 +228,7 @@ func CreateGroupProjectBinding(ctx context.Context, request interface{},
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	userInfo, err := getUserInfo(ctx, userInfoGetter, kubermaticProject.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func DeleteGroupProjectBinding(ctx context.Context, request interface{},
 		return common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	userInfo, err := getUserInfo(ctx, userInfoGetter, kubermaticProject.Name)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
@@ -356,7 +356,7 @@ func PatchGroupProjectBinding(ctx context.Context, request interface{},
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	userInfo, err := getUserInfo(ctx, userInfoGetter, kubermaticProject.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -395,4 +395,20 @@ func validateRole(role string) error {
 		return utilerrors.NewBadRequest("allowed roles are: %v", strings.Join(allowedRoles.List(), ", "))
 	}
 	return nil
+}
+
+func getUserInfo(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, error) {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if !userInfo.IsAdmin {
+		userInfo, err = userInfoGetter(ctx, projectID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return userInfo, err
 }

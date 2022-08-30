@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=always;externalCloudProvider
+// +kubebuilder:validation:Enum=always;externalCloudProvider;nonAMD64WithCanalAndIPVS
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
@@ -245,14 +245,14 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	DisableDefaultScrapingConfigs bool `json:"disableDefaultScrapingConfigs,omitempty"`
 	// CustomRules can be used to inject custom recording and alerting rules. This field
 	// must be a YAML-formatted string with a `group` element at its root, as documented
-	// on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+	// on https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/.
 	// This value is treated as a Go template, which allows to inject dynamic values like
 	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
 	// and the documentation for more information on the available fields.
 	CustomRules string `json:"customRules,omitempty"`
 	// CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
 	// YAML-formatted string containing an array of scrape configurations as documented
-	// on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+	// on https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
 	// This value is treated as a Go template, which allows to inject dynamic values like
 	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
 	// and the documentation for more information on the available fields.

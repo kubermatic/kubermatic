@@ -18,9 +18,9 @@ package aks
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
@@ -344,16 +344,14 @@ func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) err
 func DecodeError(err error) error {
 	var aerr *azcore.ResponseError
 	if errors.As(err, &aerr) {
-		type response struct {
-			Code    string `json:"code,omitempty"`
-			Message string `json:"message,omitempty"`
-			SubCode string `json:"subcode,omitempty"`
+		if aerr.RawResponse != nil {
+			byteErr, err := io.ReadAll(aerr.RawResponse.Body)
+			if err != nil {
+				return err
+			}
+
+			return utilerrors.New(aerr.StatusCode, string(byteErr))
 		}
-		responseMap := map[string]response{}
-		if err := json.NewDecoder(aerr.RawResponse.Body).Decode(&responseMap); err != nil {
-			return err
-		}
-		return utilerrors.New(aerr.StatusCode, responseMap["error"].Message)
 	}
 	return err
 }

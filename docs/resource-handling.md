@@ -81,8 +81,8 @@ For this we created the typed `Reconcile*` functions.
 ## ReconcileSecrets aka "Reduce the type casting"
 
 To avoid certain boilerplate code we introduced typed `Reconcile*` functions.
-Those functions are being generated using `go generate`: https://github.com/kubermatic/kubermatic/tree/master/api/codegen/reconcile
-The result is written into: https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/zz_generated_reconcile.go
+Those functions are being generated using `go generate`: https://github.com/kubermatic/kubermatic/tree/master/codegen/reconcile
+The result is written into: https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/reconciling/zz_generated_reconcile.go
 
 `ReconcileSecrets` is a typed convenience function around `EnsureNamedObject`.
 It offers:

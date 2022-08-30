@@ -58,8 +58,8 @@ type SSHKeySpec struct {
 	Project string `json:"project"`
 	// Clusters is the list of cluster names that this SSH key is assigned to.
 	Clusters []string `json:"clusters"`
-	// Fingerprint is calculated on the server-side and doesn't need to be set
-	// by clients.
+	// Fingerprint is calculated server-side based on the supplied public key
+	// and doesn't need to be set by clients.
 	// +optional
 	Fingerprint string `json:"fingerprint"`
 	// PublicKey is the SSH public key.

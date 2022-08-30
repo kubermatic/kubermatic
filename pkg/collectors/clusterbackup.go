@@ -180,6 +180,10 @@ func (c *clusterBackupCollector) setMetricsForCluster(ch chan<- prometheus.Metri
 }
 
 func (c *clusterBackupCollector) getS3Client(ctx context.Context, destination *kubermaticv1.BackupDestination) (*minio.Client, error) {
+	if destination.Credentials == nil {
+		return nil, fmt.Errorf("credentials not set for backup destination %q", destination)
+	}
+
 	key := types.NamespacedName{
 		Name:      destination.Credentials.Name,
 		Namespace: destination.Credentials.Namespace,

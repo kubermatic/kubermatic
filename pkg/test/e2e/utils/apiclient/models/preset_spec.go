@@ -18,10 +18,13 @@ import (
 // swagger:model PresetSpec
 type PresetSpec struct {
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// required emails
+	// RequiredEmails is a list of e-mail addresses that this presets should
+	// be restricted to. Each item in the list can be either a full e-mail
+	// address or just a domain name. This restriction is only enforced in the
+	// KKP API.
 	RequiredEmails []string `json:"requiredEmails"`
 
 	// aks

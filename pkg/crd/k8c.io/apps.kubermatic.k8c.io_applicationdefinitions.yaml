@@ -36,6 +36,11 @@ spec:
           spec:
             description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
             properties:
+              defaultValues:
+                description: DefaultValues describe overrides for manifest-rendering
+                  in UI when creating an application.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               description:
                 description: Description of the application. what is its purpose
                 type: string
@@ -45,59 +50,32 @@ spec:
                 - helm
                 type: string
               versions:
-                description: available version for this application
+                description: Available version for this application
                 items:
                   properties:
                     template:
                       description: Template defines how application is installed (source
                         provenance, Method...)
                       properties:
-                        formSpec:
-                          description: Define the valued that can be override for
-                            the installation
-                          items:
-                            properties:
-                              displayName:
-                                description: DisplayName is visible in the UI
-                                type: string
-                              helpText:
-                                description: HelpText is visible in the UI next to
-                                  the field
-                                type: string
-                              internalName:
-                                description: InternalName is used internally to save
-                                  in the ApplicationInstallation object
-                                type: string
-                              required:
-                                description: Required indicates if the control has
-                                  to be set
-                                type: boolean
-                              type:
-                                description: Type of displayed control
-                                enum:
-                                - number
-                                - boolean
-                                - text
-                                - text-area
-                                type: string
-                            required:
-                            - displayName
-                            - internalName
-                            - type
-                            type: object
-                          type: array
                         source:
                           description: Defined how the source of the application (e.g
-                            Helm chart) is retrieved
+                            Helm chart) is retrieved. Exactly one type of source must
+                            be defined.
                           properties:
                             git:
-                              description: Get application to install from a Git repository
+                              description: Install application from a Git repository
                               properties:
                                 credentials:
-                                  description: Credentials holds the git credentials
+                                  description: Credentials are optional and holds
+                                    the git credentials
                                   properties:
                                     method:
-                                      description: Authentication method
+                                      description: Authentication method. Either password
+                                        or token or ssh-key. if method is password
+                                        then username and password must be defined.
+                                        if method is token then token must be defined.
+                                        if method is ssh-key then ssh-key must be
+                                        defined.
                                       enum:
                                       - password
                                       - token
@@ -106,8 +84,10 @@ spec:
                                     password:
                                       description: Password holds the ref and key
                                         in the secret for the Password credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
+                                        The Secret must exist in the namespace where
+                                        KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -129,8 +109,11 @@ spec:
                                       x-kubernetes-map-type: atomic
                                     sshKey:
                                       description: SSHKey holds the ref and key in
-                                        the secret for the SshKey credential. Secret
-                                        must exist in the namespace where KKP is installed.
+                                        the secret for the SshKey credential. The
+                                        Secret must exist in the namespace where KKP
+                                        is installed (default is "kubermatic"). The
+                                        Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -152,8 +135,11 @@ spec:
                                       x-kubernetes-map-type: atomic
                                     token:
                                       description: Token holds the ref and key in
-                                        the secret for the token credential. Secret
-                                        must exist in the namespace where KKP is installed.
+                                        the secret for the token credential. The Secret
+                                        must exist in the namespace where KKP is installed
+                                        (default is "kubermatic"). The Secret must
+                                        be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -176,8 +162,10 @@ spec:
                                     username:
                                       description: Username holds the ref and key
                                         in the secret for the username credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
+                                        The Secret must exist in the namespace where
+                                        KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -205,10 +193,10 @@ spec:
                                     default is repository root
                                   type: string
                                 ref:
-                                  description: "Git reference to checkout. \n For
-                                    large repositories, we recommend to either use
-                                    Tag, Branch or Branch+Commit. This allows a shallow
-                                    clone, which dramatically speeds up performance"
+                                  description: Git reference to checkout. For large
+                                    repositories, we recommend to either use Tag,
+                                    Branch or Branch+Commit. This allows a shallow
+                                    clone, which dramatically speeds up performance
                                   properties:
                                     branch:
                                       description: Branch to checkout. Only the last
@@ -227,7 +215,9 @@ spec:
                                       type: string
                                   type: object
                                 remote:
-                                  description: URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+                                  description: URL to the repository. Can be HTTP(s)
+                                    (e.g. https://example.com/myrepo) or SSH (e.g.
+                                    git://example.com[:port]/path/to/repo.git/)
                                   minLength: 1
                                   type: string
                               required:
@@ -235,26 +225,29 @@ spec:
                               - remote
                               type: object
                             helm:
-                              description: Get application to install from a Helm
-                                repository
+                              description: Install Application from a Helm repository
                               properties:
                                 chartName:
-                                  description: Name of the Chart
+                                  description: Name of the Chart.
                                   minLength: 1
                                   type: string
                                 chartVersion:
-                                  description: Version of the Chart
+                                  description: Version of the Chart.
                                   minLength: 1
                                   type: string
                                 credentials:
-                                  description: Credentials hold the ref to the secret
-                                    with helm credentials
+                                  description: Credentials are optional and hold the
+                                    ref to the secret with helm credentials. Either
+                                    username / Password or registryConfigFile can
+                                    be defined.
                                   properties:
                                     password:
                                       description: Password holds the ref and key
                                         in the secret for the Password credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
+                                        The Secret must exist in the namespace where
+                                        KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -279,8 +272,10 @@ spec:
                                         and key in the secret for the registry credential
                                         file. The value is dockercfg file that follows
                                         the same format rules as ~/.docker/config.json
-                                        The Secret must exist in the namespace where
-                                        KKP is installed.
+                                        The The Secret must exist in the namespace
+                                        where KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -303,8 +298,10 @@ spec:
                                     username:
                                       description: Username holds the ref and key
                                         in the secret for the username credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
+                                        The Secret must exist in the namespace where
+                                        KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:`
+                                        set to helm or git
                                       properties:
                                         key:
                                           description: The key of the secret to select
@@ -341,7 +338,8 @@ spec:
                       - source
                       type: object
                     version:
-                      description: Version of the application (eg v1.2.3)
+                      description: Version of the application (e.g. v1.2.3)
+                      pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
                       type: string
                   required:
                   - template

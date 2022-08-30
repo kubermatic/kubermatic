@@ -425,14 +425,14 @@ spec:
     monitoring:
       # CustomRules can be used to inject custom recording and alerting rules. This field
       # must be a YAML-formatted string with a `group` element at its root, as documented
-      # on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+      # on https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/.
       # This value is treated as a Go template, which allows to inject dynamic values like
       # the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
       # and the documentation for more information on the available fields.
       customRules: ""
       # CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
       # YAML-formatted string containing an array of scrape configurations as documented
-      # on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+      # on https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
       # This value is treated as a Go template, which allows to inject dynamic values like
       # the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
       # and the documentation for more information on the available fields.
@@ -474,9 +474,9 @@ spec:
         updates: null
         # Versions lists the available versions.
         versions:
+          - v1.24
           - v1.23
           - v1.22
-          - v1.21
       eks:
         # Default is the default version to offer users.
         default: v1.22
@@ -484,10 +484,10 @@ spec:
         updates: null
         # Versions lists the available versions.
         versions:
+          - v1.23
           - v1.22
           - v1.21
           - v1.20
-          - v1.19
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -524,7 +524,7 @@ spec:
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.22.11
+        to: 1.22.12
       - from: 1.22.*
         to: 1.22.*
       - automatic: true

@@ -24,6 +24,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -64,7 +65,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter,
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
-		if cloud.ProviderName == "" {
+		if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 			return upgrades, nil
 		}
 		if apiCluster.Status.State != apiv2.RunningExternalClusterState {
@@ -120,7 +121,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
 		upgrades := make([]*apiv1.MasterVersion, 0)
 		cloud := cluster.Spec.CloudSpec
-		if cloud.ProviderName == "" {
+		if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 			return upgrades, nil
 		}
 		if apiCluster.Status.State != apiv2.RunningExternalClusterState {

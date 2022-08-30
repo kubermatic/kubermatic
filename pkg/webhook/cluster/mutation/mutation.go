@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -159,7 +160,6 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 }
 
 // mutateCreate is an addition to regular defaulting for new clusters.
-// at the time of writing it handles features that should only be enabled for new clusters.
 func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
 	if newCluster.Spec.Features == nil {
 		newCluster.Spec.Features = map[string]bool{}
@@ -169,6 +169,15 @@ func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error 
 	if _, ok := newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
 		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
+
+	// Set the annotation for the KKP 2.21 addon migration here; this prevents new
+	// clusters (created after a system has been updated from 2.20 to 2.21) from
+	// also being needlessly migrated (i.e. the addon is going to be installed twice).
+	// TODO: Remove this in KKP 2.22.
+	if newCluster.Annotations == nil {
+		newCluster.Annotations = map[string]string{}
+	}
+	newCluster.Annotations[resources.AWSNodeTerminationHandlerMigrationAnnotation] = "yes"
 
 	return nil
 }

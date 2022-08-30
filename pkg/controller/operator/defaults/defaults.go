@@ -228,7 +228,7 @@ var (
 			{
 				// Auto-upgrade unsupported clusters.
 				From:      "1.21.*",
-				To:        "1.22.11",
+				To:        "1.22.12",
 				Automatic: pointer.BoolPtr(true),
 			},
 
@@ -296,23 +296,21 @@ var (
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
 		Default: semver.NewSemverOrDie("v1.22"),
 		Versions: []semver.Semver{
+			newSemver("v1.23"),
 			newSemver("v1.22"),
 			newSemver("v1.21"),
 			newSemver("v1.20"),
-			newSemver("v1.19"),
 		},
 	}
 
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		// List of Supported versions
+		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
 		Default: semver.NewSemverOrDie("v1.22"),
 		Versions: []semver.Semver{
-			// List of Supported versions
-			// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-			// v1.24 is a Preview version (not Production ready).
-			// newSemver("v1.24"),
+			newSemver("v1.24"),
 			newSemver("v1.23"),
 			newSemver("v1.22"),
-			newSemver("v1.21"),
 		},
 	}
 

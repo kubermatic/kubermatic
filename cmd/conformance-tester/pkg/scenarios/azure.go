@@ -44,10 +44,11 @@ func (s *azureScenario) APICluster(secrets types.Secrets) *apimodels.CreateClust
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: secrets.Azure.KKPDatacenter,
 					Azure: &apimodels.AzureCloudSpec{
-						ClientID:       secrets.Azure.ClientID,
-						ClientSecret:   secrets.Azure.ClientSecret,
-						SubscriptionID: secrets.Azure.SubscriptionID,
-						TenantID:       secrets.Azure.TenantID,
+						ClientID:        secrets.Azure.ClientID,
+						ClientSecret:    secrets.Azure.ClientSecret,
+						SubscriptionID:  secrets.Azure.SubscriptionID,
+						TenantID:        secrets.Azure.TenantID,
+						LoadBalancerSKU: apimodels.LBSKU("standard"),
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -62,10 +63,11 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Azure.KKPDatacenter,
 			Azure: &kubermaticv1.AzureCloudSpec{
-				ClientID:       secrets.Azure.ClientID,
-				ClientSecret:   secrets.Azure.ClientSecret,
-				SubscriptionID: secrets.Azure.SubscriptionID,
-				TenantID:       secrets.Azure.TenantID,
+				ClientID:        secrets.Azure.ClientID,
+				ClientSecret:    secrets.Azure.ClientSecret,
+				SubscriptionID:  secrets.Azure.SubscriptionID,
+				TenantID:        secrets.Azure.TenantID,
+				LoadBalancerSKU: kubermaticv1.AzureStandardLBSKU,
 			},
 		},
 		Version: s.version,

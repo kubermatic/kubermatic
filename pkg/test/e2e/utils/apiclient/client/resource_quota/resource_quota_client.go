@@ -36,7 +36,7 @@ type ClientService interface {
 
 	ListResourceQuotas(params *ListResourceQuotasParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListResourceQuotasOK, error)
 
-	PatchResourceQuota(params *PatchResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchResourceQuotaOK, error)
+	PutResourceQuota(params *PutResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutResourceQuotaOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -194,22 +194,22 @@ func (a *Client) ListResourceQuotas(params *ListResourceQuotasParams, authInfo r
 }
 
 /*
-  PatchResourceQuota updates an existing resource quota
+  PutResourceQuota updates an existing resource quota
 */
-func (a *Client) PatchResourceQuota(params *PatchResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchResourceQuotaOK, error) {
+func (a *Client) PutResourceQuota(params *PutResourceQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutResourceQuotaOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewPatchResourceQuotaParams()
+		params = NewPutResourceQuotaParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "patchResourceQuota",
-		Method:             "PATCH",
+		ID:                 "putResourceQuota",
+		Method:             "PUT",
 		PathPattern:        "/api/v2/quotas/{quota_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &PatchResourceQuotaReader{formats: a.formats},
+		Reader:             &PutResourceQuotaReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -222,12 +222,12 @@ func (a *Client) PatchResourceQuota(params *PatchResourceQuotaParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*PatchResourceQuotaOK)
+	success, ok := result.(*PutResourceQuotaOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*PatchResourceQuotaDefault)
+	unexpectedSuccess := result.(*PutResourceQuotaDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

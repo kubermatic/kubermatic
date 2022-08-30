@@ -51,7 +51,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.35.1
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.53.0
+	github.com/kubermatic/machine-controller v1.54.0
 	github.com/minio/minio-go/v7 v7.0.31
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
@@ -90,7 +90,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.9.1
 	k8c.io/kubeone v1.4.1-0.20220531113023-c1f699725c2a // kubeone pkg: "k8c.io/kubeone/pkg/fail" is not released yet, hence importing @latestcommit
-	k8c.io/operating-system-manager v0.6.0
+	k8c.io/operating-system-manager v1.0.0
 	k8s.io/api v0.24.2
 	k8s.io/apiextensions-apiserver v0.24.2
 	k8s.io/apimachinery v0.24.2

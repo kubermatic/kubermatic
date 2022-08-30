@@ -73,7 +73,7 @@ By making a contribution to this project, I certify that:
 
 Kubermatic Kubernetes Platform currently uses the general Kubermatic email list and Slack channel:
 - Email: [kubermatic-dev](https://groups.google.com/forum/#!forum/kubermatic-dev)
-- Slack: #[Slack](http://slack.kubermatic.io/) on Slack
+- Slack: #[Slack](https://join.slack.com/t/kubermatic-community/shared_invite/zt-vqjjqnza-dDw8BuUm3HvD4VGrVQ_ptw%20) on Slack
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
 are very busy and read the mailing lists.

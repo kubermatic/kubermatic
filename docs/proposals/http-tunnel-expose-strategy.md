@@ -22,13 +22,13 @@ There are two main points we want to address with this proposal:
 
 User clusters rely on kubernetes default service to access the API server. Moreover services of type externalName are not currently supported (see [this][k8s_service_issue] issue), thus we have to rely on an IP address.
 
-Depending on the expose strategy in Kubermatic, we can either set up an endpoint IP to be hitting a Load balancer or a seed cluster node directly. The latter is called “NodePort strategy” and brings limitations: Usually those IPs are not static and if a node fails, there is no guarantee that it will be replaced by a new one having the same IP. Hence breaking the communications between the user clusters and their control plane. 
+Depending on the expose strategy in Kubermatic, we can either set up an endpoint IP to be hitting a Load balancer or a seed cluster node directly. The latter is called “NodePort strategy” and brings limitations: Usually those IPs are not static and if a node fails, there is no guarantee that it will be replaced by a new one having the same IP. Hence breaking the communications between the user clusters and their control plane.
 
-To overcome this limitation, we have two strategies that rely on load balancers. 
+To overcome this limitation, we have two strategies that rely on load balancers.
 
-The first one: “Global LoadBalancer” is using one entry point and is routing requests based on ports uniquely assigned in the nodeport range for each user cluster service (apiserver and openvpn). One downside of this approach is having a limited number of listeners on the cloud load balancer. In AWS, there is a limit of 50 listeners per ELB (ALB or NLB) which means 50 services. As we are using 2 services per user cluster this leads to a maximum of 25 user clusters per load balancer. Another downside is that each service consumes two node ports, which could lead to exhaustion of the node port ranges for large clusters (e.g. default nodeport range is 30000-32767 meaning ~700 user clusters). 
+The first one: “Global LoadBalancer” is using one entry point and is routing requests based on ports uniquely assigned in the nodeport range for each user cluster service (apiserver and openvpn). One downside of this approach is having a limited number of listeners on the cloud load balancer. In AWS, there is a limit of 50 listeners per ELB (ALB or NLB) which means 50 services. As we are using 2 services per user cluster this leads to a maximum of 25 user clusters per load balancer. Another downside is that each service consumes two node ports, which could lead to exhaustion of the node port ranges for large clusters (e.g. default nodeport range is 30000-32767 meaning ~700 user clusters).
 
-This leads us to the second load balancing strategy: “One Load Balancer Per User Cluster”. The downside of this solution is cost related. The cost of the load balancers increases linearly with the number of user clusters. 
+This leads us to the second load balancing strategy: “One Load Balancer Per User Cluster”. The downside of this solution is cost related. The cost of the load balancers increases linearly with the number of user clusters.
 
 The services to be exposed to user clusters are:
 
@@ -69,11 +69,11 @@ Note that no service of type NodePort is required anymore with this strategy.
 
 In order to intercept the traffic from the PODs, we have two solutions:
 
-*   Iptables rules that redirect the traffic to the HTTP Tunneler. 
+*   Iptables rules that redirect the traffic to the HTTP Tunneler.
 *   IPVS (see [this][k8s_ipvs_deep_dive] document for more details about ipvs
     usage in Kubernetes)
 
-Note that we cannot configure Kubernetes service endpoint to send the traffic directly to the HTTP Tunneler as localhost and link local addresses are not supported in this case. Moreover the Kubernetes default service can’t be of the type ExternalName. 
+Note that we cannot configure Kubernetes service endpoint to send the traffic directly to the HTTP Tunneler as localhost and link local addresses are not supported in this case. Moreover the Kubernetes default service can’t be of the type ExternalName.
 
 
 ### Accessing the Kubelet from the Apiserver through the Openvpn tunnel
@@ -118,9 +118,9 @@ There are two ways of achieving this:
 The HTTP Proxy on seed cluster must only accept CONNECT requests addressed to
 the OpenVPN server and Kube Apiserver, all other requests should be dropped.
 
-Moreover and to prevent disclosure of information sent in cleartext between the 
-CONNECT requests, we have implemented mTLS between the two Envoy pods 
-(HTTP Tunneler on the user cluster and HTTP Proxy on the seed cluster). 
+Moreover and to prevent disclosure of information sent in cleartext between the
+CONNECT requests, we have implemented mTLS between the two Envoy pods
+(HTTP Tunneler on the user cluster and HTTP Proxy on the seed cluster).
 
 ## Alternatives considered
 
@@ -136,7 +136,7 @@ CONNECT requests, we have implemented mTLS between the two Envoy pods
 *   Adding new expose strategy and documenting - O(2d)
 *   E2E testing - O(10d)
 
-[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/concepts/expose-strategy/expose_strategy/.
+[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/tutorials-howtos/networking/expose-strategies/
 [k8s_service_issue]: https://github.com/kubernetes/kubernetes/pull/47588
 [k8s_ipvs_deep_dive]: https://kubernetes.io/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/
 [http2_connect_rfc]: https://tools.ietf.org/html/rfc7540#section-8.3

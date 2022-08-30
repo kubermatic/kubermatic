@@ -100,7 +100,7 @@ func IngressCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Named
 			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
 			// If a Certificate is being issued, configure cert-manager by
-			// setting up the required annoations.
+			// setting up the required annotations.
 			issuer := cfg.Spec.Ingress.CertificateIssuer
 
 			if issuer.Name != "" {

@@ -135,14 +135,15 @@ func (this *loginHandler) redirect(ctx context.Context, request interface{}) (re
 		return nil, err
 	}
 
-	// Override default redirect uri
-	if err := this.oidcIssuerVerifier.SetRedirectPath(loginRequest.Request.URL.Path); err != nil {
+	// get the redirect uri
+	redirectURI, err := this.oidcIssuerVerifier.GetRedirectURI(loginRequest.Request.URL.Path)
+	if err != nil {
 		return nil, err
 	}
 
 	return &LoginResponse{
 		Request: loginRequest.Request,
-		authURL: this.oidcIssuerVerifier.AuthCodeURL(state, this.oidcConfig.OfflineAccessAsScope, scopes...),
+		authURL: this.oidcIssuerVerifier.AuthCodeURL(state, this.oidcConfig.OfflineAccessAsScope, redirectURI, scopes...),
 		nonce:   nonce,
 	}, nil
 }
@@ -223,7 +224,13 @@ func (this *loginHandler) oidcCallback(ctx context.Context, request interface{})
 		return nil, utilerrors.NewBadRequest("incorrect value of state parameter: %s", state.Nonce)
 	}
 
-	token, err := this.exchange(ctx, oidcCallbackRequest.Code)
+	// get the redirect uri
+	redirectURI, err := this.oidcIssuerVerifier.GetRedirectURI(oidcCallbackRequest.Request.URL.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := this.exchange(ctx, oidcCallbackRequest.Code, redirectURI)
 	if err != nil {
 		return nil, err
 	}
@@ -236,8 +243,8 @@ func (this *loginHandler) oidcCallback(ctx context.Context, request interface{})
 	}, nil
 }
 
-func (this *loginHandler) exchange(ctx context.Context, code string) (string, error) {
-	oidcTokens, err := this.oidcIssuerVerifier.Exchange(ctx, code)
+func (this *loginHandler) exchange(ctx context.Context, code, overwriteRedirectURI string) (string, error) {
+	oidcTokens, err := this.oidcIssuerVerifier.Exchange(ctx, code, overwriteRedirectURI)
 	if err != nil {
 		return "", utilerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 	}

@@ -544,7 +544,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.masterClient)),
+		)(admin.CreateOrUpdateMeteringConfigurations(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeMeteringConfigurationsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -619,7 +619,7 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.CreateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.masterClient)),
+		)(admin.CreateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeCreateMeteringReportConfigurationReq,
 		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
@@ -646,7 +646,7 @@ func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.UpdateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.masterClient)),
+		)(admin.UpdateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeUpdateMeteringReportConfigurationReq,
 		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
@@ -670,7 +670,7 @@ func (r Routing) DeleteMeteringReportConfiguration() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(admin.DeleteMeteringReportConfigurationEndpoint(r.userInfoGetter, r.masterClient)),
+		)(admin.DeleteMeteringReportConfigurationEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeDeleteMeteringReportConfigurationReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

@@ -25,7 +25,7 @@ keywords:
 home: https://prometheus.io/
 sources:
   - https://github.com/helm/charts/tree/master/stable/prometheus
-  - https://github.com/improbable-eng/thanos/tree/master/tutorials/kubernetes-demo/manifests
+  - https://github.com/thanos-io/thanos/tree/main/tutorials/kubernetes-helm
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com

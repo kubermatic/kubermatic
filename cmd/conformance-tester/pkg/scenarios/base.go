@@ -160,7 +160,7 @@ func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec,
 
 	case providerconfig.OperatingSystemRockyLinux:
 		return &apimodels.OperatingSystemSpec{
-			RockyLinux: &apimodels.RockyLinuxSpec{},
+			Rockylinux: &apimodels.RockyLinuxSpec{},
 		}, nil
 
 	case providerconfig.OperatingSystemAmazonLinux2:

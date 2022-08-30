@@ -27,10 +27,10 @@ package mastercontroller
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 
+	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 
@@ -151,8 +151,8 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 
 func (r *reconciler) ensureGlobalUsage(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota,
 	globalUsage *kubermaticv1.ResourceDetails) error {
-	if reflect.DeepEqual(*globalUsage, resourceQuota.Status.LocalUsage) {
-		log.Debugw("global usage is for resource quota is the same, not updating",
+	if k8cequality.Semantic.DeepEqual(*globalUsage, resourceQuota.Status.GlobalUsage) {
+		log.Debugw("global usage for resource quota is the same, not updating",
 			"cpu", globalUsage.CPU.String(),
 			"memory", globalUsage.Memory.String(),
 			"storage", globalUsage.Storage.String())

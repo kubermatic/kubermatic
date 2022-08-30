@@ -18,7 +18,7 @@ import (
 type DatacenterSpecPacket struct {
 
 	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://support.packet.com/kb/articles/data-centers
+	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
 	Facilities []string `json:"facilities"`
 
 	// Metros are facilities that are grouped together geographically and share capacity

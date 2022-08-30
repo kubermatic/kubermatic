@@ -37,7 +37,8 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Seed is the type representing a Seed cluster.
+        description: Seed is the type representing a Seed cluster. Seed clusters host
+          the the control planes for KKP user clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -381,8 +382,8 @@ spec:
                               type: boolean
                             manageSecurityGroups:
                               description: 'Optional: Gets mapped to the "manage-security-groups"
-                                setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-                                This setting defaults to true.'
+                                setting in the cloud config. This setting defaults
+                                to true.'
                               type: boolean
                             nodeSizeRequirements:
                               properties:
@@ -402,8 +403,8 @@ spec:
                               type: string
                             trustDevicePath:
                               description: 'Optional: Gets mapped to the "trust-device-path"
-                                setting in the cloud config. See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
-                                This setting defaults to false.'
+                                setting in the cloud config. This setting defaults
+                                to false.'
                               type: boolean
                             useOctavia:
                               description: 'Optional: Gets mapped to the "use-octavia"
@@ -425,7 +426,7 @@ spec:
                             facilities:
                               description: The list of enabled facilities, for example
                                 "ams1", for a full list of available facilities see
-                                https://support.packet.com/kb/articles/data-centers
+                                https://metal.equinix.com/developers/docs/locations/facilities/
                               items:
                                 type: string
                               type: array
@@ -1173,9 +1174,19 @@ spec:
                             setting the time when a report generation mechanism kicks
                             off. The Interval MUST be set independently.
                           type: string
+                        type:
+                          default:
+                          - cluster
+                          - namespace
+                          description: Types of reports to generate. Available report
+                            types are cluster and namespace. By default, all types
+                            of reports are generated.
+                          items:
+                            type: string
+                          type: array
                       type: object
                     default:
-                      kubermatic-metering-report-weekly:
+                      weekly:
                         interval: 7
                         schedule: 0 1 * * 6
                     description: ReportConfigurations is a map of report configuration
@@ -1183,8 +1194,8 @@ spec:
                     type: object
                   storageClassName:
                     description: StorageClassName is the name of the storage class
-                      that the metering tool uses to save processed files before exporting
-                      it to s3 bucket. Default value is kubermatic-fast.
+                      that the metering prometheus instance uses to store metric data
+                      for reporting.
                     type: string
                   storageSize:
                     description: StorageSize is the size of the storage class. Default

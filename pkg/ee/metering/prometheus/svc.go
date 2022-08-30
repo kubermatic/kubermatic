@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2022 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,33 +22,37 @@
    END OF TERMS AND CONDITIONS
 */
 
-package metering
+package prometheus
 
 import (
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	rbacv1 "k8s.io/api/rbac/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// clusterRoleBindingCreator create a cluster role binding for the metering tool.
-func clusterRoleBindingCreator(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return meteringToolName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
+// prometheusService creates the service to connect to prometheus api.
+func prometheusService() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
+		return Name, func(svc *corev1.Service) (*corev1.Service, error) {
+			if svc.Labels == nil {
+				svc.Labels = make(map[string]string)
 			}
+			svc.Labels[common.NameLabel] = Name
 
-			crb.Subjects = []rbacv1.Subject{
+			svc.Spec.Ports = []corev1.ServicePort{
 				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      meteringToolName,
-					Namespace: namespace,
+					Name:       Name,
+					Port:       80,
+					TargetPort: intstr.FromInt(9090),
+					Protocol:   corev1.ProtocolTCP,
 				},
 			}
+			svc.Spec.Selector = map[string]string{common.NameLabel: Name}
+			svc.Spec.Type = corev1.ServiceTypeClusterIP
 
-			return crb, nil
+			return svc, nil
 		}
 	}
 }

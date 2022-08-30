@@ -26,6 +26,7 @@ package machine
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -36,7 +37,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	packetypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	equinixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
@@ -81,6 +82,8 @@ const (
 	// Packet credential env.
 	envPacketToken     = "PACKET_API_KEY"
 	envPacketProjectID = "PACKET_PROJECT_ID"
+	// KubeVirt credential env.
+	envKubeVirtKubeConfig = "KUBEVIRT_KUBECONFIG"
 )
 
 func GetMachineResourceUsage(ctx context.Context,
@@ -121,7 +124,9 @@ func GetMachineResourceUsage(ctx context.Context,
 		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderPacket:
+	case types.CloudProviderEquinixMetal, types.CloudProviderPacket:
+		// Name Packet has been replaced at some point by Equinix Metal.
+		// We are in the process of migration to the new name, meaning that both names appear in our sourcecode.
 		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
 	default:
 		return nil, fmt.Errorf("Provider %s not supported", config.CloudProvider)
@@ -303,11 +308,11 @@ func getKubeVirtResourceRequirements(ctx context.Context,
 	var cpuReq, memReq resource.Quantity
 	// if flavor is set, then take the resource details from the vmi preset, otherwise take it from the config
 	if len(flavor) != 0 {
-		kubeconfig, err := configVarResolver.GetConfigVarStringValue(rawConfig.Auth.Kubeconfig)
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}
-		preset, err := provider.KubeVirtVMIPreset(ctx, kubeconfig, flavor)
+		preset, err := provider.KubeVirtVMIPreset(ctx, base64.StdEncoding.EncodeToString([]byte(kubeconfig)), flavor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset, error: %w", err)
 		}
@@ -378,7 +383,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
 	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSizeGB))
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", *rawConfig.DiskSizeGB))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
 	}
@@ -735,7 +740,7 @@ func getPacketResourceRequirements(ctx context.Context,
 	config *types.Config,
 ) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
-	rawConfig, err := packetypes.GetConfig(*config)
+	rawConfig, err := equinixtypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get packet raw config, error: %w", err)
 	}
@@ -789,7 +794,7 @@ func getPacketResourceRequirements(ctx context.Context,
 	}
 
 	if plan.Specs.Memory.Total != "" {
-		memReq, err = resource.ParseQuantity(plan.Specs.Memory.Total)
+		memReq, err = resource.ParseQuantity(strings.TrimSuffix(plan.Specs.Memory.Total, "B"))
 		if err != nil {
 			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 		}

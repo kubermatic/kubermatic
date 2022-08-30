@@ -98,6 +98,12 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
+	// If the cluster NamespaceName is not filled yet, return a conflict error:
+	// will requeue but not send an error event
+	if cluster.Status.NamespaceName == "" {
+		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
+	}
+
 	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
 	if err != nil {
 		return cluster, err

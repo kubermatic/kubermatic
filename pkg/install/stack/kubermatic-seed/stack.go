@@ -63,6 +63,14 @@ func (*SeedStack) Name() string {
 	return "KKP seed stack"
 }
 
+func (s *SeedStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	// CRDs on seed clusters are currently identical to the master, even though
+	// we do not use all CRs on all clusters
+	masterStack := kubermaticmaster.MasterStack{}
+
+	return masterStack.InstallKubermaticCRDs(ctx, client, logger, opt)
+}
+
 func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
@@ -103,6 +111,10 @@ func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, 
 
 	if err := kubeClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create Namespace %s: %w", ns.Name, err)
+	}
+
+	if err := s.InstallKubermaticCRDs(ctx, kubeClient, log.Prefix(logger, "   "), opt); err != nil {
+		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
 	logger.Info("✅ Success.")

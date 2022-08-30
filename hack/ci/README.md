@@ -218,14 +218,14 @@ Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
 
-## verify-user-cluster-prometheus-configs.sh
-
-This ensures that the Prometheus rules deployed into userclusters
-are valid Prometheus rules.
-
 ## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
+
+## verify-user-cluster-prometheus-configs.sh
+
+This ensures that the Prometheus rules deployed into userclusters
+are valid Prometheus rules.
 

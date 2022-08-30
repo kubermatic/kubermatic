@@ -1045,7 +1045,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
 	kubeOneCondition := internalCluster.Status.Condition
-	if cloud.ProviderName == "" {
+	if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 		apiCluster.Status.State = apiv2.RunningExternalClusterState
 	} else {
 		if cloud.EKS != nil {

@@ -174,12 +174,13 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 }
 
 // getNodeAddresses returns all relevant addresses of a node.
+// Only IPv4 addresses are returned as OpenVPN connection to the worker nodes is IPv4-only.
 func getNodeAddresses(node corev1.Node) []string {
 	addressTypes := []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
 	addresses := []string{}
 	for _, addressType := range addressTypes {
 		for _, address := range node.Status.Addresses {
-			if address.Type == addressType {
+			if address.Type == addressType && isIPv4(address.Address) {
 				addresses = append(addresses, address.Address)
 			}
 		}

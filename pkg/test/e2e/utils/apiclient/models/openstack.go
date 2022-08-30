@@ -23,13 +23,14 @@ type Openstack struct {
 	// application credential secret
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
 	// domain
 	Domain string `json:"domain,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// floating IP pool

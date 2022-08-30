@@ -43,7 +43,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 1
 		{
 			name:                   "scenario 1: user gets settings first time",
-			expectedResponse:       `{"customLinks":[],"defaultNodeCount":10,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"cleanupOptions":{},"opaOptions":{},"mlaOptions":{},"mlaAlertmanagerPrefix":"","mlaGrafanaPrefix":"","machineDeploymentVMResourceQuota":{"minCPU":1,"maxCPU":32,"minRAM":2,"maxRAM":128,"enableGPU":false}}`,
+			expectedResponse:       `{"customLinks":[],"defaultNodeCount":2,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"cleanupOptions":{},"opaOptions":{},"mlaOptions":{},"mlaAlertmanagerPrefix":"","mlaGrafanaPrefix":"","machineDeploymentVMResourceQuota":{"minCPU":1,"maxCPU":32,"minRAM":2,"maxRAM":128,"enableGPU":false}}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),

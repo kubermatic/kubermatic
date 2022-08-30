@@ -1085,9 +1085,9 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/quotas").
 		Handler(r.createResourceQuota())
 
-	mux.Methods(http.MethodPatch).
+	mux.Methods(http.MethodPut).
 		Path("/quotas/{quota_name}").
-		Handler(r.patchResourceQuota())
+		Handler(r.putResourceQuota())
 
 	mux.Methods(http.MethodDelete).
 		Path("/quotas/{quota_name}").
@@ -7146,7 +7146,7 @@ func (r Routing) createResourceQuota() http.Handler {
 	)
 }
 
-// swagger:route PATCH /api/v2/quotas/{quota_name} resourceQuota admin patchResourceQuota
+// swagger:route PUT /api/v2/quotas/{quota_name} resourceQuota admin putResourceQuota
 //
 //    Updates an existing Resource Quota.
 //
@@ -7158,13 +7158,13 @@ func (r Routing) createResourceQuota() http.Handler {
 //      200: empty
 //      401: empty
 //      403: empty
-func (r Routing) patchResourceQuota() http.Handler {
+func (r Routing) putResourceQuota() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(resourcequota.PatchResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
-		resourcequota.DecodePatchResourceQuotasReq,
+		)(resourcequota.PutResourceQuotaEndpoint(r.userInfoGetter, r.resourceQuotaProvider)),
+		resourcequota.DecodePutResourceQuotasReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -7357,7 +7357,8 @@ func (r Routing) listApplicationInstallations() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(applicationinstallation.ListApplicationInstallations(r.userInfoGetter)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.ListApplicationInstallations(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		applicationinstallation.DecodeListApplicationInstallations,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7385,7 +7386,8 @@ func (r Routing) createApplicationInstallation() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(applicationinstallation.CreateApplicationInstallation(r.userInfoGetter)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.CreateApplicationInstallation(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		applicationinstallation.DecodeCreateApplicationInstallation,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -7411,7 +7413,8 @@ func (r Routing) deleteApplicationInstallation() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(applicationinstallation.DeleteApplicationInstallation(r.userInfoGetter)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.DeleteApplicationInstallation(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		applicationinstallation.DecodeDeleteApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7437,7 +7440,8 @@ func (r Routing) getApplicationInstallation() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.GetApplicationInstallation(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		applicationinstallation.DecodeGetApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -7466,7 +7470,8 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(applicationinstallation.UpdateApplicationInstallation(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		applicationinstallation.DecodeUpdateApplicationInstallation,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

@@ -17,10 +17,11 @@ import (
 // swagger:model Hetzner
 type Hetzner struct {
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Network is the pre-existing Hetzner network in which the machines are running.

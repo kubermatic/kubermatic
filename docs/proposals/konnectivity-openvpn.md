@@ -47,7 +47,7 @@ Konnectivity requires [Service Account Token Volume Projection][kubernetes_servi
 * In case that the service account token volume projection is not yet enabled (which may be already done as part of [this issue][issue_6191]), we need to add some more kube-apiserver flags if Konnectivity is enabled.
 * In case that service account token volume projection is already enabled, we need to add `system:konnectivity-server` into `api-audiences` list.
 
-Apart from that, the API Server needs the `--egress-selector-config-file` flag pointed to the file with `EgressSelectorConfiguration`, which defines the type of connection between the API Server and the Konnectivity Server. 
+Apart from that, the API Server needs the `--egress-selector-config-file` flag pointed to the file with `EgressSelectorConfiguration`, which defines the type of connection between the API Server and the Konnectivity Server.
 
 ### Konnectivity Server in Control Plane Cluster
 
@@ -121,4 +121,4 @@ No alternate native solution supported by the k8s community is available.
 [kubernetes_konnectivity_doc]: https://kubernetes.io/docs/tasks/extend-kubernetes/setup-konnectivity/
 [kubernetes_service_account]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection
 [issue_6191]: https://github.com/kubermatic/kubermatic/issues/6191
-[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/guides/kkp_networking/expose_strategies/
+[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/tutorials-howtos/networking/expose-strategies/

@@ -87,13 +87,22 @@ func (p *GroupProjectBindingProvider) List(ctx context.Context, userInfo *provid
 }
 
 func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.GroupProjectBinding, error) {
-	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
-	if err != nil {
-		return nil, err
+	if userInfo == nil {
+		return nil, errors.New("a user is missing but required")
+	}
+
+	client := p.clientPrivileged
+
+	if !userInfo.IsAdmin {
+		var err error
+		client, err = p.getImpersonatedClient(userInfo)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	binding := &kubermaticv1.GroupProjectBinding{}
-	if err := masterImpersonatedClient.Get(ctx, types.NamespacedName{Name: name}, binding); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: name}, binding); err != nil {
 		return nil, err
 	}
 
@@ -101,35 +110,62 @@ func (p *GroupProjectBindingProvider) Get(ctx context.Context, userInfo *provide
 }
 
 func (p *GroupProjectBindingProvider) Create(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.GroupProjectBinding) error {
-	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
-	if err != nil {
-		return err
+	if userInfo == nil {
+		return errors.New("a user is missing but required")
 	}
 
-	return masterImpersonatedClient.Create(ctx, binding)
+	client := p.clientPrivileged
+
+	if !userInfo.IsAdmin {
+		var err error
+		client, err = p.getImpersonatedClient(userInfo)
+		if err != nil {
+			return err
+		}
+	}
+
+	return client.Create(ctx, binding)
 }
 
 func (p *GroupProjectBindingProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldBinding, newBinding *kubermaticv1.GroupProjectBinding) error {
-	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
-	if err != nil {
-		return err
+	if userInfo == nil {
+		return errors.New("a user is missing but required")
 	}
 
-	return masterImpersonatedClient.Patch(ctx, newBinding, ctrlruntimeclient.MergeFrom(oldBinding))
+	client := p.clientPrivileged
+
+	if !userInfo.IsAdmin {
+		var err error
+		client, err = p.getImpersonatedClient(userInfo)
+		if err != nil {
+			return err
+		}
+	}
+
+	return client.Patch(ctx, newBinding, ctrlruntimeclient.MergeFrom(oldBinding))
 }
 
 func (p *GroupProjectBindingProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, name string) error {
+	if userInfo == nil {
+		return errors.New("a user is missing but required")
+	}
+
 	binding, err := p.Get(ctx, userInfo, name)
 	if err != nil {
 		return err
 	}
 
-	masterImpersonatedClient, err := p.getImpersonatedClient(userInfo)
-	if err != nil {
-		return err
+	client := p.clientPrivileged
+
+	if !userInfo.IsAdmin {
+		var err error
+		client, err = p.getImpersonatedClient(userInfo)
+		if err != nil {
+			return err
+		}
 	}
 
-	return masterImpersonatedClient.Delete(ctx, binding)
+	return client.Delete(ctx, binding)
 }
 
 func (p *GroupProjectBindingProvider) getImpersonatedClient(userInfo *provider.UserInfo) (ctrlruntimeclient.Client, error) {

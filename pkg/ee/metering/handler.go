@@ -25,7 +25,6 @@
 package metering
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -34,14 +33,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -52,8 +48,6 @@ const (
 	Endpoint   = "endpoint"
 	SecretName = "metering-s3"
 )
-
-var secretNamespacedName = types.NamespacedName{Name: SecretName, Namespace: resources.KubermaticNamespace}
 
 type configurationReq struct {
 	Enabled          bool   `json:"enabled"`
@@ -85,7 +79,7 @@ func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
 }
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
-func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
+func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(configurationReq)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -95,14 +89,14 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 		return utilerrors.NewBadRequest(err.Error())
 	}
 
-	seedList := &kubermaticv1.SeedList{}
-	if err := masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace}); err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
+	seeds, err := seedsGetter()
+	if err != nil {
+		return fmt.Errorf("failed to get seed clients: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		if err := updateSeedMeteringConfiguration(ctx, req, &seed, masterClient); err != nil {
-			return fmt.Errorf("failed to create or update metering tool credentials: %w", err)
+	for name, seed := range seeds {
+		if err := updateSeedMeteringConfiguration(ctx, req, seed, masterClient); err != nil {
+			return fmt.Errorf("failed to reconcile metering tool credentials on Seed %s: %w", name, err)
 		}
 	}
 
@@ -152,7 +146,7 @@ func DecodeMeteringSecretReq(r *http.Request) (interface{}, error) {
 // CreateOrUpdateCredentials creates or updates the metering tool credentials.
 func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	if seedsGetter == nil || seedClientGetter == nil {
-		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+		return errors.New("parameter seedsGetter nor seedClientGetter must not be nil")
 	}
 
 	req, ok := request.(credentialReq)
@@ -164,9 +158,9 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 		return err
 	}
 
-	seeds, err := getSeeds(seedsGetter, seedClientGetter)
+	seeds, err := seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed to gety seed clients: %w", err)
+		return fmt.Errorf("failed to get seed clients: %w", err)
 	}
 
 	data := map[string][]byte{
@@ -176,79 +170,31 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 		Endpoint:  []byte(req.Endpoint),
 	}
 
-	for _, client := range seeds {
-		if err := createOrUpdateMeteringToolSecret(ctx, client, data); err != nil {
-			return fmt.Errorf("failed to create or update metering tool credentials: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
-	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to probe for secret %q: %w", SecretName, err)
-	}
-
-	if existingSecret.Name == "" {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      SecretName,
-				Namespace: resources.KubermaticNamespace,
-			},
-			Type: corev1.SecretTypeOpaque,
-			Data: secretData,
-		}
-
-		if err := seedClient.Create(ctx, secret); err != nil {
-			return fmt.Errorf("failed to create credential secret: %w", err)
-		}
-	} else {
-		if existingSecret.Data == nil {
-			existingSecret.Data = map[string][]byte{}
-		}
-
-		requiresUpdate := false
-
-		for k, v := range secretData {
-			if !bytes.Equal(v, existingSecret.Data[k]) {
-				requiresUpdate = true
-				break
-			}
-		}
-
-		if requiresUpdate {
-			existingSecret.Data = secretData
-			if err := seedClient.Update(ctx, existingSecret); err != nil {
-				return fmt.Errorf("failed to update credential secret: %w", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*kubermaticv1.Seed]ctrlruntimeclient.Client, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get seeds: %w", err)
-	}
-
-	var seedClients = make(map[*kubermaticv1.Seed]ctrlruntimeclient.Client, len(seeds))
-
-	for _, seed := range seeds {
-		seedClient, err := seedClientGetter(seed)
+	for seedName, seed := range seeds {
+		client, err := seedClientGetter(seed)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get seed client for seed %q: %w", seed.Name, err)
+			return fmt.Errorf("failed to get client for seed %s: %w", seedName, err)
 		}
 
-		seedClients[seed] = seedClient
+		if err := ensureMeteringToolSecret(ctx, client, seed, data); err != nil {
+			return fmt.Errorf("failed to ensure metering tool credentials on seed %s: %w", seedName, err)
+		}
 	}
 
-	if len(seedClients) < 1 {
-		return nil, errors.New("no seeds found")
+	return nil
+}
+
+func ensureMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, seed *kubermaticv1.Seed, secretData map[string][]byte) error {
+	creator := func() (name string, create reconciling.SecretCreator) {
+		return SecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			existing.Data = secretData
+			return existing, nil
+		}
 	}
 
-	return seedClients, nil
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, seed.Namespace, seedClient); err != nil {
+		return err
+	}
+
+	return nil
 }

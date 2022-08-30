@@ -566,6 +566,9 @@ func genGKECluster(gkeClusterSpec *apiv2.GKEClusterSpec, gkeCloudSpec *apiv2.GKE
 		VerticalPodAutoscaling: &container.VerticalPodAutoscaling{
 			Enabled: gkeClusterSpec.VerticalPodAutoscaling,
 		},
+		ReleaseChannel: &container.ReleaseChannel{
+			Channel: gkeClusterSpec.ReleaseChannel,
+		},
 	}
 	if gkeClusterSpec.NodeConfig != nil {
 		newCluster.NodeConfig = &container.NodeConfig{

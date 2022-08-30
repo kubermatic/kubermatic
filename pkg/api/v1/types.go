@@ -1436,7 +1436,7 @@ type OperatingSystemSpec struct {
 	SLES        *SLESSpec        `json:"sles,omitempty"`
 	RHEL        *RHELSpec        `json:"rhel,omitempty"`
 	Flatcar     *FlatcarSpec     `json:"flatcar,omitempty"`
-	RockyLinux  *RockyLinuxSpec  `json:"rockyLinux,omitempty"`
+	RockyLinux  *RockyLinuxSpec  `json:"rockylinux,omitempty"`
 }
 
 // NodeVersionInfo node version information

@@ -232,6 +232,8 @@ fi
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 
+kubectl apply -f hack/ci/testdata/metering_s3_creds.yaml
+
 sleep 5
 echodate "Waiting for Kubermatic Operator to deploy Seed components..."
 retry 8 check_all_deployments_ready kubermatic

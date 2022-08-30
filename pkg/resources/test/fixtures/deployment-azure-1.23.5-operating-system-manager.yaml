@@ -35,7 +35,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","cluster-de-test-01"]}'
+        - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","cluster-de-test-01","-node-kubelet-feature-gates","CSIMigrationAzureDisk=false,CSIMigrationAzureFile=false"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -59,7 +59,7 @@ spec:
             secretKeyRef:
               key: subscriptionID
               name: cloud-credentials
-        image: quay.io/kubermatic/operating-system-manager:v0.6.0
+        image: quay.io/kubermatic/operating-system-manager:v1.0.0
         livenessProbe:
           failureThreshold: 3
           httpGet:

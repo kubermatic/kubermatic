@@ -25,10 +25,15 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
@@ -140,5 +145,47 @@ func removeWebhook(ctx context.Context, logger logrus.FieldLogger, client ctrlru
 		return fmt.Errorf("failed to remove webhook %s: %w", obj.GetName(), err)
 	}
 
+	return nil
+}
+
+// RemoveOldApplicationDefinition removes old applicationDefinitions from cluster.
+// See pkg/install/stack/kubermatic-master/stack.go::InstallKubermaticCRDs() for more information.
+// TODO REMOVE AFTER release v2.21.
+func RemoveOldApplicationDefinition(ctx context.Context, kubeClient ctrlruntimeclient.Client) error {
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: "applicationdefinitions.apps.kubermatic.k8c.io"}, crd)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get CRD applicationdefinitions.apps.kubermatic.k8c.io: %w", err)
+	}
+
+	// No action is required
+	if err != nil && apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	unstructuredList := unstructured.UnstructuredList{}
+	unstructuredList.SetKind("ApplicationDefinition")
+	unstructuredList.SetAPIVersion("apps.kubermatic.k8c.io/v1")
+	if err := kubeClient.List(ctx, &unstructuredList); err != nil {
+		return fmt.Errorf("failed to get applicationDefition: %w", err)
+	}
+
+	for _, unstruturedAppDef := range unstructuredList.Items {
+		appDef := &appskubermaticv1.ApplicationDefinition{}
+
+		// Remove applicationDefinitio if it's not valid ortherwise keep it.
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstruturedAppDef.UnstructuredContent(), &appDef); err != nil {
+			if err := kubeClient.Delete(ctx, &unstruturedAppDef); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete applicationDefinition %s: %w", unstruturedAppDef.GetName(), err)
+			}
+		}
+
+		// this filed is mandatory and immutable in new version
+		if appDef.Spec.Method == "" {
+			if err := kubeClient.Delete(ctx, &unstruturedAppDef); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete applicationDefinition %s: %w", unstruturedAppDef.GetName(), err)
+			}
+		}
+	}
 	return nil
 }

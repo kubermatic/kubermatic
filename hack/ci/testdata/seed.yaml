@@ -33,6 +33,14 @@ spec:
     name: "__SEED_NAME__-kubeconfig"
     namespace: kubermatic
     fieldPath: kubeconfig
+  metering:
+    enabled: true
+    reports:
+      e2e-weekly:
+        interval: 7
+        schedule: 0 1 * * 6
+    storageClassName: standard
+    storageSize: 75Gi
   datacenters:
     byo-kubernetes:
       location: Frankfurt
@@ -94,12 +102,13 @@ spec:
           datastore: alpha1
           endpoint: https://vcenter.dc.k8c.io
           ipv6Enabled: true
-          rootPath: /Hamburg/vm/Kubermatic-dev
+          rootPath: /Hamburg/vm/Kubermatic-ci
           templates:
             centos: centos-7
-            flatcar: flatcar-stable
+            flatcar: flatcar-3033.2.2
             rhel: rhel-8.6
             ubuntu: ubuntu-20.04
+            rockylinux: rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
       country: NL

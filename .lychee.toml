@@ -1,0 +1,29 @@
+# Maximum number of concurrent link checks.
+max_concurrency = 2
+
+# Exclude private, link local and loopback links.
+exclude_all_private = true
+
+# Exclude email links
+exclude_mail = true
+
+# Exclude URLs from checking (supports regex).
+exclude = [
+  # GitHub PRs/issues rarely go away and GitHub doesn't like
+  # getting scraped.
+  'https://github.com/(.+?)/(.+?)/(issues|pull)/.+',
+  # some URLs in Dockerfile contain variables
+  '\$',
+  # skip Kubernetes URLs
+  '.local',
+]
+
+# Exclude files from checking (does not support regex).
+exclude_path = [
+  'pkg/crd/k8c.io',
+  'pkg/resources/test/fixtures',
+  'pkg/test/e2e/utils/apiclient',
+]
+
+# Log checked links.
+verbose = true

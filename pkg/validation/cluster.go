@@ -396,7 +396,7 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 				}
 
 				if key.Value != "" && key.SecretRef != nil {
-					allErrs = append(allErrs, field.Invalid(childPath, key,
+					allErrs = append(allErrs, field.Invalid(childPath, key.Name,
 						"'value' and 'secretRef' cannot be set at the same time"))
 				}
 			}

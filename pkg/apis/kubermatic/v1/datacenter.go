@@ -175,7 +175,8 @@ type SeedList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed cluster.
+// Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+// for KKP user clusters.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -518,7 +519,6 @@ type DatacenterSpecOpenstack struct {
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
@@ -526,7 +526,6 @@ type DatacenterSpecOpenstack struct {
 	// default with the in-tree cloud provider.
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
@@ -617,7 +616,7 @@ type DatacenterSpecBringYourOwn struct {
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://support.packet.com/kb/articles/data-centers
+	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
 	Facilities []string `json:"facilities,omitempty"`
 	// Metros are facilities that are grouped together geographically and share capacity
 	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
@@ -773,13 +772,13 @@ type SeedMLASettings struct {
 // MeteringConfiguration contains all the configuration for the metering tool.
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
-	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
-	// exporting it to s3 bucket. Default value is kubermatic-fast.
+
+	// StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
 
-	// +kubebuilder:default:={kubermatic-metering-report-weekly: {schedule: "0 1 * * 6", interval: 7}}
+	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 
 	// ReportConfigurations is a map of report configuration definitions.
 	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
@@ -804,6 +803,12 @@ type MeteringReportConfiguration struct {
 	// Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
 	// Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
 	Retention *uint32 `json:"retention,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:={"cluster","namespace"}
+
+	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+	Types []string `json:"type,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

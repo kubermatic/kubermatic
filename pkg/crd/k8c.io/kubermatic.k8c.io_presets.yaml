@@ -18,7 +18,9 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Preset is the type representing a Preset.
+        description: Presets are preconfigured cloud provider credentials that can
+          be applied to new clusters. This frees end users from having to know the
+          actual credentials used for their clusters.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -42,8 +44,12 @@ spec:
                   clientSecret:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   subscriptionID:
                     type: string
@@ -58,12 +64,18 @@ spec:
               alibaba:
                 properties:
                   accessKeyID:
+                    description: Access Key ID to authenticate against Alibaba.
                     type: string
                   accessKeySecret:
+                    description: Access Key Secret to authenticate against Alibaba.
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                 required:
                 - accessKeyID
@@ -72,8 +84,12 @@ spec:
               anexia:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   token:
                     description: Token is used to authenticate with the Anexia API.
@@ -84,26 +100,41 @@ spec:
               aws:
                 properties:
                   accessKeyID:
+                    description: Access Key ID to authenticate against AWS.
                     type: string
                   assumeRoleARN:
                     type: string
                   assumeRoleExternalID:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   instanceProfileName:
+                    description: Instance profile to use. This can be configured,
+                      but if left empty will be automatically filled in during reconciliation.
                     type: string
                   roleARN:
+                    description: ARN to use. This can be configured, but if left empty
+                      will be automatically filled in during reconciliation.
                     type: string
                   routeTableID:
+                    description: Route table to use. This can be configured, but if
+                      left empty will be automatically filled in during reconciliation.
                     type: string
                   secretAccessKey:
+                    description: Secret Access Key to authenticate against AWS.
                     type: string
                   securityGroupID:
+                    description: Security group to use. This can be configured, but
+                      if left empty will be automatically filled in during reconciliation.
                     type: string
                   vpcID:
+                    description: AWS VPC to use. Must be configured.
                     type: string
                 required:
                 - accessKeyID
@@ -116,8 +147,12 @@ spec:
                   clientSecret:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   loadBalancerSKU:
                     description: LoadBalancerSKU sets the LB type that will be used
@@ -153,8 +188,12 @@ spec:
               digitalocean:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   token:
                     description: Token is used to authenticate with the DigitalOcean
@@ -168,8 +207,12 @@ spec:
                   accessKeyID:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   region:
                     type: string
@@ -181,12 +224,17 @@ spec:
                 - secretAccessKey
                 type: object
               enabled:
+                description: Only enabled presets will be available in the KKP dashboard.
                 type: boolean
               fake:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   token:
                     type: string
@@ -196,8 +244,12 @@ spec:
               gcp:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   network:
                     type: string
@@ -211,8 +263,12 @@ spec:
               gke:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   serviceAccount:
                     type: string
@@ -222,8 +278,12 @@ spec:
               hetzner:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   network:
                     description: Network is the pre-existing Hetzner network in which
@@ -241,8 +301,12 @@ spec:
               kubevirt:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   kubeconfig:
                     type: string
@@ -271,8 +335,12 @@ spec:
                     description: Prism Element Username for csi driver
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   password:
                     description: Password is the password corresponding to the provided
@@ -302,10 +370,14 @@ spec:
                   applicationCredentialSecret:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   domain:
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   floatingIPPool:
                     type: string
@@ -337,8 +409,12 @@ spec:
                   billingCycle:
                     type: string
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   projectID:
                     type: string
@@ -347,14 +423,22 @@ spec:
                 - projectID
                 type: object
               requiredEmails:
+                description: RequiredEmails is a list of e-mail addresses that this
+                  presets should be restricted to. Each item in the list can be either
+                  a full e-mail address or just a domain name. This restriction is
+                  only enforced in the KKP API.
                 items:
                   type: string
                 type: array
               vmwareclouddirector:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   organization:
                     type: string
@@ -376,12 +460,16 @@ spec:
               vsphere:
                 properties:
                   datacenter:
+                    description: If datacenter is set, this preset is only applicable
+                      to the configured datacenter.
                     type: string
                   datastore:
                     type: string
                   datastoreCluster:
                     type: string
                   enabled:
+                    description: Only enabled presets will be available in the KKP
+                      dashboard.
                     type: boolean
                   password:
                     type: string

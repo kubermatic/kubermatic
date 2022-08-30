@@ -31,6 +31,7 @@ import (
 
 	"go.uber.org/zap"
 
+	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -164,8 +165,8 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 
 func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogger, resourceQuota *kubermaticv1.ResourceQuota,
 	localUsage *kubermaticv1.ResourceDetails) error {
-	if reflect.DeepEqual(localUsage, resourceQuota.Status.LocalUsage) {
-		log.Debugw("local usage is for resource quota is the same, not updating",
+	if k8cequality.Semantic.DeepEqual(localUsage, resourceQuota.Status.LocalUsage) {
+		log.Debugw("local usage for resource quota is the same, not updating",
 			"cpu", localUsage.CPU.String(),
 			"memory", localUsage.Memory.String(),
 			"storage", localUsage.Storage.String())

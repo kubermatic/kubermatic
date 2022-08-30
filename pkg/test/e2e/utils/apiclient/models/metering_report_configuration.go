@@ -27,6 +27,9 @@ type MeteringReportConfiguration struct {
 	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
 	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
 	Schedule string `json:"schedule,omitempty"`
+
+	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+	Types []string `json:"type"`
 }
 
 // Validate validates this metering report configuration

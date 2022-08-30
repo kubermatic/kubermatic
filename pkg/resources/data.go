@@ -684,6 +684,8 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
 		case cluster.Spec.Cloud.VSphere != nil:
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=false")
+		case cluster.Spec.Cloud.Azure != nil:
+			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		}
 	}
 	return featureFlags
