@@ -39,6 +39,14 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
+func seedClientGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedClientGetter, error) {
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	return provider.SeedClientGetterFactory(seedKubeconfigGetter), nil
+}
+
 func setupControllers(ctrlCtx *controllerContext) error {
 	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount); err != nil {
 		return fmt.Errorf("failed to create resource quota controller: %w", err)

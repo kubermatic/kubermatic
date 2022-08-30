@@ -417,6 +417,7 @@ func createEncryptionAtRestController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
 		ctrlCtx.seedGetter,
+		ctrlCtx.seedClientGetter,
 		ctrlCtx.configGetter,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.overwriteRegistry,

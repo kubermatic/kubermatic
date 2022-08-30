@@ -36,6 +36,14 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 	return kubernetes.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
+func seedClientGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedClientGetter, error) {
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	return provider.SeedClientGetterFactory(seedKubeconfigGetter), nil
+}
+
 func setupControllers(_ *controllerContext) error {
 	// NOP, no CE-only controllers exist
 	return nil
