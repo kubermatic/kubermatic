@@ -244,21 +244,6 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
-	sublogger.Info("Migrating UserSSHKeys…")
-	if err := s.migrateUserSSHKeyProjects(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to migrate keys: %w", err)
-	}
-
-	sublogger.Info("Migrating Users…")
-	if err := s.migrateUserProjects(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to migrate users: %w", err)
-	}
-
-	sublogger.Info("Migrating ExternalClusters…")
-	if err := s.migrateExternalClusterProviders(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to migrate external clusters: %w", err)
-	}
-
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
@@ -280,25 +265,6 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 
 func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
 	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
-
-	// in 2.19 applicationInstallation crd was introduced with cluster scope. In 2.21 we change the scope to namespaced
-	// as this field is immutable, we must delete the crd and then recreate it. This operation is safe because:
-	// 1) the feature was not "officially released", so not used by users.
-	// 2) the applicationInstallation crd should be used in user-cluster only.
-	// TODO REMOVE AFTER release v2.21.
-	if err := util.DeleteOldApplicationInstallationCrd(ctx, client); err != nil {
-		return err
-	}
-
-	// in 2.19 applicationDefinition.spec.versions.template.source.git.ref was a string. In 2.21 it becomes an object.
-	// Moreover in 2.19 no validating webhook where installed to validate application. So potentially invalid applicationDefinition
-	// may exist on the cluster.
-	// To simplify the migration we remove old applicationDefinitions from the cluster. As feature was not released yet,
-	// and controller handling application have been developed in 2.21, it's not a problem.
-	// TODO REMOVE AFTER release v2.21.
-	if err := util.RemoveOldApplicationDefinition(ctx, client); err != nil {
-		return err
-	}
 
 	// install KKP CRDs
 	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
