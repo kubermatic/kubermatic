@@ -23334,7 +23334,7 @@
           "$ref": "#/definitions/RawExtension"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ApplicationInstallationStatus": {
       "type": "object",
@@ -29287,7 +29287,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NetworkDefaults": {
       "type": "object",

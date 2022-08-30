@@ -2166,8 +2166,8 @@ func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *a
 			ID:   name,
 		},
 		Namespace: targetnamespace,
-		Spec: &appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+		Spec: &apiv2.ApplicationInstallationSpec{
+			Namespace: apiv2.NamespaceSpec{
 				Name:   targetnamespace,
 				Create: true,
 			},
