@@ -230,7 +230,6 @@ func hasSecretKeyRef(cluster *kubermaticv1.Cluster) bool {
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-
 	// reconcile until encryption is successfully initialized
 	if cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		// validate secretRef before going into Pending phase
@@ -291,7 +290,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		if cluster.Status.Encryption.ActiveKey != configuredKey {
-
 			// validate secretRef before going into Pending phase
 			result, err := r.validateSecretRef(cluster, log)
 			if err != nil {
@@ -336,34 +334,33 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) validateSecretRef(cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*reconcile.Result, error) {
-	if hasSecretKeyRef(cluster) {
-		seed, err := r.seedGetter()
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
+	if !hasSecretKeyRef(cluster) {
+		return nil, nil
+	}
 
-		log.Debug("got seed")
+	seed, err := r.seedGetter()
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
 
-		seedClient, err := r.seedClientGetter(seed)
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
+	seedClient, err := r.seedClientGetter(seed)
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
 
-		log.Debug("got seed client")
-
-		for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
-			if key.SecretRef != nil {
-				v, err := getSecretKeyValue(seedClient, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
-				if err != nil {
-					return &reconcile.Result{}, err
-				} else {
-					if err := validateKeyLength(string(v)); err != nil {
-						return &reconcile.Result{}, fmt.Errorf("%s->Secret:%s->Key:%s: %w", key.Name, key.SecretRef.Name, key.SecretRef.Key, err)
-					}
+	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
+		if key.SecretRef != nil {
+			v, err := getSecretKeyValue(seedClient, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
+			if err != nil {
+				return &reconcile.Result{}, err
+			} else {
+				if err := validateKeyLength(string(v)); err != nil {
+					return &reconcile.Result{}, fmt.Errorf("%s->Secret:%s->Key:%s: %w", key.Name, key.SecretRef.Name, key.SecretRef.Key, err)
 				}
 			}
 		}
 	}
+
 	return nil, nil
 }
 
