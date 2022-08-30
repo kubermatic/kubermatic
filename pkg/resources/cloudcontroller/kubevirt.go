@@ -140,6 +140,8 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 func getKVFlags(data *resources.TemplateData) []string {
 	flags := []string{
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
+		"--authorization-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
+		"--authentication-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--cloud-config=/etc/kubernetes/cloud/config",
 		"--cloud-provider=kubevirt",
 	}
