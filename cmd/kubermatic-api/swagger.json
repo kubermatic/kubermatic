@@ -3977,11 +3977,6 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Region",
-            "in": "header"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -4000,6 +3995,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
           }
         ],
         "responses": {
@@ -19096,6 +19096,41 @@
             "schema": {
               "$ref": "#/definitions/AzureVirtualNetworksList"
             }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/clusterroles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS Cluster Service Roles.",
+        "operationId": "listEKSClusterRoles",
+        "responses": {
+          "200": {
+            "description": "EKSClusterRolesList",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSClusterRolesList"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "description": "errorResponse",
