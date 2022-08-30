@@ -169,7 +169,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		return nil, err
 	}
 
-	md, err := s.createMachineDeployment(num, config)
+	md, err := createMachineDeployment(num, &s.version, s.operatingSystem, osSpec, s.cloudProvider, config, s.dualstackEnabled)
 	if err != nil {
 		return nil, err
 	}
