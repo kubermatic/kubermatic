@@ -423,8 +423,8 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
-	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone.
-	TopologyKeyFailureDomainZone = "failure-domain.beta.kubernetes.io/zone"
+	// TopologyKeyZone defines the topology key for the node's cloud provider zone.
+	TopologyKeyZone = "topology.kubernetes.io/zone"
 
 	// MachineCRDName defines the CRD name for machine objects.
 	MachineCRDName = "machines.cluster.k8s.io"
@@ -1539,9 +1539,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 }
 
 // SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
-// TopologyKeyFailureDomainZone label.
+// TopologyKeyZone label.
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
-	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
+	selector, err := labels.Parse(TopologyKeyZone)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse selector: %w", err)
 	}
@@ -1554,7 +1554,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyFailureDomainZone, err)
+		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyZone, err)
 	}
 
 	return len(nodeList.Items) != 0, nil
