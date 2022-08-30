@@ -117,7 +117,7 @@ const (
 	SeedPausedPhase SeedPhase = "Paused"
 )
 
-// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled
+// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled;ClusterInitialized
 
 // SeedConditionType is used to indicate the type of a seed condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered
@@ -131,6 +131,12 @@ const (
 	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
 	// resources inside the seed cluster.
 	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"
+	// SeedConditionClusterInitialized indicates that the KKP operator has finished setting up the
+	// CRDs and other prerequisites on the Seed cluster. After this condition is true, other
+	// controllers can begin to create watches and reconcile resources (i.e. this condition is
+	// a precondition to ResourcesReconciled). Once this condition is true, it is never set to false
+	// again.
+	SeedConditionClusterInitialized SeedConditionType = "ClusterInitialized"
 )
 
 var AllSeedConditionTypes = []SeedConditionType{
@@ -243,6 +249,12 @@ func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditi
 	}
 
 	return condition.Status == conditionStatus
+}
+
+// IsInitialized returns true if the seed cluster was successfully initialized and
+// is ready for controllers to operate on it.
+func (ss *SeedStatus) IsInitialized() bool {
+	return ss.Conditions[SeedConditionClusterInitialized].Status == corev1.ConditionTrue
 }
 
 // The spec for a seed cluster.
