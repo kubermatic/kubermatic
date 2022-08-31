@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
@@ -301,17 +302,17 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 	}
 
 	// install KKP CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions, crd.MasterCluster); err != nil {
 		return err
 	}
 
 	// install VPA CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil, crd.MasterCluster); err != nil {
 		return err
 	}
 
 	// install OSM CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil, crd.MasterCluster); err != nil {
 		return err
 	}
 

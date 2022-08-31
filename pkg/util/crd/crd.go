@@ -22,9 +22,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/sets"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -83,4 +85,26 @@ func LoadFromFile(filename string) ([]ctrlruntimeclient.Object, error) {
 	}
 
 	return crds, nil
+}
+
+type ClusterKind string
+
+const (
+	MasterCluster ClusterKind = "master"
+	SeedCluster   ClusterKind = "seed"
+
+	// LocationLabel is the label on CRD object that contains a comma separated list
+	// of cluster kinds where this CRD should be installed into.
+	LocationLabel = "kubermatic.k8c.io/location"
+)
+
+func SkipCRDOnCluster(crd ctrlruntimeclient.Object, kind ClusterKind) bool {
+	locationLabel := crd.GetLabels()[LocationLabel]
+
+	// only filter out if a label exists
+	if locationLabel == "" {
+		return false
+	}
+
+	return !sets.NewString(strings.Split(locationLabel, ",")...).Has(string(kind))
 }
