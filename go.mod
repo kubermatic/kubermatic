@@ -20,7 +20,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.57
 	github.com/aws/aws-sdk-go-v2/service/eks v1.21.4
 	github.com/cert-manager/cert-manager v1.9.1
-	github.com/cilium/cilium v1.11.0-rc0 // need 1.12.x because 1.11.x is incompatible with k8s 1.24
+	github.com/cilium/cilium v1.12.0 // need 1.12.x because 1.11.x is incompatible with k8s 1.24
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220623102241-067009cd38ea
