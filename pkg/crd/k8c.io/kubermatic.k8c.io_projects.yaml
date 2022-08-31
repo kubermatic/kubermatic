@@ -6,6 +6,8 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: projects.kubermatic.k8c.io
+  labels:
+    kubermatic.k8c.io/location: master,seed
 spec:
   group: kubermatic.k8c.io
   names:
@@ -15,61 +17,53 @@ spec:
     singular: project
   scope: Cluster
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.name
-      name: HumanReadableName
-      type: string
-    - jsonPath: .status.phase
-      name: Status
-      type: string
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1
-    schema:
-      openAPIV3Schema:
-        description: Project is the type describing a project. A project is a collection
-          of SSH keys, clusters and members. Members are assigned by creating UserProjectBinding
-          objects.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: ProjectSpec is a specification of a project.
-            properties:
-              name:
-                description: Name is the human-readable name given to the project.
-                type: string
-            required:
-            - name
-            type: object
-          status:
-            description: ProjectStatus represents the current status of a project.
-            properties:
-              phase:
-                description: Phase describes the project phase. New projects are in
-                  the `Inactive` phase; after being reconciled they move to `Active`
-                  and during deletion they are `Terminating`.
-                enum:
-                - Active
-                - Inactive
-                - Terminating
-                type: string
-            required:
-            - phase
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+    - additionalPrinterColumns:
+        - jsonPath: .spec.name
+          name: HumanReadableName
+          type: string
+        - jsonPath: .status.phase
+          name: Status
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: Project is the type describing a project. A project is a collection of SSH keys, clusters and members. Members are assigned by creating UserProjectBinding objects.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ProjectSpec is a specification of a project.
+              properties:
+                name:
+                  description: Name is the human-readable name given to the project.
+                  type: string
+              required:
+                - name
+              type: object
+            status:
+              description: ProjectStatus represents the current status of a project.
+              properties:
+                phase:
+                  description: Phase describes the project phase. New projects are in the `Inactive` phase; after being reconciled they move to `Active` and during deletion they are `Terminating`.
+                  enum:
+                    - Active
+                    - Inactive
+                    - Terminating
+                  type: string
+              required:
+                - phase
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}

@@ -6,6 +6,8 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: etcdbackupconfigs.kubermatic.k8c.io
+  labels:
+    kubermatic.k8c.io/location: seed
 spec:
   group: kubermatic.k8c.io
   names:
@@ -15,167 +17,139 @@ spec:
     singular: etcdbackupconfig
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1
-    schema:
-      openAPIV3Schema:
-        description: EtcdBackupConfig specifies a add-on.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: EtcdBackupConfigSpec specifies details of an etcd backup.
-            properties:
-              cluster:
-                description: Cluster is the reference to the cluster whose etcd will
-                  be backed up
-                properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                    type: string
-                  namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                    type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
-              destination:
-                description: Destination indicates where the backup will be stored.
-                  The destination name must correspond to a destination in the cluster's
-                  Seed.Spec.EtcdBackupRestore.
-                type: string
-              keep:
-                description: Keep is the number of backups to keep around before deleting
-                  the oldest one If not set, defaults to DefaultKeptBackupsCount.
-                  Only used if Schedule is set.
-                type: integer
-              name:
-                description: Name defines the name of the backup The name of the backup
-                  file in S3 will be <cluster>-<backup name> If a schedule is set
-                  (see below), -<timestamp> will be appended.
-                type: string
-              schedule:
-                description: Schedule is a cron expression defining when to perform
-                  the backup. If not set, the backup is performed exactly once, immediately.
-                type: string
-            required:
-            - cluster
-            - destination
-            - name
-            type: object
-          status:
-            properties:
-              cleanupRunning:
-                description: If the controller was configured with a cleanupContainer,
-                  CleanupRunning keeps track of the corresponding job
-                type: boolean
-              conditions:
-                additionalProperties:
+    - additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: EtcdBackupConfig specifies a add-on.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: EtcdBackupConfigSpec specifies details of an etcd backup.
+              properties:
+                cluster:
+                  description: Cluster is the reference to the cluster whose etcd will be backed up
                   properties:
-                    lastHeartbeatTime:
-                      description: Last time we got an update on a given condition.
-                      format: date-time
+                    apiVersion:
+                      description: API version of the referent.
                       type: string
-                    lastTransitionTime:
-                      description: Last time the condition transit from one status
-                        to another.
-                      format: date-time
+                    fieldPath:
+                      description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
                       type: string
-                    message:
-                      description: Human readable message indicating details about
-                        last transition.
+                    kind:
+                      description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                       type: string
-                    reason:
-                      description: (brief) reason for the condition's last transition.
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                       type: string
-                    status:
-                      description: Status of the condition, one of True, False, Unknown.
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
                       type: string
-                  required:
-                  - lastHeartbeatTime
-                  - status
-                  type: object
-                description: Conditions contains conditions of the EtcdBackupConfig
-                type: object
-              currentBackups:
-                description: CurrentBackups tracks the creation and deletion progress
-                  of all backups managed by the EtcdBackupConfig
-                items:
-                  properties:
-                    backupFinishedTime:
-                      format: date-time
+                    resourceVersion:
+                      description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
                       type: string
-                    backupMessage:
-                      type: string
-                    backupName:
-                      type: string
-                    backupPhase:
-                      type: string
-                    backupStartTime:
-                      format: date-time
-                      type: string
-                    deleteFinishedTime:
-                      format: date-time
-                      type: string
-                    deleteJobName:
-                      type: string
-                    deleteMessage:
-                      type: string
-                    deletePhase:
-                      type: string
-                    deleteStartTime:
-                      format: date-time
-                      type: string
-                    jobName:
-                      type: string
-                    scheduledTime:
-                      description: ScheduledTime will always be set when the BackupStatus
-                        is created, so it'll never be nil
-                      format: date-time
+                    uid:
+                      description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                       type: string
                   type: object
-                type: array
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                  x-kubernetes-map-type: atomic
+                destination:
+                  description: Destination indicates where the backup will be stored. The destination name must correspond to a destination in the cluster's Seed.Spec.EtcdBackupRestore.
+                  type: string
+                keep:
+                  description: Keep is the number of backups to keep around before deleting the oldest one If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
+                  type: integer
+                name:
+                  description: Name defines the name of the backup The name of the backup file in S3 will be <cluster>-<backup name> If a schedule is set (see below), -<timestamp> will be appended.
+                  type: string
+                schedule:
+                  description: Schedule is a cron expression defining when to perform the backup. If not set, the backup is performed exactly once, immediately.
+                  type: string
+              required:
+                - cluster
+                - destination
+                - name
+              type: object
+            status:
+              properties:
+                cleanupRunning:
+                  description: If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
+                  type: boolean
+                conditions:
+                  additionalProperties:
+                    properties:
+                      lastHeartbeatTime:
+                        description: Last time we got an update on a given condition.
+                        format: date-time
+                        type: string
+                      lastTransitionTime:
+                        description: Last time the condition transit from one status to another.
+                        format: date-time
+                        type: string
+                      message:
+                        description: Human readable message indicating details about last transition.
+                        type: string
+                      reason:
+                        description: (brief) reason for the condition's last transition.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                    required:
+                      - lastHeartbeatTime
+                      - status
+                    type: object
+                  description: Conditions contains conditions of the EtcdBackupConfig
+                  type: object
+                currentBackups:
+                  description: CurrentBackups tracks the creation and deletion progress of all backups managed by the EtcdBackupConfig
+                  items:
+                    properties:
+                      backupFinishedTime:
+                        format: date-time
+                        type: string
+                      backupMessage:
+                        type: string
+                      backupName:
+                        type: string
+                      backupPhase:
+                        type: string
+                      backupStartTime:
+                        format: date-time
+                        type: string
+                      deleteFinishedTime:
+                        format: date-time
+                        type: string
+                      deleteJobName:
+                        type: string
+                      deleteMessage:
+                        type: string
+                      deletePhase:
+                        type: string
+                      deleteStartTime:
+                        format: date-time
+                        type: string
+                      jobName:
+                        type: string
+                      scheduledTime:
+                        description: ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
+                        format: date-time
+                        type: string
+                    type: object
+                  type: array
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
