@@ -35,6 +35,8 @@ import (
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
@@ -52,6 +54,21 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 
 	if !crdsExists {
 		return nil // nothing to do
+	}
+
+	// Ensure that no KKP upgrade was skipped.
+	kkpMinorVersion := semverlib.MustParse(opt.Versions.Kubermatic).Minor()
+	minMinorRequired := kkpMinorVersion - 1
+
+	if currentVersion := opt.KubermaticConfiguration.Status.KubermaticVersion; currentVersion != "" {
+		currentSemver, err := semverlib.NewVersion(currentVersion)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to parse existing KKP version %q: %w", currentVersion, err))
+		}
+
+		if currentSemver.Minor() < minMinorRequired {
+			return append(errs, fmt.Errorf("existing installation is on version %s and must be updated to KKP 2.%d first (sequentially to all minor releases in-between)", currentVersion, kkpMinorVersion))
+		}
 	}
 
 	// we need the actual, effective versioning configuration, which most users will
@@ -73,6 +90,30 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 
 	for seedName, seed := range allSeeds {
 		opt.Logger.WithField("seed", seedName).Info("Checking seed cluster…")
+
+		// ensure seeds are also up-to-date before we continue
+		seedVersion := seed.Status.Versions.Kubermatic
+		if seedVersion != "" {
+			seedSemver, err := semverlib.NewVersion(seedVersion)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Seed cluster %q version %q is invalid: %w", seedName, seedVersion, err))
+				continue
+			}
+
+			if seedSemver.Minor() < minMinorRequired {
+				errs = append(errs, fmt.Errorf("Seed cluster %q is on version %s and must be updated first", seedName, seedVersion))
+				continue
+			}
+		}
+
+		// if the operator has the chance to reconcile the seed...
+		if conditions := seed.Status.Conditions; conditions[kubermaticv1.SeedConditionKubeconfigValid].Status == corev1.ConditionTrue {
+			// ... it should be healthy
+			if conditions[kubermaticv1.SeedConditionResourcesReconciled].Status != corev1.ConditionTrue {
+				errs = append(errs, fmt.Errorf("Seed cluster %q is not healthy, please verify the operator logs or events on the Seed object", seedName))
+				continue
+			}
+		}
 
 		// create client into seed
 		seedClient, err := opt.SeedClientGetter(seed)
