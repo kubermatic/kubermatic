@@ -877,6 +877,10 @@ type EKSClusterList []EKSCluster
 // swagger:model EKSRegionList
 type EKSRegionList []string
 
+// EKSClusterRolesList represents a list of EKS Cluster Service Roles.
+// swagger:model EKSClusterRolesList
+type EKSClusterRolesList []string
+
 // EKSAMITypeList represents a list of EKS AMI Types for node group.
 // swagger:model EKSAMITypeList
 type EKSAMITypeList []string

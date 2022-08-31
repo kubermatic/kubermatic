@@ -32,6 +32,8 @@ type ClientService interface {
 
 	ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesOK, error)
 
+	ListEKSClusterRoles(params *ListEKSClusterRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClusterRolesOK, error)
+
 	ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSInstanceTypesNoCredentialsOK, error)
 
 	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
@@ -126,6 +128,44 @@ func (a *Client) ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEKSCapacityTypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSClusterRoles lists e k s cluster service roles
+*/
+func (a *Client) ListEKSClusterRoles(params *ListEKSClusterRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClusterRolesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSClusterRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSClusterRoles",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/eks/clusterroles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSClusterRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSClusterRolesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSClusterRolesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
