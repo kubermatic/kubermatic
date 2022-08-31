@@ -33,7 +33,16 @@ func convertInternalToAPIApplicationInstallation(in *appskubermaticv1.Applicatio
 			Name:              in.Name,
 		},
 		Namespace: in.Namespace,
-		Spec:      &in.Spec,
+		Spec: &apiv2.ApplicationInstallationSpec{
+			Namespace: apiv2.NamespaceSpec{
+				Name:        in.Spec.Namespace.Name,
+				Create:      in.Spec.Namespace.Create,
+				Labels:      in.Spec.Namespace.Labels,
+				Annotations: in.Spec.Namespace.Annotations,
+			},
+			ApplicationRef: in.Spec.ApplicationRef,
+			Values:         in.Spec.Values,
+		},
 		Status: &apiv2.ApplicationInstallationStatus{
 			ApplicationVersion: in.Status.ApplicationVersion,
 			Method:             in.Status.Method,
@@ -75,6 +84,15 @@ func convertAPItoInternalApplicationInstallationBody(app *apiv2.ApplicationInsta
 			Name:      app.Name,
 			Namespace: app.Namespace,
 		},
-		Spec: *app.Spec,
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
+				Name:        app.Spec.Namespace.Name,
+				Create:      app.Spec.Namespace.Create,
+				Labels:      app.Spec.Namespace.Labels,
+				Annotations: app.Spec.Namespace.Annotations,
+			},
+			ApplicationRef: app.Spec.ApplicationRef,
+			Values:         app.Spec.Values,
+		},
 	}
 }
