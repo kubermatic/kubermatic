@@ -78,7 +78,7 @@ var _ = Describe("helm template", func() {
 				Name:      "app1",
 			},
 			Spec: appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: appskubermaticv1.NamespaceSpec{
+				Namespace: appskubermaticv1.AppNamespaceSpec{
 					Name: testNs.Name,
 				},
 				Values: runtime.RawExtension{},
