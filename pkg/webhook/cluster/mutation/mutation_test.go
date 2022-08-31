@@ -381,9 +381,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(
-				defaultPatches,
-			),
+			wantPatches: defaultPatches,
 		},
 		{
 			name: "Default features",
