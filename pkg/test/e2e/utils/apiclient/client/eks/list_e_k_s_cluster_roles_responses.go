@@ -63,13 +63,13 @@ func NewListEKSClusterRolesOK() *ListEKSClusterRolesOK {
 EKSClusterRolesList
 */
 type ListEKSClusterRolesOK struct {
-	Payload []models.EKSClusterRolesList
+	Payload models.EKSClusterRolesList
 }
 
 func (o *ListEKSClusterRolesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/clusterroles][%d] listEKSClusterRolesOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSClusterRolesOK) GetPayload() []models.EKSClusterRolesList {
+func (o *ListEKSClusterRolesOK) GetPayload() models.EKSClusterRolesList {
 	return o.Payload
 }
 

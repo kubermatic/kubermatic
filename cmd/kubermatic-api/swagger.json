@@ -14916,10 +14916,7 @@
           "200": {
             "description": "PacketSizeList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PacketSizeList"
-              }
+              "$ref": "#/definitions/PacketSizeList"
             }
           },
           "default": {
@@ -19120,10 +19117,7 @@
           "200": {
             "description": "EKSClusterRolesList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/EKSClusterRolesList"
-              }
+              "$ref": "#/definitions/EKSClusterRolesList"
             }
           },
           "401": {
@@ -19155,10 +19149,7 @@
           "200": {
             "description": "EKSRegionList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/EKSRegionList"
-              }
+              "$ref": "#/definitions/EKSRegionList"
             }
           },
           "401": {
@@ -20414,10 +20405,7 @@
           "200": {
             "description": "VSphereDatastoreList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/VSphereDatastoreList"
-              }
+              "$ref": "#/definitions/VSphereDatastoreList"
             }
           },
           "default": {

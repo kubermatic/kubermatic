@@ -3846,7 +3846,7 @@ func (r Routing) listAlibabaVSwitchesNoCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []PacketSizeList
+//       200: PacketSizeList
 func (r Routing) listPacketSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4222,7 +4222,7 @@ func (r Routing) listAzureVnets() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []VSphereDatastoreList
+//       200: VSphereDatastoreList
 func (r Routing) listVSphereDatastores() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6291,7 +6291,7 @@ func (r Routing) listEKSSecurityGroups() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []EKSRegionList
+//       200: EKSRegionList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSRegions() http.Handler {
@@ -6310,15 +6310,14 @@ func (r Routing) listEKSRegions() http.Handler {
 //
 //	List EKS Cluster Service Roles.
 //
+//     Produces:
+//     - application/json
 //
-//	Produces:
-//	- application/json
-//
-//	Responses:
-//	  default: errorResponse
-//	  200: []EKSClusterRolesList
-//	  401: empty
-//	  403: empty
+//     Responses:
+//       default: errorResponse
+//       200: EKSClusterRolesList
+//       401: empty
+//       403: empty
 func (r Routing) listEKSClusterRoles() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
