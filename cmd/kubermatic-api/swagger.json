@@ -14916,10 +14916,7 @@
           "200": {
             "description": "PacketSizeList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PacketSizeList"
-              }
+              "$ref": "#/definitions/PacketSizeList"
             }
           },
           "default": {
@@ -19106,6 +19103,38 @@
         }
       }
     },
+    "/api/v2/providers/eks/clusterroles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS Cluster Service Roles.",
+        "operationId": "listEKSClusterRoles",
+        "responses": {
+          "200": {
+            "description": "EKSClusterRolesList",
+            "schema": {
+              "$ref": "#/definitions/EKSClusterRolesList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/regions": {
       "get": {
         "produces": [
@@ -19120,10 +19149,7 @@
           "200": {
             "description": "EKSRegionList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/EKSRegionList"
-              }
+              "$ref": "#/definitions/EKSRegionList"
             }
           },
           "401": {
@@ -20379,10 +20405,7 @@
           "200": {
             "description": "VSphereDatastoreList",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/VSphereDatastoreList"
-              }
+              "$ref": "#/definitions/VSphereDatastoreList"
             }
           },
           "default": {
@@ -25765,6 +25788,14 @@
       "title": "EKSClusterList represents a list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterRolesList": {
+      "type": "array",
+      "title": "EKSClusterRolesList represents a list of EKS Cluster Service Roles.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

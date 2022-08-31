@@ -51,13 +51,13 @@ func NewListPacketSizesNoCredentialsV2OK() *ListPacketSizesNoCredentialsV2OK {
 PacketSizeList
 */
 type ListPacketSizesNoCredentialsV2OK struct {
-	Payload []models.PacketSizeList
+	Payload models.PacketSizeList
 }
 
 func (o *ListPacketSizesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
-func (o *ListPacketSizesNoCredentialsV2OK) GetPayload() []models.PacketSizeList {
+func (o *ListPacketSizesNoCredentialsV2OK) GetPayload() models.PacketSizeList {
 	return o.Payload
 }
 
