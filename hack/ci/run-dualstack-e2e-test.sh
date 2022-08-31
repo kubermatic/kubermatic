@@ -61,6 +61,11 @@ export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-
 export OS_USER_DOMAIN_NAME="${OS_USER_DOMAIN_NAME:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
 export OS_PROJECT_NAME="${OS_PROJECT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
 export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
+
+export OS_RHEL_USERNAME="${OS_RHEL_USERNAME:-$(vault kv get -field=user dev/redhat-subscription)}"
+export OS_RHEL_PASSWORD="${OS_RHEL_PASSWORD:-$(vault kv get -field=password dev/redhat-subscription)}"
+export OS_RHEL_OFFLINE_TOKEN="${OS_RHEL_OFFLINE_TOKEN:-$(vault kv get -field=offlineToken dev/redhat-subscription)}"
+
 export HETZNER_TOKEN="${HETZNER_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
 
 export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
@@ -74,6 +79,8 @@ export VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/
 echodate "Successfully got secrets for dev from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER --os $OSNAMES
+export OSNAMES="${OSNAMES:-all}"
+
+go_test dualstack_e2e -race -timeout 90m -tags dualstack -v ./pkg/test/dualstack/... -args --cni $CNI --provider $PROVIDER --os $OSNAMES
 
 echodate "Dualstack tests done."
