@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -162,18 +163,22 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
 		}
 
-		for _, crd := range crds {
-			crdLog := log.With("crd", crd.Name)
+		for _, crdObject := range crds {
+			crdLog := log.With("crd", crdObject.Name)
+
+			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
 
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the KKP installer does the same when
 			// updating CRDs on the master cluster)
-			if crd.Annotations == nil {
-				crd.Annotations = map[string]string{}
+			if crdObject.Annotations == nil {
+				crdObject.Annotations = map[string]string{}
 			}
-			crd.Annotations[resources.VersionLabel] = r.versions.Kubermatic
+			crdObject.Annotations[resources.VersionLabel] = r.versions.Kubermatic
 
-			err := r.createOnSeed(ctx, &crd, client, crdLog)
+			err := r.createOnSeed(ctx, &crdObject, client, crdLog)
 			if err == nil {
 				crdLog.Info("Created CRD")
 			} else {

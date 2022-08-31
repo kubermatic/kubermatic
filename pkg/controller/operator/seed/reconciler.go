@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -388,7 +389,11 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
 		}
 
-		for i := range crds {
+		for i, crdObject := range crds {
+			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
+
 			creators = append(creators, common.CRDCreator(&crds[i], log, r.versions))
 		}
 	}
