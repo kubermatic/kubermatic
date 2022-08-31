@@ -54,6 +54,6 @@ retry 2 kubectl apply -f preset-hetzner.yaml
 echodate "Running OPA tests..."
 
 go_test opa_e2e -timeout 30m -tags e2e,ee -v ./pkg/test/e2e/opa \
-  -datacenter hetzner-hel1
+  -datacenter hetzner-nbg1
 
 echodate "Tests completed successfully!"
