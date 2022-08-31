@@ -254,7 +254,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
 				// Maps SNI host with the port name of this service.
 				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
-					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.GetAddress().ExternalName)
+					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.Status.Address.ExternalName)
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
@@ -464,7 +464,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
 
-			address := c.GetAddress()
+			address := c.Status.Address
 			if address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
 			}

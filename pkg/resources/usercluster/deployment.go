@@ -78,6 +78,7 @@ type userclusterControllerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
+//
 //nolint:gocyclo
 func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -131,7 +132,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				enableUserSSHKeyAgent = pointer.BoolPtr(true)
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 
 			args := append([]string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",

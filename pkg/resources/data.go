@@ -421,7 +421,7 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
@@ -436,7 +436,7 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
@@ -798,7 +798,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.GetAddress().InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})

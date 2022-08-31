@@ -46,29 +46,6 @@ spec:
         openAPIV3Schema:
           description: Cluster represents a Kubermatic Kubernetes Platform user cluster. Cluster objects exist on Seed clusters and each user cluster consists of a namespace containing the Kubernetes control plane and additional pods (like Prometheus or the machine-controller).
           properties:
-            address:
-              description: Address contains the IPs/URLs to access the cluster control plane. This field is optional and replaced by the identical struct in the ClusterStatus. No code should rely on these fields anymore.
-              properties:
-                adminToken:
-                  description: AdminToken is the token for the kubeconfig, the user can download
-                  type: string
-                externalName:
-                  description: ExternalName is the DNS name for this cluster
-                  type: string
-                internalURL:
-                  description: InternalName is the seed cluster internal absolute DNS name to the API server
-                  type: string
-                ip:
-                  description: IP is the external IP under which the apiserver is available
-                  type: string
-                port:
-                  description: Port is the port the API server listens on
-                  format: int32
-                  type: integer
-                url:
-                  description: URL under which the Apiserver is available
-                  type: string
-              type: object
             apiVersion:
               description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string

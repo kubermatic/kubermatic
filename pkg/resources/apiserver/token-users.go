@@ -37,7 +37,7 @@ func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCrea
 
 			buffer := &bytes.Buffer{}
 			writer := csv.NewWriter(buffer)
-			if err := writer.Write([]string{data.Cluster().GetAddress().AdminToken, "admin", "10000", "system:masters"}); err != nil {
+			if err := writer.Write([]string{data.Cluster().Status.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
 				return nil, err
 			}
 			viewerToken, err := data.GetViewerToken()

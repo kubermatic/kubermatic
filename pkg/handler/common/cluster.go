@@ -1099,7 +1099,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 		},
 		Status: apiv1.ClusterStatus{
 			Version:              internalCluster.Status.Versions.ControlPlane,
-			URL:                  internalCluster.GetAddress().URL,
+			URL:                  internalCluster.Status.Address.URL,
 			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter, incompatibilities...),
 		},
 		Type: apiv1.KubernetesClusterType,
