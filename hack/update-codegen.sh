@@ -35,7 +35,7 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 
 annotation="kubermatic.k8c.io/location"
 locationMap='{
-  "applicationdefinitions.apps.kubermatic.k8c.io": "master",
+  "applicationdefinitions.apps.kubermatic.k8c.io": "master,seed",
   "applicationinstallations.apps.kubermatic.k8c.io": "usercluster",
   "addonconfigs.kubermatic.k8c.io": "master",
   "addons.kubermatic.k8c.io": "seed",
