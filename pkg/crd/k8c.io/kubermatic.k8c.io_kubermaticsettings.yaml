@@ -4,10 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
+    kubermatic.k8c.io/location: master
   creationTimestamp: null
   name: kubermaticsettings.kubermatic.k8c.io
-  labels:
-    kubermatic.k8c.io/location: master
 spec:
   group: kubermatic.k8c.io
   names:

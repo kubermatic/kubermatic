@@ -33,7 +33,7 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   paths=./pkg/apis/... \
   output:crd:dir=./$CRD_DIR
 
-labelName="kubermatic.k8c.io/location"
+annotation="kubermatic.k8c.io/location"
 locationMap='{
   "applicationdefinitions.apps.kubermatic.k8c.io": "master",
   "applicationinstallations.apps.kubermatic.k8c.io": "usercluster",
@@ -67,7 +67,7 @@ locationMap='{
 }'
 
 failure=false
-echodate "Labeling CRDs"
+echodate "Annotating CRDs"
 
 for filename in $CRD_DIR/*.yaml; do
   crdName="$(yq4 '.metadata.name' "$filename")"
@@ -79,7 +79,7 @@ for filename in $CRD_DIR/*.yaml; do
     continue
   fi
 
-  yq4 --inplace ".metadata.labels.\"$labelName\" = \"$location\"" "$filename"
+  yq4 --inplace ".metadata.annotations.\"$annotation\" = \"$location\"" "$filename"
 done
 
 if $failure; then

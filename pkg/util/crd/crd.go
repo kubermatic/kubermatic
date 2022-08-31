@@ -93,18 +93,18 @@ const (
 	MasterCluster ClusterKind = "master"
 	SeedCluster   ClusterKind = "seed"
 
-	// LocationLabel is the label on CRD object that contains a comma separated list
+	// LocationAnnotation is the annotation on CRD object that contains a comma separated list
 	// of cluster kinds where this CRD should be installed into.
-	LocationLabel = "kubermatic.k8c.io/location"
+	LocationAnnotation = "kubermatic.k8c.io/location"
 )
 
 func SkipCRDOnCluster(crd ctrlruntimeclient.Object, kind ClusterKind) bool {
-	locationLabel := crd.GetLabels()[LocationLabel]
+	location := crd.GetAnnotations()[LocationAnnotation]
 
 	// only filter out if a label exists
-	if locationLabel == "" {
+	if location == "" {
 		return false
 	}
 
-	return !sets.NewString(strings.Split(locationLabel, ",")...).Has(string(kind))
+	return !sets.NewString(strings.Split(location, ",")...).Has(string(kind))
 }
