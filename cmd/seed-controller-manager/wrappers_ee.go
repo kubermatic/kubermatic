@@ -27,6 +27,7 @@ import (
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -40,11 +41,11 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 }
 
 func seedClientGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedClientGetter, error) {
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
-	return provider.SeedClientGetterFactory(seedKubeconfigGetter), nil
+	return kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter), nil
 }
 
 func setupControllers(ctrlCtx *controllerContext) error {

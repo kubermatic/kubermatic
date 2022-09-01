@@ -24,6 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,11 +38,11 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, opt
 }
 
 func seedClientGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedClientGetter, error) {
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
-	return provider.SeedClientGetterFactory(seedKubeconfigGetter), nil
+	return kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter), nil
 }
 
 func setupControllers(_ *controllerContext) error {
