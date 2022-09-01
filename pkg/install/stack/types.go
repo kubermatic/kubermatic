@@ -50,8 +50,6 @@ type DeployOptions struct {
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
 	EnableNginxIngressMigration        bool
-	EnableOpenstackCSIDriverMigration  bool
-	EnableLogrotateMigration           bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
 }

@@ -30,7 +30,6 @@ import (
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -42,16 +41,13 @@ import (
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -296,18 +292,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
 	}
 
-	// Ensure that Old version of ApplicationInstallation CRD is removed.
-	if err := controllerutil.RemoveOldApplicationInstallationCRD(ctx, client); err != nil {
-		return err
-	}
-
-	// This is a migration that is required to ensure that with the release of KKP v2.21
-	// we don't enable OSM for existing clusters.
-	// TODO: Remove this with KKP 2.22 release.
-	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
-		return err
-	}
-
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -362,12 +346,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 
 	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
 		return err
-	}
-
-	// During the KKP 2.20->2.21 upgrade we must delete the aws-node-termination-handler addon exactly once.
-	// TODO: Remove this with KKP 2.22 release.
-	if err := r.migrateAWSNodeTerminationAddon(ctx, client, log); err != nil {
-		return fmt.Errorf("failed to migrate AWS node-termination handler addon: %w", err)
 	}
 
 	return nil
@@ -698,136 +676,4 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	return nil
-}
-
-func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("performing migration for .Spec.EnableOperatingSystemManager field in Clusters")
-
-	// Master operator removes `cluster-webhook` service and at the time of execution of this piece of code, these webhook are effectively dead.
-	// Any request to create, update, or delete the clusters will be rejected by the admission webhooks. Therefore, we need to remove the validating and mutating webhooks for clusters.
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
-	}
-
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, clusterList); err != nil {
-		return fmt.Errorf("failed to list clusters: %w", err)
-	}
-
-	var errors []error
-	// We need to ensure that we explicitly set `.spec.enableOperatingSystemManager` to false for existing clusters.
-	// Although by default if this value is `nil` it should be treated as a truthy case. This migration is completely safe
-	// to do since for all the new clusters this field will be explicitly set to `true` via the webhooks.
-	for _, cluster := range clusterList.Items {
-		if cluster.Spec.EnableOperatingSystemManager == nil {
-			cluster.Spec.EnableOperatingSystemManager = pointer.Bool(false)
-
-			if err := client.Update(ctx, &cluster); err != nil {
-				// Instead of breaking on the first error just aggregate them to []errors and try to cover as much resources
-				// as we can in each run.
-				errors = append(errors, err)
-			}
-		}
-	}
-
-	return kerrors.NewAggregate(errors)
-}
-
-func (r *Reconciler) migrateAWSNodeTerminationAddon(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("Migrating addons...")
-
-	// Before we can migrate we need to ensure that the seed-ctrl-mgr is actually up-to-date,
-	// otherwise it could happen that an old seed-ctrl-mgr is re-installing an old aws-node
-	// addon.
-	seedCtrlMgrDeployment := &appsv1.Deployment{}
-	key := types.NamespacedName{
-		Name:      common.SeedControllerManagerDeploymentName,
-		Namespace: r.namespace,
-	}
-	if err := client.Get(ctx, key, seedCtrlMgrDeployment); err != nil {
-		return fmt.Errorf("failed to retrieve seed-controller-manager Deployment: %w", err)
-	}
-
-	ready, err := kubernetes.IsDeploymentRolloutComplete(seedCtrlMgrDeployment, -1)
-	if err != nil {
-		return err
-	}
-
-	if !ready {
-		log.Debug("seed-controller-manager Deployment is not yet ready")
-		return nil
-	}
-
-	// Now that we're sure the current seed-ctrl-mgr is running, we can tell it to
-	// delete the affected addons and rely on the addoninstaller controller to bring
-	// it back later.
-
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, clusterList); err != nil {
-		return fmt.Errorf("failed to list clusters: %w", err)
-	}
-
-	var errors []error
-	for _, cluster := range clusterList.Items {
-		// Have we already migrated this cluster?
-		if _, exists := cluster.Annotations[resources.AWSNodeTerminationHandlerMigrationAnnotation]; exists {
-			continue
-		}
-
-		// Not yet reconciled.
-		if cluster.Status.NamespaceName == "" {
-			continue
-		}
-
-		// Not an AWS cluster, so there's nothing to do.
-		if cluster.Spec.Cloud.ProviderName != string(kubermaticv1.AWSCloudProvider) {
-			continue
-		}
-
-		// Here we go!
-		err := deleteAddon(ctx, client, &cluster)
-
-		// Something bad happened when trying to delete the addon.
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-
-		// Addon was deleted, let's mark the cluster accordingly.
-		oldCluster := cluster.DeepCopy()
-
-		if cluster.Annotations == nil {
-			cluster.Annotations = map[string]string{}
-		}
-		cluster.Annotations[resources.AWSNodeTerminationHandlerMigrationAnnotation] = "yes"
-
-		patchOpts := ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
-		if err := client.Patch(ctx, &cluster, patchOpts); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	return kerrors.NewAggregate(errors)
-}
-
-func deleteAddon(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	addon := &kubermaticv1.Addon{}
-	key := types.NamespacedName{
-		Name:      "aws-node-termination-handler",
-		Namespace: cluster.Status.NamespaceName,
-	}
-	if err := client.Get(ctx, key, addon); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
-	// Addon already in deletion.
-	if addon.DeletionTimestamp != nil {
-		return nil
-	}
-
-	return client.Delete(ctx, addon)
 }
