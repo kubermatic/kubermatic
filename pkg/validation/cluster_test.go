@@ -937,9 +937,7 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Log(test.name)
 			err := validateEncryptionConfiguration(test.clusterSpec, field.NewPath("spec", "encryptionConfiguration"))
-			t.Logf("%+v", err)
 			if (err != nil) != test.expectErr {
 				t.Logf("expected error: %t, got: %+v", test.expectErr, err)
 			}
