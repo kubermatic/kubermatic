@@ -26,6 +26,7 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -35,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -46,6 +48,9 @@ var (
 	ErrNotFound = errors.New("the given resource was not found")
 	// ErrAlreadyExists tells that the given resource already exists.
 	ErrAlreadyExists = errors.New("the given resource already exists")
+
+	ErrNoKubermaticConfigurationFound      = errors.New("no KubermaticConfiguration resource found")
+	ErrTooManyKubermaticConfigurationFound = errors.New("more than one KubermaticConfiguration resource found")
 )
 
 const (
@@ -54,6 +59,67 @@ const (
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
+
+// KubermaticConfigurationGetter is a function to retrieve the currently relevant
+// KubermaticConfiguration. That is the one in the same namespace as the
+// running application (e.g. the seed-controller-manager). It's an error
+// if there are none or more than one KubermaticConfiguration objects in
+// a single namespace.
+type KubermaticConfigurationGetter = func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error)
+
+// SeedGetter is a function to retrieve a single seed.
+type SeedGetter = func() (*kubermaticv1.Seed, error)
+
+// SeedsGetter is a function to retrieve a list of seeds.
+type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
+
+// SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed.
+type SeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
+
+// SeedClientGetter is used to get a ctrlruntimeclient for a given seed.
+type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error)
+
+// ClusterProviderGetter is used to get a clusterProvider.
+type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, error)
+
+// AddonProviderGetter is used to get an AddonProvider.
+type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
+
+// ConstraintProviderGetter is used to get a ConstraintProvider.
+type ConstraintProviderGetter = func(seed *kubermaticv1.Seed) (ConstraintProvider, error)
+
+// AlertmanagerProviderGetter is used to get an AlertmanagerProvider.
+type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerProvider, error)
+
+// RuleGroupProviderGetter is used to get an RuleGroupProvider.
+type RuleGroupProviderGetter = func(seed *kubermaticv1.Seed) (RuleGroupProvider, error)
+
+// PrivilegedMLAAdminSettingProviderGetter is used to get a PrivilegedMLAAdminSettingProvider.
+type PrivilegedMLAAdminSettingProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedMLAAdminSettingProvider, error)
+
+// ClusterTemplateInstanceProviderGetter is used to get a ClusterTemplateInstanceProvider.
+type ClusterTemplateInstanceProviderGetter = func(seed *kubermaticv1.Seed) (ClusterTemplateInstanceProvider, error)
+
+// EtcdBackupConfigProviderGetter is used to get a EtcdBackupConfigProvider.
+type EtcdBackupConfigProviderGetter = func(seed *kubermaticv1.Seed) (EtcdBackupConfigProvider, error)
+
+// EtcdBackupConfigProjectProviderGetter is used to get a EtcdBackupConfigProjectProvider.
+type EtcdBackupConfigProjectProviderGetter = func(seeds map[string]*kubermaticv1.Seed) (EtcdBackupConfigProjectProvider, error)
+
+// EtcdRestoreProviderGetter is used to get a EtcdRestoreProvider.
+type EtcdRestoreProviderGetter = func(seed *kubermaticv1.Seed) (EtcdRestoreProvider, error)
+
+// EtcdRestoreProjectProviderGetter is used to get a EtcdRestoreProjectProvider.
+type EtcdRestoreProjectProviderGetter = func(seeds map[string]*kubermaticv1.Seed) (EtcdRestoreProjectProvider, error)
+
+// BackupCredentialsProviderGetter is used to get a BackupCredentialsProvider.
+type BackupCredentialsProviderGetter = func(seed *kubermaticv1.Seed) (BackupCredentialsProvider, error)
+
+// PrivilegedIPAMPoolProviderGetter is used to get a PrivilegedIPAMPoolProvider.
+type PrivilegedIPAMPoolProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedIPAMPoolProvider, error)
+
+// PrivilegedOperatingSystemProfileProviderGetter is used to get a PrivilegedOperatingSystemProfileProvider.
+type PrivilegedOperatingSystemProfileProviderGetter = func(seed *kubermaticv1.Seed) (PrivilegedOperatingSystemProfileProvider, error)
 
 // CloudProvider declares a set of methods for interacting with a cloud provider.
 type CloudProvider interface {
@@ -420,94 +486,10 @@ type ProjectMemberMapper interface {
 	MapUserToGroups(ctx context.Context, user *kubermaticv1.User, projectID string) (sets.String, error)
 }
 
-// ExternalClusterCloudProviderName returns the provider name for the given ExternalClusterCloudSpec.
-func ExternalClusterCloudProviderName(spec kubermaticv1.ExternalClusterCloudSpec) (string, error) {
-	var clouds []kubermaticv1.ExternalClusterProvider
-	if spec.AKS != nil {
-		clouds = append(clouds, kubermaticv1.ExternalClusterAKSProvider)
-	}
-	if spec.EKS != nil {
-		clouds = append(clouds, kubermaticv1.ExternalClusterEKSProvider)
-	}
-	if spec.GKE != nil {
-		clouds = append(clouds, kubermaticv1.ExternalClusterGKEProvider)
-	}
-	if spec.KubeOne != nil {
-		clouds = append(clouds, kubermaticv1.ExternalClusterKubeOneProvider)
-	}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, kubermaticv1.ExternalClusterBringYourOwnProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in ExternalClusterCloudSpec, but found the following providers: %v", clouds)
-	}
-	return string(clouds[0]), nil
-}
-
-// ClusterCloudProviderName returns the provider name for the given CloudSpec.
-func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
-	var clouds []kubermaticv1.ProviderType
-	if spec.AWS != nil {
-		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
-	}
-	if spec.Alibaba != nil {
-		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
-	}
-	if spec.Anexia != nil {
-		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
-	}
-	if spec.Azure != nil {
-		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
-	}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
-	}
-	if spec.GCP != nil {
-		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
-	}
-	if spec.Hetzner != nil {
-		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
-	}
-	if spec.Kubevirt != nil {
-		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
-	}
-	if spec.Packet != nil {
-		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
-	}
-	if spec.VSphere != nil {
-		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
-	}
-	if spec.Nutanix != nil {
-		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
-	}
-	if spec.VMwareCloudDirector != nil {
-		clouds = append(clouds, kubermaticv1.VMwareCloudDirectorCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec, but found the following providers: %v", clouds)
-	}
-	return string(clouds[0]), nil
-}
-
 // ClusterCloudProvider returns the provider for the given cluster where
 // one of Cluster.Spec.Cloud.* is set.
 func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster) (string, CloudProvider, error) {
-	name, err := ClusterCloudProviderName(c.Spec.Cloud)
+	name, err := kubermaticv1helper.ClusterCloudProviderName(c.Spec.Cloud)
 	if err != nil {
 		return "", nil, err
 	}
@@ -521,66 +503,6 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 	}
 
 	return name, cp, nil
-}
-
-// DatacenterCloudProviderName returns the provider name for the given Datacenter.
-func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, error) {
-	if spec == nil {
-		return "", nil
-	}
-	var clouds []kubermaticv1.ProviderType
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
-	}
-	if spec.AWS != nil {
-		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
-	}
-	if spec.Packet != nil {
-		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
-	}
-	if spec.Hetzner != nil {
-		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
-	}
-	if spec.VSphere != nil {
-		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
-	}
-	if spec.Azure != nil {
-		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
-	}
-	if spec.GCP != nil {
-		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
-	}
-	if spec.Kubevirt != nil {
-		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
-	}
-	if spec.Alibaba != nil {
-		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
-	}
-	if spec.Anexia != nil {
-		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
-	}
-	if spec.Nutanix != nil {
-		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
-	}
-	if spec.VMwareCloudDirector != nil {
-		clouds = append(clouds, kubermaticv1.VMwareCloudDirectorCloudProvider)
-	}
-	if len(clouds) == 0 {
-		return "", nil
-	}
-	if len(clouds) != 1 {
-		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
-	}
-	return string(clouds[0]), nil
 }
 
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account.

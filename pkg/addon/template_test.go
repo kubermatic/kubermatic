@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
@@ -106,7 +106,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 }
 
 func TestNewTemplateData(t *testing.T) {
-	version := defaults.DefaultKubernetesVersioning.Default
+	version := defaulting.DefaultKubernetesVersioning.Default
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{

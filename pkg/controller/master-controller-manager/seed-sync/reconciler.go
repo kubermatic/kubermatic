@@ -27,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -105,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
 	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
-	config, err := provider.GetRawKubermaticConfiguration(ctx, r, namespace)
+	config, err := kubernetesprovider.GetRawKubermaticConfiguration(ctx, r, namespace)
 
 	if errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
 		r.log.Debug("ignoring request for namespace without KubermaticConfiguration")

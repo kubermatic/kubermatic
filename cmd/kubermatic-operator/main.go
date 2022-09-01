@@ -30,7 +30,7 @@ import (
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -109,7 +109,7 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1.SchemeGroupVersion), zap.Error(err))
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
+	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
 	if err != nil {
 		log.Fatalw("Failed to construct configGetter", zap.Error(err))
 	}
@@ -119,12 +119,12 @@ func main() {
 		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
 	}
 
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient())
+	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient())
 	if err != nil {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))

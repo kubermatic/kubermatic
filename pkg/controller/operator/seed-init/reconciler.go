@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -100,7 +101,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
-	config, err := provider.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}

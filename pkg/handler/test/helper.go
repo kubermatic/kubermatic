@@ -380,7 +380,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
 	// the more complex implementation on the side
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
+	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}

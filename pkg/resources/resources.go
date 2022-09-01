@@ -474,6 +474,9 @@ const (
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
 	// KubeVirtInfraSecretKey infra kubeconfig.
 	KubeVirtInfraSecretKey = "infra-kubeconfig"
+
+	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
+	DefaultNodePortRange = "30000-32767"
 )
 
 const (

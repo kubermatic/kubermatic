@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
@@ -72,7 +72,7 @@ func NewTemplateData(
 	ipamAllocations *kubermaticv1.IPAMAllocationList,
 	variables map[string]interface{},
 ) (*TemplateData, error) {
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}

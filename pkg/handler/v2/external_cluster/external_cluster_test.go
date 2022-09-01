@@ -27,7 +27,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
@@ -383,7 +383,7 @@ func TestListClusters(t *testing.T) {
 }
 
 func TestGetClusterEndpoint(t *testing.T) {
-	version := defaults.DefaultKubernetesVersioning.Default.String()
+	version := defaulting.DefaultKubernetesVersioning.Default.String()
 
 	t.Parallel()
 	testcases := []struct {

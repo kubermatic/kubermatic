@@ -33,7 +33,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -293,7 +293,7 @@ func (d *TemplateData) NodePortRange() string {
 func (d *TemplateData) NodePorts() (int, int) {
 	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
 	if err != nil {
-		portrange, _ = kubenetutil.ParsePortRange(defaults.DefaultNodePortRange)
+		portrange, _ = kubenetutil.ParsePortRange(DefaultNodePortRange)
 	}
 
 	return portrange.Base, portrange.Base + portrange.Size - 1
@@ -304,7 +304,7 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	nodePortRange := d.NodePortRange()
 
 	if nodePortRange == "" {
-		nodePortRange = defaults.DefaultNodePortRange
+		nodePortRange = DefaultNodePortRange
 	}
 
 	if cluster := d.Cluster(); cluster != nil {
@@ -361,7 +361,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 
 // ProviderName returns the name of the clusters providerName.
 func (d *TemplateData) ProviderName() string {
-	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
+	p, err := kubermaticv1helper.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
 		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
 	}
@@ -510,7 +510,7 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
+	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {

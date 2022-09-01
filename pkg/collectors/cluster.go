@@ -23,7 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -157,7 +157,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 }
 
 func (cc *ClusterCollector) clusterInfoLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
-	provider, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	provider, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
 	}

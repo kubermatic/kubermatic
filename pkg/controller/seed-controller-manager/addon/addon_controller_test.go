@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -419,7 +419,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
 
-	clusterVersion := defaults.DefaultKubernetesVersioning.Default
+	clusterVersion := defaulting.DefaultKubernetesVersioning.Default
 	if clusterVersion == nil {
 		t.Fatal("Should be able to determine default Kubernetes version, but got nil")
 	}

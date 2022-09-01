@@ -41,7 +41,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 }
 
 func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
-	return provider.SeedKubeconfigGetterFactory(ctx, client)
+	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
 }
 
 func ResourceQuotaProviderFactory(createMasterImpersonatedClient kubernetes.ImpersonationClient, privilegedClient ctrlruntimeclient.Client) provider.ResourceQuotaProvider {

@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -49,7 +49,7 @@ func handleErrors(logger *logrus.Logger, action cobraFuncE) cobraFuncE {
 }
 
 func findKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
-	getter, err := provider.DynamicKubermaticConfigurationGetterFactory(client, namespace)
+	getter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(client, namespace)
 	if err != nil {
 		return nil, err
 	}

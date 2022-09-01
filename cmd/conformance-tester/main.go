@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
@@ -177,7 +177,7 @@ func setupKubeClients(ctx context.Context, opts *types.Options) error {
 	}
 	opts.SeedGeneratedClient = seedGeneratedClient
 
-	seedGetter, err := provider.SeedGetterFactory(ctx, seedClusterClient, opts.KubermaticSeedName, opts.KubermaticNamespace)
+	seedGetter, err := kubernetesprovider.SeedGetterFactory(ctx, seedClusterClient, opts.KubermaticSeedName, opts.KubermaticNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to construct seedGetter: %w", err)
 	}
@@ -186,7 +186,7 @@ func setupKubeClients(ctx context.Context, opts *types.Options) error {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(opts.SeedClusterClient, opts.KubermaticNamespace)
+	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(opts.SeedClusterClient, opts.KubermaticNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to construct configGetter: %w", err)
 	}

@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,7 +63,7 @@ func Add(
 		Client:           mgr.GetClient(),
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		log:              log.Named(ControllerName),
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		seedClientGetter: kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

@@ -32,7 +32,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
@@ -114,7 +114,7 @@ func NewDefaultOptions() *Options {
 		Client:                       "kube",
 		ScenarioOptions:              sets.NewString(),
 		Providers:                    sets.NewString(),
-		Releases:                     sets.NewString(getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions)...),
+		Releases:                     sets.NewString(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
 		ContainerRuntimes:            sets.NewString(resources.ContainerRuntimeContainerd),
 		EnableDistributions:          sets.NewString(),
 		ExcludeDistributions:         sets.NewString(),

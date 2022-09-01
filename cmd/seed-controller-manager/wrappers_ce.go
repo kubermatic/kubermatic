@@ -23,6 +23,7 @@ import (
 	"flag"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,7 +33,7 @@ func addFlags(fs *flag.FlagSet) {
 }
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
-	return provider.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
+	return kubernetes.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
 }
 
 func setupControllers(_ *controllerContext) error {

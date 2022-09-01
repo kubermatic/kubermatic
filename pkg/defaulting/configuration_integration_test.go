@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package defaults
+package defaulting
 
 import (
 	"context"
@@ -112,9 +112,9 @@ func setupEnvtest(ctx context.Context, t *testing.T) (*envtest.Environment, mana
 
 	crdInstallOpts := envtest.CRDInstallOptions{
 		Paths: []string{
-			"../../../../charts/kubermatic-operator/crd/k8s.io",
-			"../../../../charts/kubermatic-operator/crd/operatingsystemmanager.k8c.io",
-			"../../../crd/k8c.io",
+			"../../charts/kubermatic-operator/crd/k8s.io",
+			"../../charts/kubermatic-operator/crd/operatingsystemmanager.k8c.io",
+			"../crd/k8c.io",
 		},
 		ErrorIfPathMissing: true,
 	}

@@ -28,8 +28,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -296,7 +296,7 @@ func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *ku
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupStoreContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupStoreContainer)
 }
 
 func getBackupCleanupContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
@@ -305,7 +305,7 @@ func getBackupCleanupContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupCleanupContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupCleanupContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupCleanupContainer)
 }
 
 func (r *Reconciler) cleanupJobs(ctx context.Context) {
