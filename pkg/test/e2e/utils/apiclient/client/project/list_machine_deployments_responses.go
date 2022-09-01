@@ -66,9 +66,39 @@ type ListMachineDeploymentsOK struct {
 	Payload []*models.NodeDeployment
 }
 
+// IsSuccess returns true when this list machine deployments o k response has a 2xx status code
+func (o *ListMachineDeploymentsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list machine deployments o k response has a 3xx status code
+func (o *ListMachineDeploymentsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployments o k response has a 4xx status code
+func (o *ListMachineDeploymentsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list machine deployments o k response has a 5xx status code
+func (o *ListMachineDeploymentsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployments o k response a status code equal to that given
+func (o *ListMachineDeploymentsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListMachineDeploymentsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListMachineDeploymentsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListMachineDeploymentsOK) GetPayload() []*models.NodeDeployment {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListMachineDeploymentsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list machine deployments unauthorized response has a 2xx status code
+func (o *ListMachineDeploymentsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployments unauthorized response has a 3xx status code
+func (o *ListMachineDeploymentsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployments unauthorized response has a 4xx status code
+func (o *ListMachineDeploymentsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployments unauthorized response has a 5xx status code
+func (o *ListMachineDeploymentsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployments unauthorized response a status code equal to that given
+func (o *ListMachineDeploymentsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListMachineDeploymentsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsUnauthorized ", 401)
+}
+
+func (o *ListMachineDeploymentsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListMachineDeploymentsForbidden struct {
 }
 
+// IsSuccess returns true when this list machine deployments forbidden response has a 2xx status code
+func (o *ListMachineDeploymentsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployments forbidden response has a 3xx status code
+func (o *ListMachineDeploymentsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployments forbidden response has a 4xx status code
+func (o *ListMachineDeploymentsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployments forbidden response has a 5xx status code
+func (o *ListMachineDeploymentsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployments forbidden response a status code equal to that given
+func (o *ListMachineDeploymentsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListMachineDeploymentsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsForbidden ", 403)
+}
+
+func (o *ListMachineDeploymentsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeploymentsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListMachineDeploymentsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list machine deployments default response has a 2xx status code
+func (o *ListMachineDeploymentsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list machine deployments default response has a 3xx status code
+func (o *ListMachineDeploymentsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list machine deployments default response has a 4xx status code
+func (o *ListMachineDeploymentsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list machine deployments default response has a 5xx status code
+func (o *ListMachineDeploymentsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list machine deployments default response a status code equal to that given
+func (o *ListMachineDeploymentsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListMachineDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeployments default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListMachineDeploymentsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments][%d] listMachineDeployments default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListMachineDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

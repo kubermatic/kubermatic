@@ -54,9 +54,39 @@ type ListOpenstackSizesOK struct {
 	Payload []*models.OpenstackSize
 }
 
+// IsSuccess returns true when this list openstack sizes o k response has a 2xx status code
+func (o *ListOpenstackSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list openstack sizes o k response has a 3xx status code
+func (o *ListOpenstackSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list openstack sizes o k response has a 4xx status code
+func (o *ListOpenstackSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list openstack sizes o k response has a 5xx status code
+func (o *ListOpenstackSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list openstack sizes o k response a status code equal to that given
+func (o *ListOpenstackSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOpenstackSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOpenstackSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOpenstackSizesOK) GetPayload() []*models.OpenstackSize {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListOpenstackSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list openstack sizes default response has a 2xx status code
+func (o *ListOpenstackSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list openstack sizes default response has a 3xx status code
+func (o *ListOpenstackSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list openstack sizes default response has a 4xx status code
+func (o *ListOpenstackSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list openstack sizes default response has a 5xx status code
+func (o *ListOpenstackSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list openstack sizes default response a status code equal to that given
+func (o *ListOpenstackSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOpenstackSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOpenstackSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/openstack/sizes][%d] listOpenstackSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOpenstackSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

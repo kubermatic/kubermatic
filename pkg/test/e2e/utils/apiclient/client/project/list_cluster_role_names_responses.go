@@ -66,9 +66,39 @@ type ListClusterRoleNamesOK struct {
 	Payload []*models.ClusterRoleName
 }
 
+// IsSuccess returns true when this list cluster role names o k response has a 2xx status code
+func (o *ListClusterRoleNamesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list cluster role names o k response has a 3xx status code
+func (o *ListClusterRoleNamesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list cluster role names o k response has a 4xx status code
+func (o *ListClusterRoleNamesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list cluster role names o k response has a 5xx status code
+func (o *ListClusterRoleNamesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list cluster role names o k response a status code equal to that given
+func (o *ListClusterRoleNamesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListClusterRoleNamesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListClusterRoleNamesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListClusterRoleNamesOK) GetPayload() []*models.ClusterRoleName {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListClusterRoleNamesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list cluster role names unauthorized response has a 2xx status code
+func (o *ListClusterRoleNamesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list cluster role names unauthorized response has a 3xx status code
+func (o *ListClusterRoleNamesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list cluster role names unauthorized response has a 4xx status code
+func (o *ListClusterRoleNamesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list cluster role names unauthorized response has a 5xx status code
+func (o *ListClusterRoleNamesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list cluster role names unauthorized response a status code equal to that given
+func (o *ListClusterRoleNamesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListClusterRoleNamesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesUnauthorized ", 401)
+}
+
+func (o *ListClusterRoleNamesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListClusterRoleNamesForbidden struct {
 }
 
+// IsSuccess returns true when this list cluster role names forbidden response has a 2xx status code
+func (o *ListClusterRoleNamesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list cluster role names forbidden response has a 3xx status code
+func (o *ListClusterRoleNamesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list cluster role names forbidden response has a 4xx status code
+func (o *ListClusterRoleNamesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list cluster role names forbidden response has a 5xx status code
+func (o *ListClusterRoleNamesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list cluster role names forbidden response a status code equal to that given
+func (o *ListClusterRoleNamesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListClusterRoleNamesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesForbidden ", 403)
+}
+
+func (o *ListClusterRoleNamesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNamesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListClusterRoleNamesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list cluster role names default response has a 2xx status code
+func (o *ListClusterRoleNamesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list cluster role names default response has a 3xx status code
+func (o *ListClusterRoleNamesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list cluster role names default response has a 4xx status code
+func (o *ListClusterRoleNamesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list cluster role names default response has a 5xx status code
+func (o *ListClusterRoleNamesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list cluster role names default response a status code equal to that given
+func (o *ListClusterRoleNamesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListClusterRoleNamesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNames default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListClusterRoleNamesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames][%d] listClusterRoleNames default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListClusterRoleNamesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

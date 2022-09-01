@@ -66,9 +66,39 @@ type ListEKSSecurityGroupsOK struct {
 	Payload models.EKSSecurityGroupList
 }
 
+// IsSuccess returns true when this list e k s security groups o k response has a 2xx status code
+func (o *ListEKSSecurityGroupsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list e k s security groups o k response has a 3xx status code
+func (o *ListEKSSecurityGroupsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s security groups o k response has a 4xx status code
+func (o *ListEKSSecurityGroupsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list e k s security groups o k response has a 5xx status code
+func (o *ListEKSSecurityGroupsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s security groups o k response a status code equal to that given
+func (o *ListEKSSecurityGroupsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListEKSSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListEKSSecurityGroupsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListEKSSecurityGroupsOK) GetPayload() models.EKSSecurityGroupList {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListEKSSecurityGroupsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list e k s security groups unauthorized response has a 2xx status code
+func (o *ListEKSSecurityGroupsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s security groups unauthorized response has a 3xx status code
+func (o *ListEKSSecurityGroupsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s security groups unauthorized response has a 4xx status code
+func (o *ListEKSSecurityGroupsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s security groups unauthorized response has a 5xx status code
+func (o *ListEKSSecurityGroupsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s security groups unauthorized response a status code equal to that given
+func (o *ListEKSSecurityGroupsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListEKSSecurityGroupsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsUnauthorized ", 401)
+}
+
+func (o *ListEKSSecurityGroupsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListEKSSecurityGroupsForbidden struct {
 }
 
+// IsSuccess returns true when this list e k s security groups forbidden response has a 2xx status code
+func (o *ListEKSSecurityGroupsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s security groups forbidden response has a 3xx status code
+func (o *ListEKSSecurityGroupsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s security groups forbidden response has a 4xx status code
+func (o *ListEKSSecurityGroupsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s security groups forbidden response has a 5xx status code
+func (o *ListEKSSecurityGroupsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s security groups forbidden response a status code equal to that given
+func (o *ListEKSSecurityGroupsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListEKSSecurityGroupsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsForbidden ", 403)
+}
+
+func (o *ListEKSSecurityGroupsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListEKSSecurityGroupsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list e k s security groups default response has a 2xx status code
+func (o *ListEKSSecurityGroupsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list e k s security groups default response has a 3xx status code
+func (o *ListEKSSecurityGroupsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list e k s security groups default response has a 4xx status code
+func (o *ListEKSSecurityGroupsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list e k s security groups default response has a 5xx status code
+func (o *ListEKSSecurityGroupsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list e k s security groups default response a status code equal to that given
+func (o *ListEKSSecurityGroupsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListEKSSecurityGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroups default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListEKSSecurityGroupsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroups default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListEKSSecurityGroupsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

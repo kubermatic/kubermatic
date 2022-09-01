@@ -66,9 +66,39 @@ type GetClusterHealthV2OK struct {
 	Payload *models.ClusterHealth
 }
 
+// IsSuccess returns true when this get cluster health v2 o k response has a 2xx status code
+func (o *GetClusterHealthV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster health v2 o k response has a 3xx status code
+func (o *GetClusterHealthV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster health v2 o k response has a 4xx status code
+func (o *GetClusterHealthV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster health v2 o k response has a 5xx status code
+func (o *GetClusterHealthV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster health v2 o k response a status code equal to that given
+func (o *GetClusterHealthV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterHealthV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2OK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterHealthV2OK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2OK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterHealthV2OK) GetPayload() *models.ClusterHealth {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetClusterHealthV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster health v2 unauthorized response has a 2xx status code
+func (o *GetClusterHealthV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster health v2 unauthorized response has a 3xx status code
+func (o *GetClusterHealthV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster health v2 unauthorized response has a 4xx status code
+func (o *GetClusterHealthV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster health v2 unauthorized response has a 5xx status code
+func (o *GetClusterHealthV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster health v2 unauthorized response a status code equal to that given
+func (o *GetClusterHealthV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterHealthV2Unauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2Unauthorized ", 401)
+}
+
+func (o *GetClusterHealthV2Unauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2Unauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetClusterHealthV2Forbidden struct {
 }
 
+// IsSuccess returns true when this get cluster health v2 forbidden response has a 2xx status code
+func (o *GetClusterHealthV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster health v2 forbidden response has a 3xx status code
+func (o *GetClusterHealthV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster health v2 forbidden response has a 4xx status code
+func (o *GetClusterHealthV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster health v2 forbidden response has a 5xx status code
+func (o *GetClusterHealthV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster health v2 forbidden response a status code equal to that given
+func (o *GetClusterHealthV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterHealthV2Forbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2Forbidden ", 403)
+}
+
+func (o *GetClusterHealthV2Forbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2Forbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetClusterHealthV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster health v2 default response has a 2xx status code
+func (o *GetClusterHealthV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster health v2 default response has a 3xx status code
+func (o *GetClusterHealthV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster health v2 default response has a 4xx status code
+func (o *GetClusterHealthV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster health v2 default response has a 5xx status code
+func (o *GetClusterHealthV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster health v2 default response a status code equal to that given
+func (o *GetClusterHealthV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterHealthV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterHealthV2Default) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/health][%d] getClusterHealthV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterHealthV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

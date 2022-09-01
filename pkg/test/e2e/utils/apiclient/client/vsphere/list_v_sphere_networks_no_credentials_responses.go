@@ -54,9 +54,39 @@ type ListVSphereNetworksNoCredentialsOK struct {
 	Payload []*models.VSphereNetwork
 }
 
+// IsSuccess returns true when this list v sphere networks no credentials o k response has a 2xx status code
+func (o *ListVSphereNetworksNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list v sphere networks no credentials o k response has a 3xx status code
+func (o *ListVSphereNetworksNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list v sphere networks no credentials o k response has a 4xx status code
+func (o *ListVSphereNetworksNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list v sphere networks no credentials o k response has a 5xx status code
+func (o *ListVSphereNetworksNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list v sphere networks no credentials o k response a status code equal to that given
+func (o *ListVSphereNetworksNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVSphereNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVSphereNetworksNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVSphereNetworksNoCredentialsOK) GetPayload() []*models.VSphereNetwork {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListVSphereNetworksNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list v sphere networks no credentials default response has a 2xx status code
+func (o *ListVSphereNetworksNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list v sphere networks no credentials default response has a 3xx status code
+func (o *ListVSphereNetworksNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list v sphere networks no credentials default response has a 4xx status code
+func (o *ListVSphereNetworksNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list v sphere networks no credentials default response has a 5xx status code
+func (o *ListVSphereNetworksNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list v sphere networks no credentials default response a status code equal to that given
+func (o *ListVSphereNetworksNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVSphereNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVSphereNetworksNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVSphereNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

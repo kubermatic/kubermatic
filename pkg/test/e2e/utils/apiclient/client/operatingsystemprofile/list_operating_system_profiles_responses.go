@@ -66,9 +66,39 @@ type ListOperatingSystemProfilesOK struct {
 	Payload []*models.OperatingSystemProfile
 }
 
+// IsSuccess returns true when this list operating system profiles o k response has a 2xx status code
+func (o *ListOperatingSystemProfilesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list operating system profiles o k response has a 3xx status code
+func (o *ListOperatingSystemProfilesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles o k response has a 4xx status code
+func (o *ListOperatingSystemProfilesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list operating system profiles o k response has a 5xx status code
+func (o *ListOperatingSystemProfilesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles o k response a status code equal to that given
+func (o *ListOperatingSystemProfilesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOperatingSystemProfilesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOperatingSystemProfilesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOperatingSystemProfilesOK) GetPayload() []*models.OperatingSystemProfile {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListOperatingSystemProfilesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list operating system profiles unauthorized response has a 2xx status code
+func (o *ListOperatingSystemProfilesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list operating system profiles unauthorized response has a 3xx status code
+func (o *ListOperatingSystemProfilesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles unauthorized response has a 4xx status code
+func (o *ListOperatingSystemProfilesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list operating system profiles unauthorized response has a 5xx status code
+func (o *ListOperatingSystemProfilesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles unauthorized response a status code equal to that given
+func (o *ListOperatingSystemProfilesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListOperatingSystemProfilesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesUnauthorized ", 401)
+}
+
+func (o *ListOperatingSystemProfilesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListOperatingSystemProfilesForbidden struct {
 }
 
+// IsSuccess returns true when this list operating system profiles forbidden response has a 2xx status code
+func (o *ListOperatingSystemProfilesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list operating system profiles forbidden response has a 3xx status code
+func (o *ListOperatingSystemProfilesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles forbidden response has a 4xx status code
+func (o *ListOperatingSystemProfilesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list operating system profiles forbidden response has a 5xx status code
+func (o *ListOperatingSystemProfilesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles forbidden response a status code equal to that given
+func (o *ListOperatingSystemProfilesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListOperatingSystemProfilesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesForbidden ", 403)
+}
+
+func (o *ListOperatingSystemProfilesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfilesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListOperatingSystemProfilesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list operating system profiles default response has a 2xx status code
+func (o *ListOperatingSystemProfilesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list operating system profiles default response has a 3xx status code
+func (o *ListOperatingSystemProfilesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list operating system profiles default response has a 4xx status code
+func (o *ListOperatingSystemProfilesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list operating system profiles default response has a 5xx status code
+func (o *ListOperatingSystemProfilesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list operating system profiles default response a status code equal to that given
+func (o *ListOperatingSystemProfilesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOperatingSystemProfilesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfiles default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOperatingSystemProfilesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/operatingsystemprofiles][%d] listOperatingSystemProfiles default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOperatingSystemProfilesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

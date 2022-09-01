@@ -66,9 +66,39 @@ type ListSSHKeysOK struct {
 	Payload []*models.SSHKey
 }
 
+// IsSuccess returns true when this list Ssh keys o k response has a 2xx status code
+func (o *ListSSHKeysOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list Ssh keys o k response has a 3xx status code
+func (o *ListSSHKeysOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ssh keys o k response has a 4xx status code
+func (o *ListSSHKeysOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list Ssh keys o k response has a 5xx status code
+func (o *ListSSHKeysOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ssh keys o k response a status code equal to that given
+func (o *ListSSHKeysOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListSSHKeysOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysOK  %+v", 200, o.Payload)
 }
+
+func (o *ListSSHKeysOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysOK  %+v", 200, o.Payload)
+}
+
 func (o *ListSSHKeysOK) GetPayload() []*models.SSHKey {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListSSHKeysUnauthorized struct {
 }
 
+// IsSuccess returns true when this list Ssh keys unauthorized response has a 2xx status code
+func (o *ListSSHKeysUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list Ssh keys unauthorized response has a 3xx status code
+func (o *ListSSHKeysUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ssh keys unauthorized response has a 4xx status code
+func (o *ListSSHKeysUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list Ssh keys unauthorized response has a 5xx status code
+func (o *ListSSHKeysUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ssh keys unauthorized response a status code equal to that given
+func (o *ListSSHKeysUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListSSHKeysUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysUnauthorized ", 401)
+}
+
+func (o *ListSSHKeysUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListSSHKeysForbidden struct {
 }
 
+// IsSuccess returns true when this list Ssh keys forbidden response has a 2xx status code
+func (o *ListSSHKeysForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list Ssh keys forbidden response has a 3xx status code
+func (o *ListSSHKeysForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ssh keys forbidden response has a 4xx status code
+func (o *ListSSHKeysForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list Ssh keys forbidden response has a 5xx status code
+func (o *ListSSHKeysForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ssh keys forbidden response a status code equal to that given
+func (o *ListSSHKeysForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListSSHKeysForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysForbidden ", 403)
+}
+
+func (o *ListSSHKeysForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListSSHKeysDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list SSH keys default response has a 2xx status code
+func (o *ListSSHKeysDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list SSH keys default response has a 3xx status code
+func (o *ListSSHKeysDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list SSH keys default response has a 4xx status code
+func (o *ListSSHKeysDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list SSH keys default response has a 5xx status code
+func (o *ListSSHKeysDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list SSH keys default response a status code equal to that given
+func (o *ListSSHKeysDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListSSHKeysDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSSHKeys default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListSSHKeysDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSSHKeys default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListSSHKeysDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

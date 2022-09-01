@@ -18,12 +18,11 @@ import (
 // swagger:model EtcdRestoreStatus
 type EtcdRestoreStatus struct {
 
+	// restore time
+	RestoreTime string `json:"restoreTime,omitempty"`
+
 	// phase
 	Phase EtcdRestorePhase `json:"phase,omitempty"`
-
-	// restore time
-	// Format: date-time
-	RestoreTime Time `json:"restoreTime,omitempty"`
 }
 
 // Validate validates this etcd restore status
@@ -31,10 +30,6 @@ func (m *EtcdRestoreStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validatePhase(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRestoreTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -61,32 +56,11 @@ func (m *EtcdRestoreStatus) validatePhase(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *EtcdRestoreStatus) validateRestoreTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.RestoreTime) { // not required
-		return nil
-	}
-
-	if err := m.RestoreTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("restoreTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("restoreTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
 // ContextValidate validate this etcd restore status based on the context it is used
 func (m *EtcdRestoreStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidatePhase(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateRestoreTime(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -103,20 +77,6 @@ func (m *EtcdRestoreStatus) contextValidatePhase(ctx context.Context, formats st
 			return ve.ValidateName("phase")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("phase")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *EtcdRestoreStatus) contextValidateRestoreTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.RestoreTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("restoreTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("restoreTime")
 		}
 		return err
 	}

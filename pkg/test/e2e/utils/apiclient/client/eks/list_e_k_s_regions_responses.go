@@ -66,9 +66,39 @@ type ListEKSRegionsOK struct {
 	Payload models.EKSRegionList
 }
 
+// IsSuccess returns true when this list e k s regions o k response has a 2xx status code
+func (o *ListEKSRegionsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list e k s regions o k response has a 3xx status code
+func (o *ListEKSRegionsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s regions o k response has a 4xx status code
+func (o *ListEKSRegionsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list e k s regions o k response has a 5xx status code
+func (o *ListEKSRegionsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s regions o k response a status code equal to that given
+func (o *ListEKSRegionsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListEKSRegionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListEKSRegionsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListEKSRegionsOK) GetPayload() models.EKSRegionList {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListEKSRegionsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list e k s regions unauthorized response has a 2xx status code
+func (o *ListEKSRegionsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s regions unauthorized response has a 3xx status code
+func (o *ListEKSRegionsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s regions unauthorized response has a 4xx status code
+func (o *ListEKSRegionsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s regions unauthorized response has a 5xx status code
+func (o *ListEKSRegionsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s regions unauthorized response a status code equal to that given
+func (o *ListEKSRegionsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListEKSRegionsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsUnauthorized ", 401)
+}
+
+func (o *ListEKSRegionsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListEKSRegionsForbidden struct {
 }
 
+// IsSuccess returns true when this list e k s regions forbidden response has a 2xx status code
+func (o *ListEKSRegionsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s regions forbidden response has a 3xx status code
+func (o *ListEKSRegionsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s regions forbidden response has a 4xx status code
+func (o *ListEKSRegionsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s regions forbidden response has a 5xx status code
+func (o *ListEKSRegionsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s regions forbidden response a status code equal to that given
+func (o *ListEKSRegionsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListEKSRegionsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsForbidden ", 403)
+}
+
+func (o *ListEKSRegionsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListEKSRegionsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list e k s regions default response has a 2xx status code
+func (o *ListEKSRegionsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list e k s regions default response has a 3xx status code
+func (o *ListEKSRegionsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list e k s regions default response has a 4xx status code
+func (o *ListEKSRegionsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list e k s regions default response has a 5xx status code
+func (o *ListEKSRegionsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list e k s regions default response a status code equal to that given
+func (o *ListEKSRegionsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListEKSRegionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegions default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListEKSRegionsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegions default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListEKSRegionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

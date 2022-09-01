@@ -54,9 +54,39 @@ type ListGKEZonesOK struct {
 	Payload models.GKEZoneList
 }
 
+// IsSuccess returns true when this list g k e zones o k response has a 2xx status code
+func (o *ListGKEZonesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e zones o k response has a 3xx status code
+func (o *ListGKEZonesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e zones o k response has a 4xx status code
+func (o *ListGKEZonesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e zones o k response has a 5xx status code
+func (o *ListGKEZonesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e zones o k response a status code equal to that given
+func (o *ListGKEZonesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/zones][%d] listGKEZonesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEZonesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/zones][%d] listGKEZonesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEZonesOK) GetPayload() models.GKEZoneList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListGKEZonesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e zones default response has a 2xx status code
+func (o *ListGKEZonesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e zones default response has a 3xx status code
+func (o *ListGKEZonesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e zones default response has a 4xx status code
+func (o *ListGKEZonesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e zones default response has a 5xx status code
+func (o *ListGKEZonesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e zones default response a status code equal to that given
+func (o *ListGKEZonesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/zones][%d] listGKEZones default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEZonesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/zones][%d] listGKEZones default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

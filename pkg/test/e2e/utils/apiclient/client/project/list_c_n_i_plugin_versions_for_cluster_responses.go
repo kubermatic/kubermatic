@@ -66,9 +66,39 @@ type ListCNIPluginVersionsForClusterOK struct {
 	Payload *models.CNIVersions
 }
 
+// IsSuccess returns true when this list c n i plugin versions for cluster o k response has a 2xx status code
+func (o *ListCNIPluginVersionsForClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list c n i plugin versions for cluster o k response has a 3xx status code
+func (o *ListCNIPluginVersionsForClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list c n i plugin versions for cluster o k response has a 4xx status code
+func (o *ListCNIPluginVersionsForClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list c n i plugin versions for cluster o k response has a 5xx status code
+func (o *ListCNIPluginVersionsForClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list c n i plugin versions for cluster o k response a status code equal to that given
+func (o *ListCNIPluginVersionsForClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListCNIPluginVersionsForClusterOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterOK  %+v", 200, o.Payload)
 }
+
+func (o *ListCNIPluginVersionsForClusterOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterOK  %+v", 200, o.Payload)
+}
+
 func (o *ListCNIPluginVersionsForClusterOK) GetPayload() *models.CNIVersions {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type ListCNIPluginVersionsForClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this list c n i plugin versions for cluster unauthorized response has a 2xx status code
+func (o *ListCNIPluginVersionsForClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list c n i plugin versions for cluster unauthorized response has a 3xx status code
+func (o *ListCNIPluginVersionsForClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list c n i plugin versions for cluster unauthorized response has a 4xx status code
+func (o *ListCNIPluginVersionsForClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list c n i plugin versions for cluster unauthorized response has a 5xx status code
+func (o *ListCNIPluginVersionsForClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list c n i plugin versions for cluster unauthorized response a status code equal to that given
+func (o *ListCNIPluginVersionsForClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListCNIPluginVersionsForClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterUnauthorized ", 401)
+}
+
+func (o *ListCNIPluginVersionsForClusterUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type ListCNIPluginVersionsForClusterForbidden struct {
 }
 
+// IsSuccess returns true when this list c n i plugin versions for cluster forbidden response has a 2xx status code
+func (o *ListCNIPluginVersionsForClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list c n i plugin versions for cluster forbidden response has a 3xx status code
+func (o *ListCNIPluginVersionsForClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list c n i plugin versions for cluster forbidden response has a 4xx status code
+func (o *ListCNIPluginVersionsForClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list c n i plugin versions for cluster forbidden response has a 5xx status code
+func (o *ListCNIPluginVersionsForClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list c n i plugin versions for cluster forbidden response a status code equal to that given
+func (o *ListCNIPluginVersionsForClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListCNIPluginVersionsForClusterForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterForbidden ", 403)
+}
+
+func (o *ListCNIPluginVersionsForClusterForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForClusterForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *ListCNIPluginVersionsForClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list c n i plugin versions for cluster default response has a 2xx status code
+func (o *ListCNIPluginVersionsForClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list c n i plugin versions for cluster default response has a 3xx status code
+func (o *ListCNIPluginVersionsForClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list c n i plugin versions for cluster default response has a 4xx status code
+func (o *ListCNIPluginVersionsForClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list c n i plugin versions for cluster default response has a 5xx status code
+func (o *ListCNIPluginVersionsForClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list c n i plugin versions for cluster default response a status code equal to that given
+func (o *ListCNIPluginVersionsForClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListCNIPluginVersionsForClusterDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListCNIPluginVersionsForClusterDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions][%d] listCNIPluginVersionsForCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListCNIPluginVersionsForClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

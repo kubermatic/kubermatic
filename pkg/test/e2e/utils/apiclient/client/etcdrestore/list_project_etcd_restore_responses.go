@@ -66,9 +66,39 @@ type ListProjectEtcdRestoreOK struct {
 	Payload []*models.EtcdRestore
 }
 
+// IsSuccess returns true when this list project etcd restore o k response has a 2xx status code
+func (o *ListProjectEtcdRestoreOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list project etcd restore o k response has a 3xx status code
+func (o *ListProjectEtcdRestoreOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd restore o k response has a 4xx status code
+func (o *ListProjectEtcdRestoreOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list project etcd restore o k response has a 5xx status code
+func (o *ListProjectEtcdRestoreOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd restore o k response a status code equal to that given
+func (o *ListProjectEtcdRestoreOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListProjectEtcdRestoreOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreOK  %+v", 200, o.Payload)
 }
+
+func (o *ListProjectEtcdRestoreOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreOK  %+v", 200, o.Payload)
+}
+
 func (o *ListProjectEtcdRestoreOK) GetPayload() []*models.EtcdRestore {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListProjectEtcdRestoreUnauthorized struct {
 }
 
+// IsSuccess returns true when this list project etcd restore unauthorized response has a 2xx status code
+func (o *ListProjectEtcdRestoreUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list project etcd restore unauthorized response has a 3xx status code
+func (o *ListProjectEtcdRestoreUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd restore unauthorized response has a 4xx status code
+func (o *ListProjectEtcdRestoreUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list project etcd restore unauthorized response has a 5xx status code
+func (o *ListProjectEtcdRestoreUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd restore unauthorized response a status code equal to that given
+func (o *ListProjectEtcdRestoreUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListProjectEtcdRestoreUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreUnauthorized ", 401)
+}
+
+func (o *ListProjectEtcdRestoreUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListProjectEtcdRestoreForbidden struct {
 }
 
+// IsSuccess returns true when this list project etcd restore forbidden response has a 2xx status code
+func (o *ListProjectEtcdRestoreForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list project etcd restore forbidden response has a 3xx status code
+func (o *ListProjectEtcdRestoreForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd restore forbidden response has a 4xx status code
+func (o *ListProjectEtcdRestoreForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list project etcd restore forbidden response has a 5xx status code
+func (o *ListProjectEtcdRestoreForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd restore forbidden response a status code equal to that given
+func (o *ListProjectEtcdRestoreForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListProjectEtcdRestoreForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreForbidden ", 403)
+}
+
+func (o *ListProjectEtcdRestoreForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestoreForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListProjectEtcdRestoreDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list project etcd restore default response has a 2xx status code
+func (o *ListProjectEtcdRestoreDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list project etcd restore default response has a 3xx status code
+func (o *ListProjectEtcdRestoreDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list project etcd restore default response has a 4xx status code
+func (o *ListProjectEtcdRestoreDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list project etcd restore default response has a 5xx status code
+func (o *ListProjectEtcdRestoreDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list project etcd restore default response a status code equal to that given
+func (o *ListProjectEtcdRestoreDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListProjectEtcdRestoreDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListProjectEtcdRestoreDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdrestores][%d] listProjectEtcdRestore default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListProjectEtcdRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

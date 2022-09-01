@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteProjectOK struct {
 }
 
+// IsSuccess returns true when this delete project o k response has a 2xx status code
+func (o *DeleteProjectOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete project o k response has a 3xx status code
+func (o *DeleteProjectOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete project o k response has a 4xx status code
+func (o *DeleteProjectOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete project o k response has a 5xx status code
+func (o *DeleteProjectOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete project o k response a status code equal to that given
+func (o *DeleteProjectOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteProjectOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectOK ", 200)
+}
+
+func (o *DeleteProjectOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteProjectUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete project unauthorized response has a 2xx status code
+func (o *DeleteProjectUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete project unauthorized response has a 3xx status code
+func (o *DeleteProjectUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete project unauthorized response has a 4xx status code
+func (o *DeleteProjectUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete project unauthorized response has a 5xx status code
+func (o *DeleteProjectUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete project unauthorized response a status code equal to that given
+func (o *DeleteProjectUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteProjectUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectUnauthorized ", 401)
+}
+
+func (o *DeleteProjectUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteProjectForbidden struct {
 }
 
+// IsSuccess returns true when this delete project forbidden response has a 2xx status code
+func (o *DeleteProjectForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete project forbidden response has a 3xx status code
+func (o *DeleteProjectForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete project forbidden response has a 4xx status code
+func (o *DeleteProjectForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete project forbidden response has a 5xx status code
+func (o *DeleteProjectForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete project forbidden response a status code equal to that given
+func (o *DeleteProjectForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteProjectForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectForbidden ", 403)
+}
+
+func (o *DeleteProjectForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProjectForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteProjectDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete project default response has a 2xx status code
+func (o *DeleteProjectDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete project default response has a 3xx status code
+func (o *DeleteProjectDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete project default response has a 4xx status code
+func (o *DeleteProjectDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete project default response has a 5xx status code
+func (o *DeleteProjectDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete project default response a status code equal to that given
+func (o *DeleteProjectDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteProjectDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProject default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteProjectDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}][%d] deleteProject default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

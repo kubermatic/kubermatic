@@ -66,9 +66,39 @@ type CreateSSHKeyCreated struct {
 	Payload *models.SSHKey
 }
 
+// IsSuccess returns true when this create Ssh key created response has a 2xx status code
+func (o *CreateSSHKeyCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create Ssh key created response has a 3xx status code
+func (o *CreateSSHKeyCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create Ssh key created response has a 4xx status code
+func (o *CreateSSHKeyCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create Ssh key created response has a 5xx status code
+func (o *CreateSSHKeyCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create Ssh key created response a status code equal to that given
+func (o *CreateSSHKeyCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateSSHKeyCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateSSHKeyCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateSSHKeyCreated) GetPayload() *models.SSHKey {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateSSHKeyUnauthorized struct {
 }
 
+// IsSuccess returns true when this create Ssh key unauthorized response has a 2xx status code
+func (o *CreateSSHKeyUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create Ssh key unauthorized response has a 3xx status code
+func (o *CreateSSHKeyUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create Ssh key unauthorized response has a 4xx status code
+func (o *CreateSSHKeyUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create Ssh key unauthorized response has a 5xx status code
+func (o *CreateSSHKeyUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create Ssh key unauthorized response a status code equal to that given
+func (o *CreateSSHKeyUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateSSHKeyUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyUnauthorized ", 401)
+}
+
+func (o *CreateSSHKeyUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateSSHKeyForbidden struct {
 }
 
+// IsSuccess returns true when this create Ssh key forbidden response has a 2xx status code
+func (o *CreateSSHKeyForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create Ssh key forbidden response has a 3xx status code
+func (o *CreateSSHKeyForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create Ssh key forbidden response has a 4xx status code
+func (o *CreateSSHKeyForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create Ssh key forbidden response has a 5xx status code
+func (o *CreateSSHKeyForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create Ssh key forbidden response a status code equal to that given
+func (o *CreateSSHKeyForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateSSHKeyForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyForbidden ", 403)
+}
+
+func (o *CreateSSHKeyForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateSSHKeyDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create SSH key default response has a 2xx status code
+func (o *CreateSSHKeyDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create SSH key default response has a 3xx status code
+func (o *CreateSSHKeyDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create SSH key default response has a 4xx status code
+func (o *CreateSSHKeyDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create SSH key default response has a 5xx status code
+func (o *CreateSSHKeyDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create SSH key default response a status code equal to that given
+func (o *CreateSSHKeyDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateSSHKeyDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSSHKey default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateSSHKeyDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSSHKey default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateSSHKeyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

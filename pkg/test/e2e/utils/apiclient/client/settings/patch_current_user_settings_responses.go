@@ -60,9 +60,39 @@ type PatchCurrentUserSettingsOK struct {
 	Payload *models.UserSettings
 }
 
+// IsSuccess returns true when this patch current user settings o k response has a 2xx status code
+func (o *PatchCurrentUserSettingsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch current user settings o k response has a 3xx status code
+func (o *PatchCurrentUserSettingsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch current user settings o k response has a 4xx status code
+func (o *PatchCurrentUserSettingsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch current user settings o k response has a 5xx status code
+func (o *PatchCurrentUserSettingsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch current user settings o k response a status code equal to that given
+func (o *PatchCurrentUserSettingsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchCurrentUserSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchCurrentUserSettingsOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchCurrentUserSettingsOK) GetPayload() *models.UserSettings {
 	return o.Payload
 }
@@ -91,7 +121,36 @@ EmptyResponse is a empty response
 type PatchCurrentUserSettingsUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch current user settings unauthorized response has a 2xx status code
+func (o *PatchCurrentUserSettingsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch current user settings unauthorized response has a 3xx status code
+func (o *PatchCurrentUserSettingsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch current user settings unauthorized response has a 4xx status code
+func (o *PatchCurrentUserSettingsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch current user settings unauthorized response has a 5xx status code
+func (o *PatchCurrentUserSettingsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch current user settings unauthorized response a status code equal to that given
+func (o *PatchCurrentUserSettingsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchCurrentUserSettingsUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsUnauthorized ", 401)
+}
+
+func (o *PatchCurrentUserSettingsUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsUnauthorized ", 401)
 }
 
@@ -122,9 +181,39 @@ func (o *PatchCurrentUserSettingsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch current user settings default response has a 2xx status code
+func (o *PatchCurrentUserSettingsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch current user settings default response has a 3xx status code
+func (o *PatchCurrentUserSettingsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch current user settings default response has a 4xx status code
+func (o *PatchCurrentUserSettingsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch current user settings default response has a 5xx status code
+func (o *PatchCurrentUserSettingsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch current user settings default response a status code equal to that given
+func (o *PatchCurrentUserSettingsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchCurrentUserSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchCurrentUserSettingsDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchCurrentUserSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

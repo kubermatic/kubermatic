@@ -54,9 +54,39 @@ type ListAlibabaInstanceTypesOK struct {
 	Payload models.AlibabaInstanceTypeList
 }
 
+// IsSuccess returns true when this list alibaba instance types o k response has a 2xx status code
+func (o *ListAlibabaInstanceTypesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list alibaba instance types o k response has a 3xx status code
+func (o *ListAlibabaInstanceTypesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list alibaba instance types o k response has a 4xx status code
+func (o *ListAlibabaInstanceTypesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list alibaba instance types o k response has a 5xx status code
+func (o *ListAlibabaInstanceTypesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list alibaba instance types o k response a status code equal to that given
+func (o *ListAlibabaInstanceTypesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAlibabaInstanceTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAlibabaInstanceTypesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAlibabaInstanceTypesOK) GetPayload() models.AlibabaInstanceTypeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAlibabaInstanceTypesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list alibaba instance types default response has a 2xx status code
+func (o *ListAlibabaInstanceTypesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list alibaba instance types default response has a 3xx status code
+func (o *ListAlibabaInstanceTypesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list alibaba instance types default response has a 4xx status code
+func (o *ListAlibabaInstanceTypesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list alibaba instance types default response has a 5xx status code
+func (o *ListAlibabaInstanceTypesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list alibaba instance types default response a status code equal to that given
+func (o *ListAlibabaInstanceTypesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAlibabaInstanceTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAlibabaInstanceTypesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/alibaba/instancetypes][%d] listAlibabaInstanceTypes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAlibabaInstanceTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteSSHKeyOK struct {
 }
 
+// IsSuccess returns true when this delete Ssh key o k response has a 2xx status code
+func (o *DeleteSSHKeyOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete Ssh key o k response has a 3xx status code
+func (o *DeleteSSHKeyOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ssh key o k response has a 4xx status code
+func (o *DeleteSSHKeyOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete Ssh key o k response has a 5xx status code
+func (o *DeleteSSHKeyOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ssh key o k response a status code equal to that given
+func (o *DeleteSSHKeyOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteSSHKeyOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyOK ", 200)
+}
+
+func (o *DeleteSSHKeyOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteSSHKeyUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete Ssh key unauthorized response has a 2xx status code
+func (o *DeleteSSHKeyUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete Ssh key unauthorized response has a 3xx status code
+func (o *DeleteSSHKeyUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ssh key unauthorized response has a 4xx status code
+func (o *DeleteSSHKeyUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete Ssh key unauthorized response has a 5xx status code
+func (o *DeleteSSHKeyUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ssh key unauthorized response a status code equal to that given
+func (o *DeleteSSHKeyUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteSSHKeyUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyUnauthorized ", 401)
+}
+
+func (o *DeleteSSHKeyUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteSSHKeyForbidden struct {
 }
 
+// IsSuccess returns true when this delete Ssh key forbidden response has a 2xx status code
+func (o *DeleteSSHKeyForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete Ssh key forbidden response has a 3xx status code
+func (o *DeleteSSHKeyForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ssh key forbidden response has a 4xx status code
+func (o *DeleteSSHKeyForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete Ssh key forbidden response has a 5xx status code
+func (o *DeleteSSHKeyForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ssh key forbidden response a status code equal to that given
+func (o *DeleteSSHKeyForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteSSHKeyForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyForbidden ", 403)
+}
+
+func (o *DeleteSSHKeyForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSshKeyForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteSSHKeyDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete SSH key default response has a 2xx status code
+func (o *DeleteSSHKeyDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete SSH key default response has a 3xx status code
+func (o *DeleteSSHKeyDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete SSH key default response has a 4xx status code
+func (o *DeleteSSHKeyDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete SSH key default response has a 5xx status code
+func (o *DeleteSSHKeyDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete SSH key default response a status code equal to that given
+func (o *DeleteSSHKeyDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteSSHKeyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSSHKey default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteSSHKeyDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSSHKey default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteSSHKeyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

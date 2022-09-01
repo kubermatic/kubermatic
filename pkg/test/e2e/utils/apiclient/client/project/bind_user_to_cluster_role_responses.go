@@ -66,9 +66,39 @@ type BindUserToClusterRoleOK struct {
 	Payload *models.ClusterRoleBinding
 }
 
+// IsSuccess returns true when this bind user to cluster role o k response has a 2xx status code
+func (o *BindUserToClusterRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this bind user to cluster role o k response has a 3xx status code
+func (o *BindUserToClusterRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role o k response has a 4xx status code
+func (o *BindUserToClusterRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this bind user to cluster role o k response has a 5xx status code
+func (o *BindUserToClusterRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role o k response a status code equal to that given
+func (o *BindUserToClusterRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *BindUserToClusterRoleOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleOK  %+v", 200, o.Payload)
 }
+
+func (o *BindUserToClusterRoleOK) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleOK  %+v", 200, o.Payload)
+}
+
 func (o *BindUserToClusterRoleOK) GetPayload() *models.ClusterRoleBinding {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type BindUserToClusterRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this bind user to cluster role unauthorized response has a 2xx status code
+func (o *BindUserToClusterRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to cluster role unauthorized response has a 3xx status code
+func (o *BindUserToClusterRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role unauthorized response has a 4xx status code
+func (o *BindUserToClusterRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to cluster role unauthorized response has a 5xx status code
+func (o *BindUserToClusterRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role unauthorized response a status code equal to that given
+func (o *BindUserToClusterRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *BindUserToClusterRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleUnauthorized ", 401)
+}
+
+func (o *BindUserToClusterRoleUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type BindUserToClusterRoleForbidden struct {
 }
 
+// IsSuccess returns true when this bind user to cluster role forbidden response has a 2xx status code
+func (o *BindUserToClusterRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to cluster role forbidden response has a 3xx status code
+func (o *BindUserToClusterRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role forbidden response has a 4xx status code
+func (o *BindUserToClusterRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to cluster role forbidden response has a 5xx status code
+func (o *BindUserToClusterRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role forbidden response a status code equal to that given
+func (o *BindUserToClusterRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *BindUserToClusterRoleForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleForbidden ", 403)
+}
+
+func (o *BindUserToClusterRoleForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *BindUserToClusterRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this bind user to cluster role default response has a 2xx status code
+func (o *BindUserToClusterRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this bind user to cluster role default response has a 3xx status code
+func (o *BindUserToClusterRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this bind user to cluster role default response has a 4xx status code
+func (o *BindUserToClusterRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this bind user to cluster role default response has a 5xx status code
+func (o *BindUserToClusterRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this bind user to cluster role default response a status code equal to that given
+func (o *BindUserToClusterRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *BindUserToClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *BindUserToClusterRoleDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *BindUserToClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

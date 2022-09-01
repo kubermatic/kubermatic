@@ -54,9 +54,39 @@ type ListAnexiaTemplatesOK struct {
 	Payload models.AnexiaTemplateList
 }
 
+// IsSuccess returns true when this list anexia templates o k response has a 2xx status code
+func (o *ListAnexiaTemplatesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list anexia templates o k response has a 3xx status code
+func (o *ListAnexiaTemplatesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list anexia templates o k response has a 4xx status code
+func (o *ListAnexiaTemplatesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list anexia templates o k response has a 5xx status code
+func (o *ListAnexiaTemplatesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list anexia templates o k response a status code equal to that given
+func (o *ListAnexiaTemplatesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAnexiaTemplatesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/anexia/templates][%d] listAnexiaTemplatesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAnexiaTemplatesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/anexia/templates][%d] listAnexiaTemplatesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAnexiaTemplatesOK) GetPayload() models.AnexiaTemplateList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAnexiaTemplatesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list anexia templates default response has a 2xx status code
+func (o *ListAnexiaTemplatesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list anexia templates default response has a 3xx status code
+func (o *ListAnexiaTemplatesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list anexia templates default response has a 4xx status code
+func (o *ListAnexiaTemplatesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list anexia templates default response has a 5xx status code
+func (o *ListAnexiaTemplatesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list anexia templates default response a status code equal to that given
+func (o *ListAnexiaTemplatesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAnexiaTemplatesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/anexia/templates][%d] listAnexiaTemplates default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAnexiaTemplatesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/anexia/templates][%d] listAnexiaTemplates default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAnexiaTemplatesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

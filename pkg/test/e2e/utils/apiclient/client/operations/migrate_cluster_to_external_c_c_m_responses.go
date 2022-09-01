@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type MigrateClusterToExternalCCMOK struct {
 }
 
+// IsSuccess returns true when this migrate cluster to external c c m o k response has a 2xx status code
+func (o *MigrateClusterToExternalCCMOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this migrate cluster to external c c m o k response has a 3xx status code
+func (o *MigrateClusterToExternalCCMOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this migrate cluster to external c c m o k response has a 4xx status code
+func (o *MigrateClusterToExternalCCMOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this migrate cluster to external c c m o k response has a 5xx status code
+func (o *MigrateClusterToExternalCCMOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this migrate cluster to external c c m o k response a status code equal to that given
+func (o *MigrateClusterToExternalCCMOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *MigrateClusterToExternalCCMOK) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMOK ", 200)
+}
+
+func (o *MigrateClusterToExternalCCMOK) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type MigrateClusterToExternalCCMUnauthorized struct {
 }
 
+// IsSuccess returns true when this migrate cluster to external c c m unauthorized response has a 2xx status code
+func (o *MigrateClusterToExternalCCMUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this migrate cluster to external c c m unauthorized response has a 3xx status code
+func (o *MigrateClusterToExternalCCMUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this migrate cluster to external c c m unauthorized response has a 4xx status code
+func (o *MigrateClusterToExternalCCMUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this migrate cluster to external c c m unauthorized response has a 5xx status code
+func (o *MigrateClusterToExternalCCMUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this migrate cluster to external c c m unauthorized response a status code equal to that given
+func (o *MigrateClusterToExternalCCMUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *MigrateClusterToExternalCCMUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMUnauthorized ", 401)
+}
+
+func (o *MigrateClusterToExternalCCMUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type MigrateClusterToExternalCCMForbidden struct {
 }
 
+// IsSuccess returns true when this migrate cluster to external c c m forbidden response has a 2xx status code
+func (o *MigrateClusterToExternalCCMForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this migrate cluster to external c c m forbidden response has a 3xx status code
+func (o *MigrateClusterToExternalCCMForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this migrate cluster to external c c m forbidden response has a 4xx status code
+func (o *MigrateClusterToExternalCCMForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this migrate cluster to external c c m forbidden response has a 5xx status code
+func (o *MigrateClusterToExternalCCMForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this migrate cluster to external c c m forbidden response a status code equal to that given
+func (o *MigrateClusterToExternalCCMForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *MigrateClusterToExternalCCMForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMForbidden ", 403)
+}
+
+func (o *MigrateClusterToExternalCCMForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCMForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *MigrateClusterToExternalCCMDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this migrate cluster to external c c m default response has a 2xx status code
+func (o *MigrateClusterToExternalCCMDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this migrate cluster to external c c m default response has a 3xx status code
+func (o *MigrateClusterToExternalCCMDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this migrate cluster to external c c m default response has a 4xx status code
+func (o *MigrateClusterToExternalCCMDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this migrate cluster to external c c m default response has a 5xx status code
+func (o *MigrateClusterToExternalCCMDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this migrate cluster to external c c m default response a status code equal to that given
+func (o *MigrateClusterToExternalCCMDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *MigrateClusterToExternalCCMDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCM default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *MigrateClusterToExternalCCMDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration][%d] migrateClusterToExternalCCM default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *MigrateClusterToExternalCCMDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

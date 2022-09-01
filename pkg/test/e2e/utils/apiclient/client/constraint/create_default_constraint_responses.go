@@ -66,9 +66,39 @@ type CreateDefaultConstraintOK struct {
 	Payload *models.Constraint
 }
 
+// IsSuccess returns true when this create default constraint o k response has a 2xx status code
+func (o *CreateDefaultConstraintOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create default constraint o k response has a 3xx status code
+func (o *CreateDefaultConstraintOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create default constraint o k response has a 4xx status code
+func (o *CreateDefaultConstraintOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create default constraint o k response has a 5xx status code
+func (o *CreateDefaultConstraintOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create default constraint o k response a status code equal to that given
+func (o *CreateDefaultConstraintOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateDefaultConstraintOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintOK  %+v", 200, o.Payload)
 }
+
+func (o *CreateDefaultConstraintOK) String() string {
+	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintOK  %+v", 200, o.Payload)
+}
+
 func (o *CreateDefaultConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateDefaultConstraintUnauthorized struct {
 }
 
+// IsSuccess returns true when this create default constraint unauthorized response has a 2xx status code
+func (o *CreateDefaultConstraintUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create default constraint unauthorized response has a 3xx status code
+func (o *CreateDefaultConstraintUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create default constraint unauthorized response has a 4xx status code
+func (o *CreateDefaultConstraintUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create default constraint unauthorized response has a 5xx status code
+func (o *CreateDefaultConstraintUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create default constraint unauthorized response a status code equal to that given
+func (o *CreateDefaultConstraintUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateDefaultConstraintUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintUnauthorized ", 401)
+}
+
+func (o *CreateDefaultConstraintUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateDefaultConstraintForbidden struct {
 }
 
+// IsSuccess returns true when this create default constraint forbidden response has a 2xx status code
+func (o *CreateDefaultConstraintForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create default constraint forbidden response has a 3xx status code
+func (o *CreateDefaultConstraintForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create default constraint forbidden response has a 4xx status code
+func (o *CreateDefaultConstraintForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create default constraint forbidden response has a 5xx status code
+func (o *CreateDefaultConstraintForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create default constraint forbidden response a status code equal to that given
+func (o *CreateDefaultConstraintForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateDefaultConstraintForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintForbidden ", 403)
+}
+
+func (o *CreateDefaultConstraintForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraintForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateDefaultConstraintDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create default constraint default response has a 2xx status code
+func (o *CreateDefaultConstraintDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create default constraint default response has a 3xx status code
+func (o *CreateDefaultConstraintDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create default constraint default response has a 4xx status code
+func (o *CreateDefaultConstraintDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create default constraint default response has a 5xx status code
+func (o *CreateDefaultConstraintDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create default constraint default response a status code equal to that given
+func (o *CreateDefaultConstraintDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateDefaultConstraintDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/constraints][%d] createDefaultConstraint default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

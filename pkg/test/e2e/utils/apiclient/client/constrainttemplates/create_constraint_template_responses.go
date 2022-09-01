@@ -66,9 +66,39 @@ type CreateConstraintTemplateOK struct {
 	Payload *models.ConstraintTemplate
 }
 
+// IsSuccess returns true when this create constraint template o k response has a 2xx status code
+func (o *CreateConstraintTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create constraint template o k response has a 3xx status code
+func (o *CreateConstraintTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create constraint template o k response has a 4xx status code
+func (o *CreateConstraintTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create constraint template o k response has a 5xx status code
+func (o *CreateConstraintTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create constraint template o k response a status code equal to that given
+func (o *CreateConstraintTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateConstraintTemplateOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateOK  %+v", 200, o.Payload)
 }
+
+func (o *CreateConstraintTemplateOK) String() string {
+	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateOK  %+v", 200, o.Payload)
+}
+
 func (o *CreateConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateConstraintTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this create constraint template unauthorized response has a 2xx status code
+func (o *CreateConstraintTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create constraint template unauthorized response has a 3xx status code
+func (o *CreateConstraintTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create constraint template unauthorized response has a 4xx status code
+func (o *CreateConstraintTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create constraint template unauthorized response has a 5xx status code
+func (o *CreateConstraintTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create constraint template unauthorized response a status code equal to that given
+func (o *CreateConstraintTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateConstraintTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateUnauthorized ", 401)
+}
+
+func (o *CreateConstraintTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateConstraintTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this create constraint template forbidden response has a 2xx status code
+func (o *CreateConstraintTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create constraint template forbidden response has a 3xx status code
+func (o *CreateConstraintTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create constraint template forbidden response has a 4xx status code
+func (o *CreateConstraintTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create constraint template forbidden response has a 5xx status code
+func (o *CreateConstraintTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create constraint template forbidden response a status code equal to that given
+func (o *CreateConstraintTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateConstraintTemplateForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateForbidden ", 403)
+}
+
+func (o *CreateConstraintTemplateForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplateForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateConstraintTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create constraint template default response has a 2xx status code
+func (o *CreateConstraintTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create constraint template default response has a 3xx status code
+func (o *CreateConstraintTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create constraint template default response has a 4xx status code
+func (o *CreateConstraintTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create constraint template default response has a 5xx status code
+func (o *CreateConstraintTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create constraint template default response a status code equal to that given
+func (o *CreateConstraintTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateConstraintTemplateDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/constrainttemplates][%d] createConstraintTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

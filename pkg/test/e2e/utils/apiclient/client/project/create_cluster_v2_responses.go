@@ -66,9 +66,39 @@ type CreateClusterV2Created struct {
 	Payload *models.Cluster
 }
 
+// IsSuccess returns true when this create cluster v2 created response has a 2xx status code
+func (o *CreateClusterV2Created) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create cluster v2 created response has a 3xx status code
+func (o *CreateClusterV2Created) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster v2 created response has a 4xx status code
+func (o *CreateClusterV2Created) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create cluster v2 created response has a 5xx status code
+func (o *CreateClusterV2Created) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster v2 created response a status code equal to that given
+func (o *CreateClusterV2Created) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateClusterV2Created) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Created  %+v", 201, o.Payload)
 }
+
+func (o *CreateClusterV2Created) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Created  %+v", 201, o.Payload)
+}
+
 func (o *CreateClusterV2Created) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateClusterV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this create cluster v2 unauthorized response has a 2xx status code
+func (o *CreateClusterV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster v2 unauthorized response has a 3xx status code
+func (o *CreateClusterV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster v2 unauthorized response has a 4xx status code
+func (o *CreateClusterV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster v2 unauthorized response has a 5xx status code
+func (o *CreateClusterV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster v2 unauthorized response a status code equal to that given
+func (o *CreateClusterV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateClusterV2Unauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Unauthorized ", 401)
+}
+
+func (o *CreateClusterV2Unauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Unauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateClusterV2Forbidden struct {
 }
 
+// IsSuccess returns true when this create cluster v2 forbidden response has a 2xx status code
+func (o *CreateClusterV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster v2 forbidden response has a 3xx status code
+func (o *CreateClusterV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster v2 forbidden response has a 4xx status code
+func (o *CreateClusterV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster v2 forbidden response has a 5xx status code
+func (o *CreateClusterV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster v2 forbidden response a status code equal to that given
+func (o *CreateClusterV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateClusterV2Forbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Forbidden ", 403)
+}
+
+func (o *CreateClusterV2Forbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2Forbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateClusterV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create cluster v2 default response has a 2xx status code
+func (o *CreateClusterV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create cluster v2 default response has a 3xx status code
+func (o *CreateClusterV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create cluster v2 default response has a 4xx status code
+func (o *CreateClusterV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create cluster v2 default response has a 5xx status code
+func (o *CreateClusterV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create cluster v2 default response a status code equal to that given
+func (o *CreateClusterV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateClusterV2Default) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateClusterV2Default) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters][%d] createClusterV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateClusterV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

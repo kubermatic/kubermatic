@@ -66,9 +66,39 @@ type GetAllowedRegistryOK struct {
 	Payload *models.AllowedRegistry
 }
 
+// IsSuccess returns true when this get allowed registry o k response has a 2xx status code
+func (o *GetAllowedRegistryOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get allowed registry o k response has a 3xx status code
+func (o *GetAllowedRegistryOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get allowed registry o k response has a 4xx status code
+func (o *GetAllowedRegistryOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get allowed registry o k response has a 5xx status code
+func (o *GetAllowedRegistryOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get allowed registry o k response a status code equal to that given
+func (o *GetAllowedRegistryOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetAllowedRegistryOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryOK  %+v", 200, o.Payload)
 }
+
+func (o *GetAllowedRegistryOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryOK  %+v", 200, o.Payload)
+}
+
 func (o *GetAllowedRegistryOK) GetPayload() *models.AllowedRegistry {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetAllowedRegistryUnauthorized struct {
 }
 
+// IsSuccess returns true when this get allowed registry unauthorized response has a 2xx status code
+func (o *GetAllowedRegistryUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get allowed registry unauthorized response has a 3xx status code
+func (o *GetAllowedRegistryUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get allowed registry unauthorized response has a 4xx status code
+func (o *GetAllowedRegistryUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get allowed registry unauthorized response has a 5xx status code
+func (o *GetAllowedRegistryUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get allowed registry unauthorized response a status code equal to that given
+func (o *GetAllowedRegistryUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetAllowedRegistryUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryUnauthorized ", 401)
+}
+
+func (o *GetAllowedRegistryUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetAllowedRegistryForbidden struct {
 }
 
+// IsSuccess returns true when this get allowed registry forbidden response has a 2xx status code
+func (o *GetAllowedRegistryForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get allowed registry forbidden response has a 3xx status code
+func (o *GetAllowedRegistryForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get allowed registry forbidden response has a 4xx status code
+func (o *GetAllowedRegistryForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get allowed registry forbidden response has a 5xx status code
+func (o *GetAllowedRegistryForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get allowed registry forbidden response a status code equal to that given
+func (o *GetAllowedRegistryForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetAllowedRegistryForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryForbidden ", 403)
+}
+
+func (o *GetAllowedRegistryForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistryForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetAllowedRegistryDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get allowed registry default response has a 2xx status code
+func (o *GetAllowedRegistryDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get allowed registry default response has a 3xx status code
+func (o *GetAllowedRegistryDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get allowed registry default response has a 4xx status code
+func (o *GetAllowedRegistryDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get allowed registry default response has a 5xx status code
+func (o *GetAllowedRegistryDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get allowed registry default response a status code equal to that given
+func (o *GetAllowedRegistryDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetAllowedRegistryDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/allowedregistries/{allowed_registry}][%d] getAllowedRegistry default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

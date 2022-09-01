@@ -18,6 +18,14 @@ import (
 // swagger:model EtcdBackupConfigCondition
 type EtcdBackupConfigCondition struct {
 
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime string `json:"lastHeartbeatTime,omitempty"`
+
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
+
 	// Human readable message indicating details about last transition.
 	// +optional
 	Message string `json:"message,omitempty"`
@@ -25,14 +33,6 @@ type EtcdBackupConfigCondition struct {
 	// (brief) reason for the condition's last transition.
 	// +optional
 	Reason string `json:"reason,omitempty"`
-
-	// last heartbeat time
-	// Format: date-time
-	LastHeartbeatTime Time `json:"lastHeartbeatTime,omitempty"`
-
-	// last transition time
-	// Format: date-time
-	LastTransitionTime Time `json:"lastTransitionTime,omitempty"`
 
 	// status
 	Status ConditionStatus `json:"status,omitempty"`
@@ -45,14 +45,6 @@ type EtcdBackupConfigCondition struct {
 func (m *EtcdBackupConfigCondition) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLastHeartbeatTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastTransitionTime(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -64,40 +56,6 @@ func (m *EtcdBackupConfigCondition) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastHeartbeatTime) { // not required
-		return nil
-	}
-
-	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastTransitionTime) { // not required
-		return nil
-	}
-
-	if err := m.LastTransitionTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
-		return err
-	}
-
 	return nil
 }
 
@@ -139,14 +97,6 @@ func (m *EtcdBackupConfigCondition) validateType(formats strfmt.Registry) error 
 func (m *EtcdBackupConfigCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateLastHeartbeatTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLastTransitionTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -158,34 +108,6 @@ func (m *EtcdBackupConfigCondition) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) contextValidateLastHeartbeatTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) contextValidateLastTransitionTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
-		return err
-	}
-
 	return nil
 }
 

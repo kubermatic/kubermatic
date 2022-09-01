@@ -66,9 +66,39 @@ type GetClusterRoleOK struct {
 	Payload *models.ClusterRole
 }
 
+// IsSuccess returns true when this get cluster role o k response has a 2xx status code
+func (o *GetClusterRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster role o k response has a 3xx status code
+func (o *GetClusterRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster role o k response has a 4xx status code
+func (o *GetClusterRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster role o k response has a 5xx status code
+func (o *GetClusterRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster role o k response a status code equal to that given
+func (o *GetClusterRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterRoleOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleOK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterRoleOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleOK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterRoleOK) GetPayload() *models.ClusterRole {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetClusterRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster role unauthorized response has a 2xx status code
+func (o *GetClusterRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster role unauthorized response has a 3xx status code
+func (o *GetClusterRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster role unauthorized response has a 4xx status code
+func (o *GetClusterRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster role unauthorized response has a 5xx status code
+func (o *GetClusterRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster role unauthorized response a status code equal to that given
+func (o *GetClusterRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleUnauthorized ", 401)
+}
+
+func (o *GetClusterRoleUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetClusterRoleForbidden struct {
 }
 
+// IsSuccess returns true when this get cluster role forbidden response has a 2xx status code
+func (o *GetClusterRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster role forbidden response has a 3xx status code
+func (o *GetClusterRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster role forbidden response has a 4xx status code
+func (o *GetClusterRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster role forbidden response has a 5xx status code
+func (o *GetClusterRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster role forbidden response a status code equal to that given
+func (o *GetClusterRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterRoleForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleForbidden ", 403)
+}
+
+func (o *GetClusterRoleForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRoleForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetClusterRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster role default response has a 2xx status code
+func (o *GetClusterRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster role default response has a 3xx status code
+func (o *GetClusterRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster role default response has a 4xx status code
+func (o *GetClusterRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster role default response has a 5xx status code
+func (o *GetClusterRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster role default response a status code equal to that given
+func (o *GetClusterRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterRoleDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}][%d] getClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

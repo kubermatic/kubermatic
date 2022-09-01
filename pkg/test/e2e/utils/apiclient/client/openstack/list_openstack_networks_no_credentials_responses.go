@@ -54,9 +54,39 @@ type ListOpenstackNetworksNoCredentialsOK struct {
 	Payload []*models.OpenstackNetwork
 }
 
+// IsSuccess returns true when this list openstack networks no credentials o k response has a 2xx status code
+func (o *ListOpenstackNetworksNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list openstack networks no credentials o k response has a 3xx status code
+func (o *ListOpenstackNetworksNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list openstack networks no credentials o k response has a 4xx status code
+func (o *ListOpenstackNetworksNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list openstack networks no credentials o k response has a 5xx status code
+func (o *ListOpenstackNetworksNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list openstack networks no credentials o k response a status code equal to that given
+func (o *ListOpenstackNetworksNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOpenstackNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks][%d] listOpenstackNetworksNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOpenstackNetworksNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks][%d] listOpenstackNetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOpenstackNetworksNoCredentialsOK) GetPayload() []*models.OpenstackNetwork {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListOpenstackNetworksNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list openstack networks no credentials default response has a 2xx status code
+func (o *ListOpenstackNetworksNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list openstack networks no credentials default response has a 3xx status code
+func (o *ListOpenstackNetworksNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list openstack networks no credentials default response has a 4xx status code
+func (o *ListOpenstackNetworksNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list openstack networks no credentials default response has a 5xx status code
+func (o *ListOpenstackNetworksNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list openstack networks no credentials default response a status code equal to that given
+func (o *ListOpenstackNetworksNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOpenstackNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks][%d] listOpenstackNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOpenstackNetworksNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks][%d] listOpenstackNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOpenstackNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

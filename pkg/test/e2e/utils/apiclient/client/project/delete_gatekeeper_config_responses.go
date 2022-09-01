@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteGatekeeperConfigOK struct {
 }
 
+// IsSuccess returns true when this delete gatekeeper config o k response has a 2xx status code
+func (o *DeleteGatekeeperConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete gatekeeper config o k response has a 3xx status code
+func (o *DeleteGatekeeperConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete gatekeeper config o k response has a 4xx status code
+func (o *DeleteGatekeeperConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete gatekeeper config o k response has a 5xx status code
+func (o *DeleteGatekeeperConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete gatekeeper config o k response a status code equal to that given
+func (o *DeleteGatekeeperConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteGatekeeperConfigOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigOK ", 200)
+}
+
+func (o *DeleteGatekeeperConfigOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteGatekeeperConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete gatekeeper config unauthorized response has a 2xx status code
+func (o *DeleteGatekeeperConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete gatekeeper config unauthorized response has a 3xx status code
+func (o *DeleteGatekeeperConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete gatekeeper config unauthorized response has a 4xx status code
+func (o *DeleteGatekeeperConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete gatekeeper config unauthorized response has a 5xx status code
+func (o *DeleteGatekeeperConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete gatekeeper config unauthorized response a status code equal to that given
+func (o *DeleteGatekeeperConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteGatekeeperConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigUnauthorized ", 401)
+}
+
+func (o *DeleteGatekeeperConfigUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteGatekeeperConfigForbidden struct {
 }
 
+// IsSuccess returns true when this delete gatekeeper config forbidden response has a 2xx status code
+func (o *DeleteGatekeeperConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete gatekeeper config forbidden response has a 3xx status code
+func (o *DeleteGatekeeperConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete gatekeeper config forbidden response has a 4xx status code
+func (o *DeleteGatekeeperConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete gatekeeper config forbidden response has a 5xx status code
+func (o *DeleteGatekeeperConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete gatekeeper config forbidden response a status code equal to that given
+func (o *DeleteGatekeeperConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteGatekeeperConfigForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigForbidden ", 403)
+}
+
+func (o *DeleteGatekeeperConfigForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfigForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteGatekeeperConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete gatekeeper config default response has a 2xx status code
+func (o *DeleteGatekeeperConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete gatekeeper config default response has a 3xx status code
+func (o *DeleteGatekeeperConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete gatekeeper config default response has a 4xx status code
+func (o *DeleteGatekeeperConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete gatekeeper config default response has a 5xx status code
+func (o *DeleteGatekeeperConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete gatekeeper config default response a status code equal to that given
+func (o *DeleteGatekeeperConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteGatekeeperConfigDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] deleteGatekeeperConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -69,9 +69,39 @@ type UpdateDCOK struct {
 	Payload *models.Datacenter
 }
 
+// IsSuccess returns true when this update d c o k response has a 2xx status code
+func (o *UpdateDCOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update d c o k response has a 3xx status code
+func (o *UpdateDCOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update d c o k response has a 4xx status code
+func (o *UpdateDCOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update d c o k response has a 5xx status code
+func (o *UpdateDCOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update d c o k response a status code equal to that given
+func (o *UpdateDCOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateDCOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateDCOK) String() string {
+	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateDCOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -100,7 +130,36 @@ EmptyResponse is a empty response
 type UpdateDCUnauthorized struct {
 }
 
+// IsSuccess returns true when this update d c unauthorized response has a 2xx status code
+func (o *UpdateDCUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update d c unauthorized response has a 3xx status code
+func (o *UpdateDCUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update d c unauthorized response has a 4xx status code
+func (o *UpdateDCUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update d c unauthorized response has a 5xx status code
+func (o *UpdateDCUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update d c unauthorized response a status code equal to that given
+func (o *UpdateDCUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateDCUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCUnauthorized ", 401)
+}
+
+func (o *UpdateDCUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCUnauthorized ", 401)
 }
 
@@ -121,7 +180,36 @@ EmptyResponse is a empty response
 type UpdateDCForbidden struct {
 }
 
+// IsSuccess returns true when this update d c forbidden response has a 2xx status code
+func (o *UpdateDCForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update d c forbidden response has a 3xx status code
+func (o *UpdateDCForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update d c forbidden response has a 4xx status code
+func (o *UpdateDCForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update d c forbidden response has a 5xx status code
+func (o *UpdateDCForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update d c forbidden response a status code equal to that given
+func (o *UpdateDCForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateDCForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCForbidden ", 403)
+}
+
+func (o *UpdateDCForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDCForbidden ", 403)
 }
 
@@ -152,9 +240,39 @@ func (o *UpdateDCDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update d c default response has a 2xx status code
+func (o *UpdateDCDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update d c default response has a 3xx status code
+func (o *UpdateDCDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update d c default response has a 4xx status code
+func (o *UpdateDCDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update d c default response has a 5xx status code
+func (o *UpdateDCDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update d c default response a status code equal to that given
+func (o *UpdateDCDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateDCDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDC default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateDCDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/seed/{seed_name}/dc/{dc}][%d] updateDC default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

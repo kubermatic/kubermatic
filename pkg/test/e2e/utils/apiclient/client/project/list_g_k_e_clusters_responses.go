@@ -54,9 +54,39 @@ type ListGKEClustersOK struct {
 	Payload models.GKEClusterList
 }
 
+// IsSuccess returns true when this list g k e clusters o k response has a 2xx status code
+func (o *ListGKEClustersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e clusters o k response has a 3xx status code
+func (o *ListGKEClustersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e clusters o k response has a 4xx status code
+func (o *ListGKEClustersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e clusters o k response has a 5xx status code
+func (o *ListGKEClustersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e clusters o k response a status code equal to that given
+func (o *ListGKEClustersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/gke/clusters][%d] listGKEClustersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEClustersOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/gke/clusters][%d] listGKEClustersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEClustersOK) GetPayload() models.GKEClusterList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListGKEClustersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e clusters default response has a 2xx status code
+func (o *ListGKEClustersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e clusters default response has a 3xx status code
+func (o *ListGKEClustersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e clusters default response has a 4xx status code
+func (o *ListGKEClustersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e clusters default response has a 5xx status code
+func (o *ListGKEClustersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e clusters default response a status code equal to that given
+func (o *ListGKEClustersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/gke/clusters][%d] listGKEClusters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEClustersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/gke/clusters][%d] listGKEClusters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

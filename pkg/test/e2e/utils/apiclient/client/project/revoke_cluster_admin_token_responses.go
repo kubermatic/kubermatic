@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type RevokeClusterAdminTokenOK struct {
 }
 
+// IsSuccess returns true when this revoke cluster admin token o k response has a 2xx status code
+func (o *RevokeClusterAdminTokenOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this revoke cluster admin token o k response has a 3xx status code
+func (o *RevokeClusterAdminTokenOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster admin token o k response has a 4xx status code
+func (o *RevokeClusterAdminTokenOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this revoke cluster admin token o k response has a 5xx status code
+func (o *RevokeClusterAdminTokenOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster admin token o k response a status code equal to that given
+func (o *RevokeClusterAdminTokenOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *RevokeClusterAdminTokenOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenOK ", 200)
+}
+
+func (o *RevokeClusterAdminTokenOK) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type RevokeClusterAdminTokenUnauthorized struct {
 }
 
+// IsSuccess returns true when this revoke cluster admin token unauthorized response has a 2xx status code
+func (o *RevokeClusterAdminTokenUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this revoke cluster admin token unauthorized response has a 3xx status code
+func (o *RevokeClusterAdminTokenUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster admin token unauthorized response has a 4xx status code
+func (o *RevokeClusterAdminTokenUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this revoke cluster admin token unauthorized response has a 5xx status code
+func (o *RevokeClusterAdminTokenUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster admin token unauthorized response a status code equal to that given
+func (o *RevokeClusterAdminTokenUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *RevokeClusterAdminTokenUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenUnauthorized ", 401)
+}
+
+func (o *RevokeClusterAdminTokenUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type RevokeClusterAdminTokenForbidden struct {
 }
 
+// IsSuccess returns true when this revoke cluster admin token forbidden response has a 2xx status code
+func (o *RevokeClusterAdminTokenForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this revoke cluster admin token forbidden response has a 3xx status code
+func (o *RevokeClusterAdminTokenForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster admin token forbidden response has a 4xx status code
+func (o *RevokeClusterAdminTokenForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this revoke cluster admin token forbidden response has a 5xx status code
+func (o *RevokeClusterAdminTokenForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster admin token forbidden response a status code equal to that given
+func (o *RevokeClusterAdminTokenForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *RevokeClusterAdminTokenForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenForbidden ", 403)
+}
+
+func (o *RevokeClusterAdminTokenForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminTokenForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *RevokeClusterAdminTokenDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this revoke cluster admin token default response has a 2xx status code
+func (o *RevokeClusterAdminTokenDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this revoke cluster admin token default response has a 3xx status code
+func (o *RevokeClusterAdminTokenDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this revoke cluster admin token default response has a 4xx status code
+func (o *RevokeClusterAdminTokenDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this revoke cluster admin token default response has a 5xx status code
+func (o *RevokeClusterAdminTokenDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this revoke cluster admin token default response a status code equal to that given
+func (o *RevokeClusterAdminTokenDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *RevokeClusterAdminTokenDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminToken default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *RevokeClusterAdminTokenDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token][%d] revokeClusterAdminToken default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *RevokeClusterAdminTokenDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

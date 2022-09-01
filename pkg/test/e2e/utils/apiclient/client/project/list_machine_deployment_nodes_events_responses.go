@@ -66,9 +66,39 @@ type ListMachineDeploymentNodesEventsOK struct {
 	Payload []*models.Event
 }
 
+// IsSuccess returns true when this list machine deployment nodes events o k response has a 2xx status code
+func (o *ListMachineDeploymentNodesEventsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list machine deployment nodes events o k response has a 3xx status code
+func (o *ListMachineDeploymentNodesEventsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment nodes events o k response has a 4xx status code
+func (o *ListMachineDeploymentNodesEventsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list machine deployment nodes events o k response has a 5xx status code
+func (o *ListMachineDeploymentNodesEventsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment nodes events o k response a status code equal to that given
+func (o *ListMachineDeploymentNodesEventsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListMachineDeploymentNodesEventsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListMachineDeploymentNodesEventsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListMachineDeploymentNodesEventsOK) GetPayload() []*models.Event {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListMachineDeploymentNodesEventsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list machine deployment nodes events unauthorized response has a 2xx status code
+func (o *ListMachineDeploymentNodesEventsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployment nodes events unauthorized response has a 3xx status code
+func (o *ListMachineDeploymentNodesEventsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment nodes events unauthorized response has a 4xx status code
+func (o *ListMachineDeploymentNodesEventsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployment nodes events unauthorized response has a 5xx status code
+func (o *ListMachineDeploymentNodesEventsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment nodes events unauthorized response a status code equal to that given
+func (o *ListMachineDeploymentNodesEventsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListMachineDeploymentNodesEventsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsUnauthorized ", 401)
+}
+
+func (o *ListMachineDeploymentNodesEventsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListMachineDeploymentNodesEventsForbidden struct {
 }
 
+// IsSuccess returns true when this list machine deployment nodes events forbidden response has a 2xx status code
+func (o *ListMachineDeploymentNodesEventsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployment nodes events forbidden response has a 3xx status code
+func (o *ListMachineDeploymentNodesEventsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment nodes events forbidden response has a 4xx status code
+func (o *ListMachineDeploymentNodesEventsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployment nodes events forbidden response has a 5xx status code
+func (o *ListMachineDeploymentNodesEventsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment nodes events forbidden response a status code equal to that given
+func (o *ListMachineDeploymentNodesEventsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListMachineDeploymentNodesEventsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsForbidden ", 403)
+}
+
+func (o *ListMachineDeploymentNodesEventsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEventsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListMachineDeploymentNodesEventsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list machine deployment nodes events default response has a 2xx status code
+func (o *ListMachineDeploymentNodesEventsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list machine deployment nodes events default response has a 3xx status code
+func (o *ListMachineDeploymentNodesEventsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list machine deployment nodes events default response has a 4xx status code
+func (o *ListMachineDeploymentNodesEventsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list machine deployment nodes events default response has a 5xx status code
+func (o *ListMachineDeploymentNodesEventsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list machine deployment nodes events default response a status code equal to that given
+func (o *ListMachineDeploymentNodesEventsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListMachineDeploymentNodesEventsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEvents default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListMachineDeploymentNodesEventsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events][%d] listMachineDeploymentNodesEvents default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListMachineDeploymentNodesEventsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

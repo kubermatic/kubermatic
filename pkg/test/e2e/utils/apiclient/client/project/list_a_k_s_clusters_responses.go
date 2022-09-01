@@ -54,9 +54,39 @@ type ListAKSClustersOK struct {
 	Payload models.AKSClusterList
 }
 
+// IsSuccess returns true when this list a k s clusters o k response has a 2xx status code
+func (o *ListAKSClustersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a k s clusters o k response has a 3xx status code
+func (o *ListAKSClustersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s clusters o k response has a 4xx status code
+func (o *ListAKSClustersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a k s clusters o k response has a 5xx status code
+func (o *ListAKSClustersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s clusters o k response a status code equal to that given
+func (o *ListAKSClustersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAKSClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/aks/clusters][%d] listAKSClustersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAKSClustersOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/aks/clusters][%d] listAKSClustersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAKSClustersOK) GetPayload() models.AKSClusterList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAKSClustersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a k s clusters default response has a 2xx status code
+func (o *ListAKSClustersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a k s clusters default response has a 3xx status code
+func (o *ListAKSClustersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a k s clusters default response has a 4xx status code
+func (o *ListAKSClustersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a k s clusters default response has a 5xx status code
+func (o *ListAKSClustersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a k s clusters default response a status code equal to that given
+func (o *ListAKSClustersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAKSClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/aks/clusters][%d] listAKSClusters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAKSClustersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/aks/clusters][%d] listAKSClusters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAKSClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type GetMeteringReportConfigurationOK struct {
 	Payload *models.MeteringReportConfiguration
 }
 
+// IsSuccess returns true when this get metering report configuration o k response has a 2xx status code
+func (o *GetMeteringReportConfigurationOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get metering report configuration o k response has a 3xx status code
+func (o *GetMeteringReportConfigurationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get metering report configuration o k response has a 4xx status code
+func (o *GetMeteringReportConfigurationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get metering report configuration o k response has a 5xx status code
+func (o *GetMeteringReportConfigurationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get metering report configuration o k response a status code equal to that given
+func (o *GetMeteringReportConfigurationOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetMeteringReportConfigurationOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationOK  %+v", 200, o.Payload)
 }
+
+func (o *GetMeteringReportConfigurationOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationOK  %+v", 200, o.Payload)
+}
+
 func (o *GetMeteringReportConfigurationOK) GetPayload() *models.MeteringReportConfiguration {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetMeteringReportConfigurationUnauthorized struct {
 }
 
+// IsSuccess returns true when this get metering report configuration unauthorized response has a 2xx status code
+func (o *GetMeteringReportConfigurationUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get metering report configuration unauthorized response has a 3xx status code
+func (o *GetMeteringReportConfigurationUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get metering report configuration unauthorized response has a 4xx status code
+func (o *GetMeteringReportConfigurationUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get metering report configuration unauthorized response has a 5xx status code
+func (o *GetMeteringReportConfigurationUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get metering report configuration unauthorized response a status code equal to that given
+func (o *GetMeteringReportConfigurationUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetMeteringReportConfigurationUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationUnauthorized ", 401)
+}
+
+func (o *GetMeteringReportConfigurationUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetMeteringReportConfigurationForbidden struct {
 }
 
+// IsSuccess returns true when this get metering report configuration forbidden response has a 2xx status code
+func (o *GetMeteringReportConfigurationForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get metering report configuration forbidden response has a 3xx status code
+func (o *GetMeteringReportConfigurationForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get metering report configuration forbidden response has a 4xx status code
+func (o *GetMeteringReportConfigurationForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get metering report configuration forbidden response has a 5xx status code
+func (o *GetMeteringReportConfigurationForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get metering report configuration forbidden response a status code equal to that given
+func (o *GetMeteringReportConfigurationForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetMeteringReportConfigurationForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationForbidden ", 403)
+}
+
+func (o *GetMeteringReportConfigurationForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetMeteringReportConfigurationDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get metering report configuration default response has a 2xx status code
+func (o *GetMeteringReportConfigurationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get metering report configuration default response has a 3xx status code
+func (o *GetMeteringReportConfigurationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get metering report configuration default response has a 4xx status code
+func (o *GetMeteringReportConfigurationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get metering report configuration default response has a 5xx status code
+func (o *GetMeteringReportConfigurationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get metering report configuration default response a status code equal to that given
+func (o *GetMeteringReportConfigurationDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetMeteringReportConfigurationDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetMeteringReportConfigurationDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type ListRoleBindingOK struct {
 	Payload []*models.RoleBinding
 }
 
+// IsSuccess returns true when this list role binding o k response has a 2xx status code
+func (o *ListRoleBindingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list role binding o k response has a 3xx status code
+func (o *ListRoleBindingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role binding o k response has a 4xx status code
+func (o *ListRoleBindingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list role binding o k response has a 5xx status code
+func (o *ListRoleBindingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role binding o k response a status code equal to that given
+func (o *ListRoleBindingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListRoleBindingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
 }
+
+func (o *ListRoleBindingOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
+}
+
 func (o *ListRoleBindingOK) GetPayload() []*models.RoleBinding {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListRoleBindingUnauthorized struct {
 }
 
+// IsSuccess returns true when this list role binding unauthorized response has a 2xx status code
+func (o *ListRoleBindingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list role binding unauthorized response has a 3xx status code
+func (o *ListRoleBindingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role binding unauthorized response has a 4xx status code
+func (o *ListRoleBindingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list role binding unauthorized response has a 5xx status code
+func (o *ListRoleBindingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role binding unauthorized response a status code equal to that given
+func (o *ListRoleBindingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListRoleBindingUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingUnauthorized ", 401)
+}
+
+func (o *ListRoleBindingUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListRoleBindingForbidden struct {
 }
 
+// IsSuccess returns true when this list role binding forbidden response has a 2xx status code
+func (o *ListRoleBindingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list role binding forbidden response has a 3xx status code
+func (o *ListRoleBindingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role binding forbidden response has a 4xx status code
+func (o *ListRoleBindingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list role binding forbidden response has a 5xx status code
+func (o *ListRoleBindingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role binding forbidden response a status code equal to that given
+func (o *ListRoleBindingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListRoleBindingForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingForbidden ", 403)
+}
+
+func (o *ListRoleBindingForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListRoleBindingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list role binding default response has a 2xx status code
+func (o *ListRoleBindingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list role binding default response has a 3xx status code
+func (o *ListRoleBindingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list role binding default response has a 4xx status code
+func (o *ListRoleBindingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list role binding default response has a 5xx status code
+func (o *ListRoleBindingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list role binding default response a status code equal to that given
+func (o *ListRoleBindingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListRoleBindingDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListRoleBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

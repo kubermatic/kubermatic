@@ -54,9 +54,39 @@ type ListAzureRouteTablesOK struct {
 	Payload *models.AzureRouteTablesList
 }
 
+// IsSuccess returns true when this list azure route tables o k response has a 2xx status code
+func (o *ListAzureRouteTablesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure route tables o k response has a 3xx status code
+func (o *ListAzureRouteTablesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure route tables o k response has a 4xx status code
+func (o *ListAzureRouteTablesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure route tables o k response has a 5xx status code
+func (o *ListAzureRouteTablesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure route tables o k response a status code equal to that given
+func (o *ListAzureRouteTablesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureRouteTablesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTablesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureRouteTablesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTablesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureRouteTablesOK) GetPayload() *models.AzureRouteTablesList {
 	return o.Payload
 }
@@ -95,9 +125,39 @@ func (o *ListAzureRouteTablesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure route tables default response has a 2xx status code
+func (o *ListAzureRouteTablesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure route tables default response has a 3xx status code
+func (o *ListAzureRouteTablesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure route tables default response has a 4xx status code
+func (o *ListAzureRouteTablesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure route tables default response has a 5xx status code
+func (o *ListAzureRouteTablesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure route tables default response a status code equal to that given
+func (o *ListAzureRouteTablesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureRouteTablesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTables default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureRouteTablesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/routetables][%d] listAzureRouteTables default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureRouteTablesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

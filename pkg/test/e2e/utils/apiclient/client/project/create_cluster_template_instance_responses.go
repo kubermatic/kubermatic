@@ -68,9 +68,39 @@ type CreateClusterTemplateInstanceCreated struct {
 	Payload *models.ClusterTemplateInstance
 }
 
+// IsSuccess returns true when this create cluster template instance created response has a 2xx status code
+func (o *CreateClusterTemplateInstanceCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create cluster template instance created response has a 3xx status code
+func (o *CreateClusterTemplateInstanceCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template instance created response has a 4xx status code
+func (o *CreateClusterTemplateInstanceCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create cluster template instance created response has a 5xx status code
+func (o *CreateClusterTemplateInstanceCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template instance created response a status code equal to that given
+func (o *CreateClusterTemplateInstanceCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateClusterTemplateInstanceCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateClusterTemplateInstanceCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateClusterTemplateInstanceCreated) GetPayload() *models.ClusterTemplateInstance {
 	return o.Payload
 }
@@ -99,7 +129,36 @@ EmptyResponse is a empty response
 type CreateClusterTemplateInstanceUnauthorized struct {
 }
 
+// IsSuccess returns true when this create cluster template instance unauthorized response has a 2xx status code
+func (o *CreateClusterTemplateInstanceUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster template instance unauthorized response has a 3xx status code
+func (o *CreateClusterTemplateInstanceUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template instance unauthorized response has a 4xx status code
+func (o *CreateClusterTemplateInstanceUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster template instance unauthorized response has a 5xx status code
+func (o *CreateClusterTemplateInstanceUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template instance unauthorized response a status code equal to that given
+func (o *CreateClusterTemplateInstanceUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateClusterTemplateInstanceUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceUnauthorized ", 401)
+}
+
+func (o *CreateClusterTemplateInstanceUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceUnauthorized ", 401)
 }
 
@@ -120,7 +179,36 @@ EmptyResponse is a empty response
 type CreateClusterTemplateInstanceForbidden struct {
 }
 
+// IsSuccess returns true when this create cluster template instance forbidden response has a 2xx status code
+func (o *CreateClusterTemplateInstanceForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster template instance forbidden response has a 3xx status code
+func (o *CreateClusterTemplateInstanceForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template instance forbidden response has a 4xx status code
+func (o *CreateClusterTemplateInstanceForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster template instance forbidden response has a 5xx status code
+func (o *CreateClusterTemplateInstanceForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template instance forbidden response a status code equal to that given
+func (o *CreateClusterTemplateInstanceForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateClusterTemplateInstanceForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceForbidden ", 403)
+}
+
+func (o *CreateClusterTemplateInstanceForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstanceForbidden ", 403)
 }
 
@@ -151,9 +239,39 @@ func (o *CreateClusterTemplateInstanceDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create cluster template instance default response has a 2xx status code
+func (o *CreateClusterTemplateInstanceDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create cluster template instance default response has a 3xx status code
+func (o *CreateClusterTemplateInstanceDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create cluster template instance default response has a 4xx status code
+func (o *CreateClusterTemplateInstanceDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create cluster template instance default response has a 5xx status code
+func (o *CreateClusterTemplateInstanceDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create cluster template instance default response a status code equal to that given
+func (o *CreateClusterTemplateInstanceDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateClusterTemplateInstanceDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstance default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateClusterTemplateInstanceDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances][%d] createClusterTemplateInstance default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateClusterTemplateInstanceDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

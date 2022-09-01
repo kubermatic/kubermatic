@@ -66,9 +66,39 @@ type ListVersionsByProviderOK struct {
 	Payload models.VersionList
 }
 
+// IsSuccess returns true when this list versions by provider o k response has a 2xx status code
+func (o *ListVersionsByProviderOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list versions by provider o k response has a 3xx status code
+func (o *ListVersionsByProviderOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by provider o k response has a 4xx status code
+func (o *ListVersionsByProviderOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list versions by provider o k response has a 5xx status code
+func (o *ListVersionsByProviderOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by provider o k response a status code equal to that given
+func (o *ListVersionsByProviderOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVersionsByProviderOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVersionsByProviderOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVersionsByProviderOK) GetPayload() models.VersionList {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListVersionsByProviderUnauthorized struct {
 }
 
+// IsSuccess returns true when this list versions by provider unauthorized response has a 2xx status code
+func (o *ListVersionsByProviderUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list versions by provider unauthorized response has a 3xx status code
+func (o *ListVersionsByProviderUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by provider unauthorized response has a 4xx status code
+func (o *ListVersionsByProviderUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list versions by provider unauthorized response has a 5xx status code
+func (o *ListVersionsByProviderUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by provider unauthorized response a status code equal to that given
+func (o *ListVersionsByProviderUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListVersionsByProviderUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderUnauthorized ", 401)
+}
+
+func (o *ListVersionsByProviderUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListVersionsByProviderForbidden struct {
 }
 
+// IsSuccess returns true when this list versions by provider forbidden response has a 2xx status code
+func (o *ListVersionsByProviderForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list versions by provider forbidden response has a 3xx status code
+func (o *ListVersionsByProviderForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by provider forbidden response has a 4xx status code
+func (o *ListVersionsByProviderForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list versions by provider forbidden response has a 5xx status code
+func (o *ListVersionsByProviderForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by provider forbidden response a status code equal to that given
+func (o *ListVersionsByProviderForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListVersionsByProviderForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderForbidden ", 403)
+}
+
+func (o *ListVersionsByProviderForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProviderForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListVersionsByProviderDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list versions by provider default response has a 2xx status code
+func (o *ListVersionsByProviderDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list versions by provider default response has a 3xx status code
+func (o *ListVersionsByProviderDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list versions by provider default response has a 4xx status code
+func (o *ListVersionsByProviderDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list versions by provider default response has a 5xx status code
+func (o *ListVersionsByProviderDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list versions by provider default response a status code equal to that given
+func (o *ListVersionsByProviderDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVersionsByProviderDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProvider default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVersionsByProviderDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/versions][%d] listVersionsByProvider default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVersionsByProviderDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -54,9 +54,39 @@ type ListGCPDiskTypesOK struct {
 	Payload models.GCPDiskTypeList
 }
 
+// IsSuccess returns true when this list g c p disk types o k response has a 2xx status code
+func (o *ListGCPDiskTypesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p disk types o k response has a 3xx status code
+func (o *ListGCPDiskTypesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p disk types o k response has a 4xx status code
+func (o *ListGCPDiskTypesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p disk types o k response has a 5xx status code
+func (o *ListGCPDiskTypesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p disk types o k response a status code equal to that given
+func (o *ListGCPDiskTypesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPDiskTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPDiskTypesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPDiskTypesOK) GetPayload() models.GCPDiskTypeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListGCPDiskTypesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p disk types default response has a 2xx status code
+func (o *ListGCPDiskTypesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p disk types default response has a 3xx status code
+func (o *ListGCPDiskTypesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p disk types default response has a 4xx status code
+func (o *ListGCPDiskTypesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p disk types default response has a 5xx status code
+func (o *ListGCPDiskTypesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p disk types default response a status code equal to that given
+func (o *ListGCPDiskTypesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPDiskTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPDiskTypesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPDiskTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

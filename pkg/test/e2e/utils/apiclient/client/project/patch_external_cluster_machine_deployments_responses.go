@@ -66,9 +66,39 @@ type PatchExternalClusterMachineDeploymentsOK struct {
 	Payload *models.ExternalClusterMachineDeployment
 }
 
+// IsSuccess returns true when this patch external cluster machine deployments o k response has a 2xx status code
+func (o *PatchExternalClusterMachineDeploymentsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch external cluster machine deployments o k response has a 3xx status code
+func (o *PatchExternalClusterMachineDeploymentsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster machine deployments o k response has a 4xx status code
+func (o *PatchExternalClusterMachineDeploymentsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch external cluster machine deployments o k response has a 5xx status code
+func (o *PatchExternalClusterMachineDeploymentsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster machine deployments o k response a status code equal to that given
+func (o *PatchExternalClusterMachineDeploymentsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchExternalClusterMachineDeploymentsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchExternalClusterMachineDeploymentsOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchExternalClusterMachineDeploymentsOK) GetPayload() *models.ExternalClusterMachineDeployment {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchExternalClusterMachineDeploymentsUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch external cluster machine deployments unauthorized response has a 2xx status code
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch external cluster machine deployments unauthorized response has a 3xx status code
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster machine deployments unauthorized response has a 4xx status code
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch external cluster machine deployments unauthorized response has a 5xx status code
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster machine deployments unauthorized response a status code equal to that given
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchExternalClusterMachineDeploymentsUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsUnauthorized ", 401)
+}
+
+func (o *PatchExternalClusterMachineDeploymentsUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchExternalClusterMachineDeploymentsForbidden struct {
 }
 
+// IsSuccess returns true when this patch external cluster machine deployments forbidden response has a 2xx status code
+func (o *PatchExternalClusterMachineDeploymentsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch external cluster machine deployments forbidden response has a 3xx status code
+func (o *PatchExternalClusterMachineDeploymentsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster machine deployments forbidden response has a 4xx status code
+func (o *PatchExternalClusterMachineDeploymentsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch external cluster machine deployments forbidden response has a 5xx status code
+func (o *PatchExternalClusterMachineDeploymentsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster machine deployments forbidden response a status code equal to that given
+func (o *PatchExternalClusterMachineDeploymentsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchExternalClusterMachineDeploymentsForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsForbidden ", 403)
+}
+
+func (o *PatchExternalClusterMachineDeploymentsForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeploymentsForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchExternalClusterMachineDeploymentsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch external cluster machine deployments default response has a 2xx status code
+func (o *PatchExternalClusterMachineDeploymentsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch external cluster machine deployments default response has a 3xx status code
+func (o *PatchExternalClusterMachineDeploymentsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch external cluster machine deployments default response has a 4xx status code
+func (o *PatchExternalClusterMachineDeploymentsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch external cluster machine deployments default response has a 5xx status code
+func (o *PatchExternalClusterMachineDeploymentsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch external cluster machine deployments default response a status code equal to that given
+func (o *PatchExternalClusterMachineDeploymentsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchExternalClusterMachineDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeployments default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchExternalClusterMachineDeploymentsDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] patchExternalClusterMachineDeployments default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchExternalClusterMachineDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

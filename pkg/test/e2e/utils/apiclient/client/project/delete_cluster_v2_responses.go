@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteClusterV2OK struct {
 }
 
+// IsSuccess returns true when this delete cluster v2 o k response has a 2xx status code
+func (o *DeleteClusterV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete cluster v2 o k response has a 3xx status code
+func (o *DeleteClusterV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster v2 o k response has a 4xx status code
+func (o *DeleteClusterV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete cluster v2 o k response has a 5xx status code
+func (o *DeleteClusterV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster v2 o k response a status code equal to that given
+func (o *DeleteClusterV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteClusterV2OK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2OK ", 200)
+}
+
+func (o *DeleteClusterV2OK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2OK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteClusterV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this delete cluster v2 unauthorized response has a 2xx status code
+func (o *DeleteClusterV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster v2 unauthorized response has a 3xx status code
+func (o *DeleteClusterV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster v2 unauthorized response has a 4xx status code
+func (o *DeleteClusterV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster v2 unauthorized response has a 5xx status code
+func (o *DeleteClusterV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster v2 unauthorized response a status code equal to that given
+func (o *DeleteClusterV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteClusterV2Unauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2Unauthorized ", 401)
+}
+
+func (o *DeleteClusterV2Unauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2Unauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteClusterV2Forbidden struct {
 }
 
+// IsSuccess returns true when this delete cluster v2 forbidden response has a 2xx status code
+func (o *DeleteClusterV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster v2 forbidden response has a 3xx status code
+func (o *DeleteClusterV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster v2 forbidden response has a 4xx status code
+func (o *DeleteClusterV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster v2 forbidden response has a 5xx status code
+func (o *DeleteClusterV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster v2 forbidden response a status code equal to that given
+func (o *DeleteClusterV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteClusterV2Forbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2Forbidden ", 403)
+}
+
+func (o *DeleteClusterV2Forbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2Forbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteClusterV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete cluster v2 default response has a 2xx status code
+func (o *DeleteClusterV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete cluster v2 default response has a 3xx status code
+func (o *DeleteClusterV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete cluster v2 default response has a 4xx status code
+func (o *DeleteClusterV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete cluster v2 default response has a 5xx status code
+func (o *DeleteClusterV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete cluster v2 default response a status code equal to that given
+func (o *DeleteClusterV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteClusterV2Default) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteClusterV2Default) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] deleteClusterV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteClusterV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

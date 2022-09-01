@@ -66,9 +66,39 @@ type GetProjectQuotaOK struct {
 	Payload *models.ResourceQuota
 }
 
+// IsSuccess returns true when this get project quota o k response has a 2xx status code
+func (o *GetProjectQuotaOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get project quota o k response has a 3xx status code
+func (o *GetProjectQuotaOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project quota o k response has a 4xx status code
+func (o *GetProjectQuotaOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get project quota o k response has a 5xx status code
+func (o *GetProjectQuotaOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project quota o k response a status code equal to that given
+func (o *GetProjectQuotaOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetProjectQuotaOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaOK  %+v", 200, o.Payload)
 }
+
+func (o *GetProjectQuotaOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaOK  %+v", 200, o.Payload)
+}
+
 func (o *GetProjectQuotaOK) GetPayload() *models.ResourceQuota {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetProjectQuotaUnauthorized struct {
 }
 
+// IsSuccess returns true when this get project quota unauthorized response has a 2xx status code
+func (o *GetProjectQuotaUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get project quota unauthorized response has a 3xx status code
+func (o *GetProjectQuotaUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project quota unauthorized response has a 4xx status code
+func (o *GetProjectQuotaUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get project quota unauthorized response has a 5xx status code
+func (o *GetProjectQuotaUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project quota unauthorized response a status code equal to that given
+func (o *GetProjectQuotaUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetProjectQuotaUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaUnauthorized ", 401)
+}
+
+func (o *GetProjectQuotaUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetProjectQuotaForbidden struct {
 }
 
+// IsSuccess returns true when this get project quota forbidden response has a 2xx status code
+func (o *GetProjectQuotaForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get project quota forbidden response has a 3xx status code
+func (o *GetProjectQuotaForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project quota forbidden response has a 4xx status code
+func (o *GetProjectQuotaForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get project quota forbidden response has a 5xx status code
+func (o *GetProjectQuotaForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project quota forbidden response a status code equal to that given
+func (o *GetProjectQuotaForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetProjectQuotaForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaForbidden ", 403)
+}
+
+func (o *GetProjectQuotaForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuotaForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetProjectQuotaDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get project quota default response has a 2xx status code
+func (o *GetProjectQuotaDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get project quota default response has a 3xx status code
+func (o *GetProjectQuotaDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get project quota default response has a 4xx status code
+func (o *GetProjectQuotaDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get project quota default response has a 5xx status code
+func (o *GetProjectQuotaDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get project quota default response a status code equal to that given
+func (o *GetProjectQuotaDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetProjectQuotaDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuota default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetProjectQuotaDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/quota][%d] getProjectQuota default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetProjectQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

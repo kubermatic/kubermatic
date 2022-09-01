@@ -54,9 +54,39 @@ type ListAKSVMSizesOK struct {
 	Payload models.AKSVMSizeList
 }
 
+// IsSuccess returns true when this list a k s Vm sizes o k response has a 2xx status code
+func (o *ListAKSVMSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a k s Vm sizes o k response has a 3xx status code
+func (o *ListAKSVMSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s Vm sizes o k response has a 4xx status code
+func (o *ListAKSVMSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a k s Vm sizes o k response has a 5xx status code
+func (o *ListAKSVMSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s Vm sizes o k response a status code equal to that given
+func (o *ListAKSVMSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAKSVMSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/vmsizes][%d] listAKSVmSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAKSVMSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/vmsizes][%d] listAKSVmSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAKSVMSizesOK) GetPayload() models.AKSVMSizeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAKSVMSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a k s VM sizes default response has a 2xx status code
+func (o *ListAKSVMSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a k s VM sizes default response has a 3xx status code
+func (o *ListAKSVMSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a k s VM sizes default response has a 4xx status code
+func (o *ListAKSVMSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a k s VM sizes default response has a 5xx status code
+func (o *ListAKSVMSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a k s VM sizes default response a status code equal to that given
+func (o *ListAKSVMSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAKSVMSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/vmsizes][%d] listAKSVMSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAKSVMSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/vmsizes][%d] listAKSVMSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAKSVMSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

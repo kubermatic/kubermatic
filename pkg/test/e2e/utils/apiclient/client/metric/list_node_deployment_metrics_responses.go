@@ -66,9 +66,39 @@ type ListNodeDeploymentMetricsOK struct {
 	Payload []*models.NodeMetric
 }
 
+// IsSuccess returns true when this list node deployment metrics o k response has a 2xx status code
+func (o *ListNodeDeploymentMetricsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list node deployment metrics o k response has a 3xx status code
+func (o *ListNodeDeploymentMetricsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployment metrics o k response has a 4xx status code
+func (o *ListNodeDeploymentMetricsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list node deployment metrics o k response has a 5xx status code
+func (o *ListNodeDeploymentMetricsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployment metrics o k response a status code equal to that given
+func (o *ListNodeDeploymentMetricsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNodeDeploymentMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNodeDeploymentMetricsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNodeDeploymentMetricsOK) GetPayload() []*models.NodeMetric {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListNodeDeploymentMetricsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list node deployment metrics unauthorized response has a 2xx status code
+func (o *ListNodeDeploymentMetricsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list node deployment metrics unauthorized response has a 3xx status code
+func (o *ListNodeDeploymentMetricsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployment metrics unauthorized response has a 4xx status code
+func (o *ListNodeDeploymentMetricsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list node deployment metrics unauthorized response has a 5xx status code
+func (o *ListNodeDeploymentMetricsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployment metrics unauthorized response a status code equal to that given
+func (o *ListNodeDeploymentMetricsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListNodeDeploymentMetricsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsUnauthorized ", 401)
+}
+
+func (o *ListNodeDeploymentMetricsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListNodeDeploymentMetricsForbidden struct {
 }
 
+// IsSuccess returns true when this list node deployment metrics forbidden response has a 2xx status code
+func (o *ListNodeDeploymentMetricsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list node deployment metrics forbidden response has a 3xx status code
+func (o *ListNodeDeploymentMetricsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployment metrics forbidden response has a 4xx status code
+func (o *ListNodeDeploymentMetricsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list node deployment metrics forbidden response has a 5xx status code
+func (o *ListNodeDeploymentMetricsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployment metrics forbidden response a status code equal to that given
+func (o *ListNodeDeploymentMetricsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListNodeDeploymentMetricsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsForbidden ", 403)
+}
+
+func (o *ListNodeDeploymentMetricsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListNodeDeploymentMetricsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list node deployment metrics default response has a 2xx status code
+func (o *ListNodeDeploymentMetricsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list node deployment metrics default response has a 3xx status code
+func (o *ListNodeDeploymentMetricsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list node deployment metrics default response has a 4xx status code
+func (o *ListNodeDeploymentMetricsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list node deployment metrics default response has a 5xx status code
+func (o *ListNodeDeploymentMetricsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list node deployment metrics default response a status code equal to that given
+func (o *ListNodeDeploymentMetricsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNodeDeploymentMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetrics default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNodeDeploymentMetricsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetrics default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNodeDeploymentMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type PatchClusterV2OK struct {
 	Payload *models.Cluster
 }
 
+// IsSuccess returns true when this patch cluster v2 o k response has a 2xx status code
+func (o *PatchClusterV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch cluster v2 o k response has a 3xx status code
+func (o *PatchClusterV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster v2 o k response has a 4xx status code
+func (o *PatchClusterV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch cluster v2 o k response has a 5xx status code
+func (o *PatchClusterV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster v2 o k response a status code equal to that given
+func (o *PatchClusterV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchClusterV2OK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2OK  %+v", 200, o.Payload)
 }
+
+func (o *PatchClusterV2OK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2OK  %+v", 200, o.Payload)
+}
+
 func (o *PatchClusterV2OK) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchClusterV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this patch cluster v2 unauthorized response has a 2xx status code
+func (o *PatchClusterV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster v2 unauthorized response has a 3xx status code
+func (o *PatchClusterV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster v2 unauthorized response has a 4xx status code
+func (o *PatchClusterV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster v2 unauthorized response has a 5xx status code
+func (o *PatchClusterV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster v2 unauthorized response a status code equal to that given
+func (o *PatchClusterV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchClusterV2Unauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2Unauthorized ", 401)
+}
+
+func (o *PatchClusterV2Unauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2Unauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchClusterV2Forbidden struct {
 }
 
+// IsSuccess returns true when this patch cluster v2 forbidden response has a 2xx status code
+func (o *PatchClusterV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster v2 forbidden response has a 3xx status code
+func (o *PatchClusterV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster v2 forbidden response has a 4xx status code
+func (o *PatchClusterV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster v2 forbidden response has a 5xx status code
+func (o *PatchClusterV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster v2 forbidden response a status code equal to that given
+func (o *PatchClusterV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchClusterV2Forbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2Forbidden ", 403)
+}
+
+func (o *PatchClusterV2Forbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2Forbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchClusterV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch cluster v2 default response has a 2xx status code
+func (o *PatchClusterV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch cluster v2 default response has a 3xx status code
+func (o *PatchClusterV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch cluster v2 default response has a 4xx status code
+func (o *PatchClusterV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch cluster v2 default response has a 5xx status code
+func (o *PatchClusterV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch cluster v2 default response a status code equal to that given
+func (o *PatchClusterV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchClusterV2Default) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchClusterV2Default) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}][%d] patchClusterV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchClusterV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type ListProviderPresetsOK struct {
 	Payload *models.PresetList
 }
 
+// IsSuccess returns true when this list provider presets o k response has a 2xx status code
+func (o *ListProviderPresetsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list provider presets o k response has a 3xx status code
+func (o *ListProviderPresetsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list provider presets o k response has a 4xx status code
+func (o *ListProviderPresetsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list provider presets o k response has a 5xx status code
+func (o *ListProviderPresetsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list provider presets o k response a status code equal to that given
+func (o *ListProviderPresetsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListProviderPresetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListProviderPresetsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListProviderPresetsOK) GetPayload() *models.PresetList {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type ListProviderPresetsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list provider presets unauthorized response has a 2xx status code
+func (o *ListProviderPresetsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list provider presets unauthorized response has a 3xx status code
+func (o *ListProviderPresetsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list provider presets unauthorized response has a 4xx status code
+func (o *ListProviderPresetsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list provider presets unauthorized response has a 5xx status code
+func (o *ListProviderPresetsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list provider presets unauthorized response a status code equal to that given
+func (o *ListProviderPresetsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListProviderPresetsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsUnauthorized ", 401)
+}
+
+func (o *ListProviderPresetsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type ListProviderPresetsForbidden struct {
 }
 
+// IsSuccess returns true when this list provider presets forbidden response has a 2xx status code
+func (o *ListProviderPresetsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list provider presets forbidden response has a 3xx status code
+func (o *ListProviderPresetsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list provider presets forbidden response has a 4xx status code
+func (o *ListProviderPresetsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list provider presets forbidden response has a 5xx status code
+func (o *ListProviderPresetsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list provider presets forbidden response a status code equal to that given
+func (o *ListProviderPresetsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListProviderPresetsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsForbidden ", 403)
+}
+
+func (o *ListProviderPresetsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresetsForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *ListProviderPresetsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list provider presets default response has a 2xx status code
+func (o *ListProviderPresetsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list provider presets default response has a 3xx status code
+func (o *ListProviderPresetsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list provider presets default response has a 4xx status code
+func (o *ListProviderPresetsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list provider presets default response has a 5xx status code
+func (o *ListProviderPresetsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list provider presets default response a status code equal to that given
+func (o *ListProviderPresetsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListProviderPresetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresets default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListProviderPresetsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/{provider_name}/presets][%d] listProviderPresets default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListProviderPresetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

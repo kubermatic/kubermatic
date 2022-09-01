@@ -66,9 +66,39 @@ type ListApplicationDefinitionsOK struct {
 	Payload []*models.ApplicationDefinition
 }
 
+// IsSuccess returns true when this list application definitions o k response has a 2xx status code
+func (o *ListApplicationDefinitionsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list application definitions o k response has a 3xx status code
+func (o *ListApplicationDefinitionsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application definitions o k response has a 4xx status code
+func (o *ListApplicationDefinitionsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list application definitions o k response has a 5xx status code
+func (o *ListApplicationDefinitionsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application definitions o k response a status code equal to that given
+func (o *ListApplicationDefinitionsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListApplicationDefinitionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListApplicationDefinitionsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListApplicationDefinitionsOK) GetPayload() []*models.ApplicationDefinition {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListApplicationDefinitionsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list application definitions unauthorized response has a 2xx status code
+func (o *ListApplicationDefinitionsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list application definitions unauthorized response has a 3xx status code
+func (o *ListApplicationDefinitionsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application definitions unauthorized response has a 4xx status code
+func (o *ListApplicationDefinitionsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list application definitions unauthorized response has a 5xx status code
+func (o *ListApplicationDefinitionsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application definitions unauthorized response a status code equal to that given
+func (o *ListApplicationDefinitionsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListApplicationDefinitionsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsUnauthorized ", 401)
+}
+
+func (o *ListApplicationDefinitionsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListApplicationDefinitionsForbidden struct {
 }
 
+// IsSuccess returns true when this list application definitions forbidden response has a 2xx status code
+func (o *ListApplicationDefinitionsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list application definitions forbidden response has a 3xx status code
+func (o *ListApplicationDefinitionsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application definitions forbidden response has a 4xx status code
+func (o *ListApplicationDefinitionsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list application definitions forbidden response has a 5xx status code
+func (o *ListApplicationDefinitionsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application definitions forbidden response a status code equal to that given
+func (o *ListApplicationDefinitionsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListApplicationDefinitionsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsForbidden ", 403)
+}
+
+func (o *ListApplicationDefinitionsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListApplicationDefinitionsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list application definitions default response has a 2xx status code
+func (o *ListApplicationDefinitionsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list application definitions default response has a 3xx status code
+func (o *ListApplicationDefinitionsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list application definitions default response has a 4xx status code
+func (o *ListApplicationDefinitionsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list application definitions default response has a 5xx status code
+func (o *ListApplicationDefinitionsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list application definitions default response a status code equal to that given
+func (o *ListApplicationDefinitionsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListApplicationDefinitionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitions default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListApplicationDefinitionsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitions default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListApplicationDefinitionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

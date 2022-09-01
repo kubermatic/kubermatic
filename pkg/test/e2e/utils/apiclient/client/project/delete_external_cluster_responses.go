@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteExternalClusterOK struct {
 }
 
+// IsSuccess returns true when this delete external cluster o k response has a 2xx status code
+func (o *DeleteExternalClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete external cluster o k response has a 3xx status code
+func (o *DeleteExternalClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete external cluster o k response has a 4xx status code
+func (o *DeleteExternalClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete external cluster o k response has a 5xx status code
+func (o *DeleteExternalClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete external cluster o k response a status code equal to that given
+func (o *DeleteExternalClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteExternalClusterOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterOK ", 200)
+}
+
+func (o *DeleteExternalClusterOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteExternalClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete external cluster unauthorized response has a 2xx status code
+func (o *DeleteExternalClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete external cluster unauthorized response has a 3xx status code
+func (o *DeleteExternalClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete external cluster unauthorized response has a 4xx status code
+func (o *DeleteExternalClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete external cluster unauthorized response has a 5xx status code
+func (o *DeleteExternalClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete external cluster unauthorized response a status code equal to that given
+func (o *DeleteExternalClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteExternalClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterUnauthorized ", 401)
+}
+
+func (o *DeleteExternalClusterUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteExternalClusterForbidden struct {
 }
 
+// IsSuccess returns true when this delete external cluster forbidden response has a 2xx status code
+func (o *DeleteExternalClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete external cluster forbidden response has a 3xx status code
+func (o *DeleteExternalClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete external cluster forbidden response has a 4xx status code
+func (o *DeleteExternalClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete external cluster forbidden response has a 5xx status code
+func (o *DeleteExternalClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete external cluster forbidden response a status code equal to that given
+func (o *DeleteExternalClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteExternalClusterForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterForbidden ", 403)
+}
+
+func (o *DeleteExternalClusterForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalClusterForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteExternalClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete external cluster default response has a 2xx status code
+func (o *DeleteExternalClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete external cluster default response has a 3xx status code
+func (o *DeleteExternalClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete external cluster default response has a 4xx status code
+func (o *DeleteExternalClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete external cluster default response has a 5xx status code
+func (o *DeleteExternalClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete external cluster default response a status code equal to that given
+func (o *DeleteExternalClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteExternalClusterDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] deleteExternalCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

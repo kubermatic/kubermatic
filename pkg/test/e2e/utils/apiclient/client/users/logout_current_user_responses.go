@@ -59,7 +59,36 @@ EmptyResponse is a empty response
 type LogoutCurrentUserOK struct {
 }
 
+// IsSuccess returns true when this logout current user o k response has a 2xx status code
+func (o *LogoutCurrentUserOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this logout current user o k response has a 3xx status code
+func (o *LogoutCurrentUserOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this logout current user o k response has a 4xx status code
+func (o *LogoutCurrentUserOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this logout current user o k response has a 5xx status code
+func (o *LogoutCurrentUserOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this logout current user o k response a status code equal to that given
+func (o *LogoutCurrentUserOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *LogoutCurrentUserOK) Error() string {
+	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUserOK ", 200)
+}
+
+func (o *LogoutCurrentUserOK) String() string {
 	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUserOK ", 200)
 }
 
@@ -80,7 +109,36 @@ EmptyResponse is a empty response
 type LogoutCurrentUserUnauthorized struct {
 }
 
+// IsSuccess returns true when this logout current user unauthorized response has a 2xx status code
+func (o *LogoutCurrentUserUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this logout current user unauthorized response has a 3xx status code
+func (o *LogoutCurrentUserUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this logout current user unauthorized response has a 4xx status code
+func (o *LogoutCurrentUserUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this logout current user unauthorized response has a 5xx status code
+func (o *LogoutCurrentUserUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this logout current user unauthorized response a status code equal to that given
+func (o *LogoutCurrentUserUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *LogoutCurrentUserUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUserUnauthorized ", 401)
+}
+
+func (o *LogoutCurrentUserUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUserUnauthorized ", 401)
 }
 
@@ -111,9 +169,39 @@ func (o *LogoutCurrentUserDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this logout current user default response has a 2xx status code
+func (o *LogoutCurrentUserDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this logout current user default response has a 3xx status code
+func (o *LogoutCurrentUserDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this logout current user default response has a 4xx status code
+func (o *LogoutCurrentUserDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this logout current user default response has a 5xx status code
+func (o *LogoutCurrentUserDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this logout current user default response a status code equal to that given
+func (o *LogoutCurrentUserDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *LogoutCurrentUserDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUser default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *LogoutCurrentUserDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/me/logout][%d] logoutCurrentUser default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *LogoutCurrentUserDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

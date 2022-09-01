@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type CreateOrUpdateMeteringConfigurationsOK struct {
 }
 
+// IsSuccess returns true when this create or update metering configurations o k response has a 2xx status code
+func (o *CreateOrUpdateMeteringConfigurationsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create or update metering configurations o k response has a 3xx status code
+func (o *CreateOrUpdateMeteringConfigurationsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering configurations o k response has a 4xx status code
+func (o *CreateOrUpdateMeteringConfigurationsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create or update metering configurations o k response has a 5xx status code
+func (o *CreateOrUpdateMeteringConfigurationsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering configurations o k response a status code equal to that given
+func (o *CreateOrUpdateMeteringConfigurationsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateOrUpdateMeteringConfigurationsOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsOK ", 200)
+}
+
+func (o *CreateOrUpdateMeteringConfigurationsOK) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type CreateOrUpdateMeteringConfigurationsUnauthorized struct {
 }
 
+// IsSuccess returns true when this create or update metering configurations unauthorized response has a 2xx status code
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update metering configurations unauthorized response has a 3xx status code
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering configurations unauthorized response has a 4xx status code
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update metering configurations unauthorized response has a 5xx status code
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering configurations unauthorized response a status code equal to that given
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsUnauthorized ", 401)
+}
+
+func (o *CreateOrUpdateMeteringConfigurationsUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type CreateOrUpdateMeteringConfigurationsForbidden struct {
 }
 
+// IsSuccess returns true when this create or update metering configurations forbidden response has a 2xx status code
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update metering configurations forbidden response has a 3xx status code
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering configurations forbidden response has a 4xx status code
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update metering configurations forbidden response has a 5xx status code
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering configurations forbidden response a status code equal to that given
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateOrUpdateMeteringConfigurationsForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsForbidden ", 403)
+}
+
+func (o *CreateOrUpdateMeteringConfigurationsForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurationsForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *CreateOrUpdateMeteringConfigurationsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create or update metering configurations default response has a 2xx status code
+func (o *CreateOrUpdateMeteringConfigurationsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create or update metering configurations default response has a 3xx status code
+func (o *CreateOrUpdateMeteringConfigurationsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create or update metering configurations default response has a 4xx status code
+func (o *CreateOrUpdateMeteringConfigurationsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create or update metering configurations default response has a 5xx status code
+func (o *CreateOrUpdateMeteringConfigurationsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create or update metering configurations default response a status code equal to that given
+func (o *CreateOrUpdateMeteringConfigurationsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateOrUpdateMeteringConfigurationsDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurations default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateOrUpdateMeteringConfigurationsDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations][%d] createOrUpdateMeteringConfigurations default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateOrUpdateMeteringConfigurationsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

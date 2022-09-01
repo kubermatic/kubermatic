@@ -54,9 +54,39 @@ type ListAzureResourceGroupsOK struct {
 	Payload *models.AzureResourceGroupsList
 }
 
+// IsSuccess returns true when this list azure resource groups o k response has a 2xx status code
+func (o *ListAzureResourceGroupsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure resource groups o k response has a 3xx status code
+func (o *ListAzureResourceGroupsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure resource groups o k response has a 4xx status code
+func (o *ListAzureResourceGroupsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure resource groups o k response has a 5xx status code
+func (o *ListAzureResourceGroupsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure resource groups o k response a status code equal to that given
+func (o *ListAzureResourceGroupsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureResourceGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/resourcegroups][%d] listAzureResourceGroupsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureResourceGroupsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/resourcegroups][%d] listAzureResourceGroupsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureResourceGroupsOK) GetPayload() *models.AzureResourceGroupsList {
 	return o.Payload
 }
@@ -95,9 +125,39 @@ func (o *ListAzureResourceGroupsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure resource groups default response has a 2xx status code
+func (o *ListAzureResourceGroupsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure resource groups default response has a 3xx status code
+func (o *ListAzureResourceGroupsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure resource groups default response has a 4xx status code
+func (o *ListAzureResourceGroupsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure resource groups default response has a 5xx status code
+func (o *ListAzureResourceGroupsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure resource groups default response a status code equal to that given
+func (o *ListAzureResourceGroupsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureResourceGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/resourcegroups][%d] listAzureResourceGroups default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureResourceGroupsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/resourcegroups][%d] listAzureResourceGroups default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureResourceGroupsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

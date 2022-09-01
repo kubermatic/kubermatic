@@ -66,9 +66,39 @@ type CreateMLAAdminSettingCreated struct {
 	Payload *models.MLAAdminSetting
 }
 
+// IsSuccess returns true when this create m l a admin setting created response has a 2xx status code
+func (o *CreateMLAAdminSettingCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create m l a admin setting created response has a 3xx status code
+func (o *CreateMLAAdminSettingCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create m l a admin setting created response has a 4xx status code
+func (o *CreateMLAAdminSettingCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create m l a admin setting created response has a 5xx status code
+func (o *CreateMLAAdminSettingCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create m l a admin setting created response a status code equal to that given
+func (o *CreateMLAAdminSettingCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateMLAAdminSettingCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateMLAAdminSettingCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateMLAAdminSettingCreated) GetPayload() *models.MLAAdminSetting {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateMLAAdminSettingUnauthorized struct {
 }
 
+// IsSuccess returns true when this create m l a admin setting unauthorized response has a 2xx status code
+func (o *CreateMLAAdminSettingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create m l a admin setting unauthorized response has a 3xx status code
+func (o *CreateMLAAdminSettingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create m l a admin setting unauthorized response has a 4xx status code
+func (o *CreateMLAAdminSettingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create m l a admin setting unauthorized response has a 5xx status code
+func (o *CreateMLAAdminSettingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create m l a admin setting unauthorized response a status code equal to that given
+func (o *CreateMLAAdminSettingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateMLAAdminSettingUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingUnauthorized ", 401)
+}
+
+func (o *CreateMLAAdminSettingUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateMLAAdminSettingForbidden struct {
 }
 
+// IsSuccess returns true when this create m l a admin setting forbidden response has a 2xx status code
+func (o *CreateMLAAdminSettingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create m l a admin setting forbidden response has a 3xx status code
+func (o *CreateMLAAdminSettingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create m l a admin setting forbidden response has a 4xx status code
+func (o *CreateMLAAdminSettingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create m l a admin setting forbidden response has a 5xx status code
+func (o *CreateMLAAdminSettingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create m l a admin setting forbidden response a status code equal to that given
+func (o *CreateMLAAdminSettingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateMLAAdminSettingForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingForbidden ", 403)
+}
+
+func (o *CreateMLAAdminSettingForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSettingForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateMLAAdminSettingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create m l a admin setting default response has a 2xx status code
+func (o *CreateMLAAdminSettingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create m l a admin setting default response has a 3xx status code
+func (o *CreateMLAAdminSettingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create m l a admin setting default response has a 4xx status code
+func (o *CreateMLAAdminSettingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create m l a admin setting default response has a 5xx status code
+func (o *CreateMLAAdminSettingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create m l a admin setting default response a status code equal to that given
+func (o *CreateMLAAdminSettingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateMLAAdminSettingDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSetting default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateMLAAdminSettingDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] createMLAAdminSetting default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateMLAAdminSettingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type ListGKEClusterDiskTypesOK struct {
 	Payload models.GCPDiskTypeList
 }
 
+// IsSuccess returns true when this list g k e cluster disk types o k response has a 2xx status code
+func (o *ListGKEClusterDiskTypesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e cluster disk types o k response has a 3xx status code
+func (o *ListGKEClusterDiskTypesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster disk types o k response has a 4xx status code
+func (o *ListGKEClusterDiskTypesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e cluster disk types o k response has a 5xx status code
+func (o *ListGKEClusterDiskTypesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster disk types o k response a status code equal to that given
+func (o *ListGKEClusterDiskTypesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEClusterDiskTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEClusterDiskTypesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEClusterDiskTypesOK) GetPayload() models.GCPDiskTypeList {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListGKEClusterDiskTypesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list g k e cluster disk types unauthorized response has a 2xx status code
+func (o *ListGKEClusterDiskTypesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster disk types unauthorized response has a 3xx status code
+func (o *ListGKEClusterDiskTypesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster disk types unauthorized response has a 4xx status code
+func (o *ListGKEClusterDiskTypesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster disk types unauthorized response has a 5xx status code
+func (o *ListGKEClusterDiskTypesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster disk types unauthorized response a status code equal to that given
+func (o *ListGKEClusterDiskTypesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListGKEClusterDiskTypesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesUnauthorized ", 401)
+}
+
+func (o *ListGKEClusterDiskTypesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListGKEClusterDiskTypesForbidden struct {
 }
 
+// IsSuccess returns true when this list g k e cluster disk types forbidden response has a 2xx status code
+func (o *ListGKEClusterDiskTypesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster disk types forbidden response has a 3xx status code
+func (o *ListGKEClusterDiskTypesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster disk types forbidden response has a 4xx status code
+func (o *ListGKEClusterDiskTypesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster disk types forbidden response has a 5xx status code
+func (o *ListGKEClusterDiskTypesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster disk types forbidden response a status code equal to that given
+func (o *ListGKEClusterDiskTypesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListGKEClusterDiskTypesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesForbidden ", 403)
+}
+
+func (o *ListGKEClusterDiskTypesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListGKEClusterDiskTypesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e cluster disk types default response has a 2xx status code
+func (o *ListGKEClusterDiskTypesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e cluster disk types default response has a 3xx status code
+func (o *ListGKEClusterDiskTypesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e cluster disk types default response has a 4xx status code
+func (o *ListGKEClusterDiskTypesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e cluster disk types default response has a 5xx status code
+func (o *ListGKEClusterDiskTypesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e cluster disk types default response a status code equal to that given
+func (o *ListGKEClusterDiskTypesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEClusterDiskTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEClusterDiskTypesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes][%d] listGKEClusterDiskTypes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEClusterDiskTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

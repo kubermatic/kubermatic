@@ -20,6 +20,14 @@ import (
 // swagger:model ApplicationInstallationCondition
 type ApplicationInstallationCondition struct {
 
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime string `json:"lastHeartbeatTime,omitempty"`
+
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
+
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
 
@@ -32,14 +40,6 @@ type ApplicationInstallationCondition struct {
 	// Enum: [ManifestsRetrieved Ready]
 	Type string `json:"type,omitempty"`
 
-	// last heartbeat time
-	// Format: date-time
-	LastHeartbeatTime Time `json:"lastHeartbeatTime,omitempty"`
-
-	// last transition time
-	// Format: date-time
-	LastTransitionTime Time `json:"lastTransitionTime,omitempty"`
-
 	// status
 	Status ConditionStatus `json:"status,omitempty"`
 }
@@ -49,14 +49,6 @@ func (m *ApplicationInstallationCondition) Validate(formats strfmt.Registry) err
 	var res []error
 
 	if err := m.validateType(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastHeartbeatTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastTransitionTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -112,40 +104,6 @@ func (m *ApplicationInstallationCondition) validateType(formats strfmt.Registry)
 	return nil
 }
 
-func (m *ApplicationInstallationCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastHeartbeatTime) { // not required
-		return nil
-	}
-
-	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ApplicationInstallationCondition) validateLastTransitionTime(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastTransitionTime) { // not required
-		return nil
-	}
-
-	if err := m.LastTransitionTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
 func (m *ApplicationInstallationCondition) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
@@ -167,14 +125,6 @@ func (m *ApplicationInstallationCondition) validateStatus(formats strfmt.Registr
 func (m *ApplicationInstallationCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateLastHeartbeatTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLastTransitionTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -182,34 +132,6 @@ func (m *ApplicationInstallationCondition) ContextValidate(ctx context.Context, 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ApplicationInstallationCondition) contextValidateLastHeartbeatTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *ApplicationInstallationCondition) contextValidateLastTransitionTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
-		return err
-	}
-
 	return nil
 }
 

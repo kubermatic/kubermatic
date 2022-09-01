@@ -71,9 +71,39 @@ type ImportClusterTemplateCreated struct {
 	Payload *models.ClusterTemplate
 }
 
+// IsSuccess returns true when this import cluster template created response has a 2xx status code
+func (o *ImportClusterTemplateCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this import cluster template created response has a 3xx status code
+func (o *ImportClusterTemplateCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this import cluster template created response has a 4xx status code
+func (o *ImportClusterTemplateCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this import cluster template created response has a 5xx status code
+func (o *ImportClusterTemplateCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this import cluster template created response a status code equal to that given
+func (o *ImportClusterTemplateCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *ImportClusterTemplateCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateCreated  %+v", 201, o.Payload)
 }
+
+func (o *ImportClusterTemplateCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateCreated  %+v", 201, o.Payload)
+}
+
 func (o *ImportClusterTemplateCreated) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -102,7 +132,36 @@ EmptyResponse is a empty response
 type ImportClusterTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this import cluster template unauthorized response has a 2xx status code
+func (o *ImportClusterTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this import cluster template unauthorized response has a 3xx status code
+func (o *ImportClusterTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this import cluster template unauthorized response has a 4xx status code
+func (o *ImportClusterTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this import cluster template unauthorized response has a 5xx status code
+func (o *ImportClusterTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this import cluster template unauthorized response a status code equal to that given
+func (o *ImportClusterTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ImportClusterTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateUnauthorized ", 401)
+}
+
+func (o *ImportClusterTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateUnauthorized ", 401)
 }
 
@@ -123,7 +182,36 @@ EmptyResponse is a empty response
 type ImportClusterTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this import cluster template forbidden response has a 2xx status code
+func (o *ImportClusterTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this import cluster template forbidden response has a 3xx status code
+func (o *ImportClusterTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this import cluster template forbidden response has a 4xx status code
+func (o *ImportClusterTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this import cluster template forbidden response has a 5xx status code
+func (o *ImportClusterTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this import cluster template forbidden response a status code equal to that given
+func (o *ImportClusterTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ImportClusterTemplateForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateForbidden ", 403)
+}
+
+func (o *ImportClusterTemplateForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplateForbidden ", 403)
 }
 
@@ -154,9 +242,39 @@ func (o *ImportClusterTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this import cluster template default response has a 2xx status code
+func (o *ImportClusterTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this import cluster template default response has a 3xx status code
+func (o *ImportClusterTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this import cluster template default response has a 4xx status code
+func (o *ImportClusterTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this import cluster template default response has a 5xx status code
+func (o *ImportClusterTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this import cluster template default response a status code equal to that given
+func (o *ImportClusterTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ImportClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ImportClusterTemplateDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates/import][%d] importClusterTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ImportClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

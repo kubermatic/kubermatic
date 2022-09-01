@@ -66,9 +66,39 @@ type CreateExternalClusterMachineDeploymentOK struct {
 	Payload *models.ExternalClusterMachineDeployment
 }
 
+// IsSuccess returns true when this create external cluster machine deployment o k response has a 2xx status code
+func (o *CreateExternalClusterMachineDeploymentOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create external cluster machine deployment o k response has a 3xx status code
+func (o *CreateExternalClusterMachineDeploymentOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster machine deployment o k response has a 4xx status code
+func (o *CreateExternalClusterMachineDeploymentOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create external cluster machine deployment o k response has a 5xx status code
+func (o *CreateExternalClusterMachineDeploymentOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster machine deployment o k response a status code equal to that given
+func (o *CreateExternalClusterMachineDeploymentOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateExternalClusterMachineDeploymentOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentOK  %+v", 200, o.Payload)
 }
+
+func (o *CreateExternalClusterMachineDeploymentOK) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentOK  %+v", 200, o.Payload)
+}
+
 func (o *CreateExternalClusterMachineDeploymentOK) GetPayload() *models.ExternalClusterMachineDeployment {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateExternalClusterMachineDeploymentUnauthorized struct {
 }
 
+// IsSuccess returns true when this create external cluster machine deployment unauthorized response has a 2xx status code
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create external cluster machine deployment unauthorized response has a 3xx status code
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster machine deployment unauthorized response has a 4xx status code
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create external cluster machine deployment unauthorized response has a 5xx status code
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster machine deployment unauthorized response a status code equal to that given
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateExternalClusterMachineDeploymentUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentUnauthorized ", 401)
+}
+
+func (o *CreateExternalClusterMachineDeploymentUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateExternalClusterMachineDeploymentForbidden struct {
 }
 
+// IsSuccess returns true when this create external cluster machine deployment forbidden response has a 2xx status code
+func (o *CreateExternalClusterMachineDeploymentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create external cluster machine deployment forbidden response has a 3xx status code
+func (o *CreateExternalClusterMachineDeploymentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster machine deployment forbidden response has a 4xx status code
+func (o *CreateExternalClusterMachineDeploymentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create external cluster machine deployment forbidden response has a 5xx status code
+func (o *CreateExternalClusterMachineDeploymentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster machine deployment forbidden response a status code equal to that given
+func (o *CreateExternalClusterMachineDeploymentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateExternalClusterMachineDeploymentForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentForbidden ", 403)
+}
+
+func (o *CreateExternalClusterMachineDeploymentForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeploymentForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateExternalClusterMachineDeploymentDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create external cluster machine deployment default response has a 2xx status code
+func (o *CreateExternalClusterMachineDeploymentDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create external cluster machine deployment default response has a 3xx status code
+func (o *CreateExternalClusterMachineDeploymentDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create external cluster machine deployment default response has a 4xx status code
+func (o *CreateExternalClusterMachineDeploymentDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create external cluster machine deployment default response has a 5xx status code
+func (o *CreateExternalClusterMachineDeploymentDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create external cluster machine deployment default response a status code equal to that given
+func (o *CreateExternalClusterMachineDeploymentDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateExternalClusterMachineDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeployment default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateExternalClusterMachineDeploymentDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] createExternalClusterMachineDeployment default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateExternalClusterMachineDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

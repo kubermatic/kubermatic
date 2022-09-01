@@ -60,9 +60,39 @@ type GetAdmissionPluginsOK struct {
 	Payload models.AdmissionPluginList
 }
 
+// IsSuccess returns true when this get admission plugins o k response has a 2xx status code
+func (o *GetAdmissionPluginsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get admission plugins o k response has a 3xx status code
+func (o *GetAdmissionPluginsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get admission plugins o k response has a 4xx status code
+func (o *GetAdmissionPluginsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get admission plugins o k response has a 5xx status code
+func (o *GetAdmissionPluginsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get admission plugins o k response a status code equal to that given
+func (o *GetAdmissionPluginsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetAdmissionPluginsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPluginsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetAdmissionPluginsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPluginsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetAdmissionPluginsOK) GetPayload() models.AdmissionPluginList {
 	return o.Payload
 }
@@ -89,7 +119,36 @@ EmptyResponse is a empty response
 type GetAdmissionPluginsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get admission plugins unauthorized response has a 2xx status code
+func (o *GetAdmissionPluginsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get admission plugins unauthorized response has a 3xx status code
+func (o *GetAdmissionPluginsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get admission plugins unauthorized response has a 4xx status code
+func (o *GetAdmissionPluginsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get admission plugins unauthorized response has a 5xx status code
+func (o *GetAdmissionPluginsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get admission plugins unauthorized response a status code equal to that given
+func (o *GetAdmissionPluginsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetAdmissionPluginsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPluginsUnauthorized ", 401)
+}
+
+func (o *GetAdmissionPluginsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPluginsUnauthorized ", 401)
 }
 
@@ -120,9 +179,39 @@ func (o *GetAdmissionPluginsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get admission plugins default response has a 2xx status code
+func (o *GetAdmissionPluginsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get admission plugins default response has a 3xx status code
+func (o *GetAdmissionPluginsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get admission plugins default response has a 4xx status code
+func (o *GetAdmissionPluginsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get admission plugins default response has a 5xx status code
+func (o *GetAdmissionPluginsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get admission plugins default response a status code equal to that given
+func (o *GetAdmissionPluginsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetAdmissionPluginsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPlugins default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetAdmissionPluginsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPlugins default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetAdmissionPluginsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
