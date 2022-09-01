@@ -441,15 +441,9 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 		return false, nil
 	}
 
-	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
-	// Service Account
-	// Needed Role/Rolebinding are reconciled in pkg/provider/cloud/kubevirt/provider.go in ReconcileCluster(),
-	//   in a dedicated namespace <cluster-id>, after this namespace is reconciled.
-	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
-	if err != nil {
-		return false, err
-	}
-	csiKubeconfig, err := r.ReconcileCSIServiceAccount(ctx)
+	// ensure that CSI driver on user cluster will have access to KubeVirt cluster
+	// RBAC reconciliation takes place in the kubevirt cloud provider
+	csiKubeconfig, err := kubevirt.EnsureCSIInfraTokenAccess(ctx, spec.Kubeconfig)
 	if err != nil {
 		return false, err
 	}
