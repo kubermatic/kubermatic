@@ -24,6 +24,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -101,7 +102,31 @@ func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets typ
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Anexia: &apimodels.AnexiaNodeSpec{
-							DiskSize:   pointer.Int64(nodeDiskSize),
+							DiskSize:   nodeDiskSize,
+							CPUs:       pointer.Int64(nodeCpu),
+							Memory:     pointer.Int64(nodeMemory),
+							TemplateID: &secrets.Anexia.TemplateID,
+							VlanID:     &secrets.Anexia.VlanID,
+						},
+					},
+					Versions: &apimodels.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: osSpec,
+				},
+			},
+		},
+		{
+			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Anexia: &apimodels.AnexiaNodeSpec{
+							Disks: []*apimodels.AnexiaDiskConfig{
+								{
+									Size: pointer.Int64(nodeDiskSize),
+								},
+							},
 							CPUs:       pointer.Int64(nodeCpu),
 							Memory:     pointer.Int64(nodeMemory),
 							TemplateID: &secrets.Anexia.TemplateID,
@@ -124,13 +149,15 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		return nil, fmt.Errorf("failed to build OS spec: %w", err)
 	}
 
+	osSpec.Flatcar.ProvisioningUtility = flatcar.CloudInit
+
 	nodeSpec := apiv1.NodeSpec{
 		OperatingSystem: *osSpec,
 		Cloud: apiv1.NodeCloudSpec{
 			Anexia: &apiv1.AnexiaNodeSpec{
 				CPUs:       nodeCpu,
 				Memory:     nodeMemory,
-				DiskSize:   nodeDiskSize,
+				DiskSize:   pointer.Int64(nodeDiskSize),
 				TemplateID: secrets.Anexia.TemplateID,
 				VlanID:     secrets.Anexia.VlanID,
 			},
@@ -142,7 +169,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		return nil, err
 	}
 
-	md, err := s.createMachineDeployment(num, config)
+	md, err := createMachineDeployment(num, &s.version, s.operatingSystem, osSpec, s.cloudProvider, config, s.dualstackEnabled)
 	if err != nil {
 		return nil, err
 	}
