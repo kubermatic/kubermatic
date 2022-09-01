@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -37,9 +36,11 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -251,8 +252,6 @@ func createUserCluster(
 		return nil, nil, cleanup, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	utilruntime.Must(metallbv1beta1.AddToScheme(clusterClient.Scheme()))
-
 	return cluster, clusterClient, cleanup, err
 }
 
@@ -331,26 +330,44 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 	}) == nil
 }
 
+type ipAddressPoolV1Beta1 struct {
+	Spec struct {
+		Addresses []string `json:"addresses"`
+	} `json:"spec"`
+}
+
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
 	return wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func() (error, error) {
-		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
+		// We use an unstructured object instead of using metallb's v1beta1 directly
+		// because Cilium has its own fork of metallb which does not contain v1beta1.
+		metallbIPAddressPool := &unstructured.Unstructured{}
+		metallbIPAddressPool.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "metallb.io",
+			Version: "v1beta1",
+			Kind:    "IPAddressPool",
+		})
 		if err := userClient.Get(ctx, types.NamespacedName{Name: "kkp-managed-pool", Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
 
+		pool := &ipAddressPoolV1Beta1{}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(metallbIPAddressPool.Object, pool); err != nil {
+			return fmt.Errorf("failed to decode metallb IPAddressPool: %w", err), nil
+		}
+
 		switch ipamAllocation.Spec.Type {
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			if len(metallbIPAddressPool.Spec.Addresses) != 1 {
+			if len(pool.Spec.Addresses) != 1 {
 				return fmt.Errorf("metallb ip address pool: no single address for IPAM allocation type \"prefix\""), nil
 			}
-			if metallbIPAddressPool.Spec.Addresses[0] != string(ipamAllocation.Spec.CIDR) {
-				return fmt.Errorf("metallb ip address pool: not expected CIDR for IPAM allocation type \"prefix\": \"%s\" (expected \"%s\")", metallbIPAddressPool.Spec.Addresses[0], ipamAllocation.Spec.CIDR), nil
+			if pool.Spec.Addresses[0] != string(ipamAllocation.Spec.CIDR) {
+				return fmt.Errorf("metallb ip address pool: not expected CIDR for IPAM allocation type \"prefix\": \"%s\" (expected \"%s\")", pool.Spec.Addresses[0], ipamAllocation.Spec.CIDR), nil
 			}
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			if len(metallbIPAddressPool.Spec.Addresses) != len(ipamAllocation.Spec.Addresses) {
-				return fmt.Errorf("metallb ip address pool: not expected number of addresses for IPAM allocation type \"range\": %d (expected %d)", len(metallbIPAddressPool.Spec.Addresses), len(ipamAllocation.Spec.Addresses)), nil
+			if len(pool.Spec.Addresses) != len(ipamAllocation.Spec.Addresses) {
+				return fmt.Errorf("metallb ip address pool: not expected number of addresses for IPAM allocation type \"range\": %d (expected %d)", len(pool.Spec.Addresses), len(ipamAllocation.Spec.Addresses)), nil
 			}
-			for i, address := range metallbIPAddressPool.Spec.Addresses {
+			for i, address := range pool.Spec.Addresses {
 				if address != ipamAllocation.Spec.Addresses[i] {
 					return fmt.Errorf("metallb ip address pool: not expected address range: \"%s\" (expected \"%s\")", address, ipamAllocation.Spec.Addresses[i]), nil
 				}
