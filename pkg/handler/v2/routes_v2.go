@@ -6315,7 +6315,7 @@ func (r Routing) listEKSRegions() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSClusterRolesList
+//       200: EKSClusterRoleList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSClusterRoles() http.Handler {

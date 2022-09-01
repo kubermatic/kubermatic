@@ -105,22 +105,34 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetList, error) {
-	subnetIDs := apiv2.EKSSubnetList{}
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcId string) (apiv2.EKSSubnetList, error) {
+	subnets := apiv2.EKSSubnetList{}
 
-	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcId)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, subnet := range subnetResults {
-		subnetIDs = append(subnetIDs, apiv2.EKSSubnet{
-			SubnetId:         to.String(subnet.SubnetId),
-			VpcId:            to.String(subnet.VpcId),
-			AvailabilityZone: to.String(subnet.AvailabilityZone),
+	azSubnetMap := make(map[string]string)
+	for _, subnetResult := range subnetResults {
+		var isDefault bool
+		// creating a list of subnets with unique availabilityZone
+		az := to.String(subnetResult.AvailabilityZone)
+		subnetId := to.String(subnetResult.SubnetId)
+		if _, ok := azSubnetMap[az]; !ok {
+			azSubnetMap[az] = subnetId
+			isDefault = true
+		}
+
+		subnets = append(subnets, apiv2.EKSSubnet{
+			SubnetId:         subnetId,
+			VpcId:            to.String(subnetResult.VpcId),
+			AvailabilityZone: az,
+			Default:          isDefault,
 		})
 	}
-	return subnetIDs, nil
+
+	return subnets, nil
 }
 
 func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPCList, error) {
@@ -194,8 +206,8 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 	return regionList, nil
 }
 
-func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRolesList, error) {
-	var rolesList []string
+func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRoleList, error) {
+	var rolesList apiv2.EKSClusterRoleList
 
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
@@ -216,7 +228,10 @@ func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (api
 			for _, policy := range rolePoliciesOutput.AttachedPolicies {
 				if policy.PolicyName != nil && *policy.PolicyName == EKSClusterPolicy {
 					if role.Arn != nil {
-						rolesList = append(rolesList, *role.Arn)
+						rolesList = append(rolesList, apiv2.EKSClusterRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
 					}
 				}
 			}
