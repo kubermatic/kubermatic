@@ -32,6 +32,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -60,7 +62,22 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	kkpMinorVersion := semverlib.MustParse(opt.Versions.Kubermatic).Minor()
 	minMinorRequired := kkpMinorVersion - 1
 
-	if currentVersion := opt.KubermaticConfiguration.Status.KubermaticVersion; currentVersion != "" {
+	// The configured KubermaticConfiguration might be a static YAML file,
+	// which would not have a status set at all. To ensure that we always
+	// get the currently live config, we fetch it from the cluster. This
+	// dynamically fetched config is only relevant to the version check, all
+	// other validations are supposed to be based on the given config.
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, opt.KubeClient, KubermaticOperatorNamespace)
+	if err != nil && !errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
+		return append(errs, fmt.Errorf("failed to create fetch KubermaticConfiguration: %w", err))
+	}
+
+	var currentVersion string
+	if config != nil {
+		currentVersion = config.Status.KubermaticVersion
+	}
+
+	if currentVersion != "" {
 		currentSemver, err := semverlib.NewVersion(currentVersion)
 		if err != nil {
 			return append(errs, fmt.Errorf("failed to parse existing KKP version %q: %w", currentVersion, err))
