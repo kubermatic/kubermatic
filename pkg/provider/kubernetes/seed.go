@@ -144,7 +144,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 	}, nil
 }
 
-func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
+func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedKubeconfigGetter, error) {
 	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
 		secret := &corev1.Secret{}
 		name := types.NamespacedName{
