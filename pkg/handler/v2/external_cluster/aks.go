@@ -651,9 +651,21 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
-	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
+	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil && nodePool.PowerState.Code != nil) {
 		md.Phase = apiv2.ExternalClusterMDPhase{
 			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			AKS: &apiv2.AKSMDPhase{
+				ProvisioningState: *nodePool.ProvisioningState,
+				PowerState:        string(*nodePool.PowerState.Code),
+			},
+		}
+		switch {
+		case string(*nodePool.PowerState.Code) == string(resources.StoppedAKSMDState) && *nodePool.ProvisioningState == string(resources.SucceededAKSMDState):
+			md.Phase.StatusMessage = "Power state is marked as 'Stopped' by Azure."
+		case string(*nodePool.PowerState.Code) == string(resources.StoppedAKSMDState) && *nodePool.ProvisioningState == string(resources.FailedAKSMDState):
+			md.Phase.StatusMessage = "Power state is marked as 'Stopped' and provisioning state is marked as 'Failed'. Please check on Azure side for previous operations on the node pool to resolve any failures."
+		case string(*nodePool.PowerState.Code) == string(resources.RunningAKSMDState) && *nodePool.ProvisioningState == string(resources.FailedAKSMDState):
+			md.Phase.StatusMessage = "Despite the power state is 'Running', provisioning state is marked as 'Failed'. Please check on Azure side for previous operations on the node pool to resolve any failures."
 		}
 	}
 

@@ -435,34 +435,46 @@ const (
 	// ErrorExternalClusterState state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterState ExternalClusterState = "Error"
+
+	// WarningExternalClusterState state indicates the cluster is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterState ExternalClusterState = "Warning"
 )
 
 const (
-	// ProvisioningExternalClusterMDState state indicates the cluster machine dedeployment is being created.
+	// ProvisioningExternalClusterMDState state indicates the cluster machine deployment is being created.
 	ProvisioningExternalClusterMDState ExternalClusterMDState = "Provisioning"
 
-	// RunningExternalClusterMDState state indicates the cluster machine dedeployment has been created and is fully usable.
+	// RunningExternalClusterMDState state indicates the cluster machine deployment has been created and is fully usable.
 	RunningExternalClusterMDState ExternalClusterMDState = "Running"
 
-	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine dedeployment, such as upgrading the master or
+	// StoppedExternalClusterMDState state indicates the cluster machine deployment is stopped. This state is specific to AKS clusters.
+	StoppedExternalClusterMDState ExternalClusterMDState = "Stopped"
+
+	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine deployment, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
 	ReconcilingExternalClusterMDState ExternalClusterMDState = "Reconciling"
 
-	// DeletingExternalClusterMDState state indicates the machine dedeployment is being deleted.
+	// DeletingExternalClusterMDState state indicates the machine deployment is being deleted.
 	DeletingExternalClusterMDState ExternalClusterMDState = "Deleting"
 
 	// UnknownExternalClusterMDState indicates undefined state.
 	UnknownExternalClusterMDState ExternalClusterMDState = "Unknown"
 
-	// ErrorExternalClusterMDState state indicates the machine dedeployment is unusable. It will be automatically deleted. Details can be found in the
+	// ErrorExternalClusterMDState state indicates the machine deployment is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterMDState ExternalClusterMDState = "Error"
+
+	// WarningExternalClusterMDState state indicates the machine deployment is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterMDState ExternalClusterMDState = "Warning"
 )
 
 // ExternalClusterStatus defines the external cluster status.
 type ExternalClusterStatus struct {
 	State         ExternalClusterState `json:"state"`
 	StatusMessage string               `json:"statusMessage,omitempty"`
+	AKS           *AKSClusterStatus    `json:"aks,omitempty"`
 }
 
 // ExternalClusterSpec defines the external cluster specification.
@@ -742,6 +754,13 @@ type AKSNetworkProfile struct {
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
 }
 
+type AKSClusterStatus struct {
+	// ProvisioningState - Defines values for AKS cluster provisioning state.
+	ProvisioningState string `json:"provisioningState"`
+	// PowerState - Defines values for AKS cluster power state.
+	PowerState string `json:"powerState"`
+}
+
 type VpcConfigRequest struct {
 	// The VPC associated with your cluster.
 	VpcId *string `json:"vpcId,omitempty"`
@@ -777,6 +796,7 @@ type ExternalClusterMachineDeployment struct {
 type ExternalClusterMDPhase struct {
 	State         ExternalClusterMDState `json:"state"`
 	StatusMessage string                 `json:"statusMessage,omitempty"`
+	AKS           *AKSMDPhase            `json:"aks,omitempty"`
 }
 
 // GKECluster represents a object of GKE cluster.
@@ -1101,6 +1121,13 @@ type AKSMachineDeploymentCloudSpec struct {
 	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 	// Configuration - Configuration of created AKS agentpool
 	Configuration AgentPoolConfig `json:"configuration,omitempty"`
+}
+
+type AKSMDPhase struct {
+	// ProvisioningState - Defines values for AKS node pool provisioning state.
+	ProvisioningState string `json:"provisioningState"`
+	// PowerState - Defines values for AKS node pool power state.
+	PowerState string `json:"powerState"`
 }
 
 type AgentPoolBasics struct {

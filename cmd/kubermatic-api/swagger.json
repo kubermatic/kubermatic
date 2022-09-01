@@ -21816,6 +21816,22 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSClusterStatus": {
+      "type": "object",
+      "properties": {
+        "powerState": {
+          "description": "PowerState - Defines values for AKS cluster power state.",
+          "type": "string",
+          "x-go-name": "PowerState"
+        },
+        "provisioningState": {
+          "description": "ProvisioningState - Defines values for AKS cluster provisioning state.",
+          "type": "string",
+          "x-go-name": "ProvisioningState"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AKSLocation": {
       "type": "object",
       "title": "AKSLocation is the object representing Azure Location.",
@@ -21838,6 +21854,22 @@
       "title": "AKSLocationList represents a list of AKS Location object for node group.",
       "items": {
         "$ref": "#/definitions/AKSLocation"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSMDPhase": {
+      "type": "object",
+      "properties": {
+        "powerState": {
+          "description": "PowerState - Defines values for AKS node pool power state.",
+          "type": "string",
+          "x-go-name": "PowerState"
+        },
+        "provisioningState": {
+          "description": "ProvisioningState - Defines values for AKS node pool provisioning state.",
+          "type": "string",
+          "x-go-name": "ProvisioningState"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -26607,6 +26639,9 @@
       "type": "object",
       "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSMDPhase"
+        },
         "state": {
           "$ref": "#/definitions/ExternalClusterMDState"
         },
@@ -26756,6 +26791,9 @@
       "type": "object",
       "title": "ExternalClusterStatus defines the external cluster status.",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSClusterStatus"
+        },
         "state": {
           "$ref": "#/definitions/ExternalClusterState"
         },
