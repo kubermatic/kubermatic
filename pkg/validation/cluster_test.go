@@ -891,7 +891,7 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 	tests := []struct {
 		name        string
 		clusterSpec *kubermaticv1.ClusterSpec
-		expectErr   bool
+		expectErr   field.ErrorList
 	}{
 		{
 			name: "small key",
@@ -911,7 +911,14 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 					},
 				},
 			},
-			expectErr: true,
+			expectErr: field.ErrorList{
+				&field.Error{
+					Type:     "FieldValueInvalid",
+					Field:    "spec.encryptionConfiguration.secretbox.keys[0]",
+					BadValue: "small-key",
+					Detail:   "key length should be 32 it is 10",
+				},
+			},
 		},
 		{
 			name: "good key",
@@ -931,16 +938,14 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 					},
 				},
 			},
-			expectErr: true,
+			expectErr: field.ErrorList{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := validateEncryptionConfiguration(test.clusterSpec, field.NewPath("spec", "encryptionConfiguration"))
-			if (err != nil) != test.expectErr {
-				t.Logf("expected error: %t, got: %+v", test.expectErr, err)
-			}
+			assert.Equal(t, test.expectErr, err)
 		})
 	}
 }
