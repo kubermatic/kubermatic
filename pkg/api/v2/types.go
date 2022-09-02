@@ -877,9 +877,21 @@ type EKSClusterList []EKSCluster
 // swagger:model EKSRegionList
 type EKSRegionList []string
 
-// EKSClusterRolesList represents a list of EKS Cluster Service Roles.
-// swagger:model EKSClusterRolesList
-type EKSClusterRolesList []string
+// EKSClusterRole represents a EKS Cluster Service Role.
+// swagger:model EKSClusterRole
+type EKSClusterRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSClusterRoleList represents a list of EKS Cluster Service Roles.
+// swagger:model EKSClusterRoleList
+type EKSClusterRoleList []EKSClusterRole
 
 // EKSAMITypeList represents a list of EKS AMI Types for node group.
 // swagger:model EKSAMITypeList
@@ -915,7 +927,8 @@ type EKSSubnet struct {
 	// The ID of the subnet.
 	SubnetId string `json:"subnetId"`
 	// The ID of the VPC the subnet is in.
-	VpcId string `json:"vpcId"`
+	VpcId   string `json:"vpcId"`
+	Default bool   `json:"default,omitempty"`
 }
 
 // EKSSecurityGroupList represents an array of EKS securityGroup.

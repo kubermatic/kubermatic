@@ -103,6 +103,8 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      location:
+                        type: string
                       name:
                         type: string
                       resourceGroup:
@@ -112,13 +114,9 @@ spec:
                       tenantID:
                         type: string
                     required:
-                    - clientID
-                    - clientSecret
-                    - credentialsReference
+                    - location
                     - name
                     - resourceGroup
-                    - subscriptionID
-                    - tenantID
                     type: object
                   bringyourown:
                     type: object
@@ -174,10 +172,8 @@ spec:
                       secretAccessKey:
                         type: string
                     required:
-                    - accessKeyID
                     - name
                     - region
-                    - secretAccessKey
                     type: object
                   gke:
                     properties:
@@ -230,7 +226,6 @@ spec:
                         type: string
                     required:
                     - name
-                    - serviceAccount
                     type: object
                   kubeone:
                     properties:
