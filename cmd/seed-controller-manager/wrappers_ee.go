@@ -27,8 +27,6 @@ import (
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,14 +36,6 @@ func addFlags(fs *flag.FlagSet) {
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
-}
-
-func seedClientGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader) (provider.SeedClientGetter, error) {
-	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, client)
-	if err != nil {
-		return nil, err
-	}
-	return kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter), nil
 }
 
 func setupControllers(ctrlCtx *controllerContext) error {

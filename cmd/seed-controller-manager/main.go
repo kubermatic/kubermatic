@@ -185,11 +185,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
 	}
 
-	seedClientGetter, err := seedClientGetterFactory(rootCtx, mgr.GetClient())
-	if err != nil {
-		log.Fatalw("Unable to create the seed client getter", zap.Error(err))
-	}
-
 	var configGetter provider.KubermaticConfigurationGetter
 	if options.kubermaticConfiguration != nil {
 		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
@@ -232,7 +227,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
-		seedClientGetter:     seedClientGetter,
 		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,

@@ -61,9 +61,8 @@ type userClusterConnectionProvider interface {
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	seedGetter       provider.SeedGetter
-	seedClientGetter provider.SeedClientGetter
-	configGetter     provider.KubermaticConfigurationGetter
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
 
 	log                     *zap.SugaredLogger
 	userClusterConnProvider userClusterConnectionProvider
@@ -83,7 +82,6 @@ func Add(
 
 	userClusterConnProvider userClusterConnectionProvider,
 	seedGetter provider.SeedGetter,
-	seedClientGetter provider.SeedClientGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 
 	versions kubermatic.Versions,
@@ -94,7 +92,6 @@ func Add(
 		Client:                  mgr.GetClient(),
 		userClusterConnProvider: userClusterConnProvider,
 		seedGetter:              seedGetter,
-		seedClientGetter:        seedClientGetter,
 		configGetter:            configGetter,
 		workerName:              workerName,
 
@@ -233,7 +230,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// reconcile until encryption is successfully initialized
 	if cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		// validate secretRef before going into Pending phase
-		result, err := r.validateSecretRef(cluster, log)
+		result, err := r.validateSecretRef(cluster)
 		if err != nil {
 			return result, err
 		}
@@ -291,7 +288,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		if cluster.Status.Encryption.ActiveKey != configuredKey {
 			// validate secretRef before going into Pending phase
-			result, err := r.validateSecretRef(cluster, log)
+			result, err := r.validateSecretRef(cluster)
 			if err != nil {
 				return result, err
 			}
@@ -333,24 +330,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 }
 
-func (r *Reconciler) validateSecretRef(cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*reconcile.Result, error) {
+func (r *Reconciler) validateSecretRef(cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if !hasSecretKeyRef(cluster) {
 		return nil, nil
 	}
 
-	seed, err := r.seedGetter()
-	if err != nil {
-		return &reconcile.Result{}, err
-	}
-
-	seedClient, err := r.seedClientGetter(seed)
-	if err != nil {
-		return &reconcile.Result{}, err
-	}
-
 	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
 		if key.SecretRef != nil {
-			v, err := getSecretKeyValue(seedClient, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
+			v, err := getSecretKeyValue(r.Client, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
 			if err != nil {
 				return &reconcile.Result{}, err
 			} else {
