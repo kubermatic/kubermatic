@@ -20,6 +20,9 @@ type EKSSubnet struct {
 	// The Availability Zone of the subnet.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 
+	// default
+	Default bool `json:"default,omitempty"`
+
 	// The ID of the subnet.
 	SubnetID string `json:"subnetId,omitempty"`
 

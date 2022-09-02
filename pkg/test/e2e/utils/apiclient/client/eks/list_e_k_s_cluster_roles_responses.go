@@ -60,16 +60,16 @@ func NewListEKSClusterRolesOK() *ListEKSClusterRolesOK {
 
 /* ListEKSClusterRolesOK describes a response with status code 200, with default header values.
 
-EKSClusterRolesList
+EKSClusterRoleList
 */
 type ListEKSClusterRolesOK struct {
-	Payload models.EKSClusterRolesList
+	Payload models.EKSClusterRoleList
 }
 
 func (o *ListEKSClusterRolesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/clusterroles][%d] listEKSClusterRolesOK  %+v", 200, o.Payload)
 }
-func (o *ListEKSClusterRolesOK) GetPayload() models.EKSClusterRolesList {
+func (o *ListEKSClusterRolesOK) GetPayload() models.EKSClusterRoleList {
 	return o.Payload
 }
 

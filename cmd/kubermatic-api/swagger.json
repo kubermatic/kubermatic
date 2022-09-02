@@ -19135,9 +19135,9 @@
         "operationId": "listEKSClusterRoles",
         "responses": {
           "200": {
-            "description": "EKSClusterRolesList",
+            "description": "EKSClusterRoleList",
             "schema": {
-              "$ref": "#/definitions/EKSClusterRolesList"
+              "$ref": "#/definitions/EKSClusterRoleList"
             }
           },
           "401": {
@@ -25839,11 +25839,28 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSClusterRolesList": {
+    "EKSClusterRole": {
+      "type": "object",
+      "title": "EKSClusterRole represents a EKS Cluster Service Role.",
+      "properties": {
+        "arn": {
+          "description": "The Amazon Resource Name (ARN) specifying the role. For more information\nabout ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)\nin the IAM User Guide guide.",
+          "type": "string",
+          "x-go-name": "Arn"
+        },
+        "roleName": {
+          "description": "RoleName  represents the friendly name that identifies the role.",
+          "type": "string",
+          "x-go-name": "RoleName"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterRoleList": {
       "type": "array",
-      "title": "EKSClusterRolesList represents a list of EKS Cluster Service Roles.",
+      "title": "EKSClusterRoleList represents a list of EKS Cluster Service Roles.",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/EKSClusterRole"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -26081,6 +26098,10 @@
           "description": "The Availability Zone of the subnet.",
           "type": "string",
           "x-go-name": "AvailabilityZone"
+        },
+        "default": {
+          "type": "boolean",
+          "x-go-name": "Default"
         },
         "subnetId": {
           "description": "The ID of the subnet.",
