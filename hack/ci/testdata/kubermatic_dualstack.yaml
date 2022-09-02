@@ -24,6 +24,12 @@ spec:
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 2
+    operatingSystemManager:
+      imageTag: sats_v4
+      imageRepository: ghcr.io/sachintiptur/operating-system-manager
+    machineController:
+      imageTag: sats_v4 
+      imageRepository: ghcr.io/sachintiptur/machine-controller
   api:
     replicas: 1
     debugLog: true
