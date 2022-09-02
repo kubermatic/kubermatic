@@ -179,9 +179,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func getSecretKeyValue(client ctrlruntimeclient.Client, ref *corev1.SecretKeySelector, namespace string) ([]byte, error) {
+func getSecretKeyValue(ctx context.Context, client ctrlruntimeclient.Client, ref *corev1.SecretKeySelector, namespace string) ([]byte, error) {
 	secret := corev1.Secret{}
-	if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 		Name:      ref.Name,
 		Namespace: namespace,
 	}, &secret); err != nil {
@@ -230,7 +230,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// reconcile until encryption is successfully initialized
 	if cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		// validate secretRef before going into Pending phase
-		result, err := r.validateSecretRef(cluster)
+		result, err := r.validateSecretRef(ctx, cluster)
 		if err != nil {
 			return result, err
 		}
@@ -288,7 +288,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		if cluster.Status.Encryption.ActiveKey != configuredKey {
 			// validate secretRef before going into Pending phase
-			result, err := r.validateSecretRef(cluster)
+			result, err := r.validateSecretRef(ctx, cluster)
 			if err != nil {
 				return result, err
 			}
@@ -330,14 +330,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 }
 
-func (r *Reconciler) validateSecretRef(cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) validateSecretRef(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if !hasSecretKeyRef(cluster) {
 		return nil, nil
 	}
 
 	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
 		if key.SecretRef != nil {
-			v, err := getSecretKeyValue(r.Client, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
+			v, err := getSecretKeyValue(ctx, r.Client, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
 			if err != nil {
 				return &reconcile.Result{}, err
 			} else {

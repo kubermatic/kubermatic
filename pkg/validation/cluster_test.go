@@ -921,6 +921,33 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 			},
 		},
 		{
+			name: "bad base64",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "small-key",
+								Value: "cmLcMbw6gdxPH$==",
+							},
+						},
+					},
+				},
+			},
+			expectErr: field.ErrorList{
+				&field.Error{
+					Type:     "FieldValueInvalid",
+					Field:    "spec.encryptionConfiguration.secretbox.keys[0]",
+					BadValue: "small-key",
+					Detail:   "illegal base64 data at input byte 13",
+				},
+			},
+		},
+		{
 			name: "good key",
 			clusterSpec: &kubermaticv1.ClusterSpec{
 				Features: map[string]bool{
