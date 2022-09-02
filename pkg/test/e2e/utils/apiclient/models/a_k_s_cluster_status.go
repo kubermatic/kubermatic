@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -17,20 +18,108 @@ import (
 // swagger:model AKSClusterStatus
 type AKSClusterStatus struct {
 
-	// PowerState - Defines values for AKS cluster power state.
-	PowerState string `json:"powerState,omitempty"`
+	// power state
+	PowerState AKSPowerState `json:"powerState,omitempty"`
 
-	// ProvisioningState - Defines values for AKS cluster provisioning state.
-	ProvisioningState string `json:"provisioningState,omitempty"`
+	// provisioning state
+	ProvisioningState AKSProvisioningState `json:"provisioningState,omitempty"`
 }
 
 // Validate validates this a k s cluster status
 func (m *AKSClusterStatus) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validatePowerState(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProvisioningState(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this a k s cluster status based on context it is used
+func (m *AKSClusterStatus) validatePowerState(formats strfmt.Registry) error {
+	if swag.IsZero(m.PowerState) { // not required
+		return nil
+	}
+
+	if err := m.PowerState.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("powerState")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("powerState")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *AKSClusterStatus) validateProvisioningState(formats strfmt.Registry) error {
+	if swag.IsZero(m.ProvisioningState) { // not required
+		return nil
+	}
+
+	if err := m.ProvisioningState.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("provisioningState")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("provisioningState")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this a k s cluster status based on the context it is used
 func (m *AKSClusterStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePowerState(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProvisioningState(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AKSClusterStatus) contextValidatePowerState(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.PowerState.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("powerState")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("powerState")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *AKSClusterStatus) contextValidateProvisioningState(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ProvisioningState.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("provisioningState")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("provisioningState")
+		}
+		return err
+	}
+
 	return nil
 }
 

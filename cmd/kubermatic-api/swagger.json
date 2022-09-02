@@ -21820,14 +21820,10 @@
       "type": "object",
       "properties": {
         "powerState": {
-          "description": "PowerState - Defines values for AKS cluster power state.",
-          "type": "string",
-          "x-go-name": "PowerState"
+          "$ref": "#/definitions/AKSPowerState"
         },
         "provisioningState": {
-          "description": "ProvisioningState - Defines values for AKS cluster provisioning state.",
-          "type": "string",
-          "x-go-name": "ProvisioningState"
+          "$ref": "#/definitions/AKSProvisioningState"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -21861,14 +21857,10 @@
       "type": "object",
       "properties": {
         "powerState": {
-          "description": "PowerState - Defines values for AKS node pool power state.",
-          "type": "string",
-          "x-go-name": "PowerState"
+          "$ref": "#/definitions/AKSPowerState"
         },
         "provisioningState": {
-          "description": "ProvisioningState - Defines values for AKS node pool provisioning state.",
-          "type": "string",
-          "x-go-name": "ProvisioningState"
+          "$ref": "#/definitions/AKSProvisioningState"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -21969,6 +21961,14 @@
           "x-go-name": "MinCount"
         }
       },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSPowerState": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSProvisioningState": {
+      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "AKSVMSize": {

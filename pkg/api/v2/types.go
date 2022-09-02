@@ -754,11 +754,16 @@ type AKSNetworkProfile struct {
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
 }
 
+type (
+	AKSProvisioningState string
+	AKSPowerState        string
+)
+
 type AKSClusterStatus struct {
 	// ProvisioningState - Defines values for AKS cluster provisioning state.
-	ProvisioningState string `json:"provisioningState"`
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
 	// PowerState - Defines values for AKS cluster power state.
-	PowerState string `json:"powerState"`
+	PowerState AKSPowerState `json:"powerState"`
 }
 
 type VpcConfigRequest struct {
@@ -1125,9 +1130,9 @@ type AKSMachineDeploymentCloudSpec struct {
 
 type AKSMDPhase struct {
 	// ProvisioningState - Defines values for AKS node pool provisioning state.
-	ProvisioningState string `json:"provisioningState"`
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
 	// PowerState - Defines values for AKS node pool power state.
-	PowerState string `json:"powerState"`
+	PowerState AKSPowerState `json:"powerState"`
 }
 
 type AgentPoolBasics struct {

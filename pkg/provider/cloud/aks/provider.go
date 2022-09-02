@@ -200,8 +200,8 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		}
 		status.State = ConvertStatus(provisioningState, powerState)
 		status.AKS = &apiv2.AKSClusterStatus{
-			ProvisioningState: provisioningState,
-			PowerState:        string(powerState),
+			ProvisioningState: apiv2.AKSProvisioningState(provisioningState),
+			PowerState:        apiv2.AKSPowerState(powerState),
 		}
 		switch {
 		case powerState == armcontainerservice.Code(resources.StoppedAKSState) && provisioningState == string(resources.SucceededAKSState):
@@ -236,10 +236,8 @@ func ConvertStatus(provisioningState string, powerState armcontainerservice.Code
 		return apiv2.StoppingExternalClusterState
 	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
 		return apiv2.StoppedExternalClusterState
-	case provisioningState == string(resources.FailedAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
-		return apiv2.WarningExternalClusterState
 	case provisioningState == string(resources.FailedAKSState):
-		return apiv2.ErrorExternalClusterState
+		return apiv2.ErrorExternalClusterState // TODO: think about changing this to "Warning" and add other variables to decide if actual error, because there are cases that Azure states "Failed" for Provision State but actually it's working/usable
 	case provisioningState == string(resources.DeletingAKSState):
 		return apiv2.DeletingExternalClusterState
 	case provisioningState == string(resources.UpgradingAKSState):
@@ -257,10 +255,8 @@ func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Co
 		return apiv2.RunningExternalClusterMDState
 	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.StoppedAKSMDState):
 		return apiv2.StoppedExternalClusterMDState
-	case provisioningState == string(resources.FailedAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
-		return apiv2.WarningExternalClusterMDState
 	case provisioningState == string(resources.FailedAKSMDState):
-		return apiv2.ErrorExternalClusterMDState
+		return apiv2.ErrorExternalClusterMDState // TODO: think about changing this to "Warning" and add other variables to decide if actual error, because there are cases that Azure states "Failed" for Provision State but actually it's working/usable
 	case provisioningState == string(resources.DeletingAKSMDState):
 		return apiv2.DeletingExternalClusterMDState
 	// "Upgrading" indicates Kubernetes version upgrade.

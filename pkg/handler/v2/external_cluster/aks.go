@@ -655,8 +655,8 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 		md.Phase = apiv2.ExternalClusterMDPhase{
 			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
 			AKS: &apiv2.AKSMDPhase{
-				ProvisioningState: *nodePool.ProvisioningState,
-				PowerState:        string(*nodePool.PowerState.Code),
+				ProvisioningState: apiv2.AKSProvisioningState(*nodePool.ProvisioningState),
+				PowerState:        apiv2.AKSPowerState(*nodePool.PowerState.Code),
 			},
 		}
 		switch {
