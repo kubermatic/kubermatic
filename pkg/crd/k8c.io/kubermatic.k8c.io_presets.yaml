@@ -214,13 +214,10 @@ spec:
                     description: Only enabled presets will be available in the KKP
                       dashboard.
                     type: boolean
-                  region:
-                    type: string
                   secretAccessKey:
                     type: string
                 required:
                 - accessKeyID
-                - region
                 - secretAccessKey
                 type: object
               enabled:

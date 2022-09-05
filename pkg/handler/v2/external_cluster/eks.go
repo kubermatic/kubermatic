@@ -103,11 +103,14 @@ type EKSClusterListReq struct {
 }
 
 func (req EKSTypesReq) Validate() error {
+	if len(req.Region) == 0 {
+		return fmt.Errorf("Region cannot be empty")
+	}
 	if len(req.Credential) != 0 {
 		return nil
 	}
-	if len(req.AccessKeyID) == 0 || len(req.SecretAccessKey) == 0 || len(req.Region) == 0 {
-		return fmt.Errorf("EKS Credentials or Region cannot be empty")
+	if len(req.AccessKeyID) == 0 || len(req.SecretAccessKey) == 0 {
+		return fmt.Errorf("EKS Credentials cannot be empty")
 	}
 	return nil
 }
@@ -116,14 +119,8 @@ func (req EKSReq) Validate() error {
 	if len(req.VpcId) == 0 {
 		return fmt.Errorf("EKS VPC ID cannot be empty")
 	}
-	if len(req.Credential) != 0 {
-		return nil
-	}
-	if len(req.AccessKeyID) == 0 || len(req.SecretAccessKey) == 0 {
-		return fmt.Errorf("EKS Credentials cannot be empty")
-	}
-	if len(req.Region) == 0 {
-		return fmt.Errorf("Region cannot be empty")
+	if err := req.EKSTypesReq.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -326,7 +323,6 @@ func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGett
 		if credentials := preset.Spec.EKS; credentials != nil {
 			accessKeyID = credentials.AccessKeyID
 			secretAccessKey = credentials.SecretAccessKey
-			region = credentials.Region
 		}
 	}
 
