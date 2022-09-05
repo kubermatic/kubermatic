@@ -107,7 +107,7 @@ spec:
             centos: centos-7
             flatcar: flatcar-3033.2.2
             rhel: rhel-8.6
-            ubuntu: ubuntu-20.04
+            ubuntu: kkp-ubuntu-20.04
             rockylinux: rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
