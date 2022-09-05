@@ -18,6 +18,7 @@ package validation
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
@@ -48,7 +49,9 @@ var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
+)
 
+const (
 	// UnsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
 	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
 	// UnsafeCNIMigrationLabel allows unsafe CNI type migration.
@@ -62,6 +65,9 @@ var (
 	// "-control-plane" being added by KKP. This leaves 39 usable characters
 	// and to give some wiggle room, we define the max length to be 36.
 	MaxClusterNameLength = 36
+
+	// EARKeyLength is required key length for encryption at rest.
+	EARKeyLength = 32
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
@@ -400,6 +406,12 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 					allErrs = append(allErrs, field.Invalid(childPath, key.Name,
 						"'value' and 'secretRef' cannot be set at the same time"))
 				}
+
+				if key.Value != "" {
+					if err := validateKeyLength(key.Value); err != nil {
+						allErrs = append(allErrs, field.Invalid(childPath, key.Name, fmt.Sprint(err)))
+					}
+				}
 			}
 		}
 
@@ -407,6 +419,20 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 	}
 
 	return allErrs
+}
+
+// validateKeyLength base64 decodes key and checks length.
+func validateKeyLength(key string) error {
+	data, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return err
+	}
+
+	if len(data) != EARKeyLength {
+		return fmt.Errorf("key length should be 32 it is %d", len(data))
+	}
+
+	return nil
 }
 
 func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kubermaticv1.Cluster) field.ErrorList {
