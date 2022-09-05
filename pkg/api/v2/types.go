@@ -925,7 +925,7 @@ type EKSVPC struct {
 	IsDefault bool   `json:"default"`
 }
 
-// AKSCluster represents a object of AKS cluster.
+// AKSCluster represents an object of AKS cluster.
 // swagger:model AKSCluster
 type AKSCluster struct {
 	Name          string `json:"name"`
@@ -945,7 +945,7 @@ type AKSVMSizeList []AKSVMSize
 // swagger:model AKSLocationList
 type AKSLocationList []AKSLocation
 
-// AKSLocation is the object representing Azure Location.
+// AKSLocation represents an object representing Azure Location.
 // swagger:model AKSLocation
 type AKSLocation struct {
 	// The location name.
@@ -953,6 +953,16 @@ type AKSLocation struct {
 	// READ-ONLY; The category of the region.
 	RegionCategory string `json:"regionCategory,omitempty"`
 }
+
+// AzureResourceGroup represents an object of Azure ResourceGroup information.
+type AzureResourceGroup struct {
+	// The name of the resource group.
+	Name string `json:"name,omitempty"`
+}
+
+// AzureResourceGroupList represents an list of AKS ResourceGroups.
+// swagger:model AzureResourceGroupList
+type AzureResourceGroupList []AzureResourceGroup
 
 // AKSVMSize is the object representing Azure VM sizes.
 // swagger:model AKSVMSize
