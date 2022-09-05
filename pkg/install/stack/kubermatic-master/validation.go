@@ -59,7 +59,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	}
 
 	// Ensure that no KKP upgrade was skipped.
-	kkpMinorVersion := semverlib.MustParse(opt.Versions.Kubermatic).Minor()
+	kkpMinorVersion := semverlib.MustParse(opt.Versions.KubermaticCommit).Minor()
 	minMinorRequired := kkpMinorVersion - 1
 
 	// The configured KubermaticConfiguration might be a static YAML file,
