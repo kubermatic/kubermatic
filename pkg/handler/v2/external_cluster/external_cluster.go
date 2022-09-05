@@ -1031,6 +1031,7 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 		cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,
+			Location:      cloud.AKS.Location,
 		}
 	}
 	if cloud.KubeOne != nil {

@@ -21703,6 +21703,10 @@
           "type": "string",
           "x-go-name": "ClientSecret"
         },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -21788,11 +21792,6 @@
           "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
           "type": "string",
           "x-go-name": "KubernetesVersion"
-        },
-        "location": {
-          "description": "Location - Resource location",
-          "type": "string",
-          "x-go-name": "Location"
         },
         "machineDeploymentSpec": {
           "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"

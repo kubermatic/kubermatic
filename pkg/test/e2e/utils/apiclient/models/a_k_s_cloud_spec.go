@@ -23,6 +23,9 @@ type AKSCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
+	// location
+	Location string `json:"location,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
