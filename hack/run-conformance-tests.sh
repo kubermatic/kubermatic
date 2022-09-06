@@ -87,7 +87,7 @@ digitalocean)
   ;;
 
 gcp)
-  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT"
+  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")"
   ;;
 
 hetzner)
@@ -122,7 +122,7 @@ vsphere)
   VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
   extraArgs="-vsphere-username=$VSPHERE_USERNAME
       -vsphere-password=$VSPHERE_PASSWORD
-      -vsphere-datastore=HS-FreeNAS"
+      -vsphere-datastore=alpha1"
   ;;
 
 *)

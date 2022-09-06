@@ -441,10 +441,34 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 					},
 				}
 			}
-			if data.Cluster().Spec.Cloud.AWS != nil {
-				if s.Annotations == nil {
-					s.Annotations = make(map[string]string)
+
+			seed := data.Seed()
+
+			// seed.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
+			// To avoid breaking changes we still copy these values over to the service annotations
+			if seed.Spec.NodeportProxy.Annotations != nil {
+				s.Annotations = seed.Spec.NodeportProxy.Annotations
+			}
+
+			if s.Annotations == nil {
+				s.Annotations = make(map[string]string)
+			}
+
+			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
+			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
+			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
+					s.Annotations[k] = v
 				}
+			}
+
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+				}
+			}
+
+			if data.Cluster().Spec.Cloud.AWS != nil {
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 

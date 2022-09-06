@@ -684,6 +684,9 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		newCluster.Spec.Features = make(map[string]bool)
 	}
 	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	if oldCluster.Spec.Cloud.VSphere != nil {
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+	}
 
 	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 	if err := seedAdminClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {

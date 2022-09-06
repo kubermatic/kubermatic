@@ -63,6 +63,26 @@ spec:
                         proxy, Docker registries and the like. Proxy settings are
                         inherited from the seed if not specified here.
                       properties:
+                        containerdRegistryMirrors:
+                          description: 'Optional: ContainerdRegistryMirrors configure
+                            registry mirrors endpoints. Can be used multiple times
+                            to specify multiple mirrors.'
+                          properties:
+                            registries:
+                              additionalProperties:
+                                description: ContainerdRegistry defines endpoints
+                                  and security for given container registry.
+                                properties:
+                                  mirrors:
+                                    description: List of registry mirrors to use
+                                    items:
+                                      type: string
+                                    type: array
+                                type: object
+                              description: A map of registries to use to render configs
+                                and mirrors for containerd registries
+                              type: object
+                          type: object
                         httpProxy:
                           description: 'Optional: If set, this proxy will be configured
                             for both HTTP and HTTPS.'
@@ -489,6 +509,7 @@ spec:
                   newly created clusters. Deprecated: Use DefaultClusterTemplate instead.'
                 properties:
                   apiserver:
+                    description: Apiserver configures kube-apiserver settings.
                     properties:
                       endpointReconcilingDisabled:
                         type: boolean
@@ -568,6 +589,8 @@ spec:
                         type: array
                     type: object
                   controllerManager:
+                    description: ControllerManager configures kube-controller-manager
+                      settings.
                     properties:
                       leaderElection:
                         properties:
@@ -665,6 +688,8 @@ spec:
                         type: array
                     type: object
                   etcd:
+                    description: Etcd configures the etcd ring used to store Kubernetes
+                      data.
                     properties:
                       clusterSize:
                         format: int32
@@ -747,7 +772,43 @@ spec:
                           type: object
                         type: array
                     type: object
+                  konnectivityProxy:
+                    description: KonnectivityProxy configures resources limits/requests
+                      for konnectivity-server sidecar.
+                    properties:
+                      resources:
+                        description: ResourceRequirements describes the compute resource
+                          requirements.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                    type: object
                   nodePortProxyEnvoy:
+                    description: NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy
+                      that is deployed if the `LoadBalancer` expose strategy is used.
+                      This is not effective if a different expose strategy is configured.
                     properties:
                       dockerRepository:
                         description: DockerRepository is the repository containing
@@ -783,6 +844,8 @@ spec:
                         type: object
                     type: object
                   prometheus:
+                    description: Prometheus configures the Prometheus instance deployed
+                      into the cluster control plane.
                     properties:
                       resources:
                         description: ResourceRequirements describes the compute resource
@@ -814,6 +877,7 @@ spec:
                         type: object
                     type: object
                   scheduler:
+                    description: Scheduler configures kube-scheduler settings.
                     properties:
                       leaderElection:
                         properties:
@@ -1058,9 +1122,10 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
-                    description: Annotations are used to further tweak the LoadBalancer
+                    description: 'Annotations are used to further tweak the LoadBalancer
                       integration with the cloud provider where the seed cluster is
-                      running.
+                      running. Deprecated: Use .envoy.loadBalancerService.annotations
+                      instead.'
                     type: object
                   disable:
                     description: Disable will prevent the Kubermatic Operator from
@@ -1075,6 +1140,24 @@ spec:
                         description: DockerRepository is the repository containing
                           the component's image.
                         type: string
+                      loadBalancerService:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations are used to further tweak the
+                              LoadBalancer integration with the cloud provider.
+                            type: object
+                          sourceRanges:
+                            description: 'SourceRanges will restrict loadbalancer
+                              service to IP ranges specified using CIDR notation like
+                              172.25.0.0/16. This field will be ignored if the cloud-provider
+                              does not support the feature. More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/'
+                            items:
+                              pattern: ^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$
+                              type: string
+                            type: array
+                        type: object
                       resources:
                         description: Resources describes the requested and maximum
                           allowed CPU/memory usage.

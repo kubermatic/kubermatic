@@ -57,6 +57,33 @@ var (
 	}
 )
 
+// AllowedCNIVersionTransition defines conditions for an allowed CNI version transition.
+// If one of the versions is not specified, it means that it is not checked (always satisfied).
+type AllowedCNIVersionTransition struct {
+	K8sVersion    string
+	OldCNIVersion string
+	NewCNIVersion string
+}
+
+// allowedCNIVersionTransitions contains a map of allowed CNI version transitions for each CNI type.
+// Apart from these, one minor version change is allowed for each CNI.
+var allowedCNIVersionTransitions = map[kubermaticv1.CNIPluginType][]AllowedCNIVersionTransition{
+	kubermaticv1.CNIPluginTypeCanal: {
+		// allow upgrade from Canal v3.8 to any newer Canal version
+		{
+			K8sVersion:    "", // any
+			OldCNIVersion: "= 3.8",
+			NewCNIVersion: "> 3.8",
+		},
+		// allow upgrade to Canal v3.22 necessary for k8s >= v1.23
+		{
+			K8sVersion:    ">= 1.23",
+			OldCNIVersion: "< 3.22",
+			NewCNIVersion: "= 3.22",
+		},
+	},
+}
+
 // GetSupportedCNIPlugins returns currently supported CNI Plugin types.
 func GetSupportedCNIPlugins() sets.String {
 	return supportedCNIPlugins
@@ -108,4 +135,10 @@ func IsSupportedCNIPluginTypeAndVersion(cni *kubermaticv1.CNIPluginSettings) boo
 		return true
 	}
 	return false
+}
+
+// GetAllowedCNIVersionTransitions returns a list of allowed CNI version transitions for the given CNI type.
+// Apart from these, one minor version change is allowed for each CNI.
+func GetAllowedCNIVersionTransitions(cniPluginType kubermaticv1.CNIPluginType) []AllowedCNIVersionTransition {
+	return allowedCNIVersionTransitions[cniPluginType]
 }

@@ -873,7 +873,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			DatacenterName: old.Cloud.DatacenterName,
 			ProviderName:   old.Cloud.ProviderName,
 
-			// AWS, Azure, VSphere and Openstack need special treatment further down
+			// AWS, Azure, VSphere, Openstack, and Kubevirt need special treatment further down
 			Alibaba:      (*newv1.AlibabaCloudSpec)(old.Cloud.Alibaba),
 			Anexia:       (*newv1.AnexiaCloudSpec)(old.Cloud.Anexia),
 			BringYourOwn: (*newv1.BringYourOwnCloudSpec)(old.Cloud.BringYourOwn),
@@ -881,7 +881,6 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			Fake:         (*newv1.FakeCloudSpec)(old.Cloud.Fake),
 			GCP:          (*newv1.GCPCloudSpec)(old.Cloud.GCP),
 			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
-			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
 			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
 			Nutanix:      convertNutanixCloudSpec(old.Cloud.Nutanix),
 		},
@@ -989,6 +988,14 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			StoragePolicy:        old.StoragePolicy,
 			ResourcePool:         old.ResourcePool,
 			InfraManagementUser:  newv1.VSphereCredentials(old.InfraManagementUser),
+		}
+	}
+
+	if old := old.Cloud.Kubevirt; old != nil {
+		result.Cloud.Kubevirt = &newv1.KubevirtCloudSpec{
+			CredentialsReference: old.CredentialsReference,
+			Kubeconfig:           old.Kubeconfig,
+			CSIKubeconfig:        "",
 		}
 	}
 
@@ -1979,7 +1986,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				NodeportProxy: newv1.NodeportProxyConfig{
 					Disable:      oldObject.Spec.NodeportProxy.Disable,
 					Annotations:  oldObject.Spec.NodeportProxy.Annotations,
-					Envoy:        convertNodeportProxyComponent(oldObject.Spec.NodeportProxy.Envoy),
+					Envoy:        convertNodeportProxyComponentEnvoy(oldObject.Spec.NodeportProxy.Envoy),
 					EnvoyManager: convertNodeportProxyComponent(oldObject.Spec.NodeportProxy.EnvoyManager),
 					Updater:      convertNodeportProxyComponent(oldObject.Spec.NodeportProxy.Updater),
 				},
@@ -2089,6 +2096,15 @@ func convertDeploymentSettings(oldSettings kubermaticv1.DeploymentSettings) newv
 		Replicas:    oldSettings.Replicas,
 		Resources:   oldSettings.Resources.DeepCopy(),
 		Tolerations: oldSettings.Tolerations,
+	}
+}
+
+func convertNodeportProxyComponentEnvoy(oldComponent kubermaticv1.NodeportProxyComponent) newv1.NodePortProxyComponentEnvoy {
+	return newv1.NodePortProxyComponentEnvoy{
+		NodeportProxyComponent: newv1.NodeportProxyComponent{
+			DockerRepository: oldComponent.DockerRepository,
+			Resources:        *oldComponent.Resources.DeepCopy(),
+		},
 	}
 }
 

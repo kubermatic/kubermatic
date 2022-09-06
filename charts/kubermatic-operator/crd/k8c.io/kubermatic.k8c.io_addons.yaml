@@ -106,6 +106,7 @@ spec:
                 description: Variables is free form data to use for parsing the manifest
                   templates
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
             required:
             - cluster
             - name

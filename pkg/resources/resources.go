@@ -662,15 +662,16 @@ const (
 	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
 
-	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+	// CSISnapshotValidationWebhookConfigurationName part of kubernetes-csi external-snapshotter validation webhook.
+	CSISnapshotValidationWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+	// CSISnapshotValidationWebhookName part of kubernetes-csi external-snapshotter validation webhook.
+	CSISnapshotValidationWebhookName = "snapshot-validation-service"
 
 	CSISnapshotWebhookSecretName = "csi-snapshot-webhook-certs"
 	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	CSIWebhookServingCertCertKeyName = "cert.pem"
 	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	CSIWebhookServingCertKeyKeyName = "key.pem"
-
-	NutanixCSIWebhookName = "snapshot-validation-service"
 )
 
 const (
@@ -1279,6 +1280,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	r := map[string]*corev1.ResourceRequirements{}
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
+	}
+	if componentSettings.KonnectivityProxy.Resources != nil {
+		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 	}
 	if componentSettings.ControllerManager.Resources != nil {
 		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()

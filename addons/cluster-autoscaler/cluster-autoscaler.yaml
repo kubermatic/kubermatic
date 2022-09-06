@@ -14,13 +14,16 @@
 
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.20" }}
-{{ $version = "v1.20.0"}}
+{{ $version = "v1.20.2"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.21" }}
-{{ $version = "v1.21.0"}}
+{{ $version = "v1.21.2"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v1.22.0"}}
+{{ $version = "v1.22.2"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.23" }}
+{{ $version = "v1.23.0"}}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}

@@ -1,0 +1,77 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sourced from:
+# - https://github.com/kubernetes-csi/external-snapshotter/blob/v4.2.1/deploy/kubernetes/webhook-example/webhook.yaml
+# Modifications:
+#   - change namespace
+#   - template function to replace base registry
+#   - change webhook-certs secret name
+#   - add seccomp profile
+
+
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapshot-validation-deployment
+  namespace: kube-system
+  labels:
+    app: snapshot-validation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-validation
+  template:
+    metadata:
+      labels:
+        app: snapshot-validation
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: snapshot-validation
+          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v4.2.1' # change the image if you wish to use your own custom validation server image
+          imagePullPolicy: IfNotPresent
+          args: ['--tls-cert-file=/etc/snapshot-validation-webhook/certs/cert.pem', '--tls-private-key-file=/etc/snapshot-validation-webhook/certs/key.pem']
+          ports:
+            - containerPort: 443 # change the port as needed
+          volumeMounts:
+            - name: snapshot-validation-webhook-certs
+              mountPath: /etc/snapshot-validation-webhook/certs
+              readOnly: true
+      volumes:
+        - name: snapshot-validation-webhook-certs
+          secret:
+            secretName: csi-snapshot-webhook-certs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshot-validation-service
+  namespace: kube-system
+spec:
+  selector:
+    app: snapshot-validation
+  ports:
+    - protocol: TCP
+      port: 443 # Change if needed
+      targetPort: 443 # Change if the webserver image expects a different port
+
+{{ end }}
+{{ end }}

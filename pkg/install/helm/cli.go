@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -76,16 +77,19 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 			repoName,
 		}
 
-		defer func() {
-			_, removeErr := c.run("default", repoRemoveFlags...)
-			if err != nil {
-				err = removeErr
-			}
-		}()
-
 		if _, err = c.run("default", repoAddFlags...); err != nil {
 			return err
 		}
+
+		defer func() {
+			_, removeErr := c.run("default", repoRemoveFlags...)
+			if err != nil && removeErr != nil {
+				err = fmt.Errorf("%w; error: clean up resources failed: can not remove remopository: %s", err, removeErr)
+			}
+			if err == nil && removeErr != nil {
+				err = fmt.Errorf("error: clean up resources failed: can not remove remopository: %w", removeErr)
+			}
+		}()
 	}
 
 	command := []string{
@@ -246,7 +250,10 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 	}
 
 	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
-	cmd.Env = append(cmd.Env, "KUBECONFIG="+c.kubeconfig)
+	// "If Env contains duplicate environment keys, only the last
+	// value in the slice for each duplicate key is used."
+	// Source: https://pkg.go.dev/os/exec#Cmd.Env
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+c.kubeconfig)
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 

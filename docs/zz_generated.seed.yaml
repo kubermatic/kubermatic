@@ -22,6 +22,8 @@ spec:
       # registries and the like. Proxy settings are inherited from the seed if
       # not specified here.
       node:
+        # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+        containerdRegistryMirrors: null
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
@@ -237,12 +239,14 @@ spec:
   # DefaultComponentSettings are default values to set for newly created clusters.
   # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
+    # Apiserver configures kube-apiserver settings.
     apiserver:
       endpointReconcilingDisabled: null
       nodePortRange: 30000-32767
       replicas: 2
       resources: null
       tolerations: null
+    # ControllerManager configures kube-controller-manager settings.
     controllerManager:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
@@ -258,12 +262,19 @@ spec:
       replicas: 1
       resources: null
       tolerations: null
+    # Etcd configures the etcd ring used to store Kubernetes data.
     etcd:
       clusterSize: 3
       diskSize: 5Gi
       resources: null
       storageClass: ""
       tolerations: null
+    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+    konnectivityProxy:
+      resources: null
+    # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+    # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+    # strategy is configured.
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: ""
@@ -277,8 +288,10 @@ spec:
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests: null
+    # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
       resources: null
+    # Scheduler configures kube-scheduler settings.
     scheduler:
       leaderElection:
         # LeaseDurationSeconds is the duration in seconds that non-leader candidates
@@ -348,9 +361,8 @@ spec:
   nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
-      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    # Deprecated: Use .envoy.loadBalancerService.annotations instead.
+    annotations: {}
     # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
     # setup on the seed cluster. This should only be used if a suitable replacement
     # is installed (like the nodeport-proxy Helm chart).
@@ -359,6 +371,16 @@ spec:
     envoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: docker.io/envoyproxy/envoy-alpine
+      loadBalancerService:
+        # Annotations are used to further tweak the LoadBalancer integration with the
+        # cloud provider.
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+        # SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+        # This field will be ignored if the cloud-provider does not support the feature.
+        # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+        sourceRanges: []
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.

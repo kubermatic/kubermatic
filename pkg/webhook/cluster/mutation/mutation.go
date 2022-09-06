@@ -187,42 +187,42 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		}
 	}
 
-	// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
-	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
-	// are not supported anymore.
-	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
-		newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
-		upgradeConstraint, err := semver.NewConstraint(">= 1.22")
-		if err != nil {
-			return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
-		}
-		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
-			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-				Type:    kubermaticv1.CNIPluginTypeCanal,
-				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
+		// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
+		// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
+		// are not supported anymore.
+		if newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
+			upgradeConstraint, err := semver.NewConstraint(">= 1.22")
+			if err != nil {
+				return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
+			}
+			if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
+				newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+				}
 			}
 		}
-	}
 
-	// This part handles Canal version upgrade for clusters with Kubernetes version 1.23 and higher,
-	// where the minimal Canal version is v3.22.
-	cniVersion, err := semver.NewVersion(newCluster.Spec.CNIPlugin.Version)
-	if err != nil {
-		return fmt.Errorf("CNI plugin version parsing failed: %w", err)
-	}
-	lowerThan322, err := semver.NewConstraint("< 3.22")
-	if err != nil {
-		return fmt.Errorf("semver constraint parsing failed: %w", err)
-	}
-	equalOrHigherThan123, err := semver.NewConstraint(">= 1.23")
-	if err != nil {
-		return fmt.Errorf("semver constraint parsing failed: %w", err)
-	}
-	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal && lowerThan322.Check(cniVersion) &&
-		newCluster.Spec.Version.String() != "" && equalOrHigherThan123.Check(newCluster.Spec.Version.Semver()) {
-		newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: "v3.22",
+		// This part handles Canal version upgrade for clusters with Kubernetes version 1.23 and higher,
+		// where the minimal Canal version is v3.22.
+		cniVersion, err := semver.NewVersion(newCluster.Spec.CNIPlugin.Version)
+		if err != nil {
+			return fmt.Errorf("CNI plugin version parsing failed: %w", err)
+		}
+		lowerThan322, err := semver.NewConstraint("< 3.22")
+		if err != nil {
+			return fmt.Errorf("semver constraint parsing failed: %w", err)
+		}
+		equalOrHigherThan123, err := semver.NewConstraint(">= 1.23")
+		if err != nil {
+			return fmt.Errorf("semver constraint parsing failed: %w", err)
+		}
+		if lowerThan322.Check(cniVersion) && newCluster.Spec.Version.String() != "" && equalOrHigherThan123.Check(newCluster.Spec.Version.Semver()) {
+			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: "v3.22",
+			}
 		}
 	}
 

@@ -33,7 +33,7 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("10m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("100Mi"),
+			corev1.ResourceMemory: resource.MustParse("200Mi"),
 			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
@@ -43,7 +43,7 @@ var (
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
 	const (
 		name    = "k8s-artifacts-prod/kas-network-proxy/proxy-server"
-		version = "v0.0.26"
+		version = "v0.0.31"
 	)
 
 	return &corev1.Container{
@@ -117,8 +117,8 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 				},
 				TCPSocket: nil,
 			},
-			InitialDelaySeconds: 30,
-			TimeoutSeconds:      60,
+			InitialDelaySeconds: 15,
+			TimeoutSeconds:      15,
 			PeriodSeconds:       10,
 			SuccessThreshold:    1,
 			FailureThreshold:    3,

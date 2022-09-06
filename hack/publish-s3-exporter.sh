@@ -22,7 +22,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 
 REPOSITORY=quay.io/kubermatic/s3-exporter
-TAG=v0.5
+TAG=v0.6
 
 GOOS=linux GOARCH=amd64 make s3-exporter
 

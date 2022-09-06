@@ -29,6 +29,9 @@ import (
 
 type ProviderType string
 
+// +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
+type CIDR string
+
 const (
 	// Constants defining known cloud providers.
 	FakeCloudProvider         ProviderType = "fake"
@@ -195,14 +198,29 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
-	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
+	Envoy NodePortProxyComponentEnvoy `json:"envoy,omitempty"`
 	// EnvoyManager configures the Kubermatic-internal Envoy manager.
 	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
+}
+
+type EnvoyLoadBalancerService struct {
+	// Annotations are used to further tweak the LoadBalancer integration with the
+	// cloud provider.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+	// This field will be ignored if the cloud-provider does not support the feature.
+	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+	SourceRanges []CIDR `json:"sourceRanges,omitempty"`
+}
+type NodePortProxyComponentEnvoy struct {
+	NodeportProxyComponent `json:",inline"`
+	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
 }
 
 type NodeportProxyComponent struct {
@@ -522,6 +540,20 @@ type NodeSettings struct {
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pauseImage,omitempty"`
+	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+}
+
+// ContainerRuntimeContainerd defines containerd container runtime registries configs.
+type ContainerRuntimeContainerd struct {
+	// A map of registries to use to render configs and mirrors for containerd registries
+	Registries map[string]ContainerdRegistry `json:"registries,omitempty"`
+}
+
+// ContainerdRegistry defines endpoints and security for given container registry.
+type ContainerdRegistry struct {
+	// List of registry mirrors to use
+	Mirrors []string `json:"mirrors,omitempty"`
 }
 
 // SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.

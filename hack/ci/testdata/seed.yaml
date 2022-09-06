@@ -53,6 +53,8 @@ spec:
       spec:
         aws:
           region: eu-central-1
+          images:
+            ubuntu: ami-092f628832a8d22a5 # ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220523
     hetzner-nbg1:
       location: Nuremberg 1 DC 3
       country: DE

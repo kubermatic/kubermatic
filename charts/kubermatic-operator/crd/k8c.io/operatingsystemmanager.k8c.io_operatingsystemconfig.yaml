@@ -73,6 +73,7 @@ spec:
                         - hetzner
                         - kubevirt
                         - linode
+                        - nutanix
                         - openstack
                         - equinixmetal
                         - vsphere
@@ -82,6 +83,7 @@ spec:
                         - scaleway
                         - baremetal
                         - external
+                        - vmware-cloud-director
                     spec:
                       description: Spec represents the os/image reference in the supported cloud provider
                       type: object
@@ -138,6 +140,16 @@ spec:
                       type: array
                       items:
                         type: string
+                    yum_repo_dir:
+                      description: 'YumRepoDir the repo parts directory where individual yum repo config files will be written. Default: /etc/yum.repos.d'
+                      type: string
+                    yum_repos:
+                      description: YumRepos adds yum repository configuration to the system.
+                      type: object
+                      additionalProperties:
+                        type: object
+                        additionalProperties:
+                          type: string
                 osName:
                   description: 'OSType represent the operating system name e.g: ubuntu'
                   type: string
@@ -148,6 +160,7 @@ spec:
                     - ubuntu
                     - sles
                     - amzn2
+                    - rockylinux
                 osVersion:
                   description: OSVersion the version of the operating system
                   type: string

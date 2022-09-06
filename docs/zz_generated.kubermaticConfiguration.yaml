@@ -427,6 +427,16 @@ spec:
     # NodePortRange is the port range for customer clusters - this must match the NodePort
     # range of the seed cluster.
     nodePortRange: 30000-32767
+    # OperatingSystemManager configures the image repo and the tag version for osm deployment.
+    operatingSystemManager:
+      # ImageRepository is used to override the OperatingSystemManager image repository.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageRepository: ""
+      # ImageTag is used to override the OperatingSystemManager image.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageTag: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
@@ -434,24 +444,17 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.21.8
+    default: v1.21.12
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
-        condition: always
+        condition: nonAMD64WithCanalAndIPVS
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: CREATE
-        # Provider to which to apply the compatibility check
-        provider: vsphere
-        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
-        version: 1.23.*
-      - condition: externalCloudProvider
         operation: UPGRADE
-        provider: vsphere
-        version: 1.23.*
-      - condition: externalCloudProvider
-        operation: SUPPORT
-        provider: vsphere
+        # Provider to which to apply the compatibility check.
+        # Empty string matches all providers
+        provider: ""
+        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
         version: 1.23.*
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
@@ -494,12 +497,19 @@ spec:
       - automatic: true
         from: '>= 1.22.0, < 1.22.5'
         to: 1.22.5
+      - from: 1.22.*
+        to: 1.23.*
+      - from: 1.23.*
+        to: 1.23.*
     # Versions lists the available versions.
     versions:
       - v1.20.13
       - v1.20.14
       - v1.21.8
+      - v1.21.12
       - v1.22.5
+      - v1.22.9
+      - v1.23.6
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

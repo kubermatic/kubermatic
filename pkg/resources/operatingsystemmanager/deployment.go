@@ -18,6 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -51,7 +52,7 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.4.1"
+	Tag  = "v0.4.5"
 )
 
 type operatingSystemManagerData interface {
@@ -62,6 +63,8 @@ type operatingSystemManagerData interface {
 	NodeLocalDNSCacheEnabled() bool
 	DC() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
+	OperatingSystemManagerImageTag() string
+	OperatingSystemManagerImageRepository() string
 }
 
 // DeploymentCreator returns the function to create and update the operating system manager deployment.
@@ -130,8 +133,6 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
-
 			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
 				return nil, err
@@ -151,10 +152,18 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
+			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
+			if r := data.OperatingSystemManagerImageRepository(); r != "" {
+				repository = r
+			}
+			tag := Tag
+			if t := data.OperatingSystemManagerImageTag(); t != "" {
+				tag = t
+			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   repository + ":" + Tag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
 					Env:     envVars,
@@ -233,6 +242,13 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 	}
 
 	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
+		}
+		if nodeSettings.ContainerdRegistryMirrors != nil {
+			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
+		}
+
 		if !nodeSettings.HTTPProxy.Empty() {
 			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 		}
@@ -240,16 +256,8 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
 		}
 		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
 		}
-	}
-
-	if cs.podCidr != "" {
-		flags = append(flags, "-pod-cidr", cs.podCidr)
-	}
-
-	if cs.nodePortRange != "" {
-		flags = append(flags, "-node-port-range", cs.nodePortRange)
 	}
 
 	if cs.containerRuntime != "" {
@@ -294,4 +302,17 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
 	}
 	return resources.SanitizeEnvVars(vars), nil
+}
+
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+	var flags []string
+	for registry, mirror := range crid.Registries {
+		var flag string
+		for _, endpoint := range mirror.Mirrors {
+			flag = fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint)
+			flags = append(flags, flag)
+		}
+	}
+
+	return flags
 }

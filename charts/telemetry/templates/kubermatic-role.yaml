@@ -18,26 +18,19 @@ metadata:
   name: {{ .Release.Name }}-kubermatic-agent-role
 rules:
 - apiGroups:
-  - kubermatic.k8c.io
-  resources:
-  - seeds
-  - clusters
-  - users
-  - projects
-  - usersshkeies
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
   resources:
   - secrets
   verbs:
   - get
 - apiGroups:
-  - operator.kubermatic.io
+  - kubermatic.k8c.io
   resources:
+  - clusters
   - kubermaticconfigurations
+  - projects
+  - seeds
+  - users
+  - usersshkeys
   verbs:
   - list

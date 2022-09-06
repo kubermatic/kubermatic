@@ -71,6 +71,16 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				},
 			},
 			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs: []string{
+					"create",
+					"update",
+					"list",
+					"get",
+				},
+			},
+			{
 				APIGroups: []string{"coordination.k8s.io"},
 				Resources: []string{"leases"},
 				Verbs:     []string{"*"},

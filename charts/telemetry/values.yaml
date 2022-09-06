@@ -16,27 +16,24 @@ telemetry:
   schedule: "0 0 * * *"
 
   # uuid is the unique identifier of the client where the agent is running.
-  # This field is required and will print an error message when that entry is missing.
-  # You can generate uuid using command uuidgen on your linux machine
+  # You can generate uuid using command uuidgen on your linux machine.
+  # This field is optional.
   uuid: ""
 
   kubermaticAgent:
     image:
-      repository: quay.io/kubermatic/telemetry-kubermatic-agent
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.0"
 
   kubernetesAgent:
     image:
-      repository: quay.io/kubermatic/telemetry-kubernetes-agent
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.0"
 
   reporter:
     image:
-      repository: quay.io/kubermatic/telemetry-reporter
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.0"
 
   resources:
     limits:

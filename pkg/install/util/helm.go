@@ -71,7 +71,19 @@ func CheckHelmRelease(ctx context.Context, log logrus.FieldLogger, helmClient he
 	return release, nil
 }
 
-func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient helm.Client, chart *helm.Chart, namespace string, releaseName string, values *yamled.Document, atomic bool, force bool, release *helm.Release) error {
+func DeployHelmChart(
+	ctx context.Context,
+	log logrus.FieldLogger,
+	helmClient helm.Client,
+	chart *helm.Chart,
+	namespace string,
+	releaseName string,
+	values *yamled.Document,
+	atomic bool,
+	force bool,
+	skipDeps bool,
+	release *helm.Release,
+) error {
 	switch {
 	case release == nil:
 		log.Debug("Installing…")
@@ -114,8 +126,10 @@ func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient hel
 		flags = append(flags, "--atomic")
 	}
 
-	if err := helmClient.BuildChartDependencies(chart.Directory, flags); err != nil {
-		return fmt.Errorf("failed to download dependencies: %w", err)
+	if !skipDeps {
+		if err := helmClient.BuildChartDependencies(chart.Directory, flags); err != nil {
+			return fmt.Errorf("failed to download dependencies: %w", err)
+		}
 	}
 
 	if err := helmClient.InstallChart(namespace, releaseName, chart.Directory, helmValues, nil, flags); err != nil {

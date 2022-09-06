@@ -199,15 +199,19 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.21.8"),
+		Default: semver.NewSemverOrDie("v1.21.12"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.20
 			newSemver("v1.20.13"),
 			newSemver("v1.20.14"),
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
+			newSemver("v1.21.12"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
+			newSemver("v1.22.9"),
+			// Kubernetes 1.23
+			newSemver("v1.23.6"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
@@ -282,25 +286,26 @@ var (
 				To:        "1.22.5",
 				Automatic: pointer.BoolPtr(true),
 			},
+			{
+				// Allow to next minor release
+				From: "1.22.*",
+				To:   "1.23.*",
+			},
+
+			// ======= 1.23 =======
+			{
+				// Allow to change to any patch version
+				From: "1.23.*",
+				To:   "1.23.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
+				// Applies to all providers.
+				Provider:  "",
 				Version:   "1.23.*",
-				Condition: kubermaticv1.AlwaysCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
 				Operation: kubermaticv1.UpdateOperation,
-			},
-			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.SupportOperation,
 			},
 		},
 	}
@@ -550,9 +555,9 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 		return seedCopy, err
 	}
 
-	if len(seedCopy.Spec.NodeportProxy.Annotations) == 0 {
-		seedCopy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
-		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
+	if len(seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations) == 0 {
+		seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.envoy.loadBalancerService.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
 	}
 
 	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;

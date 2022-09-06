@@ -33,6 +33,9 @@ const (
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
+	// NonAMD64WithCanalAndIPVSClusterCondition is an incompatibility condition that represents the usage of non-amd64 nodes in the cluster
+	// running Canal and kube-proxy in the IPVS mode.
+	NonAMD64WithCanalAndIPVSClusterCondition ConditionType = "nonAMD64WithCanalAndIPVS"
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
@@ -202,6 +205,8 @@ type KubermaticUserClusterConfiguration struct {
 	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 	// MachineController configures the Machine Controller
 	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
+	// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -230,6 +235,18 @@ type MachineControllerConfiguration struct {
 	ImageRepository string `json:"imageRepository,omitempty"`
 	// ImageTag is used to override the Machine Controller image.
 	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+type OperatingSystemManager struct {
+	// ImageRepository is used to override the OperatingSystemManager image repository.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag is used to override the OperatingSystemManager image.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
 }
 
@@ -342,7 +359,8 @@ type Update struct {
 
 // Incompatibility represents a version incompatibility for a user cluster.
 type Incompatibility struct {
-	// Provider to which to apply the compatibility check
+	// Provider to which to apply the compatibility check.
+	// Empty string matches all providers
 	Provider ProviderType `json:"provider,omitempty"`
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
 	Version string `json:"version,omitempty"`

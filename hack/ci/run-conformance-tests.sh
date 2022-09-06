@@ -44,7 +44,7 @@ elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}"
 elif [[ $provider == "gcp" ]]; then
-  EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+  EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")"
 elif [[ $provider == "azure" ]]; then
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
@@ -62,7 +62,7 @@ elif [[ $provider == "openstack" ]]; then
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
-    -vsphere-datastore=HS-FreeNAS"
+    -vsphere-datastore=alpha1"
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"

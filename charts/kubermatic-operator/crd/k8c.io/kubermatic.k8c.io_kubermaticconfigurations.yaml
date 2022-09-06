@@ -501,6 +501,25 @@ spec:
                     description: NodePortRange is the port range for customer clusters
                       - this must match the NodePort range of the seed cluster.
                     type: string
+                  operatingSystemManager:
+                    description: OperatingSystemManager configures the image repo
+                      and the tag version for osm deployment.
+                    properties:
+                      imageRepository:
+                        description: ImageRepository is used to override the OperatingSystemManager
+                          image repository. It is recommended to use this field only
+                          for development, tests and PoC purposes. For production
+                          environments. it is not recommended, to use this field due
+                          to compatibility with the overall KKP stack.
+                        type: string
+                      imageTag:
+                        description: ImageTag is used to override the OperatingSystemManager
+                          image. It is recommended to use this field only for development,
+                          tests and PoC purposes. For production environments. it
+                          is not recommended, to use this field due to compatibility
+                          with the overall KKP stack.
+                        type: string
+                    type: object
                   overwriteRegistry:
                     description: OverwriteRegistry specifies a custom Docker registry
                       which will be used for all images used for user clusters (user
@@ -539,7 +558,7 @@ spec:
                           type: string
                         provider:
                           description: Provider to which to apply the compatibility
-                            check
+                            check. Empty string matches all providers
                           enum:
                           - digitalocean
                           - hetzner

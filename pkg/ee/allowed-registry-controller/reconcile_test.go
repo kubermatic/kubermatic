@@ -203,6 +203,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 					Kind: allowedregistrycontroller.AllowedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1beta1.Validation{
+					LegacySchema: true,
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							allowedregistrycontroller.AllowedRegistryField: {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package csi
+package csisnapshotter
 
 import (
 	"crypto/x509"
@@ -28,8 +28,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI.
-func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
+// Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/admission-configuration-template
+func ValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
@@ -48,7 +49,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace, 
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
-							Name:      resources.NutanixCSIWebhookName,
+							Name:      resources.CSISnapshotValidationWebhookName,
 							Path:      pointer.String("/volumesnapshot"),
 							Port:      pointer.Int32Ptr(443),
 						},

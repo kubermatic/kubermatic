@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -70,7 +71,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					Kubevirt: &apimodels.KubevirtCloudSpec{
-						Kubeconfig: secrets.Kubevirt.Kubeconfig,
+						Kubeconfig: base64.StdEncoding.EncodeToString([]byte(secrets.Kubevirt.Kubeconfig)),
 					},
 					DatacenterName: "kubevirt-europe-west3-c",
 				},
@@ -82,7 +83,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 
 func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
-	registryAddr := "http://http-server.kube-system.svc.cluster.local"
+	registryAddr := "http://image-repo.kube-system.svc.cluster.local/images"
 
 	switch {
 	case s.nodeOsSpec.Ubuntu != nil:
@@ -100,10 +101,10 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Kubevirt: &apimodels.KubevirtNodeSpec{
-							Memory:           utilpointer.StringPtr("2Gi"),
+							Memory:           utilpointer.StringPtr("4Gi"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
-							StorageClassName: utilpointer.StringPtr("local-path"),
+							StorageClassName: utilpointer.StringPtr("longhorn"),
 							PVCSize:          utilpointer.StringPtr("25Gi"),
 							CPUs:             utilpointer.StringPtr("2"),
 						},

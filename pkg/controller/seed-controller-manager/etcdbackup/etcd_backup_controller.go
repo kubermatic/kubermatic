@@ -43,6 +43,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -418,7 +419,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
 		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
 		backupToSchedule.ScheduledTime = metav1.NewTime(r.clock.Now())
-		backupToSchedule.BackupName = backupConfig.Name
+		backupToSchedule.BackupName = fmt.Sprintf("%s.db", backupConfig.Name)
 		requeueAfter = 0
 	} else {
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
@@ -451,7 +452,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
 		backupToSchedule.ScheduledTime = metav1.NewTime(pendingBackupTime)
-		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
+		backupToSchedule.BackupName = fmt.Sprintf("%s-%s.db", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
 		requeueAfter = nextBackupTime.Sub(now)
 	}
 
@@ -481,28 +482,44 @@ func (r *Reconciler) limitNameLength(name string) string {
 	return name[0:63-len(randomness)] + randomness
 }
 
-// set a condition on a backupConfig, return true if the condition's status was changed.
+// setBackupConfigCondition sets a condition on a backupConfig, return true if the condition's
+// status was changed. If the status has not changed, no other changes are made (i.e. the
+// LastHeartbeatTime is not incremented if it would be the only change, to prevent us spamming
+// the apiserver with tons of needless updates). This is the same behaviour that is used for
+// ClusterConditions.
 func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBackupConfig, conditionType kubermaticv1.EtcdBackupConfigConditionType, status corev1.ConditionStatus, reason, message string) bool {
-	now := metav1.Now()
-	statusChanged := false
-
-	condition, exists := backupConfig.Status.Conditions[conditionType]
-	if exists && condition.Status != status {
-		condition.LastTransitionTime = now
-		statusChanged = true
+	newCondition := kubermaticv1.EtcdBackupConfigCondition{
+		Status:  status,
+		Reason:  reason,
+		Message: message,
 	}
 
-	condition.Status = status
-	condition.LastHeartbeatTime = now
-	condition.Reason = reason
-	condition.Message = message
+	oldCondition, hadCondition := backupConfig.Status.Conditions[conditionType]
+	if hadCondition {
+		conditionCopy := oldCondition.DeepCopy()
+
+		// Reset the times before comparing
+		conditionCopy.LastHeartbeatTime.Reset()
+		conditionCopy.LastTransitionTime.Reset()
+
+		if apiequality.Semantic.DeepEqual(*conditionCopy, newCondition) {
+			return false
+		}
+	}
+
+	now := metav1.Now()
+	newCondition.LastHeartbeatTime = now
+	newCondition.LastTransitionTime = oldCondition.LastTransitionTime
+	if hadCondition && oldCondition.Status != status {
+		newCondition.LastTransitionTime = now
+	}
 
 	if backupConfig.Status.Conditions == nil {
 		backupConfig.Status.Conditions = map[kubermaticv1.EtcdBackupConfigConditionType]kubermaticv1.EtcdBackupConfigCondition{}
 	}
-	backupConfig.Status.Conditions[conditionType] = condition
+	backupConfig.Status.Conditions[conditionType] = newCondition
 
-	return !exists || statusChanged
+	return true
 }
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived
