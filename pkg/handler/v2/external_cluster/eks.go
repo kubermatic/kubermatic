@@ -26,7 +26,6 @@ import (
 
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/go-kit/kit/endpoint"
-	"k8s.io/utils/pointer"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -41,6 +40,8 @@ import (
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
