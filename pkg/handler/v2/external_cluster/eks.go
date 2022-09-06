@@ -24,7 +24,6 @@ import (
 	"reflect"
 	"strings"
 
-	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/go-kit/kit/endpoint"
 	"k8s.io/utils/pointer"
@@ -874,7 +873,7 @@ func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 
 func EKSAMITypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var ami ec2types.AMIType = EKSAMITypes
+		var ami ekstypes.AMITypes = EKSAMITypes
 		var amiTypes apiv2.EKSAMITypeList
 
 		for _, amiType := range ami.Values() {
@@ -890,7 +889,7 @@ func EKSAMITypesEndpoint() endpoint.Endpoint {
 
 func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var capacityType ec2types.CapacityType = EKSCapacityTypes
+		var capacityType ekstypes.CapacityTypes = EKSCapacityTypes
 		var capacityTypes apiv2.EKSCapacityTypeList
 
 		for _, c := range capacityType.Values() {

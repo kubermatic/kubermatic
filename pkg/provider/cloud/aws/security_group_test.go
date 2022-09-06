@@ -20,6 +20,7 @@ package aws
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -87,7 +88,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 
 	stringPermissions := sets.NewString()
 	for _, perm := range permissions {
-		stringPermissions.Insert(perm.String())
+		stringPermissions.Insert(fmt.Sprintf("%v-%s-%d-%d", perm.IpRanges, *perm.IpProtocol, *perm.FromPort, *perm.ToPort))
 	}
 
 	for _, perm := range group.IpPermissions {
@@ -96,7 +97,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 			perm.UserIdGroupPairs[i].UserId = nil
 		}
 
-		stringPermissions.Delete(perm.String())
+		stringPermissions.Delete(fmt.Sprintf("%v-%s-%d-%d", perm.IpRanges, *perm.IpProtocol, *perm.FromPort, *perm.ToPort))
 	}
 
 	if stringPermissions.Len() > 0 {
