@@ -343,7 +343,7 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 	optionalSettings := agentPoolProfiles.OptionalSettings
 	clusterToCreate := armcontainerservice.ManagedCluster{
 		Name:     pointer.String(aksCloudSpec.Name),
-		Location: pointer.String(clusterSpec.Location),
+		Location: pointer.String(aksCloudSpec.Location),
 		Properties: &armcontainerservice.ManagedClusterProperties{
 			DNSPrefix:         pointer.String(aksCloudSpec.Name),
 			KubernetesVersion: pointer.String(clusterSpec.KubernetesVersion),
@@ -419,9 +419,6 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 }
 
 func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
-	if len(aksclusterSpec.Location) == 0 {
-		return utilerrors.NewBadRequest("required field is missing: Location")
-	}
 	agentPoolProfiles := aksclusterSpec.MachineDeploymentSpec
 	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
 		return utilerrors.NewBadRequest("Must define at least one system pool!")
@@ -455,6 +452,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,
+			Location:      cloud.AKS.Location,
 		},
 	}
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
@@ -952,7 +950,6 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		return apiCluster, nil
 	}
 	clusterSpec := &apiv2.AKSClusterSpec{
-		Location:          to.String(aksCluster.Location),
 		Tags:              aksCluster.Tags,
 		DNSPrefix:         to.String(aksClusterProperties.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),

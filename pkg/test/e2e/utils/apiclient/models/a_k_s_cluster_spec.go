@@ -41,9 +41,6 @@ type AKSClusterSpec struct {
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
-	// Location - Resource location
-	Location string `json:"location,omitempty"`
-
 	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
 	PrivateFQDN string `json:"privateFQDN,omitempty"`
 
