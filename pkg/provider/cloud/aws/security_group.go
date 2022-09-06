@@ -39,18 +39,19 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
 func getSecurityGroupByID(ctx context.Context, client *ec2.Client, vpc *ec2types.Vpc, id string) (*ec2types.SecurityGroup, error) {
-	if vpc == nil {
-		return nil, errors.New("no VPC given")
+	if vpc == nil || vpc.VpcId == nil {
+		return nil, errors.New("no valid VPC given")
 	}
 
 	dsgOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
 		GroupIds: []string{id},
-		Filters:  []ec2types.Filter{ec2VPCFilter(*vpc.VpcId)},
+		Filters:  []ec2types.Filter{ec2VPCFilter(pointer.StringDeref(vpc.VpcId, ""))},
 	})
 	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get security group: %w", err)
 	}
-	if len(dsgOut.SecurityGroups) == 0 {
+
+	if dsgOut == nil || len(dsgOut.SecurityGroups) == 0 {
 		return nil, fmt.Errorf("security group with id '%s' not found in VPC %s", id, *vpc.VpcId)
 	}
 
