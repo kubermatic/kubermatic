@@ -760,6 +760,7 @@ const (
 	UpgradingAKSMDState AKSMDState = "Upgrading"
 	UpdatingAKSMDState  AKSMDState = "Updating"
 	ScalingAKSMDState   AKSMDState = "Scaling"
+	StartingAKSMDState  AKSMDState = "Starting"
 )
 
 type EKSState string

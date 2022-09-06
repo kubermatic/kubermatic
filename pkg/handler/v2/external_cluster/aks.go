@@ -652,8 +652,7 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
 	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil && nodePool.PowerState.Code != nil) {
-		allReplicasRunning := md.NodeDeployment.Status.ReadyReplicas == md.NodeDeployment.Status.Replicas
-		state := aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code, allReplicasRunning)
+		state := aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code, md.NodeDeployment.Status.ReadyReplicas)
 		md.Phase = apiv2.ExternalClusterMDPhase{
 			State: state,
 			AKS: &apiv2.AKSMDPhase{

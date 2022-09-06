@@ -245,15 +245,17 @@ func ConvertStatus(provisioningState string, powerState armcontainerservice.Code
 	}
 }
 
-func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Code, allNodesRunning bool) apiv2.ExternalClusterMDState {
+func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Code, readyReplicas int32) apiv2.ExternalClusterMDState {
 	switch {
 	case provisioningState == string(resources.CreatingAKSMDState):
 		return apiv2.ProvisioningExternalClusterMDState
 	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
 		return apiv2.RunningExternalClusterMDState
+	case provisioningState == string(resources.StartingAKSState):
+		return apiv2.ProvisioningExternalClusterMDState
 	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.StoppedAKSMDState):
 		return apiv2.StoppedExternalClusterMDState
-	case provisioningState == string(resources.FailedAKSMDState) && !allNodesRunning:
+	case provisioningState == string(resources.FailedAKSMDState) && readyReplicas == 0:
 		return apiv2.ErrorExternalClusterMDState
 	case provisioningState == string(resources.FailedAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
 		return apiv2.WarningExternalClusterMDState

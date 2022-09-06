@@ -429,6 +429,9 @@ const (
 	// DeletingExternalClusterState state indicates the cluster is being deleted.
 	DeletingExternalClusterState ExternalClusterState = "Deleting"
 
+	// StartingExternalClusterState state indicates the cluster is starting.
+	StartingExternalClusterState ExternalClusterState = "Starting"
+
 	// UnknownExternalClusterState indicates undefined state.
 	UnknownExternalClusterState ExternalClusterState = "Unknown"
 
