@@ -652,20 +652,22 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
 	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil && nodePool.PowerState.Code != nil) {
+		allReplicasRunning := md.NodeDeployment.Status.ReadyReplicas == md.NodeDeployment.Status.Replicas
+		state := aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code, allReplicasRunning)
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			State: state,
 			AKS: &apiv2.AKSMDPhase{
 				ProvisioningState: apiv2.AKSProvisioningState(*nodePool.ProvisioningState),
 				PowerState:        apiv2.AKSPowerState(*nodePool.PowerState.Code),
 			},
 		}
-		switch {
-		case string(*nodePool.PowerState.Code) == string(resources.StoppedAKSMDState) && *nodePool.ProvisioningState == string(resources.SucceededAKSMDState):
-			md.Phase.StatusMessage = "Power state is marked as 'Stopped' by Azure."
-		case string(*nodePool.PowerState.Code) == string(resources.StoppedAKSMDState) && *nodePool.ProvisioningState == string(resources.FailedAKSMDState):
-			md.Phase.StatusMessage = "Power state is marked as 'Stopped' and provisioning state is marked as 'Failed'. Please check on Azure side for previous operations on the node pool to resolve any failures."
-		case string(*nodePool.PowerState.Code) == string(resources.RunningAKSMDState) && *nodePool.ProvisioningState == string(resources.FailedAKSMDState):
-			md.Phase.StatusMessage = "Despite the power state is 'Running', provisioning state is marked as 'Failed'. Please check on Azure side for previous operations on the node pool to resolve any failures."
+		switch state {
+		case apiv2.StoppedExternalClusterMDState:
+			md.Phase.StatusMessage = "The Kubernetes service is currently stopped. To perform any operation like scale or upgrade, start your cluster first."
+		case apiv2.WarningExternalClusterMDState:
+			md.Phase.StatusMessage = "The last attempted operation failed. The nodes may still be running. Check previous operations to resolve any failures."
+		case apiv2.ErrorExternalClusterMDState:
+			md.Phase.StatusMessage = "Check previous operations to resolve any failures."
 		}
 	}
 
