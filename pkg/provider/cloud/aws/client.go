@@ -64,6 +64,10 @@ func ValidateCredentials(ctx context.Context, accessKeyID, secretAccessKey strin
 		awsconfig.WithRetryMaxAttempts(maxRetries),
 	)
 
+	if err != nil {
+		return err
+	}
+
 	client := ec2.NewFromConfig(cfg)
 	_, err = client.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
 	return err
