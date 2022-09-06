@@ -19,11 +19,10 @@ limitations under the License.
 package vsphere
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"github.com/go-test/deep"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
@@ -64,13 +63,13 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
+			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !diff.SemanticallyEqual(test.expectedNetworkInfos, networkInfos) {
-				t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(test.expectedNetworkInfos, networkInfos))
+			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
+				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)
 			}
 		})
 	}
