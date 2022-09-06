@@ -56,7 +56,6 @@ func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, region, end
 }
 
 func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-
 	cfg, err := awsprovider.GetAWSConfig(ctx, accessKeyID, secretAccessKey, "", "", region, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %w", err)

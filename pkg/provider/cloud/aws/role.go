@@ -168,11 +168,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 			return fmt.Errorf("failed to list policies for role %q: %w", roleName, err)
 		}
 
-		policies = []string{}
-
-		for _, policyName := range listPoliciesOut.PolicyNames {
-			policies = append(policies, policyName)
-		}
+		policies = listPoliciesOut.PolicyNames
 	}
 
 	// delete policies from role
