@@ -22,7 +22,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	anexiaProvider "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
@@ -138,7 +138,7 @@ func GetAWSProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		EBSVolumeEncrypted:   providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 	}
 	if config.DiskType.Value == "" {
-		config.DiskType.Value = ec2.VolumeTypeGp2
+		config.DiskType.Value = string(ec2types.VolumeTypeGp2)
 	}
 	if config.DiskSize == 0 {
 		config.DiskSize = 25

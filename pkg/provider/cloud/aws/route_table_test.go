@@ -26,8 +26,8 @@ import (
 )
 
 func TestGetDefaultRouteTable(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -54,8 +54,8 @@ func TestGetDefaultRouteTable(t *testing.T) {
 }
 
 func TestReconcileRouteTable(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {

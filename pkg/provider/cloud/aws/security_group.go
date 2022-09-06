@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/smithy-go"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -37,14 +37,14 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
-func getSecurityGroupByID(ctx context.Context, client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
+func getSecurityGroupByID(ctx context.Context, client *ec2.Client, vpc *ec2types.Vpc, id string) (*ec2types.SecurityGroup, error) {
 	if vpc == nil {
 		return nil, errors.New("no VPC given")
 	}
 
-	dsgOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice([]string{id}),
-		Filters:  []*ec2.Filter{ec2VPCFilter(*vpc.VpcId)},
+	dsgOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+		GroupIds: []string{id},
+		Filters:  []ec2types.Filter{ec2VPCFilter(*vpc.VpcId)},
 	})
 	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get security group: %w", err)
@@ -53,18 +53,18 @@ func getSecurityGroupByID(ctx context.Context, client ec2iface.EC2API, vpc *ec2.
 		return nil, fmt.Errorf("security group with id '%s' not found in VPC %s", id, *vpc.VpcId)
 	}
 
-	return dsgOut.SecurityGroups[0], nil
+	return &dsgOut.SecurityGroups[0], nil
 }
 
-func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	groupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
 	// if we already have an ID on the cluster, check if that group still exists
 	if groupID != "" {
-		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
-			GroupIds: aws.StringSlice([]string{groupID}),
-			Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
+		describeOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+			GroupIds: []string{groupID},
+			Filters:  []ec2types.Filter{ec2VPCFilter(vpcID)},
 		})
 		if err != nil && !isNotFound(err) {
 			return cluster, fmt.Errorf("failed to get security groups: %w", err)
@@ -82,12 +82,12 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 	groupName := securityGroupName(cluster)
 
 	if groupID == "" {
-		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
-			Filters: []*ec2.Filter{
+		describeOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+			Filters: []ec2types.Filter{
 				ec2VPCFilter(vpcID),
 				{
-					Name:   aws.String("group-name"),
-					Values: aws.StringSlice([]string{groupName}),
+					Name:   pointer.String("group-name"),
+					Values: []string{groupName},
 				},
 			},
 		})
@@ -97,19 +97,19 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 
 		// found the group by its name!
 		if len(describeOut.SecurityGroups) >= 1 {
-			groupID = aws.StringValue(describeOut.SecurityGroups[0].GroupId)
+			groupID = pointer.StringDeref(describeOut.SecurityGroups[0].GroupId, "")
 		}
 	}
 
 	// if we still have no ID, we must create a new group
 	if groupID == "" {
-		out, err := client.CreateSecurityGroupWithContext(ctx, &ec2.CreateSecurityGroupInput{
+		out, err := client.CreateSecurityGroup(ctx, &ec2.CreateSecurityGroupInput{
 			VpcId:       &vpcID,
-			GroupName:   aws.String(groupName),
-			Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
-			TagSpecifications: []*ec2.TagSpecification{{
-				ResourceType: aws.String("security-group"),
-				Tags: []*ec2.Tag{
+			GroupName:   pointer.String(groupName),
+			Description: pointer.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
+			TagSpecifications: []ec2types.TagSpecification{{
+				ResourceType: ec2types.ResourceTypeSecurityGroup,
+				Tags: []ec2types.Tag{
 					ec2OwnershipTag(cluster.Name),
 				},
 			}},
@@ -135,15 +135,15 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 	// (e.g., one permission already exists) none of them would be created
 	for _, perm := range permissions {
 		// try to add permission
-		_, err := client.AuthorizeSecurityGroupIngressWithContext(ctx, &ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId: aws.String(groupID),
-			IpPermissions: []*ec2.IpPermission{
+		_, err := client.AuthorizeSecurityGroupIngress(ctx, &ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId: pointer.String(groupID),
+			IpPermissions: []ec2types.IpPermission{
 				perm,
 			},
 		})
 		if err != nil {
-			var awsErr awserr.Error
-			if !errors.As(err, &awsErr) || awsErr.Code() != "InvalidPermission.Duplicate" {
+			var awsErr smithy.APIError
+			if !errors.As(err, &awsErr) || awsErr.ErrorCode() != "InvalidPermission.Duplicate" {
 				return cluster, fmt.Errorf("failed to authorize security group %s with id %s: %w", groupName, groupID, err)
 			}
 		}
@@ -162,55 +162,55 @@ func getNodePortRange(cluster *kubermaticv1.Cluster) (int, int) {
 		NodePorts()
 }
 
-func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, ipv6Permissions bool) []*ec2.IpPermission {
-	permissions := []*ec2.IpPermission{
+func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, ipv6Permissions bool) []ec2types.IpPermission {
+	permissions := []ec2types.IpPermission{
 		// all protocols from within the sg
 		{
-			IpProtocol: aws.String("-1"),
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{{
-				GroupId: aws.String(securityGroupID),
+			IpProtocol: pointer.String("-1"),
+			UserIdGroupPairs: []ec2types.UserIdGroupPair{{
+				GroupId: pointer.String(securityGroupID),
 			}},
 		},
 	}
 
 	// tcp:22 from everywhere
-	sshPermission := &ec2.IpPermission{
-		IpProtocol: aws.String("tcp"),
-		FromPort:   aws.Int64(provider.DefaultSSHPort),
-		ToPort:     aws.Int64(provider.DefaultSSHPort),
+	sshPermission := ec2types.IpPermission{
+		IpProtocol: pointer.String("tcp"),
+		FromPort:   pointer.Int32(provider.DefaultSSHPort),
+		ToPort:     pointer.Int32(provider.DefaultSSHPort),
 	}
 	if ipv4Permissions {
-		sshPermission.IpRanges = []*ec2.IpRange{{
-			CidrIp: aws.String(kubermaticresources.IPv4MatchAnyCIDR),
+		sshPermission.IpRanges = []ec2types.IpRange{{
+			CidrIp: pointer.String(kubermaticresources.IPv4MatchAnyCIDR),
 		}}
 	}
 	if ipv6Permissions {
-		sshPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
-			CidrIpv6: aws.String(kubermaticresources.IPv6MatchAnyCIDR),
+		sshPermission.Ipv6Ranges = []ec2types.Ipv6Range{{
+			CidrIpv6: pointer.String(kubermaticresources.IPv6MatchAnyCIDR),
 		}}
 	}
 	permissions = append(permissions, sshPermission)
 
 	// ICMP (v4) from/to everywhere
 	if ipv4Permissions {
-		permissions = append(permissions, &ec2.IpPermission{
-			IpProtocol: aws.String("icmp"),
-			FromPort:   aws.Int64(-1), // any port
-			ToPort:     aws.Int64(-1), // any port
-			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String(kubermaticresources.IPv4MatchAnyCIDR),
+		permissions = append(permissions, ec2types.IpPermission{
+			IpProtocol: pointer.String("icmp"),
+			FromPort:   pointer.Int32(-1), // any port
+			ToPort:     pointer.Int32(-1), // any port
+			IpRanges: []ec2types.IpRange{{
+				CidrIp: pointer.String(kubermaticresources.IPv4MatchAnyCIDR),
 			}},
 		})
 	}
 
 	// ICMPv6 from/to everywhere
 	if ipv6Permissions {
-		permissions = append(permissions, &ec2.IpPermission{
-			IpProtocol: aws.String("icmpv6"),
-			FromPort:   aws.Int64(-1), // any port
-			ToPort:     aws.Int64(-1), // any port
-			Ipv6Ranges: []*ec2.Ipv6Range{{
-				CidrIpv6: aws.String(kubermaticresources.IPv6MatchAnyCIDR),
+		permissions = append(permissions, ec2types.IpPermission{
+			IpProtocol: pointer.String("icmpv6"),
+			FromPort:   pointer.Int32(-1), // any port
+			ToPort:     pointer.Int32(-1), // any port
+			Ipv6Ranges: []ec2types.Ipv6Range{{
+				CidrIpv6: pointer.String(kubermaticresources.IPv6MatchAnyCIDR),
 			}},
 		})
 	}
@@ -218,39 +218,40 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	return permissions
 }
 
-func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRanges, ipv6IPRanges []string) []*ec2.IpPermission {
-	tcpNodePortPermission := &ec2.IpPermission{
-		IpProtocol: aws.String("tcp"),
-		FromPort:   aws.Int64(int64(lowPort)),
-		ToPort:     aws.Int64(int64(highPort)),
+func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRanges, ipv6IPRanges []string) []ec2types.IpPermission {
+	tcpNodePortPermission := ec2types.IpPermission{
+		IpProtocol: pointer.String("tcp"),
+		FromPort:   pointer.Int32(int32(lowPort)),
+		ToPort:     pointer.Int32(int32(highPort)),
 	}
-	udpNodePortPermission := &ec2.IpPermission{
-		IpProtocol: aws.String("udp"),
-		FromPort:   aws.Int64(int64(lowPort)),
-		ToPort:     aws.Int64(int64(highPort)),
+
+	udpNodePortPermission := ec2types.IpPermission{
+		IpProtocol: pointer.String("udp"),
+		FromPort:   pointer.Int32(int32(lowPort)),
+		ToPort:     pointer.Int32(int32(highPort)),
 	}
 
 	for _, cidr := range ipv4IPRanges {
-		tcpNodePortPermission.IpRanges = append(tcpNodePortPermission.IpRanges, &ec2.IpRange{
-			CidrIp: aws.String(cidr),
+		tcpNodePortPermission.IpRanges = append(tcpNodePortPermission.IpRanges, ec2types.IpRange{
+			CidrIp: pointer.String(cidr),
 		})
-		udpNodePortPermission.IpRanges = append(udpNodePortPermission.IpRanges, &ec2.IpRange{
-			CidrIp: aws.String(cidr),
+		udpNodePortPermission.IpRanges = append(udpNodePortPermission.IpRanges, ec2types.IpRange{
+			CidrIp: pointer.String(cidr),
 		})
 	}
 	for _, cidr := range ipv6IPRanges {
-		tcpNodePortPermission.Ipv6Ranges = append(tcpNodePortPermission.Ipv6Ranges, &ec2.Ipv6Range{
-			CidrIpv6: aws.String(cidr),
+		tcpNodePortPermission.Ipv6Ranges = append(tcpNodePortPermission.Ipv6Ranges, ec2types.Ipv6Range{
+			CidrIpv6: pointer.String(cidr),
 		})
-		udpNodePortPermission.Ipv6Ranges = append(udpNodePortPermission.Ipv6Ranges, &ec2.Ipv6Range{
-			CidrIpv6: aws.String(cidr),
+		udpNodePortPermission.Ipv6Ranges = append(udpNodePortPermission.Ipv6Ranges, ec2types.Ipv6Range{
+			CidrIpv6: pointer.String(cidr),
 		})
 	}
 
-	return []*ec2.IpPermission{tcpNodePortPermission, udpNodePortPermission}
+	return []ec2types.IpPermission{tcpNodePortPermission, udpNodePortPermission}
 }
 
-func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
+func cleanUpSecurityGroup(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster) error {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	groupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
@@ -259,12 +260,12 @@ func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *
 	if groupID == "" {
 		groupName := securityGroupName(cluster)
 
-		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
-			Filters: []*ec2.Filter{
+		describeOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+			Filters: []ec2types.Filter{
 				ec2VPCFilter(vpcID),
 				{
-					Name:   aws.String("group-name"),
-					Values: aws.StringSlice([]string{groupName}),
+					Name:   pointer.String("group-name"),
+					Values: []string{groupName},
 				},
 			},
 		})
@@ -284,9 +285,9 @@ func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *
 	}
 
 	// check if we own the security group
-	describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice([]string{groupID}),
-		Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
+	describeOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+		GroupIds: []string{groupID},
+		Filters:  []ec2types.Filter{ec2VPCFilter(vpcID)},
 	})
 	if err != nil && !isNotFound(err) {
 		return fmt.Errorf("failed to get security groups: %w", err)
@@ -303,7 +304,7 @@ func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *
 	}
 
 	// time to delete the group
-	_, err = client.DeleteSecurityGroupWithContext(ctx, &ec2.DeleteSecurityGroupInput{GroupId: &groupID})
+	_, err = client.DeleteSecurityGroup(ctx, &ec2.DeleteSecurityGroupInput{GroupId: &groupID})
 
 	return err
 }

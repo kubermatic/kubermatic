@@ -22,13 +22,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func assertTagExistence(t *testing.T, ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, vpc *ec2.Vpc, expected bool) {
+func assertTagExistence(t *testing.T, ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, vpc *ec2types.Vpc, expected bool) {
 	rt, err := getDefaultRouteTable(ctx, client, *vpc.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
@@ -57,8 +57,8 @@ func assertTagExistence(t *testing.T, ctx context.Context, client ec2iface.EC2AP
 		}
 	}
 
-	subnets, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
+	subnets, err := client.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{
+		Filters: []ec2types.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
 	})
 	if err != nil {
 		t.Fatalf("DescribeSubnets should not have errored, but returned %v", err)
@@ -76,8 +76,8 @@ func assertTagExistence(t *testing.T, ctx context.Context, client ec2iface.EC2AP
 }
 
 func TestReconcileClusterTags(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -125,8 +125,8 @@ func TestReconcileClusterTags(t *testing.T) {
 }
 
 func TestCleanUpTags(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {

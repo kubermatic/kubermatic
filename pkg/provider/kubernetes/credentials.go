@@ -156,7 +156,7 @@ func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	}
 
 	if validate != nil {
-		if err := awsprovider.ValidateCredentials(spec.AccessKeyID, spec.SecretAccessKey); err != nil {
+		if err := awsprovider.ValidateCredentials(ctx, spec.AccessKeyID, spec.SecretAccessKey); err != nil {
 			return false, fmt.Errorf("invalid AWS credentials: %w", err)
 		}
 	}
@@ -742,7 +742,7 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 		return utilerrors.NewBadRequest("kubeone aws credentials missing")
 	}
 
-	if err := awsprovider.ValidateCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey); err != nil {
+	if err := awsprovider.ValidateCredentials(ctx, cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey); err != nil {
 		return fmt.Errorf("invalid AWS credentials: %w", err)
 	}
 
