@@ -79,10 +79,10 @@ func (s *vSphereScenario) Name() string {
 
 func (s *vSphereScenario) getTemplate() string {
 	if s.nodeOsSpec.Centos != nil {
-		return "centos-7"
+		return "kkp-centos-7"
 	}
 
-	return "ubuntu-20.04"
+	return "kkp-ubuntu-20.04"
 }
 
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
@@ -104,7 +104,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 
 	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/Hamburg/vm/Kubermatic-dev/custom_folder_test"
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/Hamburg/vm/Kubermatic-ci/custom_folder_test"
 	}
 
 	if s.datastoreCluster {
