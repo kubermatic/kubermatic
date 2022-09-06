@@ -56,7 +56,13 @@ func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, region, end
 }
 
 func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-	cs, err := getClientSet(ctx, accessKeyID, secretAccessKey, region, "")
+
+	cfg, err := awsprovider.GetAWSConfig(ctx, accessKeyID, secretAccessKey, "", "", region, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API session: %w", err)
+	}
+
+	cs := awsprovider.ClientSet{EKS: eks.NewFromConfig(cfg)}
 
 	clusterInput := &eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
@@ -84,9 +90,9 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 
 	opts := &authenticator.GetTokenOptions{
 		ClusterID: *eksclusterName,
-		Session:   sess,
+		Config:    &cfg,
 	}
-	token, err := gen.GetWithOptions(opts)
+	token, err := gen.GetWithOptions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/go-kit/kit/endpoint"
