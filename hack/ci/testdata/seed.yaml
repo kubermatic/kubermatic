@@ -104,11 +104,11 @@ spec:
           ipv6Enabled: true
           rootPath: /Hamburg/vm/Kubermatic-ci
           templates:
-            centos: centos-7
-            flatcar: flatcar-3033.2.2
-            rhel: rhel-8.6
-            ubuntu: ubuntu-20.04
-            rockylinux: rockylinux-8
+            centos: kkp-centos-7
+            flatcar: kkp-flatcar-3033.2.2
+            rhel: kkp-rhel-8.6
+            ubuntu: kkp-ubuntu-20.04
+            rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
       country: NL
