@@ -86,7 +86,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// get custom scraping configs and rules
 			customData := &CustomizationData{
 				Cluster:                  cluster,
-				APIServerHost:            cluster.GetAddress().InternalName,
+				APIServerHost:            cluster.Status.Address.InternalName,
 				EtcdTLS:                  etcdTLS,
 				ApiserverTLS:             apiserverTLS,
 				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
@@ -392,7 +392,7 @@ scrape_configs:
   scheme: https
   tls_config:
 {{ .ApiserverTLSConfig | indent 4 }}
-  
+
   kubernetes_sd_configs:
   - role: node
     api_server: 'https://{{ .APIServerHost }}'

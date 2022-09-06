@@ -54,7 +54,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %w", err)
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 			altNames := certutil.AltNames{
 				DNSNames: []string{
 					// ExternalName

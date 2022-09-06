@@ -1019,7 +1019,7 @@ func GetAllowedTLSCipherSuites() []string {
 
 // GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
-	address := cluster.GetAddress()
+	address := cluster.Status.Address
 
 	ip := net.ParseIP(address.IP)
 	if ip == nil {

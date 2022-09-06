@@ -38,7 +38,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 			}
 
 			encodedCACert := triple.EncodeCertPEM(ca.Cert)
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 
 			oldConfData, exists := se.Data[resources.KonnectivityServerConf]
 

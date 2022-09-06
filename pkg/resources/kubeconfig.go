@@ -51,7 +51,7 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSe
 				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 			config := GetBaseKubeconfig(ca.Cert, address.URL, data.Cluster().Name)
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 				KubeconfigDefaultContextKey: {
@@ -84,7 +84,7 @@ func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorG
 				return nil, fmt.Errorf("failed to get cluster ca: %w", err)
 			}
 
-			config := GetBaseKubeconfig(ca.Cert, data.Cluster().GetAddress().URL, data.Cluster().Name)
+			config := GetBaseKubeconfig(ca.Cert, data.Cluster().Status.Address.URL, data.Cluster().Name)
 			token, err := data.GetViewerToken()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get token: %w", err)
@@ -126,7 +126,7 @@ func GetInternalKubeconfigCreator(namespace, name, commonName string, organizati
 			}
 
 			b := se.Data[KubeconfigSecretKey]
-			apiserverURL := fmt.Sprintf("https://%s", data.Cluster().GetAddress().InternalName)
+			apiserverURL := fmt.Sprintf("https://%s", data.Cluster().Status.Address.InternalName)
 			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				objLogger := log.With("namespace", namespace, "name", name)
