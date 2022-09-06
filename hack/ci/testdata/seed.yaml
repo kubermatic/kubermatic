@@ -71,7 +71,6 @@ spec:
           datacenter: Hamburg
           datastore: alpha1
           endpoint: https://vcenter.dc.k8c.io
-          ipv6Enabled: true
           rootPath: /Hamburg/vm/Kubermatic-ci
           templates:
             centos: kkp-centos-7
