@@ -19,9 +19,11 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
@@ -33,10 +35,28 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: "/dc-1/network/VM Network",
+					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
 					RelativePath: "VM Network",
 					Type:         "Network",
 					Name:         "VM Network",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/Management", vSphereDatacenter),
+					RelativePath: "Management",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Management",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
+					RelativePath: "DSwitchAlpha-DVUplinks-2001",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "DSwitchAlpha-DVUplinks-2001",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
+					RelativePath: "Default Network",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Default Network",
 				},
 			},
 		},
@@ -44,13 +64,13 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, nil)
+			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
-				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)
+			if !diff.SemanticallyEqual(test.expectedNetworkInfos, networkInfos) {
+				t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(test.expectedNetworkInfos, networkInfos))
 			}
 		})
 	}
