@@ -707,12 +707,11 @@ type AKSCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty" required:"true"`
 	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
 	ResourceGroup  string `json:"resourceGroup" required:"true"`
+	Location       string `json:"location" required:"true"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
 type AKSClusterSpec struct {
-	// Location - Resource location
-	Location string `json:"location" required:"true"`
 	// The timestamp of resource creation (UTC).
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	// The identity that created the resource.
