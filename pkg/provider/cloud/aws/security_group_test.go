@@ -20,10 +20,10 @@ package aws
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -89,13 +89,13 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	for _, perm := range permissions {
 		found := false
 
-		for _, existingPerm := range group.IpPermissions {
+		for _, expectedPerm := range group.IpPermissions {
 			// normalize data and remove data inserted by AWS
-			for i := range existingPerm.UserIdGroupPairs {
-				existingPerm.UserIdGroupPairs[i].UserId = nil
+			for i := range expectedPerm.UserIdGroupPairs {
+				expectedPerm.UserIdGroupPairs[i].UserId = nil
 			}
 
-			if reflect.DeepEqual(perm, existingPerm) {
+			if compareIpPermissions(perm, expectedPerm) {
 				found = true
 				break
 			}
@@ -109,6 +109,78 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	if len(missingPermissions) > 0 {
 		t.Errorf("security group is missing the following IP permissions: %+v", missingPermissions)
 	}
+}
+
+func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
+	if pointer.Int32Deref(perm1.FromPort, -1) != pointer.Int32Deref(perm2.FromPort, -1) {
+		return false
+	}
+
+	if pointer.Int32Deref(perm1.ToPort, -1) != pointer.Int32Deref(perm2.ToPort, -1) {
+		return false
+	}
+
+	if pointer.StringDeref(perm1.IpProtocol, "") != pointer.StringDeref(perm2.IpProtocol, "") {
+		return false
+	}
+
+	if len(perm1.IpRanges) != len(perm2.IpRanges) {
+		return false
+	}
+
+	for i := range perm1.IpRanges {
+		if pointer.StringDeref(perm1.IpRanges[i].CidrIp, "") != pointer.StringDeref(perm2.IpRanges[i].CidrIp, "") {
+			return false
+		}
+	}
+
+	if len(perm1.Ipv6Ranges) != len(perm2.Ipv6Ranges) {
+		return false
+	}
+
+	for i := range perm1.Ipv6Ranges {
+		if pointer.StringDeref(perm1.Ipv6Ranges[i].CidrIpv6, "") != pointer.StringDeref(perm2.Ipv6Ranges[i].CidrIpv6, "") {
+			return false
+		}
+	}
+
+	if len(perm1.UserIdGroupPairs) != len(perm2.UserIdGroupPairs) {
+		return false
+	}
+
+	for i := range perm1.UserIdGroupPairs {
+		if pointer.StringDeref(perm1.UserIdGroupPairs[i].GroupId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].GroupId, "") {
+			return false
+		}
+
+		if pointer.StringDeref(perm1.UserIdGroupPairs[i].GroupName, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].GroupName, "") {
+			return false
+		}
+
+		if pointer.StringDeref(perm1.UserIdGroupPairs[i].PeeringStatus, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].PeeringStatus, "") {
+			return false
+		}
+
+		if pointer.StringDeref(perm1.UserIdGroupPairs[i].VpcId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].VpcId, "") {
+			return false
+		}
+
+		if pointer.StringDeref(perm1.UserIdGroupPairs[i].VpcPeeringConnectionId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].VpcPeeringConnectionId, "") {
+			return false
+		}
+	}
+
+	if len(perm1.PrefixListIds) != len(perm2.PrefixListIds) {
+		return false
+	}
+
+	for i := range perm1.PrefixListIds {
+		if pointer.StringDeref(perm1.PrefixListIds[i].PrefixListId, "") != pointer.StringDeref(perm2.PrefixListIds[i].PrefixListId, "") {
+			return false
+		}
+	}
+
+	return true
 }
 
 func TestReconcileSecurityGroup(t *testing.T) {
