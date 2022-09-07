@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 func TestGetSecurityGroupByID(t *testing.T) {
@@ -88,7 +89,17 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 
 	stringPermissions := sets.NewString()
 	for _, perm := range permissions {
-		stringPermissions.Insert(fmt.Sprintf("%v-%s-%d-%d", perm.IpRanges, *perm.IpProtocol, *perm.FromPort, *perm.ToPort))
+		stringPermissions.Insert(
+			fmt.Sprintf("%v-%v-%v-%v-%s-%d-%d",
+				perm.IpRanges,
+				perm.Ipv6Ranges,
+				perm.PrefixListIds,
+				perm.UserIdGroupPairs,
+				pointer.StringDeref(perm.IpProtocol, ""),
+				pointer.Int32Deref(perm.FromPort, 0),
+				pointer.Int32Deref(perm.ToPort, 0),
+			),
+		)
 	}
 
 	for _, perm := range group.IpPermissions {
@@ -97,7 +108,16 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 			perm.UserIdGroupPairs[i].UserId = nil
 		}
 
-		stringPermissions.Delete(fmt.Sprintf("%v-%s-%d-%d", perm.IpRanges, *perm.IpProtocol, *perm.FromPort, *perm.ToPort))
+		stringPermissions.Delete(fmt.Sprintf("%v-%v-%v-%v-%s-%d-%d",
+			perm.IpRanges,
+			perm.Ipv6Ranges,
+			perm.PrefixListIds,
+			perm.UserIdGroupPairs,
+			pointer.StringDeref(perm.IpProtocol, ""),
+			pointer.Int32Deref(perm.FromPort, 0),
+			pointer.Int32Deref(perm.ToPort, 0),
+		),
+		)
 	}
 
 	if stringPermissions.Len() > 0 {
