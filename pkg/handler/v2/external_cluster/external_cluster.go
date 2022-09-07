@@ -418,14 +418,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		apiClusters := make([]*apiv2.ExternalCluster, 0)
 
 		for _, cluster := range clusterList.Items {
-			// get version for running cluster
-			version, err := clusterProvider.GetVersion(ctx, &cluster)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, &cluster)
-			apiCluster.Spec.Version = *version
-			apiClusters = append(apiClusters, apiCluster)
+			apiClusters = append(apiClusters, convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, &cluster))
 		}
 
 		return apiClusters, nil

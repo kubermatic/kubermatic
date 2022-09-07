@@ -307,9 +307,6 @@ func TestListClusters(t *testing.T) {
 						ID:   "clusterAbcID",
 					},
 					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
-					Spec: apiv1.ClusterSpec{
-						Version: "v1.23.9",
-					},
 				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -317,9 +314,6 @@ func TestListClusters(t *testing.T) {
 						ID:   "clusterDefID",
 					},
 					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
-					Spec: apiv1.ClusterSpec{
-						Version: "v1.23.9",
-					},
 				},
 			},
 			HTTPStatus: http.StatusOK,
@@ -340,9 +334,6 @@ func TestListClusters(t *testing.T) {
 						ID:   "clusterAbcID",
 					},
 					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
-					Spec: apiv1.ClusterSpec{
-						Version: "v1.23.9",
-					},
 				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -350,9 +341,6 @@ func TestListClusters(t *testing.T) {
 						ID:   "clusterDefID",
 					},
 					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
-					Spec: apiv1.ClusterSpec{
-						Version: "v1.23.9",
-					},
 				},
 			},
 			HTTPStatus: http.StatusOK,
