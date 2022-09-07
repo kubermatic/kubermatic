@@ -20,16 +20,13 @@ package aws
 
 import (
 	"context"
-	"fmt"
+	"reflect"
 	"testing"
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 func TestGetSecurityGroupByID(t *testing.T) {
@@ -87,41 +84,30 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	lowPort, highPort := getNodePortRange(cluster)
 	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, []string{resources.IPv4MatchAnyCIDR}, []string{resources.IPv6MatchAnyCIDR})...)
 
-	stringPermissions := sets.NewString()
-	for _, perm := range permissions {
-		stringPermissions.Insert(
-			fmt.Sprintf("%v-%v-%v-%v-%s-%d-%d",
-				perm.IpRanges,
-				perm.Ipv6Ranges,
-				perm.PrefixListIds,
-				perm.UserIdGroupPairs,
-				pointer.StringDeref(perm.IpProtocol, ""),
-				pointer.Int32Deref(perm.FromPort, 0),
-				pointer.Int32Deref(perm.ToPort, 0),
-			),
-		)
-	}
+	missingPermissions := []ec2types.IpPermission{}
 
-	for _, perm := range group.IpPermissions {
-		// normalize data and remove data inserted by AWS
-		for i := range perm.UserIdGroupPairs {
-			perm.UserIdGroupPairs[i].UserId = nil
+	for _, perm := range permissions {
+		found := false
+
+		for _, existingPerm := range group.IpPermissions {
+			// normalize data and remove data inserted by AWS
+			for i := range existingPerm.UserIdGroupPairs {
+				existingPerm.UserIdGroupPairs[i].UserId = nil
+			}
+
+			if reflect.DeepEqual(perm, existingPerm) {
+				found = true
+				break
+			}
 		}
 
-		stringPermissions.Delete(fmt.Sprintf("%v-%v-%v-%v-%s-%d-%d",
-			perm.IpRanges,
-			perm.Ipv6Ranges,
-			perm.PrefixListIds,
-			perm.UserIdGroupPairs,
-			pointer.StringDeref(perm.IpProtocol, ""),
-			pointer.Int32Deref(perm.FromPort, 0),
-			pointer.Int32Deref(perm.ToPort, 0),
-		),
-		)
+		if !found {
+			missingPermissions = append(missingPermissions, perm)
+		}
 	}
 
-	if stringPermissions.Len() > 0 {
-		t.Errorf("security group is missing the following IP permissions: %v", stringPermissions.List())
+	if len(missingPermissions) > 0 {
+		t.Errorf("security group is missing the following IP permissions: %+v", missingPermissions)
 	}
 }
 

@@ -296,7 +296,7 @@ func cleanUpSecurityGroup(ctx context.Context, client *ec2.Client, cluster *kube
 	}
 
 	// someone has already deleted the group
-	if len(describeOut.SecurityGroups) == 0 {
+	if describeOut == nil || len(describeOut.SecurityGroups) == 0 {
 		return nil
 	}
 
