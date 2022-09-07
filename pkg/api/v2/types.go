@@ -941,11 +941,11 @@ type AKSClusterList []AKSCluster
 // swagger:model AKSVMSizeList
 type AKSVMSizeList []AKSVMSize
 
-// AKSLocationList represents a list of AKS Location object for node group.
+// AKSLocationList represents a list of AKS Locations.
 // swagger:model AKSLocationList
 type AKSLocationList []AKSLocation
 
-// AKSLocation represents an object representing Azure Location.
+// AKSLocation represents an object of Azure Location.
 // swagger:model AKSLocation
 type AKSLocation struct {
 	// The location name.

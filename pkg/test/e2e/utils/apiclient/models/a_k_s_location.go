@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AKSLocation AKSLocation represents an object representing Azure Location.
+// AKSLocation AKSLocation represents an object of Azure Location.
 //
 // swagger:model AKSLocation
 type AKSLocation struct {

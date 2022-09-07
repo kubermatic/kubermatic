@@ -21844,7 +21844,7 @@
     },
     "AKSLocation": {
       "type": "object",
-      "title": "AKSLocation represents an object representing Azure Location.",
+      "title": "AKSLocation represents an object of Azure Location.",
       "properties": {
         "name": {
           "description": "The location name.",
@@ -21861,7 +21861,7 @@
     },
     "AKSLocationList": {
       "type": "array",
-      "title": "AKSLocationList represents a list of AKS Location object for node group.",
+      "title": "AKSLocationList represents a list of AKS Locations.",
       "items": {
         "$ref": "#/definitions/AKSLocation"
       },
