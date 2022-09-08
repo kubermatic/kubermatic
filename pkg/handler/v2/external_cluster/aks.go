@@ -418,8 +418,11 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 	return nil
 }
 
-func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
-	agentPoolProfiles := aksclusterSpec.MachineDeploymentSpec
+func checkCreateClusterReqValidity(cloudSpec *apiv2.AKSCloudSpec, clusterSpec *apiv2.AKSClusterSpec) error {
+	if len(cloudSpec.Location) == 0 {
+		return utilerrors.NewBadRequest("required field is missing: location")
+	}
+	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
 	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
 		return utilerrors.NewBadRequest("Must define at least one system pool!")
 	}
@@ -439,7 +442,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	}
 
 	if spec != nil && spec.AKSClusterSpec != nil {
-		if err := checkCreateClusterReqValidity(spec.AKSClusterSpec); err != nil {
+		if err := checkCreateClusterReqValidity(cloud.AKS, spec.AKSClusterSpec); err != nil {
 			return nil, err
 		}
 		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
