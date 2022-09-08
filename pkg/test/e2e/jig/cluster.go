@@ -195,6 +195,11 @@ func (j *ClusterJig) WithPreset(presetSecret string) *ClusterJig {
 	return j
 }
 
+func (j *ClusterJig) WithFeatures(features map[string]bool) *ClusterJig {
+	j.spec.Features = features
+	return j
+}
+
 func (j *ClusterJig) ClusterName() string {
 	return j.clusterName
 }

@@ -146,18 +146,15 @@ func TestScaling(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewBYOCluster(client, logger)
+	testJig := jig.NewBYOClusterWithFeatures(client, logger, map[string]bool{
+		kubermaticv1.ClusterFeatureEtcdLauncher: true,
+	})
 	testJig.ClusterJig.WithTestName("etcd-scaling")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
-	}
-
-	// we run all these tests in the same cluster to speed up the e2e test
-	if err := enableLauncher(ctx, logger, client, cluster); err != nil {
-		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
 
 	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
@@ -195,17 +192,15 @@ func TestRecovery(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewBYOCluster(client, logger)
+	testJig := jig.NewBYOClusterWithFeatures(client, logger, map[string]bool{
+		kubermaticv1.ClusterFeatureEtcdLauncher: true,
+	})
 	testJig.ClusterJig.WithTestName("etcd-recovery")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
-	}
-
-	if err := enableLauncher(ctx, logger, client, cluster); err != nil {
-		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
 
 	if err := waitForClusterHealthy(ctx, logger, client, cluster); err != nil {
