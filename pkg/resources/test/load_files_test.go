@@ -548,17 +548,17 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
-							&corev1.ConfigMap{
+							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.OpenVPNClientConfigsConfigMapName,
+									Name:            resources.CloudConfigSeedSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.CloudConfigConfigMapName,
+									Name:            resources.OpenVPNClientConfigsConfigMapName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},

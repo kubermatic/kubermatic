@@ -80,7 +80,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), []corev1.Volume{
 				{
-					Name: resources.CloudConfigConfigMapName,
+					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Projected: &corev1.ProjectedVolumeSource{
 							Sources: []corev1.VolumeProjection{
@@ -90,8 +90,8 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 									},
 								},
 								{
-									ConfigMap: &corev1.ConfigMapProjection{
-										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigConfigMapName},
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigSeedSecretName},
 									},
 								},
 							},
@@ -108,7 +108,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 					Command: []string{"/bin/kubevirt-cloud-controller-manager"},
 					Args:    getKVFlags(data),
 					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-						Name:      resources.CloudConfigConfigMapName,
+						Name:      resources.CloudConfigSeedSecretName,
 						MountPath: "/etc/kubernetes/cloud",
 						ReadOnly:  true,
 					}),

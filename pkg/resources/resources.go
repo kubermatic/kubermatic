@@ -218,11 +218,11 @@ const (
 	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates.
 	CABundleConfigMapKey = "ca-bundle.pem"
 
-	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
-	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigName = "cloud-config-csi"
-	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	// CloudConfigSeedSecretName is the name for the secret containing the cloud-config inside the usercluster namespace
+	// on the seed cluster. Not to be confused with CloudConfigSecretName, which is the copy of this Secret inside the
+	// usercluster.
+	CloudConfigSeedSecretName = "cloud-config"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"

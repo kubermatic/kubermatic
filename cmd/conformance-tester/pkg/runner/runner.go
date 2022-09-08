@@ -617,14 +617,14 @@ func (r *TestRunner) getKubeconfig(ctx context.Context, log *zap.SugaredLogger, 
 func (r *TestRunner) getCloudConfig(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {
 	log.Debug("Getting cloud-config...")
 
-	name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.CloudConfigConfigMapName}
-	cm := &corev1.ConfigMap{}
+	name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.CloudConfigSeedSecretName}
+	cm := &corev1.Secret{}
 	if err := r.opts.SeedClusterClient.Get(ctx, name, cm); err != nil {
-		return "", fmt.Errorf("failed to get ConfigMap %s: %w", name.String(), err)
+		return "", fmt.Errorf("failed to get Secret %s: %w", name.String(), err)
 	}
 
 	filename := path.Join(r.opts.HomeDir, fmt.Sprintf("%s-cloud-config", cluster.Name))
-	if err := os.WriteFile(filename, []byte(cm.Data["config"]), 0644); err != nil {
+	if err := os.WriteFile(filename, cm.Data["config"], 0644); err != nil {
 		return "", fmt.Errorf("failed to write cloud config: %w", err)
 	}
 

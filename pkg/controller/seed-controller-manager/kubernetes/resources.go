@@ -412,6 +412,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretCreatorGetter{
+		cloudconfig.SecretCreator(data),
 		certificates.RootCACreator(data),
 		certificates.FrontProxyCACreator(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
@@ -480,6 +481,18 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		creators = append(creators, cloudconfig.VsphereCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
+		creators = append(creators, cloudconfig.NutanixCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		creators = append(creators, cloudconfig.VMwareCloudDirectorCSISecretCreator(data))
 	}
 
 	return creators
@@ -646,7 +659,6 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		cloudconfig.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
@@ -659,18 +671,6 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 			openvpn.ServerClientConfigsConfigMapCreator(data),
 			dns.ConfigMapCreator(data),
 		)
-	}
-
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		creators = append(creators, cloudconfig.VsphereCSIConfigMapCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
-		creators = append(creators, cloudconfig.NutanixCSIConfigMapCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
-		creators = append(creators, cloudconfig.VMwareCloudDirectorCSIConfigMapCreator(data))
 	}
 
 	return creators

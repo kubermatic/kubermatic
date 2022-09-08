@@ -28,131 +28,11 @@ import (
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
-	vmwareclouddirectorcloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
-	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-
-	corev1 "k8s.io/api/core/v1"
 )
-
-type configMapCreatorData interface {
-	DC() *kubermaticv1.Datacenter
-	Cluster() *kubermaticv1.Cluster
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
-}
-
-// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config.
-func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
-			}
-
-			cm.Labels = resources.BaseAppLabels(resources.CloudConfigConfigMapName, nil)
-			cm.Data[resources.CloudConfigKey] = cloudConfig
-			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
-
-			return cm, nil
-		}
-	}
-}
-
-func VsphereCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			vsphereCloudConfig, err := getVsphereCloudConfig(data.Cluster(), data.DC(), credentials)
-			if err != nil {
-				return nil, err
-			}
-			cloudConfig, err := vspherecloudconfig.CloudConfigCSIToString(vsphereCloudConfig)
-			if err != nil {
-				return nil, err
-			}
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
-			cm.Data[resources.CloudConfigKey] = cloudConfig
-			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
-
-			return cm, nil
-		}
-	}
-}
-
-func VMwareCloudDirectorCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			vsphereCloudConfig, err := vmwareclouddirectorcloudconfig.GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
-			if err != nil {
-				return nil, err
-			}
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
-			cm.Data[resources.CloudConfigKey] = vsphereCloudConfig
-
-			return cm, nil
-		}
-	}
-}
-
-func NutanixCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			if data.Cluster().Spec.Cloud.Nutanix.CSI.Port == nil {
-				return nil, errors.New("CSI Port must not be nil")
-			}
-
-			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.CSI.Endpoint, *data.Cluster().Spec.Cloud.Nutanix.CSI.Port, credentials.Nutanix.CSIUsername, credentials.Nutanix.CSIPassword)
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
-			cm.Data[resources.CloudConfigKey] = nutanixCsiConf
-
-			return cm, nil
-		}
-	}
-}
 
 // CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
@@ -250,7 +130,7 @@ func CloudConfig(
 		}
 
 	case cloud.VSphere != nil:
-		vsphereCloudConfig, err := getVsphereCloudConfig(cluster, dc, credentials)
+		vsphereCloudConfig, err := getVSphereCloudConfig(cluster, dc, credentials)
 		if err != nil {
 			return cloudConfig, err
 		}
@@ -336,7 +216,7 @@ func CloudConfig(
 	return cloudConfig, err
 }
 
-func getVsphereCloudConfig(
+func getVSphereCloudConfig(
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,
 	credentials resources.Credentials,
@@ -410,13 +290,3 @@ func getVsphereCloudConfig(
 	}
 	return cc, nil
 }
-
-const (
-	// FakeVMWareUUIDKeyName is the name of the cloud-config configmap key
-	// that holds the fake vmware uuid
-	// It is required when activating the vsphere cloud-provider in the controller
-	// manager on a non-ESXi host
-	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
-	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
-	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
-)
