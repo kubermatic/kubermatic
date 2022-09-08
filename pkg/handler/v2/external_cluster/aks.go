@@ -400,12 +400,6 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		agentPoolProfilesToBeCreated,
 	}
 
-	// small validation to prevent credentials issues after the creation of the cluster
-	_, err = aksClient.NewListPager(nil).NextPage(ctx)
-	if err != nil {
-		return aks.DecodeError(err)
-	}
-
 	_, err = aksClient.BeginCreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
@@ -464,6 +458,15 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
 			return nil, utilerrors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
 		}
+	}
+
+	if err := aks.ValidateCredentialsForResourceGroup(ctx, resources.AKSCredentials{
+		TenantID:       cloud.AKS.TenantID,
+		ClientID:       cloud.AKS.ClientID,
+		SubscriptionID: cloud.AKS.SubscriptionID,
+		ClientSecret:   cloud.AKS.ClientSecret,
+	}, cloud.AKS.ResourceGroup); err != nil {
+		return nil, err
 	}
 
 	// If Spec is not nil, it is interpreted as create cluster on the provider.

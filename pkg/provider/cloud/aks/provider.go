@@ -21,10 +21,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -346,6 +348,73 @@ func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) err
 	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
 		return DecodeError(err)
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	_, err = aksClient.NewListPager(nil).NextPage(ctx)
+
+	return DecodeError(err)
+}
+
+func ValidateCredentialsForResourceGroup(ctx context.Context, cred resources.AKSCredentials, resourceGroup string) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	permissionsClient, err := armauthorization.NewPermissionsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	var (
+		wildcardPermissions = map[string]struct{}{
+			"*":                            {},
+			"Microsoft.ContainerService/*": {},
+			"Microsoft.ContainerService/managedClusters/*": {},
+		}
+
+		hasSpecificPermissions = map[string]bool{
+			"Microsoft.ContainerService/managedClusters/read":                              false,
+			"Microsoft.ContainerService/managedClusters/write":                             false,
+			"Microsoft.ContainerService/managedClusters/delete":                            false,
+			"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
+		}
+	)
+
+	userHasWildcardPermission := false
+
+	pager := permissionsClient.NewListForResourceGroupPager(resourceGroup, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return DecodeError(err)
+		}
+		for _, permission := range nextResult.Value {
+			for _, action := range permission.Actions {
+				_, hasWidecardPermission := wildcardPermissions[*action]
+				if hasWidecardPermission {
+					userHasWildcardPermission = true
+					break
+				}
+				_, hasSpecificPermission := hasSpecificPermissions[*action]
+				if hasSpecificPermission {
+					hasSpecificPermissions[*action] = true
+				}
+			}
+		}
+	}
+
+	if !userHasWildcardPermission {
+		for permission, hasSpecificPermission := range hasSpecificPermissions {
+			if !hasSpecificPermission {
+				return utilerrors.New(http.StatusForbidden, fmt.Sprintf("Missing permission: %s", permission))
+			}
+		}
 	}
 
 	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
