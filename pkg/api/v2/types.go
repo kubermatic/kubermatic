@@ -461,6 +461,9 @@ const (
 	// DeletingExternalClusterMDState state indicates the machine deployment is being deleted.
 	DeletingExternalClusterMDState ExternalClusterMDState = "Deleting"
 
+	// StartingExternalClusterMDState state indicates the cluster machine deployment is starting.
+	StartingExternalClusterMDState ExternalClusterMDState = "Starting"
+
 	// UnknownExternalClusterMDState indicates undefined state.
 	UnknownExternalClusterMDState ExternalClusterMDState = "Unknown"
 

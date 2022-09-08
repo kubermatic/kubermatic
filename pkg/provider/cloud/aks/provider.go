@@ -229,7 +229,7 @@ func ConvertStatus(provisioningState string, powerState armcontainerservice.Code
 	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
 		return apiv2.RunningExternalClusterState
 	case provisioningState == string(resources.StartingAKSState):
-		return apiv2.ProvisioningExternalClusterState
+		return apiv2.StartingExternalClusterState
 	case provisioningState == string(resources.StoppingAKSState):
 		return apiv2.StoppingExternalClusterState
 	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
@@ -251,8 +251,8 @@ func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Co
 		return apiv2.ProvisioningExternalClusterMDState
 	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
 		return apiv2.RunningExternalClusterMDState
-	case provisioningState == string(resources.StartingAKSState):
-		return apiv2.ProvisioningExternalClusterMDState
+	case provisioningState == string(resources.StartingAKSMDState):
+		return apiv2.StartingExternalClusterMDState
 	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.StoppedAKSMDState):
 		return apiv2.StoppedExternalClusterMDState
 	case provisioningState == string(resources.FailedAKSMDState) && readyReplicas == 0:
