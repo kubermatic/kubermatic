@@ -21815,6 +21815,18 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSClusterStatus": {
+      "type": "object",
+      "properties": {
+        "powerState": {
+          "$ref": "#/definitions/AKSPowerState"
+        },
+        "provisioningState": {
+          "$ref": "#/definitions/AKSProvisioningState"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AKSLocation": {
       "type": "object",
       "title": "AKSLocation is the object representing Azure Location.",
@@ -21837,6 +21849,18 @@
       "title": "AKSLocationList represents a list of AKS Location object for node group.",
       "items": {
         "$ref": "#/definitions/AKSLocation"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSMDPhase": {
+      "type": "object",
+      "properties": {
+        "powerState": {
+          "$ref": "#/definitions/AKSPowerState"
+        },
+        "provisioningState": {
+          "$ref": "#/definitions/AKSProvisioningState"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -21936,6 +21960,14 @@
           "x-go-name": "MinCount"
         }
       },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSPowerState": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSProvisioningState": {
+      "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "AKSVMSize": {
@@ -26602,6 +26634,9 @@
       "type": "object",
       "title": "ExternalClusterMDPhase defines the external cluster machinedeployment phase.",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSMDPhase"
+        },
         "state": {
           "$ref": "#/definitions/ExternalClusterMDState"
         },
@@ -26751,6 +26786,9 @@
       "type": "object",
       "title": "ExternalClusterStatus defines the external cluster status.",
       "properties": {
+        "aks": {
+          "$ref": "#/definitions/AKSClusterStatus"
+        },
         "state": {
           "$ref": "#/definitions/ExternalClusterState"
         },
