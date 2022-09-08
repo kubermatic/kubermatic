@@ -164,3 +164,22 @@ func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Tes
 		ClusterJig: clusterJig,
 	}
 }
+
+func NewBYOClusterWithFeatures(client ctrlruntimeclient.Client, log *zap.SugaredLogger, features map[string]bool) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithFeatures(features).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: DatacenterName(),
+			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
+			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
+		})
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+	}
+}

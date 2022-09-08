@@ -125,54 +125,53 @@ func main() {
 		log.Info("peer-tls-mode: strict")
 	}
 
-	// if the cluster already exists, try to connect and update peer URLs that might be out of sync.
-	// etcd might fail to start if peer URLs in the etcd member state and the flags passed to it are different
 	if e.initialState == initialStateExisting {
-		// make sure that peer URLs in the cluster member data is
-		// updated / in sync with the etcd node's configuration
+		// if the cluster already exists, try to connect and update peer URLs that might be out of sync.
+		// etcd might fail to start if peer URLs in the etcd member state and the flags passed to it are different.
+		// make sure that peer URLs in the cluster member data is updated / in sync with the etcd node's configuration.
 		if err := e.UpdatePeerURLs(ctx, log); err != nil {
 			log.Warnw("failed to update peerURL, etcd node might fail to start ...", zap.Error(err))
 		}
-	}
 
-	thisMember, err := e.GetMemberByName(ctx, log, e.podName)
+		thisMember, err := e.GetMemberByName(ctx, log, e.podName)
 
-	switch {
-	case err != nil:
-		log.Warnw("failed to check cluster membership", zap.Error(err))
-	case thisMember != nil:
-		log.Infof("%v is a member", thisMember.GetPeerURLs())
+		switch {
+		case err != nil:
+			log.Warnw("failed to check cluster membership", zap.Error(err))
+		case thisMember != nil:
+			log.Infof("%v is a member", thisMember.GetPeerURLs())
 
-		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
-			client, err := e.GetClusterClient()
-			if err != nil {
-				log.Panicw("can't find cluster client: %v", zap.Error(err))
-			}
+			if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
+				client, err := e.GetClusterClient()
+				if err != nil {
+					log.Panicw("can't find cluster client", zap.Error(err))
+				}
 
-			log.Warnw("No data dir, removing stale membership to rejoin cluster as new member")
+				log.Warnw("No data dir, removing stale membership to rejoin cluster as new member")
 
-			_, err = client.MemberRemove(ctx, thisMember.ID)
-			if err != nil {
+				_, err = client.MemberRemove(ctx, thisMember.ID)
+				if err != nil {
+					closeClient(client, log)
+					log.Panicw("failed to remove own member information from cluster before rejoining", zap.Error(err))
+				}
+
 				closeClient(client, log)
-				log.Panicw("remove itself due to data dir loss", zap.Error(err))
+				if err := joinCluster(ctx, e, log); err != nil {
+					log.Panicw("failed to join cluster as fresh member", zap.Error(err))
+				}
 			}
-
-			closeClient(client, log)
+		default:
+			// if no membership information was found but we were able to list from an etcd cluster, we can attempt to join
 			if err := joinCluster(ctx, e, log); err != nil {
-				log.Panicw("join cluster as fresh member", zap.Error(err))
+				log.Panicw("failed to join cluster as fresh member", zap.Error(err))
 			}
-		}
-	default:
-		// if no membership information was found but we were able to list from an etcd cluster, we can attempt to join
-		if err := joinCluster(ctx, e, log); err != nil {
-			log.Panicw("failed to join cluster as fresh member", zap.Error(err))
 		}
 	}
 
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
 	if err != nil {
-		log.Panicw("start etcd cmd", zap.Error(err))
+		log.Panicw("failed to start etcd cmd", zap.Error(err))
 	}
 
 	if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
@@ -218,7 +217,7 @@ func inClusterClient(log *zap.SugaredLogger) (ctrlruntimeclient.Client, error) {
 
 func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 	if _, err := os.Stat(etcdCommandPath); errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("find etcd executable: %w", err)
+		return nil, fmt.Errorf("failed to find etcd executable: %w", err)
 	}
 
 	cmd := exec.Command(etcdCommandPath, etcdCmd(e)...)
