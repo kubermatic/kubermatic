@@ -707,7 +707,7 @@ type AKSCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty" required:"true"`
 	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
 	ResourceGroup  string `json:"resourceGroup" required:"true"`
-	Location       string `json:"location" required:"true"`
+	Location       string `json:"location"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
