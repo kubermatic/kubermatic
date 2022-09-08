@@ -400,6 +400,12 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		agentPoolProfilesToBeCreated,
 	}
 
+	// small validation to prevent credentials issues after the creation of the cluster
+	_, err = aksClient.NewListPager(nil).NextPage(ctx)
+	if err != nil {
+		return aks.DecodeError(err)
+	}
+
 	_, err = aksClient.BeginCreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
