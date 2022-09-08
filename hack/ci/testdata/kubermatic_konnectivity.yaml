@@ -29,4 +29,5 @@ spec:
     apiserverReplicas: 1
   featureGates:
     KonnectivityService: true
+    EtcdLauncher: true
     HeadlessInstallation: true
