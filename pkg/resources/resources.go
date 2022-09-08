@@ -1725,3 +1725,24 @@ func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
 	}
 	return IPVSProxyMode
 }
+
+// GetKubeletPreferredAddressTypes returns the preferred address types in the correct order to be used when
+// contacting kubelet from the control plane.
+func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivityEnabled bool) string {
+	if cluster.Spec.Cloud.GCP != nil {
+		return "InternalIP"
+	}
+	if cluster.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
+		// Due to https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/305
+		// InternalIP needs to be preferred over ExternalIP in dual-stack Hetzner clusters
+		return "InternalIP,ExternalIP"
+	}
+	if isKonnectivityEnabled {
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		return "InternalIP,ExternalIP"
+	}
+	return "ExternalIP,InternalIP"
+}
