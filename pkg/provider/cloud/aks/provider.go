@@ -26,6 +26,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	semverlib "github.com/Masterminds/semver/v3"
@@ -370,4 +371,35 @@ func DecodeError(err error) error {
 		}
 	}
 	return err
+}
+
+func ListAzureResourceGroups(ctx context.Context, cred *resources.AKSCredentials) (apiv2.AzureResourceGroupList, error) {
+	var resourceGroupList apiv2.AzureResourceGroupList
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+	rgClient, err := armresources.NewResourceGroupsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	pager := rgClient.NewListPager(nil)
+
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, DecodeError(err)
+		}
+		if nextResult.Value != nil {
+			for _, rg := range nextResult.Value {
+				resourceGroupList = append(resourceGroupList, apiv2.AzureResourceGroup{
+					Name: to.String(rg.Name),
+				})
+			}
+		}
+	}
+
+	return resourceGroupList, nil
 }

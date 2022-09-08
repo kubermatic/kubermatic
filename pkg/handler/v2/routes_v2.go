@@ -137,6 +137,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listAKSVMSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aks/resourcegroups").
+		Handler(r.listAKSResourceGroups())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aks/locations").
 		Handler(r.listAKSLocations())
 
@@ -6117,6 +6121,28 @@ func (r Routing) listAKSVMSizes() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/aks/resourcegroups aks listAKSResourceGroups
+//
+//     List resource groups in an Azure subscription.
+//
+//	   Produces:
+//	   - application/json
+//
+//	   Responses:
+//	     default: errorResponse
+//	     200: AzureResourceGroupList
+func (r Routing) listAKSResourceGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListAKSResourceGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeAKSCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/aks/locations aks listAKSLocations
 //
 // List AKS recommended Locations.
@@ -6671,7 +6697,6 @@ func (r Routing) getExternalClusterMachineDeploymentUpgrades() http.Handler {
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes project listExternalClusterMachineDeploymentNodes
 //
 //     Gets an external cluster machine deployment nodes.
-//
 //
 //     Produces:
 //     - application/json

@@ -232,6 +232,25 @@ func ListAKSVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGett
 	}
 }
 
+func ListAKSResourceGroupsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(AKSCommonReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		cred, err := getAKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		return aks.ListAzureResourceGroups(ctx, cred)
+	}
+}
+
 func ListAKSLocationsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(AKSCommonReq)

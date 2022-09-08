@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AKSCluster AKSCluster represents a object of AKS cluster.
+// AKSCluster AKSCluster represents an object of AKS cluster.
 //
 // swagger:model AKSCluster
 type AKSCluster struct {
