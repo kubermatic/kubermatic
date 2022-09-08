@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AKSLocationList AKSLocationList represents a list of AKS Locations.
+// AzureResourceGroupList AzureResourceGroupList represents an list of AKS ResourceGroups.
 //
-// swagger:model AKSLocationList
-type AKSLocationList []*AKSLocation
+// swagger:model AzureResourceGroupList
+type AzureResourceGroupList []*AzureResourceGroup
 
-// Validate validates this a k s location list
-func (m AKSLocationList) Validate(formats strfmt.Registry) error {
+// Validate validates this azure resource group list
+func (m AzureResourceGroupList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m AKSLocationList) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this a k s location list based on the context it is used
-func (m AKSLocationList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this azure resource group list based on the context it is used
+func (m AzureResourceGroupList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {

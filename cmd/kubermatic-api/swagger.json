@@ -13936,13 +13936,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13954,6 +13947,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18675,6 +18675,32 @@
         }
       }
     },
+    "/api/v2/providers/aks/resourcegroups": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "summary": "List resource groups in an Azure subscription.",
+        "operationId": "listAKSResourceGroups",
+        "responses": {
+          "200": {
+            "description": "AzureResourceGroupList",
+            "schema": {
+              "$ref": "#/definitions/AzureResourceGroupList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/aks/validatecredentials": {
       "get": {
         "description": "Validates AKS credentials",
@@ -21728,7 +21754,7 @@
     },
     "AKSCluster": {
       "type": "object",
-      "title": "AKSCluster represents a object of AKS cluster.",
+      "title": "AKSCluster represents an object of AKS cluster.",
       "properties": {
         "imported": {
           "type": "boolean",
@@ -21829,7 +21855,7 @@
     },
     "AKSLocation": {
       "type": "object",
-      "title": "AKSLocation is the object representing Azure Location.",
+      "title": "AKSLocation represents an object of Azure Location.",
       "properties": {
         "name": {
           "description": "The location name.",
@@ -21846,7 +21872,7 @@
     },
     "AKSLocationList": {
       "type": "array",
-      "title": "AKSLocationList represents a list of AKS Location object for node group.",
+      "title": "AKSLocationList represents a list of AKS Locations.",
       "items": {
         "$ref": "#/definitions/AKSLocation"
       },
@@ -23809,6 +23835,26 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AzureResourceGroup": {
+      "type": "object",
+      "title": "AzureResourceGroup represents an object of Azure ResourceGroup information.",
+      "properties": {
+        "name": {
+          "description": "The name of the resource group.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AzureResourceGroupList": {
+      "type": "array",
+      "title": "AzureResourceGroupList represents an list of AKS ResourceGroups.",
+      "items": {
+        "$ref": "#/definitions/AzureResourceGroup"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "AzureResourceGroupsList": {
       "description": "AzureResourceGroupsList is the object representing the resource groups for vms in azure cloud provider",
