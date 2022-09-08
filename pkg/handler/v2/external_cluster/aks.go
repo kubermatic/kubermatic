@@ -651,9 +651,22 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
-	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
+	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil && nodePool.PowerState.Code != nil) {
+		state := aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code, md.NodeDeployment.Status.ReadyReplicas)
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			State: state,
+			AKS: &apiv2.AKSMDPhase{
+				ProvisioningState: apiv2.AKSProvisioningState(*nodePool.ProvisioningState),
+				PowerState:        apiv2.AKSPowerState(*nodePool.PowerState.Code),
+			},
+		}
+		switch state {
+		case apiv2.StoppedExternalClusterMDState:
+			md.Phase.StatusMessage = "The Kubernetes service is currently stopped. To perform any operation like scale or upgrade, start your cluster first."
+		case apiv2.WarningExternalClusterMDState:
+			md.Phase.StatusMessage = "The last attempted operation failed. The nodes may still be running. Check previous operations to resolve any failures."
+		case apiv2.ErrorExternalClusterMDState:
+			md.Phase.StatusMessage = "Check previous operations to resolve any failures."
 		}
 	}
 

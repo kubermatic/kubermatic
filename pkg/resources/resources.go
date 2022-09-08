@@ -757,11 +757,13 @@ const (
 	CreatingAKSMDState  AKSMDState = "Creating"
 	SucceededAKSMDState AKSMDState = "Succeeded"
 	RunningAKSMDState   AKSMDState = "Running"
+	StoppedAKSMDState   AKSMDState = "Stopped"
 	FailedAKSMDState    AKSMDState = "Failed"
 	DeletingAKSMDState  AKSMDState = "Deleting"
 	UpgradingAKSMDState AKSMDState = "Upgrading"
 	UpdatingAKSMDState  AKSMDState = "Updating"
 	ScalingAKSMDState   AKSMDState = "Scaling"
+	StartingAKSMDState  AKSMDState = "Starting"
 )
 
 type EKSState string
