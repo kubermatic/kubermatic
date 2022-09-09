@@ -302,6 +302,10 @@ func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProv
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
