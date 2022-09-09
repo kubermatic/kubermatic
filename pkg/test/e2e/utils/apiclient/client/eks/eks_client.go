@@ -36,6 +36,8 @@ type ClientService interface {
 
 	ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSInstanceTypesNoCredentialsOK, error)
 
+	ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesOK, error)
+
 	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
 
 	ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error)
@@ -204,6 +206,44 @@ func (a *Client) ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesN
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEKSInstanceTypesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSNodeRoles lists e k s node i a m roles
+*/
+func (a *Client) ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSNodeRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSNodeRoles",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/eks/noderoles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSNodeRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSNodeRolesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSNodeRolesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

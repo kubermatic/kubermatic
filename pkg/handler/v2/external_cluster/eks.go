@@ -296,6 +296,21 @@ func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetP
 	}
 }
 
+func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(EKSTypesReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		return providercommon.ListEKSNodeRoles(ctx, *credential)
+	}
+}
+
 func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(EKSTypesReq)
