@@ -93,7 +93,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				err = clusterJig.CreateMachineDeployment(userClient, options.osCredentials)
 				if err != nil {
 					clusterJig.Log.Debug("MachineDeployment creation failed")
-					return false, nil
+					return false, err
 				}
 
 				return err == nil, nil
