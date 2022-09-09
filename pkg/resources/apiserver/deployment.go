@@ -394,20 +394,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--api-audiences", strings.Join(audiences, ","),
 	)
 
-	if cluster.Spec.Cloud.GCP != nil {
-		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
-	} else {
-		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
-		// This request fails because of security policies disallow external traffic to the node.
-		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
-		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
-		// and https://kubermatic.slack.com/archives/C01EWQZEW69/p1628769575001400
-		if data.IsKonnectivityEnabled() {
-			flags = append(flags, "--kubelet-preferred-address-types", "InternalIP,ExternalIP")
-		} else {
-			flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
-		}
-	}
+	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, data.IsKonnectivityEnabled()))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
 	if cloudProviderName != "" && cloudProviderName != "external" {
