@@ -92,7 +92,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
 				err = clusterJig.CreateMachineDeployment(userClient, options.osCredentials)
 				if err != nil {
-					clusterJig.Log.Debug("MachineDeployment creation failed")
+					clusterJig.Log.Debugf("MachineDeployment creation failed with err %s", err.Error())
 					return false, nil
 				}
 
