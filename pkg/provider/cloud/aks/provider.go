@@ -360,7 +360,7 @@ func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) err
 	return DecodeError(err)
 }
 
-func ValidateCredentialsForResourceGroup(ctx context.Context, cred resources.AKSCredentials, resourceGroup string) error {
+func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCredentials, resourceGroup string) error {
 	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
 		return DecodeError(err)
@@ -371,22 +371,12 @@ func ValidateCredentialsForResourceGroup(ctx context.Context, cred resources.AKS
 		return DecodeError(err)
 	}
 
-	var (
-		wildcardPermissions = map[string]struct{}{
-			"*":                            {},
-			"Microsoft.ContainerService/*": {},
-			"Microsoft.ContainerService/managedClusters/*": {},
-		}
-
-		hasSpecificPermissions = map[string]bool{
-			"Microsoft.ContainerService/managedClusters/read":                              false,
-			"Microsoft.ContainerService/managedClusters/write":                             false,
-			"Microsoft.ContainerService/managedClusters/delete":                            false,
-			"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
-		}
-	)
-
-	userHasWildcardPermission := false
+	var requiredPermissions = map[string]bool{
+		"Microsoft.ContainerService/managedClusters/read":                              false,
+		"Microsoft.ContainerService/managedClusters/write":                             false,
+		"Microsoft.ContainerService/managedClusters/delete":                            false,
+		"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
+	}
 
 	pager := permissionsClient.NewListForResourceGroupPager(resourceGroup, nil)
 	for pager.More() {
@@ -396,35 +386,31 @@ func ValidateCredentialsForResourceGroup(ctx context.Context, cred resources.AKS
 		}
 		for _, permission := range nextResult.Value {
 			for _, action := range permission.Actions {
-				_, hasWidecardPermission := wildcardPermissions[*action]
-				if hasWidecardPermission {
-					userHasWildcardPermission = true
-					break
-				}
-				_, hasSpecificPermission := hasSpecificPermissions[*action]
-				if hasSpecificPermission {
-					hasSpecificPermissions[*action] = true
+				switch *action {
+				case "*",
+					"Microsoft.ContainerService/*",
+					"Microsoft.ContainerService/managedClusters/*":
+					// if it's a wildcard permission, then the user can execute all necessary actions, so just return
+					return nil
+				default:
+					// checking and saving if user has a required permission
+					_, hasRequiredPermission := requiredPermissions[*action]
+					if hasRequiredPermission {
+						requiredPermissions[*action] = true
+					}
 				}
 			}
 		}
 	}
 
-	if !userHasWildcardPermission {
-		for permission, hasSpecificPermission := range hasSpecificPermissions {
-			if !hasSpecificPermission {
-				return utilerrors.New(http.StatusForbidden, fmt.Sprintf("Missing permission: %s", permission))
-			}
+	// checking if user has all required permissions
+	for permission, hasRequiredPermission := range requiredPermissions {
+		if !hasRequiredPermission {
+			return utilerrors.New(http.StatusForbidden, fmt.Sprintf("Missing permission: %s", permission))
 		}
 	}
 
-	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
-	if err != nil {
-		return DecodeError(err)
-	}
-
-	_, err = aksClient.NewListPager(nil).NextPage(ctx)
-
-	return DecodeError(err)
+	return nil
 }
 
 func DecodeError(err error) error {

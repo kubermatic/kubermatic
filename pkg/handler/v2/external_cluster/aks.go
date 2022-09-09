@@ -460,7 +460,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
-	if err := aks.ValidateCredentialsForResourceGroup(ctx, resources.AKSCredentials{
+	if err := aks.ValidateCredentialsPermissions(ctx, resources.AKSCredentials{
 		TenantID:       cloud.AKS.TenantID,
 		ClientID:       cloud.AKS.ClientID,
 		SubscriptionID: cloud.AKS.SubscriptionID,
