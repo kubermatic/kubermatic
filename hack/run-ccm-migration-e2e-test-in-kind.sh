@@ -269,7 +269,7 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
-    -openstack-auth-url=https://api.cbk.cloud.syseleven.net:5000/v3
+    -openstack-auth-url=${OS_AUTH_URL}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}"
