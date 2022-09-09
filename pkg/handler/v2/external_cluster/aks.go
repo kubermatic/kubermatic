@@ -1027,6 +1027,7 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		clusterSpec.NetworkProfile.NetworkMode = string(*networkProfile.NetworkMode)
 	}
 	apiCluster.Spec.AKSClusterSpec = clusterSpec
+	apiCluster.Cloud.AKS.Location = to.String(aksCluster.Location)
 
 	return apiCluster, nil
 }
