@@ -43,7 +43,7 @@ import (
 
 const (
 	clusterReadinessCheckPeriod = 10 * time.Second
-	clusterReadinessTimeout     = 10 * time.Minute
+	clusterReadinessTimeout     = 20 * time.Minute
 
 	machineDeploymentName      = "ccm-migration-e2e"
 	machineDeploymentNamespace = "kube-system"
