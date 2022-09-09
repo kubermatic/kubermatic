@@ -88,10 +88,9 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 }
 
 func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
-	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
+	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
 		osCredentials.authURL,
 		osCredentials.username,
-		osCredentials.password,
 		osCredentials.project,
 		osCredentials.region,
 		osCredentials.domain,
