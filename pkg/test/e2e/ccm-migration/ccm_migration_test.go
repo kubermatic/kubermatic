@@ -42,7 +42,7 @@ import (
 
 const (
 	userClusterPollInterval = 5 * time.Second
-	customTestTimeout       = 10 * time.Minute
+	customTestTimeout       = 30 * time.Minute
 )
 
 var _ = ginkgo.Describe("CCM migration", func() {
