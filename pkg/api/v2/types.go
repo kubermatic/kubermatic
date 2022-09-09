@@ -928,7 +928,7 @@ type EKSSubnet struct {
 	SubnetId string `json:"subnetId"`
 	// The ID of the VPC the subnet is in.
 	VpcId   string `json:"vpcId"`
-	Default bool   `json:"default,omitempty"`
+	Default bool   `json:"default"`
 }
 
 // EKSSecurityGroupList represents an array of EKS securityGroup.
@@ -960,6 +960,7 @@ type EKSVPC struct {
 type AKSCluster struct {
 	Name          string `json:"name"`
 	ResourceGroup string `json:"resourceGroup"`
+	Location      string `json:"location"`
 	IsImported    bool   `json:"imported"`
 }
 
