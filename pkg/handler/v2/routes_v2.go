@@ -121,6 +121,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listEKSClusterRoles())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/noderoles").
+		Handler(r.listEKSNodeRoles())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/eks/versions").
 		Handler(r.listEKSVersions())
 
@@ -6350,6 +6354,30 @@ func (r Routing) listEKSClusterRoles() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSClusterRolesEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/noderoles eks listEKSNodeRoles
+//
+//	List EKS Node IAM Roles.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSNodeRoleList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSNodeRoles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSNodeRolesEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

@@ -19181,6 +19181,38 @@
         }
       }
     },
+    "/api/v2/providers/eks/noderoles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS Node IAM Roles.",
+        "operationId": "listEKSNodeRoles",
+        "responses": {
+          "200": {
+            "description": "EKSNodeRoleList",
+            "schema": {
+              "$ref": "#/definitions/EKSNodeRoleList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/regions": {
       "get": {
         "produces": [
@@ -26107,6 +26139,31 @@
           "type": "string",
           "x-go-name": "Version"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSNodeRole": {
+      "type": "object",
+      "title": "EKSNodeRole represents a EKS Node IAM Role.",
+      "properties": {
+        "arn": {
+          "description": "The Amazon Resource Name (ARN) specifying the role. For more information\nabout ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)\nin the IAM User Guide guide.",
+          "type": "string",
+          "x-go-name": "Arn"
+        },
+        "roleName": {
+          "description": "RoleName  represents the friendly name that identifies the role.",
+          "type": "string",
+          "x-go-name": "RoleName"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSNodeRoleList": {
+      "type": "array",
+      "title": "EKSNodeRoleList represents a list of EKS Node IAM Roles.",
+      "items": {
+        "$ref": "#/definitions/EKSNodeRole"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
