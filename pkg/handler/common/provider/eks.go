@@ -44,8 +44,9 @@ func init() {
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
 const (
-	RegionEndpoint   = "eu-central-1"
-	EKSClusterPolicy = "AmazonEKSClusterPolicy"
+	RegionEndpoint      = "eu-central-1"
+	EKSClusterPolicy    = "AmazonEKSClusterPolicy"
+	EKSWorkerNodePolicy = "AmazonEKSWorkerNodePolicy"
 )
 
 func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
@@ -229,6 +230,41 @@ func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (api
 				if policy.PolicyName != nil && *policy.PolicyName == EKSClusterPolicy {
 					if role.Arn != nil {
 						rolesList = append(rolesList, apiv2.EKSClusterRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
+}
+
+func ListEKSNodeRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSNodeRoleList, error) {
+	var rolesList apiv2.EKSNodeRoleList
+
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "ec2.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSWorkerNodePolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, apiv2.EKSNodeRole{
 							RoleName: to.String(role.RoleName),
 							Arn:      to.String(role.Arn),
 						})

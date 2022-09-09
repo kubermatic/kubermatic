@@ -892,6 +892,22 @@ type EKSClusterRole struct {
 // swagger:model EKSClusterRoleList
 type EKSClusterRoleList []EKSClusterRole
 
+// EKSNodeRole represents a EKS Node IAM Role.
+// swagger:model EKSNodeRole
+type EKSNodeRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSNodeRoleList represents a list of EKS Node IAM Roles.
+// swagger:model EKSNodeRoleList
+type EKSNodeRoleList []EKSNodeRole
+
 // EKSAMITypeList represents a list of EKS AMI Types for node group.
 // swagger:model EKSAMITypeList
 type EKSAMITypeList []string
