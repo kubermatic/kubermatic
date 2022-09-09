@@ -21760,6 +21760,10 @@
           "type": "boolean",
           "x-go-name": "IsImported"
         },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"

@@ -20,6 +20,9 @@ type AKSCluster struct {
 	// is imported
 	IsImported bool `json:"imported,omitempty"`
 
+	// location
+	Location string `json:"location,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

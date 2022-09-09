@@ -96,7 +96,11 @@ func ListAKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 				imported = true
 			}
 		}
-		clusters = append(clusters, apiv2.AKSCluster{Name: *cluster.Name, ResourceGroup: resourceGroup, IsImported: imported})
+		clusters = append(clusters, apiv2.AKSCluster{
+			Name:          to.String(cluster.Name),
+			Location:      to.String(cluster.Location),
+			ResourceGroup: resourceGroup,
+			IsImported:    imported})
 	}
 	return clusters, nil
 }

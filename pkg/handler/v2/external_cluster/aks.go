@@ -460,6 +460,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
+	// If Spec is not nil, it is interpreted as create cluster on the provider.
 	if spec != nil && spec.AKSClusterSpec != nil {
 		if err := checkCreateClusterReqValidity(cloud.AKS, spec.AKSClusterSpec); err != nil {
 			return nil, err
@@ -1017,6 +1018,7 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		clusterSpec.NetworkProfile.NetworkMode = string(*networkProfile.NetworkMode)
 	}
 	apiCluster.Spec.AKSClusterSpec = clusterSpec
+	apiCluster.Cloud.AKS.Location = to.String(aksCluster.Location)
 
 	return apiCluster, nil
 }
