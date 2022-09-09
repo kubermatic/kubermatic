@@ -42,7 +42,7 @@ import (
 
 const (
 	userClusterPollInterval = 5 * time.Second
-	customTestTimeout       = 30 * time.Minute
+	customTestTimeout       = 20 * time.Minute
 )
 
 var _ = ginkgo.Describe("CCM migration", func() {
@@ -89,8 +89,26 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			})).NotTo(gomega.HaveOccurred())
 			gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
-			gomega.Expect(clusterJig.CreateMachineDeployment(userClient, options.osCredentials))
+			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+				err = clusterJig.CreateMachineDeployment(userClient, options.osCredentials)
+				if err != nil {
+					clusterJig.Log.Debug("MachineDeployment creation failed")
+					return false, nil
+				}
+
+				return err == nil, nil
+			})).NotTo(gomega.HaveOccurred())
 			clusterJig.Log.Debug("MachineDeployment created")
+
+			clusterJig.Log.Debug("Waiting for node(s) to be ready...")
+			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+				ready, err := clusterJig.WaitForNodeToBeReady(userClient)
+				if err != nil {
+					clusterJig.Log.Debug("Failed to check node readiness")
+				}
+				return ready, nil
+			})).NotTo(gomega.HaveOccurred())
+			clusterJig.Log.Debug("Node(s) are ready.")
 		})
 
 		ginkgo.AfterEach(func() {
