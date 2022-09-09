@@ -123,7 +123,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						"--secure-port", "4443",
 						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
-						"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
+						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
