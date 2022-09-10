@@ -728,9 +728,14 @@ func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client c
 	// to do since for all the new clusters this field will be explicitly set to `true` via the webhooks.
 	for _, cluster := range clusterList.Items {
 		if cluster.Spec.EnableOperatingSystemManager == nil {
+			oldCluster := cluster.DeepCopy()
 			cluster.Spec.EnableOperatingSystemManager = pointer.Bool(false)
 
-			if err := client.Update(ctx, &cluster); err != nil {
+			// This must use Patch() instead of Update(); during the 2.20->2.21 change the spec.pause field was made optional
+			// and so an Update() from the operator on the master cluster (with 2.21 CRDs) will fail on external seed clusters
+			// on 2.20, where the spec.pause field is still required (as the payload will not contain the pause flag due to
+			// omitempty). The CRDs are purposefully updated *after* this OSM migration took place.
+			if err := client.Patch(ctx, &cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
 				// Instead of breaking on the first error just aggregate them to []errors and try to cover as much resources
 				// as we can in each run.
 				errors = append(errors, err)
