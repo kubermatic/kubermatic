@@ -19,7 +19,26 @@ package seedsync
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
+
+func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return original.Name, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Labels = original.Labels
+			if s.Labels == nil {
+				s.Labels = make(map[string]string)
+			}
+			s.Labels[ManagedByLabel] = ControllerName
+
+			s.Annotations = original.Annotations
+			s.Data = original.Data
+
+			return s, nil
+		}
+	}
+}
 
 func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 	return func() (string, reconciling.SeedCreator) {
