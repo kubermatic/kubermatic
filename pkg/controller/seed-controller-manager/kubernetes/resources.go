@@ -57,6 +57,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -288,7 +289,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 			OwnerReferences: []metav1.OwnerReference{r.getOwnerRefForCluster(cluster)},
 		},
 	}
-	if err := r.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
+	if err := r.Create(ctx, ns); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return nil, fmt.Errorf("failed to create Namespace %s: %w", namespace, err)
 	}
 

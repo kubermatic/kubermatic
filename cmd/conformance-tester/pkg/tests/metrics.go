@@ -32,7 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -173,7 +172,7 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 		},
 	}
 
-	if err := userClusterClient.Create(ctx, pod); err != nil && !apierrors.IsAlreadyExists(err) {
+	if err := userClusterClient.Create(ctx, pod); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 

@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,15 +29,11 @@ import (
 func EnsureNamespace(ctx context.Context, log logrus.FieldLogger, kubeClient ctrlruntimeclient.Client, namespace string) error {
 	log.WithField("namespace", namespace).Debug("Ensuring namespace…")
 
-	ns := corev1.Namespace{
+	err := kubeClient.Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
-	}
+	})
 
-	if err := kubeClient.Create(ctx, &ns); err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
+	return ctrlruntimeclient.IgnoreAlreadyExists(err)
 }
