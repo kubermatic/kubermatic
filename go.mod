@@ -166,6 +166,7 @@ require (
 	github.com/aws/smithy-go v1.12.0 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
 	github.com/bugsnag/bugsnag-go v0.0.0-20141110184014-b1d153021fcd // indirect
 	github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b // indirect
@@ -197,6 +198,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.7 // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -360,9 +362,4 @@ require (
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-)
-
-require (
-	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 )
