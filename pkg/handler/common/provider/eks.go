@@ -246,17 +246,17 @@ func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (api
 func ListEKSNodeRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSNodeRoleList, error) {
 	var rolesList apiv2.EKSNodeRoleList
 
-	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
-	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
+	rolesOutput, err := client.IAM.ListRoles(ctx, &iam.ListRolesInput{})
 	if err != nil {
 		return nil, err
 	}
 	for _, role := range rolesOutput.Roles {
 		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "ec2.amazonaws.com") {
-			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(ctx, &iam.ListAttachedRolePoliciesInput{
 				RoleName: role.RoleName,
 			})
 			if err != nil {
