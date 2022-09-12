@@ -75,10 +75,10 @@ func TestDownloadChart(t *testing.T) {
 	chartArchiveDir := t.TempDir()
 
 	chartGlobPath := path.Join(chartArchiveDir, "*.tgz")
-	chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
-	chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
-	chartArchiveV1Name := "examplechart-0.1.0.tgz"
-	chartArchiveV2Name := "examplechart-0.2.0.tgz"
+	chartArchiveV1Path, chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
+	chartArchiveV2Path, chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
+	chartArchiveV1Name := path.Base(chartArchiveV1Path)
+	chartArchiveV2Name := path.Base(chartArchiveV2Path)
 
 	srv, err := repotest.NewTempServerWithCleanup(t, chartGlobPath)
 	if err != nil {
@@ -643,8 +643,8 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 }
 
 // packageChart packages the chart in chartDir into a chart archive file (i.e. a tgz) in destDir directory and returns
-// the size of the archive.
-func packageChart(t *testing.T, chartDir string, destDir string) int64 {
+// the full path and the size of the archive.
+func packageChart(t *testing.T, chartDir string, destDir string) (string, int64) {
 	ch, err := loader.LoadDir(chartDir)
 	if err != nil {
 		t.Fatalf("failed to load chart '%s': %s", chartDir, err)
@@ -666,5 +666,5 @@ func packageChart(t *testing.T, chartDir string, destDir string) int64 {
 		t.Fatalf("can get size chart archive %s", err)
 	}
 
-	return expectedChartInfo.Size()
+	return archivePath, expectedChartInfo.Size()
 }
