@@ -100,11 +100,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to create seed cluster client: %w", err)
 	}
 
-	seedKubeconfig, err := kubernetes.GetSeedKubeconfigSecret(ctx, r.masterClient, seed)
-	if err != nil {
-		return fmt.Errorf("failed to get seed kubeconfig: %w", err)
-	}
-
 	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
 	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
 	if err != nil {
@@ -120,10 +115,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	if err := r.createOnSeed(ctx, ns, seedClient, log.With("namespace", ns.Name)); err != nil {
 		return fmt.Errorf("failed to create KKP namespace: %w", err)
-	}
-
-	if err := r.createOnSeed(ctx, seedKubeconfig, seedClient, log.With("seed", seed.Name)); err != nil {
-		return fmt.Errorf("failed to create Seed kubeconfig resource copy: %w", err)
 	}
 
 	if err := r.createOnSeed(ctx, seed, seedClient, log.With("seed", seed.Name)); err != nil {

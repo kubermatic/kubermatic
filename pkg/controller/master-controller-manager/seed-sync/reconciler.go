@@ -143,19 +143,6 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 
 	// see project-synchronizer's syncAllSeeds comment
 	if seedInSeed.UID == "" || seedInSeed.UID != seed.UID {
-		seedKubeconfig, err := kubernetesprovider.GetSeedKubeconfigSecret(ctx, r, seed)
-		if err != nil {
-			return fmt.Errorf("failed to get kubeconfig for seed: %w", err)
-		}
-
-		seedKubeconfigCreators := []reconciling.NamedSecretCreatorGetter{
-			secretCreator(seedKubeconfig),
-		}
-
-		if err := reconciling.ReconcileSecrets(ctx, seedKubeconfigCreators, seedKubeconfig.Namespace, seedClient); err != nil {
-			return fmt.Errorf("failed to reconcile seed kubeconfig: %w", err)
-		}
-
 		seedCreators := []reconciling.NamedSeedCreatorGetter{
 			seedCreator(seed),
 		}
