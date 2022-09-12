@@ -130,32 +130,51 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 	}, nil
 }
 
+func GetSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: seed.Spec.Kubeconfig.Namespace,
+		Name:      seed.Spec.Kubeconfig.Name,
+	}
+	if name.Namespace == "" {
+		name.Namespace = seed.Namespace
+	}
+	if err := client.Get(ctx, name, secret); err != nil {
+		return nil, fmt.Errorf("failed to get kubeconfig secret %q: %w", name.String(), err)
+	}
+
+	return secret, nil
+}
+
+func GetSeedKubeconfig(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) ([]byte, error) {
+	secret, err := GetSeedKubeconfigSecret(ctx, client, seed)
+	if err != nil {
+		return nil, err
+	}
+
+	fieldPath := seed.Spec.Kubeconfig.FieldPath
+	if len(fieldPath) == 0 {
+		fieldPath = DefaultKubeconfigFieldPath
+	}
+	if _, exists := secret.Data[fieldPath]; !exists {
+		return nil, fmt.Errorf("secret %q has no key %q", secret.Name, fieldPath)
+	}
+
+	return secret.Data[fieldPath], nil
+}
+
 func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (SeedKubeconfigGetter, error) {
 	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
-		secret := &corev1.Secret{}
-		name := types.NamespacedName{
-			Namespace: seed.Spec.Kubeconfig.Namespace,
-			Name:      seed.Spec.Kubeconfig.Name,
-		}
-		if name.Namespace == "" {
-			name.Namespace = seed.Namespace
-		}
-		if err := client.Get(ctx, name, secret); err != nil {
-			return nil, fmt.Errorf("failed to get kubeconfig secret %q: %w", name.String(), err)
+		kubeconfig, err := GetSeedKubeconfig(ctx, client, seed)
+		if err != nil {
+			return nil, err
 		}
 
-		fieldPath := seed.Spec.Kubeconfig.FieldPath
-		if len(fieldPath) == 0 {
-			fieldPath = DefaultKubeconfigFieldPath
-		}
-		if _, exists := secret.Data[fieldPath]; !exists {
-			return nil, fmt.Errorf("secret %q has no key %q", name.String(), fieldPath)
-		}
-
-		cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
+		cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 		}
+
 		return cfg, nil
 	}, nil
 }
