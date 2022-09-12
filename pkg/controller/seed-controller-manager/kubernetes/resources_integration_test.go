@@ -49,7 +49,7 @@ func (c *testUserClusterConnectionProvider) GetClient(context.Context, *kubermat
 	return c, nil
 }
 
-func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object) error {
+func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object, _ ...ctrlruntimeclient.GetOption) error {
 	switch x := obj.(type) {
 	case *corev1.ServiceAccount:
 		x.Secrets = append(x.Secrets, corev1.ObjectReference{

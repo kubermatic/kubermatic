@@ -56,6 +56,7 @@ func (f *fakeClientThatErrorsOnGet) Get(
 	_ context.Context,
 	key ctrlruntimeclient.ObjectKey,
 	_ ctrlruntimeclient.Object,
+	_ ...ctrlruntimeclient.GetOption,
 ) error {
 	return errors.New("erroring on get as requested")
 }
