@@ -55,6 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -287,7 +288,8 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 
 	// if master and seed clusters are shared, the webhook can be configured
 	// with a seed name; if no name is configured, the seed getter will simply
-	// return nil.
+	// return nil. Note that just because -seed-name is given does not mean the
+	// webhook runs on a seed-only cluster, it can very well be a shared master/seed.
 	// The kubermatic-operator takes care of setting the -seed-name flag properly.
 	if options.seedName != "" {
 		seedGetter, err = seedGetterFactory(ctx, client, options)
@@ -310,7 +312,21 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 		log.Fatalw("Failed to create seed kubeconfig getter", zap.Error(err))
 	}
 
-	seedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
+	// To improve performance and to not require the seed kubeconfig Secret to be
+	// present on each seed clusters, we create a custom seed client getter that
+	// will return the local client if the seed's name is equal to -seed-name.
+	// We cannot always return the local client as this would break on shared
+	// master/seed systems (i.e. -seed-name being given means this is _also_ a
+	// seed cluster, not necessarily _only_ a seed cluster).
+	standardClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
+
+	seedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+		if options.seedName != "" && options.seedName == seed.Name {
+			return client, nil
+		}
+
+		return standardClientGetter(seed)
+	}
 
 	return
 }
