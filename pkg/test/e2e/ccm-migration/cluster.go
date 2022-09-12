@@ -35,6 +35,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/pointer"
@@ -43,7 +44,7 @@ import (
 
 const (
 	clusterReadinessCheckPeriod = 10 * time.Second
-	clusterReadinessTimeout     = 10 * time.Minute
+	clusterReadinessTimeout     = 15 * time.Minute
 
 	machineDeploymentName      = "ccm-migration-e2e"
 	machineDeploymentNamespace = "kube-system"
@@ -87,10 +88,9 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 }
 
 func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
-	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
+	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
 		osCredentials.authURL,
 		osCredentials.username,
-		osCredentials.password,
 		osCredentials.project,
 		osCredentials.region,
 		osCredentials.domain,
@@ -310,4 +310,26 @@ func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) e
 
 		return cl.Status.Conditions[kubermaticv1.ClusterConditionSeedResourcesUpToDate].Status == corev1.ConditionTrue, nil
 	})
+}
+
+func (ccj *ClusterJig) WaitForNodeToBeReady(userClient ctrlruntimeclient.Client) (bool, error) {
+	machines := &clusterv1alpha1.MachineList{}
+	if err := userClient.List(context.Background(), machines); err != nil {
+		return false, err
+	}
+	for _, m := range machines.Items {
+		if nodeRef := m.Status.NodeRef; nodeRef != nil && m.DeletionTimestamp == nil {
+			node := &corev1.Node{}
+			if err := userClient.Get(context.Background(), types.NamespacedName{Name: nodeRef.Name}, node); err != nil {
+				return false, err
+			}
+			for _, c := range node.Status.Conditions {
+				if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
 }
