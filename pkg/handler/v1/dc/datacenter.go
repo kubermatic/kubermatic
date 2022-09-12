@@ -288,6 +288,9 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		// Add DC, update seed
+		if seed.Spec.Datacenters == nil {
+			seed.Spec.Datacenters = map[string]kubermaticv1.Datacenter{}
+		}
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		if err = masterClient.Update(ctx, seed); err != nil {
