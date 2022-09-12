@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	anexiaProvider "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
 	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
@@ -458,8 +459,28 @@ func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter)
 		TemplateID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.TemplateID},
 		CPUs:       nodeSpec.Cloud.Anexia.CPUs,
 		Memory:     int(nodeSpec.Cloud.Anexia.Memory),
-		DiskSize:   int(nodeSpec.Cloud.Anexia.DiskSize),
+		DiskSize:   int(*nodeSpec.Cloud.Anexia.DiskSize),
 		LocationID: providerconfig.ConfigVarString{Value: dc.Spec.Anexia.LocationID},
+	}
+
+	if nodeSpec.Cloud.Anexia.DiskSize != nil {
+		config.DiskSize = int(*nodeSpec.Cloud.Anexia.DiskSize)
+	}
+
+	if diskcount := len(nodeSpec.Cloud.Anexia.Disks); diskcount > 0 {
+		config.Disks = make([]anexia.RawDisk, diskcount)
+
+		for diskIndex, diskConfig := range nodeSpec.Cloud.Anexia.Disks {
+			config.Disks[diskIndex].Size = int(diskConfig.Size)
+
+			if diskConfig.PerformanceType != nil {
+				config.Disks[diskIndex].PerformanceType.Value = *diskConfig.PerformanceType
+			}
+		}
+	}
+
+	if config.DiskSize >= 0 && len(config.Disks) > 0 {
+		return nil, anexiaProvider.ErrConfigDiskSizeAndDisks
 	}
 
 	ext := &runtime.RawExtension{}

@@ -43,7 +43,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.51.0
+	github.com/kubermatic/machine-controller v1.54.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
@@ -251,10 +251,10 @@ require (
 )
 
 replace (
-	github.com/anexia-it/go-anxcloud => github.com/anexia-it/go-anxcloud v0.3.8
+	github.com/anexia-it/go-anxcloud => github.com/anexia-it/go-anxcloud v0.3.28
 	github.com/apoydence/onpar => github.com/poy/onpar v0.0.0-20200406201722-06f95a1c68e8
 	github.com/envoyproxy/go-control-plane => github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0
-	github.com/kubermatic/machine-controller => github.com/kubermatic/machine-controller v1.45.1
+	github.com/kubermatic/machine-controller => github.com/kubermatic/machine-controller v1.45.4
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
