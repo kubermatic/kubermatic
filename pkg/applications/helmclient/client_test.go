@@ -54,8 +54,8 @@ const defaultNs = "default"
 
 func TestNewShouldFailWhenRESTClientGetterNamespaceIsDifferentThanTargetNamespace(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-	downloadDest, settings := createHelmConfiguration(t)
-	defer os.RemoveAll(downloadDest)
+	tempDir := t.TempDir()
+	settings := NewSettings(tempDir)
 
 	tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
 	defer tf.Cleanup()
@@ -75,10 +75,10 @@ func TestDownloadChart(t *testing.T) {
 	chartArchiveDir := t.TempDir()
 
 	chartGlobPath := path.Join(chartArchiveDir, "*.tgz")
-	chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
-	chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
-	chartArchiveV1Name := "examplechart-0.1.0.tgz"
-	chartArchiveV2Name := "examplechart-0.2.0.tgz"
+	chartArchiveV1Path, chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
+	chartArchiveV2Path, chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
+	chartArchiveV1Name := path.Base(chartArchiveV1Path)
+	chartArchiveV2Name := path.Base(chartArchiveV2Path)
 
 	srv, err := repotest.NewTempServerWithCleanup(t, chartGlobPath)
 	if err != nil {
@@ -209,8 +209,8 @@ func TestDownloadChart(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			func() {
-				downloadDest, settings := createHelmConfiguration(t)
-				defer os.RemoveAll(downloadDest)
+				downloadDest := t.TempDir()
+				settings := NewSettings(downloadDest)
 
 				tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
 				defer tf.Cleanup()
@@ -410,8 +410,8 @@ func TestBuildDependencies(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			func() {
-				tempDir, settings := createHelmConfiguration(t)
-				defer os.RemoveAll(tempDir)
+				tempDir := t.TempDir()
+				settings := NewSettings(tempDir)
 
 				tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
 				defer tf.Cleanup()
@@ -519,18 +519,6 @@ func assertDependencyLoaded(chartUnderTest *chart.Chart, dep *chart.Dependency, 
 	if !found {
 		t.Fatalf("dependency  %v has not been loaded into chart", dep)
 	}
-}
-
-// createHelmConfiguration creates the temporary directory where helm caches and chart will be download and the
-// corresponding HelmSettings.It returns the path to the temporary directory and the HelmSettings.
-func createHelmConfiguration(t *testing.T) (string, HelmSettings) {
-	t.Helper()
-
-	downloadDest, err := os.MkdirTemp("", "helmClientTest-")
-	if err != nil {
-		t.Fatalf("can not create temp dir where chart will be downloaded: %s", err)
-	}
-	return downloadDest, NewSettings(downloadDest)
 }
 
 // HashReq generates a hash of the dependencies.
@@ -655,8 +643,8 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 }
 
 // packageChart packages the chart in chartDir into a chart archive file (i.e. a tgz) in destDir directory and returns
-// the size of the archive.
-func packageChart(t *testing.T, chartDir string, destDir string) int64 {
+// the full path and the size of the archive.
+func packageChart(t *testing.T, chartDir string, destDir string) (string, int64) {
 	ch, err := loader.LoadDir(chartDir)
 	if err != nil {
 		t.Fatalf("failed to load chart '%s': %s", chartDir, err)
@@ -678,5 +666,5 @@ func packageChart(t *testing.T, chartDir string, destDir string) int64 {
 		t.Fatalf("can get size chart archive %s", err)
 	}
 
-	return expectedChartInfo.Size()
+	return archivePath, expectedChartInfo.Size()
 }

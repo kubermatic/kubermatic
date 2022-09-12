@@ -18,6 +18,6 @@
 # name: value
 
 cmData:
-  foo: bar
+  foo-version-2: bar-version-2
 
-versionLabel: "1.0"
+versionLabel: "2.0"
