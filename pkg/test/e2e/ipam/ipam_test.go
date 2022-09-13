@@ -148,13 +148,19 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating third IPAM Pool...")
-	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+	ipamPool3Datacenters := map[string]kubermaticv1.IPAMPoolDatacenterSettings{
 		jig.DatacenterName(): {
 			Type:             "prefix",
 			PoolCIDR:         "193.169.1.0/28",
 			AllocationPrefix: 29,
 		},
-	})
+		jig.DatacenterName() + "-dummy": {
+			Type:            "range",
+			PoolCIDR:        "194.170.1.0/28",
+			AllocationRange: 8,
+		},
+	}
+	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "", ipamPool3Datacenters)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -180,6 +186,20 @@ func TestIPAM(t *testing.T) {
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.8/29",
 	}); err != nil {
+		t.Fatal(err)
+	}
+
+	log.Info("Removing cluster datacenter spec from IPAM pool 3...")
+	delete(ipamPool3Datacenters, jig.DatacenterName())
+	err = updateIPAMPool(ctx, seedClient, ipamPool3.Name, ipamPool3Datacenters)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -216,19 +236,14 @@ func TestIPAM(t *testing.T) {
 	log.Info("Deleting second cluster...")
 	cleanupUserCluster2()
 
-	log.Info("Deleting third cluster...")
-	cleanupUserCluster3()
-
 	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name); err != nil {
 		t.Fatal(err)
 	}
-	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name); err != nil {
-		t.Fatal(err)
-	}
+
+	log.Info("Deleting third cluster...")
+	cleanupUserCluster3()
+
 	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name); err != nil {
-		t.Fatal(err)
-	}
-	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -296,6 +311,22 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	}
 
 	return ipamPool, nil
+}
+
+func updateIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, ipamPoolName string, datacenters map[string]kubermaticv1.IPAMPoolDatacenterSettings) error {
+	ipamPool := &kubermaticv1.IPAMPool{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamPoolName}, ipamPool); err != nil {
+		return fmt.Errorf("failed to get IPAM pool: %w", err)
+	}
+
+	newIPAMPool := ipamPool.DeepCopy()
+	newIPAMPool.Spec.Datacenters = datacenters
+
+	if err := seedClient.Patch(ctx, newIPAMPool, ctrlruntimeclient.MergeFrom(ipamPool)); err != nil {
+		return fmt.Errorf("failed to update IPAM pool: %w", err)
+	}
+
+	return nil
 }
 
 func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) error {
