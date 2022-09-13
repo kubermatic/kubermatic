@@ -71,7 +71,13 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating first IPAM Pool (for metallb addon)...")
-	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8, "metallb")
+	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "metallb", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:            "range",
+			PoolCIDR:        "192.168.1.0/28",
+			AllocationRange: 8,
+		},
+	})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -86,7 +92,13 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating second IPAM Pool...")
-	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.169.1.0/27", "prefix", 28, "")
+	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:             "prefix",
+			PoolCIDR:         "192.169.1.0/27",
+			AllocationPrefix: 28,
+		},
+	})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -136,7 +148,13 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating third IPAM Pool...")
-	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "193.169.1.0/28", "prefix", 29, "")
+	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:             "prefix",
+			PoolCIDR:         "193.169.1.0/28",
+			AllocationPrefix: 29,
+		},
+	})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -255,7 +273,7 @@ func createUserCluster(
 	return cluster, clusterClient, cleanup, err
 }
 
-func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, poolCIDR kubermaticv1.SubnetCIDR, allocationType kubermaticv1.IPAMPoolAllocationType, allocationValue int, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
+func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, ipamPoolName string, datacenters map[string]kubermaticv1.IPAMPoolDatacenterSettings) (*kubermaticv1.IPAMPool, error) {
 	if ipamPoolName == "" {
 		ipamPoolName = rand.String(10)
 	}
@@ -266,14 +284,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 			Labels: map[string]string{},
 		},
 		Spec: kubermaticv1.IPAMPoolSpec{
-			Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-				jig.DatacenterName(): {
-					Type:             allocationType,
-					PoolCIDR:         poolCIDR,
-					AllocationRange:  allocationValue,
-					AllocationPrefix: allocationValue,
-				},
-			},
+			Datacenters: datacenters,
 		},
 	}); err != nil {
 		return nil, err
