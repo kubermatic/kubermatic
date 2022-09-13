@@ -36,15 +36,15 @@ type clusterNetworkingConfig models.ClusterNetworkingConfig
 
 func defaultClusterNetworkingConfig() clusterNetworkingConfig {
 	c := models.ClusterNetworkingConfig{
-		NodeCIDRMaskSizeIPV4: 20,
-		NodeCIDRMaskSizeIPV6: 100,
+		NodeCIDRMaskSizeIPV4: 24,
+		NodeCIDRMaskSizeIPV6: 64,
 		ProxyMode:            "ebpf",
 		IPFamily:             "IPv4+IPv6",
 		Pods: &models.NetworkRanges{
-			CIDRBlocks: []string{"172.25.0.0/16", "fd00::/99"},
+			CIDRBlocks: []string{"172.25.0.0/16", "fd01::/48"},
 		},
 		Services: &models.NetworkRanges{
-			CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
+			CIDRBlocks: []string{"10.240.16.0/20", "fd02::/120"},
 		},
 		KonnectivityEnabled: true,
 	}
@@ -270,17 +270,29 @@ type openstack struct{}
 
 var _ clusterSpec = openstack{}
 
+// getImage returns image name for given OS name.
+// We need this because OpenStack NodeSpec requires
+// image specified.
 func (a openstack) getImage(osName string) string {
 	switch osName {
-	case "ubuntu":
+	case Ubuntu:
 		return "Ubuntu Focal 20.04 (2021-07-01)"
-	case "centos":
-		return "CentOS 8 (2021-07-05)"
-	case "flatcar":
-		return "Flatcar Stable (2022-05-10)"
+	case CentOS:
+		return "machine-controller-e2e-centos"
+	case Flatcar:
+		return "kubermatic-e2e-flatcar"
+	case RHEL:
+		return "kubermatic-e2e-rhel"
 	default:
 		return fmt.Sprintf("unknown os: %s", osName)
 	}
+}
+
+func addRHELSubscriptionInfo(o models.OperatingSystemSpec) models.OperatingSystemSpec {
+	o.Rhel.RHELSubscriptionManagerUser = os.Getenv("OS_RHEL_USERNAME")
+	o.Rhel.RHELSubscriptionManagerPassword = os.Getenv("OS_RHEL_PASSWORD")
+	o.Rhel.RHSMOfflineToken = os.Getenv("OS_RHEL_OFFLINE_TOKEN")
+	return o
 }
 
 func (a openstack) NodeSpec() models.NodeCloudSpec {
@@ -404,7 +416,7 @@ var _ clusterSpec = vsphere{}
 func (a vsphere) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Vsphere: &models.VSphereNodeSpec{
-			Template:   "ubuntu-20.04",
+			Template:   "kkp-ubuntu-20.04",
 			CPUs:       2,
 			Memory:     4096,
 			DiskSizeGB: 10,

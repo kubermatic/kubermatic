@@ -227,7 +227,6 @@ func CreateEndpoint(
 				if credentials := preset.Spec.EKS; credentials != nil {
 					cloud.EKS.AccessKeyID = credentials.AccessKeyID
 					cloud.EKS.SecretAccessKey = credentials.SecretAccessKey
-					cloud.EKS.Region = credentials.Region
 				}
 			}
 
@@ -1024,6 +1023,7 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 		cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,
+			Location:      cloud.AKS.Location,
 		}
 	}
 	if cloud.KubeOne != nil {
@@ -1095,7 +1095,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	if err != nil && apiCluster.Status.State == apiv2.RunningExternalClusterState {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
 			State:         apiv2.ErrorExternalClusterState,
-			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
+			StatusMessage: "Can't access cluster via kubeconfig. Please check the credentials privileges.",
 		}
 	}
 	return apiCluster

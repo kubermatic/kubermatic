@@ -28,7 +28,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
@@ -37,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/images/docker"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
@@ -127,7 +127,7 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 }
 
 func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
+	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
@@ -215,12 +215,6 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 
 func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
-	cloudConfigConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.CloudConfigConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
 	caBundleConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.CABundleConfigMapName,
@@ -259,7 +253,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	}
 	configMapList := &corev1.ConfigMapList{
 		Items: []corev1.ConfigMap{
-			cloudConfigConfigMap,
 			caBundleConfigMap,
 			prometheusConfigMap,
 			dnsResolverConfigMap,
@@ -306,6 +299,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		},
 	}
 	secretList := createNamedSecrets([]string{
+		resources.CloudConfigSeedSecretName,
 		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,
@@ -391,9 +385,9 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithSeed(&kubermaticv1.Seed{}).
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
-		WithKubermaticImage(defaults.DefaultKubermaticImage).
-		WithEtcdLauncherImage(defaults.DefaultEtcdLauncherImage).
-		WithDnatControllerImage(defaults.DefaultDNATControllerImage).
+		WithKubermaticImage(defaulting.DefaultKubermaticImage).
+		WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
+		WithDnatControllerImage(defaulting.DefaultDNATControllerImage).
 		WithBackupPeriod(20 * time.Minute).
 		WithFailureDomainZoneAntiaffinity(false).
 		WithVersions(kubermaticVersions).

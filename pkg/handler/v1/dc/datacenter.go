@@ -31,6 +31,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -287,6 +288,9 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		// Add DC, update seed
+		if seed.Spec.Datacenters == nil {
+			seed.Spec.Datacenters = map[string]kubermaticv1.Datacenter{}
+		}
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		if err = masterClient.Update(ctx, seed); err != nil {
@@ -427,7 +431,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		kubermaticPatched := convertExternalDCToInternal(&patched.Spec)
 
 		// As provider field is extracted from providers, we need to make sure its set properly
-		providerName, err := provider.DatacenterCloudProviderName(kubermaticPatched.Spec.DeepCopy())
+		providerName, err := kubermaticv1helper.DatacenterCloudProviderName(kubermaticPatched.Spec.DeepCopy())
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed extracting provider name from dc: %v", err))
 		}
@@ -603,7 +607,7 @@ func convertInternalDCToExternal(dc *kubermaticv1.Datacenter, dcName, seedName s
 }
 
 func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpec, error) {
-	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
+	p, err := kubermaticv1helper.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}

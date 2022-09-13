@@ -18,6 +18,7 @@ package validation
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
@@ -27,6 +28,7 @@ import (
 	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -47,7 +49,9 @@ var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
+)
 
+const (
 	// UnsafeCNIUpgradeLabel allows unsafe CNI version upgrade (difference in versions more than one minor version).
 	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
 	// UnsafeCNIMigrationLabel allows unsafe CNI type migration.
@@ -61,6 +65,9 @@ var (
 	// "-control-plane" being added by KKP. This leaves 39 usable characters
 	// and to give some wiggle room, we define the max length to be 36.
 	MaxClusterNameLength = 36
+
+	// EARKeyLength is required key length for encryption at rest.
+	EARKeyLength = 32
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
@@ -202,7 +209,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
 	}
 
-	if address := newCluster.GetAddress(); address.AdminToken != "" {
+	if address := newCluster.Status.Address; address.AdminToken != "" {
 		if err := kuberneteshelper.ValidateKubernetesToken(address.AdminToken); err != nil {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("address", "adminToken"), address.AdminToken, err.Error()))
 		}
@@ -350,7 +357,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 	}
 
 	if n.IPFamily == kubermaticv1.IPFamilyDualStack && dc != nil {
-		cloudProvider, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		cloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(fldPath, nil,
 				fmt.Sprintf("could not determine cloud provider: %v", err)))
@@ -399,6 +406,12 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 					allErrs = append(allErrs, field.Invalid(childPath, key.Name,
 						"'value' and 'secretRef' cannot be set at the same time"))
 				}
+
+				if key.Value != "" {
+					if err := validateKeyLength(key.Value); err != nil {
+						allErrs = append(allErrs, field.Invalid(childPath, key.Name, fmt.Sprint(err)))
+					}
+				}
 			}
 		}
 
@@ -406,6 +419,20 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 	}
 
 	return allErrs
+}
+
+// validateKeyLength base64 decodes key and checks length.
+func validateKeyLength(key string) error {
+	data, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return err
+	}
+
+	if len(data) != EARKeyLength {
+		return fmt.Errorf("key length should be 32 it is %d", len(data))
+	}
+
+	return nil
 }
 
 func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kubermaticv1.Cluster) field.ErrorList {
@@ -532,12 +559,12 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 		return errors.New("changing the datacenter is not allowed")
 	}
 
-	oldCloudProvider, err := provider.ClusterCloudProviderName(oldSpec)
+	oldCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(oldSpec)
 	if err != nil {
 		return fmt.Errorf("could not determine old cloud provider: %w", err)
 	}
 
-	newCloudProvider, err := provider.ClusterCloudProviderName(newSpec)
+	newCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(newSpec)
 	if err != nil {
 		return fmt.Errorf("could not determine new cloud provider: %w", err)
 	}
@@ -559,7 +586,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		allErrs = append(allErrs, field.Required(parentFieldPath.Child("dc"), "no node datacenter specified"))
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(spec)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(spec)
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(parentFieldPath, "<redacted>", err.Error()))
 	}
@@ -574,12 +601,12 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	}
 
 	if dc != nil {
-		clusterCloudProvider, err := provider.ClusterCloudProviderName(spec)
+		clusterCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(spec)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine cluster cloud provider: %v", err)))
 		}
 
-		dcCloudProvider, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine datacenter cloud provider: %v", err)))
 		}

@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -75,7 +76,7 @@ func Add(
 		recorder:         masterManager.GetEventRecorderFor(ControllerName),
 		masterClient:     masterManager.GetClient(),
 		seedsGetter:      seedsGetter,
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		seedClientGetter: kubernetes.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})

@@ -232,6 +232,25 @@ func ListAKSVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGett
 	}
 }
 
+func ListAKSResourceGroupsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(AKSCommonReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		cred, err := getAKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		return aks.ListAzureResourceGroups(ctx, cred)
+	}
+}
+
 func ListAKSLocationsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(AKSCommonReq)
@@ -343,7 +362,7 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 	optionalSettings := agentPoolProfiles.OptionalSettings
 	clusterToCreate := armcontainerservice.ManagedCluster{
 		Name:     pointer.String(aksCloudSpec.Name),
-		Location: pointer.String(clusterSpec.Location),
+		Location: pointer.String(aksCloudSpec.Location),
 		Properties: &armcontainerservice.ManagedClusterProperties{
 			DNSPrefix:         pointer.String(aksCloudSpec.Name),
 			KubernetesVersion: pointer.String(clusterSpec.KubernetesVersion),
@@ -418,11 +437,11 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 	return nil
 }
 
-func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
-	if len(aksclusterSpec.Location) == 0 {
-		return utilerrors.NewBadRequest("required field is missing: Location")
+func checkCreateClusterReqValidity(cloudSpec *apiv2.AKSCloudSpec, clusterSpec *apiv2.AKSClusterSpec) error {
+	if len(cloudSpec.Location) == 0 {
+		return utilerrors.NewBadRequest("required field is missing: location")
 	}
-	agentPoolProfiles := aksclusterSpec.MachineDeploymentSpec
+	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
 	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
 		return utilerrors.NewBadRequest("Must define at least one system pool!")
 	}
@@ -441,8 +460,18 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
+	if err := aks.ValidateCredentialsPermissions(ctx, resources.AKSCredentials{
+		TenantID:       cloud.AKS.TenantID,
+		ClientID:       cloud.AKS.ClientID,
+		SubscriptionID: cloud.AKS.SubscriptionID,
+		ClientSecret:   cloud.AKS.ClientSecret,
+	}, cloud.AKS.ResourceGroup); err != nil {
+		return nil, err
+	}
+
+	// If Spec is not nil, it is interpreted as create cluster on the provider.
 	if spec != nil && spec.AKSClusterSpec != nil {
-		if err := checkCreateClusterReqValidity(spec.AKSClusterSpec); err != nil {
+		if err := checkCreateClusterReqValidity(cloud.AKS, spec.AKSClusterSpec); err != nil {
 			return nil, err
 		}
 		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
@@ -455,6 +484,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,
+			Location:      cloud.AKS.Location,
 		},
 	}
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
@@ -651,9 +681,22 @@ func createMachineDeploymentFromAKSNodePoll(nodePool *armcontainerservice.Manage
 	if nodePool.UpgradeSettings != nil {
 		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
-	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil || nodePool.PowerState.Code != nil) {
+	if nodePool.ProvisioningState != nil && (nodePool.PowerState != nil && nodePool.PowerState.Code != nil) {
+		state := aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code, md.NodeDeployment.Status.ReadyReplicas)
 		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: aks.ConvertMDStatus(*nodePool.ProvisioningState, *nodePool.PowerState.Code),
+			State: state,
+			AKS: &apiv2.AKSMDPhase{
+				ProvisioningState: apiv2.AKSProvisioningState(*nodePool.ProvisioningState),
+				PowerState:        apiv2.AKSPowerState(*nodePool.PowerState.Code),
+			},
+		}
+		switch state {
+		case apiv2.StoppedExternalClusterMDState:
+			md.Phase.StatusMessage = "The Kubernetes service is currently stopped. To perform any operation like scale or upgrade, start your cluster first."
+		case apiv2.WarningExternalClusterMDState:
+			md.Phase.StatusMessage = "The last attempted operation failed. The nodes may still be running. Check previous operations to resolve any failures."
+		case apiv2.ErrorExternalClusterMDState:
+			md.Phase.StatusMessage = "Check previous operations to resolve any failures."
 		}
 	}
 
@@ -952,7 +995,6 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		return apiCluster, nil
 	}
 	clusterSpec := &apiv2.AKSClusterSpec{
-		Location:          to.String(aksCluster.Location),
 		Tags:              aksCluster.Tags,
 		DNSPrefix:         to.String(aksClusterProperties.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
@@ -985,6 +1027,7 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		clusterSpec.NetworkProfile.NetworkMode = string(*networkProfile.NetworkMode)
 	}
 	apiCluster.Spec.AKSClusterSpec = clusterSpec
+	apiCluster.Cloud.AKS.Location = to.String(aksCluster.Location)
 
 	return apiCluster, nil
 }

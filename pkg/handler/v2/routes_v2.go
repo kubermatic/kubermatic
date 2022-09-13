@@ -117,6 +117,14 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listEKSRegions())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/clusterroles").
+		Handler(r.listEKSClusterRoles())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/noderoles").
+		Handler(r.listEKSNodeRoles())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/eks/versions").
 		Handler(r.listEKSVersions())
 
@@ -135,6 +143,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/providers/aks/vmsizes").
 		Handler(r.listAKSVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/resourcegroups").
+		Handler(r.listAKSResourceGroups())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/aks/locations").
@@ -3842,7 +3854,7 @@ func (r Routing) listAlibabaVSwitchesNoCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []PacketSizeList
+//       200: PacketSizeList
 func (r Routing) listPacketSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4218,7 +4230,7 @@ func (r Routing) listAzureVnets() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []VSphereDatastoreList
+//       200: VSphereDatastoreList
 func (r Routing) listVSphereDatastores() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6117,6 +6129,28 @@ func (r Routing) listAKSVMSizes() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/aks/resourcegroups aks listAKSResourceGroups
+//
+//     List resource groups in an Azure subscription.
+//
+//	   Produces:
+//	   - application/json
+//
+//	   Responses:
+//	     default: errorResponse
+//	     200: AzureResourceGroupList
+func (r Routing) listAKSResourceGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListAKSResourceGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeAKSCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/aks/locations aks listAKSLocations
 //
 // List AKS recommended Locations.
@@ -6287,7 +6321,7 @@ func (r Routing) listEKSSecurityGroups() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []EKSRegionList
+//       200: EKSRegionList
 //       401: empty
 //       403: empty
 func (r Routing) listEKSRegions() http.Handler {
@@ -6296,6 +6330,54 @@ func (r Routing) listEKSRegions() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/clusterroles eks listEKSClusterRoles
+//
+//	List EKS Cluster Service Roles.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSClusterRoleList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSClusterRoles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSClusterRolesEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/noderoles eks listEKSNodeRoles
+//
+//	List EKS Node IAM Roles.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSNodeRoleList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSNodeRoles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSNodeRolesEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6671,7 +6753,6 @@ func (r Routing) getExternalClusterMachineDeploymentUpgrades() http.Handler {
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes project listExternalClusterMachineDeploymentNodes
 //
 //     Gets an external cluster machine deployment nodes.
-//
 //
 //     Produces:
 //     - application/json

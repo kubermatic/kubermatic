@@ -373,28 +373,10 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kuberma
 
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
 func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
-	// during the KKP 2.20->2.21 migration, the cluster address was moved
-	// and we need to handle current seeds (using cluster.Status.Address)
-	// and older seeds (using cluster.Address)
-	newToken := kuberneteshelper.GenerateToken()
-
-	// seed is on KKP 2.21 and so it has the new fields available; update the
-	// status address first, as its the primary source of truth for all other
-	// reconciling (see the GetAddress() function on Clusters)
-	if p.seed.IsUpToDate(p.versions) {
-		oldCluster := c.DeepCopy()
-		c.Status.Address.AdminToken = newToken
-
-		if err := p.GetSeedClusterAdminRuntimeClient().Status().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to patch cluster with new token: %w", err)
-		}
-	}
-
-	// KKP 2.21 also still contains the old field, so we can always reset it
 	oldCluster := c.DeepCopy()
-	c.Address.AdminToken = newToken
+	c.Status.Address.AdminToken = kuberneteshelper.GenerateToken()
 
-	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	if err := p.GetSeedClusterAdminRuntimeClient().Status().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to patch cluster with new token: %w", err)
 	}
 
@@ -440,7 +422,7 @@ func (p *ClusterProvider) GetTokenForUserCluster(ctx context.Context, userInfo *
 		}
 		return string(s.Data[resources.ViewerTokenSecretKey]), nil
 	} else if userInfo.Roles.HasAny("editors", "owners") {
-		return cluster.GetAddress().AdminToken, nil
+		return cluster.Status.Address.AdminToken, nil
 	}
 
 	return "", fmt.Errorf("user role %s not supported", userInfo.Roles.List())

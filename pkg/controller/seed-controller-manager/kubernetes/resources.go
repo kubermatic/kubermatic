@@ -91,7 +91,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// We should not proceed without having an IP address unless tunneling
 	// strategy is used. Its required for all Kubeconfigs & triggers errors
 	// otherwise.
-	if cluster.GetAddress().IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+	if cluster.Status.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		// This can happen e.g. if a LB external IP address has not yet been allocated by a CCM.
 		// Try to reconcile after some time and do not return an error.
 		r.log.Debugf("Cluster IP address not known, retry after %.0f s", clusterIPUnknownRetryTimeout.Seconds())
@@ -324,7 +324,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 
 // GetServiceCreators returns all service creators that are currently in use.
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
-	extName := data.Cluster().GetAddress().ExternalName
+	extName := data.Cluster().Status.Address.ExternalName
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, extName),
@@ -412,6 +412,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretCreatorGetter{
+		cloudconfig.SecretCreator(data),
 		certificates.RootCACreator(data),
 		certificates.FrontProxyCACreator(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
@@ -480,6 +481,18 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		creators = append(creators, cloudconfig.VsphereCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
+		creators = append(creators, cloudconfig.NutanixCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		creators = append(creators, cloudconfig.VMwareCloudDirectorCSISecretCreator(data))
 	}
 
 	return creators
@@ -599,7 +612,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
-			extName := data.Cluster().GetAddress().ExternalName
+			extName := data.Cluster().Status.Address.ExternalName
 
 			// allow egress traffic to all resolved cluster external IPs
 			ipList, err := hostnameToIPList(resolverCtx, extName)
@@ -646,7 +659,6 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		cloudconfig.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
@@ -659,18 +671,6 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 			openvpn.ServerClientConfigsConfigMapCreator(data),
 			dns.ConfigMapCreator(data),
 		)
-	}
-
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		creators = append(creators, cloudconfig.VsphereCSIConfigMapCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
-		creators = append(creators, cloudconfig.NutanixCSIConfigMapCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
-		creators = append(creators, cloudconfig.VMwareCloudDirectorCSIConfigMapCreator(data))
 	}
 
 	return creators

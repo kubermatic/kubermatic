@@ -110,12 +110,6 @@ const (
 	// NodePortProxyEnvoyContainerName is the name of the envoy container in the nodeport-proxy deployment.
 	NodePortProxyEnvoyContainerName = "envoy"
 
-	// AWSNodeTerminationHandlerMigrationAnnotation is set on Cluster objects that have completed
-	// the KKP 2.20->2.21 migration for the aws-node-termination-handler addon. This annotation should
-	// not be used by external controllers and will be removed once the need for the migration has gone.
-	// TODO: Remove this in KKP 2.22.
-	AWSNodeTerminationHandlerMigrationAnnotation = "kubermatic.k8c.io/migrated-aws-node-termination-handler-addon"
-
 	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
@@ -224,11 +218,11 @@ const (
 	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates.
 	CABundleConfigMapKey = "ca-bundle.pem"
 
-	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
-	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigName = "cloud-config-csi"
-	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	// CloudConfigSeedSecretName is the name for the secret containing the cloud-config inside the usercluster namespace
+	// on the seed cluster. Not to be confused with CloudConfigSecretName, which is the copy of this Secret inside the
+	// usercluster.
+	CloudConfigSeedSecretName = "cloud-config"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
@@ -480,6 +474,9 @@ const (
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
 	// KubeVirtInfraSecretKey infra kubeconfig.
 	KubeVirtInfraSecretKey = "infra-kubeconfig"
+
+	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
+	DefaultNodePortRange = "30000-32767"
 )
 
 const (
@@ -757,11 +754,13 @@ const (
 	CreatingAKSMDState  AKSMDState = "Creating"
 	SucceededAKSMDState AKSMDState = "Succeeded"
 	RunningAKSMDState   AKSMDState = "Running"
+	StoppedAKSMDState   AKSMDState = "Stopped"
 	FailedAKSMDState    AKSMDState = "Failed"
 	DeletingAKSMDState  AKSMDState = "Deleting"
 	UpgradingAKSMDState AKSMDState = "Upgrading"
 	UpdatingAKSMDState  AKSMDState = "Updating"
 	ScalingAKSMDState   AKSMDState = "Scaling"
+	StartingAKSMDState  AKSMDState = "Starting"
 )
 
 type EKSState string
@@ -1022,7 +1021,7 @@ func GetAllowedTLSCipherSuites() []string {
 
 // GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
-	address := cluster.GetAddress()
+	address := cluster.Status.Address
 
 	ip := net.ParseIP(address.IP)
 	if ip == nil {
@@ -1727,4 +1726,25 @@ func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
 		return IPTablesProxyMode
 	}
 	return IPVSProxyMode
+}
+
+// GetKubeletPreferredAddressTypes returns the preferred address types in the correct order to be used when
+// contacting kubelet from the control plane.
+func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivityEnabled bool) string {
+	if cluster.Spec.Cloud.GCP != nil {
+		return "InternalIP"
+	}
+	if cluster.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
+		// Due to https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/305
+		// InternalIP needs to be preferred over ExternalIP in dual-stack Hetzner clusters
+		return "InternalIP,ExternalIP"
+	}
+	if isKonnectivityEnabled {
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		return "InternalIP,ExternalIP"
+	}
+	return "ExternalIP,InternalIP"
 }

@@ -440,9 +440,7 @@ func getOldestAvailableVersion(log *zap.SugaredLogger, replicaSets []appsv1.Repl
 
 		versionLabel := rs.GetLabels()[resources.VersionLabel]
 		if versionLabel == "" {
-			// This is a normal condition during th KKP 2.20->2.21 upgrade, but for KKP 2.22 this
-			// log message should be increased to warning level.
-			log.Debugw("ReplicaSet has no version label, this should not happen", "replicaset", rs.Name)
+			log.Warnw("ReplicaSet has no version label, this should not happen", "replicaset", rs.Name)
 			continue
 		}
 

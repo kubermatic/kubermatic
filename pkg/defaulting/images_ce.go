@@ -1,4 +1,4 @@
-//go:build ee
+//go:build !ee
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -16,13 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package defaults
+package defaulting
 
 const (
 	DefaultNodeportProxyDockerRepository = "quay.io/kubermatic/nodeport-proxy"
 
 	// DefaultKubermaticImage defines the default Docker repository containing the Kubermatic API image.
-	DefaultKubermaticImage = "quay.io/kubermatic/kubermatic-ee"
+	DefaultKubermaticImage = "quay.io/kubermatic/kubermatic"
 
 	// DefaultEtcdLauncherImage defines the default Docker repository containing the etcd launcher image.
 	DefaultEtcdLauncherImage = "quay.io/kubermatic/etcd-launcher"
@@ -31,7 +31,7 @@ const (
 	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
 
 	// DefaultDashboardAddonImage defines the default Docker repository containing the dashboard image.
-	DefaultDashboardImage = "quay.io/kubermatic/dashboard-ee"
+	DefaultDashboardImage = "quay.io/kubermatic/dashboard"
 
 	// DefaultKubernetesAddonImage defines the default Docker repository containing the Kubernetes addons.
 	DefaultKubernetesAddonImage = "quay.io/kubermatic/addons"

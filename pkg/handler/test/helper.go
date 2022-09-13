@@ -380,7 +380,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
 	// the more complex implementation on the side
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
+	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -2145,7 +2145,7 @@ func GenApplicationInstallation(name, clusterName, targetnamespace string) *apps
 			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:   targetnamespace,
 				Create: true,
 			},
@@ -2166,8 +2166,8 @@ func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *a
 			ID:   name,
 		},
 		Namespace: targetnamespace,
-		Spec: &appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+		Spec: &apiv2.ApplicationInstallationSpec{
+			Namespace: apiv2.NamespaceSpec{
 				Name:   targetnamespace,
 				Create: true,
 			},

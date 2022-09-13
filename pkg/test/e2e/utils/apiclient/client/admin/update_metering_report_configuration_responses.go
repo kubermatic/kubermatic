@@ -25,8 +25,8 @@ type UpdateMeteringReportConfigurationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateMeteringReportConfigurationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-	case 201:
-		result := NewUpdateMeteringReportConfigurationCreated()
+	case 200:
+		result := NewUpdateMeteringReportConfigurationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -55,23 +55,34 @@ func (o *UpdateMeteringReportConfigurationReader) ReadResponse(response runtime.
 	}
 }
 
-// NewUpdateMeteringReportConfigurationCreated creates a UpdateMeteringReportConfigurationCreated with default headers values
-func NewUpdateMeteringReportConfigurationCreated() *UpdateMeteringReportConfigurationCreated {
-	return &UpdateMeteringReportConfigurationCreated{}
+// NewUpdateMeteringReportConfigurationOK creates a UpdateMeteringReportConfigurationOK with default headers values
+func NewUpdateMeteringReportConfigurationOK() *UpdateMeteringReportConfigurationOK {
+	return &UpdateMeteringReportConfigurationOK{}
 }
 
-/* UpdateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
+/* UpdateMeteringReportConfigurationOK describes a response with status code 200, with default header values.
 
-EmptyResponse is a empty response
+MeteringReportConfiguration
 */
-type UpdateMeteringReportConfigurationCreated struct {
+type UpdateMeteringReportConfigurationOK struct {
+	Payload *models.MeteringReportConfiguration
 }
 
-func (o *UpdateMeteringReportConfigurationCreated) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationCreated ", 201)
+func (o *UpdateMeteringReportConfigurationOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK  %+v", 200, o.Payload)
+}
+func (o *UpdateMeteringReportConfigurationOK) GetPayload() *models.MeteringReportConfiguration {
+	return o.Payload
 }
 
-func (o *UpdateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *UpdateMeteringReportConfigurationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.MeteringReportConfiguration)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
@@ -172,6 +183,9 @@ type UpdateMeteringReportConfigurationBody struct {
 
 	// schedule
 	Schedule string `json:"schedule,omitempty"`
+
+	// types
+	Types []string `json:"types"`
 }
 
 // Validate validates this update metering report configuration body

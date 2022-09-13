@@ -118,11 +118,11 @@ func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
-		if err := createMeteringReportConfiguration(ctx, req, seedsGetter, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to create metering report configuration: %w", err)
+		if config, err := createMeteringReportConfiguration(ctx, req, seedsGetter, masterClient); err != nil {
+			return config, err
+		} else {
+			return config, nil
 		}
-
-		return nil, nil
 	}
 }
 
@@ -137,11 +137,11 @@ func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
-		if err := updateMeteringReportConfiguration(ctx, req, seedsGetter, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to update metering report configuration: %w", err)
+		if config, err := updateMeteringReportConfiguration(ctx, req, seedsGetter, masterClient); err != nil {
+			return config, err
+		} else {
+			return config, nil
 		}
-
-		return nil, nil
 	}
 }
 

@@ -36,7 +36,7 @@ import (
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -69,8 +69,6 @@ type DeployOptions struct {
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
-	MigrateOpenstackCSI        bool
-	MigrateLogrotate           bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -122,8 +120,6 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateOpenstackCSI, "migrate-openstack-csidrivers", false, "(kubermatic-seed only) enable the data migration of CSIDriver of openstack user-clusters")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateLogrotate, "migrate-logrotate", false, "enable the data migration to delete the logrotate addon")
 
 	return cmd
 }
@@ -202,8 +198,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableCertManagerV2Migration:       opt.MigrateCertManager,
 			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
 			EnableNginxIngressMigration:        opt.MigrateNginx,
-			EnableOpenstackCSIDriverMigration:  opt.MigrateOpenstackCSI,
-			EnableLogrotateMigration:           opt.MigrateLogrotate,
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			Versions:                           versions,
@@ -296,7 +290,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		deployOptions.KubeClient = kubeClient
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
-		deployOptions.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 

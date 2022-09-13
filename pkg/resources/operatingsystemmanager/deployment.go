@@ -22,7 +22,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -135,7 +135,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
+			cloudProviderName, err := kubermaticv1helper.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
 				return nil, err
 			}

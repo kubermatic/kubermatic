@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AKSLocationList AKSLocationList represents a list of AKS Location object for node group.
+// AKSLocationList AKSLocationList represents a list of AKS Locations.
 //
 // swagger:model AKSLocationList
 type AKSLocationList []*AKSLocation

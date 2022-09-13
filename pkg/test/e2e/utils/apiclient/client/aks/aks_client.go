@@ -34,6 +34,8 @@ type ClientService interface {
 
 	ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error)
 
+	ListAKSResourceGroups(params *ListAKSResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSResourceGroupsOK, error)
+
 	ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error)
 
 	ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesNoCredentialsOK, error)
@@ -156,6 +158,44 @@ func (a *Client) ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoC
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAKSNodeVersionsNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAKSResourceGroups lists resource groups in an azure subscription
+*/
+func (a *Client) ListAKSResourceGroups(params *ListAKSResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSResourceGroupsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSResourceGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSResourceGroups",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/aks/resourcegroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSResourceGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSResourceGroupsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSResourceGroupsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

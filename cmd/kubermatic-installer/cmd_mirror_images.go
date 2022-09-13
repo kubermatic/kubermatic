@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -150,7 +150,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
-		kubermaticConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
 		}

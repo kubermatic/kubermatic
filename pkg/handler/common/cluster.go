@@ -1099,7 +1099,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 		},
 		Status: apiv1.ClusterStatus{
 			Version:              internalCluster.Status.Versions.ControlPlane,
-			URL:                  internalCluster.GetAddress().URL,
+			URL:                  internalCluster.Status.Address.URL,
 			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter, incompatibilities...),
 		},
 		Type: apiv1.KubernetesClusterType,
@@ -1139,7 +1139,7 @@ func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateCl
 		return errors.New("invalid cluster name: too long (greater than 100 characters)")
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}

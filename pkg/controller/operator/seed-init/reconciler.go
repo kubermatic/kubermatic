@@ -28,7 +28,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -98,8 +100,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to create seed cluster client: %w", err)
 	}
 
+	seedKubeconfig, err := kubernetes.GetSeedKubeconfigSecret(ctx, r.masterClient, seed)
+	if err != nil {
+		return fmt.Errorf("failed to get seed kubeconfig: %w", err)
+	}
+
 	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
-	config, err := provider.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, r.masterClient, seed.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
@@ -113,6 +120,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	if err := r.createOnSeed(ctx, ns, seedClient, log.With("namespace", ns.Name)); err != nil {
 		return fmt.Errorf("failed to create KKP namespace: %w", err)
+	}
+
+	if err := r.createOnSeed(ctx, seedKubeconfig, seedClient, log.With("seed", seed.Name)); err != nil {
+		return fmt.Errorf("failed to create Seed kubeconfig resource copy: %w", err)
 	}
 
 	if err := r.createOnSeed(ctx, seed, seedClient, log.With("seed", seed.Name)); err != nil {
@@ -162,18 +173,22 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
 		}
 
-		for _, crd := range crds {
-			crdLog := log.With("crd", crd.Name)
+		for _, crdObject := range crds {
+			crdLog := log.With("crd", crdObject.Name)
+
+			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
 
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the KKP installer does the same when
 			// updating CRDs on the master cluster)
-			if crd.Annotations == nil {
-				crd.Annotations = map[string]string{}
+			if crdObject.Annotations == nil {
+				crdObject.Annotations = map[string]string{}
 			}
-			crd.Annotations[resources.VersionLabel] = r.versions.Kubermatic
+			crdObject.Annotations[resources.VersionLabel] = r.versions.Kubermatic
 
-			err := r.createOnSeed(ctx, &crd, client, crdLog)
+			err := r.createOnSeed(ctx, &crdObject, client, crdLog)
 			if err == nil {
 				crdLog.Info("Created CRD")
 			} else {

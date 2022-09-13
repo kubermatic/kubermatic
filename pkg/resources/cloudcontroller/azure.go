@@ -85,12 +85,10 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
+					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.CloudConfigSeedSecretName,
 						},
 					},
 				})
@@ -103,7 +101,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 					Args:    getAzureFlags(data),
 					VolumeMounts: append(getVolumeMounts(),
 						corev1.VolumeMount{
-							Name:      resources.CloudConfigConfigMapName,
+							Name:      resources.CloudConfigSeedSecretName,
 							MountPath: "/etc/kubernetes/cloud",
 							ReadOnly:  true,
 						},

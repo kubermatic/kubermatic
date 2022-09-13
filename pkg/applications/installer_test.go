@@ -42,14 +42,14 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 	testCases := []struct {
 		name          string
 		userClient    ctrlruntimeclient.Client
-		namespaceSpec appskubermaticv1.NamespaceSpec
+		namespaceSpec appskubermaticv1.AppNamespaceSpec
 	}{
 		{
 			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be cretated without labels or annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -61,7 +61,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -73,7 +73,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -85,7 +85,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -124,7 +124,7 @@ func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIs
 		NewClientBuilder().
 		Build()
 
-	namespaceSpec := appskubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.AppNamespaceSpec{
 		Name:        "foo",
 		Create:      false,
 		Labels:      nil,
@@ -156,7 +156,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 			genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
-	namespaceSpec := appskubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.AppNamespaceSpec{
 		Name:        nsName,
 		Create:      false,
 		Labels:      nil,
@@ -207,7 +207,7 @@ func contains(actual map[string]string, expected map[string]string) error {
 	return nil
 }
 
-func genApplicationInstallation(namspaceSpec appskubermaticv1.NamespaceSpec) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(namspaceSpec appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-",

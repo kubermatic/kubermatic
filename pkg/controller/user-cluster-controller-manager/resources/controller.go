@@ -358,16 +358,33 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 	return secret.Data, nil
 }
 
-func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName string) ([]byte, error) {
-	configmap := &corev1.ConfigMap{}
-	name := types.NamespacedName{Namespace: r.namespace, Name: cloudConfigConfigmapName}
-	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
-		return nil, fmt.Errorf("failed to get cloud-config: %w", err)
+// During the release of KKP 2.23, this was migrated from ConfigMaps to Secrets.
+// To ensure a smooth transition, this function first checks for the Secret and then
+// falls back to the ConfigMap.
+// TODO: Remove this fallback in KKP 2.24.
+func (r *reconciler) cloudConfig(ctx context.Context, secretName string) ([]byte, error) {
+	name := types.NamespacedName{Namespace: r.namespace, Name: secretName}
+
+	secret := &corev1.Secret{}
+	if err := r.seedClient.Get(ctx, name, secret); err == nil {
+		value, exists := secret.Data[resources.CloudConfigKey]
+		if !exists {
+			return nil, fmt.Errorf("cloud-config Secret contains no data for key %s", resources.CloudConfigKey)
+		}
+
+		return value, nil
 	}
+
+	configmap := &corev1.ConfigMap{}
+	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
+		return nil, fmt.Errorf("failed to get legacy cloud-config ConfigMap: %w", err)
+	}
+
 	value, exists := configmap.Data[resources.CloudConfigKey]
 	if !exists {
-		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigKey)
+		return nil, fmt.Errorf("cloud-config ConfigMap contains no data for key %s", resources.CloudConfigKey)
 	}
+
 	return []byte(value), nil
 }
 
@@ -402,9 +419,7 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 		reconcileK8sSvcEndpoints = false
 	}
 
-	addr := cluster.GetAddress()
-
-	return &addr, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
+	return &cluster.Status.Address, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.

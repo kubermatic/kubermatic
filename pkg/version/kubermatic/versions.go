@@ -31,7 +31,7 @@ var (
 	// but is not monotone (gaps can occur, this can go from v2.20.0-1234-d6aef3
 	// to v2.34.0-912-dd79178e to v3.0.1).
 	// Also this value does not necessarily reflect the current release branch,
-	// as releases are taggedo on the release branch and on those tags are not
+	// as releases are tagged on the release branch and on those tags are not
 	// visible from the master branch.
 	gitVersion string
 

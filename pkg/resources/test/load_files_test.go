@@ -31,9 +31,9 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -254,7 +254,7 @@ func TestLoadFiles(t *testing.T) {
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
 				Monitoring: kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
-					ScrapeAnnotationPrefix: defaults.DefaultUserClusterScrapeAnnotationPrefix,
+					ScrapeAnnotationPrefix: defaulting.DefaultUserClusterScrapeAnnotationPrefix,
 					CustomScrapingConfigs: `
 - job_name: custom-test-config
   scheme: https
@@ -548,17 +548,17 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
-							&corev1.ConfigMap{
+							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.OpenVPNClientConfigsConfigMapName,
+									Name:            resources.CloudConfigSeedSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.CloudConfigConfigMapName,
+									Name:            resources.OpenVPNClientConfigsConfigMapName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},

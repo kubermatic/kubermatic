@@ -4,6 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
+    kubermatic.k8c.io/location: master,seed
   creationTimestamp: null
   name: users.kubermatic.k8c.io
 spec:
@@ -15,145 +16,118 @@ spec:
     singular: user
   scope: Cluster
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.email
-      name: Email
-      type: string
-    - jsonPath: .spec.name
-      name: HumanReadableName
-      type: string
-    - jsonPath: .spec.admin
-      name: Admin
-      type: boolean
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1
-    schema:
-      openAPIV3Schema:
-        description: User specifies a KKP user. Users can be either humans or KKP
-          service accounts.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: UserSpec specifies a user.
-            properties:
-              admin:
-                default: false
-                description: IsAdmin defines whether this user is an administrator
-                  with additional permissions. Admins can for example see all projects
-                  and clusters in the KKP dashboard.
-                type: boolean
-              email:
-                description: Email is the email address of this user. Emails must
-                  be globally unique across all KKP users.
-                type: string
-              groups:
-                description: Groups holds the information to which groups the user
-                  belongs to. Set automatically when logging in to the KKP API, and
-                  used by the KKP API.
-                items:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.email
+          name: Email
+          type: string
+        - jsonPath: .spec.name
+          name: HumanReadableName
+          type: string
+        - jsonPath: .spec.admin
+          name: Admin
+          type: boolean
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: User specifies a KKP user. Users can be either humans or KKP service accounts.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: UserSpec specifies a user.
+              properties:
+                admin:
+                  default: false
+                  description: IsAdmin defines whether this user is an administrator with additional permissions. Admins can for example see all projects and clusters in the KKP dashboard.
+                  type: boolean
+                email:
+                  description: Email is the email address of this user. Emails must be globally unique across all KKP users.
                   type: string
-                type: array
-              id:
-                description: 'ID is an unnused legacy field. Deprecated: do not set
-                  this field anymore.'
-                type: string
-              invalidTokensReference:
-                description: InvalidTokensReference is a reference to a Secret that
-                  contains invalidated login tokens. The tokens are used to provide
-                  a safe logout mechanism.
-                properties:
-                  apiVersion:
-                    description: API version of the referent.
+                groups:
+                  description: Groups holds the information to which groups the user belongs to. Set automatically when logging in to the KKP API, and used by the KKP API.
+                  items:
                     type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  key:
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                    type: string
-                  namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                    type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
-              name:
-                description: Name is the full name of this user.
-                type: string
-              project:
-                description: Project is the name of the project that this service
-                  account user is tied to. This field is only applicable to service
-                  accounts and regular users must not set this field.
-                type: string
-              settings:
-                description: Settings contains both user-configurable and system-owned
-                  configuration for the KKP dashboard.
-                properties:
-                  collapseSidenav:
-                    type: boolean
-                  displayAllProjectsForAdmin:
-                    type: boolean
-                  itemsPerPage:
-                    type: integer
-                  lastSeenChangelogVersion:
-                    type: string
-                  selectProjectTableView:
-                    type: boolean
-                  selectedProjectID:
-                    type: string
-                  selectedTheme:
-                    type: string
-                  useClustersView:
-                    type: boolean
-                type: object
-            required:
-            - admin
-            - email
-            - name
-            type: object
-          status:
-            description: UserStatus stores status information about a user.
-            properties:
-              lastSeen:
-                format: date-time
-                type: string
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                  type: array
+                id:
+                  description: 'ID is an unnused legacy field. Deprecated: do not set this field anymore.'
+                  type: string
+                invalidTokensReference:
+                  description: InvalidTokensReference is a reference to a Secret that contains invalidated login tokens. The tokens are used to provide a safe logout mechanism.
+                  properties:
+                    apiVersion:
+                      description: API version of the referent.
+                      type: string
+                    fieldPath:
+                      description: 'If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: "spec.containers{name}" (where "name" refers to the name of the container that triggered the event) or if no container name is specified "spec.containers[2]" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object. TODO: this design is not final and this field is subject to change in the future.'
+                      type: string
+                    key:
+                      type: string
+                    kind:
+                      description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      type: string
+                    resourceVersion:
+                      description: 'Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                      type: string
+                    uid:
+                      description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                name:
+                  description: Name is the full name of this user.
+                  type: string
+                project:
+                  description: Project is the name of the project that this service account user is tied to. This field is only applicable to service accounts and regular users must not set this field.
+                  type: string
+                settings:
+                  description: Settings contains both user-configurable and system-owned configuration for the KKP dashboard.
+                  properties:
+                    collapseSidenav:
+                      type: boolean
+                    displayAllProjectsForAdmin:
+                      type: boolean
+                    itemsPerPage:
+                      type: integer
+                    lastSeenChangelogVersion:
+                      type: string
+                    selectProjectTableView:
+                      type: boolean
+                    selectedProjectID:
+                      type: string
+                    selectedTheme:
+                      type: string
+                    useClustersView:
+                      type: boolean
+                  type: object
+              required:
+                - admin
+                - email
+                - name
+              type: object
+            status:
+              description: UserStatus stores status information about a user.
+              properties:
+                lastSeen:
+                  format: date-time
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}

@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,7 +48,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return errors.New("object is not a KubermaticConfiguration")
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return fmt.Errorf("failed to apply default values: %w", err)
 	}
@@ -62,7 +62,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return errors.New("new object is not a KubermaticConfiguration")
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return fmt.Errorf("failed to apply default values: %w", err)
 	}

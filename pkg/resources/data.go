@@ -33,7 +33,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -293,7 +293,7 @@ func (d *TemplateData) NodePortRange() string {
 func (d *TemplateData) NodePorts() (int, int) {
 	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
 	if err != nil {
-		portrange, _ = kubenetutil.ParsePortRange(defaults.DefaultNodePortRange)
+		portrange, _ = kubenetutil.ParsePortRange(DefaultNodePortRange)
 	}
 
 	return portrange.Base, portrange.Base + portrange.Size - 1
@@ -304,7 +304,7 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	nodePortRange := d.NodePortRange()
 
 	if nodePortRange == "" {
-		nodePortRange = defaults.DefaultNodePortRange
+		nodePortRange = DefaultNodePortRange
 	}
 
 	if cluster := d.Cluster(); cluster != nil {
@@ -361,7 +361,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 
 // ProviderName returns the name of the clusters providerName.
 func (d *TemplateData) ProviderName() string {
-	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
+	p, err := kubermaticv1helper.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
 		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
 	}
@@ -421,7 +421,7 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
@@ -436,7 +436,7 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
@@ -510,7 +510,7 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
+	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -798,7 +798,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.GetAddress().InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})

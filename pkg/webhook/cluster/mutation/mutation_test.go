@@ -27,8 +27,8 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
@@ -80,13 +80,13 @@ var (
 	// inherit defaulting done for the KubermaticConfiguration and Seed. They are
 	// collected here for brevity sake.
 	defaultPatches = []jsonpatch.JsonPatchOperation{
-		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaults.DefaultEtcdVolumeSize),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaults.DefaultAPIServerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", defaults.DefaultNodePortRange),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaults.DefaultControllerManagerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", resources.DefaultNodePortRange),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultControllerManagerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultSchedulerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 	}
@@ -277,9 +277,8 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
-				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaults.DefaultExposeStrategy)),
+				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			},
 		},
 		{
@@ -337,7 +336,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -383,10 +381,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(
-				defaultPatches,
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
-			),
+			wantPatches: defaultPatches,
 		},
 		{
 			name: "Default features",
@@ -429,7 +424,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -569,7 +563,6 @@ func TestHandle(t *testing.T) {
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -824,7 +817,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -870,7 +862,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -913,7 +904,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -953,7 +943,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -1001,7 +990,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{resources.AWSNodeTerminationHandlerMigrationAnnotation: "yes"}),
 			),
 		},
 		{
@@ -1240,7 +1228,7 @@ func TestHandle(t *testing.T) {
 			dummySeedClient := builder.Build()
 
 			// this getter, as do all KubermaticConfigurationGetters, performs defaulting on the config
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(&config)
 			if err != nil {
 				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
 			}

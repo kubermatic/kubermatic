@@ -85,12 +85,10 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
 				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
+					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.CloudConfigSeedSecretName,
 						},
 					},
 				},
@@ -120,7 +118,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 					},
 					VolumeMounts: append(getVolumeMounts(),
 						corev1.VolumeMount{
-							Name:      resources.CloudConfigConfigMapName,
+							Name:      resources.CloudConfigSeedSecretName,
 							MountPath: "/etc/kubernetes/cloud",
 							ReadOnly:  true,
 						},

@@ -68,7 +68,7 @@ type ClientService interface {
 
 	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error)
 
-	UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationCreated, error)
+	UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationOK, error)
 
 	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error)
 
@@ -838,7 +838,7 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 /*
   UpdateMeteringReportConfiguration Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
-func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationCreated, error) {
+func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateMeteringReportConfigurationParams()
@@ -864,7 +864,7 @@ func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportC
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*UpdateMeteringReportConfigurationCreated)
+	success, ok := result.(*UpdateMeteringReportConfigurationOK)
 	if ok {
 		return success, nil
 	}

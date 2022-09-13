@@ -19,9 +19,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/go-autorest/autorest/to"
 	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -41,7 +43,11 @@ func init() {
 
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
-const RegionEndpoint = "eu-central-1"
+const (
+	RegionEndpoint      = "eu-central-1"
+	EKSClusterPolicy    = "AmazonEKSClusterPolicy"
+	EKSWorkerNodePolicy = "AmazonEKSWorkerNodePolicy"
+)
 
 func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
 	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
@@ -100,22 +106,34 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	return clusters, nil
 }
 
-func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetList, error) {
-	subnetIDs := apiv2.EKSSubnetList{}
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcId string) (apiv2.EKSSubnetList, error) {
+	subnets := apiv2.EKSSubnetList{}
 
-	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcId)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, subnet := range subnetResults {
-		subnetIDs = append(subnetIDs, apiv2.EKSSubnet{
-			SubnetId:         to.String(subnet.SubnetId),
-			VpcId:            to.String(subnet.VpcId),
-			AvailabilityZone: to.String(subnet.AvailabilityZone),
+	azSubnetMap := make(map[string]string)
+	for _, subnetResult := range subnetResults {
+		var isDefault bool
+		// creating a list of subnets with unique availabilityZone
+		az := to.String(subnetResult.AvailabilityZone)
+		subnetId := to.String(subnetResult.SubnetId)
+		if _, ok := azSubnetMap[az]; !ok {
+			azSubnetMap[az] = subnetId
+			isDefault = true
+		}
+
+		subnets = append(subnets, apiv2.EKSSubnet{
+			SubnetId:         subnetId,
+			VpcId:            to.String(subnetResult.VpcId),
+			AvailabilityZone: az,
+			Default:          isDefault,
 		})
 	}
-	return subnetIDs, nil
+
+	return subnets, nil
 }
 
 func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPCList, error) {
@@ -187,6 +205,76 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 		regionList = append(regionList, *region.RegionName)
 	}
 	return regionList, nil
+}
+
+func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRoleList, error) {
+	var rolesList apiv2.EKSClusterRoleList
+
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "eks.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSClusterPolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, apiv2.EKSClusterRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
+}
+
+func ListEKSNodeRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSNodeRoleList, error) {
+	var rolesList apiv2.EKSNodeRoleList
+
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "ec2.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSWorkerNodePolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, apiv2.EKSNodeRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
 }
 
 func ListEKSSecurityGroup(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupList, error) {

@@ -23,7 +23,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -35,70 +34,50 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions) error {
+func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions, kind crd.ClusterKind) error {
 	crds, err := crd.LoadFromDirectory(directory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs: %w", err)
 	}
 
-	for _, crd := range crds {
-		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
+	for _, crdObject := range crds {
+		logger := log.WithField("name", crdObject.GetName())
+
+		if crd.SkipCRDOnCluster(crdObject, kind) {
+			logger.Debug("Skipping CRD")
+			continue
+		}
+
+		logger.Debug("Creating CRD…")
 
 		if versions != nil {
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the seed-operator will do the same when
 			// updating CRDs on seed clusters)
-			annotations := crd.GetAnnotations()
+			annotations := crdObject.GetAnnotations()
 			if annotations == nil {
 				annotations = map[string]string{}
 			}
 			annotations[resources.VersionLabel] = versions.KubermaticCommit
-			crd.SetAnnotations(annotations)
+			crdObject.SetAnnotations(annotations)
 		}
 
-		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
-			return fmt.Errorf("failed to deploy CRD %s: %w", crd.GetName(), err)
+		if err := DeployCRD(ctx, kubeClient, crdObject); err != nil {
+			return fmt.Errorf("failed to deploy CRD %s: %w", crdObject.GetName(), err)
 		}
 	}
 
 	// wait for CRDs to be established
-	for _, crd := range crds {
-		if err := WaitForReadyCRD(ctx, kubeClient, crd.GetName(), 30*time.Second); err != nil {
-			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crd.GetName(), err)
+	for _, crdObject := range crds {
+		if crd.SkipCRDOnCluster(crdObject, kind) {
+			continue
+		}
+
+		if err := WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), 30*time.Second); err != nil {
+			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crdObject.GetName(), err)
 		}
 	}
 
-	return nil
-}
-
-// DeleteOldApplicationInstallationCrd removes old applicationInstallation crd from cluster.
-// See pkg/install/stack/kubermatic-master/stack.go::InstallKubermaticCRDs() for more information.
-// TODO REMOVE AFTER release v2.21.
-func DeleteOldApplicationInstallationCrd(ctx context.Context, kubeClient ctrlruntimeclient.Client) error {
-	crd := &apiextensionsv1.CustomResourceDefinition{}
-	err := kubeClient.Get(ctx, types.NamespacedName{Name: appskubermaticv1.ApplicationInstallationsFQDNName}, crd)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get CRD %s: %w", appskubermaticv1.ApplicationInstallationsFQDNName, err)
-	}
-
-	// No action is required
-	if err != nil && apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	// CRD exists, now we need to check if it's namespaced scoped
-	if crd.Spec.Scope == apiextensionsv1.NamespaceScoped {
-		return nil
-	}
-
-	// Crd is cluster scoped, so we need to delete it.
-	if err := kubeClient.Delete(ctx, crd); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete CRD %s: %w", crd.Name, err)
-	}
-
-	if err := WaitForCRDGone(ctx, kubeClient, appskubermaticv1.ApplicationInstallationsFQDNName, 10*time.Second); err != nil {
-		return fmt.Errorf(" %s could not be deleted, please check for remaining resources and remove any finalizers", appskubermaticv1.ApplicationInstallationsFQDNName)
-	}
 	return nil
 }
 

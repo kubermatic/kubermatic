@@ -27,6 +27,7 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -428,40 +429,58 @@ const (
 	// DeletingExternalClusterState state indicates the cluster is being deleted.
 	DeletingExternalClusterState ExternalClusterState = "Deleting"
 
+	// StartingExternalClusterState state indicates the cluster is starting.
+	StartingExternalClusterState ExternalClusterState = "Starting"
+
 	// UnknownExternalClusterState indicates undefined state.
 	UnknownExternalClusterState ExternalClusterState = "Unknown"
 
 	// ErrorExternalClusterState state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterState ExternalClusterState = "Error"
+
+	// WarningExternalClusterState state indicates the cluster is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterState ExternalClusterState = "Warning"
 )
 
 const (
-	// ProvisioningExternalClusterMDState state indicates the cluster machine dedeployment is being created.
+	// ProvisioningExternalClusterMDState state indicates the cluster machine deployment is being created.
 	ProvisioningExternalClusterMDState ExternalClusterMDState = "Provisioning"
 
-	// RunningExternalClusterMDState state indicates the cluster machine dedeployment has been created and is fully usable.
+	// RunningExternalClusterMDState state indicates the cluster machine deployment has been created and is fully usable.
 	RunningExternalClusterMDState ExternalClusterMDState = "Running"
 
-	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine dedeployment, such as upgrading the master or
+	// StoppedExternalClusterMDState state indicates the cluster machine deployment is stopped. This state is specific to AKS clusters.
+	StoppedExternalClusterMDState ExternalClusterMDState = "Stopped"
+
+	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine deployment, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
 	ReconcilingExternalClusterMDState ExternalClusterMDState = "Reconciling"
 
-	// DeletingExternalClusterMDState state indicates the machine dedeployment is being deleted.
+	// DeletingExternalClusterMDState state indicates the machine deployment is being deleted.
 	DeletingExternalClusterMDState ExternalClusterMDState = "Deleting"
+
+	// StartingExternalClusterMDState state indicates the cluster machine deployment is starting.
+	StartingExternalClusterMDState ExternalClusterMDState = "Starting"
 
 	// UnknownExternalClusterMDState indicates undefined state.
 	UnknownExternalClusterMDState ExternalClusterMDState = "Unknown"
 
-	// ErrorExternalClusterMDState state indicates the machine dedeployment is unusable. It will be automatically deleted. Details can be found in the
+	// ErrorExternalClusterMDState state indicates the machine deployment is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterMDState ExternalClusterMDState = "Error"
+
+	// WarningExternalClusterMDState state indicates the machine deployment is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterMDState ExternalClusterMDState = "Warning"
 )
 
 // ExternalClusterStatus defines the external cluster status.
 type ExternalClusterStatus struct {
 	State         ExternalClusterState `json:"state"`
 	StatusMessage string               `json:"statusMessage,omitempty"`
+	AKS           *AKSClusterStatus    `json:"aks,omitempty"`
 }
 
 // ExternalClusterSpec defines the external cluster specification.
@@ -689,12 +708,11 @@ type AKSCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty" required:"true"`
 	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
 	ResourceGroup  string `json:"resourceGroup" required:"true"`
+	Location       string `json:"location"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
 type AKSClusterSpec struct {
-	// Location - Resource location
-	Location string `json:"location" required:"true"`
 	// The timestamp of resource creation (UTC).
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	// The identity that created the resource.
@@ -741,6 +759,18 @@ type AKSNetworkProfile struct {
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
 }
 
+type (
+	AKSProvisioningState string
+	AKSPowerState        string
+)
+
+type AKSClusterStatus struct {
+	// ProvisioningState - Defines values for AKS cluster provisioning state.
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
+	// PowerState - Defines values for AKS cluster power state.
+	PowerState AKSPowerState `json:"powerState"`
+}
+
 type VpcConfigRequest struct {
 	// The VPC associated with your cluster.
 	VpcId *string `json:"vpcId,omitempty"`
@@ -776,6 +806,7 @@ type ExternalClusterMachineDeployment struct {
 type ExternalClusterMDPhase struct {
 	State         ExternalClusterMDState `json:"state"`
 	StatusMessage string                 `json:"statusMessage,omitempty"`
+	AKS           *AKSMDPhase            `json:"aks,omitempty"`
 }
 
 // GKECluster represents a object of GKE cluster.
@@ -846,6 +877,38 @@ type EKSClusterList []EKSCluster
 // swagger:model EKSRegionList
 type EKSRegionList []string
 
+// EKSClusterRole represents a EKS Cluster Service Role.
+// swagger:model EKSClusterRole
+type EKSClusterRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSClusterRoleList represents a list of EKS Cluster Service Roles.
+// swagger:model EKSClusterRoleList
+type EKSClusterRoleList []EKSClusterRole
+
+// EKSNodeRole represents a EKS Node IAM Role.
+// swagger:model EKSNodeRole
+type EKSNodeRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSNodeRoleList represents a list of EKS Node IAM Roles.
+// swagger:model EKSNodeRoleList
+type EKSNodeRoleList []EKSNodeRole
+
 // EKSAMITypeList represents a list of EKS AMI Types for node group.
 // swagger:model EKSAMITypeList
 type EKSAMITypeList []string
@@ -880,7 +943,8 @@ type EKSSubnet struct {
 	// The ID of the subnet.
 	SubnetId string `json:"subnetId"`
 	// The ID of the VPC the subnet is in.
-	VpcId string `json:"vpcId"`
+	VpcId   string `json:"vpcId"`
+	Default bool   `json:"default"`
 }
 
 // EKSSecurityGroupList represents an array of EKS securityGroup.
@@ -907,11 +971,12 @@ type EKSVPC struct {
 	IsDefault bool   `json:"default"`
 }
 
-// AKSCluster represents a object of AKS cluster.
+// AKSCluster represents an object of AKS cluster.
 // swagger:model AKSCluster
 type AKSCluster struct {
 	Name          string `json:"name"`
 	ResourceGroup string `json:"resourceGroup"`
+	Location      string `json:"location"`
 	IsImported    bool   `json:"imported"`
 }
 
@@ -923,11 +988,11 @@ type AKSClusterList []AKSCluster
 // swagger:model AKSVMSizeList
 type AKSVMSizeList []AKSVMSize
 
-// AKSLocationList represents a list of AKS Location object for node group.
+// AKSLocationList represents a list of AKS Locations.
 // swagger:model AKSLocationList
 type AKSLocationList []AKSLocation
 
-// AKSLocation is the object representing Azure Location.
+// AKSLocation represents an object of Azure Location.
 // swagger:model AKSLocation
 type AKSLocation struct {
 	// The location name.
@@ -935,6 +1000,16 @@ type AKSLocation struct {
 	// READ-ONLY; The category of the region.
 	RegionCategory string `json:"regionCategory,omitempty"`
 }
+
+// AzureResourceGroup represents an object of Azure ResourceGroup information.
+type AzureResourceGroup struct {
+	// The name of the resource group.
+	Name string `json:"name,omitempty"`
+}
+
+// AzureResourceGroupList represents an list of AKS ResourceGroups.
+// swagger:model AzureResourceGroupList
+type AzureResourceGroupList []AzureResourceGroup
 
 // AKSVMSize is the object representing Azure VM sizes.
 // swagger:model AKSVMSize
@@ -1083,6 +1158,13 @@ type AKSMachineDeploymentCloudSpec struct {
 	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 	// Configuration - Configuration of created AKS agentpool
 	Configuration AgentPoolConfig `json:"configuration,omitempty"`
+}
+
+type AKSMDPhase struct {
+	// ProvisioningState - Defines values for AKS node pool provisioning state.
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
+	// PowerState - Defines values for AKS node pool power state.
+	PowerState AKSPowerState `json:"powerState"`
 }
 
 type AgentPoolBasics struct {
@@ -1613,7 +1695,7 @@ type ApplicationInstallation struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
 
 	Status *ApplicationInstallationStatus `json:"status"`
 }
@@ -1625,7 +1707,45 @@ type ApplicationInstallationBody struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
+}
+
+type ApplicationInstallationSpec struct {
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
+
+	// ApplicationRef is a reference to identify which Application should be deployed
+	ApplicationRef appskubermaticv1.ApplicationRef `json:"applicationRef"`
+
+	// Values describe overrides for manifest-rendering. It's a free yaml field.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Values runtime.RawExtension `json:"values,omitempty"`
+	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+}
+
+// NamespaceSpec describe the desired state of the namespace where application will be created.
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+	Name string `json:"name"`
+
+	// +kubebuilder:default:=true
+
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	Create bool `json:"create"`
+
+	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // ApplicationInstallationStatus is the object representing the status of an Application.

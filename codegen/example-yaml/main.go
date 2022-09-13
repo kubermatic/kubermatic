@@ -32,7 +32,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,7 +139,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						RegistryMirrors:    []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
-						ProviderReconciliationInterval: &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval},
+						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						RequiredEmails:                 []string{},
@@ -209,7 +209,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		},
 	}
 
-	defaulted, err := defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultSeed(seed, config, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default Seed: %v", err)
 	}
@@ -238,14 +238,14 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
-				BackupStoreContainer:   defaults.DefaultBackupStoreContainer,
-				BackupCleanupContainer: defaults.DefaultBackupCleanupContainer,
-				BackupDeleteContainer:  defaults.DefaultNewBackupDeleteContainer,
+				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
+				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
+				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
 			},
 		},
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
 	}
@@ -357,7 +357,7 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 			Name: "<<appInstallation-name>>",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:        "my-namespace",
 				Create:      true,
 				Labels:      map[string]string{"env": "dev"},

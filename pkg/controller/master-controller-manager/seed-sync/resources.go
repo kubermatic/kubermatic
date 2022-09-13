@@ -31,6 +31,23 @@ func namespaceCreator(namespace string) reconciling.NamedNamespaceCreatorGetter 
 	}
 }
 
+func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return original.Name, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Labels = original.Labels
+			if s.Labels == nil {
+				s.Labels = make(map[string]string)
+			}
+			s.Labels[ManagedByLabel] = ControllerName
+
+			s.Annotations = original.Annotations
+			s.Data = original.Data
+
+			return s, nil
+		}
+	}
+}
+
 func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 	return func() (string, reconciling.SeedCreator) {
 		return seed.Name, func(s *kubermaticv1.Seed) (*kubermaticv1.Seed, error) {
