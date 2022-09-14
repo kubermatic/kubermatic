@@ -601,19 +601,19 @@ func (r Routing) ListMeteringReportConfigurations() http.Handler {
 
 // swagger:route POST /api/v1/admin/metering/configurations/reports/{name} admin createMeteringReportConfiguration
 //
-//     Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -628,19 +628,19 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/configurations/reports/{name} admin updateMeteringReportConfiguration
 //
-//     Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

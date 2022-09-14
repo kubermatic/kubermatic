@@ -3848,12 +3848,12 @@ func (r Routing) listAlibabaVSwitchesNoCredentials() http.Handler {
 //
 // Lists sizes from packet
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []PacketSizeList
+//	Responses:
+//	  default: errorResponse
+//	  200: []PacketSizeList
 func (r Routing) listPacketSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -4224,12 +4224,12 @@ func (r Routing) listAzureVnets() http.Handler {
 //
 // Lists datastores from vsphere datacenter
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []VSphereDatastoreList
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereDatastoreList
 func (r Routing) listVSphereDatastores() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6130,14 +6130,14 @@ func (r Routing) listAKSVMSizes() http.Handler {
 
 // swagger:route GET /api/v2/providers/aks/resourcegroups aks listAKSResourceGroups
 //
-//     List resource groups in an Azure subscription.
+//	List resource groups in an Azure subscription.
 //
-//	   Produces:
-//	   - application/json
+//	Produces:
+//	- application/json
 //
-//	   Responses:
-//	     default: errorResponse
-//	     200: AzureResourceGroupList
+//	Responses:
+//	  default: errorResponse
+//	  200: AzureResourceGroupList
 func (r Routing) listAKSResourceGroups() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6289,7 +6289,6 @@ func (r Routing) listEKSSubnets() http.Handler {
 //
 //	List EKS securitygroup list.
 //
-//
 //	Produces:
 //	- application/json
 //
@@ -6312,17 +6311,16 @@ func (r Routing) listEKSSecurityGroups() http.Handler {
 
 // swagger:route GET /api/v2/providers/eks/regions eks listEKSRegions
 //
-//     List EKS regions.
+//	List EKS regions.
 //
+//	Produces:
+//	- application/json
 //
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []EKSRegionList
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []EKSRegionList
+//	  401: empty
+//	  403: empty
 func (r Routing) listEKSRegions() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6339,14 +6337,14 @@ func (r Routing) listEKSRegions() http.Handler {
 //
 //	List EKS Cluster Service Roles.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: EKSClusterRoleList
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSClusterRoleList
+//	  401: empty
+//	  403: empty
 func (r Routing) listEKSClusterRoles() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6363,14 +6361,14 @@ func (r Routing) listEKSClusterRoles() http.Handler {
 //
 //	List EKS Node IAM Roles.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: EKSNodeRoleList
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSNodeRoleList
+//	  401: empty
+//	  403: empty
 func (r Routing) listEKSNodeRoles() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6751,16 +6749,16 @@ func (r Routing) getExternalClusterMachineDeploymentUpgrades() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes project listExternalClusterMachineDeploymentNodes
 //
-//     Gets an external cluster machine deployment nodes.
+//	Gets an external cluster machine deployment nodes.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []ExternalClusterNode
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []ExternalClusterNode
+//	  401: empty
+//	  403: empty
 func (r Routing) listExternalClusterMachineDeploymentNodes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
