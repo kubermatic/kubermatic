@@ -204,6 +204,7 @@ var (
 			semver.MustParse("v1.21.8"),
 			// Kubernetes 1.22
 			semver.MustParse("v1.22.5"),
+			semver.MustParse("v1.22.14"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.19 =======
@@ -274,8 +275,10 @@ var (
 				// - CVE-2021-33910 (fixed >= 1.22.4)
 				// - CVE-2021-44716 (fixed >= 1.22.5)
 				// - CVE-2021-44717 (fixed >= 1.22.5)
-				From:      ">= 1.22.0, < 1.22.5",
-				To:        "1.22.5",
+				// - CVE-2022-3172 (fixed >= 1.22.14)
+				// - CVE-2021-25749 (fixed >= 1.22.14)
+				From:      ">= 1.22.0, < 1.22.14",
+				To:        "1.22.14",
 				Automatic: pointer.BoolPtr(true),
 			},
 		},
