@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-0 containerize ./hack/update-swagger.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-1 containerize ./hack/update-swagger.sh
 
 echodate "Generating swagger spec"
 cd cmd/kubermatic-api/
