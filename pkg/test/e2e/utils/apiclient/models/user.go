@@ -44,7 +44,8 @@ type User struct {
 	IsAdmin bool `json:"isAdmin,omitempty"`
 
 	// LastSeen holds a time in UTC format when the user has been using the API last time
-	LastSeen string `json:"lastSeen,omitempty"`
+	// Format: date-time
+	LastSeen strfmt.DateTime `json:"lastSeen,omitempty"`
 
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
@@ -66,6 +67,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDeletionTimestamp(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastSeen(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,6 +106,18 @@ func (m *User) validateDeletionTimestamp(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("deletionTimestamp", "body", "date-time", m.DeletionTimestamp.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *User) validateLastSeen(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastSeen) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("lastSeen", "body", "date-time", m.LastSeen.String(), formats); err != nil {
 		return err
 	}
 

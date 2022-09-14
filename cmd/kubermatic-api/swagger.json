@@ -23454,11 +23454,13 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
           "description": "Last time the condition transit from one status to another.\n+optional",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "LastTransitionTime"
         },
         "message": {
@@ -24061,6 +24063,7 @@
       "properties": {
         "backupFinishedTime": {
           "type": "string",
+          "format": "date-time",
           "x-go-name": "BackupFinishedTime"
         },
         "backupMessage": {
@@ -24076,10 +24079,12 @@
         },
         "backupStartTime": {
           "type": "string",
+          "format": "date-time",
           "x-go-name": "BackupStartTime"
         },
         "deleteFinishedTime": {
           "type": "string",
+          "format": "date-time",
           "x-go-name": "DeleteFinishedTime"
         },
         "deleteJobName": {
@@ -24095,6 +24100,7 @@
         },
         "deleteStartTime": {
           "type": "string",
+          "format": "date-time",
           "x-go-name": "DeleteStartTime"
         },
         "jobName": {
@@ -24104,6 +24110,7 @@
         "scheduledTime": {
           "description": "ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "ScheduledTime"
         }
       },
@@ -26368,11 +26375,13 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
           "description": "Last time the condition transit from one status to another.\n+optional",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "LastTransitionTime"
         },
         "message": {
@@ -26557,6 +26566,7 @@
         },
         "restoreTime": {
           "type": "string",
+          "format": "date-time",
           "x-go-name": "RestoreTime"
         }
       },
@@ -32782,6 +32792,7 @@
         "lastSeen": {
           "description": "LastSeen holds a time in UTC format when the user has been using the API last time",
           "type": "string",
+          "format": "date-time",
           "x-go-name": "LastSeen"
         },
         "name": {

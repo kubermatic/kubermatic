@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // EtcdRestoreStatus etcd restore status
@@ -19,7 +20,8 @@ import (
 type EtcdRestoreStatus struct {
 
 	// restore time
-	RestoreTime string `json:"restoreTime,omitempty"`
+	// Format: date-time
+	RestoreTime strfmt.DateTime `json:"restoreTime,omitempty"`
 
 	// phase
 	Phase EtcdRestorePhase `json:"phase,omitempty"`
@@ -29,6 +31,10 @@ type EtcdRestoreStatus struct {
 func (m *EtcdRestoreStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateRestoreTime(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePhase(formats); err != nil {
 		res = append(res, err)
 	}
@@ -36,6 +42,18 @@ func (m *EtcdRestoreStatus) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *EtcdRestoreStatus) validateRestoreTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.RestoreTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("restoreTime", "body", "date-time", m.RestoreTime.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

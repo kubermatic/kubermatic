@@ -22,11 +22,13 @@ type ApplicationInstallationCondition struct {
 
 	// Last time we got an update on a given condition.
 	// +optional
-	LastHeartbeatTime string `json:"lastHeartbeatTime,omitempty"`
+	// Format: date-time
+	LastHeartbeatTime strfmt.DateTime `json:"lastHeartbeatTime,omitempty"`
 
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
+	// Format: date-time
+	LastTransitionTime strfmt.DateTime `json:"lastTransitionTime,omitempty"`
 
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
@@ -48,6 +50,14 @@ type ApplicationInstallationCondition struct {
 func (m *ApplicationInstallationCondition) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateLastHeartbeatTime(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastTransitionTime(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,6 +69,30 @@ func (m *ApplicationInstallationCondition) Validate(formats strfmt.Registry) err
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) validateLastHeartbeatTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastHeartbeatTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("lastHeartbeatTime", "body", "date-time", m.LastHeartbeatTime.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallationCondition) validateLastTransitionTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastTransitionTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("lastTransitionTime", "body", "date-time", m.LastTransitionTime.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

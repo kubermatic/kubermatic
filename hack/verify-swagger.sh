@@ -31,6 +31,13 @@ trap cleanup EXIT SIGINT SIGTERM
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
+# For some reason, since go-swagger 0.30.0, GOFLAGS with `-trimpath` causes
+# Swagger to ignore/forget/don't see half of the necessary types and completely
+# mangles the generated spec.
+# After multiple days of debugging we simply gave up and ensure that GOFLAGS
+# is not set for generating/verifying the Swagger spec.
+export GOFLAGS=
+
 cd cmd/kubermatic-api/
 go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --tags=ee --scan-models -o ${TMP_SWAGGER}
 # The parameters order in the generated swagger spec json file is not

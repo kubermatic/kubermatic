@@ -19,7 +19,14 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.18.4 containerize ./hack/update-swagger.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.18-node-16-10 containerize ./hack/update-swagger.sh
+
+# For some reason, since go-swagger 0.30.0, GOFLAGS with `-trimpath` causes
+# Swagger to ignore/forget/don't see half of the necessary types and completely
+# mangles the generated spec.
+# After multiple days of debugging we simply gave up and ensure that GOFLAGS
+# is not set for generating/verifying the Swagger spec.
+export GOFLAGS=
 
 echodate "Generating swagger spec"
 cd cmd/kubermatic-api/
