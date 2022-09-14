@@ -58,7 +58,6 @@ func TestCreateVMFolder(t *testing.T) {
 }
 
 func TestProvider_GetVMFolders(t *testing.T) {
-
 	tests := []struct {
 		name            string
 		dc              *kubermaticv1.DatacenterSpecVSphere
