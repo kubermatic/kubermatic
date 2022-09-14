@@ -485,7 +485,7 @@ func isNotFoundErr(err error) bool {
 func isEndpointNotFoundErr(err error) bool {
 	var endpointNotFoundErr *gophercloud.ErrEndpointNotFound
 	// left side of the || to catch any error returned as pointer to struct (current case of gophercloud)
-	// right side of the || to cathc any error returned as struct (in case...)
+	// right side of the || to catch any error returned as struct (in case...)
 	return errors.As(err, &endpointNotFoundErr) || errors.As(err, &gophercloud.ErrEndpointNotFound{})
 }
 
