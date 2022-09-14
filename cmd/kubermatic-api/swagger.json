@@ -564,10 +564,7 @@
         ],
         "responses": {
           "200": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -636,10 +633,7 @@
         ],
         "responses": {
           "201": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -14936,7 +14930,10 @@
           "200": {
             "description": "PacketSizeList",
             "schema": {
-              "$ref": "#/definitions/PacketSizeList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
+              }
             }
           },
           "default": {
@@ -19227,7 +19224,10 @@
           "200": {
             "description": "EKSRegionList",
             "schema": {
-              "$ref": "#/definitions/EKSRegionList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSRegionList"
+              }
             }
           },
           "401": {
@@ -20483,7 +20483,10 @@
           "200": {
             "description": "VSphereDatastoreList",
             "schema": {
-              "$ref": "#/definitions/VSphereDatastoreList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereDatastoreList"
+              }
             }
           },
           "default": {
@@ -23454,8 +23457,7 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
-          "$ref": "#/definitions/Time"
-          "type": "string",
+          "format": "date-time",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
@@ -24080,7 +24082,7 @@
         },
         "backupStartTime": {
           "type": "string",
-          "$ref": "#/definitions/Time"
+          "format": "date-time",
           "x-go-name": "BackupStartTime"
         },
         "deleteFinishedTime": {
@@ -24101,7 +24103,7 @@
         },
         "deleteStartTime": {
           "type": "string",
-          "$ref": "#/definitions/Time"
+          "format": "date-time",
           "x-go-name": "DeleteStartTime"
         },
         "jobName": {
@@ -24111,8 +24113,7 @@
         "scheduledTime": {
           "description": "ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil",
           "type": "string",
-          "$ref": "#/definitions/Time"
-          "type": "string",
+          "format": "date-time",
           "x-go-name": "ScheduledTime"
         }
       },
@@ -26377,8 +26378,7 @@
         "lastHeartbeatTime": {
           "description": "Last time we got an update on a given condition.\n+optional",
           "type": "string",
-          "$ref": "#/definitions/Time"
-          "type": "string",
+          "format": "date-time",
           "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
@@ -32795,7 +32795,7 @@
         "lastSeen": {
           "description": "LastSeen holds a time in UTC format when the user has been using the API last time",
           "type": "string",
-          "$ref": "#/definitions/Time"
+          "format": "date-time",
           "x-go-name": "LastSeen"
         },
         "name": {

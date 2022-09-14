@@ -61,52 +61,47 @@ func NewUpdateMeteringReportConfigurationOK() *UpdateMeteringReportConfiguration
 }
 
 /*
-/* UpdateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
+UpdateMeteringReportConfigurationOK describes a response with status code 200, with default header values.
 
-MeteringReportConfiguration
+EmptyResponse is a empty response
 */
 type UpdateMeteringReportConfigurationOK struct {
-	Payload *models.MeteringReportConfiguration
 }
 
+// IsSuccess returns true when this update metering report configuration o k response has a 2xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsSuccess() bool {
 	return true
 }
 
+// IsRedirect returns true when this update metering report configuration o k response has a 3xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsRedirect() bool {
 	return false
 }
 
+// IsClientError returns true when this update metering report configuration o k response has a 4xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsClientError() bool {
 	return false
 }
 
+// IsServerError returns true when this update metering report configuration o k response has a 5xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsServerError() bool {
 	return false
 }
 
+// IsCode returns true when this update metering report configuration o k response a status code equal to that given
+func (o *UpdateMeteringReportConfigurationOK) IsCode(code int) bool {
+	return code == 200
 }
 
 func (o *UpdateMeteringReportConfigurationOK) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationCreated ", 201)
-}
-
-func (o *UpdateMeteringReportConfigurationCreated) String() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
 }
 
 func (o *UpdateMeteringReportConfigurationOK) String() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK  %+v", 200, o.Payload)
-}
-
-func (o *UpdateMeteringReportConfigurationOK) GetPayload() *models.MeteringReportConfiguration {
-	return o.Payload
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
 }
 
 func (o *UpdateMeteringReportConfigurationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.MeteringReportConfiguration)
-
-	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
-		return err
-	}
 
 	return nil
 }

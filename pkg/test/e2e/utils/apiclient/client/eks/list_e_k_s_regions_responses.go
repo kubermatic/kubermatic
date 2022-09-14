@@ -64,7 +64,7 @@ ListEKSRegionsOK describes a response with status code 200, with default header 
 EKSRegionList
 */
 type ListEKSRegionsOK struct {
-	Payload models.EKSRegionList
+	Payload []models.EKSRegionList
 }
 
 // IsSuccess returns true when this list e k s regions o k response has a 2xx status code
@@ -100,7 +100,7 @@ func (o *ListEKSRegionsOK) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsOK  %+v", 200, o.Payload)
 }
 
-func (o *ListEKSRegionsOK) GetPayload() models.EKSRegionList {
+func (o *ListEKSRegionsOK) GetPayload() []models.EKSRegionList {
 	return o.Payload
 }
 

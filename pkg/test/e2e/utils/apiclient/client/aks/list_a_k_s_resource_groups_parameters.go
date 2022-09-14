@@ -52,10 +52,12 @@ func NewListAKSResourceGroupsParamsWithHTTPClient(client *http.Client) *ListAKSR
 	}
 }
 
-/* ListAKSResourceGroupsParams contains all the parameters to send to the API endpoint
-   for the list a k s resource groups operation.
+/*
+ListAKSResourceGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s resource groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSResourceGroupsParams struct {
 	timeout    time.Duration

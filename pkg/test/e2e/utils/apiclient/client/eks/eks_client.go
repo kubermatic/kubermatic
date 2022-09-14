@@ -134,7 +134,7 @@ func (a *Client) ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authIn
 }
 
 /*
-  ListEKSClusterRoles lists e k s cluster service roles
+ListEKSClusterRoles lists e k s cluster service roles
 */
 func (a *Client) ListEKSClusterRoles(params *ListEKSClusterRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClusterRolesOK, error) {
 	// TODO: Validate the params before sending
@@ -210,7 +210,7 @@ func (a *Client) ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesN
 }
 
 /*
-  ListEKSNodeRoles lists e k s node i a m roles
+ListEKSNodeRoles lists e k s node i a m roles
 */
 func (a *Client) ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesOK, error) {
 	// TODO: Validate the params before sending

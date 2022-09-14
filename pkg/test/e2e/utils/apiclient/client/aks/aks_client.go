@@ -162,7 +162,7 @@ func (a *Client) ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoC
 }
 
 /*
-  ListAKSResourceGroups lists resource groups in an azure subscription
+ListAKSResourceGroups lists resource groups in an azure subscription
 */
 func (a *Client) ListAKSResourceGroups(params *ListAKSResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSResourceGroupsOK, error) {
 	// TODO: Validate the params before sending

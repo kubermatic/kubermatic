@@ -21,6 +21,7 @@ type BackupStatus struct {
 
 	// backup finished time
 	// Format: date-time
+	BackupFinishedTime strfmt.DateTime `json:"backupFinishedTime,omitempty"`
 
 	// backup message
 	BackupMessage string `json:"backupMessage,omitempty"`
@@ -30,9 +31,11 @@ type BackupStatus struct {
 
 	// backup start time
 	// Format: date-time
+	BackupStartTime strfmt.DateTime `json:"backupStartTime,omitempty"`
 
 	// delete finished time
 	// Format: date-time
+	DeleteFinishedTime strfmt.DateTime `json:"deleteFinishedTime,omitempty"`
 
 	// delete job name
 	DeleteJobName string `json:"deleteJobName,omitempty"`
@@ -42,12 +45,14 @@ type BackupStatus struct {
 
 	// delete start time
 	// Format: date-time
+	DeleteStartTime strfmt.DateTime `json:"deleteStartTime,omitempty"`
 
 	// job name
 	JobName string `json:"jobName,omitempty"`
 
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	BackupFinishedTime Time `json:"backupFinishedTime,omitempty"`
+	// Format: date-time
+	ScheduledTime strfmt.DateTime `json:"scheduledTime,omitempty"`
 
 	// backup phase
 	BackupPhase BackupStatusPhase `json:"backupPhase,omitempty"`
@@ -60,22 +65,45 @@ type BackupStatus struct {
 func (m *BackupStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateBackupFinishedTime(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBackupStartTime(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDeleteFinishedTime(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateDeleteStartTime(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateDeleteStartTime(formats); err != nil {
-	if err := m.validateBackupPhase(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateScheduledTime(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBackupPhase(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDeletePhase(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *BackupStatus) validateBackupFinishedTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.BackupFinishedTime) { // not required
+		return nil
+	}
+
 	if err := validate.FormatOf("backupFinishedTime", "body", "date-time", m.BackupFinishedTime.String(), formats); err != nil {
 		return err
 	}
@@ -95,9 +123,9 @@ func (m *BackupStatus) validateBackupStartTime(formats strfmt.Registry) error {
 	return nil
 }
 
-	if err := m.BackupFinishedTime.Validate(formats); err != nil {
-			return ve.ValidateName("backupFinishedTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
+func (m *BackupStatus) validateDeleteFinishedTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.DeleteFinishedTime) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("deleteFinishedTime", "body", "date-time", m.DeleteFinishedTime.String(), formats); err != nil {
@@ -120,10 +148,14 @@ func (m *BackupStatus) validateDeleteStartTime(formats strfmt.Registry) error {
 }
 
 func (m *BackupStatus) validateScheduledTime(formats strfmt.Registry) error {
-			return ce.ValidateName("backupFinishedTime")
+	if swag.IsZero(m.ScheduledTime) { // not required
 		return nil
+	}
 
 	if err := validate.FormatOf("scheduledTime", "body", "date-time", m.ScheduledTime.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 
