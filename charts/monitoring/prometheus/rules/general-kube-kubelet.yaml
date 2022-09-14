@@ -98,7 +98,7 @@ groups:
           service: kubelet
       - alert: KubeletRuntimeErrors
         annotations:
-          message: The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime oprations.
+          message: The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime operations.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeletruntimeerrors
         expr: |
           sum(rate(kubelet_runtime_operations_errors_total{job="kubelet"}[5m])) by (instance) > 0.1

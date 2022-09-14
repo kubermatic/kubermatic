@@ -12,7 +12,7 @@ via `machineDeployments`. This in turn means, that we need controllers for both 
 
 These controllers already exist within the [sig cluster-api repo](https://github.com/kubernetes-sigs/cluster-api/tree/c8f5046fb0b9a3a16b7f8b92f6dda7b0f65b4f55):
 
-* [machineSet controlller]: https://github.com/kubernetes-sigs/cluster-api/tree/c8f5046fb0b9a3a16b7f8b92f6dda7b0f65b4f55/pkg/controller/machineset
+* [machineSet controller]: https://github.com/kubernetes-sigs/cluster-api/tree/c8f5046fb0b9a3a16b7f8b92f6dda7b0f65b4f55/pkg/controller/machineset
 * [machineDeployment controller]: https://github.com/kubernetes-sigs/cluster-api/tree/c8f5046fb0b9a3a16b7f8b92f6dda7b0f65b4f55/pkg/controller/machinedeployment
 
 To reduce development efforts we would like to use the upstream controllers. However simply importing them is

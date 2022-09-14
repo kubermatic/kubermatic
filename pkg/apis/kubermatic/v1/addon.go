@@ -48,7 +48,7 @@ type Addon struct {
 	// Spec describes the desired addon state.
 	Spec AddonSpec `json:"spec,omitempty"`
 
-	// Status contrains information about the reconciliation status.
+	// Status contains information about the reconciliation status.
 	Status AddonStatus `json:"status,omitempty"`
 }
 
@@ -92,7 +92,7 @@ type AddonList struct {
 	Items []Addon `json:"items"`
 }
 
-// AddonStatus contrains information about the reconciliation status.
+// AddonStatus contains information about the reconciliation status.
 type AddonStatus struct {
 	Conditions map[AddonConditionType]AddonCondition `json:"conditions,omitempty"`
 }
