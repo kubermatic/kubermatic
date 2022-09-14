@@ -28,6 +28,7 @@ import (
 )
 
 func TestVSphereCA(t *testing.T) {
+	t.Skip()
 	tests := []struct {
 		name           string
 		expectedError  bool

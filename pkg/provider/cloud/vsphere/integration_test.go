@@ -19,9 +19,8 @@ limitations under the License.
 package vsphere
 
 import (
-	"os"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"os"
 )
 
 var (
