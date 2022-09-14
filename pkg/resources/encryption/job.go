@@ -74,7 +74,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 					Containers: []corev1.Container{
 						{
 							Name:    "encryption-runner",
-							Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.0.0",
+							Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.2.0",
 							Command: []string{"/bin/bash", "-c"},
 							Args: []string{
 								fmt.Sprintf(encryptionJobScript, resourceList),
