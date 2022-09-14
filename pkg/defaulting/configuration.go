@@ -216,17 +216,20 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.23.9"),
+		Default: semver.NewSemverOrDie("v1.23.11"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			newSemver("v1.22.9"),
 			newSemver("v1.22.12"),
+			newSemver("v1.22.14"),
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			newSemver("v1.23.9"),
+			newSemver("v1.23.11"),
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
+			newSemver("v1.24.5"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
