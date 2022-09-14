@@ -70,7 +70,7 @@ failure=false
 echodate "Annotating CRDs"
 
 for filename in $CRD_DIR/*.yaml; do
-  crdName="$(yq4 '.metadata.name' "$filename")"
+  crdName="$(yq '.metadata.name' "$filename")"
   location="$(echo "$locationMap" | jq -rc --arg key "$crdName" '.[$key]')"
 
   if [ -z "$location" ]; then
@@ -79,7 +79,7 @@ for filename in $CRD_DIR/*.yaml; do
     continue
   fi
 
-  yq4 --inplace ".metadata.annotations.\"$annotation\" = \"$location\"" "$filename"
+  yq --inplace ".metadata.annotations.\"$annotation\" = \"$location\"" "$filename"
 done
 
 if $failure; then

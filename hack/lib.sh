@@ -434,10 +434,10 @@ set_helm_charts_version() {
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
 
-    yq4 --inplace ".version = \"$version\"" "$chartFile"
+    yq --inplace ".version = \"$version\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
-      yq4 --inplace ".appVersion = \"$version\"" "$chartFile"
-      yq4 --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
+      yq --inplace ".appVersion = \"$version\"" "$chartFile"
+      yq --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
     fi
   done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
 }
@@ -466,7 +466,7 @@ set_crds_version_annotation() {
   fi
 
   while IFS= read -r -d '' filename; do
-    yq4 --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
+    yq --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
 }
 
