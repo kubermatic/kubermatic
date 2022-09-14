@@ -66,9 +66,39 @@ type ListAccessibleAddonsOK struct {
 	Payload models.AccessibleAddons
 }
 
+// IsSuccess returns true when this list accessible addons o k response has a 2xx status code
+func (o *ListAccessibleAddonsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list accessible addons o k response has a 3xx status code
+func (o *ListAccessibleAddonsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list accessible addons o k response has a 4xx status code
+func (o *ListAccessibleAddonsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list accessible addons o k response has a 5xx status code
+func (o *ListAccessibleAddonsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list accessible addons o k response a status code equal to that given
+func (o *ListAccessibleAddonsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAccessibleAddonsOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAccessibleAddonsOK) String() string {
+	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAccessibleAddonsOK) GetPayload() models.AccessibleAddons {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListAccessibleAddonsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list accessible addons unauthorized response has a 2xx status code
+func (o *ListAccessibleAddonsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list accessible addons unauthorized response has a 3xx status code
+func (o *ListAccessibleAddonsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list accessible addons unauthorized response has a 4xx status code
+func (o *ListAccessibleAddonsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list accessible addons unauthorized response has a 5xx status code
+func (o *ListAccessibleAddonsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list accessible addons unauthorized response a status code equal to that given
+func (o *ListAccessibleAddonsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListAccessibleAddonsUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsUnauthorized ", 401)
+}
+
+func (o *ListAccessibleAddonsUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListAccessibleAddonsForbidden struct {
 }
 
+// IsSuccess returns true when this list accessible addons forbidden response has a 2xx status code
+func (o *ListAccessibleAddonsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list accessible addons forbidden response has a 3xx status code
+func (o *ListAccessibleAddonsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list accessible addons forbidden response has a 4xx status code
+func (o *ListAccessibleAddonsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list accessible addons forbidden response has a 5xx status code
+func (o *ListAccessibleAddonsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list accessible addons forbidden response a status code equal to that given
+func (o *ListAccessibleAddonsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListAccessibleAddonsForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsForbidden ", 403)
+}
+
+func (o *ListAccessibleAddonsForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddonsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListAccessibleAddonsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list accessible addons default response has a 2xx status code
+func (o *ListAccessibleAddonsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list accessible addons default response has a 3xx status code
+func (o *ListAccessibleAddonsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list accessible addons default response has a 4xx status code
+func (o *ListAccessibleAddonsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list accessible addons default response has a 5xx status code
+func (o *ListAccessibleAddonsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list accessible addons default response a status code equal to that given
+func (o *ListAccessibleAddonsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAccessibleAddonsDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddons default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAccessibleAddonsDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/addons][%d] listAccessibleAddons default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAccessibleAddonsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

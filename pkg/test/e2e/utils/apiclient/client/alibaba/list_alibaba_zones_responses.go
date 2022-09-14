@@ -54,9 +54,39 @@ type ListAlibabaZonesOK struct {
 	Payload models.AlibabaZoneList
 }
 
+// IsSuccess returns true when this list alibaba zones o k response has a 2xx status code
+func (o *ListAlibabaZonesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list alibaba zones o k response has a 3xx status code
+func (o *ListAlibabaZonesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list alibaba zones o k response has a 4xx status code
+func (o *ListAlibabaZonesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list alibaba zones o k response has a 5xx status code
+func (o *ListAlibabaZonesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list alibaba zones o k response a status code equal to that given
+func (o *ListAlibabaZonesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAlibabaZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZonesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAlibabaZonesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZonesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAlibabaZonesOK) GetPayload() models.AlibabaZoneList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAlibabaZonesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list alibaba zones default response has a 2xx status code
+func (o *ListAlibabaZonesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list alibaba zones default response has a 3xx status code
+func (o *ListAlibabaZonesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list alibaba zones default response has a 4xx status code
+func (o *ListAlibabaZonesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list alibaba zones default response has a 5xx status code
+func (o *ListAlibabaZonesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list alibaba zones default response a status code equal to that given
+func (o *ListAlibabaZonesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAlibabaZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZones default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAlibabaZonesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/alibaba/zones][%d] listAlibabaZones default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAlibabaZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

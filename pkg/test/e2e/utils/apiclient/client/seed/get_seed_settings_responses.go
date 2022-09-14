@@ -66,9 +66,39 @@ type GetSeedSettingsOK struct {
 	Payload *models.SeedSettings
 }
 
+// IsSuccess returns true when this get seed settings o k response has a 2xx status code
+func (o *GetSeedSettingsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get seed settings o k response has a 3xx status code
+func (o *GetSeedSettingsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get seed settings o k response has a 4xx status code
+func (o *GetSeedSettingsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get seed settings o k response has a 5xx status code
+func (o *GetSeedSettingsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get seed settings o k response a status code equal to that given
+func (o *GetSeedSettingsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetSeedSettingsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetSeedSettingsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetSeedSettingsOK) GetPayload() *models.SeedSettings {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetSeedSettingsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get seed settings unauthorized response has a 2xx status code
+func (o *GetSeedSettingsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get seed settings unauthorized response has a 3xx status code
+func (o *GetSeedSettingsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get seed settings unauthorized response has a 4xx status code
+func (o *GetSeedSettingsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get seed settings unauthorized response has a 5xx status code
+func (o *GetSeedSettingsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get seed settings unauthorized response a status code equal to that given
+func (o *GetSeedSettingsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetSeedSettingsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsUnauthorized ", 401)
+}
+
+func (o *GetSeedSettingsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetSeedSettingsForbidden struct {
 }
 
+// IsSuccess returns true when this get seed settings forbidden response has a 2xx status code
+func (o *GetSeedSettingsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get seed settings forbidden response has a 3xx status code
+func (o *GetSeedSettingsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get seed settings forbidden response has a 4xx status code
+func (o *GetSeedSettingsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get seed settings forbidden response has a 5xx status code
+func (o *GetSeedSettingsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get seed settings forbidden response a status code equal to that given
+func (o *GetSeedSettingsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetSeedSettingsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsForbidden ", 403)
+}
+
+func (o *GetSeedSettingsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettingsForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetSeedSettingsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get seed settings default response has a 2xx status code
+func (o *GetSeedSettingsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get seed settings default response has a 3xx status code
+func (o *GetSeedSettingsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get seed settings default response has a 4xx status code
+func (o *GetSeedSettingsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get seed settings default response has a 5xx status code
+func (o *GetSeedSettingsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get seed settings default response a status code equal to that given
+func (o *GetSeedSettingsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetSeedSettingsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettings default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetSeedSettingsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/settings][%d] getSeedSettings default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetSeedSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

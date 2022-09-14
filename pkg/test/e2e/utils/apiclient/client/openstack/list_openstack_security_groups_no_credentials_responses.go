@@ -54,9 +54,39 @@ type ListOpenstackSecurityGroupsNoCredentialsOK struct {
 	Payload []*models.OpenstackSecurityGroup
 }
 
+// IsSuccess returns true when this list openstack security groups no credentials o k response has a 2xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list openstack security groups no credentials o k response has a 3xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list openstack security groups no credentials o k response has a 4xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list openstack security groups no credentials o k response has a 5xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list openstack security groups no credentials o k response a status code equal to that given
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) GetPayload() []*models.OpenstackSecurityGroup {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list openstack security groups no credentials default response has a 2xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list openstack security groups no credentials default response has a 3xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list openstack security groups no credentials default response has a 4xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list openstack security groups no credentials default response has a 5xx status code
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list openstack security groups no credentials default response a status code equal to that given
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

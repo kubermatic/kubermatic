@@ -66,9 +66,39 @@ type UpdateAdmissionPluginOK struct {
 	Payload *models.AdmissionPlugin
 }
 
+// IsSuccess returns true when this update admission plugin o k response has a 2xx status code
+func (o *UpdateAdmissionPluginOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update admission plugin o k response has a 3xx status code
+func (o *UpdateAdmissionPluginOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update admission plugin o k response has a 4xx status code
+func (o *UpdateAdmissionPluginOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update admission plugin o k response has a 5xx status code
+func (o *UpdateAdmissionPluginOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update admission plugin o k response a status code equal to that given
+func (o *UpdateAdmissionPluginOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateAdmissionPluginOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateAdmissionPluginOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateAdmissionPluginOK) GetPayload() *models.AdmissionPlugin {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type UpdateAdmissionPluginUnauthorized struct {
 }
 
+// IsSuccess returns true when this update admission plugin unauthorized response has a 2xx status code
+func (o *UpdateAdmissionPluginUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update admission plugin unauthorized response has a 3xx status code
+func (o *UpdateAdmissionPluginUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update admission plugin unauthorized response has a 4xx status code
+func (o *UpdateAdmissionPluginUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update admission plugin unauthorized response has a 5xx status code
+func (o *UpdateAdmissionPluginUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update admission plugin unauthorized response a status code equal to that given
+func (o *UpdateAdmissionPluginUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateAdmissionPluginUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginUnauthorized ", 401)
+}
+
+func (o *UpdateAdmissionPluginUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type UpdateAdmissionPluginForbidden struct {
 }
 
+// IsSuccess returns true when this update admission plugin forbidden response has a 2xx status code
+func (o *UpdateAdmissionPluginForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update admission plugin forbidden response has a 3xx status code
+func (o *UpdateAdmissionPluginForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update admission plugin forbidden response has a 4xx status code
+func (o *UpdateAdmissionPluginForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update admission plugin forbidden response has a 5xx status code
+func (o *UpdateAdmissionPluginForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update admission plugin forbidden response a status code equal to that given
+func (o *UpdateAdmissionPluginForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateAdmissionPluginForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginForbidden ", 403)
+}
+
+func (o *UpdateAdmissionPluginForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *UpdateAdmissionPluginDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update admission plugin default response has a 2xx status code
+func (o *UpdateAdmissionPluginDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update admission plugin default response has a 3xx status code
+func (o *UpdateAdmissionPluginDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update admission plugin default response has a 4xx status code
+func (o *UpdateAdmissionPluginDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update admission plugin default response has a 5xx status code
+func (o *UpdateAdmissionPluginDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update admission plugin default response a status code equal to that given
+func (o *UpdateAdmissionPluginDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPlugin default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateAdmissionPluginDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPlugin default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

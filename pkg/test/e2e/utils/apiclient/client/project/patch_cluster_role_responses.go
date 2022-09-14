@@ -66,9 +66,39 @@ type PatchClusterRoleOK struct {
 	Payload *models.ClusterRole
 }
 
+// IsSuccess returns true when this patch cluster role o k response has a 2xx status code
+func (o *PatchClusterRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch cluster role o k response has a 3xx status code
+func (o *PatchClusterRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster role o k response has a 4xx status code
+func (o *PatchClusterRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch cluster role o k response has a 5xx status code
+func (o *PatchClusterRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster role o k response a status code equal to that given
+func (o *PatchClusterRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchClusterRoleOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchClusterRoleOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchClusterRoleOK) GetPayload() *models.ClusterRole {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchClusterRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch cluster role unauthorized response has a 2xx status code
+func (o *PatchClusterRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster role unauthorized response has a 3xx status code
+func (o *PatchClusterRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster role unauthorized response has a 4xx status code
+func (o *PatchClusterRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster role unauthorized response has a 5xx status code
+func (o *PatchClusterRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster role unauthorized response a status code equal to that given
+func (o *PatchClusterRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchClusterRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleUnauthorized ", 401)
+}
+
+func (o *PatchClusterRoleUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchClusterRoleForbidden struct {
 }
 
+// IsSuccess returns true when this patch cluster role forbidden response has a 2xx status code
+func (o *PatchClusterRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster role forbidden response has a 3xx status code
+func (o *PatchClusterRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster role forbidden response has a 4xx status code
+func (o *PatchClusterRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster role forbidden response has a 5xx status code
+func (o *PatchClusterRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster role forbidden response a status code equal to that given
+func (o *PatchClusterRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchClusterRoleForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleForbidden ", 403)
+}
+
+func (o *PatchClusterRoleForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRoleForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchClusterRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch cluster role default response has a 2xx status code
+func (o *PatchClusterRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch cluster role default response has a 3xx status code
+func (o *PatchClusterRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch cluster role default response has a 4xx status code
+func (o *PatchClusterRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch cluster role default response has a 5xx status code
+func (o *PatchClusterRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch cluster role default response a status code equal to that given
+func (o *PatchClusterRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchClusterRoleDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] patchClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

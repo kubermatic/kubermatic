@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteAddonOK struct {
 }
 
+// IsSuccess returns true when this delete addon o k response has a 2xx status code
+func (o *DeleteAddonOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete addon o k response has a 3xx status code
+func (o *DeleteAddonOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete addon o k response has a 4xx status code
+func (o *DeleteAddonOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete addon o k response has a 5xx status code
+func (o *DeleteAddonOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete addon o k response a status code equal to that given
+func (o *DeleteAddonOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteAddonOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonOK ", 200)
+}
+
+func (o *DeleteAddonOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteAddonUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete addon unauthorized response has a 2xx status code
+func (o *DeleteAddonUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete addon unauthorized response has a 3xx status code
+func (o *DeleteAddonUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete addon unauthorized response has a 4xx status code
+func (o *DeleteAddonUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete addon unauthorized response has a 5xx status code
+func (o *DeleteAddonUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete addon unauthorized response a status code equal to that given
+func (o *DeleteAddonUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteAddonUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonUnauthorized ", 401)
+}
+
+func (o *DeleteAddonUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteAddonForbidden struct {
 }
 
+// IsSuccess returns true when this delete addon forbidden response has a 2xx status code
+func (o *DeleteAddonForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete addon forbidden response has a 3xx status code
+func (o *DeleteAddonForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete addon forbidden response has a 4xx status code
+func (o *DeleteAddonForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete addon forbidden response has a 5xx status code
+func (o *DeleteAddonForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete addon forbidden response a status code equal to that given
+func (o *DeleteAddonForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteAddonForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonForbidden ", 403)
+}
+
+func (o *DeleteAddonForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddonForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteAddonDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete addon default response has a 2xx status code
+func (o *DeleteAddonDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete addon default response has a 3xx status code
+func (o *DeleteAddonDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete addon default response has a 4xx status code
+func (o *DeleteAddonDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete addon default response has a 5xx status code
+func (o *DeleteAddonDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete addon default response a status code equal to that given
+func (o *DeleteAddonDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteAddonDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddon default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteAddonDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] deleteAddon default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

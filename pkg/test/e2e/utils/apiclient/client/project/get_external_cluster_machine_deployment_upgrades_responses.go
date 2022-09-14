@@ -66,9 +66,39 @@ type GetExternalClusterMachineDeploymentUpgradesOK struct {
 	Payload []*models.MasterVersion
 }
 
+// IsSuccess returns true when this get external cluster machine deployment upgrades o k response has a 2xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get external cluster machine deployment upgrades o k response has a 3xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster machine deployment upgrades o k response has a 4xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get external cluster machine deployment upgrades o k response has a 5xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster machine deployment upgrades o k response a status code equal to that given
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesOK  %+v", 200, o.Payload)
 }
+
+func (o *GetExternalClusterMachineDeploymentUpgradesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesOK  %+v", 200, o.Payload)
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type GetExternalClusterMachineDeploymentUpgradesUnauthorized struct {
 }
 
+// IsSuccess returns true when this get external cluster machine deployment upgrades unauthorized response has a 2xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get external cluster machine deployment upgrades unauthorized response has a 3xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster machine deployment upgrades unauthorized response has a 4xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get external cluster machine deployment upgrades unauthorized response has a 5xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster machine deployment upgrades unauthorized response a status code equal to that given
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesUnauthorized ", 401)
+}
+
+func (o *GetExternalClusterMachineDeploymentUpgradesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type GetExternalClusterMachineDeploymentUpgradesForbidden struct {
 }
 
+// IsSuccess returns true when this get external cluster machine deployment upgrades forbidden response has a 2xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get external cluster machine deployment upgrades forbidden response has a 3xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster machine deployment upgrades forbidden response has a 4xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get external cluster machine deployment upgrades forbidden response has a 5xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster machine deployment upgrades forbidden response a status code equal to that given
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesForbidden ", 403)
+}
+
+func (o *GetExternalClusterMachineDeploymentUpgradesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgradesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *GetExternalClusterMachineDeploymentUpgradesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get external cluster machine deployment upgrades default response has a 2xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get external cluster machine deployment upgrades default response has a 3xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get external cluster machine deployment upgrades default response has a 4xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get external cluster machine deployment upgrades default response has a 5xx status code
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get external cluster machine deployment upgrades default response a status code equal to that given
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgrades default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetExternalClusterMachineDeploymentUpgradesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/upgrades][%d] getExternalClusterMachineDeploymentUpgrades default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetExternalClusterMachineDeploymentUpgradesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

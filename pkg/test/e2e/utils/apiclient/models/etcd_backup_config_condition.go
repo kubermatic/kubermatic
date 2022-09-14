@@ -11,12 +11,23 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // EtcdBackupConfigCondition etcd backup config condition
 //
 // swagger:model EtcdBackupConfigCondition
 type EtcdBackupConfigCondition struct {
+
+	// Last time we got an update on a given condition.
+	// +optional
+	// Format: date-time
+	LastHeartbeatTime strfmt.DateTime `json:"lastHeartbeatTime,omitempty"`
+
+	// Last time the condition transit from one status to another.
+	// +optional
+	// Format: date-time
+	LastTransitionTime strfmt.DateTime `json:"lastTransitionTime,omitempty"`
 
 	// Human readable message indicating details about last transition.
 	// +optional
@@ -25,14 +36,6 @@ type EtcdBackupConfigCondition struct {
 	// (brief) reason for the condition's last transition.
 	// +optional
 	Reason string `json:"reason,omitempty"`
-
-	// last heartbeat time
-	// Format: date-time
-	LastHeartbeatTime Time `json:"lastHeartbeatTime,omitempty"`
-
-	// last transition time
-	// Format: date-time
-	LastTransitionTime Time `json:"lastTransitionTime,omitempty"`
 
 	// status
 	Status ConditionStatus `json:"status,omitempty"`
@@ -72,12 +75,7 @@ func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Reg
 		return nil
 	}
 
-	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
+	if err := validate.FormatOf("lastHeartbeatTime", "body", "date-time", m.LastHeartbeatTime.String(), formats); err != nil {
 		return err
 	}
 
@@ -89,12 +87,7 @@ func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Re
 		return nil
 	}
 
-	if err := m.LastTransitionTime.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
+	if err := validate.FormatOf("lastTransitionTime", "body", "date-time", m.LastTransitionTime.String(), formats); err != nil {
 		return err
 	}
 
@@ -139,14 +132,6 @@ func (m *EtcdBackupConfigCondition) validateType(formats strfmt.Registry) error 
 func (m *EtcdBackupConfigCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateLastHeartbeatTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLastTransitionTime(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -158,34 +143,6 @@ func (m *EtcdBackupConfigCondition) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) contextValidateLastHeartbeatTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastHeartbeatTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastHeartbeatTime")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *EtcdBackupConfigCondition) contextValidateLastTransitionTime(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastTransitionTime")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastTransitionTime")
-		}
-		return err
-	}
-
 	return nil
 }
 

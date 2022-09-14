@@ -69,9 +69,39 @@ type CreateSeedOK struct {
 	Payload *models.Seed
 }
 
+// IsSuccess returns true when this create seed o k response has a 2xx status code
+func (o *CreateSeedOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create seed o k response has a 3xx status code
+func (o *CreateSeedOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create seed o k response has a 4xx status code
+func (o *CreateSeedOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create seed o k response has a 5xx status code
+func (o *CreateSeedOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create seed o k response a status code equal to that given
+func (o *CreateSeedOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateSeedOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedOK  %+v", 200, o.Payload)
 }
+
+func (o *CreateSeedOK) String() string {
+	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedOK  %+v", 200, o.Payload)
+}
+
 func (o *CreateSeedOK) GetPayload() *models.Seed {
 	return o.Payload
 }
@@ -100,7 +130,36 @@ EmptyResponse is a empty response
 type CreateSeedUnauthorized struct {
 }
 
+// IsSuccess returns true when this create seed unauthorized response has a 2xx status code
+func (o *CreateSeedUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create seed unauthorized response has a 3xx status code
+func (o *CreateSeedUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create seed unauthorized response has a 4xx status code
+func (o *CreateSeedUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create seed unauthorized response has a 5xx status code
+func (o *CreateSeedUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create seed unauthorized response a status code equal to that given
+func (o *CreateSeedUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateSeedUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedUnauthorized ", 401)
+}
+
+func (o *CreateSeedUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedUnauthorized ", 401)
 }
 
@@ -121,7 +180,36 @@ EmptyResponse is a empty response
 type CreateSeedForbidden struct {
 }
 
+// IsSuccess returns true when this create seed forbidden response has a 2xx status code
+func (o *CreateSeedForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create seed forbidden response has a 3xx status code
+func (o *CreateSeedForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create seed forbidden response has a 4xx status code
+func (o *CreateSeedForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create seed forbidden response has a 5xx status code
+func (o *CreateSeedForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create seed forbidden response a status code equal to that given
+func (o *CreateSeedForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateSeedForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedForbidden ", 403)
+}
+
+func (o *CreateSeedForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeedForbidden ", 403)
 }
 
@@ -152,9 +240,39 @@ func (o *CreateSeedDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create seed default response has a 2xx status code
+func (o *CreateSeedDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create seed default response has a 3xx status code
+func (o *CreateSeedDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create seed default response has a 4xx status code
+func (o *CreateSeedDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create seed default response has a 5xx status code
+func (o *CreateSeedDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create seed default response a status code equal to that given
+func (o *CreateSeedDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateSeedDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeed default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateSeedDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/admin/seeds][%d] createSeed default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

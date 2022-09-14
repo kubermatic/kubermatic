@@ -54,9 +54,39 @@ type ListAKSVersionsOK struct {
 	Payload []*models.MasterVersion
 }
 
+// IsSuccess returns true when this list a k s versions o k response has a 2xx status code
+func (o *ListAKSVersionsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a k s versions o k response has a 3xx status code
+func (o *ListAKSVersionsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s versions o k response has a 4xx status code
+func (o *ListAKSVersionsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a k s versions o k response has a 5xx status code
+func (o *ListAKSVersionsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s versions o k response a status code equal to that given
+func (o *ListAKSVersionsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAKSVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/versions][%d] listAKSVersionsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAKSVersionsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/versions][%d] listAKSVersionsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAKSVersionsOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAKSVersionsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a k s versions default response has a 2xx status code
+func (o *ListAKSVersionsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a k s versions default response has a 3xx status code
+func (o *ListAKSVersionsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a k s versions default response has a 4xx status code
+func (o *ListAKSVersionsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a k s versions default response has a 5xx status code
+func (o *ListAKSVersionsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a k s versions default response a status code equal to that given
+func (o *ListAKSVersionsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAKSVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/versions][%d] listAKSVersions default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAKSVersionsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/versions][%d] listAKSVersions default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAKSVersionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

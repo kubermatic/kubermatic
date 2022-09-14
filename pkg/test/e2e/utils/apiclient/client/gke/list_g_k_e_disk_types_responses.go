@@ -54,9 +54,39 @@ type ListGKEDiskTypesOK struct {
 	Payload models.GKEDiskTypeList
 }
 
+// IsSuccess returns true when this list g k e disk types o k response has a 2xx status code
+func (o *ListGKEDiskTypesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e disk types o k response has a 3xx status code
+func (o *ListGKEDiskTypesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e disk types o k response has a 4xx status code
+func (o *ListGKEDiskTypesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e disk types o k response has a 5xx status code
+func (o *ListGKEDiskTypesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e disk types o k response a status code equal to that given
+func (o *ListGKEDiskTypesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEDiskTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/disktypes][%d] listGKEDiskTypesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEDiskTypesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/disktypes][%d] listGKEDiskTypesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEDiskTypesOK) GetPayload() models.GKEDiskTypeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListGKEDiskTypesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e disk types default response has a 2xx status code
+func (o *ListGKEDiskTypesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e disk types default response has a 3xx status code
+func (o *ListGKEDiskTypesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e disk types default response has a 4xx status code
+func (o *ListGKEDiskTypesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e disk types default response has a 5xx status code
+func (o *ListGKEDiskTypesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e disk types default response a status code equal to that given
+func (o *ListGKEDiskTypesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEDiskTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/disktypes][%d] listGKEDiskTypes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEDiskTypesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/disktypes][%d] listGKEDiskTypes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEDiskTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

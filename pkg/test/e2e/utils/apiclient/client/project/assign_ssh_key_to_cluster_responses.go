@@ -66,9 +66,39 @@ type AssignSSHKeyToClusterCreated struct {
 	Payload *models.SSHKey
 }
 
+// IsSuccess returns true when this assign Ssh key to cluster created response has a 2xx status code
+func (o *AssignSSHKeyToClusterCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this assign Ssh key to cluster created response has a 3xx status code
+func (o *AssignSSHKeyToClusterCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this assign Ssh key to cluster created response has a 4xx status code
+func (o *AssignSSHKeyToClusterCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this assign Ssh key to cluster created response has a 5xx status code
+func (o *AssignSSHKeyToClusterCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this assign Ssh key to cluster created response a status code equal to that given
+func (o *AssignSSHKeyToClusterCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *AssignSSHKeyToClusterCreated) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterCreated  %+v", 201, o.Payload)
 }
+
+func (o *AssignSSHKeyToClusterCreated) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterCreated  %+v", 201, o.Payload)
+}
+
 func (o *AssignSSHKeyToClusterCreated) GetPayload() *models.SSHKey {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type AssignSSHKeyToClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this assign Ssh key to cluster unauthorized response has a 2xx status code
+func (o *AssignSSHKeyToClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this assign Ssh key to cluster unauthorized response has a 3xx status code
+func (o *AssignSSHKeyToClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this assign Ssh key to cluster unauthorized response has a 4xx status code
+func (o *AssignSSHKeyToClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this assign Ssh key to cluster unauthorized response has a 5xx status code
+func (o *AssignSSHKeyToClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this assign Ssh key to cluster unauthorized response a status code equal to that given
+func (o *AssignSSHKeyToClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *AssignSSHKeyToClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterUnauthorized ", 401)
+}
+
+func (o *AssignSSHKeyToClusterUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type AssignSSHKeyToClusterForbidden struct {
 }
 
+// IsSuccess returns true when this assign Ssh key to cluster forbidden response has a 2xx status code
+func (o *AssignSSHKeyToClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this assign Ssh key to cluster forbidden response has a 3xx status code
+func (o *AssignSSHKeyToClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this assign Ssh key to cluster forbidden response has a 4xx status code
+func (o *AssignSSHKeyToClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this assign Ssh key to cluster forbidden response has a 5xx status code
+func (o *AssignSSHKeyToClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this assign Ssh key to cluster forbidden response a status code equal to that given
+func (o *AssignSSHKeyToClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *AssignSSHKeyToClusterForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterForbidden ", 403)
+}
+
+func (o *AssignSSHKeyToClusterForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *AssignSSHKeyToClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this assign SSH key to cluster default response has a 2xx status code
+func (o *AssignSSHKeyToClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this assign SSH key to cluster default response has a 3xx status code
+func (o *AssignSSHKeyToClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this assign SSH key to cluster default response has a 4xx status code
+func (o *AssignSSHKeyToClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this assign SSH key to cluster default response has a 5xx status code
+func (o *AssignSSHKeyToClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this assign SSH key to cluster default response a status code equal to that given
+func (o *AssignSSHKeyToClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *AssignSSHKeyToClusterDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSSHKeyToCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *AssignSSHKeyToClusterDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSSHKeyToCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *AssignSSHKeyToClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

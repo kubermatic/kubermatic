@@ -66,9 +66,39 @@ type UpdateAlertmanagerOK struct {
 	Payload *models.Alertmanager
 }
 
+// IsSuccess returns true when this update alertmanager o k response has a 2xx status code
+func (o *UpdateAlertmanagerOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update alertmanager o k response has a 3xx status code
+func (o *UpdateAlertmanagerOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update alertmanager o k response has a 4xx status code
+func (o *UpdateAlertmanagerOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update alertmanager o k response has a 5xx status code
+func (o *UpdateAlertmanagerOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update alertmanager o k response a status code equal to that given
+func (o *UpdateAlertmanagerOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateAlertmanagerOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateAlertmanagerOK) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateAlertmanagerOK) GetPayload() *models.Alertmanager {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type UpdateAlertmanagerUnauthorized struct {
 }
 
+// IsSuccess returns true when this update alertmanager unauthorized response has a 2xx status code
+func (o *UpdateAlertmanagerUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update alertmanager unauthorized response has a 3xx status code
+func (o *UpdateAlertmanagerUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update alertmanager unauthorized response has a 4xx status code
+func (o *UpdateAlertmanagerUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update alertmanager unauthorized response has a 5xx status code
+func (o *UpdateAlertmanagerUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update alertmanager unauthorized response a status code equal to that given
+func (o *UpdateAlertmanagerUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateAlertmanagerUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerUnauthorized ", 401)
+}
+
+func (o *UpdateAlertmanagerUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type UpdateAlertmanagerForbidden struct {
 }
 
+// IsSuccess returns true when this update alertmanager forbidden response has a 2xx status code
+func (o *UpdateAlertmanagerForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update alertmanager forbidden response has a 3xx status code
+func (o *UpdateAlertmanagerForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update alertmanager forbidden response has a 4xx status code
+func (o *UpdateAlertmanagerForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update alertmanager forbidden response has a 5xx status code
+func (o *UpdateAlertmanagerForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update alertmanager forbidden response a status code equal to that given
+func (o *UpdateAlertmanagerForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateAlertmanagerForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerForbidden ", 403)
+}
+
+func (o *UpdateAlertmanagerForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanagerForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *UpdateAlertmanagerDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update alertmanager default response has a 2xx status code
+func (o *UpdateAlertmanagerDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update alertmanager default response has a 3xx status code
+func (o *UpdateAlertmanagerDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update alertmanager default response has a 4xx status code
+func (o *UpdateAlertmanagerDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update alertmanager default response has a 5xx status code
+func (o *UpdateAlertmanagerDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update alertmanager default response a status code equal to that given
+func (o *UpdateAlertmanagerDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateAlertmanagerDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanager default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateAlertmanagerDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] updateAlertmanager default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateAlertmanagerDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

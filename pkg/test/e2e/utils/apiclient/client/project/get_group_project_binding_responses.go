@@ -66,9 +66,39 @@ type GetGroupProjectBindingOK struct {
 	Payload *models.GroupProjectBinding
 }
 
+// IsSuccess returns true when this get group project binding o k response has a 2xx status code
+func (o *GetGroupProjectBindingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get group project binding o k response has a 3xx status code
+func (o *GetGroupProjectBindingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get group project binding o k response has a 4xx status code
+func (o *GetGroupProjectBindingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get group project binding o k response has a 5xx status code
+func (o *GetGroupProjectBindingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get group project binding o k response a status code equal to that given
+func (o *GetGroupProjectBindingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetGroupProjectBindingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingOK  %+v", 200, o.Payload)
 }
+
+func (o *GetGroupProjectBindingOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingOK  %+v", 200, o.Payload)
+}
+
 func (o *GetGroupProjectBindingOK) GetPayload() *models.GroupProjectBinding {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetGroupProjectBindingUnauthorized struct {
 }
 
+// IsSuccess returns true when this get group project binding unauthorized response has a 2xx status code
+func (o *GetGroupProjectBindingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get group project binding unauthorized response has a 3xx status code
+func (o *GetGroupProjectBindingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get group project binding unauthorized response has a 4xx status code
+func (o *GetGroupProjectBindingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get group project binding unauthorized response has a 5xx status code
+func (o *GetGroupProjectBindingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get group project binding unauthorized response a status code equal to that given
+func (o *GetGroupProjectBindingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetGroupProjectBindingUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingUnauthorized ", 401)
+}
+
+func (o *GetGroupProjectBindingUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetGroupProjectBindingForbidden struct {
 }
 
+// IsSuccess returns true when this get group project binding forbidden response has a 2xx status code
+func (o *GetGroupProjectBindingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get group project binding forbidden response has a 3xx status code
+func (o *GetGroupProjectBindingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get group project binding forbidden response has a 4xx status code
+func (o *GetGroupProjectBindingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get group project binding forbidden response has a 5xx status code
+func (o *GetGroupProjectBindingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get group project binding forbidden response a status code equal to that given
+func (o *GetGroupProjectBindingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetGroupProjectBindingForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingForbidden ", 403)
+}
+
+func (o *GetGroupProjectBindingForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBindingForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetGroupProjectBindingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get group project binding default response has a 2xx status code
+func (o *GetGroupProjectBindingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get group project binding default response has a 3xx status code
+func (o *GetGroupProjectBindingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get group project binding default response has a 4xx status code
+func (o *GetGroupProjectBindingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get group project binding default response has a 5xx status code
+func (o *GetGroupProjectBindingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get group project binding default response a status code equal to that given
+func (o *GetGroupProjectBindingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetGroupProjectBindingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBinding default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetGroupProjectBindingDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] getGroupProjectBinding default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetGroupProjectBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

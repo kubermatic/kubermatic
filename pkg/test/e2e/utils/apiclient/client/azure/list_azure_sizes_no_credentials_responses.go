@@ -54,9 +54,39 @@ type ListAzureSizesNoCredentialsOK struct {
 	Payload models.AzureSizeList
 }
 
+// IsSuccess returns true when this list azure sizes no credentials o k response has a 2xx status code
+func (o *ListAzureSizesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure sizes no credentials o k response has a 3xx status code
+func (o *ListAzureSizesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure sizes no credentials o k response has a 4xx status code
+func (o *ListAzureSizesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure sizes no credentials o k response has a 5xx status code
+func (o *ListAzureSizesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure sizes no credentials o k response a status code equal to that given
+func (o *ListAzureSizesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureSizesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureSizesNoCredentialsOK) GetPayload() models.AzureSizeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAzureSizesNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure sizes no credentials default response has a 2xx status code
+func (o *ListAzureSizesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure sizes no credentials default response has a 3xx status code
+func (o *ListAzureSizesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure sizes no credentials default response has a 4xx status code
+func (o *ListAzureSizesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure sizes no credentials default response has a 5xx status code
+func (o *ListAzureSizesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure sizes no credentials default response a status code equal to that given
+func (o *ListAzureSizesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureSizesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes][%d] listAzureSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

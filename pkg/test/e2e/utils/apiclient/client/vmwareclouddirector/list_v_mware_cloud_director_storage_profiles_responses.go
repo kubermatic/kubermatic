@@ -54,9 +54,39 @@ type ListVMwareCloudDirectorStorageProfilesOK struct {
 	Payload models.VMwareCloudDirectorStorageProfileList
 }
 
+// IsSuccess returns true when this list v mware cloud director storage profiles o k response has a 2xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list v mware cloud director storage profiles o k response has a 3xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list v mware cloud director storage profiles o k response has a 4xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list v mware cloud director storage profiles o k response has a 5xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list v mware cloud director storage profiles o k response a status code equal to that given
+func (o *ListVMwareCloudDirectorStorageProfilesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/vmwareclouddirector/{dc}/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVMwareCloudDirectorStorageProfilesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/vmwareclouddirector/{dc}/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesOK) GetPayload() models.VMwareCloudDirectorStorageProfileList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListVMwareCloudDirectorStorageProfilesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list v mware cloud director storage profiles default response has a 2xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list v mware cloud director storage profiles default response has a 3xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list v mware cloud director storage profiles default response has a 4xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list v mware cloud director storage profiles default response has a 5xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list v mware cloud director storage profiles default response a status code equal to that given
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/vmwareclouddirector/{dc}/storageprofiles][%d] listVMwareCloudDirectorStorageProfiles default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVMwareCloudDirectorStorageProfilesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/vmwareclouddirector/{dc}/storageprofiles][%d] listVMwareCloudDirectorStorageProfiles default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -54,9 +54,39 @@ type ListVSphereFoldersOK struct {
 	Payload []*models.VSphereFolder
 }
 
+// IsSuccess returns true when this list v sphere folders o k response has a 2xx status code
+func (o *ListVSphereFoldersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list v sphere folders o k response has a 3xx status code
+func (o *ListVSphereFoldersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list v sphere folders o k response has a 4xx status code
+func (o *ListVSphereFoldersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list v sphere folders o k response has a 5xx status code
+func (o *ListVSphereFoldersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list v sphere folders o k response a status code equal to that given
+func (o *ListVSphereFoldersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVSphereFoldersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFoldersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVSphereFoldersOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFoldersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVSphereFoldersOK) GetPayload() []*models.VSphereFolder {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListVSphereFoldersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list v sphere folders default response has a 2xx status code
+func (o *ListVSphereFoldersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list v sphere folders default response has a 3xx status code
+func (o *ListVSphereFoldersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list v sphere folders default response has a 4xx status code
+func (o *ListVSphereFoldersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list v sphere folders default response has a 5xx status code
+func (o *ListVSphereFoldersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list v sphere folders default response a status code equal to that given
+func (o *ListVSphereFoldersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVSphereFoldersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFolders default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVSphereFoldersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/vsphere/folders][%d] listVSphereFolders default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVSphereFoldersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

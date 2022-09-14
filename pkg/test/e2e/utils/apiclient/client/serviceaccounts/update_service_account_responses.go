@@ -66,9 +66,39 @@ type UpdateServiceAccountOK struct {
 	Payload *models.ServiceAccount
 }
 
+// IsSuccess returns true when this update service account o k response has a 2xx status code
+func (o *UpdateServiceAccountOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update service account o k response has a 3xx status code
+func (o *UpdateServiceAccountOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update service account o k response has a 4xx status code
+func (o *UpdateServiceAccountOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update service account o k response has a 5xx status code
+func (o *UpdateServiceAccountOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update service account o k response a status code equal to that given
+func (o *UpdateServiceAccountOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateServiceAccountOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateServiceAccountOK) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateServiceAccountOK) GetPayload() *models.ServiceAccount {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type UpdateServiceAccountUnauthorized struct {
 }
 
+// IsSuccess returns true when this update service account unauthorized response has a 2xx status code
+func (o *UpdateServiceAccountUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update service account unauthorized response has a 3xx status code
+func (o *UpdateServiceAccountUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update service account unauthorized response has a 4xx status code
+func (o *UpdateServiceAccountUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update service account unauthorized response has a 5xx status code
+func (o *UpdateServiceAccountUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update service account unauthorized response a status code equal to that given
+func (o *UpdateServiceAccountUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateServiceAccountUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountUnauthorized ", 401)
+}
+
+func (o *UpdateServiceAccountUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type UpdateServiceAccountForbidden struct {
 }
 
+// IsSuccess returns true when this update service account forbidden response has a 2xx status code
+func (o *UpdateServiceAccountForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update service account forbidden response has a 3xx status code
+func (o *UpdateServiceAccountForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update service account forbidden response has a 4xx status code
+func (o *UpdateServiceAccountForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update service account forbidden response has a 5xx status code
+func (o *UpdateServiceAccountForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update service account forbidden response a status code equal to that given
+func (o *UpdateServiceAccountForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateServiceAccountForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountForbidden ", 403)
+}
+
+func (o *UpdateServiceAccountForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccountForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *UpdateServiceAccountDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update service account default response has a 2xx status code
+func (o *UpdateServiceAccountDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update service account default response has a 3xx status code
+func (o *UpdateServiceAccountDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update service account default response has a 4xx status code
+func (o *UpdateServiceAccountDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update service account default response has a 5xx status code
+func (o *UpdateServiceAccountDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update service account default response a status code equal to that given
+func (o *UpdateServiceAccountDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccount default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateServiceAccountDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}][%d] updateServiceAccount default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateServiceAccountDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

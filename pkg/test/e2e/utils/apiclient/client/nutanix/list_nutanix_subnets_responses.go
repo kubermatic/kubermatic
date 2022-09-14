@@ -54,9 +54,39 @@ type ListNutanixSubnetsOK struct {
 	Payload models.NutanixSubnetList
 }
 
+// IsSuccess returns true when this list nutanix subnets o k response has a 2xx status code
+func (o *ListNutanixSubnetsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list nutanix subnets o k response has a 3xx status code
+func (o *ListNutanixSubnetsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list nutanix subnets o k response has a 4xx status code
+func (o *ListNutanixSubnetsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list nutanix subnets o k response has a 5xx status code
+func (o *ListNutanixSubnetsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list nutanix subnets o k response a status code equal to that given
+func (o *ListNutanixSubnetsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNutanixSubnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnetsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNutanixSubnetsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnetsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNutanixSubnetsOK) GetPayload() models.NutanixSubnetList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListNutanixSubnetsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list nutanix subnets default response has a 2xx status code
+func (o *ListNutanixSubnetsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list nutanix subnets default response has a 3xx status code
+func (o *ListNutanixSubnetsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list nutanix subnets default response has a 4xx status code
+func (o *ListNutanixSubnetsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list nutanix subnets default response has a 5xx status code
+func (o *ListNutanixSubnetsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list nutanix subnets default response a status code equal to that given
+func (o *ListNutanixSubnetsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNutanixSubnetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnets default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNutanixSubnetsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnets default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNutanixSubnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

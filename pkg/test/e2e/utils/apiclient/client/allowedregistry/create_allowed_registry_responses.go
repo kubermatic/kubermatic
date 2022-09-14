@@ -66,9 +66,39 @@ type CreateAllowedRegistryCreated struct {
 	Payload *models.AllowedRegistry
 }
 
+// IsSuccess returns true when this create allowed registry created response has a 2xx status code
+func (o *CreateAllowedRegistryCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create allowed registry created response has a 3xx status code
+func (o *CreateAllowedRegistryCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create allowed registry created response has a 4xx status code
+func (o *CreateAllowedRegistryCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create allowed registry created response has a 5xx status code
+func (o *CreateAllowedRegistryCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create allowed registry created response a status code equal to that given
+func (o *CreateAllowedRegistryCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateAllowedRegistryCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateAllowedRegistryCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateAllowedRegistryCreated) GetPayload() *models.AllowedRegistry {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateAllowedRegistryUnauthorized struct {
 }
 
+// IsSuccess returns true when this create allowed registry unauthorized response has a 2xx status code
+func (o *CreateAllowedRegistryUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create allowed registry unauthorized response has a 3xx status code
+func (o *CreateAllowedRegistryUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create allowed registry unauthorized response has a 4xx status code
+func (o *CreateAllowedRegistryUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create allowed registry unauthorized response has a 5xx status code
+func (o *CreateAllowedRegistryUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create allowed registry unauthorized response a status code equal to that given
+func (o *CreateAllowedRegistryUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateAllowedRegistryUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryUnauthorized ", 401)
+}
+
+func (o *CreateAllowedRegistryUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateAllowedRegistryForbidden struct {
 }
 
+// IsSuccess returns true when this create allowed registry forbidden response has a 2xx status code
+func (o *CreateAllowedRegistryForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create allowed registry forbidden response has a 3xx status code
+func (o *CreateAllowedRegistryForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create allowed registry forbidden response has a 4xx status code
+func (o *CreateAllowedRegistryForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create allowed registry forbidden response has a 5xx status code
+func (o *CreateAllowedRegistryForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create allowed registry forbidden response a status code equal to that given
+func (o *CreateAllowedRegistryForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateAllowedRegistryForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryForbidden ", 403)
+}
+
+func (o *CreateAllowedRegistryForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistryForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateAllowedRegistryDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create allowed registry default response has a 2xx status code
+func (o *CreateAllowedRegistryDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create allowed registry default response has a 3xx status code
+func (o *CreateAllowedRegistryDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create allowed registry default response has a 4xx status code
+func (o *CreateAllowedRegistryDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create allowed registry default response has a 5xx status code
+func (o *CreateAllowedRegistryDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create allowed registry default response a status code equal to that given
+func (o *CreateAllowedRegistryDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateAllowedRegistryDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/allowedregistries][%d] createAllowedRegistry default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

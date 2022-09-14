@@ -66,9 +66,39 @@ type ListSystemLabelsOK struct {
 	Payload models.ResourceLabelMap
 }
 
+// IsSuccess returns true when this list system labels o k response has a 2xx status code
+func (o *ListSystemLabelsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list system labels o k response has a 3xx status code
+func (o *ListSystemLabelsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list system labels o k response has a 4xx status code
+func (o *ListSystemLabelsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list system labels o k response has a 5xx status code
+func (o *ListSystemLabelsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list system labels o k response a status code equal to that given
+func (o *ListSystemLabelsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListSystemLabelsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListSystemLabelsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListSystemLabelsOK) GetPayload() models.ResourceLabelMap {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListSystemLabelsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list system labels unauthorized response has a 2xx status code
+func (o *ListSystemLabelsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list system labels unauthorized response has a 3xx status code
+func (o *ListSystemLabelsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list system labels unauthorized response has a 4xx status code
+func (o *ListSystemLabelsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list system labels unauthorized response has a 5xx status code
+func (o *ListSystemLabelsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list system labels unauthorized response a status code equal to that given
+func (o *ListSystemLabelsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListSystemLabelsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsUnauthorized ", 401)
+}
+
+func (o *ListSystemLabelsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListSystemLabelsForbidden struct {
 }
 
+// IsSuccess returns true when this list system labels forbidden response has a 2xx status code
+func (o *ListSystemLabelsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list system labels forbidden response has a 3xx status code
+func (o *ListSystemLabelsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list system labels forbidden response has a 4xx status code
+func (o *ListSystemLabelsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list system labels forbidden response has a 5xx status code
+func (o *ListSystemLabelsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list system labels forbidden response a status code equal to that given
+func (o *ListSystemLabelsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListSystemLabelsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsForbidden ", 403)
+}
+
+func (o *ListSystemLabelsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListSystemLabelsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list system labels default response has a 2xx status code
+func (o *ListSystemLabelsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list system labels default response has a 3xx status code
+func (o *ListSystemLabelsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list system labels default response has a 4xx status code
+func (o *ListSystemLabelsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list system labels default response has a 5xx status code
+func (o *ListSystemLabelsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list system labels default response a status code equal to that given
+func (o *ListSystemLabelsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListSystemLabelsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListSystemLabelsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListSystemLabelsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

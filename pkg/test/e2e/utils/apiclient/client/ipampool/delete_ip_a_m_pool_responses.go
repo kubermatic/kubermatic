@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteIPAMPoolOK struct {
 }
 
+// IsSuccess returns true when this delete Ip a m pool o k response has a 2xx status code
+func (o *DeleteIPAMPoolOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete Ip a m pool o k response has a 3xx status code
+func (o *DeleteIPAMPoolOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ip a m pool o k response has a 4xx status code
+func (o *DeleteIPAMPoolOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete Ip a m pool o k response has a 5xx status code
+func (o *DeleteIPAMPoolOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ip a m pool o k response a status code equal to that given
+func (o *DeleteIPAMPoolOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteIPAMPoolOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolOK ", 200)
+}
+
+func (o *DeleteIPAMPoolOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteIPAMPoolUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete Ip a m pool unauthorized response has a 2xx status code
+func (o *DeleteIPAMPoolUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete Ip a m pool unauthorized response has a 3xx status code
+func (o *DeleteIPAMPoolUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ip a m pool unauthorized response has a 4xx status code
+func (o *DeleteIPAMPoolUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete Ip a m pool unauthorized response has a 5xx status code
+func (o *DeleteIPAMPoolUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ip a m pool unauthorized response a status code equal to that given
+func (o *DeleteIPAMPoolUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteIPAMPoolUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolUnauthorized ", 401)
+}
+
+func (o *DeleteIPAMPoolUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteIPAMPoolForbidden struct {
 }
 
+// IsSuccess returns true when this delete Ip a m pool forbidden response has a 2xx status code
+func (o *DeleteIPAMPoolForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete Ip a m pool forbidden response has a 3xx status code
+func (o *DeleteIPAMPoolForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete Ip a m pool forbidden response has a 4xx status code
+func (o *DeleteIPAMPoolForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete Ip a m pool forbidden response has a 5xx status code
+func (o *DeleteIPAMPoolForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete Ip a m pool forbidden response a status code equal to that given
+func (o *DeleteIPAMPoolForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteIPAMPoolForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolForbidden ", 403)
+}
+
+func (o *DeleteIPAMPoolForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIpAMPoolForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteIPAMPoolDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete IP a m pool default response has a 2xx status code
+func (o *DeleteIPAMPoolDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete IP a m pool default response has a 3xx status code
+func (o *DeleteIPAMPoolDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete IP a m pool default response has a 4xx status code
+func (o *DeleteIPAMPoolDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete IP a m pool default response has a 5xx status code
+func (o *DeleteIPAMPoolDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete IP a m pool default response a status code equal to that given
+func (o *DeleteIPAMPoolDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteIPAMPoolDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIPAMPool default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteIPAMPoolDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] deleteIPAMPool default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

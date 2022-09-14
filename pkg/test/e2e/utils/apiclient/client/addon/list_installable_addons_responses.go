@@ -66,9 +66,39 @@ type ListInstallableAddonsOK struct {
 	Payload models.AccessibleAddons
 }
 
+// IsSuccess returns true when this list installable addons o k response has a 2xx status code
+func (o *ListInstallableAddonsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list installable addons o k response has a 3xx status code
+func (o *ListInstallableAddonsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list installable addons o k response has a 4xx status code
+func (o *ListInstallableAddonsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list installable addons o k response has a 5xx status code
+func (o *ListInstallableAddonsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list installable addons o k response a status code equal to that given
+func (o *ListInstallableAddonsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListInstallableAddonsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListInstallableAddonsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListInstallableAddonsOK) GetPayload() models.AccessibleAddons {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListInstallableAddonsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list installable addons unauthorized response has a 2xx status code
+func (o *ListInstallableAddonsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list installable addons unauthorized response has a 3xx status code
+func (o *ListInstallableAddonsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list installable addons unauthorized response has a 4xx status code
+func (o *ListInstallableAddonsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list installable addons unauthorized response has a 5xx status code
+func (o *ListInstallableAddonsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list installable addons unauthorized response a status code equal to that given
+func (o *ListInstallableAddonsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListInstallableAddonsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsUnauthorized ", 401)
+}
+
+func (o *ListInstallableAddonsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListInstallableAddonsForbidden struct {
 }
 
+// IsSuccess returns true when this list installable addons forbidden response has a 2xx status code
+func (o *ListInstallableAddonsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list installable addons forbidden response has a 3xx status code
+func (o *ListInstallableAddonsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list installable addons forbidden response has a 4xx status code
+func (o *ListInstallableAddonsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list installable addons forbidden response has a 5xx status code
+func (o *ListInstallableAddonsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list installable addons forbidden response a status code equal to that given
+func (o *ListInstallableAddonsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListInstallableAddonsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsForbidden ", 403)
+}
+
+func (o *ListInstallableAddonsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddonsForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListInstallableAddonsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list installable addons default response has a 2xx status code
+func (o *ListInstallableAddonsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list installable addons default response has a 3xx status code
+func (o *ListInstallableAddonsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list installable addons default response has a 4xx status code
+func (o *ListInstallableAddonsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list installable addons default response has a 5xx status code
+func (o *ListInstallableAddonsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list installable addons default response a status code equal to that given
+func (o *ListInstallableAddonsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListInstallableAddonsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddons default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListInstallableAddonsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons][%d] listInstallableAddons default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListInstallableAddonsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

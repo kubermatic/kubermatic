@@ -66,9 +66,39 @@ type GetNodeDeploymentOK struct {
 	Payload *models.NodeDeployment
 }
 
+// IsSuccess returns true when this get node deployment o k response has a 2xx status code
+func (o *GetNodeDeploymentOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get node deployment o k response has a 3xx status code
+func (o *GetNodeDeploymentOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node deployment o k response has a 4xx status code
+func (o *GetNodeDeploymentOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get node deployment o k response has a 5xx status code
+func (o *GetNodeDeploymentOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node deployment o k response a status code equal to that given
+func (o *GetNodeDeploymentOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetNodeDeploymentOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentOK  %+v", 200, o.Payload)
 }
+
+func (o *GetNodeDeploymentOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentOK  %+v", 200, o.Payload)
+}
+
 func (o *GetNodeDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetNodeDeploymentUnauthorized struct {
 }
 
+// IsSuccess returns true when this get node deployment unauthorized response has a 2xx status code
+func (o *GetNodeDeploymentUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get node deployment unauthorized response has a 3xx status code
+func (o *GetNodeDeploymentUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node deployment unauthorized response has a 4xx status code
+func (o *GetNodeDeploymentUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get node deployment unauthorized response has a 5xx status code
+func (o *GetNodeDeploymentUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node deployment unauthorized response a status code equal to that given
+func (o *GetNodeDeploymentUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetNodeDeploymentUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentUnauthorized ", 401)
+}
+
+func (o *GetNodeDeploymentUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetNodeDeploymentForbidden struct {
 }
 
+// IsSuccess returns true when this get node deployment forbidden response has a 2xx status code
+func (o *GetNodeDeploymentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get node deployment forbidden response has a 3xx status code
+func (o *GetNodeDeploymentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node deployment forbidden response has a 4xx status code
+func (o *GetNodeDeploymentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get node deployment forbidden response has a 5xx status code
+func (o *GetNodeDeploymentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node deployment forbidden response a status code equal to that given
+func (o *GetNodeDeploymentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetNodeDeploymentForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentForbidden ", 403)
+}
+
+func (o *GetNodeDeploymentForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetNodeDeploymentDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get node deployment default response has a 2xx status code
+func (o *GetNodeDeploymentDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get node deployment default response has a 3xx status code
+func (o *GetNodeDeploymentDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get node deployment default response has a 4xx status code
+func (o *GetNodeDeploymentDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get node deployment default response has a 5xx status code
+func (o *GetNodeDeploymentDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get node deployment default response a status code equal to that given
+func (o *GetNodeDeploymentDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetNodeDeploymentDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeployment default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -556,6 +556,7 @@ type User struct {
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 
 	// LastSeen holds a time in UTC format when the user has been using the API last time
+	// swagger:strfmt date-time
 	LastSeen *Time `json:"lastSeen,omitempty"`
 }
 

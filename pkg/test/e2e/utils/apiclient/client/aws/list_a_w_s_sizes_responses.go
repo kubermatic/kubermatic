@@ -54,9 +54,39 @@ type ListAWSSizesOK struct {
 	Payload models.AWSSizeList
 }
 
+// IsSuccess returns true when this list a w s sizes o k response has a 2xx status code
+func (o *ListAWSSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a w s sizes o k response has a 3xx status code
+func (o *ListAWSSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a w s sizes o k response has a 4xx status code
+func (o *ListAWSSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a w s sizes o k response has a 5xx status code
+func (o *ListAWSSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a w s sizes o k response a status code equal to that given
+func (o *ListAWSSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAWSSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAWSSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAWSSizesOK) GetPayload() models.AWSSizeList {
 	return o.Payload
 }
@@ -93,9 +123,39 @@ func (o *ListAWSSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a w s sizes default response has a 2xx status code
+func (o *ListAWSSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a w s sizes default response has a 3xx status code
+func (o *ListAWSSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a w s sizes default response has a 4xx status code
+func (o *ListAWSSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a w s sizes default response has a 5xx status code
+func (o *ListAWSSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a w s sizes default response a status code equal to that given
+func (o *ListAWSSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAWSSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAWSSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/aws/sizes][%d] listAWSSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAWSSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

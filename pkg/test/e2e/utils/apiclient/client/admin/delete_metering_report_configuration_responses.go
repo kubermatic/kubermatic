@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteMeteringReportConfigurationOK struct {
 }
 
+// IsSuccess returns true when this delete metering report configuration o k response has a 2xx status code
+func (o *DeleteMeteringReportConfigurationOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete metering report configuration o k response has a 3xx status code
+func (o *DeleteMeteringReportConfigurationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete metering report configuration o k response has a 4xx status code
+func (o *DeleteMeteringReportConfigurationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete metering report configuration o k response has a 5xx status code
+func (o *DeleteMeteringReportConfigurationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete metering report configuration o k response a status code equal to that given
+func (o *DeleteMeteringReportConfigurationOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteMeteringReportConfigurationOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationOK ", 200)
+}
+
+func (o *DeleteMeteringReportConfigurationOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteMeteringReportConfigurationUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete metering report configuration unauthorized response has a 2xx status code
+func (o *DeleteMeteringReportConfigurationUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete metering report configuration unauthorized response has a 3xx status code
+func (o *DeleteMeteringReportConfigurationUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete metering report configuration unauthorized response has a 4xx status code
+func (o *DeleteMeteringReportConfigurationUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete metering report configuration unauthorized response has a 5xx status code
+func (o *DeleteMeteringReportConfigurationUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete metering report configuration unauthorized response a status code equal to that given
+func (o *DeleteMeteringReportConfigurationUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteMeteringReportConfigurationUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationUnauthorized ", 401)
+}
+
+func (o *DeleteMeteringReportConfigurationUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteMeteringReportConfigurationForbidden struct {
 }
 
+// IsSuccess returns true when this delete metering report configuration forbidden response has a 2xx status code
+func (o *DeleteMeteringReportConfigurationForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete metering report configuration forbidden response has a 3xx status code
+func (o *DeleteMeteringReportConfigurationForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete metering report configuration forbidden response has a 4xx status code
+func (o *DeleteMeteringReportConfigurationForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete metering report configuration forbidden response has a 5xx status code
+func (o *DeleteMeteringReportConfigurationForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete metering report configuration forbidden response a status code equal to that given
+func (o *DeleteMeteringReportConfigurationForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteMeteringReportConfigurationForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationForbidden ", 403)
+}
+
+func (o *DeleteMeteringReportConfigurationForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteMeteringReportConfigurationDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete metering report configuration default response has a 2xx status code
+func (o *DeleteMeteringReportConfigurationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete metering report configuration default response has a 3xx status code
+func (o *DeleteMeteringReportConfigurationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete metering report configuration default response has a 4xx status code
+func (o *DeleteMeteringReportConfigurationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete metering report configuration default response has a 5xx status code
+func (o *DeleteMeteringReportConfigurationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete metering report configuration default response a status code equal to that given
+func (o *DeleteMeteringReportConfigurationDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteMeteringReportConfigurationDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteMeteringReportConfigurationDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

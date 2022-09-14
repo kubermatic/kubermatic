@@ -66,9 +66,39 @@ type CreateClusterCreated struct {
 	Payload *models.Cluster
 }
 
+// IsSuccess returns true when this create cluster created response has a 2xx status code
+func (o *CreateClusterCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create cluster created response has a 3xx status code
+func (o *CreateClusterCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster created response has a 4xx status code
+func (o *CreateClusterCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create cluster created response has a 5xx status code
+func (o *CreateClusterCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster created response a status code equal to that given
+func (o *CreateClusterCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateClusterCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateClusterCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateClusterCreated) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this create cluster unauthorized response has a 2xx status code
+func (o *CreateClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster unauthorized response has a 3xx status code
+func (o *CreateClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster unauthorized response has a 4xx status code
+func (o *CreateClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster unauthorized response has a 5xx status code
+func (o *CreateClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster unauthorized response a status code equal to that given
+func (o *CreateClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterUnauthorized ", 401)
+}
+
+func (o *CreateClusterUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateClusterForbidden struct {
 }
 
+// IsSuccess returns true when this create cluster forbidden response has a 2xx status code
+func (o *CreateClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster forbidden response has a 3xx status code
+func (o *CreateClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster forbidden response has a 4xx status code
+func (o *CreateClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster forbidden response has a 5xx status code
+func (o *CreateClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster forbidden response a status code equal to that given
+func (o *CreateClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateClusterForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterForbidden ", 403)
+}
+
+func (o *CreateClusterForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createClusterForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create cluster default response has a 2xx status code
+func (o *CreateClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create cluster default response has a 3xx status code
+func (o *CreateClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create cluster default response has a 4xx status code
+func (o *CreateClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create cluster default response has a 5xx status code
+func (o *CreateClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create cluster default response a status code equal to that given
+func (o *CreateClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateClusterDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateClusterDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters][%d] createCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

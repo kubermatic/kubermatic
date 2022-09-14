@@ -66,9 +66,39 @@ type PatchConstraintTemplateOK struct {
 	Payload *models.ConstraintTemplate
 }
 
+// IsSuccess returns true when this patch constraint template o k response has a 2xx status code
+func (o *PatchConstraintTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch constraint template o k response has a 3xx status code
+func (o *PatchConstraintTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint template o k response has a 4xx status code
+func (o *PatchConstraintTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch constraint template o k response has a 5xx status code
+func (o *PatchConstraintTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint template o k response a status code equal to that given
+func (o *PatchConstraintTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchConstraintTemplateOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchConstraintTemplateOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchConstraintTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch constraint template unauthorized response has a 2xx status code
+func (o *PatchConstraintTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch constraint template unauthorized response has a 3xx status code
+func (o *PatchConstraintTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint template unauthorized response has a 4xx status code
+func (o *PatchConstraintTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch constraint template unauthorized response has a 5xx status code
+func (o *PatchConstraintTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint template unauthorized response a status code equal to that given
+func (o *PatchConstraintTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchConstraintTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateUnauthorized ", 401)
+}
+
+func (o *PatchConstraintTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchConstraintTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this patch constraint template forbidden response has a 2xx status code
+func (o *PatchConstraintTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch constraint template forbidden response has a 3xx status code
+func (o *PatchConstraintTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint template forbidden response has a 4xx status code
+func (o *PatchConstraintTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch constraint template forbidden response has a 5xx status code
+func (o *PatchConstraintTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint template forbidden response a status code equal to that given
+func (o *PatchConstraintTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchConstraintTemplateForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateForbidden ", 403)
+}
+
+func (o *PatchConstraintTemplateForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchConstraintTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch constraint template default response has a 2xx status code
+func (o *PatchConstraintTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch constraint template default response has a 3xx status code
+func (o *PatchConstraintTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch constraint template default response has a 4xx status code
+func (o *PatchConstraintTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch constraint template default response has a 5xx status code
+func (o *PatchConstraintTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch constraint template default response a status code equal to that given
+func (o *PatchConstraintTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchConstraintTemplateDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

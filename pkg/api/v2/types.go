@@ -281,15 +281,20 @@ type EtcdBackupConfigStatus struct {
 
 type BackupStatus struct {
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	ScheduledTime      *apiv1.Time                    `json:"scheduledTime,omitempty"`
-	BackupName         string                         `json:"backupName,omitempty"`
-	JobName            string                         `json:"jobName,omitempty"`
-	BackupStartTime    *apiv1.Time                    `json:"backupStartTime,omitempty"`
+	// swagger:strfmt date-time
+	ScheduledTime *apiv1.Time `json:"scheduledTime,omitempty"`
+	BackupName    string      `json:"backupName,omitempty"`
+	JobName       string      `json:"jobName,omitempty"`
+	// swagger:strfmt date-time
+	BackupStartTime *apiv1.Time `json:"backupStartTime,omitempty"`
+	// swagger:strfmt date-time
 	BackupFinishedTime *apiv1.Time                    `json:"backupFinishedTime,omitempty"`
 	BackupPhase        kubermaticv1.BackupStatusPhase `json:"backupPhase,omitempty"`
 	BackupMessage      string                         `json:"backupMessage,omitempty"`
 	DeleteJobName      string                         `json:"deleteJobName,omitempty"`
-	DeleteStartTime    *apiv1.Time                    `json:"deleteStartTime,omitempty"`
+	// swagger:strfmt date-time
+	DeleteStartTime *apiv1.Time `json:"deleteStartTime,omitempty"`
+	// swagger:strfmt date-time
 	DeleteFinishedTime *apiv1.Time                    `json:"deleteFinishedTime,omitempty"`
 	DeletePhase        kubermaticv1.BackupStatusPhase `json:"deletePhase,omitempty"`
 	DeleteMessage      string                         `json:"deleteMessage,omitempty"`
@@ -302,9 +307,11 @@ type EtcdBackupConfigCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
 	// +optional
+	// swagger:strfmt date-time
 	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
 	// Last time the condition transit from one status to another.
 	// +optional
+	// swagger:strfmt date-time
 	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	// +optional
@@ -343,8 +350,9 @@ type EtcdRestore struct {
 }
 
 type EtcdRestoreStatus struct {
-	Phase       kubermaticv1.EtcdRestorePhase `json:"phase"`
-	RestoreTime *apiv1.Time                   `json:"restoreTime,omitempty"`
+	Phase kubermaticv1.EtcdRestorePhase `json:"phase"`
+	// swagger:strfmt date-time
+	RestoreTime *apiv1.Time `json:"restoreTime,omitempty"`
 }
 
 // EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
@@ -1769,9 +1777,11 @@ type ApplicationInstallationCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
 	// +optional
+	// swagger:strfmt date-time
 	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
 	// Last time the condition transit from one status to another.
 	// +optional
+	// swagger:strfmt date-time
 	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`

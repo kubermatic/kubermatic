@@ -66,9 +66,39 @@ type GetClusterKubeconfigOK struct {
 	Payload []uint8
 }
 
+// IsSuccess returns true when this get cluster kubeconfig o k response has a 2xx status code
+func (o *GetClusterKubeconfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster kubeconfig o k response has a 3xx status code
+func (o *GetClusterKubeconfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster kubeconfig o k response has a 4xx status code
+func (o *GetClusterKubeconfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster kubeconfig o k response has a 5xx status code
+func (o *GetClusterKubeconfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster kubeconfig o k response a status code equal to that given
+func (o *GetClusterKubeconfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigOK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterKubeconfigOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigOK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type GetClusterKubeconfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster kubeconfig unauthorized response has a 2xx status code
+func (o *GetClusterKubeconfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster kubeconfig unauthorized response has a 3xx status code
+func (o *GetClusterKubeconfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster kubeconfig unauthorized response has a 4xx status code
+func (o *GetClusterKubeconfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster kubeconfig unauthorized response has a 5xx status code
+func (o *GetClusterKubeconfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster kubeconfig unauthorized response a status code equal to that given
+func (o *GetClusterKubeconfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterKubeconfigUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigUnauthorized ", 401)
+}
+
+func (o *GetClusterKubeconfigUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type GetClusterKubeconfigForbidden struct {
 }
 
+// IsSuccess returns true when this get cluster kubeconfig forbidden response has a 2xx status code
+func (o *GetClusterKubeconfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster kubeconfig forbidden response has a 3xx status code
+func (o *GetClusterKubeconfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster kubeconfig forbidden response has a 4xx status code
+func (o *GetClusterKubeconfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster kubeconfig forbidden response has a 5xx status code
+func (o *GetClusterKubeconfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster kubeconfig forbidden response a status code equal to that given
+func (o *GetClusterKubeconfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterKubeconfigForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigForbidden ", 403)
+}
+
+func (o *GetClusterKubeconfigForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *GetClusterKubeconfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster kubeconfig default response has a 2xx status code
+func (o *GetClusterKubeconfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster kubeconfig default response has a 3xx status code
+func (o *GetClusterKubeconfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster kubeconfig default response has a 4xx status code
+func (o *GetClusterKubeconfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster kubeconfig default response has a 5xx status code
+func (o *GetClusterKubeconfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster kubeconfig default response a status code equal to that given
+func (o *GetClusterKubeconfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterKubeconfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterKubeconfigDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterKubeconfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

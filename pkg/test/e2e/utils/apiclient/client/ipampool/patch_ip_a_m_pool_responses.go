@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type PatchIPAMPoolOK struct {
 }
 
+// IsSuccess returns true when this patch Ip a m pool o k response has a 2xx status code
+func (o *PatchIPAMPoolOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch Ip a m pool o k response has a 3xx status code
+func (o *PatchIPAMPoolOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch Ip a m pool o k response has a 4xx status code
+func (o *PatchIPAMPoolOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch Ip a m pool o k response has a 5xx status code
+func (o *PatchIPAMPoolOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch Ip a m pool o k response a status code equal to that given
+func (o *PatchIPAMPoolOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchIPAMPoolOK) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolOK ", 200)
+}
+
+func (o *PatchIPAMPoolOK) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type PatchIPAMPoolUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch Ip a m pool unauthorized response has a 2xx status code
+func (o *PatchIPAMPoolUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch Ip a m pool unauthorized response has a 3xx status code
+func (o *PatchIPAMPoolUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch Ip a m pool unauthorized response has a 4xx status code
+func (o *PatchIPAMPoolUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch Ip a m pool unauthorized response has a 5xx status code
+func (o *PatchIPAMPoolUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch Ip a m pool unauthorized response a status code equal to that given
+func (o *PatchIPAMPoolUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchIPAMPoolUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolUnauthorized ", 401)
+}
+
+func (o *PatchIPAMPoolUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type PatchIPAMPoolForbidden struct {
 }
 
+// IsSuccess returns true when this patch Ip a m pool forbidden response has a 2xx status code
+func (o *PatchIPAMPoolForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch Ip a m pool forbidden response has a 3xx status code
+func (o *PatchIPAMPoolForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch Ip a m pool forbidden response has a 4xx status code
+func (o *PatchIPAMPoolForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch Ip a m pool forbidden response has a 5xx status code
+func (o *PatchIPAMPoolForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch Ip a m pool forbidden response a status code equal to that given
+func (o *PatchIPAMPoolForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchIPAMPoolForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolForbidden ", 403)
+}
+
+func (o *PatchIPAMPoolForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIpAMPoolForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *PatchIPAMPoolDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch IP a m pool default response has a 2xx status code
+func (o *PatchIPAMPoolDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch IP a m pool default response has a 3xx status code
+func (o *PatchIPAMPoolDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch IP a m pool default response has a 4xx status code
+func (o *PatchIPAMPoolDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch IP a m pool default response has a 5xx status code
+func (o *PatchIPAMPoolDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch IP a m pool default response a status code equal to that given
+func (o *PatchIPAMPoolDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchIPAMPoolDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIPAMPool default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchIPAMPoolDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/seeds/{seed_name}/ipampools/{ipampool_name}][%d] patchIPAMPool default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchIPAMPoolDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

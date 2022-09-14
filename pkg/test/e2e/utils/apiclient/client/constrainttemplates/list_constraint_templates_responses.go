@@ -66,9 +66,39 @@ type ListConstraintTemplatesOK struct {
 	Payload []*models.ConstraintTemplate
 }
 
+// IsSuccess returns true when this list constraint templates o k response has a 2xx status code
+func (o *ListConstraintTemplatesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list constraint templates o k response has a 3xx status code
+func (o *ListConstraintTemplatesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraint templates o k response has a 4xx status code
+func (o *ListConstraintTemplatesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list constraint templates o k response has a 5xx status code
+func (o *ListConstraintTemplatesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraint templates o k response a status code equal to that given
+func (o *ListConstraintTemplatesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListConstraintTemplatesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListConstraintTemplatesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListConstraintTemplatesOK) GetPayload() []*models.ConstraintTemplate {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListConstraintTemplatesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list constraint templates unauthorized response has a 2xx status code
+func (o *ListConstraintTemplatesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list constraint templates unauthorized response has a 3xx status code
+func (o *ListConstraintTemplatesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraint templates unauthorized response has a 4xx status code
+func (o *ListConstraintTemplatesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list constraint templates unauthorized response has a 5xx status code
+func (o *ListConstraintTemplatesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraint templates unauthorized response a status code equal to that given
+func (o *ListConstraintTemplatesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListConstraintTemplatesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesUnauthorized ", 401)
+}
+
+func (o *ListConstraintTemplatesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListConstraintTemplatesForbidden struct {
 }
 
+// IsSuccess returns true when this list constraint templates forbidden response has a 2xx status code
+func (o *ListConstraintTemplatesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list constraint templates forbidden response has a 3xx status code
+func (o *ListConstraintTemplatesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraint templates forbidden response has a 4xx status code
+func (o *ListConstraintTemplatesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list constraint templates forbidden response has a 5xx status code
+func (o *ListConstraintTemplatesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraint templates forbidden response a status code equal to that given
+func (o *ListConstraintTemplatesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListConstraintTemplatesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesForbidden ", 403)
+}
+
+func (o *ListConstraintTemplatesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplatesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListConstraintTemplatesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list constraint templates default response has a 2xx status code
+func (o *ListConstraintTemplatesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list constraint templates default response has a 3xx status code
+func (o *ListConstraintTemplatesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list constraint templates default response has a 4xx status code
+func (o *ListConstraintTemplatesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list constraint templates default response has a 5xx status code
+func (o *ListConstraintTemplatesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list constraint templates default response a status code equal to that given
+func (o *ListConstraintTemplatesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListConstraintTemplatesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplates default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListConstraintTemplatesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates][%d] listConstraintTemplates default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListConstraintTemplatesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

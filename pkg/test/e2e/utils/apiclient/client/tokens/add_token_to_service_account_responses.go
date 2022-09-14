@@ -66,9 +66,39 @@ type AddTokenToServiceAccountCreated struct {
 	Payload *models.ServiceAccountToken
 }
 
+// IsSuccess returns true when this add token to service account created response has a 2xx status code
+func (o *AddTokenToServiceAccountCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this add token to service account created response has a 3xx status code
+func (o *AddTokenToServiceAccountCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this add token to service account created response has a 4xx status code
+func (o *AddTokenToServiceAccountCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this add token to service account created response has a 5xx status code
+func (o *AddTokenToServiceAccountCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this add token to service account created response a status code equal to that given
+func (o *AddTokenToServiceAccountCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *AddTokenToServiceAccountCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountCreated  %+v", 201, o.Payload)
 }
+
+func (o *AddTokenToServiceAccountCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountCreated  %+v", 201, o.Payload)
+}
+
 func (o *AddTokenToServiceAccountCreated) GetPayload() *models.ServiceAccountToken {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type AddTokenToServiceAccountUnauthorized struct {
 }
 
+// IsSuccess returns true when this add token to service account unauthorized response has a 2xx status code
+func (o *AddTokenToServiceAccountUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this add token to service account unauthorized response has a 3xx status code
+func (o *AddTokenToServiceAccountUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this add token to service account unauthorized response has a 4xx status code
+func (o *AddTokenToServiceAccountUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this add token to service account unauthorized response has a 5xx status code
+func (o *AddTokenToServiceAccountUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this add token to service account unauthorized response a status code equal to that given
+func (o *AddTokenToServiceAccountUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *AddTokenToServiceAccountUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountUnauthorized ", 401)
+}
+
+func (o *AddTokenToServiceAccountUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type AddTokenToServiceAccountForbidden struct {
 }
 
+// IsSuccess returns true when this add token to service account forbidden response has a 2xx status code
+func (o *AddTokenToServiceAccountForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this add token to service account forbidden response has a 3xx status code
+func (o *AddTokenToServiceAccountForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this add token to service account forbidden response has a 4xx status code
+func (o *AddTokenToServiceAccountForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this add token to service account forbidden response has a 5xx status code
+func (o *AddTokenToServiceAccountForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this add token to service account forbidden response a status code equal to that given
+func (o *AddTokenToServiceAccountForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *AddTokenToServiceAccountForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountForbidden ", 403)
+}
+
+func (o *AddTokenToServiceAccountForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *AddTokenToServiceAccountDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this add token to service account default response has a 2xx status code
+func (o *AddTokenToServiceAccountDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this add token to service account default response has a 3xx status code
+func (o *AddTokenToServiceAccountDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this add token to service account default response has a 4xx status code
+func (o *AddTokenToServiceAccountDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this add token to service account default response has a 5xx status code
+func (o *AddTokenToServiceAccountDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this add token to service account default response a status code equal to that given
+func (o *AddTokenToServiceAccountDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *AddTokenToServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccount default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *AddTokenToServiceAccountDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccount default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *AddTokenToServiceAccountDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type PatchEtcdBackupConfigOK struct {
 	Payload *models.EtcdBackupConfig
 }
 
+// IsSuccess returns true when this patch etcd backup config o k response has a 2xx status code
+func (o *PatchEtcdBackupConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch etcd backup config o k response has a 3xx status code
+func (o *PatchEtcdBackupConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch etcd backup config o k response has a 4xx status code
+func (o *PatchEtcdBackupConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch etcd backup config o k response has a 5xx status code
+func (o *PatchEtcdBackupConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch etcd backup config o k response a status code equal to that given
+func (o *PatchEtcdBackupConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchEtcdBackupConfigOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchEtcdBackupConfigOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchEtcdBackupConfigOK) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchEtcdBackupConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch etcd backup config unauthorized response has a 2xx status code
+func (o *PatchEtcdBackupConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch etcd backup config unauthorized response has a 3xx status code
+func (o *PatchEtcdBackupConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch etcd backup config unauthorized response has a 4xx status code
+func (o *PatchEtcdBackupConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch etcd backup config unauthorized response has a 5xx status code
+func (o *PatchEtcdBackupConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch etcd backup config unauthorized response a status code equal to that given
+func (o *PatchEtcdBackupConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchEtcdBackupConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigUnauthorized ", 401)
+}
+
+func (o *PatchEtcdBackupConfigUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchEtcdBackupConfigForbidden struct {
 }
 
+// IsSuccess returns true when this patch etcd backup config forbidden response has a 2xx status code
+func (o *PatchEtcdBackupConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch etcd backup config forbidden response has a 3xx status code
+func (o *PatchEtcdBackupConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch etcd backup config forbidden response has a 4xx status code
+func (o *PatchEtcdBackupConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch etcd backup config forbidden response has a 5xx status code
+func (o *PatchEtcdBackupConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch etcd backup config forbidden response a status code equal to that given
+func (o *PatchEtcdBackupConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchEtcdBackupConfigForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigForbidden ", 403)
+}
+
+func (o *PatchEtcdBackupConfigForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchEtcdBackupConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch etcd backup config default response has a 2xx status code
+func (o *PatchEtcdBackupConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch etcd backup config default response has a 3xx status code
+func (o *PatchEtcdBackupConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch etcd backup config default response has a 4xx status code
+func (o *PatchEtcdBackupConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch etcd backup config default response has a 5xx status code
+func (o *PatchEtcdBackupConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch etcd backup config default response a status code equal to that given
+func (o *PatchEtcdBackupConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchEtcdBackupConfigDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

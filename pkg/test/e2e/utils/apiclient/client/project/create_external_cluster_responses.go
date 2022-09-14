@@ -66,9 +66,39 @@ type CreateExternalClusterCreated struct {
 	Payload *models.ExternalCluster
 }
 
+// IsSuccess returns true when this create external cluster created response has a 2xx status code
+func (o *CreateExternalClusterCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create external cluster created response has a 3xx status code
+func (o *CreateExternalClusterCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster created response has a 4xx status code
+func (o *CreateExternalClusterCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create external cluster created response has a 5xx status code
+func (o *CreateExternalClusterCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster created response a status code equal to that given
+func (o *CreateExternalClusterCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateExternalClusterCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateExternalClusterCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateExternalClusterCreated) GetPayload() *models.ExternalCluster {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateExternalClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this create external cluster unauthorized response has a 2xx status code
+func (o *CreateExternalClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create external cluster unauthorized response has a 3xx status code
+func (o *CreateExternalClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster unauthorized response has a 4xx status code
+func (o *CreateExternalClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create external cluster unauthorized response has a 5xx status code
+func (o *CreateExternalClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster unauthorized response a status code equal to that given
+func (o *CreateExternalClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateExternalClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterUnauthorized ", 401)
+}
+
+func (o *CreateExternalClusterUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateExternalClusterForbidden struct {
 }
 
+// IsSuccess returns true when this create external cluster forbidden response has a 2xx status code
+func (o *CreateExternalClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create external cluster forbidden response has a 3xx status code
+func (o *CreateExternalClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create external cluster forbidden response has a 4xx status code
+func (o *CreateExternalClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create external cluster forbidden response has a 5xx status code
+func (o *CreateExternalClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create external cluster forbidden response a status code equal to that given
+func (o *CreateExternalClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateExternalClusterForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterForbidden ", 403)
+}
+
+func (o *CreateExternalClusterForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateExternalClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create external cluster default response has a 2xx status code
+func (o *CreateExternalClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create external cluster default response has a 3xx status code
+func (o *CreateExternalClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create external cluster default response has a 4xx status code
+func (o *CreateExternalClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create external cluster default response has a 5xx status code
+func (o *CreateExternalClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create external cluster default response a status code equal to that given
+func (o *CreateExternalClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateExternalClusterDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

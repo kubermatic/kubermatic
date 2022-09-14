@@ -22724,9 +22724,7 @@
         "variables": {
           "description": "Variables is free form data to use for parsing the manifest templates",
           "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          },
+          "additionalProperties": {},
           "x-go-name": "Variables"
         }
       },
@@ -23454,10 +23452,16 @@
       "type": "object",
       "properties": {
         "lastHeartbeatTime": {
-          "$ref": "#/definitions/Time"
+          "description": "Last time we got an update on a given condition.\n+optional",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
-          "$ref": "#/definitions/Time"
+          "description": "Last time the condition transit from one status to another.\n+optional",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastTransitionTime"
         },
         "message": {
           "description": "Human readable message indicating details about last transition.",
@@ -24058,7 +24062,9 @@
       "type": "object",
       "properties": {
         "backupFinishedTime": {
-          "$ref": "#/definitions/Time"
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "BackupFinishedTime"
         },
         "backupMessage": {
           "type": "string",
@@ -24072,10 +24078,14 @@
           "$ref": "#/definitions/BackupStatusPhase"
         },
         "backupStartTime": {
-          "$ref": "#/definitions/Time"
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "BackupStartTime"
         },
         "deleteFinishedTime": {
-          "$ref": "#/definitions/Time"
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeleteFinishedTime"
         },
         "deleteJobName": {
           "type": "string",
@@ -24089,14 +24099,19 @@
           "$ref": "#/definitions/BackupStatusPhase"
         },
         "deleteStartTime": {
-          "$ref": "#/definitions/Time"
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeleteStartTime"
         },
         "jobName": {
           "type": "string",
           "x-go-name": "JobName"
         },
         "scheduledTime": {
-          "$ref": "#/definitions/Time"
+          "description": "ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ScheduledTime"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -26358,10 +26373,16 @@
       "type": "object",
       "properties": {
         "lastHeartbeatTime": {
-          "$ref": "#/definitions/Time"
+          "description": "Last time we got an update on a given condition.\n+optional",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastHeartbeatTime"
         },
         "lastTransitionTime": {
-          "$ref": "#/definitions/Time"
+          "description": "Last time the condition transit from one status to another.\n+optional",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastTransitionTime"
         },
         "message": {
           "description": "Human readable message indicating details about last transition.\n+optional",
@@ -26544,7 +26565,9 @@
           "$ref": "#/definitions/EtcdRestorePhase"
         },
         "restoreTime": {
-          "$ref": "#/definitions/Time"
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "RestoreTime"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -32665,13 +32688,6 @@
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
-    "Time": {
-      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
-      "type": "string",
-      "format": "date-time",
-      "title": "A Time represents an instant in time with nanosecond precision.",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
     "Trace": {
       "type": "object",
       "properties": {
@@ -32774,7 +32790,10 @@
           "x-go-name": "IsAdmin"
         },
         "lastSeen": {
-          "$ref": "#/definitions/Time"
+          "description": "LastSeen holds a time in UTC format when the user has been using the API last time",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastSeen"
         },
         "name": {
           "description": "Name represents human readable name for the resource",

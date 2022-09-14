@@ -66,9 +66,39 @@ type ListPresetsOK struct {
 	Payload *models.PresetList
 }
 
+// IsSuccess returns true when this list presets o k response has a 2xx status code
+func (o *ListPresetsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list presets o k response has a 3xx status code
+func (o *ListPresetsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list presets o k response has a 4xx status code
+func (o *ListPresetsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list presets o k response has a 5xx status code
+func (o *ListPresetsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list presets o k response a status code equal to that given
+func (o *ListPresetsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListPresetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListPresetsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListPresetsOK) GetPayload() *models.PresetList {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type ListPresetsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list presets unauthorized response has a 2xx status code
+func (o *ListPresetsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list presets unauthorized response has a 3xx status code
+func (o *ListPresetsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list presets unauthorized response has a 4xx status code
+func (o *ListPresetsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list presets unauthorized response has a 5xx status code
+func (o *ListPresetsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list presets unauthorized response a status code equal to that given
+func (o *ListPresetsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListPresetsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsUnauthorized ", 401)
+}
+
+func (o *ListPresetsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type ListPresetsForbidden struct {
 }
 
+// IsSuccess returns true when this list presets forbidden response has a 2xx status code
+func (o *ListPresetsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list presets forbidden response has a 3xx status code
+func (o *ListPresetsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list presets forbidden response has a 4xx status code
+func (o *ListPresetsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list presets forbidden response has a 5xx status code
+func (o *ListPresetsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list presets forbidden response a status code equal to that given
+func (o *ListPresetsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListPresetsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsForbidden ", 403)
+}
+
+func (o *ListPresetsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresetsForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *ListPresetsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list presets default response has a 2xx status code
+func (o *ListPresetsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list presets default response has a 3xx status code
+func (o *ListPresetsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list presets default response has a 4xx status code
+func (o *ListPresetsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list presets default response has a 5xx status code
+func (o *ListPresetsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list presets default response a status code equal to that given
+func (o *ListPresetsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListPresetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresets default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListPresetsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/presets][%d] listPresets default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListPresetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

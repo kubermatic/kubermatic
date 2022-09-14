@@ -66,9 +66,39 @@ type ListNamespaceOK struct {
 	Payload []*models.Namespace
 }
 
+// IsSuccess returns true when this list namespace o k response has a 2xx status code
+func (o *ListNamespaceOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list namespace o k response has a 3xx status code
+func (o *ListNamespaceOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list namespace o k response has a 4xx status code
+func (o *ListNamespaceOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list namespace o k response has a 5xx status code
+func (o *ListNamespaceOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list namespace o k response a status code equal to that given
+func (o *ListNamespaceOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNamespaceOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNamespaceOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNamespaceOK) GetPayload() []*models.Namespace {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListNamespaceUnauthorized struct {
 }
 
+// IsSuccess returns true when this list namespace unauthorized response has a 2xx status code
+func (o *ListNamespaceUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list namespace unauthorized response has a 3xx status code
+func (o *ListNamespaceUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list namespace unauthorized response has a 4xx status code
+func (o *ListNamespaceUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list namespace unauthorized response has a 5xx status code
+func (o *ListNamespaceUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list namespace unauthorized response a status code equal to that given
+func (o *ListNamespaceUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListNamespaceUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceUnauthorized ", 401)
+}
+
+func (o *ListNamespaceUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListNamespaceForbidden struct {
 }
 
+// IsSuccess returns true when this list namespace forbidden response has a 2xx status code
+func (o *ListNamespaceForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list namespace forbidden response has a 3xx status code
+func (o *ListNamespaceForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list namespace forbidden response has a 4xx status code
+func (o *ListNamespaceForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list namespace forbidden response has a 5xx status code
+func (o *ListNamespaceForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list namespace forbidden response a status code equal to that given
+func (o *ListNamespaceForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListNamespaceForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceForbidden ", 403)
+}
+
+func (o *ListNamespaceForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespaceForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListNamespaceDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list namespace default response has a 2xx status code
+func (o *ListNamespaceDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list namespace default response has a 3xx status code
+func (o *ListNamespaceDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list namespace default response has a 4xx status code
+func (o *ListNamespaceDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list namespace default response has a 5xx status code
+func (o *ListNamespaceDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list namespace default response a status code equal to that given
+func (o *ListNamespaceDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNamespaceDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespace default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNamespaceDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces][%d] listNamespace default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNamespaceDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

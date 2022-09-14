@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteSeedOK struct {
 }
 
+// IsSuccess returns true when this delete seed o k response has a 2xx status code
+func (o *DeleteSeedOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete seed o k response has a 3xx status code
+func (o *DeleteSeedOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete seed o k response has a 4xx status code
+func (o *DeleteSeedOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete seed o k response has a 5xx status code
+func (o *DeleteSeedOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete seed o k response a status code equal to that given
+func (o *DeleteSeedOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteSeedOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedOK ", 200)
+}
+
+func (o *DeleteSeedOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteSeedUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete seed unauthorized response has a 2xx status code
+func (o *DeleteSeedUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete seed unauthorized response has a 3xx status code
+func (o *DeleteSeedUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete seed unauthorized response has a 4xx status code
+func (o *DeleteSeedUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete seed unauthorized response has a 5xx status code
+func (o *DeleteSeedUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete seed unauthorized response a status code equal to that given
+func (o *DeleteSeedUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteSeedUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedUnauthorized ", 401)
+}
+
+func (o *DeleteSeedUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteSeedForbidden struct {
 }
 
+// IsSuccess returns true when this delete seed forbidden response has a 2xx status code
+func (o *DeleteSeedForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete seed forbidden response has a 3xx status code
+func (o *DeleteSeedForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete seed forbidden response has a 4xx status code
+func (o *DeleteSeedForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete seed forbidden response has a 5xx status code
+func (o *DeleteSeedForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete seed forbidden response a status code equal to that given
+func (o *DeleteSeedForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteSeedForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedForbidden ", 403)
+}
+
+func (o *DeleteSeedForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeedForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteSeedDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete seed default response has a 2xx status code
+func (o *DeleteSeedDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete seed default response has a 3xx status code
+func (o *DeleteSeedDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete seed default response has a 4xx status code
+func (o *DeleteSeedDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete seed default response has a 5xx status code
+func (o *DeleteSeedDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete seed default response a status code equal to that given
+func (o *DeleteSeedDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteSeedDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeed default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteSeedDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/seeds/{seed_name}][%d] deleteSeed default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

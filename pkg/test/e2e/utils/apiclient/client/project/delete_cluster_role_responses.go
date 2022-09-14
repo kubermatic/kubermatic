@@ -65,7 +65,36 @@ EmptyResponse is a empty response
 type DeleteClusterRoleOK struct {
 }
 
+// IsSuccess returns true when this delete cluster role o k response has a 2xx status code
+func (o *DeleteClusterRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete cluster role o k response has a 3xx status code
+func (o *DeleteClusterRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster role o k response has a 4xx status code
+func (o *DeleteClusterRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete cluster role o k response has a 5xx status code
+func (o *DeleteClusterRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster role o k response a status code equal to that given
+func (o *DeleteClusterRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteClusterRoleOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleOK ", 200)
+}
+
+func (o *DeleteClusterRoleOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleOK ", 200)
 }
 
@@ -86,7 +115,36 @@ EmptyResponse is a empty response
 type DeleteClusterRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete cluster role unauthorized response has a 2xx status code
+func (o *DeleteClusterRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster role unauthorized response has a 3xx status code
+func (o *DeleteClusterRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster role unauthorized response has a 4xx status code
+func (o *DeleteClusterRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster role unauthorized response has a 5xx status code
+func (o *DeleteClusterRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster role unauthorized response a status code equal to that given
+func (o *DeleteClusterRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteClusterRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleUnauthorized ", 401)
+}
+
+func (o *DeleteClusterRoleUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleUnauthorized ", 401)
 }
 
@@ -107,7 +165,36 @@ EmptyResponse is a empty response
 type DeleteClusterRoleForbidden struct {
 }
 
+// IsSuccess returns true when this delete cluster role forbidden response has a 2xx status code
+func (o *DeleteClusterRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster role forbidden response has a 3xx status code
+func (o *DeleteClusterRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster role forbidden response has a 4xx status code
+func (o *DeleteClusterRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster role forbidden response has a 5xx status code
+func (o *DeleteClusterRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster role forbidden response a status code equal to that given
+func (o *DeleteClusterRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteClusterRoleForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleForbidden ", 403)
+}
+
+func (o *DeleteClusterRoleForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRoleForbidden ", 403)
 }
 
@@ -138,9 +225,39 @@ func (o *DeleteClusterRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete cluster role default response has a 2xx status code
+func (o *DeleteClusterRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete cluster role default response has a 3xx status code
+func (o *DeleteClusterRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete cluster role default response has a 4xx status code
+func (o *DeleteClusterRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete cluster role default response has a 5xx status code
+func (o *DeleteClusterRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete cluster role default response a status code equal to that given
+func (o *DeleteClusterRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteClusterRoleDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}][%d] deleteClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

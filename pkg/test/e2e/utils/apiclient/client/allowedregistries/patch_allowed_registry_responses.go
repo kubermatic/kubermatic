@@ -66,9 +66,39 @@ type PatchAllowedRegistryOK struct {
 	Payload *models.ConstraintTemplate
 }
 
+// IsSuccess returns true when this patch allowed registry o k response has a 2xx status code
+func (o *PatchAllowedRegistryOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch allowed registry o k response has a 3xx status code
+func (o *PatchAllowedRegistryOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch allowed registry o k response has a 4xx status code
+func (o *PatchAllowedRegistryOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch allowed registry o k response has a 5xx status code
+func (o *PatchAllowedRegistryOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch allowed registry o k response a status code equal to that given
+func (o *PatchAllowedRegistryOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchAllowedRegistryOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchAllowedRegistryOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchAllowedRegistryOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchAllowedRegistryUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch allowed registry unauthorized response has a 2xx status code
+func (o *PatchAllowedRegistryUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch allowed registry unauthorized response has a 3xx status code
+func (o *PatchAllowedRegistryUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch allowed registry unauthorized response has a 4xx status code
+func (o *PatchAllowedRegistryUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch allowed registry unauthorized response has a 5xx status code
+func (o *PatchAllowedRegistryUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch allowed registry unauthorized response a status code equal to that given
+func (o *PatchAllowedRegistryUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchAllowedRegistryUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryUnauthorized ", 401)
+}
+
+func (o *PatchAllowedRegistryUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchAllowedRegistryForbidden struct {
 }
 
+// IsSuccess returns true when this patch allowed registry forbidden response has a 2xx status code
+func (o *PatchAllowedRegistryForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch allowed registry forbidden response has a 3xx status code
+func (o *PatchAllowedRegistryForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch allowed registry forbidden response has a 4xx status code
+func (o *PatchAllowedRegistryForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch allowed registry forbidden response has a 5xx status code
+func (o *PatchAllowedRegistryForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch allowed registry forbidden response a status code equal to that given
+func (o *PatchAllowedRegistryForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchAllowedRegistryForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryForbidden ", 403)
+}
+
+func (o *PatchAllowedRegistryForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistryForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchAllowedRegistryDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch allowed registry default response has a 2xx status code
+func (o *PatchAllowedRegistryDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch allowed registry default response has a 3xx status code
+func (o *PatchAllowedRegistryDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch allowed registry default response has a 4xx status code
+func (o *PatchAllowedRegistryDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch allowed registry default response has a 5xx status code
+func (o *PatchAllowedRegistryDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch allowed registry default response a status code equal to that given
+func (o *PatchAllowedRegistryDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchAllowedRegistryDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistry default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchAllowedRegistryDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/allowedregistries/{allowed_registry}][%d] patchAllowedRegistry default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchAllowedRegistryDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

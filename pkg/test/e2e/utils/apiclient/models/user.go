@@ -43,16 +43,16 @@ type User struct {
 	// IsAdmin indicates admin role
 	IsAdmin bool `json:"isAdmin,omitempty"`
 
+	// LastSeen holds a time in UTC format when the user has been using the API last time
+	// Format: date-time
+	LastSeen strfmt.DateTime `json:"lastSeen,omitempty"`
+
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
 
 	// Projects holds the list of project the user belongs to
 	// along with the group names
 	Projects []*ProjectGroup `json:"projects"`
-
-	// last seen
-	// Format: date-time
-	LastSeen Time `json:"lastSeen,omitempty"`
 
 	// user settings
 	UserSettings *UserSettings `json:"userSettings,omitempty"`
@@ -70,11 +70,11 @@ func (m *User) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateProjects(formats); err != nil {
+	if err := m.validateLastSeen(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateLastSeen(formats); err != nil {
+	if err := m.validateProjects(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -112,6 +112,18 @@ func (m *User) validateDeletionTimestamp(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *User) validateLastSeen(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastSeen) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("lastSeen", "body", "date-time", m.LastSeen.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *User) validateProjects(formats strfmt.Registry) error {
 	if swag.IsZero(m.Projects) { // not required
 		return nil
@@ -133,23 +145,6 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *User) validateLastSeen(formats strfmt.Registry) error {
-	if swag.IsZero(m.LastSeen) { // not required
-		return nil
-	}
-
-	if err := m.LastSeen.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastSeen")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastSeen")
-		}
-		return err
 	}
 
 	return nil
@@ -182,10 +177,6 @@ func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateLastSeen(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateUserSettings(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -211,20 +202,6 @@ func (m *User) contextValidateProjects(ctx context.Context, formats strfmt.Regis
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *User) contextValidateLastSeen(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.LastSeen.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("lastSeen")
-		} else if ce, ok := err.(*errors.CompositeError); ok {
-			return ce.ValidateName("lastSeen")
-		}
-		return err
 	}
 
 	return nil

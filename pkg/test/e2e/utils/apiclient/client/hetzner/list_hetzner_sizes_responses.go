@@ -54,9 +54,39 @@ type ListHetznerSizesOK struct {
 	Payload *models.HetznerSizeList
 }
 
+// IsSuccess returns true when this list hetzner sizes o k response has a 2xx status code
+func (o *ListHetznerSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list hetzner sizes o k response has a 3xx status code
+func (o *ListHetznerSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list hetzner sizes o k response has a 4xx status code
+func (o *ListHetznerSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list hetzner sizes o k response has a 5xx status code
+func (o *ListHetznerSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list hetzner sizes o k response a status code equal to that given
+func (o *ListHetznerSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListHetznerSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListHetznerSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListHetznerSizesOK) GetPayload() *models.HetznerSizeList {
 	return o.Payload
 }
@@ -95,9 +125,39 @@ func (o *ListHetznerSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list hetzner sizes default response has a 2xx status code
+func (o *ListHetznerSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list hetzner sizes default response has a 3xx status code
+func (o *ListHetznerSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list hetzner sizes default response has a 4xx status code
+func (o *ListHetznerSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list hetzner sizes default response has a 5xx status code
+func (o *ListHetznerSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list hetzner sizes default response a status code equal to that given
+func (o *ListHetznerSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListHetznerSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListHetznerSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListHetznerSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

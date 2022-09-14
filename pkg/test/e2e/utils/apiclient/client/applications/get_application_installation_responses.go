@@ -66,9 +66,39 @@ type GetApplicationInstallationOK struct {
 	Payload *models.ApplicationInstallation
 }
 
+// IsSuccess returns true when this get application installation o k response has a 2xx status code
+func (o *GetApplicationInstallationOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get application installation o k response has a 3xx status code
+func (o *GetApplicationInstallationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get application installation o k response has a 4xx status code
+func (o *GetApplicationInstallationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get application installation o k response has a 5xx status code
+func (o *GetApplicationInstallationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get application installation o k response a status code equal to that given
+func (o *GetApplicationInstallationOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetApplicationInstallationOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationOK  %+v", 200, o.Payload)
 }
+
+func (o *GetApplicationInstallationOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationOK  %+v", 200, o.Payload)
+}
+
 func (o *GetApplicationInstallationOK) GetPayload() *models.ApplicationInstallation {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type GetApplicationInstallationUnauthorized struct {
 }
 
+// IsSuccess returns true when this get application installation unauthorized response has a 2xx status code
+func (o *GetApplicationInstallationUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get application installation unauthorized response has a 3xx status code
+func (o *GetApplicationInstallationUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get application installation unauthorized response has a 4xx status code
+func (o *GetApplicationInstallationUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get application installation unauthorized response has a 5xx status code
+func (o *GetApplicationInstallationUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get application installation unauthorized response a status code equal to that given
+func (o *GetApplicationInstallationUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetApplicationInstallationUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationUnauthorized ", 401)
+}
+
+func (o *GetApplicationInstallationUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type GetApplicationInstallationForbidden struct {
 }
 
+// IsSuccess returns true when this get application installation forbidden response has a 2xx status code
+func (o *GetApplicationInstallationForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get application installation forbidden response has a 3xx status code
+func (o *GetApplicationInstallationForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get application installation forbidden response has a 4xx status code
+func (o *GetApplicationInstallationForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get application installation forbidden response has a 5xx status code
+func (o *GetApplicationInstallationForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get application installation forbidden response a status code equal to that given
+func (o *GetApplicationInstallationForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetApplicationInstallationForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationForbidden ", 403)
+}
+
+func (o *GetApplicationInstallationForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallationForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *GetApplicationInstallationDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get application installation default response has a 2xx status code
+func (o *GetApplicationInstallationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get application installation default response has a 3xx status code
+func (o *GetApplicationInstallationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get application installation default response has a 4xx status code
+func (o *GetApplicationInstallationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get application installation default response has a 5xx status code
+func (o *GetApplicationInstallationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get application installation default response a status code equal to that given
+func (o *GetApplicationInstallationDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetApplicationInstallationDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallation default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetApplicationInstallationDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] getApplicationInstallation default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetApplicationInstallationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

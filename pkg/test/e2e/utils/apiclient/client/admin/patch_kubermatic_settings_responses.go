@@ -66,9 +66,39 @@ type PatchKubermaticSettingsOK struct {
 	Payload *models.GlobalSettings
 }
 
+// IsSuccess returns true when this patch kubermatic settings o k response has a 2xx status code
+func (o *PatchKubermaticSettingsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch kubermatic settings o k response has a 3xx status code
+func (o *PatchKubermaticSettingsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch kubermatic settings o k response has a 4xx status code
+func (o *PatchKubermaticSettingsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch kubermatic settings o k response has a 5xx status code
+func (o *PatchKubermaticSettingsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch kubermatic settings o k response a status code equal to that given
+func (o *PatchKubermaticSettingsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchKubermaticSettingsOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type PatchKubermaticSettingsUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch kubermatic settings unauthorized response has a 2xx status code
+func (o *PatchKubermaticSettingsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch kubermatic settings unauthorized response has a 3xx status code
+func (o *PatchKubermaticSettingsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch kubermatic settings unauthorized response has a 4xx status code
+func (o *PatchKubermaticSettingsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch kubermatic settings unauthorized response has a 5xx status code
+func (o *PatchKubermaticSettingsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch kubermatic settings unauthorized response a status code equal to that given
+func (o *PatchKubermaticSettingsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchKubermaticSettingsUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsUnauthorized ", 401)
+}
+
+func (o *PatchKubermaticSettingsUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type PatchKubermaticSettingsForbidden struct {
 }
 
+// IsSuccess returns true when this patch kubermatic settings forbidden response has a 2xx status code
+func (o *PatchKubermaticSettingsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch kubermatic settings forbidden response has a 3xx status code
+func (o *PatchKubermaticSettingsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch kubermatic settings forbidden response has a 4xx status code
+func (o *PatchKubermaticSettingsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch kubermatic settings forbidden response has a 5xx status code
+func (o *PatchKubermaticSettingsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch kubermatic settings forbidden response a status code equal to that given
+func (o *PatchKubermaticSettingsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchKubermaticSettingsForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsForbidden ", 403)
+}
+
+func (o *PatchKubermaticSettingsForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *PatchKubermaticSettingsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch kubermatic settings default response has a 2xx status code
+func (o *PatchKubermaticSettingsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch kubermatic settings default response has a 3xx status code
+func (o *PatchKubermaticSettingsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch kubermatic settings default response has a 4xx status code
+func (o *PatchKubermaticSettingsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch kubermatic settings default response has a 5xx status code
+func (o *PatchKubermaticSettingsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch kubermatic settings default response a status code equal to that given
+func (o *PatchKubermaticSettingsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettings default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchKubermaticSettingsDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettings default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -66,9 +66,39 @@ type ListDCForSeedOK struct {
 	Payload []*models.Datacenter
 }
 
+// IsSuccess returns true when this list d c for seed o k response has a 2xx status code
+func (o *ListDCForSeedOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list d c for seed o k response has a 3xx status code
+func (o *ListDCForSeedOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for seed o k response has a 4xx status code
+func (o *ListDCForSeedOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list d c for seed o k response has a 5xx status code
+func (o *ListDCForSeedOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for seed o k response a status code equal to that given
+func (o *ListDCForSeedOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListDCForSeedOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedOK  %+v", 200, o.Payload)
 }
+
+func (o *ListDCForSeedOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedOK  %+v", 200, o.Payload)
+}
+
 func (o *ListDCForSeedOK) GetPayload() []*models.Datacenter {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListDCForSeedUnauthorized struct {
 }
 
+// IsSuccess returns true when this list d c for seed unauthorized response has a 2xx status code
+func (o *ListDCForSeedUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list d c for seed unauthorized response has a 3xx status code
+func (o *ListDCForSeedUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for seed unauthorized response has a 4xx status code
+func (o *ListDCForSeedUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list d c for seed unauthorized response has a 5xx status code
+func (o *ListDCForSeedUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for seed unauthorized response a status code equal to that given
+func (o *ListDCForSeedUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListDCForSeedUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedUnauthorized ", 401)
+}
+
+func (o *ListDCForSeedUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListDCForSeedForbidden struct {
 }
 
+// IsSuccess returns true when this list d c for seed forbidden response has a 2xx status code
+func (o *ListDCForSeedForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list d c for seed forbidden response has a 3xx status code
+func (o *ListDCForSeedForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for seed forbidden response has a 4xx status code
+func (o *ListDCForSeedForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list d c for seed forbidden response has a 5xx status code
+func (o *ListDCForSeedForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for seed forbidden response a status code equal to that given
+func (o *ListDCForSeedForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListDCForSeedForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedForbidden ", 403)
+}
+
+func (o *ListDCForSeedForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeedForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListDCForSeedDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list d c for seed default response has a 2xx status code
+func (o *ListDCForSeedDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list d c for seed default response has a 3xx status code
+func (o *ListDCForSeedDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list d c for seed default response has a 4xx status code
+func (o *ListDCForSeedDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list d c for seed default response has a 5xx status code
+func (o *ListDCForSeedDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list d c for seed default response a status code equal to that given
+func (o *ListDCForSeedDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListDCForSeedDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeed default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListDCForSeedDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/seed/{seed_name}/dc][%d] listDCForSeed default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListDCForSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

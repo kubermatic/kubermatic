@@ -66,9 +66,39 @@ type ListGKEClusterZonesOK struct {
 	Payload models.GKEZoneList
 }
 
+// IsSuccess returns true when this list g k e cluster zones o k response has a 2xx status code
+func (o *ListGKEClusterZonesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e cluster zones o k response has a 3xx status code
+func (o *ListGKEClusterZonesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster zones o k response has a 4xx status code
+func (o *ListGKEClusterZonesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e cluster zones o k response has a 5xx status code
+func (o *ListGKEClusterZonesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster zones o k response a status code equal to that given
+func (o *ListGKEClusterZonesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEClusterZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEClusterZonesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEClusterZonesOK) GetPayload() models.GKEZoneList {
 	return o.Payload
 }
@@ -95,7 +125,36 @@ EmptyResponse is a empty response
 type ListGKEClusterZonesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list g k e cluster zones unauthorized response has a 2xx status code
+func (o *ListGKEClusterZonesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster zones unauthorized response has a 3xx status code
+func (o *ListGKEClusterZonesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster zones unauthorized response has a 4xx status code
+func (o *ListGKEClusterZonesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster zones unauthorized response has a 5xx status code
+func (o *ListGKEClusterZonesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster zones unauthorized response a status code equal to that given
+func (o *ListGKEClusterZonesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListGKEClusterZonesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesUnauthorized ", 401)
+}
+
+func (o *ListGKEClusterZonesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesUnauthorized ", 401)
 }
 
@@ -116,7 +175,36 @@ EmptyResponse is a empty response
 type ListGKEClusterZonesForbidden struct {
 }
 
+// IsSuccess returns true when this list g k e cluster zones forbidden response has a 2xx status code
+func (o *ListGKEClusterZonesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster zones forbidden response has a 3xx status code
+func (o *ListGKEClusterZonesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster zones forbidden response has a 4xx status code
+func (o *ListGKEClusterZonesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster zones forbidden response has a 5xx status code
+func (o *ListGKEClusterZonesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster zones forbidden response a status code equal to that given
+func (o *ListGKEClusterZonesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListGKEClusterZonesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesForbidden ", 403)
+}
+
+func (o *ListGKEClusterZonesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZonesForbidden ", 403)
 }
 
@@ -147,9 +235,39 @@ func (o *ListGKEClusterZonesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e cluster zones default response has a 2xx status code
+func (o *ListGKEClusterZonesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e cluster zones default response has a 3xx status code
+func (o *ListGKEClusterZonesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e cluster zones default response has a 4xx status code
+func (o *ListGKEClusterZonesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e cluster zones default response has a 5xx status code
+func (o *ListGKEClusterZonesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e cluster zones default response a status code equal to that given
+func (o *ListGKEClusterZonesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEClusterZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZones default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEClusterZonesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones][%d] listGKEClusterZones default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEClusterZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

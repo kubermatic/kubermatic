@@ -66,9 +66,39 @@ type CreateGatekeeperConfigCreated struct {
 	Payload *models.GatekeeperConfig
 }
 
+// IsSuccess returns true when this create gatekeeper config created response has a 2xx status code
+func (o *CreateGatekeeperConfigCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create gatekeeper config created response has a 3xx status code
+func (o *CreateGatekeeperConfigCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create gatekeeper config created response has a 4xx status code
+func (o *CreateGatekeeperConfigCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create gatekeeper config created response has a 5xx status code
+func (o *CreateGatekeeperConfigCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create gatekeeper config created response a status code equal to that given
+func (o *CreateGatekeeperConfigCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateGatekeeperConfigCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateGatekeeperConfigCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateGatekeeperConfigCreated) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type CreateGatekeeperConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this create gatekeeper config unauthorized response has a 2xx status code
+func (o *CreateGatekeeperConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create gatekeeper config unauthorized response has a 3xx status code
+func (o *CreateGatekeeperConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create gatekeeper config unauthorized response has a 4xx status code
+func (o *CreateGatekeeperConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create gatekeeper config unauthorized response has a 5xx status code
+func (o *CreateGatekeeperConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create gatekeeper config unauthorized response a status code equal to that given
+func (o *CreateGatekeeperConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateGatekeeperConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigUnauthorized ", 401)
+}
+
+func (o *CreateGatekeeperConfigUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type CreateGatekeeperConfigForbidden struct {
 }
 
+// IsSuccess returns true when this create gatekeeper config forbidden response has a 2xx status code
+func (o *CreateGatekeeperConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create gatekeeper config forbidden response has a 3xx status code
+func (o *CreateGatekeeperConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create gatekeeper config forbidden response has a 4xx status code
+func (o *CreateGatekeeperConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create gatekeeper config forbidden response has a 5xx status code
+func (o *CreateGatekeeperConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create gatekeeper config forbidden response a status code equal to that given
+func (o *CreateGatekeeperConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateGatekeeperConfigForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigForbidden ", 403)
+}
+
+func (o *CreateGatekeeperConfigForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfigForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *CreateGatekeeperConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create gatekeeper config default response has a 2xx status code
+func (o *CreateGatekeeperConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create gatekeeper config default response has a 3xx status code
+func (o *CreateGatekeeperConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create gatekeeper config default response has a 4xx status code
+func (o *CreateGatekeeperConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create gatekeeper config default response has a 5xx status code
+func (o *CreateGatekeeperConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create gatekeeper config default response a status code equal to that given
+func (o *CreateGatekeeperConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateGatekeeperConfigDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] createGatekeeperConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

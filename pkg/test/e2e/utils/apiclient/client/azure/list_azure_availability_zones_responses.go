@@ -54,9 +54,39 @@ type ListAzureAvailabilityZonesOK struct {
 	Payload *models.AzureAvailabilityZonesList
 }
 
+// IsSuccess returns true when this list azure availability zones o k response has a 2xx status code
+func (o *ListAzureAvailabilityZonesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure availability zones o k response has a 3xx status code
+func (o *ListAzureAvailabilityZonesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure availability zones o k response has a 4xx status code
+func (o *ListAzureAvailabilityZonesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure availability zones o k response has a 5xx status code
+func (o *ListAzureAvailabilityZonesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure availability zones o k response a status code equal to that given
+func (o *ListAzureAvailabilityZonesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureAvailabilityZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZonesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureAvailabilityZonesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZonesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureAvailabilityZonesOK) GetPayload() *models.AzureAvailabilityZonesList {
 	return o.Payload
 }
@@ -95,9 +125,39 @@ func (o *ListAzureAvailabilityZonesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure availability zones default response has a 2xx status code
+func (o *ListAzureAvailabilityZonesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure availability zones default response has a 3xx status code
+func (o *ListAzureAvailabilityZonesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure availability zones default response has a 4xx status code
+func (o *ListAzureAvailabilityZonesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure availability zones default response has a 5xx status code
+func (o *ListAzureAvailabilityZonesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure availability zones default response a status code equal to that given
+func (o *ListAzureAvailabilityZonesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureAvailabilityZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZones default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureAvailabilityZonesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/azure/availabilityzones][%d] listAzureAvailabilityZones default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureAvailabilityZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

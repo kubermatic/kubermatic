@@ -66,9 +66,39 @@ type EditUserInProjectOK struct {
 	Payload *models.User
 }
 
+// IsSuccess returns true when this edit user in project o k response has a 2xx status code
+func (o *EditUserInProjectOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this edit user in project o k response has a 3xx status code
+func (o *EditUserInProjectOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this edit user in project o k response has a 4xx status code
+func (o *EditUserInProjectOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this edit user in project o k response has a 5xx status code
+func (o *EditUserInProjectOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this edit user in project o k response a status code equal to that given
+func (o *EditUserInProjectOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *EditUserInProjectOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectOK  %+v", 200, o.Payload)
 }
+
+func (o *EditUserInProjectOK) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectOK  %+v", 200, o.Payload)
+}
+
 func (o *EditUserInProjectOK) GetPayload() *models.User {
 	return o.Payload
 }
@@ -97,7 +127,36 @@ EmptyResponse is a empty response
 type EditUserInProjectUnauthorized struct {
 }
 
+// IsSuccess returns true when this edit user in project unauthorized response has a 2xx status code
+func (o *EditUserInProjectUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this edit user in project unauthorized response has a 3xx status code
+func (o *EditUserInProjectUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this edit user in project unauthorized response has a 4xx status code
+func (o *EditUserInProjectUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this edit user in project unauthorized response has a 5xx status code
+func (o *EditUserInProjectUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this edit user in project unauthorized response a status code equal to that given
+func (o *EditUserInProjectUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *EditUserInProjectUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectUnauthorized ", 401)
+}
+
+func (o *EditUserInProjectUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectUnauthorized ", 401)
 }
 
@@ -118,7 +177,36 @@ EmptyResponse is a empty response
 type EditUserInProjectForbidden struct {
 }
 
+// IsSuccess returns true when this edit user in project forbidden response has a 2xx status code
+func (o *EditUserInProjectForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this edit user in project forbidden response has a 3xx status code
+func (o *EditUserInProjectForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this edit user in project forbidden response has a 4xx status code
+func (o *EditUserInProjectForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this edit user in project forbidden response has a 5xx status code
+func (o *EditUserInProjectForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this edit user in project forbidden response a status code equal to that given
+func (o *EditUserInProjectForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *EditUserInProjectForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectForbidden ", 403)
+}
+
+func (o *EditUserInProjectForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProjectForbidden ", 403)
 }
 
@@ -149,9 +237,39 @@ func (o *EditUserInProjectDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this edit user in project default response has a 2xx status code
+func (o *EditUserInProjectDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this edit user in project default response has a 3xx status code
+func (o *EditUserInProjectDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this edit user in project default response has a 4xx status code
+func (o *EditUserInProjectDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this edit user in project default response has a 5xx status code
+func (o *EditUserInProjectDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this edit user in project default response a status code equal to that given
+func (o *EditUserInProjectDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *EditUserInProjectDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProject default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *EditUserInProjectDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/users/{user_id}][%d] editUserInProject default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *EditUserInProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
