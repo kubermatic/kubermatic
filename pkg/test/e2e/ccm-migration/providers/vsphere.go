@@ -162,7 +162,7 @@ func (vc *VsphereCredentialsType) GenerateProviderSpec(clustername string, datac
 		CPUs:           2,
 		MemoryMB:       4096,
 		DiskSizeGB:     pointer.Int64(10),
-		AllowInsecure:  types.ConfigVarBool{Value: pointer.Bool(false)},
+		AllowInsecure:  types.ConfigVarBool{Value: pointer.Bool(true)},
 		Cluster:        types.ConfigVarString{Value: datacenter.Cluster},
 		Datacenter:     types.ConfigVarString{Value: datacenter.Datacenter},
 		Datastore:      types.ConfigVarString{Value: datacenter.DefaultDatastore},
