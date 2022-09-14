@@ -30,11 +30,8 @@ import (
 )
 
 func TestCreateVMFolder(t *testing.T) {
-	dc := &kubermaticv1.DatacenterSpecVSphere{
-		Datacenter: vSphereDatacenter,
-		Endpoint:   vSphereEndpoint,
-		RootPath:   path.Join("/", vSphereDatacenter, "vm"),
-	}
+	dc := getTestDC()
+	dc.RootPath = path.Join("/", vSphereDatacenter, "vm")
 
 	ctx := context.Background()
 	session, err := newSession(ctx, dc, vSphereUsername, vSpherePassword, nil)
@@ -77,9 +74,10 @@ func TestProvider_GetVMFolders(t *testing.T) {
 		{
 			name: "successfully-list-folders-below-custom-root",
 			dc: &kubermaticv1.DatacenterSpecVSphere{
-				Datacenter: vSphereDatacenter,
-				Endpoint:   vSphereEndpoint,
-				RootPath:   path.Join("/", vSphereDatacenter, "vm"),
+				Datacenter:    vSphereDatacenter,
+				Endpoint:      vSphereEndpoint,
+				AllowInsecure: true,
+				RootPath:      path.Join("/", vSphereDatacenter, "vm"),
 			},
 			expectedFolders: sets.NewString(
 				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
