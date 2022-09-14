@@ -495,12 +495,15 @@ spec:
       - from: 1.22.*
         to: 1.22.*
       - automatic: true
-        from: '>= 1.22.0, < 1.22.5'
-        to: 1.22.5
+        from: '>= 1.22.0, < 1.22.14'
+        to: 1.22.14
       - from: 1.22.*
         to: 1.23.*
       - from: 1.23.*
         to: 1.23.*
+      - automatic: true
+        from: '>= 1.23.0, < 1.23.11'
+        to: 1.23.11
     # Versions lists the available versions.
     versions:
       - v1.20.13
@@ -509,7 +512,9 @@ spec:
       - v1.21.12
       - v1.22.5
       - v1.22.9
+      - v1.22.14
       - v1.23.6
+      - v1.23.11
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
