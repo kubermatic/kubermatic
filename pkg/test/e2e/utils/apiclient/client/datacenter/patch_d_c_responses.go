@@ -58,7 +58,8 @@ func NewPatchDCOK() *PatchDCOK {
 	return &PatchDCOK{}
 }
 
-/* PatchDCOK describes a response with status code 200, with default header values.
+/*
+PatchDCOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -120,7 +121,8 @@ func NewPatchDCUnauthorized() *PatchDCUnauthorized {
 	return &PatchDCUnauthorized{}
 }
 
-/* PatchDCUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchDCForbidden() *PatchDCForbidden {
 	return &PatchDCForbidden{}
 }
 
-/* PatchDCForbidden describes a response with status code 403, with default header values.
+/*
+PatchDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchDCDefault(code int) *PatchDCDefault {
 	}
 }
 
-/* PatchDCDefault describes a response with status code -1, with default header values.
+/*
+PatchDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

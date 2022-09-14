@@ -46,7 +46,8 @@ func NewListNutanixProjectsOK() *ListNutanixProjectsOK {
 	return &ListNutanixProjectsOK{}
 }
 
-/* ListNutanixProjectsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixProjectsOK describes a response with status code 200, with default header values.
 
 NutanixProjectList
 */
@@ -108,7 +109,8 @@ func NewListNutanixProjectsDefault(code int) *ListNutanixProjectsDefault {
 	}
 }
 
-/* ListNutanixProjectsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixProjectsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewCreateRoleCreated() *CreateRoleCreated {
 	return &CreateRoleCreated{}
 }
 
-/* CreateRoleCreated describes a response with status code 201, with default header values.
+/*
+CreateRoleCreated describes a response with status code 201, with default header values.
 
 Role
 */
@@ -120,7 +121,8 @@ func NewCreateRoleUnauthorized() *CreateRoleUnauthorized {
 	return &CreateRoleUnauthorized{}
 }
 
-/* CreateRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateRoleForbidden() *CreateRoleForbidden {
 	return &CreateRoleForbidden{}
 }
 
-/* CreateRoleForbidden describes a response with status code 403, with default header values.
+/*
+CreateRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateRoleDefault(code int) *CreateRoleDefault {
 	}
 }
 
-/* CreateRoleDefault describes a response with status code -1, with default header values.
+/*
+CreateRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

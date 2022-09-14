@@ -46,7 +46,8 @@ func NewListGKEDiskTypesOK() *ListGKEDiskTypesOK {
 	return &ListGKEDiskTypesOK{}
 }
 
-/* ListGKEDiskTypesOK describes a response with status code 200, with default header values.
+/*
+ListGKEDiskTypesOK describes a response with status code 200, with default header values.
 
 GKEDiskTypeList
 */
@@ -108,7 +109,8 @@ func NewListGKEDiskTypesDefault(code int) *ListGKEDiskTypesDefault {
 	}
 }
 
-/* ListGKEDiskTypesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEDiskTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

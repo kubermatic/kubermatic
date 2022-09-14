@@ -52,10 +52,12 @@ func NewListAlibabaInstanceTypesNoCredentialsParamsWithHTTPClient(client *http.C
 	}
 }
 
-/* ListAlibabaInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list alibaba instance types no credentials operation.
+/*
+ListAlibabaInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba instance types no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaInstanceTypesNoCredentialsParams struct {
 

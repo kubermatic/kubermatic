@@ -52,10 +52,12 @@ func NewListAKSNodeVersionsNoCredentialsParamsWithHTTPClient(client *http.Client
 	}
 }
 
-/* ListAKSNodeVersionsNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list a k s node versions no credentials operation.
+/*
+ListAKSNodeVersionsNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s node versions no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSNodeVersionsNoCredentialsParams struct {
 

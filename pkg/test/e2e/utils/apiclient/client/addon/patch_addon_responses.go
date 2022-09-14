@@ -58,7 +58,8 @@ func NewPatchAddonOK() *PatchAddonOK {
 	return &PatchAddonOK{}
 }
 
-/* PatchAddonOK describes a response with status code 200, with default header values.
+/*
+PatchAddonOK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -120,7 +121,8 @@ func NewPatchAddonUnauthorized() *PatchAddonUnauthorized {
 	return &PatchAddonUnauthorized{}
 }
 
-/* PatchAddonUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchAddonForbidden() *PatchAddonForbidden {
 	return &PatchAddonForbidden{}
 }
 
-/* PatchAddonForbidden describes a response with status code 403, with default header values.
+/*
+PatchAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchAddonDefault(code int) *PatchAddonDefault {
 	}
 }
 
-/* PatchAddonDefault describes a response with status code -1, with default header values.
+/*
+PatchAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

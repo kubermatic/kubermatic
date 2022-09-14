@@ -46,7 +46,8 @@ func NewListKubeVirtVMIPresetsNoCredentialsOK() *ListKubeVirtVMIPresetsNoCredent
 	return &ListKubeVirtVMIPresetsNoCredentialsOK{}
 }
 
-/* ListKubeVirtVMIPresetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListKubeVirtVMIPresetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 VirtualMachineInstancePresetList
 */
@@ -108,7 +109,8 @@ func NewListKubeVirtVMIPresetsNoCredentialsDefault(code int) *ListKubeVirtVMIPre
 	}
 }
 
-/* ListKubeVirtVMIPresetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListKubeVirtVMIPresetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

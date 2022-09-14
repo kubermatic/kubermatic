@@ -58,7 +58,8 @@ func NewDeleteMachineDeploymentOK() *DeleteMachineDeploymentOK {
 	return &DeleteMachineDeploymentOK{}
 }
 
-/* DeleteMachineDeploymentOK describes a response with status code 200, with default header values.
+/*
+DeleteMachineDeploymentOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteMachineDeploymentUnauthorized() *DeleteMachineDeploymentUnauthoriz
 	return &DeleteMachineDeploymentUnauthorized{}
 }
 
-/* DeleteMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteMachineDeploymentForbidden() *DeleteMachineDeploymentForbidden {
 	return &DeleteMachineDeploymentForbidden{}
 }
 
-/* DeleteMachineDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+DeleteMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteMachineDeploymentDefault(code int) *DeleteMachineDeploymentDefault
 	}
 }
 
-/* DeleteMachineDeploymentDefault describes a response with status code -1, with default header values.
+/*
+DeleteMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

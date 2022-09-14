@@ -46,7 +46,8 @@ func NewListAWSSubnetsNoCredentialsOK() *ListAWSSubnetsNoCredentialsOK {
 	return &ListAWSSubnetsNoCredentialsOK{}
 }
 
-/* ListAWSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAWSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 AWSSubnetList
 */
@@ -108,7 +109,8 @@ func NewListAWSSubnetsNoCredentialsDefault(code int) *ListAWSSubnetsNoCredential
 	}
 }
 
-/* ListAWSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAWSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

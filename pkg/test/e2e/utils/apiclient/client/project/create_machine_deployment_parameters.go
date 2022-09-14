@@ -54,10 +54,12 @@ func NewCreateMachineDeploymentParamsWithHTTPClient(client *http.Client) *Create
 	}
 }
 
-/* CreateMachineDeploymentParams contains all the parameters to send to the API endpoint
-   for the create machine deployment operation.
+/*
+CreateMachineDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create machine deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateMachineDeploymentParams struct {
 

@@ -58,7 +58,8 @@ func NewListNodesForClusterOK() *ListNodesForClusterOK {
 	return &ListNodesForClusterOK{}
 }
 
-/* ListNodesForClusterOK describes a response with status code 200, with default header values.
+/*
+ListNodesForClusterOK describes a response with status code 200, with default header values.
 
 Node
 */
@@ -118,7 +119,8 @@ func NewListNodesForClusterUnauthorized() *ListNodesForClusterUnauthorized {
 	return &ListNodesForClusterUnauthorized{}
 }
 
-/* ListNodesForClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+ListNodesForClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListNodesForClusterForbidden() *ListNodesForClusterForbidden {
 	return &ListNodesForClusterForbidden{}
 }
 
-/* ListNodesForClusterForbidden describes a response with status code 403, with default header values.
+/*
+ListNodesForClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListNodesForClusterDefault(code int) *ListNodesForClusterDefault {
 	}
 }
 
-/* ListNodesForClusterDefault describes a response with status code -1, with default header values.
+/*
+ListNodesForClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

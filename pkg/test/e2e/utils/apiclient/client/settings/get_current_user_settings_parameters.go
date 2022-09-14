@@ -52,10 +52,12 @@ func NewGetCurrentUserSettingsParamsWithHTTPClient(client *http.Client) *GetCurr
 	}
 }
 
-/* GetCurrentUserSettingsParams contains all the parameters to send to the API endpoint
-   for the get current user settings operation.
+/*
+GetCurrentUserSettingsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get current user settings operation.
+
+	Typically these are written to a http.Request.
 */
 type GetCurrentUserSettingsParams struct {
 	timeout    time.Duration

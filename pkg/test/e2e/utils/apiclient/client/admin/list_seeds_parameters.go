@@ -52,10 +52,12 @@ func NewListSeedsParamsWithHTTPClient(client *http.Client) *ListSeedsParams {
 	}
 }
 
-/* ListSeedsParams contains all the parameters to send to the API endpoint
-   for the list seeds operation.
+/*
+ListSeedsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list seeds operation.
+
+	Typically these are written to a http.Request.
 */
 type ListSeedsParams struct {
 	timeout    time.Duration

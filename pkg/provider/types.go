@@ -131,7 +131,7 @@ type CloudProvider interface {
 }
 
 // ReconcilingCloudProvider is a cloud provider that can not just created resources
-// once, but is capable of continuously reconciling annd fixing any problems with them.
+// once, but is capable of continuously reconciling and fixing any problems with them.
 type ReconcilingCloudProvider interface {
 	CloudProvider
 

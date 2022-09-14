@@ -52,7 +52,7 @@ type ClientService interface {
 }
 
 /*
-  ListGKEClusterDiskTypes gets g k e cluster machine disk types
+ListGKEClusterDiskTypes gets g k e cluster machine disk types
 */
 func (a *Client) ListGKEClusterDiskTypes(params *ListGKEClusterDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterDiskTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -90,7 +90,7 @@ func (a *Client) ListGKEClusterDiskTypes(params *ListGKEClusterDiskTypesParams, 
 }
 
 /*
-  ListGKEClusterImages gets g k e cluster images
+ListGKEClusterImages gets g k e cluster images
 */
 func (a *Client) ListGKEClusterImages(params *ListGKEClusterImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -128,7 +128,7 @@ func (a *Client) ListGKEClusterImages(params *ListGKEClusterImagesParams, authIn
 }
 
 /*
-  ListGKEClusterSizes gets g k e cluster machine sizes
+ListGKEClusterSizes gets g k e cluster machine sizes
 */
 func (a *Client) ListGKEClusterSizes(params *ListGKEClusterSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -166,7 +166,7 @@ func (a *Client) ListGKEClusterSizes(params *ListGKEClusterSizesParams, authInfo
 }
 
 /*
-  ListGKEClusterZones gets g k e cluster zones
+ListGKEClusterZones gets g k e cluster zones
 */
 func (a *Client) ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +204,7 @@ func (a *Client) ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo
 }
 
 /*
-  ListGKEDiskTypes gets g k e machine disk types
+ListGKEDiskTypes gets g k e machine disk types
 */
 func (a *Client) ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEDiskTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +242,7 @@ func (a *Client) ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runti
 }
 
 /*
-  ListGKEImages Lists GKE image types
+ListGKEImages Lists GKE image types
 */
 func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +280,7 @@ func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.Cli
 }
 
 /*
-  ListGKEVMSizes Lists GKE vmsizes
+ListGKEVMSizes Lists GKE vmsizes
 */
 func (a *Client) ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVMSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +318,7 @@ func (a *Client) ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.C
 }
 
 /*
-  ListGKEVersions Lists GKE versions
+ListGKEVersions Lists GKE versions
 */
 func (a *Client) ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +356,7 @@ func (a *Client) ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime
 }
 
 /*
-  ListGKEZones Lists GKE zones
+ListGKEZones Lists GKE zones
 */
 func (a *Client) ListGKEZones(params *ListGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -394,7 +394,7 @@ func (a *Client) ListGKEZones(params *ListGKEZonesParams, authInfo runtime.Clien
 }
 
 /*
-  ValidateGKECredentials Validates GKE credentials
+ValidateGKECredentials Validates GKE credentials
 */
 func (a *Client) ValidateGKECredentials(params *ValidateGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateGKECredentialsOK, error) {
 	// TODO: Validate the params before sending

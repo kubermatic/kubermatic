@@ -58,7 +58,8 @@ func NewDeleteMeteringReportConfigurationOK() *DeleteMeteringReportConfiguration
 	return &DeleteMeteringReportConfigurationOK{}
 }
 
-/* DeleteMeteringReportConfigurationOK describes a response with status code 200, with default header values.
+/*
+DeleteMeteringReportConfigurationOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteMeteringReportConfigurationUnauthorized() *DeleteMeteringReportCon
 	return &DeleteMeteringReportConfigurationUnauthorized{}
 }
 
-/* DeleteMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteMeteringReportConfigurationForbidden() *DeleteMeteringReportConfig
 	return &DeleteMeteringReportConfigurationForbidden{}
 }
 
-/* DeleteMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
+/*
+DeleteMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteMeteringReportConfigurationDefault(code int) *DeleteMeteringReport
 	}
 }
 
-/* DeleteMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
+/*
+DeleteMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewListEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *ListEtcdB
 	}
 }
 
-/* ListEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-   for the list etcd backup config operation.
+/*
+ListEtcdBackupConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list etcd backup config operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEtcdBackupConfigParams struct {
 

@@ -52,10 +52,12 @@ func NewListAzureSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListAz
 	}
 }
 
-/* ListAzureSecurityGroupsParams contains all the parameters to send to the API endpoint
-   for the list azure security groups operation.
+/*
+ListAzureSecurityGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure security groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureSecurityGroupsParams struct {
 

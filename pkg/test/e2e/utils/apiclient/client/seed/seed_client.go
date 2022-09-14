@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  GetSeedSettings gets the seed settings
+GetSeedSettings gets the seed settings
 */
 func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime
 }
 
 /*
-  ListSeedNames list seed names API
+ListSeedNames list seed names API
 */
 func (a *Client) ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedNamesOK, error) {
 	// TODO: Validate the params before sending

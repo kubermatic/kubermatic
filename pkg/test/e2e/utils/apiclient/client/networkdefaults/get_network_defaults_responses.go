@@ -58,7 +58,8 @@ func NewGetNetworkDefaultsOK() *GetNetworkDefaultsOK {
 	return &GetNetworkDefaultsOK{}
 }
 
-/* GetNetworkDefaultsOK describes a response with status code 200, with default header values.
+/*
+GetNetworkDefaultsOK describes a response with status code 200, with default header values.
 
 NetworkDefaults
 */
@@ -120,7 +121,8 @@ func NewGetNetworkDefaultsUnauthorized() *GetNetworkDefaultsUnauthorized {
 	return &GetNetworkDefaultsUnauthorized{}
 }
 
-/* GetNetworkDefaultsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetNetworkDefaultsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetNetworkDefaultsForbidden() *GetNetworkDefaultsForbidden {
 	return &GetNetworkDefaultsForbidden{}
 }
 
-/* GetNetworkDefaultsForbidden describes a response with status code 403, with default header values.
+/*
+GetNetworkDefaultsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetNetworkDefaultsDefault(code int) *GetNetworkDefaultsDefault {
 	}
 }
 
-/* GetNetworkDefaultsDefault describes a response with status code -1, with default header values.
+/*
+GetNetworkDefaultsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

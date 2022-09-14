@@ -46,7 +46,8 @@ func NewListAWSSizesOK() *ListAWSSizesOK {
 	return &ListAWSSizesOK{}
 }
 
-/* ListAWSSizesOK describes a response with status code 200, with default header values.
+/*
+ListAWSSizesOK describes a response with status code 200, with default header values.
 
 AWSSizeList
 */
@@ -108,7 +109,8 @@ func NewListAWSSizesDefault(code int) *ListAWSSizesDefault {
 	}
 }
 
-/* ListAWSSizesDefault describes a response with status code -1, with default header values.
+/*
+ListAWSSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

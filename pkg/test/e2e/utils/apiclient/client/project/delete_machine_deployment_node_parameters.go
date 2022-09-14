@@ -52,10 +52,12 @@ func NewDeleteMachineDeploymentNodeParamsWithHTTPClient(client *http.Client) *De
 	}
 }
 
-/* DeleteMachineDeploymentNodeParams contains all the parameters to send to the API endpoint
-   for the delete machine deployment node operation.
+/*
+DeleteMachineDeploymentNodeParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete machine deployment node operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteMachineDeploymentNodeParams struct {
 

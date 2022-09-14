@@ -52,10 +52,12 @@ func NewRevokeClusterViewerTokenV2ParamsWithHTTPClient(client *http.Client) *Rev
 	}
 }
 
-/* RevokeClusterViewerTokenV2Params contains all the parameters to send to the API endpoint
-   for the revoke cluster viewer token v2 operation.
+/*
+RevokeClusterViewerTokenV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the revoke cluster viewer token v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type RevokeClusterViewerTokenV2Params struct {
 

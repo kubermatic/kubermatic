@@ -52,10 +52,12 @@ func NewListGroupProjectBindingParamsWithHTTPClient(client *http.Client) *ListGr
 	}
 }
 
-/* ListGroupProjectBindingParams contains all the parameters to send to the API endpoint
-   for the list group project binding operation.
+/*
+ListGroupProjectBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list group project binding operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGroupProjectBindingParams struct {
 

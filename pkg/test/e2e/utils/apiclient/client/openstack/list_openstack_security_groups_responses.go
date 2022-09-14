@@ -46,7 +46,8 @@ func NewListOpenstackSecurityGroupsOK() *ListOpenstackSecurityGroupsOK {
 	return &ListOpenstackSecurityGroupsOK{}
 }
 
-/* ListOpenstackSecurityGroupsOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSecurityGroupsOK describes a response with status code 200, with default header values.
 
 OpenstackSecurityGroup
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSecurityGroupsDefault(code int) *ListOpenstackSecurityGroup
 	}
 }
 
-/* ListOpenstackSecurityGroupsDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

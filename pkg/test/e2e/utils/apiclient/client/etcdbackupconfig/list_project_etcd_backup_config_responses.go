@@ -58,7 +58,8 @@ func NewListProjectEtcdBackupConfigOK() *ListProjectEtcdBackupConfigOK {
 	return &ListProjectEtcdBackupConfigOK{}
 }
 
-/* ListProjectEtcdBackupConfigOK describes a response with status code 200, with default header values.
+/*
+ListProjectEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EtcdBackupConfig
 */
@@ -118,7 +119,8 @@ func NewListProjectEtcdBackupConfigUnauthorized() *ListProjectEtcdBackupConfigUn
 	return &ListProjectEtcdBackupConfigUnauthorized{}
 }
 
-/* ListProjectEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProjectEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListProjectEtcdBackupConfigForbidden() *ListProjectEtcdBackupConfigForbi
 	return &ListProjectEtcdBackupConfigForbidden{}
 }
 
-/* ListProjectEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+ListProjectEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListProjectEtcdBackupConfigDefault(code int) *ListProjectEtcdBackupConfi
 	}
 }
 
-/* ListProjectEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+ListProjectEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

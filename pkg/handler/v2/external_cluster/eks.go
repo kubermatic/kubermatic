@@ -45,12 +45,14 @@ import (
 )
 
 const (
+	RegionEndpoint   = "eu-central-1"
 	EKSAMITypes      = "Amazon Linux 2"
 	EKSCustomAMIType = "CUSTOM"
 	EKSCapacityTypes = "SPOT"
 )
 
 // EKSCommonReq represent a request with common parameters for EKS.
+// swagger:parameters listEKSRegions listEKSClusterRoles
 type EKSCommonReq struct {
 	// in: header
 	// name: AccessKeyID
@@ -74,7 +76,7 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 // EKSTypesReq represent a request for EKS types.
-// swagger:parameters validateEKSCredentials listEKSRegion listEKSVPCS
+// swagger:parameters validateEKSCredentials listEKSVPCS
 type EKSTypesReq struct {
 	EKSCommonReq
 	// in: header
@@ -102,15 +104,22 @@ type EKSClusterListReq struct {
 	EKSTypesReq
 }
 
-func (req EKSTypesReq) Validate() error {
-	if len(req.Region) == 0 {
-		return fmt.Errorf("Region cannot be empty")
-	}
+func (req EKSCommonReq) Validate() error {
 	if len(req.Credential) != 0 {
 		return nil
 	}
 	if len(req.AccessKeyID) == 0 || len(req.SecretAccessKey) == 0 {
 		return fmt.Errorf("EKS Credentials cannot be empty")
+	}
+	return nil
+}
+
+func (req EKSTypesReq) Validate() error {
+	if len(req.Region) == 0 {
+		return fmt.Errorf("region cannot be empty")
+	}
+	if err := req.EKSCommonReq.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -143,7 +152,7 @@ func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, e
 }
 
 // eksNoCredentialReq represent a request for EKS resources
-// swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials
+// swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials listEKSNodeRolesNoCredentials
 type eksNoCredentialReq struct {
 	GetClusterReq
 }
@@ -200,6 +209,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
+
 		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
@@ -268,11 +278,19 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 
 func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
+		req, ok := request.(EKSCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		eksTypesReq := EKSTypesReq{
+			EKSCommonReq: req,
+			Region:       RegionEndpoint,
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -283,11 +301,19 @@ func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 
 func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
+		req, ok := request.(EKSCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		eksTypesReq := EKSTypesReq{
+			EKSCommonReq: req,
+			Region:       RegionEndpoint,
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -746,6 +772,7 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
+
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -776,6 +803,43 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 			Region:          cloudSpec.Region,
 		}
 		return providercommon.ListEKSSubnetIDs(ctx, cred, req.VpcId)
+	}
+}
+
+func EKSNodeRolesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(eksNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
+			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
+		}
+
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		cred := resources.EKSCredential{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+			Region:          RegionEndpoint,
+		}
+
+		return providercommon.ListEKSNodeRoles(ctx, cred)
 	}
 }
 

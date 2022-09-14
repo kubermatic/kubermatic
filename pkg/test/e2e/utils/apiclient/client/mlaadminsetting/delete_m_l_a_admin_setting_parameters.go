@@ -52,10 +52,12 @@ func NewDeleteMLAAdminSettingParamsWithHTTPClient(client *http.Client) *DeleteML
 	}
 }
 
-/* DeleteMLAAdminSettingParams contains all the parameters to send to the API endpoint
-   for the delete m l a admin setting operation.
+/*
+DeleteMLAAdminSettingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete m l a admin setting operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteMLAAdminSettingParams struct {
 

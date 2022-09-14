@@ -46,7 +46,8 @@ func NewGetDatacenterOK() *GetDatacenterOK {
 	return &GetDatacenterOK{}
 }
 
-/* GetDatacenterOK describes a response with status code 200, with default header values.
+/*
+GetDatacenterOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -110,7 +111,8 @@ func NewGetDatacenterDefault(code int) *GetDatacenterDefault {
 	}
 }
 
-/* GetDatacenterDefault describes a response with status code -1, with default header values.
+/*
+GetDatacenterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

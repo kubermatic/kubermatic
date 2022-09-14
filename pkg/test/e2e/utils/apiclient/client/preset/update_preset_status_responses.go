@@ -60,7 +60,8 @@ func NewUpdatePresetStatusOK() *UpdatePresetStatusOK {
 	return &UpdatePresetStatusOK{}
 }
 
-/* UpdatePresetStatusOK describes a response with status code 200, with default header values.
+/*
+UpdatePresetStatusOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -110,7 +111,8 @@ func NewUpdatePresetStatusUnauthorized() *UpdatePresetStatusUnauthorized {
 	return &UpdatePresetStatusUnauthorized{}
 }
 
-/* UpdatePresetStatusUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdatePresetStatusUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -160,7 +162,8 @@ func NewUpdatePresetStatusForbidden() *UpdatePresetStatusForbidden {
 	return &UpdatePresetStatusForbidden{}
 }
 
-/* UpdatePresetStatusForbidden describes a response with status code 403, with default header values.
+/*
+UpdatePresetStatusForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -212,7 +215,8 @@ func NewUpdatePresetStatusDefault(code int) *UpdatePresetStatusDefault {
 	}
 }
 
-/* UpdatePresetStatusDefault describes a response with status code -1, with default header values.
+/*
+UpdatePresetStatusDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -276,7 +280,8 @@ func (o *UpdatePresetStatusDefault) readResponse(response runtime.ClientResponse
 	return nil
 }
 
-/*UpdatePresetStatusBody update preset status body
+/*
+UpdatePresetStatusBody update preset status body
 swagger:model UpdatePresetStatusBody
 */
 type UpdatePresetStatusBody struct {

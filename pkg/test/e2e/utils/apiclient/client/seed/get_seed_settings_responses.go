@@ -58,7 +58,8 @@ func NewGetSeedSettingsOK() *GetSeedSettingsOK {
 	return &GetSeedSettingsOK{}
 }
 
-/* GetSeedSettingsOK describes a response with status code 200, with default header values.
+/*
+GetSeedSettingsOK describes a response with status code 200, with default header values.
 
 SeedSettings
 */
@@ -120,7 +121,8 @@ func NewGetSeedSettingsUnauthorized() *GetSeedSettingsUnauthorized {
 	return &GetSeedSettingsUnauthorized{}
 }
 
-/* GetSeedSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetSeedSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetSeedSettingsForbidden() *GetSeedSettingsForbidden {
 	return &GetSeedSettingsForbidden{}
 }
 
-/* GetSeedSettingsForbidden describes a response with status code 403, with default header values.
+/*
+GetSeedSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetSeedSettingsDefault(code int) *GetSeedSettingsDefault {
 	}
 }
 
-/* GetSeedSettingsDefault describes a response with status code -1, with default header values.
+/*
+GetSeedSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

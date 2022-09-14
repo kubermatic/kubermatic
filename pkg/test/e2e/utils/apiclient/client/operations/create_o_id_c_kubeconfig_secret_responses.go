@@ -64,7 +64,8 @@ func NewCreateOIDCKubeconfigSecretOK() *CreateOIDCKubeconfigSecretOK {
 	return &CreateOIDCKubeconfigSecretOK{}
 }
 
-/* CreateOIDCKubeconfigSecretOK describes a response with status code 200, with default header values.
+/*
+CreateOIDCKubeconfigSecretOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +115,8 @@ func NewCreateOIDCKubeconfigSecretCreated() *CreateOIDCKubeconfigSecretCreated {
 	return &CreateOIDCKubeconfigSecretCreated{}
 }
 
-/* CreateOIDCKubeconfigSecretCreated describes a response with status code 201, with default header values.
+/*
+CreateOIDCKubeconfigSecretCreated describes a response with status code 201, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -164,7 +166,8 @@ func NewCreateOIDCKubeconfigSecretUnauthorized() *CreateOIDCKubeconfigSecretUnau
 	return &CreateOIDCKubeconfigSecretUnauthorized{}
 }
 
-/* CreateOIDCKubeconfigSecretUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateOIDCKubeconfigSecretUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -214,7 +217,8 @@ func NewCreateOIDCKubeconfigSecretForbidden() *CreateOIDCKubeconfigSecretForbidd
 	return &CreateOIDCKubeconfigSecretForbidden{}
 }
 
-/* CreateOIDCKubeconfigSecretForbidden describes a response with status code 403, with default header values.
+/*
+CreateOIDCKubeconfigSecretForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -266,7 +270,8 @@ func NewCreateOIDCKubeconfigSecretDefault(code int) *CreateOIDCKubeconfigSecretD
 	}
 }
 
-/* CreateOIDCKubeconfigSecretDefault describes a response with status code -1, with default header values.
+/*
+CreateOIDCKubeconfigSecretDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

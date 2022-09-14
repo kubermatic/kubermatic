@@ -58,7 +58,8 @@ func NewListGKEClusterSizesOK() *ListGKEClusterSizesOK {
 	return &ListGKEClusterSizesOK{}
 }
 
-/* ListGKEClusterSizesOK describes a response with status code 200, with default header values.
+/*
+ListGKEClusterSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -118,7 +119,8 @@ func NewListGKEClusterSizesUnauthorized() *ListGKEClusterSizesUnauthorized {
 	return &ListGKEClusterSizesUnauthorized{}
 }
 
-/* ListGKEClusterSizesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListGKEClusterSizesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListGKEClusterSizesForbidden() *ListGKEClusterSizesForbidden {
 	return &ListGKEClusterSizesForbidden{}
 }
 
-/* ListGKEClusterSizesForbidden describes a response with status code 403, with default header values.
+/*
+ListGKEClusterSizesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListGKEClusterSizesDefault(code int) *ListGKEClusterSizesDefault {
 	}
 }
 
-/* ListGKEClusterSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClusterSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

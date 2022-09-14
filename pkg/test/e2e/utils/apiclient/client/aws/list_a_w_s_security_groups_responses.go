@@ -46,7 +46,8 @@ func NewListAWSSecurityGroupsOK() *ListAWSSecurityGroupsOK {
 	return &ListAWSSecurityGroupsOK{}
 }
 
-/* ListAWSSecurityGroupsOK describes a response with status code 200, with default header values.
+/*
+ListAWSSecurityGroupsOK describes a response with status code 200, with default header values.
 
 AWSSecurityGroupList
 */
@@ -110,7 +111,8 @@ func NewListAWSSecurityGroupsDefault(code int) *ListAWSSecurityGroupsDefault {
 	}
 }
 
-/* ListAWSSecurityGroupsDefault describes a response with status code -1, with default header values.
+/*
+ListAWSSecurityGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

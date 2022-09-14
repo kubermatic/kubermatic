@@ -52,10 +52,12 @@ func NewListGCPSizesParamsWithHTTPClient(client *http.Client) *ListGCPSizesParam
 	}
 }
 
-/* ListGCPSizesParams contains all the parameters to send to the API endpoint
-   for the list g c p sizes operation.
+/*
+ListGCPSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPSizesParams struct {
 

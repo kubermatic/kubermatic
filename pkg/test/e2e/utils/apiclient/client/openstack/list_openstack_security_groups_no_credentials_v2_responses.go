@@ -46,7 +46,8 @@ func NewListOpenstackSecurityGroupsNoCredentialsV2OK() *ListOpenstackSecurityGro
 	return &ListOpenstackSecurityGroupsNoCredentialsV2OK{}
 }
 
-/* ListOpenstackSecurityGroupsNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSecurityGroupsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackSecurityGroup
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSecurityGroupsNoCredentialsV2Default(code int) *ListOpensta
 	}
 }
 
-/* ListOpenstackSecurityGroupsNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListOpenstackSecurityGroupsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

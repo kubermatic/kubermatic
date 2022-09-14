@@ -46,7 +46,8 @@ func NewListEKSSubnetsOK() *ListEKSSubnetsOK {
 	return &ListEKSSubnetsOK{}
 }
 
-/* ListEKSSubnetsOK describes a response with status code 200, with default header values.
+/*
+ListEKSSubnetsOK describes a response with status code 200, with default header values.
 
 EKSSubnetList
 */
@@ -108,7 +109,8 @@ func NewListEKSSubnetsDefault(code int) *ListEKSSubnetsDefault {
 	}
 }
 
-/* ListEKSSubnetsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewListMeteringReportsOK() *ListMeteringReportsOK {
 	return &ListMeteringReportsOK{}
 }
 
-/* ListMeteringReportsOK describes a response with status code 200, with default header values.
+/*
+ListMeteringReportsOK describes a response with status code 200, with default header values.
 
 MeteringReport
 */
@@ -118,7 +119,8 @@ func NewListMeteringReportsUnauthorized() *ListMeteringReportsUnauthorized {
 	return &ListMeteringReportsUnauthorized{}
 }
 
-/* ListMeteringReportsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListMeteringReportsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListMeteringReportsForbidden() *ListMeteringReportsForbidden {
 	return &ListMeteringReportsForbidden{}
 }
 
-/* ListMeteringReportsForbidden describes a response with status code 403, with default header values.
+/*
+ListMeteringReportsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListMeteringReportsDefault(code int) *ListMeteringReportsDefault {
 	}
 }
 
-/* ListMeteringReportsDefault describes a response with status code -1, with default header values.
+/*
+ListMeteringReportsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

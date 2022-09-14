@@ -58,7 +58,8 @@ func NewListProviderPresetsOK() *ListProviderPresetsOK {
 	return &ListProviderPresetsOK{}
 }
 
-/* ListProviderPresetsOK describes a response with status code 200, with default header values.
+/*
+ListProviderPresetsOK describes a response with status code 200, with default header values.
 
 PresetList
 */
@@ -120,7 +121,8 @@ func NewListProviderPresetsUnauthorized() *ListProviderPresetsUnauthorized {
 	return &ListProviderPresetsUnauthorized{}
 }
 
-/* ListProviderPresetsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProviderPresetsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewListProviderPresetsForbidden() *ListProviderPresetsForbidden {
 	return &ListProviderPresetsForbidden{}
 }
 
-/* ListProviderPresetsForbidden describes a response with status code 403, with default header values.
+/*
+ListProviderPresetsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewListProviderPresetsDefault(code int) *ListProviderPresetsDefault {
 	}
 }
 
-/* ListProviderPresetsDefault describes a response with status code -1, with default header values.
+/*
+ListProviderPresetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewListAlibabaInstanceTypesParamsWithHTTPClient(client *http.Client) *ListA
 	}
 }
 
-/* ListAlibabaInstanceTypesParams contains all the parameters to send to the API endpoint
-   for the list alibaba instance types operation.
+/*
+ListAlibabaInstanceTypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba instance types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaInstanceTypesParams struct {
 

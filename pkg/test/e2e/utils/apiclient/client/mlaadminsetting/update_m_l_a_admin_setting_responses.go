@@ -58,7 +58,8 @@ func NewUpdateMLAAdminSettingOK() *UpdateMLAAdminSettingOK {
 	return &UpdateMLAAdminSettingOK{}
 }
 
-/* UpdateMLAAdminSettingOK describes a response with status code 200, with default header values.
+/*
+UpdateMLAAdminSettingOK describes a response with status code 200, with default header values.
 
 MLAAdminSetting
 */
@@ -120,7 +121,8 @@ func NewUpdateMLAAdminSettingUnauthorized() *UpdateMLAAdminSettingUnauthorized {
 	return &UpdateMLAAdminSettingUnauthorized{}
 }
 
-/* UpdateMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewUpdateMLAAdminSettingForbidden() *UpdateMLAAdminSettingForbidden {
 	return &UpdateMLAAdminSettingForbidden{}
 }
 
-/* UpdateMLAAdminSettingForbidden describes a response with status code 403, with default header values.
+/*
+UpdateMLAAdminSettingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewUpdateMLAAdminSettingDefault(code int) *UpdateMLAAdminSettingDefault {
 	}
 }
 
-/* UpdateMLAAdminSettingDefault describes a response with status code -1, with default header values.
+/*
+UpdateMLAAdminSettingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

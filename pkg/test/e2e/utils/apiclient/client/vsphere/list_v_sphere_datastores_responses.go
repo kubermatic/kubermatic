@@ -46,12 +46,13 @@ func NewListVSphereDatastoresOK() *ListVSphereDatastoresOK {
 	return &ListVSphereDatastoresOK{}
 }
 
-/* ListVSphereDatastoresOK describes a response with status code 200, with default header values.
+/*
+ListVSphereDatastoresOK describes a response with status code 200, with default header values.
 
 VSphereDatastoreList
 */
 type ListVSphereDatastoresOK struct {
-	Payload *models.VSphereDatastoreList
+	Payload []*models.VSphereDatastoreList
 }
 
 // IsSuccess returns true when this list v sphere datastores o k response has a 2xx status code
@@ -87,16 +88,14 @@ func (o *ListVSphereDatastoresOK) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/vsphere/datastores][%d] listVSphereDatastoresOK  %+v", 200, o.Payload)
 }
 
-func (o *ListVSphereDatastoresOK) GetPayload() *models.VSphereDatastoreList {
+func (o *ListVSphereDatastoresOK) GetPayload() []*models.VSphereDatastoreList {
 	return o.Payload
 }
 
 func (o *ListVSphereDatastoresOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.VSphereDatastoreList)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
@@ -110,7 +109,8 @@ func NewListVSphereDatastoresDefault(code int) *ListVSphereDatastoresDefault {
 	}
 }
 
-/* ListVSphereDatastoresDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereDatastoresDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

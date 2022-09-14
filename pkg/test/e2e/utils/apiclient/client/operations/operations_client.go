@@ -46,7 +46,8 @@ type ClientService interface {
 }
 
 /*
-  CreateOIDCKubeconfig Starts OIDC flow and generates kubeconfig, the generated config
+	CreateOIDCKubeconfig Starts OIDC flow and generates kubeconfig, the generated config
+
 contains OIDC provider authentication info
 */
 func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCKubeconfigOK, error) {
@@ -85,7 +86,8 @@ func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authIn
 }
 
 /*
-  CreateOIDCKubeconfigSecret Starts OIDC flow and generates kubeconfig, the generated config
+	CreateOIDCKubeconfigSecret Starts OIDC flow and generates kubeconfig, the generated config
+
 contains OIDC provider authentication info. The kubeconfig is stored in the secret.
 */
 func (a *Client) CreateOIDCKubeconfigSecret(params *CreateOIDCKubeconfigSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCKubeconfigSecretOK, *CreateOIDCKubeconfigSecretCreated, error) {
@@ -126,7 +128,7 @@ func (a *Client) CreateOIDCKubeconfigSecret(params *CreateOIDCKubeconfigSecretPa
 }
 
 /*
-  GetAddonConfig returns specified addon config
+GetAddonConfig returns specified addon config
 */
 func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddonConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -164,7 +166,7 @@ func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.C
 }
 
 /*
-  GetAdmissionPlugins returns specified addon config
+GetAdmissionPlugins returns specified addon config
 */
 func (a *Client) GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdmissionPluginsOK, error) {
 	// TODO: Validate the params before sending
@@ -202,7 +204,7 @@ func (a *Client) GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo
 }
 
 /*
-  ListAddonConfigs returns all available addon configs
+ListAddonConfigs returns all available addon configs
 */
 func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAddonConfigsOK, error) {
 	// TODO: Validate the params before sending
@@ -240,7 +242,7 @@ func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runti
 }
 
 /*
-  ListSystemLabels List restricted system labels
+ListSystemLabels List restricted system labels
 */
 func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSystemLabelsOK, error) {
 	// TODO: Validate the params before sending
@@ -278,7 +280,7 @@ func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runti
 }
 
 /*
-  MigrateClusterToExternalCCM Enable the migration to the external CCM for the given cluster
+MigrateClusterToExternalCCM Enable the migration to the external CCM for the given cluster
 */
 func (a *Client) MigrateClusterToExternalCCM(params *MigrateClusterToExternalCCMParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MigrateClusterToExternalCCMOK, error) {
 	// TODO: Validate the params before sending

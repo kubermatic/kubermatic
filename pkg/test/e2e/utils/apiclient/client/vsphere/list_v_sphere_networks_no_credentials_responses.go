@@ -46,7 +46,8 @@ func NewListVSphereNetworksNoCredentialsOK() *ListVSphereNetworksNoCredentialsOK
 	return &ListVSphereNetworksNoCredentialsOK{}
 }
 
-/* ListVSphereNetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListVSphereNetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 VSphereNetwork
 */
@@ -108,7 +109,8 @@ func NewListVSphereNetworksNoCredentialsDefault(code int) *ListVSphereNetworksNo
 	}
 }
 
-/* ListVSphereNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

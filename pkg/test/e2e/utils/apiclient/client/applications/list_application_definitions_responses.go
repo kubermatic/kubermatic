@@ -58,7 +58,8 @@ func NewListApplicationDefinitionsOK() *ListApplicationDefinitionsOK {
 	return &ListApplicationDefinitionsOK{}
 }
 
-/* ListApplicationDefinitionsOK describes a response with status code 200, with default header values.
+/*
+ListApplicationDefinitionsOK describes a response with status code 200, with default header values.
 
 ApplicationDefinition
 */
@@ -118,7 +119,8 @@ func NewListApplicationDefinitionsUnauthorized() *ListApplicationDefinitionsUnau
 	return &ListApplicationDefinitionsUnauthorized{}
 }
 
-/* ListApplicationDefinitionsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListApplicationDefinitionsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListApplicationDefinitionsForbidden() *ListApplicationDefinitionsForbidd
 	return &ListApplicationDefinitionsForbidden{}
 }
 
-/* ListApplicationDefinitionsForbidden describes a response with status code 403, with default header values.
+/*
+ListApplicationDefinitionsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListApplicationDefinitionsDefault(code int) *ListApplicationDefinitionsD
 	}
 }
 
-/* ListApplicationDefinitionsDefault describes a response with status code -1, with default header values.
+/*
+ListApplicationDefinitionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

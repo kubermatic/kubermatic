@@ -46,7 +46,8 @@ func NewListAzureVnetsOK() *ListAzureVnetsOK {
 	return &ListAzureVnetsOK{}
 }
 
-/* ListAzureVnetsOK describes a response with status code 200, with default header values.
+/*
+ListAzureVnetsOK describes a response with status code 200, with default header values.
 
 AzureVirtualNetworksList
 */
@@ -110,7 +111,8 @@ func NewListAzureVnetsDefault(code int) *ListAzureVnetsDefault {
 	}
 }
 
-/* ListAzureVnetsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureVnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

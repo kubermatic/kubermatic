@@ -52,10 +52,12 @@ func NewListAnexiaTemplatesParamsWithHTTPClient(client *http.Client) *ListAnexia
 	}
 }
 
-/* ListAnexiaTemplatesParams contains all the parameters to send to the API endpoint
-   for the list anexia templates operation.
+/*
+ListAnexiaTemplatesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list anexia templates operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAnexiaTemplatesParams struct {
 

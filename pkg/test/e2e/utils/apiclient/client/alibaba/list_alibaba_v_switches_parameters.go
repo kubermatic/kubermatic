@@ -52,10 +52,12 @@ func NewListAlibabaVSwitchesParamsWithHTTPClient(client *http.Client) *ListAliba
 	}
 }
 
-/* ListAlibabaVSwitchesParams contains all the parameters to send to the API endpoint
-   for the list alibaba v switches operation.
+/*
+ListAlibabaVSwitchesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba v switches operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaVSwitchesParams struct {
 	timeout    time.Duration

@@ -54,10 +54,12 @@ func NewPutResourceQuotaParamsWithHTTPClient(client *http.Client) *PutResourceQu
 	}
 }
 
-/* PutResourceQuotaParams contains all the parameters to send to the API endpoint
-   for the put resource quota operation.
+/*
+PutResourceQuotaParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the put resource quota operation.
+
+	Typically these are written to a http.Request.
 */
 type PutResourceQuotaParams struct {
 

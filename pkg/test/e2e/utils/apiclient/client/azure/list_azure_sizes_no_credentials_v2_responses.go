@@ -46,7 +46,8 @@ func NewListAzureSizesNoCredentialsV2OK() *ListAzureSizesNoCredentialsV2OK {
 	return &ListAzureSizesNoCredentialsV2OK{}
 }
 
-/* ListAzureSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAzureSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AzureSizeList
 */
@@ -108,7 +109,8 @@ func NewListAzureSizesNoCredentialsV2Default(code int) *ListAzureSizesNoCredenti
 	}
 }
 
-/* ListAzureSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAzureSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

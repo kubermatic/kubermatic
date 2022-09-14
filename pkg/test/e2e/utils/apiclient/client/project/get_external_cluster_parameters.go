@@ -52,10 +52,12 @@ func NewGetExternalClusterParamsWithHTTPClient(client *http.Client) *GetExternal
 	}
 }
 
-/* GetExternalClusterParams contains all the parameters to send to the API endpoint
-   for the get external cluster operation.
+/*
+GetExternalClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get external cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type GetExternalClusterParams struct {
 

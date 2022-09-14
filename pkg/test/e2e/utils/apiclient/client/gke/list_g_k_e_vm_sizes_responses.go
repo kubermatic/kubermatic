@@ -46,7 +46,8 @@ func NewListGKEVMSizesOK() *ListGKEVMSizesOK {
 	return &ListGKEVMSizesOK{}
 }
 
-/* ListGKEVMSizesOK describes a response with status code 200, with default header values.
+/*
+ListGKEVMSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -108,7 +109,8 @@ func NewListGKEVMSizesDefault(code int) *ListGKEVMSizesDefault {
 	}
 }
 
-/* ListGKEVMSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEVMSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

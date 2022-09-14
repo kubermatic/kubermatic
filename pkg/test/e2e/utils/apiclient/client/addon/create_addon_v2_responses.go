@@ -58,7 +58,8 @@ func NewCreateAddonV2Created() *CreateAddonV2Created {
 	return &CreateAddonV2Created{}
 }
 
-/* CreateAddonV2Created describes a response with status code 201, with default header values.
+/*
+CreateAddonV2Created describes a response with status code 201, with default header values.
 
 Addon
 */
@@ -120,7 +121,8 @@ func NewCreateAddonV2Unauthorized() *CreateAddonV2Unauthorized {
 	return &CreateAddonV2Unauthorized{}
 }
 
-/* CreateAddonV2Unauthorized describes a response with status code 401, with default header values.
+/*
+CreateAddonV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateAddonV2Forbidden() *CreateAddonV2Forbidden {
 	return &CreateAddonV2Forbidden{}
 }
 
-/* CreateAddonV2Forbidden describes a response with status code 403, with default header values.
+/*
+CreateAddonV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateAddonV2Default(code int) *CreateAddonV2Default {
 	}
 }
 
-/* CreateAddonV2Default describes a response with status code -1, with default header values.
+/*
+CreateAddonV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewDeleteDefaultConstraintOK() *DeleteDefaultConstraintOK {
 	return &DeleteDefaultConstraintOK{}
 }
 
-/* DeleteDefaultConstraintOK describes a response with status code 200, with default header values.
+/*
+DeleteDefaultConstraintOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteDefaultConstraintUnauthorized() *DeleteDefaultConstraintUnauthoriz
 	return &DeleteDefaultConstraintUnauthorized{}
 }
 
-/* DeleteDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteDefaultConstraintForbidden() *DeleteDefaultConstraintForbidden {
 	return &DeleteDefaultConstraintForbidden{}
 }
 
-/* DeleteDefaultConstraintForbidden describes a response with status code 403, with default header values.
+/*
+DeleteDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteDefaultConstraintDefault(code int) *DeleteDefaultConstraintDefault
 	}
 }
 
-/* DeleteDefaultConstraintDefault describes a response with status code -1, with default header values.
+/*
+DeleteDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

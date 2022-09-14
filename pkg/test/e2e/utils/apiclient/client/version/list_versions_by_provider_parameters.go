@@ -52,10 +52,12 @@ func NewListVersionsByProviderParamsWithHTTPClient(client *http.Client) *ListVer
 	}
 }
 
-/* ListVersionsByProviderParams contains all the parameters to send to the API endpoint
-   for the list versions by provider operation.
+/*
+ListVersionsByProviderParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list versions by provider operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVersionsByProviderParams struct {
 

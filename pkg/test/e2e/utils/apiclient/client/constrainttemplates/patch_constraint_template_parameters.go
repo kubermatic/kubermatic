@@ -52,10 +52,12 @@ func NewPatchConstraintTemplateParamsWithHTTPClient(client *http.Client) *PatchC
 	}
 }
 
-/* PatchConstraintTemplateParams contains all the parameters to send to the API endpoint
-   for the patch constraint template operation.
+/*
+PatchConstraintTemplateParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch constraint template operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchConstraintTemplateParams struct {
 

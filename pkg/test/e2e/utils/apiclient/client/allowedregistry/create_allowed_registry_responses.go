@@ -58,7 +58,8 @@ func NewCreateAllowedRegistryCreated() *CreateAllowedRegistryCreated {
 	return &CreateAllowedRegistryCreated{}
 }
 
-/* CreateAllowedRegistryCreated describes a response with status code 201, with default header values.
+/*
+CreateAllowedRegistryCreated describes a response with status code 201, with default header values.
 
 AllowedRegistry
 */
@@ -120,7 +121,8 @@ func NewCreateAllowedRegistryUnauthorized() *CreateAllowedRegistryUnauthorized {
 	return &CreateAllowedRegistryUnauthorized{}
 }
 
-/* CreateAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateAllowedRegistryForbidden() *CreateAllowedRegistryForbidden {
 	return &CreateAllowedRegistryForbidden{}
 }
 
-/* CreateAllowedRegistryForbidden describes a response with status code 403, with default header values.
+/*
+CreateAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateAllowedRegistryDefault(code int) *CreateAllowedRegistryDefault {
 	}
 }
 
-/* CreateAllowedRegistryDefault describes a response with status code -1, with default header values.
+/*
+CreateAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

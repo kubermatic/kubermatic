@@ -52,10 +52,12 @@ func NewListAKSNodePoolModesParamsWithHTTPClient(client *http.Client) *ListAKSNo
 	}
 }
 
-/* ListAKSNodePoolModesParams contains all the parameters to send to the API endpoint
-   for the list a k s node pool modes operation.
+/*
+ListAKSNodePoolModesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s node pool modes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSNodePoolModesParams struct {
 	timeout    time.Duration

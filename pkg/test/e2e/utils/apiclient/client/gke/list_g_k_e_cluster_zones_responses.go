@@ -58,7 +58,8 @@ func NewListGKEClusterZonesOK() *ListGKEClusterZonesOK {
 	return &ListGKEClusterZonesOK{}
 }
 
-/* ListGKEClusterZonesOK describes a response with status code 200, with default header values.
+/*
+ListGKEClusterZonesOK describes a response with status code 200, with default header values.
 
 GKEZoneList
 */
@@ -118,7 +119,8 @@ func NewListGKEClusterZonesUnauthorized() *ListGKEClusterZonesUnauthorized {
 	return &ListGKEClusterZonesUnauthorized{}
 }
 
-/* ListGKEClusterZonesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListGKEClusterZonesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListGKEClusterZonesForbidden() *ListGKEClusterZonesForbidden {
 	return &ListGKEClusterZonesForbidden{}
 }
 
-/* ListGKEClusterZonesForbidden describes a response with status code 403, with default header values.
+/*
+ListGKEClusterZonesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListGKEClusterZonesDefault(code int) *ListGKEClusterZonesDefault {
 	}
 }
 
-/* ListGKEClusterZonesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClusterZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

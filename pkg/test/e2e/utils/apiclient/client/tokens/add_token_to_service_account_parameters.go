@@ -54,10 +54,12 @@ func NewAddTokenToServiceAccountParamsWithHTTPClient(client *http.Client) *AddTo
 	}
 }
 
-/* AddTokenToServiceAccountParams contains all the parameters to send to the API endpoint
-   for the add token to service account operation.
+/*
+AddTokenToServiceAccountParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add token to service account operation.
+
+	Typically these are written to a http.Request.
 */
 type AddTokenToServiceAccountParams struct {
 

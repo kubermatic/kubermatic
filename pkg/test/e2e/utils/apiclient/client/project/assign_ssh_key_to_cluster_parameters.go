@@ -52,10 +52,12 @@ func NewAssignSSHKeyToClusterParamsWithHTTPClient(client *http.Client) *AssignSS
 	}
 }
 
-/* AssignSSHKeyToClusterParams contains all the parameters to send to the API endpoint
-   for the assign SSH key to cluster operation.
+/*
+AssignSSHKeyToClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the assign SSH key to cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type AssignSSHKeyToClusterParams struct {
 

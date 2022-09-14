@@ -58,7 +58,8 @@ func NewListSSHKeysAssignedToClusterOK() *ListSSHKeysAssignedToClusterOK {
 	return &ListSSHKeysAssignedToClusterOK{}
 }
 
-/* ListSSHKeysAssignedToClusterOK describes a response with status code 200, with default header values.
+/*
+ListSSHKeysAssignedToClusterOK describes a response with status code 200, with default header values.
 
 SSHKey
 */
@@ -118,7 +119,8 @@ func NewListSSHKeysAssignedToClusterUnauthorized() *ListSSHKeysAssignedToCluster
 	return &ListSSHKeysAssignedToClusterUnauthorized{}
 }
 
-/* ListSSHKeysAssignedToClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+ListSSHKeysAssignedToClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListSSHKeysAssignedToClusterForbidden() *ListSSHKeysAssignedToClusterFor
 	return &ListSSHKeysAssignedToClusterForbidden{}
 }
 
-/* ListSSHKeysAssignedToClusterForbidden describes a response with status code 403, with default header values.
+/*
+ListSSHKeysAssignedToClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListSSHKeysAssignedToClusterDefault(code int) *ListSSHKeysAssignedToClus
 	}
 }
 
-/* ListSSHKeysAssignedToClusterDefault describes a response with status code -1, with default header values.
+/*
+ListSSHKeysAssignedToClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListOpenstackSubnetPoolsOK() *ListOpenstackSubnetPoolsOK {
 	return &ListOpenstackSubnetPoolsOK{}
 }
 
-/* ListOpenstackSubnetPoolsOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSubnetPoolsOK describes a response with status code 200, with default header values.
 
 OpenstackSubnetPool
 */
@@ -108,7 +109,8 @@ func NewListOpenstackSubnetPoolsDefault(code int) *ListOpenstackSubnetPoolsDefau
 	}
 }
 
-/* ListOpenstackSubnetPoolsDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackSubnetPoolsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

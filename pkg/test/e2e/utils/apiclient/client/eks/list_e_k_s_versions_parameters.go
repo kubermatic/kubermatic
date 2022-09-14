@@ -52,10 +52,12 @@ func NewListEKSVersionsParamsWithHTTPClient(client *http.Client) *ListEKSVersion
 	}
 }
 
-/* ListEKSVersionsParams contains all the parameters to send to the API endpoint
-   for the list e k s versions operation.
+/*
+ListEKSVersionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s versions operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSVersionsParams struct {
 	timeout    time.Duration

@@ -46,7 +46,8 @@ func NewListAlibabaZonesOK() *ListAlibabaZonesOK {
 	return &ListAlibabaZonesOK{}
 }
 
-/* ListAlibabaZonesOK describes a response with status code 200, with default header values.
+/*
+ListAlibabaZonesOK describes a response with status code 200, with default header values.
 
 AlibabaZoneList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaZonesDefault(code int) *ListAlibabaZonesDefault {
 	}
 }
 
-/* ListAlibabaZonesDefault describes a response with status code -1, with default header values.
+/*
+ListAlibabaZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewListAWSSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *List
 	}
 }
 
-/* ListAWSSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list a w s sizes no credentials operation.
+/*
+ListAWSSizesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a w s sizes no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAWSSizesNoCredentialsParams struct {
 

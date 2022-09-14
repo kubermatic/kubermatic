@@ -46,7 +46,8 @@ func NewListCredentialsOK() *ListCredentialsOK {
 	return &ListCredentialsOK{}
 }
 
-/* ListCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListCredentialsOK describes a response with status code 200, with default header values.
 
 CredentialList
 */
@@ -110,7 +111,8 @@ func NewListCredentialsDefault(code int) *ListCredentialsDefault {
 	}
 }
 
-/* ListCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

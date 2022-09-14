@@ -52,10 +52,12 @@ func NewLogoutCurrentUserParamsWithHTTPClient(client *http.Client) *LogoutCurren
 	}
 }
 
-/* LogoutCurrentUserParams contains all the parameters to send to the API endpoint
-   for the logout current user operation.
+/*
+LogoutCurrentUserParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the logout current user operation.
+
+	Typically these are written to a http.Request.
 */
 type LogoutCurrentUserParams struct {
 	timeout    time.Duration

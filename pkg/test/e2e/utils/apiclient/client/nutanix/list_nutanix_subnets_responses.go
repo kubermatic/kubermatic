@@ -46,7 +46,8 @@ func NewListNutanixSubnetsOK() *ListNutanixSubnetsOK {
 	return &ListNutanixSubnetsOK{}
 }
 
-/* ListNutanixSubnetsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixSubnetsOK describes a response with status code 200, with default header values.
 
 NutanixSubnetList
 */
@@ -108,7 +109,8 @@ func NewListNutanixSubnetsDefault(code int) *ListNutanixSubnetsDefault {
 	}
 }
 
-/* ListNutanixSubnetsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

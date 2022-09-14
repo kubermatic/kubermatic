@@ -46,7 +46,8 @@ func NewListGKEClustersOK() *ListGKEClustersOK {
 	return &ListGKEClustersOK{}
 }
 
-/* ListGKEClustersOK describes a response with status code 200, with default header values.
+/*
+ListGKEClustersOK describes a response with status code 200, with default header values.
 
 GKEClusterList
 */
@@ -108,7 +109,8 @@ func NewListGKEClustersDefault(code int) *ListGKEClustersDefault {
 	}
 }
 
-/* ListGKEClustersDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

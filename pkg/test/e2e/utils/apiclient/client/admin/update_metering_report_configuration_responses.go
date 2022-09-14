@@ -60,12 +60,12 @@ func NewUpdateMeteringReportConfigurationOK() *UpdateMeteringReportConfiguration
 	return &UpdateMeteringReportConfigurationOK{}
 }
 
-/* UpdateMeteringReportConfigurationOK describes a response with status code 200, with default header values.
+/*
+UpdateMeteringReportConfigurationOK describes a response with status code 200, with default header values.
 
-MeteringReportConfiguration
+EmptyResponse is a empty response
 */
 type UpdateMeteringReportConfigurationOK struct {
-	Payload *models.MeteringReportConfiguration
 }
 
 // IsSuccess returns true when this update metering report configuration o k response has a 2xx status code
@@ -94,25 +94,14 @@ func (o *UpdateMeteringReportConfigurationOK) IsCode(code int) bool {
 }
 
 func (o *UpdateMeteringReportConfigurationOK) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
 }
 
 func (o *UpdateMeteringReportConfigurationOK) String() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK  %+v", 200, o.Payload)
-}
-
-func (o *UpdateMeteringReportConfigurationOK) GetPayload() *models.MeteringReportConfiguration {
-	return o.Payload
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
 }
 
 func (o *UpdateMeteringReportConfigurationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.MeteringReportConfiguration)
-
-	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
-		return err
-	}
 
 	return nil
 }
@@ -122,7 +111,8 @@ func NewUpdateMeteringReportConfigurationUnauthorized() *UpdateMeteringReportCon
 	return &UpdateMeteringReportConfigurationUnauthorized{}
 }
 
-/* UpdateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -172,7 +162,8 @@ func NewUpdateMeteringReportConfigurationForbidden() *UpdateMeteringReportConfig
 	return &UpdateMeteringReportConfigurationForbidden{}
 }
 
-/* UpdateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
+/*
+UpdateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -224,7 +215,8 @@ func NewUpdateMeteringReportConfigurationDefault(code int) *UpdateMeteringReport
 	}
 }
 
-/* UpdateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
+/*
+UpdateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -288,7 +280,8 @@ func (o *UpdateMeteringReportConfigurationDefault) readResponse(response runtime
 	return nil
 }
 
-/*UpdateMeteringReportConfigurationBody update metering report configuration body
+/*
+UpdateMeteringReportConfigurationBody update metering report configuration body
 swagger:model UpdateMeteringReportConfigurationBody
 */
 type UpdateMeteringReportConfigurationBody struct {

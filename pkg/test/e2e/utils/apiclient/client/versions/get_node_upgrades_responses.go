@@ -58,7 +58,8 @@ func NewGetNodeUpgradesOK() *GetNodeUpgradesOK {
 	return &GetNodeUpgradesOK{}
 }
 
-/* GetNodeUpgradesOK describes a response with status code 200, with default header values.
+/*
+GetNodeUpgradesOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -118,7 +119,8 @@ func NewGetNodeUpgradesUnauthorized() *GetNodeUpgradesUnauthorized {
 	return &GetNodeUpgradesUnauthorized{}
 }
 
-/* GetNodeUpgradesUnauthorized describes a response with status code 401, with default header values.
+/*
+GetNodeUpgradesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetNodeUpgradesForbidden() *GetNodeUpgradesForbidden {
 	return &GetNodeUpgradesForbidden{}
 }
 
-/* GetNodeUpgradesForbidden describes a response with status code 403, with default header values.
+/*
+GetNodeUpgradesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetNodeUpgradesDefault(code int) *GetNodeUpgradesDefault {
 	}
 }
 
-/* GetNodeUpgradesDefault describes a response with status code -1, with default header values.
+/*
+GetNodeUpgradesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

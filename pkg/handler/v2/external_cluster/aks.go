@@ -52,41 +52,6 @@ const (
 	AgentPoolModeSystem = "System"
 )
 
-// AKSTypesReq represent a request for AKS types.
-// swagger:parameters validateAKSCredentials
-type AKSTypesReq struct {
-	AKSCommonReq
-}
-
-// AKSCommonReq represent a request with common parameters for AKS.
-type AKSCommonReq struct {
-	// in: header
-	// name: TenantID
-	TenantID string
-	// in: header
-	// name: SubscriptionID
-	SubscriptionID string
-	// in: header
-	// name: ClientID
-	ClientID string
-	// in: header
-	// name: ClientSecret
-	ClientSecret string
-	// in: header
-	// name: Credential
-	Credential string
-}
-
-// AKSVMSizesReq represent a request for AKS VM Sizes list.
-// swagger:parameters listAKSVMSizes
-type AKSVMSizesReq struct {
-	AKSTypesReq
-	// Location - Resource location
-	// in: header
-	// name: Location
-	Location string
-}
-
 // aksNoCredentialReq represent a request for AKS resources
 // swagger:parameters listAKSVMSizesNoCredentials
 type aksNoCredentialReq struct {
@@ -95,6 +60,12 @@ type aksNoCredentialReq struct {
 	// in: header
 	// name: Location
 	Location string
+}
+
+// AKSTypesReq represent a request for AKS types.
+// swagger:parameters validateAKSCredentials
+type AKSTypesReq struct {
+	AKSCommonReq
 }
 
 func DecodeAKSTypesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -106,6 +77,16 @@ func DecodeAKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	}
 	req.AKSCommonReq = commonReq.(AKSCommonReq)
 	return req, nil
+}
+
+// AKSVMSizesReq represent a request for AKS VM Sizes list.
+// swagger:parameters listAKSVMSizes
+type AKSVMSizesReq struct {
+	AKSTypesReq
+	// Location - Resource location
+	// in: header
+	// name: Location
+	Location string
 }
 
 func DecodeAKSVMSizesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -158,6 +139,26 @@ func (req AKSVMSizesReq) Validate() error {
 	return nil
 }
 
+// AKSCommonReq represent a request with common parameters for AKS.
+// swagger:parameters listAKSResourceGroups listAKSLocations
+type AKSCommonReq struct {
+	// in: header
+	// name: TenantID
+	TenantID string
+	// in: header
+	// name: SubscriptionID
+	SubscriptionID string
+	// in: header
+	// name: ClientID
+	ClientID string
+	// in: header
+	// name: ClientSecret
+	ClientSecret string
+	// in: header
+	// name: Credential
+	Credential string
+}
+
 func DecodeAKSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AKSCommonReq
 
@@ -168,6 +169,13 @@ func DecodeAKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
+}
+
+// AKSClusterListReq represent a request for AKS cluster list.
+// swagger:parameters listAKSClusters
+type AKSClusterListReq struct {
+	common.ProjectReq
+	AKSCommonReq
 }
 
 func DecodeAKSClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -185,13 +193,6 @@ func DecodeAKSClusterListReq(c context.Context, r *http.Request) (interface{}, e
 	req.ProjectReq = pr.(common.ProjectReq)
 
 	return req, nil
-}
-
-// AKSClusterListReq represent a request for AKS cluster list.
-// swagger:parameters listAKSClusters
-type AKSClusterListReq struct {
-	common.ProjectReq
-	AKSCommonReq
 }
 
 func ListAKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
@@ -300,6 +301,10 @@ func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err

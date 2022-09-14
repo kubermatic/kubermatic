@@ -564,10 +564,7 @@
         ],
         "responses": {
           "200": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -636,10 +633,7 @@
         ],
         "responses": {
           "201": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -14936,7 +14930,10 @@
           "200": {
             "description": "PacketSizeList",
             "schema": {
-              "$ref": "#/definitions/PacketSizeList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
+              }
             }
           },
           "default": {
@@ -18070,6 +18067,54 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/noderoles": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS Node IAM Roles.",
+        "operationId": "listEKSNodeRolesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSNodeRoleList",
+            "schema": {
+              "$ref": "#/definitions/EKSNodeRoleList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets": {
       "get": {
         "produces": [
@@ -18627,6 +18672,33 @@
         ],
         "summary": "List AKS recommended Locations.",
         "operationId": "listAKSLocations",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AKSLocationList",
@@ -18685,6 +18757,33 @@
         ],
         "summary": "List resource groups in an Azure subscription.",
         "operationId": "listAKSResourceGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AzureResourceGroupList",
@@ -19159,43 +19258,28 @@
         ],
         "summary": "List EKS Cluster Service Roles.",
         "operationId": "listEKSClusterRoles",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSClusterRoleList",
             "schema": {
               "$ref": "#/definitions/EKSClusterRoleList"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/eks/noderoles": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "eks"
-        ],
-        "summary": "List EKS Node IAM Roles.",
-        "operationId": "listEKSNodeRoles",
-        "responses": {
-          "200": {
-            "description": "EKSNodeRoleList",
-            "schema": {
-              "$ref": "#/definitions/EKSNodeRoleList"
             }
           },
           "401": {
@@ -19223,11 +19307,31 @@
         ],
         "summary": "List EKS regions.",
         "operationId": "listEKSRegions",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSRegionList",
             "schema": {
-              "$ref": "#/definitions/EKSRegionList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSRegionList"
+              }
             }
           },
           "401": {
@@ -19489,6 +19593,26 @@
         ],
         "summary": "Gets GKE machine disk types.",
         "operationId": "listGKEDiskTypes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "GKEDiskTypeList",
@@ -19705,6 +19829,20 @@
           "gke"
         ],
         "operationId": "listGKEZones",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "GKEZoneList",
@@ -20483,7 +20621,10 @@
           "200": {
             "description": "VSphereDatastoreList",
             "schema": {
-              "$ref": "#/definitions/VSphereDatastoreList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereDatastoreList"
+              }
             }
           },
           "default": {

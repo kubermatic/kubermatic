@@ -46,7 +46,8 @@ func NewListAWSSizesNoCredentialsV2OK() *ListAWSSizesNoCredentialsV2OK {
 	return &ListAWSSizesNoCredentialsV2OK{}
 }
 
-/* ListAWSSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAWSSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AWSSizeList
 */
@@ -108,7 +109,8 @@ func NewListAWSSizesNoCredentialsV2Default(code int) *ListAWSSizesNoCredentialsV
 	}
 }
 
-/* ListAWSSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAWSSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

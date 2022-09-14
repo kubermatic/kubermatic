@@ -52,10 +52,12 @@ func NewListGKEVMSizesParamsWithHTTPClient(client *http.Client) *ListGKEVMSizesP
 	}
 }
 
-/* ListGKEVMSizesParams contains all the parameters to send to the API endpoint
-   for the list g k e VM sizes operation.
+/*
+ListGKEVMSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e VM sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEVMSizesParams struct {
 

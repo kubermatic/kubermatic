@@ -58,7 +58,8 @@ func NewPutResourceQuotaOK() *PutResourceQuotaOK {
 	return &PutResourceQuotaOK{}
 }
 
-/* PutResourceQuotaOK describes a response with status code 200, with default header values.
+/*
+PutResourceQuotaOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewPutResourceQuotaUnauthorized() *PutResourceQuotaUnauthorized {
 	return &PutResourceQuotaUnauthorized{}
 }
 
-/* PutResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+PutResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewPutResourceQuotaForbidden() *PutResourceQuotaForbidden {
 	return &PutResourceQuotaForbidden{}
 }
 
-/* PutResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+PutResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewPutResourceQuotaDefault(code int) *PutResourceQuotaDefault {
 	}
 }
 
-/* PutResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+PutResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

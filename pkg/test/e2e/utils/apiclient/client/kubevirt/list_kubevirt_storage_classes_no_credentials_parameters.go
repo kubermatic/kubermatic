@@ -52,10 +52,12 @@ func NewListKubevirtStorageClassesNoCredentialsParamsWithHTTPClient(client *http
 	}
 }
 
-/* ListKubevirtStorageClassesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list kubevirt storage classes no credentials operation.
+/*
+ListKubevirtStorageClassesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list kubevirt storage classes no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListKubevirtStorageClassesNoCredentialsParams struct {
 

@@ -52,10 +52,12 @@ func NewPatchAllowedRegistryParamsWithHTTPClient(client *http.Client) *PatchAllo
 	}
 }
 
-/* PatchAllowedRegistryParams contains all the parameters to send to the API endpoint
-   for the patch allowed registry operation.
+/*
+PatchAllowedRegistryParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch allowed registry operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchAllowedRegistryParams struct {
 

@@ -54,10 +54,12 @@ func NewCreateIPAMPoolParamsWithHTTPClient(client *http.Client) *CreateIPAMPoolP
 	}
 }
 
-/* CreateIPAMPoolParams contains all the parameters to send to the API endpoint
-   for the create IP a m pool operation.
+/*
+CreateIPAMPoolParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create IP a m pool operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateIPAMPoolParams struct {
 

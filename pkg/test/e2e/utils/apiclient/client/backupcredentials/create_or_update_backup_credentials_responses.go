@@ -58,7 +58,8 @@ func NewCreateOrUpdateBackupCredentialsOK() *CreateOrUpdateBackupCredentialsOK {
 	return &CreateOrUpdateBackupCredentialsOK{}
 }
 
-/* CreateOrUpdateBackupCredentialsOK describes a response with status code 200, with default header values.
+/*
+CreateOrUpdateBackupCredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewCreateOrUpdateBackupCredentialsUnauthorized() *CreateOrUpdateBackupCrede
 	return &CreateOrUpdateBackupCredentialsUnauthorized{}
 }
 
-/* CreateOrUpdateBackupCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateOrUpdateBackupCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewCreateOrUpdateBackupCredentialsForbidden() *CreateOrUpdateBackupCredenti
 	return &CreateOrUpdateBackupCredentialsForbidden{}
 }
 
-/* CreateOrUpdateBackupCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+CreateOrUpdateBackupCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewCreateOrUpdateBackupCredentialsDefault(code int) *CreateOrUpdateBackupCr
 	}
 }
 
-/* CreateOrUpdateBackupCredentialsDefault describes a response with status code -1, with default header values.
+/*
+CreateOrUpdateBackupCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

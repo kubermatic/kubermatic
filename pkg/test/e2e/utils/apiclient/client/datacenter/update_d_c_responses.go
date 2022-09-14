@@ -61,7 +61,8 @@ func NewUpdateDCOK() *UpdateDCOK {
 	return &UpdateDCOK{}
 }
 
-/* UpdateDCOK describes a response with status code 200, with default header values.
+/*
+UpdateDCOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -123,7 +124,8 @@ func NewUpdateDCUnauthorized() *UpdateDCUnauthorized {
 	return &UpdateDCUnauthorized{}
 }
 
-/* UpdateDCUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -173,7 +175,8 @@ func NewUpdateDCForbidden() *UpdateDCForbidden {
 	return &UpdateDCForbidden{}
 }
 
-/* UpdateDCForbidden describes a response with status code 403, with default header values.
+/*
+UpdateDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -225,7 +228,8 @@ func NewUpdateDCDefault(code int) *UpdateDCDefault {
 	}
 }
 
-/* UpdateDCDefault describes a response with status code -1, with default header values.
+/*
+UpdateDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -289,7 +293,8 @@ func (o *UpdateDCDefault) readResponse(response runtime.ClientResponse, consumer
 	return nil
 }
 
-/*UpdateDCBody update d c body
+/*
+UpdateDCBody update d c body
 swagger:model UpdateDCBody
 */
 type UpdateDCBody struct {

@@ -239,7 +239,7 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 
 	cluster := scenario.APICluster(c.opts.Secrets)
 	// The cluster name must be unique per project;
-	// we build up a readable name with the various cli parameters annd
+	// we build up a readable name with the various cli parameters and
 	// add a random string in the end to ensure we really have a unique name.
 	if c.opts.NamePrefix != "" {
 		cluster.Cluster.Name = c.opts.NamePrefix + "-"

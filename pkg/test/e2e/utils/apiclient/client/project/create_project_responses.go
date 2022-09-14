@@ -60,7 +60,8 @@ func NewCreateProjectCreated() *CreateProjectCreated {
 	return &CreateProjectCreated{}
 }
 
-/* CreateProjectCreated describes a response with status code 201, with default header values.
+/*
+CreateProjectCreated describes a response with status code 201, with default header values.
 
 Project
 */
@@ -122,7 +123,8 @@ func NewCreateProjectUnauthorized() *CreateProjectUnauthorized {
 	return &CreateProjectUnauthorized{}
 }
 
-/* CreateProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -172,7 +174,8 @@ func NewCreateProjectConflict() *CreateProjectConflict {
 	return &CreateProjectConflict{}
 }
 
-/* CreateProjectConflict describes a response with status code 409, with default header values.
+/*
+CreateProjectConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -224,7 +227,8 @@ func NewCreateProjectDefault(code int) *CreateProjectDefault {
 	}
 }
 
-/* CreateProjectDefault describes a response with status code -1, with default header values.
+/*
+CreateProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -288,7 +292,8 @@ func (o *CreateProjectDefault) readResponse(response runtime.ClientResponse, con
 	return nil
 }
 
-/*CreateProjectBody create project body
+/*
+CreateProjectBody create project body
 swagger:model CreateProjectBody
 */
 type CreateProjectBody struct {

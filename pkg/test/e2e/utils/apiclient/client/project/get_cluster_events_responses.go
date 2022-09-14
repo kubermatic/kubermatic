@@ -58,7 +58,8 @@ func NewGetClusterEventsOK() *GetClusterEventsOK {
 	return &GetClusterEventsOK{}
 }
 
-/* GetClusterEventsOK describes a response with status code 200, with default header values.
+/*
+GetClusterEventsOK describes a response with status code 200, with default header values.
 
 Event
 */
@@ -118,7 +119,8 @@ func NewGetClusterEventsUnauthorized() *GetClusterEventsUnauthorized {
 	return &GetClusterEventsUnauthorized{}
 }
 
-/* GetClusterEventsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterEventsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetClusterEventsForbidden() *GetClusterEventsForbidden {
 	return &GetClusterEventsForbidden{}
 }
 
-/* GetClusterEventsForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterEventsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetClusterEventsDefault(code int) *GetClusterEventsDefault {
 	}
 }
 
-/* GetClusterEventsDefault describes a response with status code -1, with default header values.
+/*
+GetClusterEventsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

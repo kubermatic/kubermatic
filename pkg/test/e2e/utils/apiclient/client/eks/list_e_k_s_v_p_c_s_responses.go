@@ -46,7 +46,8 @@ func NewListEKSVPCSOK() *ListEKSVPCSOK {
 	return &ListEKSVPCSOK{}
 }
 
-/* ListEKSVPCSOK describes a response with status code 200, with default header values.
+/*
+ListEKSVPCSOK describes a response with status code 200, with default header values.
 
 EKSVPCList
 */
@@ -108,7 +109,8 @@ func NewListEKSVPCSDefault(code int) *ListEKSVPCSDefault {
 	}
 }
 
-/* ListEKSVPCSDefault describes a response with status code -1, with default header values.
+/*
+ListEKSVPCSDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

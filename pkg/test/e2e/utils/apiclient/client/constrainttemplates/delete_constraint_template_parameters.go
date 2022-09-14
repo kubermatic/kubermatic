@@ -52,10 +52,12 @@ func NewDeleteConstraintTemplateParamsWithHTTPClient(client *http.Client) *Delet
 	}
 }
 
-/* DeleteConstraintTemplateParams contains all the parameters to send to the API endpoint
-   for the delete constraint template operation.
+/*
+DeleteConstraintTemplateParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete constraint template operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteConstraintTemplateParams struct {
 

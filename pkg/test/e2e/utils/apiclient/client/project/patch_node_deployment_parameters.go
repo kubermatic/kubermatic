@@ -52,10 +52,12 @@ func NewPatchNodeDeploymentParamsWithHTTPClient(client *http.Client) *PatchNodeD
 	}
 }
 
-/* PatchNodeDeploymentParams contains all the parameters to send to the API endpoint
-   for the patch node deployment operation.
+/*
+PatchNodeDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch node deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchNodeDeploymentParams struct {
 

@@ -46,7 +46,8 @@ func NewListGCPSubnetworksNoCredentialsOK() *ListGCPSubnetworksNoCredentialsOK {
 	return &ListGCPSubnetworksNoCredentialsOK{}
 }
 
-/* ListGCPSubnetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPSubnetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPSubnetworkList
 */
@@ -108,7 +109,8 @@ func NewListGCPSubnetworksNoCredentialsDefault(code int) *ListGCPSubnetworksNoCr
 	}
 }
 
-/* ListGCPSubnetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSubnetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

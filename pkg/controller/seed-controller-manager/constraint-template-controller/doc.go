@@ -17,6 +17,5 @@ limitations under the License.
 /*
 Package constrainttemplatecontroller contains a controller that is responsible for ensuring that the
 kubermatic constraint templates are synced to the user cluster.
-
 */
 package constrainttemplatecontroller

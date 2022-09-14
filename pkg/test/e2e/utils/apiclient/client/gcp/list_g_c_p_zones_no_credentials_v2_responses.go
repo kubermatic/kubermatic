@@ -46,7 +46,8 @@ func NewListGCPZonesNoCredentialsV2OK() *ListGCPZonesNoCredentialsV2OK {
 	return &ListGCPZonesNoCredentialsV2OK{}
 }
 
-/* ListGCPZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListGCPZonesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 GCPZoneList
 */
@@ -108,7 +109,8 @@ func NewListGCPZonesNoCredentialsV2Default(code int) *ListGCPZonesNoCredentialsV
 	}
 }
 
-/* ListGCPZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListGCPZonesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewGetMeteringReportOK() *GetMeteringReportOK {
 	return &GetMeteringReportOK{}
 }
 
-/* GetMeteringReportOK describes a response with status code 200, with default header values.
+/*
+GetMeteringReportOK describes a response with status code 200, with default header values.
 
 MeteringReportURL
 */
@@ -118,7 +119,8 @@ func NewGetMeteringReportUnauthorized() *GetMeteringReportUnauthorized {
 	return &GetMeteringReportUnauthorized{}
 }
 
-/* GetMeteringReportUnauthorized describes a response with status code 401, with default header values.
+/*
+GetMeteringReportUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetMeteringReportForbidden() *GetMeteringReportForbidden {
 	return &GetMeteringReportForbidden{}
 }
 
-/* GetMeteringReportForbidden describes a response with status code 403, with default header values.
+/*
+GetMeteringReportForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetMeteringReportDefault(code int) *GetMeteringReportDefault {
 	}
 }
 
-/* GetMeteringReportDefault describes a response with status code -1, with default header values.
+/*
+GetMeteringReportDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

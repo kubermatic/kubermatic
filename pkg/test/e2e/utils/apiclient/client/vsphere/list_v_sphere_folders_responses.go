@@ -46,7 +46,8 @@ func NewListVSphereFoldersOK() *ListVSphereFoldersOK {
 	return &ListVSphereFoldersOK{}
 }
 
-/* ListVSphereFoldersOK describes a response with status code 200, with default header values.
+/*
+ListVSphereFoldersOK describes a response with status code 200, with default header values.
 
 VSphereFolder
 */
@@ -108,7 +109,8 @@ func NewListVSphereFoldersDefault(code int) *ListVSphereFoldersDefault {
 	}
 }
 
-/* ListVSphereFoldersDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereFoldersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

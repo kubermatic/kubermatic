@@ -52,10 +52,12 @@ func NewGetAdminRuleGroupParamsWithHTTPClient(client *http.Client) *GetAdminRule
 	}
 }
 
-/* GetAdminRuleGroupParams contains all the parameters to send to the API endpoint
-   for the get admin rule group operation.
+/*
+GetAdminRuleGroupParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get admin rule group operation.
+
+	Typically these are written to a http.Request.
 */
 type GetAdminRuleGroupParams struct {
 

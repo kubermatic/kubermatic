@@ -46,7 +46,8 @@ func NewListOpenstackAvailabilityZonesOK() *ListOpenstackAvailabilityZonesOK {
 	return &ListOpenstackAvailabilityZonesOK{}
 }
 
-/* ListOpenstackAvailabilityZonesOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackAvailabilityZonesOK describes a response with status code 200, with default header values.
 
 OpenstackAvailabilityZone
 */
@@ -108,7 +109,8 @@ func NewListOpenstackAvailabilityZonesDefault(code int) *ListOpenstackAvailabili
 	}
 }
 
-/* ListOpenstackAvailabilityZonesDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackAvailabilityZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListNutanixSubnetsNoCredentialsOK() *ListNutanixSubnetsNoCredentialsOK {
 	return &ListNutanixSubnetsNoCredentialsOK{}
 }
 
-/* ListNutanixSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 NutanixSubnetList
 */
@@ -108,7 +109,8 @@ func NewListNutanixSubnetsNoCredentialsDefault(code int) *ListNutanixSubnetsNoCr
 	}
 }
 
-/* ListNutanixSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

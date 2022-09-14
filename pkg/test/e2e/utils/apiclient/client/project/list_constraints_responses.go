@@ -58,7 +58,8 @@ func NewListConstraintsOK() *ListConstraintsOK {
 	return &ListConstraintsOK{}
 }
 
-/* ListConstraintsOK describes a response with status code 200, with default header values.
+/*
+ListConstraintsOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -118,7 +119,8 @@ func NewListConstraintsUnauthorized() *ListConstraintsUnauthorized {
 	return &ListConstraintsUnauthorized{}
 }
 
-/* ListConstraintsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListConstraintsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListConstraintsForbidden() *ListConstraintsForbidden {
 	return &ListConstraintsForbidden{}
 }
 
-/* ListConstraintsForbidden describes a response with status code 403, with default header values.
+/*
+ListConstraintsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListConstraintsDefault(code int) *ListConstraintsDefault {
 	}
 }
 
-/* ListConstraintsDefault describes a response with status code -1, with default header values.
+/*
+ListConstraintsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

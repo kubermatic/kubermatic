@@ -138,16 +138,16 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
 //
-//     Gets the global settings.
+//	Gets the global settings.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GlobalSettings
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: GlobalSettings
+//	  401: empty
+//	  403: empty
 func (r Routing) getKubermaticSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -162,16 +162,16 @@ func (r Routing) getKubermaticSettings() http.Handler {
 
 // swagger:route GET /api/v1/admin/settings/customlinks admin getKubermaticCustomLinks
 //
-//     Gets the custom links.
+//	Gets the custom links.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GlobalCustomLinks
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: GlobalCustomLinks
+//	  401: empty
+//	  403: empty
 func (r Routing) getKubermaticCustomLinks() http.Handler {
 	return httptransport.NewServer(
 		admin.KubermaticCustomLinksEndpoint(r.settingsProvider),
@@ -183,16 +183,16 @@ func (r Routing) getKubermaticCustomLinks() http.Handler {
 
 // swagger:route PATCH /api/v1/admin/settings admin patchKubermaticSettings
 //
-//     Patches the global settings.
+//	Patches the global settings.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: GlobalSettings
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: GlobalSettings
+//	  401: empty
+//	  403: empty
 func (r Routing) patchKubermaticSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -207,16 +207,16 @@ func (r Routing) patchKubermaticSettings() http.Handler {
 
 // swagger:route GET /api/v1/admin admin getAdmins
 //
-//     Returns list of admin users.
+//	Returns list of admin users.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Admin
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Admin
+//	  401: empty
+//	  403: empty
 func (r Routing) getAdmins() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -231,20 +231,20 @@ func (r Routing) getAdmins() http.Handler {
 
 // swagger:route PUT /api/v1/admin admin setAdmin
 //
-//     Allows setting and clearing admin role for users.
+//	Allows setting and clearing admin role for users.
 //
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Admin
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Admin
+//	  401: empty
+//	  403: empty
 func (r Routing) setAdmin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -259,16 +259,16 @@ func (r Routing) setAdmin() http.Handler {
 
 // swagger:route GET /api/v1/admin/admission/plugins admin listAdmissionPlugins
 //
-//     Returns all admission plugins from the CRDs.
+//	Returns all admission plugins from the CRDs.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []AdmissionPlugin
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []AdmissionPlugin
+//	  401: empty
+//	  403: empty
 func (r Routing) listAdmissionPlugins() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -283,16 +283,16 @@ func (r Routing) listAdmissionPlugins() http.Handler {
 
 // swagger:route GET /api/v1/admin/admission/plugins/{name} admin getAdmissionPlugin
 //
-//     Gets the admission plugin.
+//	Gets the admission plugin.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AdmissionPlugin
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AdmissionPlugin
+//	  401: empty
+//	  403: empty
 func (r Routing) getAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -307,16 +307,16 @@ func (r Routing) getAdmissionPlugin() http.Handler {
 
 // swagger:route DELETE /api/v1/admin/admission/plugins/{name} admin deleteAdmissionPlugin
 //
-//     Deletes the admission plugin.
+//	Deletes the admission plugin.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -331,19 +331,19 @@ func (r Routing) deleteAdmissionPlugin() http.Handler {
 
 // swagger:route PATCH /api/v1/admin/admission/plugins/{name} admin updateAdmissionPlugin
 //
-//     Updates the admission plugin.
+//	Updates the admission plugin.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: AdmissionPlugin
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: AdmissionPlugin
+//	  401: empty
+//	  403: empty
 func (r Routing) updateAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -358,16 +358,16 @@ func (r Routing) updateAdmissionPlugin() http.Handler {
 
 // swagger:route POST /api/v1/admin/seeds admin createSeed
 //
-//     Creates a new seed object.
+//	Creates a new seed object.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Seed
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Seed
+//	  401: empty
+//	  403: empty
 func (r Routing) createSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -382,16 +382,16 @@ func (r Routing) createSeed() http.Handler {
 
 // swagger:route GET /api/v1/admin/seeds admin listSeeds
 //
-//     Returns all seeds from the CRDs.
+//	Returns all seeds from the CRDs.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []Seed
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []Seed
+//	  401: empty
+//	  403: empty
 func (r Routing) listSeeds() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -406,16 +406,16 @@ func (r Routing) listSeeds() http.Handler {
 
 // swagger:route GET /api/v1/admin/seeds/{seed_name} admin getSeed
 //
-//     Returns the seed object.
+//	Returns the seed object.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Seed
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Seed
+//	  401: empty
+//	  403: empty
 func (r Routing) getSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -430,19 +430,19 @@ func (r Routing) getSeed() http.Handler {
 
 // swagger:route PATCH /api/v1/admin/seeds/{seed_name} admin updateSeed
 //
-//     Updates the seed.
+//	Updates the seed.
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: Seed
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: Seed
+//	  401: empty
+//	  403: empty
 func (r Routing) updateSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -457,16 +457,16 @@ func (r Routing) updateSeed() http.Handler {
 
 // swagger:route DELETE /api/v1/admin/seeds/{seed_name} admin deleteSeed
 //
-//     Deletes the seed CRD object from the Kubermatic.
+//	Deletes the seed CRD object from the Kubermatic.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -481,16 +481,16 @@ func (r Routing) deleteSeed() http.Handler {
 
 // swagger:route DELETE /api/v1/admin/seeds/{seed_name}/backupdestinations/{backup_destination} admin deleteBackupDestination
 //
-//     Deletes a backup destination from the Seed.
+//	Deletes a backup destination from the Seed.
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) deleteBackupDestination() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -505,16 +505,16 @@ func (r Routing) deleteBackupDestination() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/credentials admin createOrUpdateMeteringCredentials
 //
-//     Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
+//	Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -529,16 +529,16 @@ func (r Routing) createOrUpdateMeteringCredentials() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/configurations admin createOrUpdateMeteringConfigurations
 //
-//     Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Configures KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -553,16 +553,16 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 
 // swagger:route GET /api/v1/admin/metering/configurations/reports/{name} admin getMeteringReportConfiguration
 //
-//     Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: MeteringReportConfiguration
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: MeteringReportConfiguration
+//	  401: empty
+//	  403: empty
 func (r Routing) GetMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -577,16 +577,16 @@ func (r Routing) GetMeteringReportConfiguration() http.Handler {
 
 // swagger:route GET /api/v1/admin/metering/configurations/reports admin listMeteringReportConfigurations
 //
-//     Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []MeteringReportConfiguration
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []MeteringReportConfiguration
+//	  401: empty
+//	  403: empty
 func (r Routing) ListMeteringReportConfigurations() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -601,19 +601,19 @@ func (r Routing) ListMeteringReportConfigurations() http.Handler {
 
 // swagger:route POST /api/v1/admin/metering/configurations/reports/{name} admin createMeteringReportConfiguration
 //
-//     Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       201: MeteringReportConfiguration
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  201: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -628,19 +628,19 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 
 // swagger:route PUT /api/v1/admin/metering/configurations/reports/{name} admin updateMeteringReportConfiguration
 //
-//     Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: MeteringReportConfiguration
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -655,16 +655,16 @@ func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 
 // swagger:route DELETE /api/v1/admin/metering/configurations/reports/{name} admin deleteMeteringReportConfiguration
 //
-//     Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//	Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
 func (r Routing) DeleteMeteringReportConfiguration() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -679,16 +679,16 @@ func (r Routing) DeleteMeteringReportConfiguration() http.Handler {
 
 // swagger:route GET /api/v1/admin/metering/reports metering reports listMeteringReports
 //
-//     List metering reports. Only available in Kubermatic Enterprise Edition
+//	List metering reports. Only available in Kubermatic Enterprise Edition
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: []MeteringReport
-//       401: empty
-//       403: empty
+//	Responses:
+//	  default: errorResponse
+//	  200: []MeteringReport
+//	  401: empty
+//	  403: empty
 func (r Routing) listMeteringReports() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -701,18 +701,19 @@ func (r Routing) listMeteringReports() http.Handler {
 	)
 }
 
-//swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
+// swagger:route GET /api/v1/admin/metering/reports/{report_name} metering report getMeteringReport
 //
-//    Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
+// Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
 //
-//    Produces:
-//    - application/json
+// Produces:
+// - application/json
 //
-//    Responses:
-//      default: errorResponse
-//      200: MeteringReportURL
-//      401: empty
-//      403: empty
+// Responses:
+//
+//	default: errorResponse
+//	200: MeteringReportURL
+//	401: empty
+//	403: empty
 func (r Routing) getMeteringReport() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -725,18 +726,19 @@ func (r Routing) getMeteringReport() http.Handler {
 	)
 }
 
-//swagger:route DELETE /api/v1/admin/metering/reports/{report_name} metering report deleteMeteringReport
+// swagger:route DELETE /api/v1/admin/metering/reports/{report_name} metering report deleteMeteringReport
 //
-//    Removes a specific metering report. Only available in Kubermatic Enterprise Edition
+// Removes a specific metering report. Only available in Kubermatic Enterprise Edition
 //
-//    Produces:
-//    - application/json
+// Produces:
+// - application/json
 //
-//    Responses:
-//      default: errorResponse
-//      200: empty
-//      401: empty
-//      403: empty
+// Responses:
+//
+//	default: errorResponse
+//	200: empty
+//	401: empty
+//	403: empty
 func (r Routing) deleteMeteringReport() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

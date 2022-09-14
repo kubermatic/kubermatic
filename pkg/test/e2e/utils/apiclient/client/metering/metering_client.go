@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  DeleteMeteringReport Removes a specific metering report. Only available in Kubermatic Enterprise Edition
+DeleteMeteringReport Removes a specific metering report. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) DeleteMeteringReport(params *DeleteMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) DeleteMeteringReport(params *DeleteMeteringReportParams, authIn
 }
 
 /*
-  GetMeteringReport Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
+GetMeteringReport Download a specific metering report. Provides an S3 pre signed URL valid for 1 hour. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) GetMeteringReport(params *GetMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) GetMeteringReport(params *GetMeteringReportParams, authInfo run
 }
 
 /*
-  ListMeteringReports List metering reports. Only available in Kubermatic Enterprise Edition
+ListMeteringReports List metering reports. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) ListMeteringReports(params *ListMeteringReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportsOK, error) {
 	// TODO: Validate the params before sending

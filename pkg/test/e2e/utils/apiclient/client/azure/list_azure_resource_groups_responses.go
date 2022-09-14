@@ -46,7 +46,8 @@ func NewListAzureResourceGroupsOK() *ListAzureResourceGroupsOK {
 	return &ListAzureResourceGroupsOK{}
 }
 
-/* ListAzureResourceGroupsOK describes a response with status code 200, with default header values.
+/*
+ListAzureResourceGroupsOK describes a response with status code 200, with default header values.
 
 AzureResourceGroupsList
 */
@@ -110,7 +111,8 @@ func NewListAzureResourceGroupsDefault(code int) *ListAzureResourceGroupsDefault
 	}
 }
 
-/* ListAzureResourceGroupsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureResourceGroupsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

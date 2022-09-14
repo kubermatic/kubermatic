@@ -52,10 +52,12 @@ func NewGetKubermaticVersionParamsWithHTTPClient(client *http.Client) *GetKuberm
 	}
 }
 
-/* GetKubermaticVersionParams contains all the parameters to send to the API endpoint
-   for the get kubermatic version operation.
+/*
+GetKubermaticVersionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get kubermatic version operation.
+
+	Typically these are written to a http.Request.
 */
 type GetKubermaticVersionParams struct {
 	timeout    time.Duration

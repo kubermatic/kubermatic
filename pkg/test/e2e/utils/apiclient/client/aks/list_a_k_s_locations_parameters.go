@@ -52,12 +52,30 @@ func NewListAKSLocationsParamsWithHTTPClient(client *http.Client) *ListAKSLocati
 	}
 }
 
-/* ListAKSLocationsParams contains all the parameters to send to the API endpoint
-   for the list a k s locations operation.
+/*
+ListAKSLocationsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s locations operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSLocationsParams struct {
+
+	// ClientID.
+	ClientID *string
+
+	// ClientSecret.
+	ClientSecret *string
+
+	// Credential.
+	Credential *string
+
+	// SubscriptionID.
+	SubscriptionID *string
+
+	// TenantID.
+	TenantID *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +129,61 @@ func (o *ListAKSLocationsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClientID adds the clientID to the list a k s locations params
+func (o *ListAKSLocationsParams) WithClientID(clientID *string) *ListAKSLocationsParams {
+	o.SetClientID(clientID)
+	return o
+}
+
+// SetClientID adds the clientId to the list a k s locations params
+func (o *ListAKSLocationsParams) SetClientID(clientID *string) {
+	o.ClientID = clientID
+}
+
+// WithClientSecret adds the clientSecret to the list a k s locations params
+func (o *ListAKSLocationsParams) WithClientSecret(clientSecret *string) *ListAKSLocationsParams {
+	o.SetClientSecret(clientSecret)
+	return o
+}
+
+// SetClientSecret adds the clientSecret to the list a k s locations params
+func (o *ListAKSLocationsParams) SetClientSecret(clientSecret *string) {
+	o.ClientSecret = clientSecret
+}
+
+// WithCredential adds the credential to the list a k s locations params
+func (o *ListAKSLocationsParams) WithCredential(credential *string) *ListAKSLocationsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list a k s locations params
+func (o *ListAKSLocationsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithSubscriptionID adds the subscriptionID to the list a k s locations params
+func (o *ListAKSLocationsParams) WithSubscriptionID(subscriptionID *string) *ListAKSLocationsParams {
+	o.SetSubscriptionID(subscriptionID)
+	return o
+}
+
+// SetSubscriptionID adds the subscriptionId to the list a k s locations params
+func (o *ListAKSLocationsParams) SetSubscriptionID(subscriptionID *string) {
+	o.SubscriptionID = subscriptionID
+}
+
+// WithTenantID adds the tenantID to the list a k s locations params
+func (o *ListAKSLocationsParams) WithTenantID(tenantID *string) *ListAKSLocationsParams {
+	o.SetTenantID(tenantID)
+	return o
+}
+
+// SetTenantID adds the tenantId to the list a k s locations params
+func (o *ListAKSLocationsParams) SetTenantID(tenantID *string) {
+	o.TenantID = tenantID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAKSLocationsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +191,46 @@ func (o *ListAKSLocationsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	if o.ClientID != nil {
+
+		// header param ClientID
+		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
+			return err
+		}
+	}
+
+	if o.ClientSecret != nil {
+
+		// header param ClientSecret
+		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.SubscriptionID != nil {
+
+		// header param SubscriptionID
+		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
+			return err
+		}
+	}
+
+	if o.TenantID != nil {
+
+		// header param TenantID
+		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

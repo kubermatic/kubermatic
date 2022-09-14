@@ -58,7 +58,8 @@ func NewDeleteDCOK() *DeleteDCOK {
 	return &DeleteDCOK{}
 }
 
-/* DeleteDCOK describes a response with status code 200, with default header values.
+/*
+DeleteDCOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteDCUnauthorized() *DeleteDCUnauthorized {
 	return &DeleteDCUnauthorized{}
 }
 
-/* DeleteDCUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteDCForbidden() *DeleteDCForbidden {
 	return &DeleteDCForbidden{}
 }
 
-/* DeleteDCForbidden describes a response with status code 403, with default header values.
+/*
+DeleteDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteDCDefault(code int) *DeleteDCDefault {
 	}
 }
 
-/* DeleteDCDefault describes a response with status code -1, with default header values.
+/*
+DeleteDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

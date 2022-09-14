@@ -58,7 +58,8 @@ func NewListIPAMPoolsOK() *ListIPAMPoolsOK {
 	return &ListIPAMPoolsOK{}
 }
 
-/* ListIPAMPoolsOK describes a response with status code 200, with default header values.
+/*
+ListIPAMPoolsOK describes a response with status code 200, with default header values.
 
 IPAMPool
 */
@@ -118,7 +119,8 @@ func NewListIPAMPoolsUnauthorized() *ListIPAMPoolsUnauthorized {
 	return &ListIPAMPoolsUnauthorized{}
 }
 
-/* ListIPAMPoolsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListIPAMPoolsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListIPAMPoolsForbidden() *ListIPAMPoolsForbidden {
 	return &ListIPAMPoolsForbidden{}
 }
 
-/* ListIPAMPoolsForbidden describes a response with status code 403, with default header values.
+/*
+ListIPAMPoolsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListIPAMPoolsDefault(code int) *ListIPAMPoolsDefault {
 	}
 }
 
-/* ListIPAMPoolsDefault describes a response with status code -1, with default header values.
+/*
+ListIPAMPoolsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

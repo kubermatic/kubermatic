@@ -58,7 +58,8 @@ func NewGetRoleOK() *GetRoleOK {
 	return &GetRoleOK{}
 }
 
-/* GetRoleOK describes a response with status code 200, with default header values.
+/*
+GetRoleOK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -120,7 +121,8 @@ func NewGetRoleUnauthorized() *GetRoleUnauthorized {
 	return &GetRoleUnauthorized{}
 }
 
-/* GetRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+GetRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetRoleForbidden() *GetRoleForbidden {
 	return &GetRoleForbidden{}
 }
 
-/* GetRoleForbidden describes a response with status code 403, with default header values.
+/*
+GetRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetRoleDefault(code int) *GetRoleDefault {
 	}
 }
 
-/* GetRoleDefault describes a response with status code -1, with default header values.
+/*
+GetRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

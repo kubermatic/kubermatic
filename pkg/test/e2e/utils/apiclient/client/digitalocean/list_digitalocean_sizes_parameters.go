@@ -52,10 +52,12 @@ func NewListDigitaloceanSizesParamsWithHTTPClient(client *http.Client) *ListDigi
 	}
 }
 
-/* ListDigitaloceanSizesParams contains all the parameters to send to the API endpoint
-   for the list digitalocean sizes operation.
+/*
+ListDigitaloceanSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list digitalocean sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListDigitaloceanSizesParams struct {
 

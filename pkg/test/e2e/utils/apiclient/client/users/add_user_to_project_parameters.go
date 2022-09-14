@@ -54,10 +54,12 @@ func NewAddUserToProjectParamsWithHTTPClient(client *http.Client) *AddUserToProj
 	}
 }
 
-/* AddUserToProjectParams contains all the parameters to send to the API endpoint
-   for the add user to project operation.
+/*
+AddUserToProjectParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add user to project operation.
+
+	Typically these are written to a http.Request.
 */
 type AddUserToProjectParams struct {
 

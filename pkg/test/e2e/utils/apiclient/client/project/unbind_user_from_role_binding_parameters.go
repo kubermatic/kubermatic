@@ -54,10 +54,12 @@ func NewUnbindUserFromRoleBindingParamsWithHTTPClient(client *http.Client) *Unbi
 	}
 }
 
-/* UnbindUserFromRoleBindingParams contains all the parameters to send to the API endpoint
-   for the unbind user from role binding operation.
+/*
+UnbindUserFromRoleBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the unbind user from role binding operation.
+
+	Typically these are written to a http.Request.
 */
 type UnbindUserFromRoleBindingParams struct {
 

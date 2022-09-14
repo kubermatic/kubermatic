@@ -52,10 +52,12 @@ func NewCreateOIDCKubeconfigParamsWithHTTPClient(client *http.Client) *CreateOID
 	}
 }
 
-/* CreateOIDCKubeconfigParams contains all the parameters to send to the API endpoint
-   for the create o ID c kubeconfig operation.
+/*
+CreateOIDCKubeconfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create o ID c kubeconfig operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateOIDCKubeconfigParams struct {
 

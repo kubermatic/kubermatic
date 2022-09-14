@@ -46,7 +46,8 @@ func NewListHetznerSizesOK() *ListHetznerSizesOK {
 	return &ListHetznerSizesOK{}
 }
 
-/* ListHetznerSizesOK describes a response with status code 200, with default header values.
+/*
+ListHetznerSizesOK describes a response with status code 200, with default header values.
 
 HetznerSizeList
 */
@@ -110,7 +111,8 @@ func NewListHetznerSizesDefault(code int) *ListHetznerSizesDefault {
 	}
 }
 
-/* ListHetznerSizesDefault describes a response with status code -1, with default header values.
+/*
+ListHetznerSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

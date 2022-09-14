@@ -58,7 +58,8 @@ func NewListAKSVMSizesNoCredentialsOK() *ListAKSVMSizesNoCredentialsOK {
 	return &ListAKSVMSizesNoCredentialsOK{}
 }
 
-/* ListAKSVMSizesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAKSVMSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AKSVMSizeList
 */
@@ -118,7 +119,8 @@ func NewListAKSVMSizesNoCredentialsUnauthorized() *ListAKSVMSizesNoCredentialsUn
 	return &ListAKSVMSizesNoCredentialsUnauthorized{}
 }
 
-/* ListAKSVMSizesNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAKSVMSizesNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListAKSVMSizesNoCredentialsForbidden() *ListAKSVMSizesNoCredentialsForbi
 	return &ListAKSVMSizesNoCredentialsForbidden{}
 }
 
-/* ListAKSVMSizesNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListAKSVMSizesNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListAKSVMSizesNoCredentialsDefault(code int) *ListAKSVMSizesNoCredential
 	}
 }
 
-/* ListAKSVMSizesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAKSVMSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

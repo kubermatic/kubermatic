@@ -44,7 +44,7 @@ type ClientService interface {
 }
 
 /*
-  CreateApplicationInstallation Creates ApplicationInstallation into the given cluster
+CreateApplicationInstallation Creates ApplicationInstallation into the given cluster
 */
 func (a *Client) CreateApplicationInstallation(params *CreateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateApplicationInstallationCreated, error) {
 	// TODO: Validate the params before sending
@@ -82,7 +82,7 @@ func (a *Client) CreateApplicationInstallation(params *CreateApplicationInstalla
 }
 
 /*
-  DeleteApplicationInstallation Deletes the given ApplicationInstallation
+DeleteApplicationInstallation Deletes the given ApplicationInstallation
 */
 func (a *Client) DeleteApplicationInstallation(params *DeleteApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteApplicationInstallationOK, error) {
 	// TODO: Validate the params before sending
@@ -120,7 +120,7 @@ func (a *Client) DeleteApplicationInstallation(params *DeleteApplicationInstalla
 }
 
 /*
-  GetApplicationInstallation Gets the given ApplicationInstallation
+GetApplicationInstallation Gets the given ApplicationInstallation
 */
 func (a *Client) GetApplicationInstallation(params *GetApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationInstallationOK, error) {
 	// TODO: Validate the params before sending
@@ -158,7 +158,7 @@ func (a *Client) GetApplicationInstallation(params *GetApplicationInstallationPa
 }
 
 /*
-  ListApplicationDefinitions List ApplicationDefinitions which are available in the KKP installation
+ListApplicationDefinitions List ApplicationDefinitions which are available in the KKP installation
 */
 func (a *Client) ListApplicationDefinitions(params *ListApplicationDefinitionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationDefinitionsOK, error) {
 	// TODO: Validate the params before sending
@@ -196,7 +196,7 @@ func (a *Client) ListApplicationDefinitions(params *ListApplicationDefinitionsPa
 }
 
 /*
-  ListApplicationInstallations List ApplicationInstallations which belong to the given cluster
+ListApplicationInstallations List ApplicationInstallations which belong to the given cluster
 */
 func (a *Client) ListApplicationInstallations(params *ListApplicationInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationInstallationsOK, error) {
 	// TODO: Validate the params before sending
@@ -234,7 +234,7 @@ func (a *Client) ListApplicationInstallations(params *ListApplicationInstallatio
 }
 
 /*
-  UpdateApplicationInstallation Updates the given ApplicationInstallation
+UpdateApplicationInstallation Updates the given ApplicationInstallation
 */
 func (a *Client) UpdateApplicationInstallation(params *UpdateApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateApplicationInstallationOK, error) {
 	// TODO: Validate the params before sending

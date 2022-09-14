@@ -52,10 +52,12 @@ func NewListAzureRouteTablesParamsWithHTTPClient(client *http.Client) *ListAzure
 	}
 }
 
-/* ListAzureRouteTablesParams contains all the parameters to send to the API endpoint
-   for the list azure route tables operation.
+/*
+ListAzureRouteTablesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure route tables operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureRouteTablesParams struct {
 

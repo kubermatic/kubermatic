@@ -46,7 +46,8 @@ func NewListAnexiaTemplatesNoCredentialsV2OK() *ListAnexiaTemplatesNoCredentials
 	return &ListAnexiaTemplatesNoCredentialsV2OK{}
 }
 
-/* ListAnexiaTemplatesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAnexiaTemplatesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AnexiaTemplateList
 */
@@ -108,7 +109,8 @@ func NewListAnexiaTemplatesNoCredentialsV2Default(code int) *ListAnexiaTemplates
 	}
 }
 
-/* ListAnexiaTemplatesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAnexiaTemplatesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

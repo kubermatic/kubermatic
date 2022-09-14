@@ -60,7 +60,8 @@ func NewPatchGroupProjectBindingOK() *PatchGroupProjectBindingOK {
 	return &PatchGroupProjectBindingOK{}
 }
 
-/* PatchGroupProjectBindingOK describes a response with status code 200, with default header values.
+/*
+PatchGroupProjectBindingOK describes a response with status code 200, with default header values.
 
 GroupProjectBinding
 */
@@ -122,7 +123,8 @@ func NewPatchGroupProjectBindingUnauthorized() *PatchGroupProjectBindingUnauthor
 	return &PatchGroupProjectBindingUnauthorized{}
 }
 
-/* PatchGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -172,7 +174,8 @@ func NewPatchGroupProjectBindingForbidden() *PatchGroupProjectBindingForbidden {
 	return &PatchGroupProjectBindingForbidden{}
 }
 
-/* PatchGroupProjectBindingForbidden describes a response with status code 403, with default header values.
+/*
+PatchGroupProjectBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -224,7 +227,8 @@ func NewPatchGroupProjectBindingDefault(code int) *PatchGroupProjectBindingDefau
 	}
 }
 
-/* PatchGroupProjectBindingDefault describes a response with status code -1, with default header values.
+/*
+PatchGroupProjectBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -288,7 +292,8 @@ func (o *PatchGroupProjectBindingDefault) readResponse(response runtime.ClientRe
 	return nil
 }
 
-/*PatchGroupProjectBindingBody patch group project binding body
+/*
+PatchGroupProjectBindingBody patch group project binding body
 swagger:model PatchGroupProjectBindingBody
 */
 type PatchGroupProjectBindingBody struct {

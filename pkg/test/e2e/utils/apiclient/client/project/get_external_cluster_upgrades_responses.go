@@ -58,7 +58,8 @@ func NewGetExternalClusterUpgradesOK() *GetExternalClusterUpgradesOK {
 	return &GetExternalClusterUpgradesOK{}
 }
 
-/* GetExternalClusterUpgradesOK describes a response with status code 200, with default header values.
+/*
+GetExternalClusterUpgradesOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -118,7 +119,8 @@ func NewGetExternalClusterUpgradesUnauthorized() *GetExternalClusterUpgradesUnau
 	return &GetExternalClusterUpgradesUnauthorized{}
 }
 
-/* GetExternalClusterUpgradesUnauthorized describes a response with status code 401, with default header values.
+/*
+GetExternalClusterUpgradesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetExternalClusterUpgradesForbidden() *GetExternalClusterUpgradesForbidd
 	return &GetExternalClusterUpgradesForbidden{}
 }
 
-/* GetExternalClusterUpgradesForbidden describes a response with status code 403, with default header values.
+/*
+GetExternalClusterUpgradesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetExternalClusterUpgradesDefault(code int) *GetExternalClusterUpgradesD
 	}
 }
 
-/* GetExternalClusterUpgradesDefault describes a response with status code -1, with default header values.
+/*
+GetExternalClusterUpgradesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

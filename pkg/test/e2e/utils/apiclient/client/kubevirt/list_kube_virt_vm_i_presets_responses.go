@@ -46,7 +46,8 @@ func NewListKubeVirtVMIPresetsOK() *ListKubeVirtVMIPresetsOK {
 	return &ListKubeVirtVMIPresetsOK{}
 }
 
-/* ListKubeVirtVMIPresetsOK describes a response with status code 200, with default header values.
+/*
+ListKubeVirtVMIPresetsOK describes a response with status code 200, with default header values.
 
 VirtualMachineInstancePresetList
 */
@@ -108,7 +109,8 @@ func NewListKubeVirtVMIPresetsDefault(code int) *ListKubeVirtVMIPresetsDefault {
 	}
 }
 
-/* ListKubeVirtVMIPresetsDefault describes a response with status code -1, with default header values.
+/*
+ListKubeVirtVMIPresetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

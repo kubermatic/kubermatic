@@ -48,7 +48,7 @@ type ClientService interface {
 }
 
 /*
-  ListVMwareCloudDirectorCatalogs List VMware Cloud Director Catalogs
+ListVMwareCloudDirectorCatalogs List VMware Cloud Director Catalogs
 */
 func (a *Client) ListVMwareCloudDirectorCatalogs(params *ListVMwareCloudDirectorCatalogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorCatalogsOK, error) {
 	// TODO: Validate the params before sending
@@ -86,7 +86,7 @@ func (a *Client) ListVMwareCloudDirectorCatalogs(params *ListVMwareCloudDirector
 }
 
 /*
-  ListVMwareCloudDirectorCatalogsNoCredentials List VMware Cloud Director Catalogs
+ListVMwareCloudDirectorCatalogsNoCredentials List VMware Cloud Director Catalogs
 */
 func (a *Client) ListVMwareCloudDirectorCatalogsNoCredentials(params *ListVMwareCloudDirectorCatalogsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorCatalogsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -124,7 +124,7 @@ func (a *Client) ListVMwareCloudDirectorCatalogsNoCredentials(params *ListVMware
 }
 
 /*
-  ListVMwareCloudDirectorNetworks List VMware Cloud Director OVDC Networks
+ListVMwareCloudDirectorNetworks List VMware Cloud Director OVDC Networks
 */
 func (a *Client) ListVMwareCloudDirectorNetworks(params *ListVMwareCloudDirectorNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorNetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -162,7 +162,7 @@ func (a *Client) ListVMwareCloudDirectorNetworks(params *ListVMwareCloudDirector
 }
 
 /*
-  ListVMwareCloudDirectorNetworksNoCredentials List VMware Cloud Director OVDC Networks
+ListVMwareCloudDirectorNetworksNoCredentials List VMware Cloud Director OVDC Networks
 */
 func (a *Client) ListVMwareCloudDirectorNetworksNoCredentials(params *ListVMwareCloudDirectorNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -200,7 +200,7 @@ func (a *Client) ListVMwareCloudDirectorNetworksNoCredentials(params *ListVMware
 }
 
 /*
-  ListVMwareCloudDirectorStorageProfiles List VMware Cloud Director Storage Profiles
+ListVMwareCloudDirectorStorageProfiles List VMware Cloud Director Storage Profiles
 */
 func (a *Client) ListVMwareCloudDirectorStorageProfiles(params *ListVMwareCloudDirectorStorageProfilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorStorageProfilesOK, error) {
 	// TODO: Validate the params before sending
@@ -238,7 +238,7 @@ func (a *Client) ListVMwareCloudDirectorStorageProfiles(params *ListVMwareCloudD
 }
 
 /*
-  ListVMwareCloudDirectorStorageProfilesNoCredentials List VMware Cloud Director Storage Profiles
+ListVMwareCloudDirectorStorageProfilesNoCredentials List VMware Cloud Director Storage Profiles
 */
 func (a *Client) ListVMwareCloudDirectorStorageProfilesNoCredentials(params *ListVMwareCloudDirectorStorageProfilesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorStorageProfilesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -276,7 +276,7 @@ func (a *Client) ListVMwareCloudDirectorStorageProfilesNoCredentials(params *Lis
 }
 
 /*
-  ListVMwareCloudDirectorTemplates List VMware Cloud Director Templates
+ListVMwareCloudDirectorTemplates List VMware Cloud Director Templates
 */
 func (a *Client) ListVMwareCloudDirectorTemplates(params *ListVMwareCloudDirectorTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorTemplatesOK, error) {
 	// TODO: Validate the params before sending
@@ -314,7 +314,7 @@ func (a *Client) ListVMwareCloudDirectorTemplates(params *ListVMwareCloudDirecto
 }
 
 /*
-  ListVMwareCloudDirectorTemplatesNoCredentials List VMware Cloud Director Templates
+ListVMwareCloudDirectorTemplatesNoCredentials List VMware Cloud Director Templates
 */
 func (a *Client) ListVMwareCloudDirectorTemplatesNoCredentials(params *ListVMwareCloudDirectorTemplatesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVMwareCloudDirectorTemplatesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending

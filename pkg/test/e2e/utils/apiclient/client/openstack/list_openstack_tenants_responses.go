@@ -46,7 +46,8 @@ func NewListOpenstackTenantsOK() *ListOpenstackTenantsOK {
 	return &ListOpenstackTenantsOK{}
 }
 
-/* ListOpenstackTenantsOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackTenantsOK describes a response with status code 200, with default header values.
 
 OpenstackTenant
 */
@@ -108,7 +109,8 @@ func NewListOpenstackTenantsDefault(code int) *ListOpenstackTenantsDefault {
 	}
 }
 
-/* ListOpenstackTenantsDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackTenantsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

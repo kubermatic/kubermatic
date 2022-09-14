@@ -52,10 +52,12 @@ func NewListVMwareCloudDirectorCatalogsParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListVMwareCloudDirectorCatalogsParams contains all the parameters to send to the API endpoint
-   for the list v mware cloud director catalogs operation.
+/*
+ListVMwareCloudDirectorCatalogsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list v mware cloud director catalogs operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVMwareCloudDirectorCatalogsParams struct {
 

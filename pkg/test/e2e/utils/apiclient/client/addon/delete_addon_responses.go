@@ -58,7 +58,8 @@ func NewDeleteAddonOK() *DeleteAddonOK {
 	return &DeleteAddonOK{}
 }
 
-/* DeleteAddonOK describes a response with status code 200, with default header values.
+/*
+DeleteAddonOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteAddonUnauthorized() *DeleteAddonUnauthorized {
 	return &DeleteAddonUnauthorized{}
 }
 
-/* DeleteAddonUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteAddonForbidden() *DeleteAddonForbidden {
 	return &DeleteAddonForbidden{}
 }
 
-/* DeleteAddonForbidden describes a response with status code 403, with default header values.
+/*
+DeleteAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteAddonDefault(code int) *DeleteAddonDefault {
 	}
 }
 
-/* DeleteAddonDefault describes a response with status code -1, with default header values.
+/*
+DeleteAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

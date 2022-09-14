@@ -58,7 +58,8 @@ func NewListProjectsOK() *ListProjectsOK {
 	return &ListProjectsOK{}
 }
 
-/* ListProjectsOK describes a response with status code 200, with default header values.
+/*
+ListProjectsOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -118,7 +119,8 @@ func NewListProjectsUnauthorized() *ListProjectsUnauthorized {
 	return &ListProjectsUnauthorized{}
 }
 
-/* ListProjectsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProjectsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListProjectsConflict() *ListProjectsConflict {
 	return &ListProjectsConflict{}
 }
 
-/* ListProjectsConflict describes a response with status code 409, with default header values.
+/*
+ListProjectsConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListProjectsDefault(code int) *ListProjectsDefault {
 	}
 }
 
-/* ListProjectsDefault describes a response with status code -1, with default header values.
+/*
+ListProjectsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

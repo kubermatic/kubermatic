@@ -54,10 +54,12 @@ func NewBindUserToClusterRoleParamsWithHTTPClient(client *http.Client) *BindUser
 	}
 }
 
-/* BindUserToClusterRoleParams contains all the parameters to send to the API endpoint
-   for the bind user to cluster role operation.
+/*
+BindUserToClusterRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the bind user to cluster role operation.
+
+	Typically these are written to a http.Request.
 */
 type BindUserToClusterRoleParams struct {
 

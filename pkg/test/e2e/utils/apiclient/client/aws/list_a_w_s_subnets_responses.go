@@ -46,7 +46,8 @@ func NewListAWSSubnetsOK() *ListAWSSubnetsOK {
 	return &ListAWSSubnetsOK{}
 }
 
-/* ListAWSSubnetsOK describes a response with status code 200, with default header values.
+/*
+ListAWSSubnetsOK describes a response with status code 200, with default header values.
 
 AWSSubnetList
 */
@@ -108,7 +109,8 @@ func NewListAWSSubnetsDefault(code int) *ListAWSSubnetsDefault {
 	}
 }
 
-/* ListAWSSubnetsDefault describes a response with status code -1, with default header values.
+/*
+ListAWSSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

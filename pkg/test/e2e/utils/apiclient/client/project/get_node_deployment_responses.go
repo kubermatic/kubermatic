@@ -58,7 +58,8 @@ func NewGetNodeDeploymentOK() *GetNodeDeploymentOK {
 	return &GetNodeDeploymentOK{}
 }
 
-/* GetNodeDeploymentOK describes a response with status code 200, with default header values.
+/*
+GetNodeDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -120,7 +121,8 @@ func NewGetNodeDeploymentUnauthorized() *GetNodeDeploymentUnauthorized {
 	return &GetNodeDeploymentUnauthorized{}
 }
 
-/* GetNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+GetNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetNodeDeploymentForbidden() *GetNodeDeploymentForbidden {
 	return &GetNodeDeploymentForbidden{}
 }
 
-/* GetNodeDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+GetNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetNodeDeploymentDefault(code int) *GetNodeDeploymentDefault {
 	}
 }
 
-/* GetNodeDeploymentDefault describes a response with status code -1, with default header values.
+/*
+GetNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

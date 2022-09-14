@@ -58,7 +58,8 @@ func NewPatchServiceAccountTokenOK() *PatchServiceAccountTokenOK {
 	return &PatchServiceAccountTokenOK{}
 }
 
-/* PatchServiceAccountTokenOK describes a response with status code 200, with default header values.
+/*
+PatchServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -120,7 +121,8 @@ func NewPatchServiceAccountTokenUnauthorized() *PatchServiceAccountTokenUnauthor
 	return &PatchServiceAccountTokenUnauthorized{}
 }
 
-/* PatchServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchServiceAccountTokenForbidden() *PatchServiceAccountTokenForbidden {
 	return &PatchServiceAccountTokenForbidden{}
 }
 
-/* PatchServiceAccountTokenForbidden describes a response with status code 403, with default header values.
+/*
+PatchServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchServiceAccountTokenDefault(code int) *PatchServiceAccountTokenDefau
 	}
 }
 
-/* PatchServiceAccountTokenDefault describes a response with status code -1, with default header values.
+/*
+PatchServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

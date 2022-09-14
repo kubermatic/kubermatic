@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  GetNetworkDefaults retrieves the cluster networking defaults for the given provider and datacenter
+GetNetworkDefaults retrieves the cluster networking defaults for the given provider and datacenter
 */
 func (a *Client) GetNetworkDefaults(params *GetNetworkDefaultsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNetworkDefaultsOK, error) {
 	// TODO: Validate the params before sending

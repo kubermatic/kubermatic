@@ -58,7 +58,8 @@ func NewCreateGatekeeperConfigCreated() *CreateGatekeeperConfigCreated {
 	return &CreateGatekeeperConfigCreated{}
 }
 
-/* CreateGatekeeperConfigCreated describes a response with status code 201, with default header values.
+/*
+CreateGatekeeperConfigCreated describes a response with status code 201, with default header values.
 
 GatekeeperConfig
 */
@@ -120,7 +121,8 @@ func NewCreateGatekeeperConfigUnauthorized() *CreateGatekeeperConfigUnauthorized
 	return &CreateGatekeeperConfigUnauthorized{}
 }
 
-/* CreateGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateGatekeeperConfigForbidden() *CreateGatekeeperConfigForbidden {
 	return &CreateGatekeeperConfigForbidden{}
 }
 
-/* CreateGatekeeperConfigForbidden describes a response with status code 403, with default header values.
+/*
+CreateGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateGatekeeperConfigDefault(code int) *CreateGatekeeperConfigDefault {
 	}
 }
 
-/* CreateGatekeeperConfigDefault describes a response with status code -1, with default header values.
+/*
+CreateGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

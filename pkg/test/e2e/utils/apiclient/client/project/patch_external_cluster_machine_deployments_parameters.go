@@ -52,10 +52,12 @@ func NewPatchExternalClusterMachineDeploymentsParamsWithHTTPClient(client *http.
 	}
 }
 
-/* PatchExternalClusterMachineDeploymentsParams contains all the parameters to send to the API endpoint
-   for the patch external cluster machine deployments operation.
+/*
+PatchExternalClusterMachineDeploymentsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch external cluster machine deployments operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchExternalClusterMachineDeploymentsParams struct {
 

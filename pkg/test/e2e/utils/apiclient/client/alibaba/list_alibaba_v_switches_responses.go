@@ -46,7 +46,8 @@ func NewListAlibabaVSwitchesOK() *ListAlibabaVSwitchesOK {
 	return &ListAlibabaVSwitchesOK{}
 }
 
-/* ListAlibabaVSwitchesOK describes a response with status code 200, with default header values.
+/*
+ListAlibabaVSwitchesOK describes a response with status code 200, with default header values.
 
 AlibabaVSwitchList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaVSwitchesDefault(code int) *ListAlibabaVSwitchesDefault {
 	}
 }
 
-/* ListAlibabaVSwitchesDefault describes a response with status code -1, with default header values.
+/*
+ListAlibabaVSwitchesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewEditUserInProjectOK() *EditUserInProjectOK {
 	return &EditUserInProjectOK{}
 }
 
-/* EditUserInProjectOK describes a response with status code 200, with default header values.
+/*
+EditUserInProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -120,7 +121,8 @@ func NewEditUserInProjectUnauthorized() *EditUserInProjectUnauthorized {
 	return &EditUserInProjectUnauthorized{}
 }
 
-/* EditUserInProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+EditUserInProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewEditUserInProjectForbidden() *EditUserInProjectForbidden {
 	return &EditUserInProjectForbidden{}
 }
 
-/* EditUserInProjectForbidden describes a response with status code 403, with default header values.
+/*
+EditUserInProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewEditUserInProjectDefault(code int) *EditUserInProjectDefault {
 	}
 }
 
-/* EditUserInProjectDefault describes a response with status code -1, with default header values.
+/*
+EditUserInProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

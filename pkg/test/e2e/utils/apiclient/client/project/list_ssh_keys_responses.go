@@ -58,7 +58,8 @@ func NewListSSHKeysOK() *ListSSHKeysOK {
 	return &ListSSHKeysOK{}
 }
 
-/* ListSSHKeysOK describes a response with status code 200, with default header values.
+/*
+ListSSHKeysOK describes a response with status code 200, with default header values.
 
 SSHKey
 */
@@ -118,7 +119,8 @@ func NewListSSHKeysUnauthorized() *ListSSHKeysUnauthorized {
 	return &ListSSHKeysUnauthorized{}
 }
 
-/* ListSSHKeysUnauthorized describes a response with status code 401, with default header values.
+/*
+ListSSHKeysUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListSSHKeysForbidden() *ListSSHKeysForbidden {
 	return &ListSSHKeysForbidden{}
 }
 
-/* ListSSHKeysForbidden describes a response with status code 403, with default header values.
+/*
+ListSSHKeysForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListSSHKeysDefault(code int) *ListSSHKeysDefault {
 	}
 }
 
-/* ListSSHKeysDefault describes a response with status code -1, with default header values.
+/*
+ListSSHKeysDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

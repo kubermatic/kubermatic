@@ -54,10 +54,12 @@ func NewBindUserToRoleParamsWithHTTPClient(client *http.Client) *BindUserToRoleP
 	}
 }
 
-/* BindUserToRoleParams contains all the parameters to send to the API endpoint
-   for the bind user to role operation.
+/*
+BindUserToRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the bind user to role operation.
+
+	Typically these are written to a http.Request.
 */
 type BindUserToRoleParams struct {
 

@@ -58,7 +58,8 @@ func NewGetProjectQuotaOK() *GetProjectQuotaOK {
 	return &GetProjectQuotaOK{}
 }
 
-/* GetProjectQuotaOK describes a response with status code 200, with default header values.
+/*
+GetProjectQuotaOK describes a response with status code 200, with default header values.
 
 ResourceQuota
 */
@@ -120,7 +121,8 @@ func NewGetProjectQuotaUnauthorized() *GetProjectQuotaUnauthorized {
 	return &GetProjectQuotaUnauthorized{}
 }
 
-/* GetProjectQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+GetProjectQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetProjectQuotaForbidden() *GetProjectQuotaForbidden {
 	return &GetProjectQuotaForbidden{}
 }
 
-/* GetProjectQuotaForbidden describes a response with status code 403, with default header values.
+/*
+GetProjectQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetProjectQuotaDefault(code int) *GetProjectQuotaDefault {
 	}
 }
 
-/* GetProjectQuotaDefault describes a response with status code -1, with default header values.
+/*
+GetProjectQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

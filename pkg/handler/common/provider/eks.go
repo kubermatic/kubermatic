@@ -210,7 +210,7 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRoleList, error) {
 	var rolesList apiv2.EKSClusterRoleList
 
-	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", RegionEndpoint)
 	if err != nil {
 		return nil, err
 	}

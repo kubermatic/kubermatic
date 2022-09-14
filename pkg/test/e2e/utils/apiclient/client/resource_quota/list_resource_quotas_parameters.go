@@ -52,10 +52,12 @@ func NewListResourceQuotasParamsWithHTTPClient(client *http.Client) *ListResourc
 	}
 }
 
-/* ListResourceQuotasParams contains all the parameters to send to the API endpoint
-   for the list resource quotas operation.
+/*
+ListResourceQuotasParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list resource quotas operation.
+
+	Typically these are written to a http.Request.
 */
 type ListResourceQuotasParams struct {
 

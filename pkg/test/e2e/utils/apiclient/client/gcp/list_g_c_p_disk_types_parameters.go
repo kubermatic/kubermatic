@@ -52,10 +52,12 @@ func NewListGCPDiskTypesParamsWithHTTPClient(client *http.Client) *ListGCPDiskTy
 	}
 }
 
-/* ListGCPDiskTypesParams contains all the parameters to send to the API endpoint
-   for the list g c p disk types operation.
+/*
+ListGCPDiskTypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p disk types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPDiskTypesParams struct {
 

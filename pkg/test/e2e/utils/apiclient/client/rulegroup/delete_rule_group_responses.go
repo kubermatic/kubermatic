@@ -58,7 +58,8 @@ func NewDeleteRuleGroupOK() *DeleteRuleGroupOK {
 	return &DeleteRuleGroupOK{}
 }
 
-/* DeleteRuleGroupOK describes a response with status code 200, with default header values.
+/*
+DeleteRuleGroupOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteRuleGroupUnauthorized() *DeleteRuleGroupUnauthorized {
 	return &DeleteRuleGroupUnauthorized{}
 }
 
-/* DeleteRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteRuleGroupForbidden() *DeleteRuleGroupForbidden {
 	return &DeleteRuleGroupForbidden{}
 }
 
-/* DeleteRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+DeleteRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteRuleGroupDefault(code int) *DeleteRuleGroupDefault {
 	}
 }
 
-/* DeleteRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+DeleteRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

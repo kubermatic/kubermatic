@@ -52,10 +52,12 @@ func NewListRuleGroupsParamsWithHTTPClient(client *http.Client) *ListRuleGroupsP
 	}
 }
 
-/* ListRuleGroupsParams contains all the parameters to send to the API endpoint
-   for the list rule groups operation.
+/*
+ListRuleGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list rule groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListRuleGroupsParams struct {
 

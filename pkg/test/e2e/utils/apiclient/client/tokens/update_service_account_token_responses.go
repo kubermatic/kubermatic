@@ -58,7 +58,8 @@ func NewUpdateServiceAccountTokenOK() *UpdateServiceAccountTokenOK {
 	return &UpdateServiceAccountTokenOK{}
 }
 
-/* UpdateServiceAccountTokenOK describes a response with status code 200, with default header values.
+/*
+UpdateServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 ServiceAccountToken
 */
@@ -120,7 +121,8 @@ func NewUpdateServiceAccountTokenUnauthorized() *UpdateServiceAccountTokenUnauth
 	return &UpdateServiceAccountTokenUnauthorized{}
 }
 
-/* UpdateServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewUpdateServiceAccountTokenForbidden() *UpdateServiceAccountTokenForbidden
 	return &UpdateServiceAccountTokenForbidden{}
 }
 
-/* UpdateServiceAccountTokenForbidden describes a response with status code 403, with default header values.
+/*
+UpdateServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewUpdateServiceAccountTokenDefault(code int) *UpdateServiceAccountTokenDef
 	}
 }
 
-/* UpdateServiceAccountTokenDefault describes a response with status code -1, with default header values.
+/*
+UpdateServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

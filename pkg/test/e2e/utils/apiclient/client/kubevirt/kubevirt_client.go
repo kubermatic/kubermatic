@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  ListKubeVirtVMIPresets lists available kube virt virtual machine instance preset
+ListKubeVirtVMIPresets lists available kube virt virtual machine instance preset
 */
 func (a *Client) ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, au
 }
 
 /*
-  ListKubeVirtVMIPresetsNoCredentials Lists available VirtualMachineInstancePreset
+ListKubeVirtVMIPresetsNoCredentials Lists available VirtualMachineInstancePreset
 */
 func (a *Client) ListKubeVirtVMIPresetsNoCredentials(params *ListKubeVirtVMIPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) ListKubeVirtVMIPresetsNoCredentials(params *ListKubeVirtVMIPres
 }
 
 /*
-  ListKubevirtStorageClasses lists available k8s storage classes in the kubevirt cluster
+ListKubevirtStorageClasses lists available k8s storage classes in the kubevirt cluster
 */
 func (a *Client) ListKubevirtStorageClasses(params *ListKubevirtStorageClassesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtStorageClassesOK, error) {
 	// TODO: Validate the params before sending
@@ -154,7 +154,7 @@ func (a *Client) ListKubevirtStorageClasses(params *ListKubevirtStorageClassesPa
 }
 
 /*
-  ListKubevirtStorageClassesNoCredentials List Storage Classes
+ListKubevirtStorageClassesNoCredentials List Storage Classes
 */
 func (a *Client) ListKubevirtStorageClassesNoCredentials(params *ListKubevirtStorageClassesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtStorageClassesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending

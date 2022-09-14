@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorNetworksNoCredentialsOK() *ListVMwareCloudDirecto
 	return &ListVMwareCloudDirectorNetworksNoCredentialsOK{}
 }
 
-/* ListVMwareCloudDirectorNetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorNetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorNetworkList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorNetworksNoCredentialsDefault(code int) *ListVMwar
 	}
 }
 
-/* ListVMwareCloudDirectorNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

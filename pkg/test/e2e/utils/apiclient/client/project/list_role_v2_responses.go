@@ -58,7 +58,8 @@ func NewListRoleV2OK() *ListRoleV2OK {
 	return &ListRoleV2OK{}
 }
 
-/* ListRoleV2OK describes a response with status code 200, with default header values.
+/*
+ListRoleV2OK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -118,7 +119,8 @@ func NewListRoleV2Unauthorized() *ListRoleV2Unauthorized {
 	return &ListRoleV2Unauthorized{}
 }
 
-/* ListRoleV2Unauthorized describes a response with status code 401, with default header values.
+/*
+ListRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListRoleV2Forbidden() *ListRoleV2Forbidden {
 	return &ListRoleV2Forbidden{}
 }
 
-/* ListRoleV2Forbidden describes a response with status code 403, with default header values.
+/*
+ListRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListRoleV2Default(code int) *ListRoleV2Default {
 	}
 }
 
-/* ListRoleV2Default describes a response with status code -1, with default header values.
+/*
+ListRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

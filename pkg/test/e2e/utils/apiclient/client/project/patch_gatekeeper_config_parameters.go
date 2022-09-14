@@ -52,10 +52,12 @@ func NewPatchGatekeeperConfigParamsWithHTTPClient(client *http.Client) *PatchGat
 	}
 }
 
-/* PatchGatekeeperConfigParams contains all the parameters to send to the API endpoint
-   for the patch gatekeeper config operation.
+/*
+PatchGatekeeperConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch gatekeeper config operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchGatekeeperConfigParams struct {
 

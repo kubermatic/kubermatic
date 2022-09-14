@@ -52,10 +52,12 @@ func NewListNutanixSubnetsParamsWithHTTPClient(client *http.Client) *ListNutanix
 	}
 }
 
-/* ListNutanixSubnetsParams contains all the parameters to send to the API endpoint
-   for the list nutanix subnets operation.
+/*
+ListNutanixSubnetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix subnets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixSubnetsParams struct {
 

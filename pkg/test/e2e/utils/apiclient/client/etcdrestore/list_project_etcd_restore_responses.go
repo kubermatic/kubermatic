@@ -58,7 +58,8 @@ func NewListProjectEtcdRestoreOK() *ListProjectEtcdRestoreOK {
 	return &ListProjectEtcdRestoreOK{}
 }
 
-/* ListProjectEtcdRestoreOK describes a response with status code 200, with default header values.
+/*
+ListProjectEtcdRestoreOK describes a response with status code 200, with default header values.
 
 EtcdRestore
 */
@@ -118,7 +119,8 @@ func NewListProjectEtcdRestoreUnauthorized() *ListProjectEtcdRestoreUnauthorized
 	return &ListProjectEtcdRestoreUnauthorized{}
 }
 
-/* ListProjectEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProjectEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListProjectEtcdRestoreForbidden() *ListProjectEtcdRestoreForbidden {
 	return &ListProjectEtcdRestoreForbidden{}
 }
 
-/* ListProjectEtcdRestoreForbidden describes a response with status code 403, with default header values.
+/*
+ListProjectEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListProjectEtcdRestoreDefault(code int) *ListProjectEtcdRestoreDefault {
 	}
 }
 
-/* ListProjectEtcdRestoreDefault describes a response with status code -1, with default header values.
+/*
+ListProjectEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

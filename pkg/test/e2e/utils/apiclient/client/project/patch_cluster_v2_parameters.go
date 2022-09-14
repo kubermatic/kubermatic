@@ -52,10 +52,12 @@ func NewPatchClusterV2ParamsWithHTTPClient(client *http.Client) *PatchClusterV2P
 	}
 }
 
-/* PatchClusterV2Params contains all the parameters to send to the API endpoint
-   for the patch cluster v2 operation.
+/*
+PatchClusterV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch cluster v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchClusterV2Params struct {
 

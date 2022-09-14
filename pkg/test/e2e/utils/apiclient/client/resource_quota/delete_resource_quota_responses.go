@@ -58,7 +58,8 @@ func NewDeleteResourceQuotaOK() *DeleteResourceQuotaOK {
 	return &DeleteResourceQuotaOK{}
 }
 
-/* DeleteResourceQuotaOK describes a response with status code 200, with default header values.
+/*
+DeleteResourceQuotaOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteResourceQuotaUnauthorized() *DeleteResourceQuotaUnauthorized {
 	return &DeleteResourceQuotaUnauthorized{}
 }
 
-/* DeleteResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteResourceQuotaForbidden() *DeleteResourceQuotaForbidden {
 	return &DeleteResourceQuotaForbidden{}
 }
 
-/* DeleteResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+DeleteResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteResourceQuotaDefault(code int) *DeleteResourceQuotaDefault {
 	}
 }
 
-/* DeleteResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+DeleteResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

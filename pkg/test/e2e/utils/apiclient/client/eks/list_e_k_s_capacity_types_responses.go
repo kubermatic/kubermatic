@@ -58,7 +58,8 @@ func NewListEKSCapacityTypesOK() *ListEKSCapacityTypesOK {
 	return &ListEKSCapacityTypesOK{}
 }
 
-/* ListEKSCapacityTypesOK describes a response with status code 200, with default header values.
+/*
+ListEKSCapacityTypesOK describes a response with status code 200, with default header values.
 
 EKSCapacityTypeList
 */
@@ -118,7 +119,8 @@ func NewListEKSCapacityTypesUnauthorized() *ListEKSCapacityTypesUnauthorized {
 	return &ListEKSCapacityTypesUnauthorized{}
 }
 
-/* ListEKSCapacityTypesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSCapacityTypesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSCapacityTypesForbidden() *ListEKSCapacityTypesForbidden {
 	return &ListEKSCapacityTypesForbidden{}
 }
 
-/* ListEKSCapacityTypesForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSCapacityTypesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSCapacityTypesDefault(code int) *ListEKSCapacityTypesDefault {
 	}
 }
 
-/* ListEKSCapacityTypesDefault describes a response with status code -1, with default header values.
+/*
+ListEKSCapacityTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

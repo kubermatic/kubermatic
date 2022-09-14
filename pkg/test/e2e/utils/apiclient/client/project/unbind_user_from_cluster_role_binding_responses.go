@@ -58,7 +58,8 @@ func NewUnbindUserFromClusterRoleBindingOK() *UnbindUserFromClusterRoleBindingOK
 	return &UnbindUserFromClusterRoleBindingOK{}
 }
 
-/* UnbindUserFromClusterRoleBindingOK describes a response with status code 200, with default header values.
+/*
+UnbindUserFromClusterRoleBindingOK describes a response with status code 200, with default header values.
 
 ClusterRoleBinding
 */
@@ -120,7 +121,8 @@ func NewUnbindUserFromClusterRoleBindingUnauthorized() *UnbindUserFromClusterRol
 	return &UnbindUserFromClusterRoleBindingUnauthorized{}
 }
 
-/* UnbindUserFromClusterRoleBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+UnbindUserFromClusterRoleBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewUnbindUserFromClusterRoleBindingForbidden() *UnbindUserFromClusterRoleBi
 	return &UnbindUserFromClusterRoleBindingForbidden{}
 }
 
-/* UnbindUserFromClusterRoleBindingForbidden describes a response with status code 403, with default header values.
+/*
+UnbindUserFromClusterRoleBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewUnbindUserFromClusterRoleBindingDefault(code int) *UnbindUserFromCluster
 	}
 }
 
-/* UnbindUserFromClusterRoleBindingDefault describes a response with status code -1, with default header values.
+/*
+UnbindUserFromClusterRoleBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

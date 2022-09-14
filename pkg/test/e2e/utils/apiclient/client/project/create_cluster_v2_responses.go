@@ -58,7 +58,8 @@ func NewCreateClusterV2Created() *CreateClusterV2Created {
 	return &CreateClusterV2Created{}
 }
 
-/* CreateClusterV2Created describes a response with status code 201, with default header values.
+/*
+CreateClusterV2Created describes a response with status code 201, with default header values.
 
 Cluster
 */
@@ -120,7 +121,8 @@ func NewCreateClusterV2Unauthorized() *CreateClusterV2Unauthorized {
 	return &CreateClusterV2Unauthorized{}
 }
 
-/* CreateClusterV2Unauthorized describes a response with status code 401, with default header values.
+/*
+CreateClusterV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateClusterV2Forbidden() *CreateClusterV2Forbidden {
 	return &CreateClusterV2Forbidden{}
 }
 
-/* CreateClusterV2Forbidden describes a response with status code 403, with default header values.
+/*
+CreateClusterV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateClusterV2Default(code int) *CreateClusterV2Default {
 	}
 }
 
-/* CreateClusterV2Default describes a response with status code -1, with default header values.
+/*
+CreateClusterV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

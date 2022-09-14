@@ -54,10 +54,12 @@ func NewCreateAllowedRegistryParamsWithHTTPClient(client *http.Client) *CreateAl
 	}
 }
 
-/* CreateAllowedRegistryParams contains all the parameters to send to the API endpoint
-   for the create allowed registry operation.
+/*
+CreateAllowedRegistryParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create allowed registry operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateAllowedRegistryParams struct {
 

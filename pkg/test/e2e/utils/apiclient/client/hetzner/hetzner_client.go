@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  ListHetznerSizes Lists sizes from hetzner
+ListHetznerSizes Lists sizes from hetzner
 */
 func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 }
 
 /*
-  ListHetznerSizesNoCredentials Lists sizes from hetzner
+ListHetznerSizesNoCredentials Lists sizes from hetzner
 */
 func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredent
 }
 
 /*
-  ListHetznerSizesNoCredentialsV2 Lists sizes from hetzner
+ListHetznerSizesNoCredentialsV2 Lists sizes from hetzner
 */
 func (a *Client) ListHetznerSizesNoCredentialsV2(params *ListHetznerSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListHetznerSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

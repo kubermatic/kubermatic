@@ -54,10 +54,12 @@ func NewSetAdminParamsWithHTTPClient(client *http.Client) *SetAdminParams {
 	}
 }
 
-/* SetAdminParams contains all the parameters to send to the API endpoint
-   for the set admin operation.
+/*
+SetAdminParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the set admin operation.
+
+	Typically these are written to a http.Request.
 */
 type SetAdminParams struct {
 

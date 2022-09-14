@@ -46,7 +46,8 @@ func NewValidateGKECredentialsOK() *ValidateGKECredentialsOK {
 	return &ValidateGKECredentialsOK{}
 }
 
-/* ValidateGKECredentialsOK describes a response with status code 200, with default header values.
+/*
+ValidateGKECredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -98,7 +99,8 @@ func NewValidateGKECredentialsDefault(code int) *ValidateGKECredentialsDefault {
 	}
 }
 
-/* ValidateGKECredentialsDefault describes a response with status code -1, with default header values.
+/*
+ValidateGKECredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

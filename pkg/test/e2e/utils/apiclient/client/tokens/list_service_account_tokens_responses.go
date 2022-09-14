@@ -58,7 +58,8 @@ func NewListServiceAccountTokensOK() *ListServiceAccountTokensOK {
 	return &ListServiceAccountTokensOK{}
 }
 
-/* ListServiceAccountTokensOK describes a response with status code 200, with default header values.
+/*
+ListServiceAccountTokensOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -118,7 +119,8 @@ func NewListServiceAccountTokensUnauthorized() *ListServiceAccountTokensUnauthor
 	return &ListServiceAccountTokensUnauthorized{}
 }
 
-/* ListServiceAccountTokensUnauthorized describes a response with status code 401, with default header values.
+/*
+ListServiceAccountTokensUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListServiceAccountTokensForbidden() *ListServiceAccountTokensForbidden {
 	return &ListServiceAccountTokensForbidden{}
 }
 
-/* ListServiceAccountTokensForbidden describes a response with status code 403, with default header values.
+/*
+ListServiceAccountTokensForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListServiceAccountTokensDefault(code int) *ListServiceAccountTokensDefau
 	}
 }
 
-/* ListServiceAccountTokensDefault describes a response with status code -1, with default header values.
+/*
+ListServiceAccountTokensDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

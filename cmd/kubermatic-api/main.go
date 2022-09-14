@@ -18,23 +18,23 @@ limitations under the License.
 //
 // This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
-//     Schemes: https
-//     Version: 2.21
+//	Schemes: https
+//	Version: 2.21
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Security:
-//     - api_key:
+//	Security:
+//	- api_key:
 //
-//     SecurityDefinitions:
-//     api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
+//	SecurityDefinitions:
+//	api_key:
+//	     type: apiKey
+//	     name: Authorization
+//	     in: header
 //
 // swagger:meta
 package main

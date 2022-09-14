@@ -58,7 +58,8 @@ func NewPatchGatekeeperConfigOK() *PatchGatekeeperConfigOK {
 	return &PatchGatekeeperConfigOK{}
 }
 
-/* PatchGatekeeperConfigOK describes a response with status code 200, with default header values.
+/*
+PatchGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 GatekeeperConfig
 */
@@ -120,7 +121,8 @@ func NewPatchGatekeeperConfigUnauthorized() *PatchGatekeeperConfigUnauthorized {
 	return &PatchGatekeeperConfigUnauthorized{}
 }
 
-/* PatchGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchGatekeeperConfigForbidden() *PatchGatekeeperConfigForbidden {
 	return &PatchGatekeeperConfigForbidden{}
 }
 
-/* PatchGatekeeperConfigForbidden describes a response with status code 403, with default header values.
+/*
+PatchGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchGatekeeperConfigDefault(code int) *PatchGatekeeperConfigDefault {
 	}
 }
 
-/* PatchGatekeeperConfigDefault describes a response with status code -1, with default header values.
+/*
+PatchGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

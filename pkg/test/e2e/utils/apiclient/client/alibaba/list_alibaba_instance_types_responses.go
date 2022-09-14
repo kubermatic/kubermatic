@@ -46,7 +46,8 @@ func NewListAlibabaInstanceTypesOK() *ListAlibabaInstanceTypesOK {
 	return &ListAlibabaInstanceTypesOK{}
 }
 
-/* ListAlibabaInstanceTypesOK describes a response with status code 200, with default header values.
+/*
+ListAlibabaInstanceTypesOK describes a response with status code 200, with default header values.
 
 AlibabaInstanceTypeList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaInstanceTypesDefault(code int) *ListAlibabaInstanceTypesDefau
 	}
 }
 
-/* ListAlibabaInstanceTypesDefault describes a response with status code -1, with default header values.
+/*
+ListAlibabaInstanceTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

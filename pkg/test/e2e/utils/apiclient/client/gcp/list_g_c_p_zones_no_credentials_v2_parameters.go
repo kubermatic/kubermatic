@@ -52,10 +52,12 @@ func NewListGCPZonesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *Li
 	}
 }
 
-/* ListGCPZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list g c p zones no credentials v2 operation.
+/*
+ListGCPZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p zones no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPZonesNoCredentialsV2Params struct {
 

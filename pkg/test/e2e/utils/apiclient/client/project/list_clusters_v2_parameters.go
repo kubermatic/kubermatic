@@ -53,10 +53,12 @@ func NewListClustersV2ParamsWithHTTPClient(client *http.Client) *ListClustersV2P
 	}
 }
 
-/* ListClustersV2Params contains all the parameters to send to the API endpoint
-   for the list clusters v2 operation.
+/*
+ListClustersV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list clusters v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListClustersV2Params struct {
 

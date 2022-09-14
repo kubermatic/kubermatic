@@ -54,10 +54,12 @@ func NewCreateExternalClusterMachineDeploymentParamsWithHTTPClient(client *http.
 	}
 }
 
-/* CreateExternalClusterMachineDeploymentParams contains all the parameters to send to the API endpoint
-   for the create external cluster machine deployment operation.
+/*
+CreateExternalClusterMachineDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create external cluster machine deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateExternalClusterMachineDeploymentParams struct {
 

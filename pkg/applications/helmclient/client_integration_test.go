@@ -15,6 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package helmclient
 
 import (
@@ -461,9 +462,9 @@ func createNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 // clean it.
 //
 // more precisely it:
-//   * starts envTest
-//   * packages charts testdata/examplechart and testdata/examplechart-v2. archive path are stored in chartArchiveV1Path and chartArchiveV2Path variables
-//   * writes the kubeconfig to access envTest cluster in temporary directory. The path is stored in kubeconfigPath variable.
+//   - starts envTest
+//   - packages charts testdata/examplechart and testdata/examplechart-v2. archive path are stored in chartArchiveV1Path and chartArchiveV2Path variables
+//   - writes the kubeconfig to access envTest cluster in temporary directory. The path is stored in kubeconfigPath variable.
 func startTestEnvAndPackageChartsWithCleanup(t *testing.T) (context.Context, ctrlruntimeclient.Client) {
 	ctx, cancel := context.WithCancel(context.Background())
 	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()

@@ -54,10 +54,12 @@ func NewUpgradeClusterNodeDeploymentsParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* UpgradeClusterNodeDeploymentsParams contains all the parameters to send to the API endpoint
-   for the upgrade cluster node deployments operation.
+/*
+UpgradeClusterNodeDeploymentsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the upgrade cluster node deployments operation.
+
+	Typically these are written to a http.Request.
 */
 type UpgradeClusterNodeDeploymentsParams struct {
 

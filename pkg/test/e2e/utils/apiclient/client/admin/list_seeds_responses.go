@@ -58,7 +58,8 @@ func NewListSeedsOK() *ListSeedsOK {
 	return &ListSeedsOK{}
 }
 
-/* ListSeedsOK describes a response with status code 200, with default header values.
+/*
+ListSeedsOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -118,7 +119,8 @@ func NewListSeedsUnauthorized() *ListSeedsUnauthorized {
 	return &ListSeedsUnauthorized{}
 }
 
-/* ListSeedsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListSeedsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListSeedsForbidden() *ListSeedsForbidden {
 	return &ListSeedsForbidden{}
 }
 
-/* ListSeedsForbidden describes a response with status code 403, with default header values.
+/*
+ListSeedsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListSeedsDefault(code int) *ListSeedsDefault {
 	}
 }
 
-/* ListSeedsDefault describes a response with status code -1, with default header values.
+/*
+ListSeedsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

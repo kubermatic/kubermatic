@@ -52,10 +52,12 @@ func NewGetAllowedRegistryParamsWithHTTPClient(client *http.Client) *GetAllowedR
 	}
 }
 
-/* GetAllowedRegistryParams contains all the parameters to send to the API endpoint
-   for the get allowed registry operation.
+/*
+GetAllowedRegistryParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get allowed registry operation.
+
+	Typically these are written to a http.Request.
 */
 type GetAllowedRegistryParams struct {
 

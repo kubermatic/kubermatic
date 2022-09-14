@@ -52,10 +52,12 @@ func NewListExternalClusterNodesMetricsParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListExternalClusterNodesMetricsParams contains all the parameters to send to the API endpoint
-   for the list external cluster nodes metrics operation.
+/*
+ListExternalClusterNodesMetricsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list external cluster nodes metrics operation.
+
+	Typically these are written to a http.Request.
 */
 type ListExternalClusterNodesMetricsParams struct {
 

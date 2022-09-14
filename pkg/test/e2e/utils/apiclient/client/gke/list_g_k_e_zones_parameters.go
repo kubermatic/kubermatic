@@ -52,12 +52,27 @@ func NewListGKEZonesParamsWithHTTPClient(client *http.Client) *ListGKEZonesParam
 	}
 }
 
-/* ListGKEZonesParams contains all the parameters to send to the API endpoint
-   for the list g k e zones operation.
+/*
+ListGKEZonesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e zones operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEZonesParams struct {
+
+	/* Credential.
+
+	   The credential name used in the preset for the GCP provider
+	*/
+	Credential *string
+
+	/* ServiceAccount.
+
+	   The plain GCP service account
+	*/
+	ServiceAccount *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +126,28 @@ func (o *ListGKEZonesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list g k e zones params
+func (o *ListGKEZonesParams) WithCredential(credential *string) *ListGKEZonesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list g k e zones params
+func (o *ListGKEZonesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithServiceAccount adds the serviceAccount to the list g k e zones params
+func (o *ListGKEZonesParams) WithServiceAccount(serviceAccount *string) *ListGKEZonesParams {
+	o.SetServiceAccount(serviceAccount)
+	return o
+}
+
+// SetServiceAccount adds the serviceAccount to the list g k e zones params
+func (o *ListGKEZonesParams) SetServiceAccount(serviceAccount *string) {
+	o.ServiceAccount = serviceAccount
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListGKEZonesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +155,22 @@ func (o *ListGKEZonesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.ServiceAccount != nil {
+
+		// header param ServiceAccount
+		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

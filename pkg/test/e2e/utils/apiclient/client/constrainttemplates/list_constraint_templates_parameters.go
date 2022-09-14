@@ -52,10 +52,12 @@ func NewListConstraintTemplatesParamsWithHTTPClient(client *http.Client) *ListCo
 	}
 }
 
-/* ListConstraintTemplatesParams contains all the parameters to send to the API endpoint
-   for the list constraint templates operation.
+/*
+ListConstraintTemplatesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list constraint templates operation.
+
+	Typically these are written to a http.Request.
 */
 type ListConstraintTemplatesParams struct {
 	timeout    time.Duration

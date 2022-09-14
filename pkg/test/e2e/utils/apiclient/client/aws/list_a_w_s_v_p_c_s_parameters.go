@@ -52,10 +52,12 @@ func NewListAWSVPCSParamsWithHTTPClient(client *http.Client) *ListAWSVPCSParams 
 	}
 }
 
-/* ListAWSVPCSParams contains all the parameters to send to the API endpoint
-   for the list a w s v p c s operation.
+/*
+ListAWSVPCSParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a w s v p c s operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAWSVPCSParams struct {
 

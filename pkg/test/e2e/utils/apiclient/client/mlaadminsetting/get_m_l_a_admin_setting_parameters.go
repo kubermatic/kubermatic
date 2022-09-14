@@ -52,10 +52,12 @@ func NewGetMLAAdminSettingParamsWithHTTPClient(client *http.Client) *GetMLAAdmin
 	}
 }
 
-/* GetMLAAdminSettingParams contains all the parameters to send to the API endpoint
-   for the get m l a admin setting operation.
+/*
+GetMLAAdminSettingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get m l a admin setting operation.
+
+	Typically these are written to a http.Request.
 */
 type GetMLAAdminSettingParams struct {
 

@@ -52,10 +52,12 @@ func NewListOperatingSystemProfilesParamsWithHTTPClient(client *http.Client) *Li
 	}
 }
 
-/* ListOperatingSystemProfilesParams contains all the parameters to send to the API endpoint
-   for the list operating system profiles operation.
+/*
+ListOperatingSystemProfilesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list operating system profiles operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOperatingSystemProfilesParams struct {
 

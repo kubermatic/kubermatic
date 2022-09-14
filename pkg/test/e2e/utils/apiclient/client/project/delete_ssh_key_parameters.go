@@ -52,10 +52,12 @@ func NewDeleteSSHKeyParamsWithHTTPClient(client *http.Client) *DeleteSSHKeyParam
 	}
 }
 
-/* DeleteSSHKeyParams contains all the parameters to send to the API endpoint
-   for the delete SSH key operation.
+/*
+DeleteSSHKeyParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete SSH key operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteSSHKeyParams struct {
 

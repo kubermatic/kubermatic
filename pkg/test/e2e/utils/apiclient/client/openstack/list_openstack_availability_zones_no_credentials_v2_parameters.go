@@ -52,10 +52,12 @@ func NewListOpenstackAvailabilityZonesNoCredentialsV2ParamsWithHTTPClient(client
 	}
 }
 
-/* ListOpenstackAvailabilityZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list openstack availability zones no credentials v2 operation.
+/*
+ListOpenstackAvailabilityZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack availability zones no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackAvailabilityZonesNoCredentialsV2Params struct {
 

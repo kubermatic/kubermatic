@@ -58,7 +58,8 @@ func NewDeleteGroupProjectBindingOK() *DeleteGroupProjectBindingOK {
 	return &DeleteGroupProjectBindingOK{}
 }
 
-/* DeleteGroupProjectBindingOK describes a response with status code 200, with default header values.
+/*
+DeleteGroupProjectBindingOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteGroupProjectBindingUnauthorized() *DeleteGroupProjectBindingUnauth
 	return &DeleteGroupProjectBindingUnauthorized{}
 }
 
-/* DeleteGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteGroupProjectBindingForbidden() *DeleteGroupProjectBindingForbidden
 	return &DeleteGroupProjectBindingForbidden{}
 }
 
-/* DeleteGroupProjectBindingForbidden describes a response with status code 403, with default header values.
+/*
+DeleteGroupProjectBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteGroupProjectBindingDefault(code int) *DeleteGroupProjectBindingDef
 	}
 }
 
-/* DeleteGroupProjectBindingDefault describes a response with status code -1, with default header values.
+/*
+DeleteGroupProjectBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewDeleteIPAMPoolOK() *DeleteIPAMPoolOK {
 	return &DeleteIPAMPoolOK{}
 }
 
-/* DeleteIPAMPoolOK describes a response with status code 200, with default header values.
+/*
+DeleteIPAMPoolOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteIPAMPoolUnauthorized() *DeleteIPAMPoolUnauthorized {
 	return &DeleteIPAMPoolUnauthorized{}
 }
 
-/* DeleteIPAMPoolUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteIPAMPoolUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteIPAMPoolForbidden() *DeleteIPAMPoolForbidden {
 	return &DeleteIPAMPoolForbidden{}
 }
 
-/* DeleteIPAMPoolForbidden describes a response with status code 403, with default header values.
+/*
+DeleteIPAMPoolForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteIPAMPoolDefault(code int) *DeleteIPAMPoolDefault {
 	}
 }
 
-/* DeleteIPAMPoolDefault describes a response with status code -1, with default header values.
+/*
+DeleteIPAMPoolDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

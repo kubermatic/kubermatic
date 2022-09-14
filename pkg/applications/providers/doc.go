@@ -19,7 +19,7 @@ Package providers provide the different implementations to download the applicat
 application into the user-cluster.
 
 There are 2 types of providers:
-   - source provider: which handles the download of application's sources. For example, the GitSource provider downloads sources from a git repository.
-   - template provider: which handles installation, update, or uninstallation of an application.
+  - source provider: which handles the download of application's sources. For example, the GitSource provider downloads sources from a git repository.
+  - template provider: which handles installation, update, or uninstallation of an application.
 */
 package providers

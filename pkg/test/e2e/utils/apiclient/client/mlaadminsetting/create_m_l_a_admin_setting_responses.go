@@ -58,7 +58,8 @@ func NewCreateMLAAdminSettingCreated() *CreateMLAAdminSettingCreated {
 	return &CreateMLAAdminSettingCreated{}
 }
 
-/* CreateMLAAdminSettingCreated describes a response with status code 201, with default header values.
+/*
+CreateMLAAdminSettingCreated describes a response with status code 201, with default header values.
 
 MLAAdminSetting
 */
@@ -120,7 +121,8 @@ func NewCreateMLAAdminSettingUnauthorized() *CreateMLAAdminSettingUnauthorized {
 	return &CreateMLAAdminSettingUnauthorized{}
 }
 
-/* CreateMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateMLAAdminSettingForbidden() *CreateMLAAdminSettingForbidden {
 	return &CreateMLAAdminSettingForbidden{}
 }
 
-/* CreateMLAAdminSettingForbidden describes a response with status code 403, with default header values.
+/*
+CreateMLAAdminSettingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateMLAAdminSettingDefault(code int) *CreateMLAAdminSettingDefault {
 	}
 }
 
-/* CreateMLAAdminSettingDefault describes a response with status code -1, with default header values.
+/*
+CreateMLAAdminSettingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

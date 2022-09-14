@@ -52,10 +52,12 @@ func NewListOperatingSystemProfilesForClusterParamsWithHTTPClient(client *http.C
 	}
 }
 
-/* ListOperatingSystemProfilesForClusterParams contains all the parameters to send to the API endpoint
-   for the list operating system profiles for cluster operation.
+/*
+ListOperatingSystemProfilesForClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list operating system profiles for cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOperatingSystemProfilesForClusterParams struct {
 

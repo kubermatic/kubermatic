@@ -24,6 +24,5 @@
 Package allowedregistrycontroller contains a controller that is responsible for ensuring that the allowed registries
 are being synced into corresponding Constraints and Constraint Templates, so that in the User clusters using OPA, users can
 only deploy workloads that are from allowed registries
-
 */
 package allowedregistrycontroller

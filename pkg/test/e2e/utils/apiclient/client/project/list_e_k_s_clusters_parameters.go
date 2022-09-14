@@ -52,10 +52,12 @@ func NewListEKSClustersParamsWithHTTPClient(client *http.Client) *ListEKSCluster
 	}
 }
 
-/* ListEKSClustersParams contains all the parameters to send to the API endpoint
-   for the list e k s clusters operation.
+/*
+ListEKSClustersParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s clusters operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSClustersParams struct {
 

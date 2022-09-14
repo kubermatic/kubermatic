@@ -58,7 +58,8 @@ func NewListGKEClusterImagesOK() *ListGKEClusterImagesOK {
 	return &ListGKEClusterImagesOK{}
 }
 
-/* ListGKEClusterImagesOK describes a response with status code 200, with default header values.
+/*
+ListGKEClusterImagesOK describes a response with status code 200, with default header values.
 
 GKEImageList
 */
@@ -118,7 +119,8 @@ func NewListGKEClusterImagesUnauthorized() *ListGKEClusterImagesUnauthorized {
 	return &ListGKEClusterImagesUnauthorized{}
 }
 
-/* ListGKEClusterImagesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListGKEClusterImagesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListGKEClusterImagesForbidden() *ListGKEClusterImagesForbidden {
 	return &ListGKEClusterImagesForbidden{}
 }
 
-/* ListGKEClusterImagesForbidden describes a response with status code 403, with default header values.
+/*
+ListGKEClusterImagesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListGKEClusterImagesDefault(code int) *ListGKEClusterImagesDefault {
 	}
 }
 
-/* ListGKEClusterImagesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClusterImagesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

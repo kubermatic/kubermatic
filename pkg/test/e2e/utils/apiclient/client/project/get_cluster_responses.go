@@ -58,7 +58,8 @@ func NewGetClusterOK() *GetClusterOK {
 	return &GetClusterOK{}
 }
 
-/* GetClusterOK describes a response with status code 200, with default header values.
+/*
+GetClusterOK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -120,7 +121,8 @@ func NewGetClusterUnauthorized() *GetClusterUnauthorized {
 	return &GetClusterUnauthorized{}
 }
 
-/* GetClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetClusterForbidden() *GetClusterForbidden {
 	return &GetClusterForbidden{}
 }
 
-/* GetClusterForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetClusterDefault(code int) *GetClusterDefault {
 	}
 }
 
-/* GetClusterDefault describes a response with status code -1, with default header values.
+/*
+GetClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewCreateIPAMPoolCreated() *CreateIPAMPoolCreated {
 	return &CreateIPAMPoolCreated{}
 }
 
-/* CreateIPAMPoolCreated describes a response with status code 201, with default header values.
+/*
+CreateIPAMPoolCreated describes a response with status code 201, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewCreateIPAMPoolUnauthorized() *CreateIPAMPoolUnauthorized {
 	return &CreateIPAMPoolUnauthorized{}
 }
 
-/* CreateIPAMPoolUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateIPAMPoolUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewCreateIPAMPoolForbidden() *CreateIPAMPoolForbidden {
 	return &CreateIPAMPoolForbidden{}
 }
 
-/* CreateIPAMPoolForbidden describes a response with status code 403, with default header values.
+/*
+CreateIPAMPoolForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewCreateIPAMPoolDefault(code int) *CreateIPAMPoolDefault {
 	}
 }
 
-/* CreateIPAMPoolDefault describes a response with status code -1, with default header values.
+/*
+CreateIPAMPoolDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

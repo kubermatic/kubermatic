@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  DeleteDefaultConstraint deletes a specified default constraint
+DeleteDefaultConstraint deletes a specified default constraint
 */
 func (a *Client) DeleteDefaultConstraint(params *DeleteDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
