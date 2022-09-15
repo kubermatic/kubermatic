@@ -27,6 +27,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -161,7 +162,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: defaulting.DefaultKubernetesVersioning.Versions,
+				Versions: defaults.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}
