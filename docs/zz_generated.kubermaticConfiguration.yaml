@@ -528,16 +528,22 @@ spec:
       - from: 1.22.*
         to: 1.22.*
       - automatic: true
-        from: '>= 1.22.0, < 1.22.5'
-        to: 1.22.5
+        from: '>= 1.22.0, < 1.22.14'
+        to: 1.22.14
       - from: 1.22.*
         to: 1.23.*
       - from: 1.23.*
         to: 1.23.*
+      - automatic: true
+        from: '>= 1.23.0, < 1.23.11'
+        to: 1.23.11
       - from: 1.23.*
         to: 1.24.*
       - from: 1.24.*
         to: 1.24.*
+      - automatic: true
+        from: '>= 1.24.0, < 1.24.5'
+        to: 1.24.5
     # Versions lists the available versions.
     versions:
       - v1.22.5
