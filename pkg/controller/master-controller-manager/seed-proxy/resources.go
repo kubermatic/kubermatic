@@ -268,7 +268,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, get
 						},
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("32Mi"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
 						},
 					},
 					ReadinessProbe: &probe,
