@@ -210,11 +210,7 @@ func (a *Client) ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesN
 }
 
 /*
-<<<<<<< HEAD
-  ListEKSNodeRolesNoCredentials lists e k s node i a m roles
-=======
-ListEKSNodeRoles lists e k s node i a m roles
->>>>>>> 12f39660eb767c8b969eeec5613574ffd3b2939f
+ListEKSNodeRolesNoCredentials lists e k s node i a m roles
 */
 func (a *Client) ListEKSNodeRolesNoCredentials(params *ListEKSNodeRolesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending

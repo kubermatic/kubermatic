@@ -52,10 +52,12 @@ func NewListEKSNodeRolesNoCredentialsParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* ListEKSNodeRolesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list e k s node roles no credentials operation.
+/*
+ListEKSNodeRolesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s node roles no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSNodeRolesNoCredentialsParams struct {
 
