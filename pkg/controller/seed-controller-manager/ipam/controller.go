@@ -175,18 +175,26 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		clusterDC := cluster.Spec.Cloud.DatacenterName
 
 		dcIPAMPoolCfg, isClusterDCConfigured := ipamPool.Spec.Datacenters[clusterDC]
-		if !isClusterDCConfigured {
-			// This IPAM pool is not relevant to cluster, so skip it
-			continue
-		}
 
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		err = r.Client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: ipamPool.Name}, ipamAllocation)
 		if err == nil {
-			// skip because pool is already allocated for cluster
+			if !isClusterDCConfigured {
+				// There is an allocation for a datacenter that is not present
+				// in the IPAM pool spec anymore, so delete it
+				if err := r.Delete(ctx, ipamAllocation); err != nil && !apierrors.IsNotFound(err) {
+					return nil, err
+				}
+			}
+			// Skip because no allocation from this IPAM pool is needed for the cluster
 			continue
 		} else if !apierrors.IsNotFound(err) {
 			return nil, err
+		}
+
+		if !isClusterDCConfigured {
+			// This IPAM pool is not relevant to cluster, so skip it
+			continue
 		}
 
 		dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool.Name, clusterDC, dcIPAMPoolCfg)

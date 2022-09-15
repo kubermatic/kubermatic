@@ -19,31 +19,21 @@ package validation
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"net"
-	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating Resource Quota CRD.
-type validator struct {
-	seedGetter       provider.SeedGetter
-	seedClientGetter provider.SeedClientGetter
-}
+type validator struct{}
 
 // NewValidator returns a new Resource Quota validator.
-func NewValidator(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *validator {
-	return &validator{
-		seedGetter:       seedGetter,
-		seedClientGetter: seedClientGetter,
-	}
+func NewValidator() *validator {
+	return &validator{}
 }
 
 var _ admission.CustomValidator = &validator{}
@@ -64,10 +54,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	for dc, dcOldConfig := range oldIPAMPool.Spec.Datacenters {
 		dcNewConfig, dcExistsInNewPool := newIPAMPool.Spec.Datacenters[dc]
 		if !dcExistsInNewPool {
-			err := v.validateDCRemoval(ctx, oldIPAMPool, dc)
-			if err != nil {
-				return err
-			}
+			// we allow deletion of a specific datacenter from the IPAM Pool
 			continue
 		}
 
@@ -142,49 +129,4 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
-}
-
-func (v *validator) validateDCRemoval(ctx context.Context, ipamPool *kubermaticv1.IPAMPool, dc string) error {
-	seedClient, err := v.getSeedClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	// List all IPAM allocations
-	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err = seedClient.List(ctx, ipamAllocationList)
-	if err != nil {
-		return fmt.Errorf("failed to list IPAM allocations: %w", err)
-	}
-
-	// Iterate current IPAM allocations to check if there is an allocation for the pool to be deleted
-	var ipamAllocationsNamespaces []string
-	for _, ipamAllocation := range ipamAllocationList.Items {
-		if ipamAllocation.Name == ipamPool.Name && ipamAllocation.Spec.DC == dc {
-			ipamAllocationsNamespaces = append(ipamAllocationsNamespaces, ipamAllocation.Namespace)
-		}
-	}
-
-	if len(ipamAllocationsNamespaces) > 0 {
-		return fmt.Errorf("cannot delete some datacenter IPAMPool because there is existing IPAMAllocation in namespaces (%s)", strings.Join(ipamAllocationsNamespaces, ", "))
-	}
-
-	return nil
-}
-
-func (v *validator) getSeedClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
-	seed, err := v.seedGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current seed: %w", err)
-	}
-	if seed == nil {
-		return nil, errors.New("webhook not configured for a seed cluster")
-	}
-
-	client, err := v.seedClientGetter(seed)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get seed client: %w", err)
-	}
-
-	return client, nil
 }
