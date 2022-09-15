@@ -155,7 +155,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: test.GenDefaultVersions(),
+				Versions: defaulting.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}
@@ -796,7 +796,7 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: test.GenDefaultVersions(),
+				Versions: defaulting.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}
