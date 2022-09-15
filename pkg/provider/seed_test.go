@@ -97,7 +97,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 		t.Fatalf("failed calling seedsGetter: %v", err)
 	}
 	if _, exists := seeds[DefaultSeedName]; !exists || len(seeds) != 1 {
-		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
+		t.Fatalf("expected to get a map with exactly one key `my-seed`, got %v", seeds)
 	}
 
 	seed := seeds[DefaultSeedName]

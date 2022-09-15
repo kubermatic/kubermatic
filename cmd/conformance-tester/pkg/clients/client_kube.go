@@ -169,7 +169,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
 
 	// The cluster humanReadableName must be unique per project;
-	// we build up a readable humanReadableName with the various cli parameters annd
+	// we build up a readable humanReadableName with the various cli parameters and
 	// add a random string in the end to ensure we really have a unique humanReadableName.
 	humanReadableName := ""
 	if c.opts.NamePrefix != "" {

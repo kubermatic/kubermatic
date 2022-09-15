@@ -6,7 +6,7 @@ environment, then configuring that cluster to be managed by a locally running co
 The basic steps to get started on this are these:
 
 * Clone the dashboard repo onto your `GOPATH`: `git clone git@github.com:kubermatic/dashboard.git $(go env GOPATH)/src/k8c.io/dashboard`
-* Start all the components via the respective scripts. All of them are blocking so it is suggested to start a termial instance for each:
+* Start all the components via the respective scripts. All of them are blocking so it is suggested to start a terminal instance for each:
     * API: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-api.sh`
     * Dashboard: `$(go env GOPATH)/src/k8c.io/dashboard/hack/run-local-dashboard.sh`
     * Controller-Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-controller.sh`
