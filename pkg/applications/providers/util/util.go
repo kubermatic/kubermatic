@@ -49,7 +49,7 @@ func CleanUpHelmTempDir(cacheDir string, logger *zap.SugaredLogger) {
 }
 
 // StatusUpdater is a function that postpone the update of the applicationInstallation.
-// It used to set status's filed of a specific template Porvider (eg status.HelmRelease).
+// It used to set status's filed of a specific template Provider (eg status.HelmRelease).
 type StatusUpdater func(status *appskubermaticv1.ApplicationInstallationStatus)
 
 // NoStatusUpdate is a StatusUpdater that does not update the status.

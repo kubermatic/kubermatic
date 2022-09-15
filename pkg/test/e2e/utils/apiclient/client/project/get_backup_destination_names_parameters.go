@@ -52,10 +52,12 @@ func NewGetBackupDestinationNamesParamsWithHTTPClient(client *http.Client) *GetB
 	}
 }
 
-/* GetBackupDestinationNamesParams contains all the parameters to send to the API endpoint
-   for the get backup destination names operation.
+/*
+GetBackupDestinationNamesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get backup destination names operation.
+
+	Typically these are written to a http.Request.
 */
 type GetBackupDestinationNamesParams struct {
 

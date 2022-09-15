@@ -58,7 +58,8 @@ func NewGetClusterHealthOK() *GetClusterHealthOK {
 	return &GetClusterHealthOK{}
 }
 
-/* GetClusterHealthOK describes a response with status code 200, with default header values.
+/*
+GetClusterHealthOK describes a response with status code 200, with default header values.
 
 ClusterHealth
 */
@@ -120,7 +121,8 @@ func NewGetClusterHealthUnauthorized() *GetClusterHealthUnauthorized {
 	return &GetClusterHealthUnauthorized{}
 }
 
-/* GetClusterHealthUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterHealthUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetClusterHealthForbidden() *GetClusterHealthForbidden {
 	return &GetClusterHealthForbidden{}
 }
 
-/* GetClusterHealthForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterHealthForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetClusterHealthDefault(code int) *GetClusterHealthDefault {
 	}
 }
 
-/* GetClusterHealthDefault describes a response with status code -1, with default header values.
+/*
+GetClusterHealthDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

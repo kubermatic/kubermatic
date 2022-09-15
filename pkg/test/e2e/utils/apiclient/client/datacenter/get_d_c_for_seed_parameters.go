@@ -52,10 +52,12 @@ func NewGetDCForSeedParamsWithHTTPClient(client *http.Client) *GetDCForSeedParam
 	}
 }
 
-/* GetDCForSeedParams contains all the parameters to send to the API endpoint
-   for the get d c for seed operation.
+/*
+GetDCForSeedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get d c for seed operation.
+
+	Typically these are written to a http.Request.
 */
 type GetDCForSeedParams struct {
 

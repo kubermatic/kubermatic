@@ -52,10 +52,12 @@ func NewDeleteExternalClusterParamsWithHTTPClient(client *http.Client) *DeleteEx
 	}
 }
 
-/* DeleteExternalClusterParams contains all the parameters to send to the API endpoint
-   for the delete external cluster operation.
+/*
+DeleteExternalClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete external cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteExternalClusterParams struct {
 

@@ -52,10 +52,12 @@ func NewListVSphereFoldersNoCredentialsV2ParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* ListVSphereFoldersNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list v sphere folders no credentials v2 operation.
+/*
+ListVSphereFoldersNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list v sphere folders no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVSphereFoldersNoCredentialsV2Params struct {
 

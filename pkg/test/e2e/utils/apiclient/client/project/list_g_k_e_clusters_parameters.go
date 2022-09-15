@@ -52,10 +52,12 @@ func NewListGKEClustersParamsWithHTTPClient(client *http.Client) *ListGKECluster
 	}
 }
 
-/* ListGKEClustersParams contains all the parameters to send to the API endpoint
-   for the list g k e clusters operation.
+/*
+ListGKEClustersParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e clusters operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEClustersParams struct {
 

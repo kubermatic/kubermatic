@@ -58,7 +58,8 @@ func NewGetRuleGroupOK() *GetRuleGroupOK {
 	return &GetRuleGroupOK{}
 }
 
-/* GetRuleGroupOK describes a response with status code 200, with default header values.
+/*
+GetRuleGroupOK describes a response with status code 200, with default header values.
 
 RuleGroup
 */
@@ -120,7 +121,8 @@ func NewGetRuleGroupUnauthorized() *GetRuleGroupUnauthorized {
 	return &GetRuleGroupUnauthorized{}
 }
 
-/* GetRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+GetRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetRuleGroupForbidden() *GetRuleGroupForbidden {
 	return &GetRuleGroupForbidden{}
 }
 
-/* GetRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+GetRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetRuleGroupDefault(code int) *GetRuleGroupDefault {
 	}
 }
 
-/* GetRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+GetRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

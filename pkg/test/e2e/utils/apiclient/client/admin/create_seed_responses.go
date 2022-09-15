@@ -61,7 +61,8 @@ func NewCreateSeedOK() *CreateSeedOK {
 	return &CreateSeedOK{}
 }
 
-/* CreateSeedOK describes a response with status code 200, with default header values.
+/*
+CreateSeedOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -123,7 +124,8 @@ func NewCreateSeedUnauthorized() *CreateSeedUnauthorized {
 	return &CreateSeedUnauthorized{}
 }
 
-/* CreateSeedUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -173,7 +175,8 @@ func NewCreateSeedForbidden() *CreateSeedForbidden {
 	return &CreateSeedForbidden{}
 }
 
-/* CreateSeedForbidden describes a response with status code 403, with default header values.
+/*
+CreateSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -225,7 +228,8 @@ func NewCreateSeedDefault(code int) *CreateSeedDefault {
 	}
 }
 
-/* CreateSeedDefault describes a response with status code -1, with default header values.
+/*
+CreateSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -289,7 +293,8 @@ func (o *CreateSeedDefault) readResponse(response runtime.ClientResponse, consum
 	return nil
 }
 
-/*CreateSeedBody create seed body
+/*
+CreateSeedBody create seed body
 swagger:model CreateSeedBody
 */
 type CreateSeedBody struct {

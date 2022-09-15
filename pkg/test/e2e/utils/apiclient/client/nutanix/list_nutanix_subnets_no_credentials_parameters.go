@@ -52,10 +52,12 @@ func NewListNutanixSubnetsNoCredentialsParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListNutanixSubnetsNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list nutanix subnets no credentials operation.
+/*
+ListNutanixSubnetsNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix subnets no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixSubnetsNoCredentialsParams struct {
 

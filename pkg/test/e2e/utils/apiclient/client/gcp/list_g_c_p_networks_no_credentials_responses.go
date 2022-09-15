@@ -46,7 +46,8 @@ func NewListGCPNetworksNoCredentialsOK() *ListGCPNetworksNoCredentialsOK {
 	return &ListGCPNetworksNoCredentialsOK{}
 }
 
-/* ListGCPNetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPNetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -108,7 +109,8 @@ func NewListGCPNetworksNoCredentialsDefault(code int) *ListGCPNetworksNoCredenti
 	}
 }
 
-/* ListGCPNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

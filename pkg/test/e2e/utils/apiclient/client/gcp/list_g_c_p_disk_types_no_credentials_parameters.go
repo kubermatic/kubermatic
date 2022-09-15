@@ -52,10 +52,12 @@ func NewListGCPDiskTypesNoCredentialsParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* ListGCPDiskTypesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list g c p disk types no credentials operation.
+/*
+ListGCPDiskTypesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p disk types no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPDiskTypesNoCredentialsParams struct {
 

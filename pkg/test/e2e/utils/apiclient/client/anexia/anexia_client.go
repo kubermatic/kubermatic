@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  ListAnexiaTemplates Lists templates from anexia
+ListAnexiaTemplates Lists templates from anexia
 */
 func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesOK, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) ListAnexiaTemplates(params *ListAnexiaTemplatesParams, authInfo
 }
 
 /*
-  ListAnexiaTemplatesNoCredentialsV2 Lists templates from Anexia
+ListAnexiaTemplatesNoCredentialsV2 Lists templates from Anexia
 */
 func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaTemplatesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) ListAnexiaTemplatesNoCredentialsV2(params *ListAnexiaTemplatesN
 }
 
 /*
-  ListAnexiaVlans Lists vlans from anexia
+ListAnexiaVlans Lists vlans from anexia
 */
 func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansOK, error) {
 	// TODO: Validate the params before sending
@@ -154,7 +154,7 @@ func (a *Client) ListAnexiaVlans(params *ListAnexiaVlansParams, authInfo runtime
 }
 
 /*
-  ListAnexiaVlansNoCredentialsV2 Lists vlans from Anexia
+ListAnexiaVlansNoCredentialsV2 Lists vlans from Anexia
 */
 func (a *Client) ListAnexiaVlansNoCredentialsV2(params *ListAnexiaVlansNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAnexiaVlansNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

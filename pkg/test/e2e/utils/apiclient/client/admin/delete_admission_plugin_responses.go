@@ -58,7 +58,8 @@ func NewDeleteAdmissionPluginOK() *DeleteAdmissionPluginOK {
 	return &DeleteAdmissionPluginOK{}
 }
 
-/* DeleteAdmissionPluginOK describes a response with status code 200, with default header values.
+/*
+DeleteAdmissionPluginOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteAdmissionPluginUnauthorized() *DeleteAdmissionPluginUnauthorized {
 	return &DeleteAdmissionPluginUnauthorized{}
 }
 
-/* DeleteAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteAdmissionPluginForbidden() *DeleteAdmissionPluginForbidden {
 	return &DeleteAdmissionPluginForbidden{}
 }
 
-/* DeleteAdmissionPluginForbidden describes a response with status code 403, with default header values.
+/*
+DeleteAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteAdmissionPluginDefault(code int) *DeleteAdmissionPluginDefault {
 	}
 }
 
-/* DeleteAdmissionPluginDefault describes a response with status code -1, with default header values.
+/*
+DeleteAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

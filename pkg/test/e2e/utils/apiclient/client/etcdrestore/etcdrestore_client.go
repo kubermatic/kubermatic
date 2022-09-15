@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  CreateEtcdRestore Creates a etcd backup restore for a given cluster
+CreateEtcdRestore Creates a etcd backup restore for a given cluster
 */
 func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEtcdRestoreCreated, error) {
 	// TODO: Validate the params before sending
@@ -80,7 +80,7 @@ func (a *Client) CreateEtcdRestore(params *CreateEtcdRestoreParams, authInfo run
 }
 
 /*
-  DeleteEtcdRestore Deletes a etcd restore config for a given cluster based on its name
+DeleteEtcdRestore Deletes a etcd restore config for a given cluster based on its name
 */
 func (a *Client) DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
@@ -118,7 +118,7 @@ func (a *Client) DeleteEtcdRestore(params *DeleteEtcdRestoreParams, authInfo run
 }
 
 /*
-  GetEtcdRestore Gets a etcd backup restore for a given cluster based on its name
+GetEtcdRestore Gets a etcd backup restore for a given cluster based on its name
 */
 func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) GetEtcdRestore(params *GetEtcdRestoreParams, authInfo runtime.C
 }
 
 /*
-  ListEtcdRestore List etcd backup restores for a given cluster
+ListEtcdRestore List etcd backup restores for a given cluster
 */
 func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending
@@ -194,7 +194,7 @@ func (a *Client) ListEtcdRestore(params *ListEtcdRestoreParams, authInfo runtime
 }
 
 /*
-  ListProjectEtcdRestore List etcd backup restores for a given project
+ListProjectEtcdRestore List etcd backup restores for a given project
 */
 func (a *Client) ListProjectEtcdRestore(params *ListProjectEtcdRestoreParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdRestoreOK, error) {
 	// TODO: Validate the params before sending

@@ -52,10 +52,12 @@ func NewListOpenstackTenantsNoCredentialsParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* ListOpenstackTenantsNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list openstack tenants no credentials operation.
+/*
+ListOpenstackTenantsNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack tenants no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackTenantsNoCredentialsParams struct {
 

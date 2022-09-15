@@ -58,7 +58,8 @@ func NewRevokeClusterAdminTokenV2OK() *RevokeClusterAdminTokenV2OK {
 	return &RevokeClusterAdminTokenV2OK{}
 }
 
-/* RevokeClusterAdminTokenV2OK describes a response with status code 200, with default header values.
+/*
+RevokeClusterAdminTokenV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewRevokeClusterAdminTokenV2Unauthorized() *RevokeClusterAdminTokenV2Unauth
 	return &RevokeClusterAdminTokenV2Unauthorized{}
 }
 
-/* RevokeClusterAdminTokenV2Unauthorized describes a response with status code 401, with default header values.
+/*
+RevokeClusterAdminTokenV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewRevokeClusterAdminTokenV2Forbidden() *RevokeClusterAdminTokenV2Forbidden
 	return &RevokeClusterAdminTokenV2Forbidden{}
 }
 
-/* RevokeClusterAdminTokenV2Forbidden describes a response with status code 403, with default header values.
+/*
+RevokeClusterAdminTokenV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewRevokeClusterAdminTokenV2Default(code int) *RevokeClusterAdminTokenV2Def
 	}
 }
 
-/* RevokeClusterAdminTokenV2Default describes a response with status code -1, with default header values.
+/*
+RevokeClusterAdminTokenV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

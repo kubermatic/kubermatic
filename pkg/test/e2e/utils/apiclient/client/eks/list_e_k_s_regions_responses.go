@@ -58,12 +58,13 @@ func NewListEKSRegionsOK() *ListEKSRegionsOK {
 	return &ListEKSRegionsOK{}
 }
 
-/* ListEKSRegionsOK describes a response with status code 200, with default header values.
+/*
+ListEKSRegionsOK describes a response with status code 200, with default header values.
 
 EKSRegionList
 */
 type ListEKSRegionsOK struct {
-	Payload models.EKSRegionList
+	Payload []models.EKSRegionList
 }
 
 // IsSuccess returns true when this list e k s regions o k response has a 2xx status code
@@ -99,7 +100,7 @@ func (o *ListEKSRegionsOK) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/eks/regions][%d] listEKSRegionsOK  %+v", 200, o.Payload)
 }
 
-func (o *ListEKSRegionsOK) GetPayload() models.EKSRegionList {
+func (o *ListEKSRegionsOK) GetPayload() []models.EKSRegionList {
 	return o.Payload
 }
 
@@ -118,7 +119,8 @@ func NewListEKSRegionsUnauthorized() *ListEKSRegionsUnauthorized {
 	return &ListEKSRegionsUnauthorized{}
 }
 
-/* ListEKSRegionsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSRegionsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSRegionsForbidden() *ListEKSRegionsForbidden {
 	return &ListEKSRegionsForbidden{}
 }
 
-/* ListEKSRegionsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSRegionsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSRegionsDefault(code int) *ListEKSRegionsDefault {
 	}
 }
 
-/* ListEKSRegionsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSRegionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

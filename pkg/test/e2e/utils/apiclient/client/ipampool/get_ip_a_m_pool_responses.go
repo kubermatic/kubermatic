@@ -58,7 +58,8 @@ func NewGetIPAMPoolOK() *GetIPAMPoolOK {
 	return &GetIPAMPoolOK{}
 }
 
-/* GetIPAMPoolOK describes a response with status code 200, with default header values.
+/*
+GetIPAMPoolOK describes a response with status code 200, with default header values.
 
 IPAMPool
 */
@@ -120,7 +121,8 @@ func NewGetIPAMPoolUnauthorized() *GetIPAMPoolUnauthorized {
 	return &GetIPAMPoolUnauthorized{}
 }
 
-/* GetIPAMPoolUnauthorized describes a response with status code 401, with default header values.
+/*
+GetIPAMPoolUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetIPAMPoolForbidden() *GetIPAMPoolForbidden {
 	return &GetIPAMPoolForbidden{}
 }
 
-/* GetIPAMPoolForbidden describes a response with status code 403, with default header values.
+/*
+GetIPAMPoolForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetIPAMPoolDefault(code int) *GetIPAMPoolDefault {
 	}
 }
 
-/* GetIPAMPoolDefault describes a response with status code -1, with default header values.
+/*
+GetIPAMPoolDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

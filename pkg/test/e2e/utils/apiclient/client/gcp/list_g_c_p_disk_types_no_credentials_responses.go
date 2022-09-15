@@ -46,7 +46,8 @@ func NewListGCPDiskTypesNoCredentialsOK() *ListGCPDiskTypesNoCredentialsOK {
 	return &ListGCPDiskTypesNoCredentialsOK{}
 }
 
-/* ListGCPDiskTypesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPDiskTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPDiskTypeList
 */
@@ -108,7 +109,8 @@ func NewListGCPDiskTypesNoCredentialsDefault(code int) *ListGCPDiskTypesNoCreden
 	}
 }
 
-/* ListGCPDiskTypesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPDiskTypesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorStorageProfilesNoCredentialsOK() *ListVMwareCloud
 	return &ListVMwareCloudDirectorStorageProfilesNoCredentialsOK{}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesNoCredentialsOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorStorageProfileList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorStorageProfilesNoCredentialsDefault(code int) *Li
 	}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

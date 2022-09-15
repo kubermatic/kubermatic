@@ -58,7 +58,8 @@ func NewUpgradeClusterNodeDeploymentsV2OK() *UpgradeClusterNodeDeploymentsV2OK {
 	return &UpgradeClusterNodeDeploymentsV2OK{}
 }
 
-/* UpgradeClusterNodeDeploymentsV2OK describes a response with status code 200, with default header values.
+/*
+UpgradeClusterNodeDeploymentsV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewUpgradeClusterNodeDeploymentsV2Unauthorized() *UpgradeClusterNodeDeploym
 	return &UpgradeClusterNodeDeploymentsV2Unauthorized{}
 }
 
-/* UpgradeClusterNodeDeploymentsV2Unauthorized describes a response with status code 401, with default header values.
+/*
+UpgradeClusterNodeDeploymentsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewUpgradeClusterNodeDeploymentsV2Forbidden() *UpgradeClusterNodeDeployment
 	return &UpgradeClusterNodeDeploymentsV2Forbidden{}
 }
 
-/* UpgradeClusterNodeDeploymentsV2Forbidden describes a response with status code 403, with default header values.
+/*
+UpgradeClusterNodeDeploymentsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewUpgradeClusterNodeDeploymentsV2Default(code int) *UpgradeClusterNodeDepl
 	}
 }
 
-/* UpgradeClusterNodeDeploymentsV2Default describes a response with status code -1, with default header values.
+/*
+UpgradeClusterNodeDeploymentsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

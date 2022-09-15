@@ -52,10 +52,12 @@ func NewGetMasterVersionsParamsWithHTTPClient(client *http.Client) *GetMasterVer
 	}
 }
 
-/* GetMasterVersionsParams contains all the parameters to send to the API endpoint
-   for the get master versions operation.
+/*
+GetMasterVersionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get master versions operation.
+
+	Typically these are written to a http.Request.
 */
 type GetMasterVersionsParams struct {
 	timeout    time.Duration

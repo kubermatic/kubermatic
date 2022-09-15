@@ -52,10 +52,12 @@ func NewListGCPSubnetworksParamsWithHTTPClient(client *http.Client) *ListGCPSubn
 	}
 }
 
-/* ListGCPSubnetworksParams contains all the parameters to send to the API endpoint
-   for the list g c p subnetworks operation.
+/*
+ListGCPSubnetworksParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p subnetworks operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPSubnetworksParams struct {
 

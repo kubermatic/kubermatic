@@ -52,10 +52,12 @@ func NewListSSHKeysParamsWithHTTPClient(client *http.Client) *ListSSHKeysParams 
 	}
 }
 
-/* ListSSHKeysParams contains all the parameters to send to the API endpoint
-   for the list SSH keys operation.
+/*
+ListSSHKeysParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list SSH keys operation.
+
+	Typically these are written to a http.Request.
 */
 type ListSSHKeysParams struct {
 

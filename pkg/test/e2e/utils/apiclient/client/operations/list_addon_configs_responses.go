@@ -52,7 +52,8 @@ func NewListAddonConfigsOK() *ListAddonConfigsOK {
 	return &ListAddonConfigsOK{}
 }
 
-/* ListAddonConfigsOK describes a response with status code 200, with default header values.
+/*
+ListAddonConfigsOK describes a response with status code 200, with default header values.
 
 AddonConfig
 */
@@ -112,7 +113,8 @@ func NewListAddonConfigsUnauthorized() *ListAddonConfigsUnauthorized {
 	return &ListAddonConfigsUnauthorized{}
 }
 
-/* ListAddonConfigsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAddonConfigsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -164,7 +166,8 @@ func NewListAddonConfigsDefault(code int) *ListAddonConfigsDefault {
 	}
 }
 
-/* ListAddonConfigsDefault describes a response with status code -1, with default header values.
+/*
+ListAddonConfigsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

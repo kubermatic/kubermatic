@@ -58,7 +58,8 @@ func NewListDCForProviderOK() *ListDCForProviderOK {
 	return &ListDCForProviderOK{}
 }
 
-/* ListDCForProviderOK describes a response with status code 200, with default header values.
+/*
+ListDCForProviderOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -118,7 +119,8 @@ func NewListDCForProviderUnauthorized() *ListDCForProviderUnauthorized {
 	return &ListDCForProviderUnauthorized{}
 }
 
-/* ListDCForProviderUnauthorized describes a response with status code 401, with default header values.
+/*
+ListDCForProviderUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListDCForProviderForbidden() *ListDCForProviderForbidden {
 	return &ListDCForProviderForbidden{}
 }
 
-/* ListDCForProviderForbidden describes a response with status code 403, with default header values.
+/*
+ListDCForProviderForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListDCForProviderDefault(code int) *ListDCForProviderDefault {
 	}
 }
 
-/* ListDCForProviderDefault describes a response with status code -1, with default header values.
+/*
+ListDCForProviderDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,7 +52,7 @@ type ClientService interface {
 }
 
 /*
-  CreateAdminRuleGroup Creates a rule group that will belong to the given Seed
+CreateAdminRuleGroup Creates a rule group that will belong to the given Seed
 */
 func (a *Client) CreateAdminRuleGroup(params *CreateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdminRuleGroupCreated, error) {
 	// TODO: Validate the params before sending
@@ -90,7 +90,7 @@ func (a *Client) CreateAdminRuleGroup(params *CreateAdminRuleGroupParams, authIn
 }
 
 /*
-  CreateRuleGroup Creates a rule group that will belong to the given cluster
+CreateRuleGroup Creates a rule group that will belong to the given cluster
 */
 func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRuleGroupCreated, error) {
 	// TODO: Validate the params before sending
@@ -128,7 +128,7 @@ func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime
 }
 
 /*
-  DeleteAdminRuleGroup deletes the given rule group that belongs to the seed
+DeleteAdminRuleGroup deletes the given rule group that belongs to the seed
 */
 func (a *Client) DeleteAdminRuleGroup(params *DeleteAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdminRuleGroupOK, error) {
 	// TODO: Validate the params before sending
@@ -166,7 +166,7 @@ func (a *Client) DeleteAdminRuleGroup(params *DeleteAdminRuleGroupParams, authIn
 }
 
 /*
-  DeleteRuleGroup deletes the given rule group that belongs to the cluster
+DeleteRuleGroup deletes the given rule group that belongs to the cluster
 */
 func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRuleGroupOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +204,7 @@ func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime
 }
 
 /*
-  GetAdminRuleGroup gets a specified rule group for a given seed
+GetAdminRuleGroup gets a specified rule group for a given seed
 */
 func (a *Client) GetAdminRuleGroup(params *GetAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminRuleGroupOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +242,7 @@ func (a *Client) GetAdminRuleGroup(params *GetAdminRuleGroupParams, authInfo run
 }
 
 /*
-  GetRuleGroup gets a specified rule group for the given cluster
+GetRuleGroup gets a specified rule group for the given cluster
 */
 func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRuleGroupOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +280,7 @@ func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.Clien
 }
 
 /*
-  ListAdminRuleGroups lists rule groups that belong to a given seed
+ListAdminRuleGroups lists rule groups that belong to a given seed
 */
 func (a *Client) ListAdminRuleGroups(params *ListAdminRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdminRuleGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +318,7 @@ func (a *Client) ListAdminRuleGroups(params *ListAdminRuleGroupsParams, authInfo
 }
 
 /*
-  ListRuleGroups Lists rule groups that belong to the given cluster
+ListRuleGroups Lists rule groups that belong to the given cluster
 */
 func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRuleGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +356,7 @@ func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.C
 }
 
 /*
-  UpdateAdminRuleGroup updates the specified rule group for the given seed
+UpdateAdminRuleGroup updates the specified rule group for the given seed
 */
 func (a *Client) UpdateAdminRuleGroup(params *UpdateAdminRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdminRuleGroupOK, error) {
 	// TODO: Validate the params before sending
@@ -394,7 +394,7 @@ func (a *Client) UpdateAdminRuleGroup(params *UpdateAdminRuleGroupParams, authIn
 }
 
 /*
-  UpdateRuleGroup updates the specified rule group for the given cluster
+UpdateRuleGroup updates the specified rule group for the given cluster
 */
 func (a *Client) UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRuleGroupOK, error) {
 	// TODO: Validate the params before sending

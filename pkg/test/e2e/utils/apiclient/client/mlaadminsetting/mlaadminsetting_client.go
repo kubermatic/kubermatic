@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  CreateMLAAdminSetting Creates MLA admin setting that will belong to the given cluster
+CreateMLAAdminSetting Creates MLA admin setting that will belong to the given cluster
 */
 func (a *Client) CreateMLAAdminSetting(params *CreateMLAAdminSettingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMLAAdminSettingCreated, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) CreateMLAAdminSetting(params *CreateMLAAdminSettingParams, auth
 }
 
 /*
-  DeleteMLAAdminSetting deletes the m l a admin setting that belongs to the cluster
+DeleteMLAAdminSetting deletes the m l a admin setting that belongs to the cluster
 */
 func (a *Client) DeleteMLAAdminSetting(params *DeleteMLAAdminSettingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMLAAdminSettingOK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) DeleteMLAAdminSetting(params *DeleteMLAAdminSettingParams, auth
 }
 
 /*
-  GetMLAAdminSetting gets m l a admin settings for the given cluster
+GetMLAAdminSetting gets m l a admin settings for the given cluster
 */
 func (a *Client) GetMLAAdminSetting(params *GetMLAAdminSettingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMLAAdminSettingOK, error) {
 	// TODO: Validate the params before sending
@@ -154,7 +154,7 @@ func (a *Client) GetMLAAdminSetting(params *GetMLAAdminSettingParams, authInfo r
 }
 
 /*
-  UpdateMLAAdminSetting updates the m l a admin setting for the given cluster
+UpdateMLAAdminSetting updates the m l a admin setting for the given cluster
 */
 func (a *Client) UpdateMLAAdminSetting(params *UpdateMLAAdminSettingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMLAAdminSettingOK, error) {
 	// TODO: Validate the params before sending

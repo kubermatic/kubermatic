@@ -35,7 +35,7 @@ The "chain of command" is then as follows:
 
 As our documentation already separates Kubermatic from the monitoring and logging stack,
 the installer will do the same. The first version will only include support for
-intalling the Kubermatic stack (cert-manager, nginx, Dex, Kubermatic Operator), later
+installing the Kubermatic stack (cert-manager, nginx, Dex, Kubermatic Operator), later
 versions will then gain support for the other stacks.
 
 ### User Story

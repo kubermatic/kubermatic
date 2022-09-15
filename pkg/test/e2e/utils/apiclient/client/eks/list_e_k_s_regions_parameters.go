@@ -52,10 +52,12 @@ func NewListEKSRegionsParamsWithHTTPClient(client *http.Client) *ListEKSRegionsP
 	}
 }
 
-/* ListEKSRegionsParams contains all the parameters to send to the API endpoint
-   for the list e k s regions operation.
+/*
+ListEKSRegionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s regions operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSRegionsParams struct {
 	timeout    time.Duration

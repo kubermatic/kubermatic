@@ -46,7 +46,8 @@ func NewListNutanixCategoryValuesOK() *ListNutanixCategoryValuesOK {
 	return &ListNutanixCategoryValuesOK{}
 }
 
-/* ListNutanixCategoryValuesOK describes a response with status code 200, with default header values.
+/*
+ListNutanixCategoryValuesOK describes a response with status code 200, with default header values.
 
 NutanixCategoryValueList
 */
@@ -108,7 +109,8 @@ func NewListNutanixCategoryValuesDefault(code int) *ListNutanixCategoryValuesDef
 	}
 }
 
-/* ListNutanixCategoryValuesDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixCategoryValuesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

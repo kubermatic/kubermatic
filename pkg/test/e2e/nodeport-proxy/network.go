@@ -44,11 +44,12 @@ type networkingTestConfig struct {
 // https://github.com/mgdevstack/kubernetes/blob/9eced040142454a20255ae323279a38dc6b2bc1a/test/e2e/framework/network/utils.go#L347
 // DialFromNode executes a tcp request based on protocol via kubectl exec
 // in a test container running with host networking.
-// - minTries is the minimum number of curl attempts required before declaring
-//   success. Set to 0 if you'd like to return as soon as all endpoints respond
-//   at least once.
-// - maxTries is the maximum number of curl attempts. If this many attempts pass
-//   and we don't see all expected endpoints, the test fails.
+//   - minTries is the minimum number of curl attempts required before declaring
+//     success. Set to 0 if you'd like to return as soon as all endpoints respond
+//     at least once.
+//   - maxTries is the maximum number of curl attempts. If this many attempts pass
+//     and we don't see all expected endpoints, the test fails.
+//
 // maxTries == minTries will confirm that we see the expected endpoints and no
 // more for maxTries. Use this if you want to eg: fail a readiness check on a
 // pod and confirm it doesn't show up as an endpoint.

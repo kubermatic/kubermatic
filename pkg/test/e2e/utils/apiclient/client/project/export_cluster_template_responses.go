@@ -58,7 +58,8 @@ func NewExportClusterTemplateOK() *ExportClusterTemplateOK {
 	return &ExportClusterTemplateOK{}
 }
 
-/* ExportClusterTemplateOK describes a response with status code 200, with default header values.
+/*
+ExportClusterTemplateOK describes a response with status code 200, with default header values.
 
 ClusterTemplate
 */
@@ -120,7 +121,8 @@ func NewExportClusterTemplateUnauthorized() *ExportClusterTemplateUnauthorized {
 	return &ExportClusterTemplateUnauthorized{}
 }
 
-/* ExportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+ExportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewExportClusterTemplateForbidden() *ExportClusterTemplateForbidden {
 	return &ExportClusterTemplateForbidden{}
 }
 
-/* ExportClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+ExportClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewExportClusterTemplateDefault(code int) *ExportClusterTemplateDefault {
 	}
 }
 
-/* ExportClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+ExportClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

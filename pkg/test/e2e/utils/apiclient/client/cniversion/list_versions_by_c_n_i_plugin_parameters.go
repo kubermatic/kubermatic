@@ -52,10 +52,12 @@ func NewListVersionsByCNIPluginParamsWithHTTPClient(client *http.Client) *ListVe
 	}
 }
 
-/* ListVersionsByCNIPluginParams contains all the parameters to send to the API endpoint
-   for the list versions by c n i plugin operation.
+/*
+ListVersionsByCNIPluginParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list versions by c n i plugin operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVersionsByCNIPluginParams struct {
 

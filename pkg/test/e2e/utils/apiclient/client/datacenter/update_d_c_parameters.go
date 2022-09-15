@@ -52,10 +52,12 @@ func NewUpdateDCParamsWithHTTPClient(client *http.Client) *UpdateDCParams {
 	}
 }
 
-/* UpdateDCParams contains all the parameters to send to the API endpoint
-   for the update d c operation.
+/*
+UpdateDCParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update d c operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateDCParams struct {
 

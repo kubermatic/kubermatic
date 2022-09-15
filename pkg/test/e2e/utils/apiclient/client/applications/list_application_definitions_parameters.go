@@ -52,10 +52,12 @@ func NewListApplicationDefinitionsParamsWithHTTPClient(client *http.Client) *Lis
 	}
 }
 
-/* ListApplicationDefinitionsParams contains all the parameters to send to the API endpoint
-   for the list application definitions operation.
+/*
+ListApplicationDefinitionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list application definitions operation.
+
+	Typically these are written to a http.Request.
 */
 type ListApplicationDefinitionsParams struct {
 	timeout    time.Duration

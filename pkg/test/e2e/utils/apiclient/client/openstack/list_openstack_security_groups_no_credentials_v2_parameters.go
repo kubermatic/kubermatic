@@ -52,10 +52,12 @@ func NewListOpenstackSecurityGroupsNoCredentialsV2ParamsWithHTTPClient(client *h
 	}
 }
 
-/* ListOpenstackSecurityGroupsNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list openstack security groups no credentials v2 operation.
+/*
+ListOpenstackSecurityGroupsNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack security groups no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSecurityGroupsNoCredentialsV2Params struct {
 

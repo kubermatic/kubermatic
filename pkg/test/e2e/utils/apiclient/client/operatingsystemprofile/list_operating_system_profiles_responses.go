@@ -58,7 +58,8 @@ func NewListOperatingSystemProfilesOK() *ListOperatingSystemProfilesOK {
 	return &ListOperatingSystemProfilesOK{}
 }
 
-/* ListOperatingSystemProfilesOK describes a response with status code 200, with default header values.
+/*
+ListOperatingSystemProfilesOK describes a response with status code 200, with default header values.
 
 OperatingSystemProfile
 */
@@ -118,7 +119,8 @@ func NewListOperatingSystemProfilesUnauthorized() *ListOperatingSystemProfilesUn
 	return &ListOperatingSystemProfilesUnauthorized{}
 }
 
-/* ListOperatingSystemProfilesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListOperatingSystemProfilesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListOperatingSystemProfilesForbidden() *ListOperatingSystemProfilesForbi
 	return &ListOperatingSystemProfilesForbidden{}
 }
 
-/* ListOperatingSystemProfilesForbidden describes a response with status code 403, with default header values.
+/*
+ListOperatingSystemProfilesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListOperatingSystemProfilesDefault(code int) *ListOperatingSystemProfile
 	}
 }
 
-/* ListOperatingSystemProfilesDefault describes a response with status code -1, with default header values.
+/*
+ListOperatingSystemProfilesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

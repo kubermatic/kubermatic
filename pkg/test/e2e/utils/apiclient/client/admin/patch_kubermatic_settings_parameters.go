@@ -52,10 +52,12 @@ func NewPatchKubermaticSettingsParamsWithHTTPClient(client *http.Client) *PatchK
 	}
 }
 
-/* PatchKubermaticSettingsParams contains all the parameters to send to the API endpoint
-   for the patch kubermatic settings operation.
+/*
+PatchKubermaticSettingsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch kubermatic settings operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchKubermaticSettingsParams struct {
 

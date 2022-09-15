@@ -46,7 +46,8 @@ func NewCreateOIDCKubeconfigOK() *CreateOIDCKubeconfigOK {
 	return &CreateOIDCKubeconfigOK{}
 }
 
-/* CreateOIDCKubeconfigOK describes a response with status code 200, with default header values.
+/*
+CreateOIDCKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -108,7 +109,8 @@ func NewCreateOIDCKubeconfigDefault(code int) *CreateOIDCKubeconfigDefault {
 	}
 }
 
-/* CreateOIDCKubeconfigDefault describes a response with status code -1, with default header values.
+/*
+CreateOIDCKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -52,10 +52,12 @@ func NewListAKSVMSizesParamsWithHTTPClient(client *http.Client) *ListAKSVMSizesP
 	}
 }
 
-/* ListAKSVMSizesParams contains all the parameters to send to the API endpoint
-   for the list a k s VM sizes operation.
+/*
+ListAKSVMSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s VM sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSVMSizesParams struct {
 

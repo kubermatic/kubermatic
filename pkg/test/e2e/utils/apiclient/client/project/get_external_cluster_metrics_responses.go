@@ -58,7 +58,8 @@ func NewGetExternalClusterMetricsOK() *GetExternalClusterMetricsOK {
 	return &GetExternalClusterMetricsOK{}
 }
 
-/* GetExternalClusterMetricsOK describes a response with status code 200, with default header values.
+/*
+GetExternalClusterMetricsOK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -120,7 +121,8 @@ func NewGetExternalClusterMetricsUnauthorized() *GetExternalClusterMetricsUnauth
 	return &GetExternalClusterMetricsUnauthorized{}
 }
 
-/* GetExternalClusterMetricsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetExternalClusterMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetExternalClusterMetricsForbidden() *GetExternalClusterMetricsForbidden
 	return &GetExternalClusterMetricsForbidden{}
 }
 
-/* GetExternalClusterMetricsForbidden describes a response with status code 403, with default header values.
+/*
+GetExternalClusterMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetExternalClusterMetricsDefault(code int) *GetExternalClusterMetricsDef
 	}
 }
 
-/* GetExternalClusterMetricsDefault describes a response with status code -1, with default header values.
+/*
+GetExternalClusterMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

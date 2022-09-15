@@ -58,7 +58,8 @@ func NewListAKSNodePoolModesOK() *ListAKSNodePoolModesOK {
 	return &ListAKSNodePoolModesOK{}
 }
 
-/* ListAKSNodePoolModesOK describes a response with status code 200, with default header values.
+/*
+ListAKSNodePoolModesOK describes a response with status code 200, with default header values.
 
 AKSNodePoolModes
 */
@@ -118,7 +119,8 @@ func NewListAKSNodePoolModesUnauthorized() *ListAKSNodePoolModesUnauthorized {
 	return &ListAKSNodePoolModesUnauthorized{}
 }
 
-/* ListAKSNodePoolModesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAKSNodePoolModesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListAKSNodePoolModesForbidden() *ListAKSNodePoolModesForbidden {
 	return &ListAKSNodePoolModesForbidden{}
 }
 
-/* ListAKSNodePoolModesForbidden describes a response with status code 403, with default header values.
+/*
+ListAKSNodePoolModesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListAKSNodePoolModesDefault(code int) *ListAKSNodePoolModesDefault {
 	}
 }
 
-/* ListAKSNodePoolModesDefault describes a response with status code -1, with default header values.
+/*
+ListAKSNodePoolModesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -58,7 +58,8 @@ func NewPatchMachineDeploymentOK() *PatchMachineDeploymentOK {
 	return &PatchMachineDeploymentOK{}
 }
 
-/* PatchMachineDeploymentOK describes a response with status code 200, with default header values.
+/*
+PatchMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -120,7 +121,8 @@ func NewPatchMachineDeploymentUnauthorized() *PatchMachineDeploymentUnauthorized
 	return &PatchMachineDeploymentUnauthorized{}
 }
 
-/* PatchMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchMachineDeploymentForbidden() *PatchMachineDeploymentForbidden {
 	return &PatchMachineDeploymentForbidden{}
 }
 
-/* PatchMachineDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+PatchMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchMachineDeploymentDefault(code int) *PatchMachineDeploymentDefault {
 	}
 }
 
-/* PatchMachineDeploymentDefault describes a response with status code -1, with default header values.
+/*
+PatchMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

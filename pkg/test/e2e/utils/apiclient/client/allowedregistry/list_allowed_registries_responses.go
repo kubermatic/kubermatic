@@ -58,7 +58,8 @@ func NewListAllowedRegistriesOK() *ListAllowedRegistriesOK {
 	return &ListAllowedRegistriesOK{}
 }
 
-/* ListAllowedRegistriesOK describes a response with status code 200, with default header values.
+/*
+ListAllowedRegistriesOK describes a response with status code 200, with default header values.
 
 AllowedRegistry
 */
@@ -118,7 +119,8 @@ func NewListAllowedRegistriesUnauthorized() *ListAllowedRegistriesUnauthorized {
 	return &ListAllowedRegistriesUnauthorized{}
 }
 
-/* ListAllowedRegistriesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAllowedRegistriesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListAllowedRegistriesForbidden() *ListAllowedRegistriesForbidden {
 	return &ListAllowedRegistriesForbidden{}
 }
 
-/* ListAllowedRegistriesForbidden describes a response with status code 403, with default header values.
+/*
+ListAllowedRegistriesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListAllowedRegistriesDefault(code int) *ListAllowedRegistriesDefault {
 	}
 }
 
-/* ListAllowedRegistriesDefault describes a response with status code -1, with default header values.
+/*
+ListAllowedRegistriesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

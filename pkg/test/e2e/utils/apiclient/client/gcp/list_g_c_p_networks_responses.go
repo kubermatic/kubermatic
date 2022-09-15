@@ -46,7 +46,8 @@ func NewListGCPNetworksOK() *ListGCPNetworksOK {
 	return &ListGCPNetworksOK{}
 }
 
-/* ListGCPNetworksOK describes a response with status code 200, with default header values.
+/*
+ListGCPNetworksOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -108,7 +109,8 @@ func NewListGCPNetworksDefault(code int) *ListGCPNetworksDefault {
 	}
 }
 
-/* ListGCPNetworksDefault describes a response with status code -1, with default header values.
+/*
+ListGCPNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListGCPSizesNoCredentialsV2OK() *ListGCPSizesNoCredentialsV2OK {
 	return &ListGCPSizesNoCredentialsV2OK{}
 }
 
-/* ListGCPSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListGCPSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -108,7 +109,8 @@ func NewListGCPSizesNoCredentialsV2Default(code int) *ListGCPSizesNoCredentialsV
 	}
 }
 
-/* ListGCPSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListGCPSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

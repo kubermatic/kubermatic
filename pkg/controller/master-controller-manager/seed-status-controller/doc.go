@@ -18,11 +18,11 @@ limitations under the License.
 Package seedstatuscontroller contains a controller that is responsible
 for managing the basic parts of the SeedStatus:
 
-  * status.versions.kubermatic
-  * status.versions.cluster
-  * status.conditions.SeedConditionKubeconfigValid
-  * status.phase
-  * status.clusters
+  - status.versions.kubermatic
+  - status.versions.cluster
+  - status.conditions.SeedConditionKubeconfigValid
+  - status.phase
+  - status.clusters
 
 It does so by checking the kubeconfig for a seed and combining the other
 conditions set by other controllers to compute the current phase.

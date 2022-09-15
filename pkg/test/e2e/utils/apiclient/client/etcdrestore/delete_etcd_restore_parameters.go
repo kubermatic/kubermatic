@@ -52,10 +52,12 @@ func NewDeleteEtcdRestoreParamsWithHTTPClient(client *http.Client) *DeleteEtcdRe
 	}
 }
 
-/* DeleteEtcdRestoreParams contains all the parameters to send to the API endpoint
-   for the delete etcd restore operation.
+/*
+DeleteEtcdRestoreParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete etcd restore operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteEtcdRestoreParams struct {
 

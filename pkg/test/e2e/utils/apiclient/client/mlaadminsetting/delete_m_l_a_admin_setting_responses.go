@@ -58,7 +58,8 @@ func NewDeleteMLAAdminSettingOK() *DeleteMLAAdminSettingOK {
 	return &DeleteMLAAdminSettingOK{}
 }
 
-/* DeleteMLAAdminSettingOK describes a response with status code 200, with default header values.
+/*
+DeleteMLAAdminSettingOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteMLAAdminSettingUnauthorized() *DeleteMLAAdminSettingUnauthorized {
 	return &DeleteMLAAdminSettingUnauthorized{}
 }
 
-/* DeleteMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteMLAAdminSettingForbidden() *DeleteMLAAdminSettingForbidden {
 	return &DeleteMLAAdminSettingForbidden{}
 }
 
-/* DeleteMLAAdminSettingForbidden describes a response with status code 403, with default header values.
+/*
+DeleteMLAAdminSettingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteMLAAdminSettingDefault(code int) *DeleteMLAAdminSettingDefault {
 	}
 }
 
-/* DeleteMLAAdminSettingDefault describes a response with status code -1, with default header values.
+/*
+DeleteMLAAdminSettingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

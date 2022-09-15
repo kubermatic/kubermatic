@@ -46,7 +46,8 @@ func NewListAzureSizesOK() *ListAzureSizesOK {
 	return &ListAzureSizesOK{}
 }
 
-/* ListAzureSizesOK describes a response with status code 200, with default header values.
+/*
+ListAzureSizesOK describes a response with status code 200, with default header values.
 
 AzureSizeList
 */
@@ -108,7 +109,8 @@ func NewListAzureSizesDefault(code int) *ListAzureSizesDefault {
 	}
 }
 
-/* ListAzureSizesDefault describes a response with status code -1, with default header values.
+/*
+ListAzureSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

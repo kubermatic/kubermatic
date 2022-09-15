@@ -52,10 +52,12 @@ func NewListAdminRuleGroupsParamsWithHTTPClient(client *http.Client) *ListAdminR
 	}
 }
 
-/* ListAdminRuleGroupsParams contains all the parameters to send to the API endpoint
-   for the list admin rule groups operation.
+/*
+ListAdminRuleGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list admin rule groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAdminRuleGroupsParams struct {
 

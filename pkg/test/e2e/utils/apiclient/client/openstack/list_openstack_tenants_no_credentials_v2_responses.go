@@ -46,7 +46,8 @@ func NewListOpenstackTenantsNoCredentialsV2OK() *ListOpenstackTenantsNoCredentia
 	return &ListOpenstackTenantsNoCredentialsV2OK{}
 }
 
-/* ListOpenstackTenantsNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListOpenstackTenantsNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 OpenstackTenant
 */
@@ -108,7 +109,8 @@ func NewListOpenstackTenantsNoCredentialsV2Default(code int) *ListOpenstackTenan
 	}
 }
 
-/* ListOpenstackTenantsNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListOpenstackTenantsNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

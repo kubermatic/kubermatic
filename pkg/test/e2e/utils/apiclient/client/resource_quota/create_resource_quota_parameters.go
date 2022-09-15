@@ -52,10 +52,12 @@ func NewCreateResourceQuotaParamsWithHTTPClient(client *http.Client) *CreateReso
 	}
 }
 
-/* CreateResourceQuotaParams contains all the parameters to send to the API endpoint
-   for the create resource quota operation.
+/*
+CreateResourceQuotaParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create resource quota operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateResourceQuotaParams struct {
 

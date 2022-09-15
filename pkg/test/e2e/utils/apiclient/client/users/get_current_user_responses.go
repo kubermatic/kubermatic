@@ -52,7 +52,8 @@ func NewGetCurrentUserOK() *GetCurrentUserOK {
 	return &GetCurrentUserOK{}
 }
 
-/* GetCurrentUserOK describes a response with status code 200, with default header values.
+/*
+GetCurrentUserOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -114,7 +115,8 @@ func NewGetCurrentUserUnauthorized() *GetCurrentUserUnauthorized {
 	return &GetCurrentUserUnauthorized{}
 }
 
-/* GetCurrentUserUnauthorized describes a response with status code 401, with default header values.
+/*
+GetCurrentUserUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -166,7 +168,8 @@ func NewGetCurrentUserDefault(code int) *GetCurrentUserDefault {
 	}
 }
 
-/* GetCurrentUserDefault describes a response with status code -1, with default header values.
+/*
+GetCurrentUserDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

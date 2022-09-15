@@ -64,7 +64,8 @@ func NewDeletePresetOK() *DeletePresetOK {
 	return &DeletePresetOK{}
 }
 
-/* DeletePresetOK describes a response with status code 200, with default header values.
+/*
+DeletePresetOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -114,7 +115,8 @@ func NewDeletePresetUnauthorized() *DeletePresetUnauthorized {
 	return &DeletePresetUnauthorized{}
 }
 
-/* DeletePresetUnauthorized describes a response with status code 401, with default header values.
+/*
+DeletePresetUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -164,7 +166,8 @@ func NewDeletePresetForbidden() *DeletePresetForbidden {
 	return &DeletePresetForbidden{}
 }
 
-/* DeletePresetForbidden describes a response with status code 403, with default header values.
+/*
+DeletePresetForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -214,7 +217,8 @@ func NewDeletePresetNotFound() *DeletePresetNotFound {
 	return &DeletePresetNotFound{}
 }
 
-/* DeletePresetNotFound describes a response with status code 404, with default header values.
+/*
+DeletePresetNotFound describes a response with status code 404, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -266,7 +270,8 @@ func NewDeletePresetDefault(code int) *DeletePresetDefault {
 	}
 }
 
-/* DeletePresetDefault describes a response with status code -1, with default header values.
+/*
+DeletePresetDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

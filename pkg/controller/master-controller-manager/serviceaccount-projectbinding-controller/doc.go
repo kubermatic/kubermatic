@@ -19,8 +19,8 @@ Package serviceaccountprojectbindingcontroller contains a controller
 that watches Users, but only those that are KKP service accounts. For
 them it will
 
-  * ensure an owner ref pointing to the project they belong to
-  * ensure a UserProjectBinding exists and has a proper owner ref to the user
+  - ensure an owner ref pointing to the project they belong to
+  - ensure a UserProjectBinding exists and has a proper owner ref to the user
 
 When new service accounts are created, they have a ServiceAccountLabelGroup
 label to indicate their initial group. This label is taken into account

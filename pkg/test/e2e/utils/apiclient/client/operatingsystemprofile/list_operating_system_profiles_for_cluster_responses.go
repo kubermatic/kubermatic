@@ -58,7 +58,8 @@ func NewListOperatingSystemProfilesForClusterOK() *ListOperatingSystemProfilesFo
 	return &ListOperatingSystemProfilesForClusterOK{}
 }
 
-/* ListOperatingSystemProfilesForClusterOK describes a response with status code 200, with default header values.
+/*
+ListOperatingSystemProfilesForClusterOK describes a response with status code 200, with default header values.
 
 OperatingSystemProfile
 */
@@ -118,7 +119,8 @@ func NewListOperatingSystemProfilesForClusterUnauthorized() *ListOperatingSystem
 	return &ListOperatingSystemProfilesForClusterUnauthorized{}
 }
 
-/* ListOperatingSystemProfilesForClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+ListOperatingSystemProfilesForClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListOperatingSystemProfilesForClusterForbidden() *ListOperatingSystemPro
 	return &ListOperatingSystemProfilesForClusterForbidden{}
 }
 
-/* ListOperatingSystemProfilesForClusterForbidden describes a response with status code 403, with default header values.
+/*
+ListOperatingSystemProfilesForClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListOperatingSystemProfilesForClusterDefault(code int) *ListOperatingSys
 	}
 }
 
-/* ListOperatingSystemProfilesForClusterDefault describes a response with status code -1, with default header values.
+/*
+ListOperatingSystemProfilesForClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

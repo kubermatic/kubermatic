@@ -52,10 +52,12 @@ func NewUpdateSeedParamsWithHTTPClient(client *http.Client) *UpdateSeedParams {
 	}
 }
 
-/* UpdateSeedParams contains all the parameters to send to the API endpoint
-   for the update seed operation.
+/*
+UpdateSeedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update seed operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateSeedParams struct {
 

@@ -58,7 +58,8 @@ func NewDeleteSSHKeyOK() *DeleteSSHKeyOK {
 	return &DeleteSSHKeyOK{}
 }
 
-/* DeleteSSHKeyOK describes a response with status code 200, with default header values.
+/*
+DeleteSSHKeyOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteSSHKeyUnauthorized() *DeleteSSHKeyUnauthorized {
 	return &DeleteSSHKeyUnauthorized{}
 }
 
-/* DeleteSSHKeyUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteSSHKeyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteSSHKeyForbidden() *DeleteSSHKeyForbidden {
 	return &DeleteSSHKeyForbidden{}
 }
 
-/* DeleteSSHKeyForbidden describes a response with status code 403, with default header values.
+/*
+DeleteSSHKeyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteSSHKeyDefault(code int) *DeleteSSHKeyDefault {
 	}
 }
 
-/* DeleteSSHKeyDefault describes a response with status code -1, with default header values.
+/*
+DeleteSSHKeyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

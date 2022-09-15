@@ -62,7 +62,8 @@ func NewCreateClusterTemplateCreated() *CreateClusterTemplateCreated {
 	return &CreateClusterTemplateCreated{}
 }
 
-/* CreateClusterTemplateCreated describes a response with status code 201, with default header values.
+/*
+CreateClusterTemplateCreated describes a response with status code 201, with default header values.
 
 ClusterTemplate
 */
@@ -124,7 +125,8 @@ func NewCreateClusterTemplateUnauthorized() *CreateClusterTemplateUnauthorized {
 	return &CreateClusterTemplateUnauthorized{}
 }
 
-/* CreateClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -174,7 +176,8 @@ func NewCreateClusterTemplateForbidden() *CreateClusterTemplateForbidden {
 	return &CreateClusterTemplateForbidden{}
 }
 
-/* CreateClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+CreateClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -226,7 +229,8 @@ func NewCreateClusterTemplateDefault(code int) *CreateClusterTemplateDefault {
 	}
 }
 
-/* CreateClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+CreateClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -290,7 +294,8 @@ func (o *CreateClusterTemplateDefault) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*CreateClusterTemplateBody create cluster template body
+/*
+CreateClusterTemplateBody create cluster template body
 swagger:model CreateClusterTemplateBody
 */
 type CreateClusterTemplateBody struct {

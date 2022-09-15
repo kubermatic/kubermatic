@@ -52,10 +52,12 @@ func NewListNutanixClustersParamsWithHTTPClient(client *http.Client) *ListNutani
 	}
 }
 
-/* ListNutanixClustersParams contains all the parameters to send to the API endpoint
-   for the list nutanix clusters operation.
+/*
+ListNutanixClustersParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix clusters operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixClustersParams struct {
 

@@ -52,10 +52,12 @@ func NewListDefaultConstraintParamsWithHTTPClient(client *http.Client) *ListDefa
 	}
 }
 
-/* ListDefaultConstraintParams contains all the parameters to send to the API endpoint
-   for the list default constraint operation.
+/*
+ListDefaultConstraintParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list default constraint operation.
+
+	Typically these are written to a http.Request.
 */
 type ListDefaultConstraintParams struct {
 	timeout    time.Duration

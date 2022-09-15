@@ -58,7 +58,8 @@ func NewDeleteEtcdBackupConfigOK() *DeleteEtcdBackupConfigOK {
 	return &DeleteEtcdBackupConfigOK{}
 }
 
-/* DeleteEtcdBackupConfigOK describes a response with status code 200, with default header values.
+/*
+DeleteEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteEtcdBackupConfigUnauthorized() *DeleteEtcdBackupConfigUnauthorized
 	return &DeleteEtcdBackupConfigUnauthorized{}
 }
 
-/* DeleteEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteEtcdBackupConfigForbidden() *DeleteEtcdBackupConfigForbidden {
 	return &DeleteEtcdBackupConfigForbidden{}
 }
 
-/* DeleteEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+DeleteEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteEtcdBackupConfigDefault(code int) *DeleteEtcdBackupConfigDefault {
 	}
 }
 
-/* DeleteEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+DeleteEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

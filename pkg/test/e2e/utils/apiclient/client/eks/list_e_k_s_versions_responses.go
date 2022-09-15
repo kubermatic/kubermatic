@@ -46,7 +46,8 @@ func NewListEKSVersionsOK() *ListEKSVersionsOK {
 	return &ListEKSVersionsOK{}
 }
 
-/* ListEKSVersionsOK describes a response with status code 200, with default header values.
+/*
+ListEKSVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -108,7 +109,8 @@ func NewListEKSVersionsDefault(code int) *ListEKSVersionsDefault {
 	}
 }
 
-/* ListEKSVersionsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListAKSVersionsOK() *ListAKSVersionsOK {
 	return &ListAKSVersionsOK{}
 }
 
-/* ListAKSVersionsOK describes a response with status code 200, with default header values.
+/*
+ListAKSVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -108,7 +109,8 @@ func NewListAKSVersionsDefault(code int) *ListAKSVersionsDefault {
 	}
 }
 
-/* ListAKSVersionsDefault describes a response with status code -1, with default header values.
+/*
+ListAKSVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

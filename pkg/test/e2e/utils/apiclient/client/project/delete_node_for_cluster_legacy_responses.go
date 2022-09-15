@@ -58,7 +58,8 @@ func NewDeleteNodeForClusterLegacyOK() *DeleteNodeForClusterLegacyOK {
 	return &DeleteNodeForClusterLegacyOK{}
 }
 
-/* DeleteNodeForClusterLegacyOK describes a response with status code 200, with default header values.
+/*
+DeleteNodeForClusterLegacyOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteNodeForClusterLegacyUnauthorized() *DeleteNodeForClusterLegacyUnau
 	return &DeleteNodeForClusterLegacyUnauthorized{}
 }
 
-/* DeleteNodeForClusterLegacyUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteNodeForClusterLegacyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteNodeForClusterLegacyForbidden() *DeleteNodeForClusterLegacyForbidd
 	return &DeleteNodeForClusterLegacyForbidden{}
 }
 
-/* DeleteNodeForClusterLegacyForbidden describes a response with status code 403, with default header values.
+/*
+DeleteNodeForClusterLegacyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteNodeForClusterLegacyDefault(code int) *DeleteNodeForClusterLegacyD
 	}
 }
 
-/* DeleteNodeForClusterLegacyDefault describes a response with status code -1, with default header values.
+/*
+DeleteNodeForClusterLegacyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

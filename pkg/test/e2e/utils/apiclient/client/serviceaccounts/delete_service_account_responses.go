@@ -58,7 +58,8 @@ func NewDeleteServiceAccountOK() *DeleteServiceAccountOK {
 	return &DeleteServiceAccountOK{}
 }
 
-/* DeleteServiceAccountOK describes a response with status code 200, with default header values.
+/*
+DeleteServiceAccountOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteServiceAccountUnauthorized() *DeleteServiceAccountUnauthorized {
 	return &DeleteServiceAccountUnauthorized{}
 }
 
-/* DeleteServiceAccountUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteServiceAccountUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteServiceAccountForbidden() *DeleteServiceAccountForbidden {
 	return &DeleteServiceAccountForbidden{}
 }
 
-/* DeleteServiceAccountForbidden describes a response with status code 403, with default header values.
+/*
+DeleteServiceAccountForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteServiceAccountDefault(code int) *DeleteServiceAccountDefault {
 	}
 }
 
-/* DeleteServiceAccountDefault describes a response with status code -1, with default header values.
+/*
+DeleteServiceAccountDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

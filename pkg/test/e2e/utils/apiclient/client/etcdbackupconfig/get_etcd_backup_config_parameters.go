@@ -52,10 +52,12 @@ func NewGetEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *GetEtcdBac
 	}
 }
 
-/* GetEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-   for the get etcd backup config operation.
+/*
+GetEtcdBackupConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get etcd backup config operation.
+
+	Typically these are written to a http.Request.
 */
 type GetEtcdBackupConfigParams struct {
 

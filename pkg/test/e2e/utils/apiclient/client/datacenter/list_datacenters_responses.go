@@ -46,7 +46,8 @@ func NewListDatacentersOK() *ListDatacentersOK {
 	return &ListDatacentersOK{}
 }
 
-/* ListDatacentersOK describes a response with status code 200, with default header values.
+/*
+ListDatacentersOK describes a response with status code 200, with default header values.
 
 DatacenterList
 */
@@ -108,7 +109,8 @@ func NewListDatacentersDefault(code int) *ListDatacentersDefault {
 	}
 }
 
-/* ListDatacentersDefault describes a response with status code -1, with default header values.
+/*
+ListDatacentersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

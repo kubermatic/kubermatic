@@ -63,7 +63,8 @@ func NewImportClusterTemplateCreated() *ImportClusterTemplateCreated {
 	return &ImportClusterTemplateCreated{}
 }
 
-/* ImportClusterTemplateCreated describes a response with status code 201, with default header values.
+/*
+ImportClusterTemplateCreated describes a response with status code 201, with default header values.
 
 ClusterTemplate
 */
@@ -125,7 +126,8 @@ func NewImportClusterTemplateUnauthorized() *ImportClusterTemplateUnauthorized {
 	return &ImportClusterTemplateUnauthorized{}
 }
 
-/* ImportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+ImportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -175,7 +177,8 @@ func NewImportClusterTemplateForbidden() *ImportClusterTemplateForbidden {
 	return &ImportClusterTemplateForbidden{}
 }
 
-/* ImportClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+ImportClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -227,7 +230,8 @@ func NewImportClusterTemplateDefault(code int) *ImportClusterTemplateDefault {
 	}
 }
 
-/* ImportClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+ImportClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -291,7 +295,8 @@ func (o *ImportClusterTemplateDefault) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*ImportClusterTemplateBody import cluster template body
+/*
+ImportClusterTemplateBody import cluster template body
 swagger:model ImportClusterTemplateBody
 */
 type ImportClusterTemplateBody struct {

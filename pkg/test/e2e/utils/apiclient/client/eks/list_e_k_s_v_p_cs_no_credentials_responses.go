@@ -58,7 +58,8 @@ func NewListEKSVPCsNoCredentialsOK() *ListEKSVPCsNoCredentialsOK {
 	return &ListEKSVPCsNoCredentialsOK{}
 }
 
-/* ListEKSVPCsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListEKSVPCsNoCredentialsOK describes a response with status code 200, with default header values.
 
 EKSVPCList
 */
@@ -118,7 +119,8 @@ func NewListEKSVPCsNoCredentialsUnauthorized() *ListEKSVPCsNoCredentialsUnauthor
 	return &ListEKSVPCsNoCredentialsUnauthorized{}
 }
 
-/* ListEKSVPCsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSVPCsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSVPCsNoCredentialsForbidden() *ListEKSVPCsNoCredentialsForbidden {
 	return &ListEKSVPCsNoCredentialsForbidden{}
 }
 
-/* ListEKSVPCsNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSVPCsNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSVPCsNoCredentialsDefault(code int) *ListEKSVPCsNoCredentialsDefau
 	}
 }
 
-/* ListEKSVPCsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSVPCsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

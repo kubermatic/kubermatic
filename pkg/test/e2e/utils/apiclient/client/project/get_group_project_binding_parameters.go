@@ -52,10 +52,12 @@ func NewGetGroupProjectBindingParamsWithHTTPClient(client *http.Client) *GetGrou
 	}
 }
 
-/* GetGroupProjectBindingParams contains all the parameters to send to the API endpoint
-   for the get group project binding operation.
+/*
+GetGroupProjectBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get group project binding operation.
+
+	Typically these are written to a http.Request.
 */
 type GetGroupProjectBindingParams struct {
 

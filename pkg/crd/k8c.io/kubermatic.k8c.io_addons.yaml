@@ -90,7 +90,7 @@ spec:
                 - name
               type: object
             status:
-              description: Status contrains information about the reconciliation status.
+              description: Status contains information about the reconciliation status.
               properties:
                 conditions:
                   additionalProperties:

@@ -58,7 +58,8 @@ func NewResetAlertmanagerOK() *ResetAlertmanagerOK {
 	return &ResetAlertmanagerOK{}
 }
 
-/* ResetAlertmanagerOK describes a response with status code 200, with default header values.
+/*
+ResetAlertmanagerOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewResetAlertmanagerUnauthorized() *ResetAlertmanagerUnauthorized {
 	return &ResetAlertmanagerUnauthorized{}
 }
 
-/* ResetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
+/*
+ResetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewResetAlertmanagerForbidden() *ResetAlertmanagerForbidden {
 	return &ResetAlertmanagerForbidden{}
 }
 
-/* ResetAlertmanagerForbidden describes a response with status code 403, with default header values.
+/*
+ResetAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewResetAlertmanagerDefault(code int) *ResetAlertmanagerDefault {
 	}
 }
 
-/* ResetAlertmanagerDefault describes a response with status code -1, with default header values.
+/*
+ResetAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

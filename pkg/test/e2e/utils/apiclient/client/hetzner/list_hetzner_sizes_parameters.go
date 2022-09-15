@@ -52,10 +52,12 @@ func NewListHetznerSizesParamsWithHTTPClient(client *http.Client) *ListHetznerSi
 	}
 }
 
-/* ListHetznerSizesParams contains all the parameters to send to the API endpoint
-   for the list hetzner sizes operation.
+/*
+ListHetznerSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list hetzner sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListHetznerSizesParams struct {
 

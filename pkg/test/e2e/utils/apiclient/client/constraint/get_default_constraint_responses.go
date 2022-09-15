@@ -58,7 +58,8 @@ func NewGetDefaultConstraintOK() *GetDefaultConstraintOK {
 	return &GetDefaultConstraintOK{}
 }
 
-/* GetDefaultConstraintOK describes a response with status code 200, with default header values.
+/*
+GetDefaultConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -120,7 +121,8 @@ func NewGetDefaultConstraintUnauthorized() *GetDefaultConstraintUnauthorized {
 	return &GetDefaultConstraintUnauthorized{}
 }
 
-/* GetDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+GetDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetDefaultConstraintForbidden() *GetDefaultConstraintForbidden {
 	return &GetDefaultConstraintForbidden{}
 }
 
-/* GetDefaultConstraintForbidden describes a response with status code 403, with default header values.
+/*
+GetDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetDefaultConstraintDefault(code int) *GetDefaultConstraintDefault {
 	}
 }
 
-/* GetDefaultConstraintDefault describes a response with status code -1, with default header values.
+/*
+GetDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

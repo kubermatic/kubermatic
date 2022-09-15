@@ -58,7 +58,8 @@ func NewListVersionsByProviderOK() *ListVersionsByProviderOK {
 	return &ListVersionsByProviderOK{}
 }
 
-/* ListVersionsByProviderOK describes a response with status code 200, with default header values.
+/*
+ListVersionsByProviderOK describes a response with status code 200, with default header values.
 
 VersionList
 */
@@ -118,7 +119,8 @@ func NewListVersionsByProviderUnauthorized() *ListVersionsByProviderUnauthorized
 	return &ListVersionsByProviderUnauthorized{}
 }
 
-/* ListVersionsByProviderUnauthorized describes a response with status code 401, with default header values.
+/*
+ListVersionsByProviderUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListVersionsByProviderForbidden() *ListVersionsByProviderForbidden {
 	return &ListVersionsByProviderForbidden{}
 }
 
-/* ListVersionsByProviderForbidden describes a response with status code 403, with default header values.
+/*
+ListVersionsByProviderForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListVersionsByProviderDefault(code int) *ListVersionsByProviderDefault {
 	}
 }
 
-/* ListVersionsByProviderDefault describes a response with status code -1, with default header values.
+/*
+ListVersionsByProviderDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

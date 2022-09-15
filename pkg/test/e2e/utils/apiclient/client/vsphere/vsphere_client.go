@@ -46,7 +46,7 @@ type ClientService interface {
 }
 
 /*
-  ListVSphereDatastores Lists datastores from vsphere datacenter
+ListVSphereDatastores Lists datastores from vsphere datacenter
 */
 func (a *Client) ListVSphereDatastores(params *ListVSphereDatastoresParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereDatastoresOK, error) {
 	// TODO: Validate the params before sending
@@ -84,7 +84,7 @@ func (a *Client) ListVSphereDatastores(params *ListVSphereDatastoresParams, auth
 }
 
 /*
-  ListVSphereFolders Lists folders from vsphere datacenter
+ListVSphereFolders Lists folders from vsphere datacenter
 */
 func (a *Client) ListVSphereFolders(params *ListVSphereFoldersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereFoldersOK, error) {
 	// TODO: Validate the params before sending
@@ -122,7 +122,7 @@ func (a *Client) ListVSphereFolders(params *ListVSphereFoldersParams, authInfo r
 }
 
 /*
-  ListVSphereFoldersNoCredentials Lists folders from vsphere datacenter
+ListVSphereFoldersNoCredentials Lists folders from vsphere datacenter
 */
 func (a *Client) ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereFoldersNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -160,7 +160,7 @@ func (a *Client) ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCre
 }
 
 /*
-  ListVSphereFoldersNoCredentialsV2 Lists folders from vsphere datacenter
+ListVSphereFoldersNoCredentialsV2 Lists folders from vsphere datacenter
 */
 func (a *Client) ListVSphereFoldersNoCredentialsV2(params *ListVSphereFoldersNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereFoldersNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -198,7 +198,7 @@ func (a *Client) ListVSphereFoldersNoCredentialsV2(params *ListVSphereFoldersNoC
 }
 
 /*
-  ListVSphereNetworks Lists networks from vsphere datacenter
+ListVSphereNetworks Lists networks from vsphere datacenter
 */
 func (a *Client) ListVSphereNetworks(params *ListVSphereNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereNetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -236,7 +236,7 @@ func (a *Client) ListVSphereNetworks(params *ListVSphereNetworksParams, authInfo
 }
 
 /*
-  ListVSphereNetworksNoCredentials Lists networks from vsphere datacenter
+ListVSphereNetworksNoCredentials Lists networks from vsphere datacenter
 */
 func (a *Client) ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -274,7 +274,7 @@ func (a *Client) ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoC
 }
 
 /*
-  ListVSphereNetworksNoCredentialsV2 Lists networks from vsphere datacenter
+ListVSphereNetworksNoCredentialsV2 Lists networks from vsphere datacenter
 */
 func (a *Client) ListVSphereNetworksNoCredentialsV2(params *ListVSphereNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVSphereNetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

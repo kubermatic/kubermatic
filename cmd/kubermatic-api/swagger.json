@@ -564,10 +564,7 @@
         ],
         "responses": {
           "200": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -636,10 +633,7 @@
         ],
         "responses": {
           "201": {
-            "description": "MeteringReportConfiguration",
-            "schema": {
-              "$ref": "#/definitions/MeteringReportConfiguration"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -14936,7 +14930,10 @@
           "200": {
             "description": "PacketSizeList",
             "schema": {
-              "$ref": "#/definitions/PacketSizeList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
+              }
             }
           },
           "default": {
@@ -19227,7 +19224,10 @@
           "200": {
             "description": "EKSRegionList",
             "schema": {
-              "$ref": "#/definitions/EKSRegionList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSRegionList"
+              }
             }
           },
           "401": {
@@ -20483,7 +20483,10 @@
           "200": {
             "description": "VSphereDatastoreList",
             "schema": {
-              "$ref": "#/definitions/VSphereDatastoreList"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereDatastoreList"
+              }
             }
           },
           "default": {

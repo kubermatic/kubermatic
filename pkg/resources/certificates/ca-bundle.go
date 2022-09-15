@@ -36,9 +36,10 @@ import (
 // creates a ca-bundle ConfigMap for use in seeds and userclusters.
 //
 // TODO: Do not use fmt.Stringer, but a better type for the CA bundle
-//       parameter. "*CABundle" is not viable because most of the codebase
-//       deals with "resources.CABundle", which in turn exists to
-//       prevent an import loop between this and the "resources" package.
+//
+//	parameter. "*CABundle" is not viable because most of the codebase
+//	deals with "resources.CABundle", which in turn exists to
+//	prevent an import loop between this and the "resources" package.
 func CABundleConfigMapCreator(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapCreatorGetter { //nolint:interfacer
 	return func() (string, reconciling.ConfigMapCreator) {
 		return name, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {

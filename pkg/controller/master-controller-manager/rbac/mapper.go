@@ -107,12 +107,13 @@ func generateRBACRoleNameForClusterNamespaceNamedResource(kind, resourceName, gr
 
 // generateClusterRBACRoleNamedResource generates ClusterRole for a named resource.
 // named resources have its rules set to a resource with the given name for example:
-// the following rule allows reading a ConfigMap named “my-config”
-//  rules:
-//   - apiGroups: [""]
-//   resources: ["configmaps"]
-//   resourceNames: ["my-config"]
-//   verbs: ["get"]
+// the following rule allows reading a ConfigMap named "my-config"
+//
+//	rules:
+//	 - apiGroups: [""]
+//	   resources: ["configmaps"]
+//	   resourceNames: ["my-config"]
+//	   verbs: ["get"]
 //
 // Note that for some kinds we don't want to generate ClusterRole in that case a nil cluster resource will be returned without an error.
 func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
@@ -293,12 +294,13 @@ func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kin
 
 // generateRBACRoleNamedResource generates Role for a named resource.
 // named resources have its rules set to a resource with the given name for example:
-// the following rule allows reading a ConfigMap named “my-config”
-//  rules:
-//   - apiGroups: [""]
-//   resources: ["configmaps"]
-//   resourceNames: ["my-config"]
-//   verbs: ["get"]
+// the following rule allows reading a ConfigMap named "my-config"
+//
+//	rules:
+//	 - apiGroups: [""]
+//	   resources: ["configmaps"]
+//	   resourceNames: ["my-config"]
+//	   verbs: ["get"]
 //
 // Note that for some kinds we don't want to generate Role in that case a nil cluster resource will be returned without an error.
 func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName, namespace string, oRef metav1.OwnerReference) (*rbacv1.Role, error) {

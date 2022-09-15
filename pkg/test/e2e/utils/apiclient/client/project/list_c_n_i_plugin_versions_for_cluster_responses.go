@@ -58,7 +58,8 @@ func NewListCNIPluginVersionsForClusterOK() *ListCNIPluginVersionsForClusterOK {
 	return &ListCNIPluginVersionsForClusterOK{}
 }
 
-/* ListCNIPluginVersionsForClusterOK describes a response with status code 200, with default header values.
+/*
+ListCNIPluginVersionsForClusterOK describes a response with status code 200, with default header values.
 
 CNIVersions
 */
@@ -120,7 +121,8 @@ func NewListCNIPluginVersionsForClusterUnauthorized() *ListCNIPluginVersionsForC
 	return &ListCNIPluginVersionsForClusterUnauthorized{}
 }
 
-/* ListCNIPluginVersionsForClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+ListCNIPluginVersionsForClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewListCNIPluginVersionsForClusterForbidden() *ListCNIPluginVersionsForClus
 	return &ListCNIPluginVersionsForClusterForbidden{}
 }
 
-/* ListCNIPluginVersionsForClusterForbidden describes a response with status code 403, with default header values.
+/*
+ListCNIPluginVersionsForClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewListCNIPluginVersionsForClusterDefault(code int) *ListCNIPluginVersionsF
 	}
 }
 
-/* ListCNIPluginVersionsForClusterDefault describes a response with status code -1, with default header values.
+/*
+ListCNIPluginVersionsForClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

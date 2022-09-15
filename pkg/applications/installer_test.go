@@ -45,7 +45,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 		namespaceSpec appskubermaticv1.AppNamespaceSpec
 	}{
 		{
-			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be cretated without labels or annotations",
+			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be created without labels or annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
@@ -57,7 +57,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 2: when Namespace.create=true, labels field is defined and annotations field nil then namespace should be cretated with labels",
+			name: "scenario 2: when Namespace.create=true, labels field is defined and annotations field nil then namespace should be created with labels",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
@@ -69,7 +69,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 3: when Namespace.create=true, labels field is nil and annotations field is defined then namespace should be cretated with annotations",
+			name: "scenario 3: when Namespace.create=true, labels field is nil and annotations field is defined then namespace should be created with annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
@@ -81,7 +81,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 4: when Namespace.create=true, labels and annotations are defined then namespace should be cretated with labels and annotations",
+			name: "scenario 4: when Namespace.create=true, labels and annotations are defined then namespace should be created with labels and annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),

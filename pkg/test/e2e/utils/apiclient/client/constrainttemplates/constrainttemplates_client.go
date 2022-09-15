@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  CreateConstraintTemplate Create constraint template
+CreateConstraintTemplate Create constraint template
 */
 func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -80,7 +80,7 @@ func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams
 }
 
 /*
-  DeleteConstraintTemplate Deletes the specified cluster
+DeleteConstraintTemplate Deletes the specified cluster
 */
 func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -118,7 +118,7 @@ func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams
 }
 
 /*
-  GetConstraintTemplate Get constraint templates specified by name
+GetConstraintTemplate Get constraint templates specified by name
 */
 func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, auth
 }
 
 /*
-  ListConstraintTemplates lists constraint templates
+ListConstraintTemplates lists constraint templates
 */
 func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintTemplatesOK, error) {
 	// TODO: Validate the params before sending
@@ -194,7 +194,7 @@ func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, 
 }
 
 /*
-  PatchConstraintTemplate Patch a specified constraint template
+PatchConstraintTemplate Patch a specified constraint template
 */
 func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending

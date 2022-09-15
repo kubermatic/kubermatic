@@ -58,7 +58,7 @@ spec:
                     type: string
                   type: array
                 id:
-                  description: 'ID is an unnused legacy field. Deprecated: do not set this field anymore.'
+                  description: 'ID is an unused legacy field. Deprecated: do not set this field anymore.'
                   type: string
                 invalidTokensReference:
                   description: InvalidTokensReference is a reference to a Secret that contains invalidated login tokens. The tokens are used to provide a safe logout mechanism.

@@ -52,10 +52,12 @@ func NewDeleteProviderPresetParamsWithHTTPClient(client *http.Client) *DeletePro
 	}
 }
 
-/* DeleteProviderPresetParams contains all the parameters to send to the API endpoint
-   for the delete provider preset operation.
+/*
+DeleteProviderPresetParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete provider preset operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteProviderPresetParams struct {
 

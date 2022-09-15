@@ -58,7 +58,8 @@ func NewCreateConstraintOK() *CreateConstraintOK {
 	return &CreateConstraintOK{}
 }
 
-/* CreateConstraintOK describes a response with status code 200, with default header values.
+/*
+CreateConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -120,7 +121,8 @@ func NewCreateConstraintUnauthorized() *CreateConstraintUnauthorized {
 	return &CreateConstraintUnauthorized{}
 }
 
-/* CreateConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateConstraintForbidden() *CreateConstraintForbidden {
 	return &CreateConstraintForbidden{}
 }
 
-/* CreateConstraintForbidden describes a response with status code 403, with default header values.
+/*
+CreateConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateConstraintDefault(code int) *CreateConstraintDefault {
 	}
 }
 
-/* CreateConstraintDefault describes a response with status code -1, with default header values.
+/*
+CreateConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

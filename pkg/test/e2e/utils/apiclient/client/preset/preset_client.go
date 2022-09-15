@@ -50,7 +50,7 @@ type ClientService interface {
 }
 
 /*
-  CreatePreset Creates the preset
+CreatePreset Creates the preset
 */
 func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -88,7 +88,7 @@ func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.Clien
 }
 
 /*
-  DeletePreset removes preset
+DeletePreset removes preset
 */
 func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -126,7 +126,7 @@ func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.Clien
 }
 
 /*
-  DeletePresetProvider removes selected preset s provider
+DeletePresetProvider removes selected preset s provider
 */
 func (a *Client) DeletePresetProvider(params *DeletePresetProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -164,9 +164,9 @@ func (a *Client) DeletePresetProvider(params *DeletePresetProviderParams, authIn
 }
 
 /*
-  DeleteProviderPreset deletes provider preset
+DeleteProviderPreset deletes provider preset
 
-  This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
+This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 */
 func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProviderPresetOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +204,7 @@ func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authIn
 }
 
 /*
-  GetPresetStats gets presets stats
+GetPresetStats gets presets stats
 */
 func (a *Client) GetPresetStats(params *GetPresetStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPresetStatsOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +242,7 @@ func (a *Client) GetPresetStats(params *GetPresetStatsParams, authInfo runtime.C
 }
 
 /*
-  ListPresets Lists presets
+ListPresets Lists presets
 */
 func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +280,7 @@ func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientA
 }
 
 /*
-  ListProviderPresets Lists presets for the provider
+ListProviderPresets Lists presets for the provider
 */
 func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +318,7 @@ func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo
 }
 
 /*
-  UpdatePreset Updates provider preset
+UpdatePreset Updates provider preset
 */
 func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +356,7 @@ func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.Clien
 }
 
 /*
-  UpdatePresetStatus updates the status of a preset it can enable or disable it so that it won t be listed by the list endpoints
+UpdatePresetStatus updates the status of a preset it can enable or disable it so that it won t be listed by the list endpoints
 */
 func (a *Client) UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetStatusOK, error) {
 	// TODO: Validate the params before sending

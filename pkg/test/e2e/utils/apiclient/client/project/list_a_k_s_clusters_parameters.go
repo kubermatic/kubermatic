@@ -52,10 +52,12 @@ func NewListAKSClustersParamsWithHTTPClient(client *http.Client) *ListAKSCluster
 	}
 }
 
-/* ListAKSClustersParams contains all the parameters to send to the API endpoint
-   for the list a k s clusters operation.
+/*
+ListAKSClustersParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s clusters operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSClustersParams struct {
 

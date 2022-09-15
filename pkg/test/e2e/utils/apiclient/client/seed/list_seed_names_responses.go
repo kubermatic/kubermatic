@@ -46,7 +46,8 @@ func NewListSeedNamesOK() *ListSeedNamesOK {
 	return &ListSeedNamesOK{}
 }
 
-/* ListSeedNamesOK describes a response with status code 200, with default header values.
+/*
+ListSeedNamesOK describes a response with status code 200, with default header values.
 
 SeedNamesList
 */
@@ -108,7 +109,8 @@ func NewListSeedNamesDefault(code int) *ListSeedNamesDefault {
 	}
 }
 
-/* ListSeedNamesDefault describes a response with status code -1, with default header values.
+/*
+ListSeedNamesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

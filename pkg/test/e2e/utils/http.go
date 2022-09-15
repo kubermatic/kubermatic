@@ -117,7 +117,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		}
 
 		// perform request
-		// disabled due to Go 1.18 compat issues: nolint:bodyclose
+		//nolint:bodyclose
 		response, reqErr = http.DefaultTransport.RoundTrip(requestClone)
 		if reqErr != nil {
 			multiErr = append(multiErr, fmt.Errorf("error occurred while executing http call: %w", reqErr))

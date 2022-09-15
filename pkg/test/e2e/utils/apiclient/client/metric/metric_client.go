@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  ListMachineDeploymentMetrics lists metrics that belong to the given machine deployment
+ListMachineDeploymentMetrics lists metrics that belong to the given machine deployment
 */
 func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetri
 }
 
 /*
-  ListNodeDeploymentMetrics lists metrics that belong to the given node deployment
+ListNodeDeploymentMetrics lists metrics that belong to the given node deployment
 */
 func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending

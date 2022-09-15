@@ -52,10 +52,12 @@ func NewListVSphereDatastoresParamsWithHTTPClient(client *http.Client) *ListVSph
 	}
 }
 
-/* ListVSphereDatastoresParams contains all the parameters to send to the API endpoint
-   for the list v sphere datastores operation.
+/*
+ListVSphereDatastoresParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list v sphere datastores operation.
+
+	Typically these are written to a http.Request.
 */
 type ListVSphereDatastoresParams struct {
 

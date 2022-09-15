@@ -58,7 +58,8 @@ func NewDeleteGatekeeperConfigOK() *DeleteGatekeeperConfigOK {
 	return &DeleteGatekeeperConfigOK{}
 }
 
-/* DeleteGatekeeperConfigOK describes a response with status code 200, with default header values.
+/*
+DeleteGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteGatekeeperConfigUnauthorized() *DeleteGatekeeperConfigUnauthorized
 	return &DeleteGatekeeperConfigUnauthorized{}
 }
 
-/* DeleteGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteGatekeeperConfigForbidden() *DeleteGatekeeperConfigForbidden {
 	return &DeleteGatekeeperConfigForbidden{}
 }
 
-/* DeleteGatekeeperConfigForbidden describes a response with status code 403, with default header values.
+/*
+DeleteGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteGatekeeperConfigDefault(code int) *DeleteGatekeeperConfigDefault {
 	}
 }
 
-/* DeleteGatekeeperConfigDefault describes a response with status code -1, with default header values.
+/*
+DeleteGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  Gates Status of feature gates
+Gates Status of feature gates
 */
 func (a *Client) Gates(params *GatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GatesOK, error) {
 	// TODO: Validate the params before sending

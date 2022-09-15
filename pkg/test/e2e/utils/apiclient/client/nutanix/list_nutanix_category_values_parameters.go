@@ -52,10 +52,12 @@ func NewListNutanixCategoryValuesParamsWithHTTPClient(client *http.Client) *List
 	}
 }
 
-/* ListNutanixCategoryValuesParams contains all the parameters to send to the API endpoint
-   for the list nutanix category values operation.
+/*
+ListNutanixCategoryValuesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix category values operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixCategoryValuesParams struct {
 

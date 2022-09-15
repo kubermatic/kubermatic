@@ -39,19 +39,19 @@ func (r Routing) RegisterV1Legacy(mux *mux.Router) {
 
 // swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project deleteNodeForClusterLegacy
 //
-//    Deprecated:
-//    Deletes the given node that belongs to the cluster.
+//	Deprecated:
+//	Deletes the given node that belongs to the cluster.
 //
-//     This endpoint is deprecated, please create a Node Deployment instead.
+//	 This endpoint is deprecated, please create a Node Deployment instead.
 //
-//     Produces:
-//     - application/json
+//	 Produces:
+//	 - application/json
 //
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
+//	 Responses:
+//	   default: errorResponse
+//	   200: empty
+//	   401: empty
+//	   403: empty
 func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

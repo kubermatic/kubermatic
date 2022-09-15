@@ -52,10 +52,12 @@ func NewDeleteServiceAccountParamsWithHTTPClient(client *http.Client) *DeleteSer
 	}
 }
 
-/* DeleteServiceAccountParams contains all the parameters to send to the API endpoint
-   for the delete service account operation.
+/*
+DeleteServiceAccountParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete service account operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteServiceAccountParams struct {
 

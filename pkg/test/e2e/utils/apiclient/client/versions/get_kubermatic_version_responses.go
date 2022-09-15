@@ -46,7 +46,8 @@ func NewGetKubermaticVersionOK() *GetKubermaticVersionOK {
 	return &GetKubermaticVersionOK{}
 }
 
-/* GetKubermaticVersionOK describes a response with status code 200, with default header values.
+/*
+GetKubermaticVersionOK describes a response with status code 200, with default header values.
 
 KubermaticVersions
 */
@@ -110,7 +111,8 @@ func NewGetKubermaticVersionDefault(code int) *GetKubermaticVersionDefault {
 	}
 }
 
-/* GetKubermaticVersionDefault describes a response with status code -1, with default header values.
+/*
+GetKubermaticVersionDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

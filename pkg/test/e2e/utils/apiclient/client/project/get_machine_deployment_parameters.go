@@ -52,10 +52,12 @@ func NewGetMachineDeploymentParamsWithHTTPClient(client *http.Client) *GetMachin
 	}
 }
 
-/* GetMachineDeploymentParams contains all the parameters to send to the API endpoint
-   for the get machine deployment operation.
+/*
+GetMachineDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get machine deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type GetMachineDeploymentParams struct {
 

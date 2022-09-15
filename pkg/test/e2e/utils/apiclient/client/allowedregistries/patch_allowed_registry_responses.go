@@ -58,7 +58,8 @@ func NewPatchAllowedRegistryOK() *PatchAllowedRegistryOK {
 	return &PatchAllowedRegistryOK{}
 }
 
-/* PatchAllowedRegistryOK describes a response with status code 200, with default header values.
+/*
+PatchAllowedRegistryOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -120,7 +121,8 @@ func NewPatchAllowedRegistryUnauthorized() *PatchAllowedRegistryUnauthorized {
 	return &PatchAllowedRegistryUnauthorized{}
 }
 
-/* PatchAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchAllowedRegistryForbidden() *PatchAllowedRegistryForbidden {
 	return &PatchAllowedRegistryForbidden{}
 }
 
-/* PatchAllowedRegistryForbidden describes a response with status code 403, with default header values.
+/*
+PatchAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchAllowedRegistryDefault(code int) *PatchAllowedRegistryDefault {
 	}
 }
 
-/* PatchAllowedRegistryDefault describes a response with status code -1, with default header values.
+/*
+PatchAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

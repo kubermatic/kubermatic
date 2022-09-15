@@ -52,10 +52,12 @@ func NewListAKSVersionsParamsWithHTTPClient(client *http.Client) *ListAKSVersion
 	}
 }
 
-/* ListAKSVersionsParams contains all the parameters to send to the API endpoint
-   for the list a k s versions operation.
+/*
+ListAKSVersionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s versions operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSVersionsParams struct {
 	timeout    time.Duration

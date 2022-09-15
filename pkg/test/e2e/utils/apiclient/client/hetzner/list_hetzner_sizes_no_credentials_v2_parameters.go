@@ -52,10 +52,12 @@ func NewListHetznerSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListHetznerSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list hetzner sizes no credentials v2 operation.
+/*
+ListHetznerSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list hetzner sizes no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListHetznerSizesNoCredentialsV2Params struct {
 

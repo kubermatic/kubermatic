@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  ListVersionsByCNIPlugin Lists all CNI Plugin versions that are supported for a given CNI plugin type
+ListVersionsByCNIPlugin Lists all CNI Plugin versions that are supported for a given CNI plugin type
 */
 func (a *Client) ListVersionsByCNIPlugin(params *ListVersionsByCNIPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListVersionsByCNIPluginOK, error) {
 	// TODO: Validate the params before sending

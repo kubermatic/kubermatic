@@ -70,7 +70,8 @@ func NewUpdateProjectOK() *UpdateProjectOK {
 	return &UpdateProjectOK{}
 }
 
-/* UpdateProjectOK describes a response with status code 200, with default header values.
+/*
+UpdateProjectOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -132,7 +133,8 @@ func NewUpdateProjectBadRequest() *UpdateProjectBadRequest {
 	return &UpdateProjectBadRequest{}
 }
 
-/* UpdateProjectBadRequest describes a response with status code 400, with default header values.
+/*
+UpdateProjectBadRequest describes a response with status code 400, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -182,7 +184,8 @@ func NewUpdateProjectNotFound() *UpdateProjectNotFound {
 	return &UpdateProjectNotFound{}
 }
 
-/* UpdateProjectNotFound describes a response with status code 404, with default header values.
+/*
+UpdateProjectNotFound describes a response with status code 404, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -232,7 +235,8 @@ func NewUpdateProjectInternalServerError() *UpdateProjectInternalServerError {
 	return &UpdateProjectInternalServerError{}
 }
 
-/* UpdateProjectInternalServerError describes a response with status code 500, with default header values.
+/*
+UpdateProjectInternalServerError describes a response with status code 500, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -282,7 +286,8 @@ func NewUpdateProjectNotImplemented() *UpdateProjectNotImplemented {
 	return &UpdateProjectNotImplemented{}
 }
 
-/* UpdateProjectNotImplemented describes a response with status code 501, with default header values.
+/*
+UpdateProjectNotImplemented describes a response with status code 501, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -334,7 +339,8 @@ func NewUpdateProjectDefault(code int) *UpdateProjectDefault {
 	}
 }
 
-/* UpdateProjectDefault describes a response with status code -1, with default header values.
+/*
+UpdateProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

@@ -46,7 +46,8 @@ func NewListDigitaloceanSizesNoCredentialsOK() *ListDigitaloceanSizesNoCredentia
 	return &ListDigitaloceanSizesNoCredentialsOK{}
 }
 
-/* ListDigitaloceanSizesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListDigitaloceanSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 DigitaloceanSizeList
 */
@@ -110,7 +111,8 @@ func NewListDigitaloceanSizesNoCredentialsDefault(code int) *ListDigitaloceanSiz
 	}
 }
 
-/* ListDigitaloceanSizesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListDigitaloceanSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

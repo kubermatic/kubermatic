@@ -52,10 +52,12 @@ func NewListGKEImagesParamsWithHTTPClient(client *http.Client) *ListGKEImagesPar
 	}
 }
 
-/* ListGKEImagesParams contains all the parameters to send to the API endpoint
-   for the list g k e images operation.
+/*
+ListGKEImagesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e images operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEImagesParams struct {
 

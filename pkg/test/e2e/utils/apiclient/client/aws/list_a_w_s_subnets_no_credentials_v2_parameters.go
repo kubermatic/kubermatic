@@ -52,10 +52,12 @@ func NewListAWSSubnetsNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* ListAWSSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list a w s subnets no credentials v2 operation.
+/*
+ListAWSSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a w s subnets no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAWSSubnetsNoCredentialsV2Params struct {
 

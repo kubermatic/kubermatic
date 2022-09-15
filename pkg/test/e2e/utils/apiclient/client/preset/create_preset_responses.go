@@ -58,7 +58,8 @@ func NewCreatePresetOK() *CreatePresetOK {
 	return &CreatePresetOK{}
 }
 
-/* CreatePresetOK describes a response with status code 200, with default header values.
+/*
+CreatePresetOK describes a response with status code 200, with default header values.
 
 Preset
 */
@@ -120,7 +121,8 @@ func NewCreatePresetUnauthorized() *CreatePresetUnauthorized {
 	return &CreatePresetUnauthorized{}
 }
 
-/* CreatePresetUnauthorized describes a response with status code 401, with default header values.
+/*
+CreatePresetUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreatePresetForbidden() *CreatePresetForbidden {
 	return &CreatePresetForbidden{}
 }
 
-/* CreatePresetForbidden describes a response with status code 403, with default header values.
+/*
+CreatePresetForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreatePresetDefault(code int) *CreatePresetDefault {
 	}
 }
 
-/* CreatePresetDefault describes a response with status code -1, with default header values.
+/*
+CreatePresetDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

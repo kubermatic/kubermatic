@@ -46,7 +46,8 @@ func NewListAzureAvailabilityZonesNoCredentialsOK() *ListAzureAvailabilityZonesN
 	return &ListAzureAvailabilityZonesNoCredentialsOK{}
 }
 
-/* ListAzureAvailabilityZonesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAzureAvailabilityZonesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AzureAvailabilityZonesList
 */
@@ -110,7 +111,8 @@ func NewListAzureAvailabilityZonesNoCredentialsDefault(code int) *ListAzureAvail
 	}
 }
 
-/* ListAzureAvailabilityZonesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureAvailabilityZonesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

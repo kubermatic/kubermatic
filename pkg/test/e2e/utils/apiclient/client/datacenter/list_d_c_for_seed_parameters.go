@@ -52,10 +52,12 @@ func NewListDCForSeedParamsWithHTTPClient(client *http.Client) *ListDCForSeedPar
 	}
 }
 
-/* ListDCForSeedParams contains all the parameters to send to the API endpoint
-   for the list d c for seed operation.
+/*
+ListDCForSeedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list d c for seed operation.
+
+	Typically these are written to a http.Request.
 */
 type ListDCForSeedParams struct {
 

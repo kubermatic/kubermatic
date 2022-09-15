@@ -58,7 +58,8 @@ func NewPatchClusterV2OK() *PatchClusterV2OK {
 	return &PatchClusterV2OK{}
 }
 
-/* PatchClusterV2OK describes a response with status code 200, with default header values.
+/*
+PatchClusterV2OK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -120,7 +121,8 @@ func NewPatchClusterV2Unauthorized() *PatchClusterV2Unauthorized {
 	return &PatchClusterV2Unauthorized{}
 }
 
-/* PatchClusterV2Unauthorized describes a response with status code 401, with default header values.
+/*
+PatchClusterV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewPatchClusterV2Forbidden() *PatchClusterV2Forbidden {
 	return &PatchClusterV2Forbidden{}
 }
 
-/* PatchClusterV2Forbidden describes a response with status code 403, with default header values.
+/*
+PatchClusterV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewPatchClusterV2Default(code int) *PatchClusterV2Default {
 	}
 }
 
-/* PatchClusterV2Default describes a response with status code -1, with default header values.
+/*
+PatchClusterV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

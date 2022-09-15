@@ -58,7 +58,8 @@ func NewAddUserToProjectCreated() *AddUserToProjectCreated {
 	return &AddUserToProjectCreated{}
 }
 
-/* AddUserToProjectCreated describes a response with status code 201, with default header values.
+/*
+AddUserToProjectCreated describes a response with status code 201, with default header values.
 
 User
 */
@@ -120,7 +121,8 @@ func NewAddUserToProjectUnauthorized() *AddUserToProjectUnauthorized {
 	return &AddUserToProjectUnauthorized{}
 }
 
-/* AddUserToProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+AddUserToProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewAddUserToProjectForbidden() *AddUserToProjectForbidden {
 	return &AddUserToProjectForbidden{}
 }
 
-/* AddUserToProjectForbidden describes a response with status code 403, with default header values.
+/*
+AddUserToProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewAddUserToProjectDefault(code int) *AddUserToProjectDefault {
 	}
 }
 
-/* AddUserToProjectDefault describes a response with status code -1, with default header values.
+/*
+AddUserToProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

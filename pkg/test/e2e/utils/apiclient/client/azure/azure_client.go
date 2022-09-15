@@ -54,7 +54,7 @@ type ClientService interface {
 }
 
 /*
-  ListAzureAvailabilityZones Lists VM availability zones in an Azure region
+ListAzureAvailabilityZones Lists VM availability zones in an Azure region
 */
 func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -92,7 +92,7 @@ func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesPa
 }
 
 /*
-  ListAzureAvailabilityZonesNoCredentials Lists available VM availability zones in an Azure region
+ListAzureAvailabilityZonesNoCredentials Lists available VM availability zones in an Azure region
 */
 func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -130,7 +130,7 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentials(params *ListAzureAvaila
 }
 
 /*
-  ListAzureAvailabilityZonesNoCredentialsV2 Lists available VM availability zones in an Azure region
+ListAzureAvailabilityZonesNoCredentialsV2 Lists available VM availability zones in an Azure region
 */
 func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureAvailabilityZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -168,7 +168,7 @@ func (a *Client) ListAzureAvailabilityZonesNoCredentialsV2(params *ListAzureAvai
 }
 
 /*
-  ListAzureResourceGroups Lists available VM resource groups
+ListAzureResourceGroups Lists available VM resource groups
 */
 func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureResourceGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -206,7 +206,7 @@ func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, 
 }
 
 /*
-  ListAzureRouteTables Lists available VM route tables
+ListAzureRouteTables Lists available VM route tables
 */
 func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureRouteTablesOK, error) {
 	// TODO: Validate the params before sending
@@ -244,7 +244,7 @@ func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authIn
 }
 
 /*
-  ListAzureSecurityGroups Lists available VM security groups
+ListAzureSecurityGroups Lists available VM security groups
 */
 func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -282,7 +282,7 @@ func (a *Client) ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, 
 }
 
 /*
-  ListAzureSizes Lists available VM sizes in an Azure region
+ListAzureSizes Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -320,7 +320,7 @@ func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.C
 }
 
 /*
-  ListAzureSizesNoCredentials Lists available VM sizes in an Azure region
+ListAzureSizesNoCredentials Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -358,7 +358,7 @@ func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentials
 }
 
 /*
-  ListAzureSizesNoCredentialsV2 Lists available VM sizes in an Azure region
+ListAzureSizesNoCredentialsV2 Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -396,7 +396,7 @@ func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentia
 }
 
 /*
-  ListAzureSubnets Lists available VM subnets
+ListAzureSubnets Lists available VM subnets
 */
 func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureSubnetsOK, error) {
 	// TODO: Validate the params before sending
@@ -434,7 +434,7 @@ func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runti
 }
 
 /*
-  ListAzureVnets Lists available VM virtual networks
+ListAzureVnets Lists available VM virtual networks
 */
 func (a *Client) ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAzureVnetsOK, error) {
 	// TODO: Validate the params before sending

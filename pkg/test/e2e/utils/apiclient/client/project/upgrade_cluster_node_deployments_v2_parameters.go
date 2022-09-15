@@ -54,10 +54,12 @@ func NewUpgradeClusterNodeDeploymentsV2ParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* UpgradeClusterNodeDeploymentsV2Params contains all the parameters to send to the API endpoint
-   for the upgrade cluster node deployments v2 operation.
+/*
+UpgradeClusterNodeDeploymentsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the upgrade cluster node deployments v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type UpgradeClusterNodeDeploymentsV2Params struct {
 

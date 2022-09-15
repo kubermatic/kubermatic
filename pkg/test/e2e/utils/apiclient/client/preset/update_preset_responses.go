@@ -58,7 +58,8 @@ func NewUpdatePresetOK() *UpdatePresetOK {
 	return &UpdatePresetOK{}
 }
 
-/* UpdatePresetOK describes a response with status code 200, with default header values.
+/*
+UpdatePresetOK describes a response with status code 200, with default header values.
 
 Preset
 */
@@ -120,7 +121,8 @@ func NewUpdatePresetUnauthorized() *UpdatePresetUnauthorized {
 	return &UpdatePresetUnauthorized{}
 }
 
-/* UpdatePresetUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdatePresetUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewUpdatePresetForbidden() *UpdatePresetForbidden {
 	return &UpdatePresetForbidden{}
 }
 
-/* UpdatePresetForbidden describes a response with status code 403, with default header values.
+/*
+UpdatePresetForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewUpdatePresetDefault(code int) *UpdatePresetDefault {
 	}
 }
 
-/* UpdatePresetDefault describes a response with status code -1, with default header values.
+/*
+UpdatePresetDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

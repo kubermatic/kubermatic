@@ -46,7 +46,8 @@ func NewListGCPDiskTypesOK() *ListGCPDiskTypesOK {
 	return &ListGCPDiskTypesOK{}
 }
 
-/* ListGCPDiskTypesOK describes a response with status code 200, with default header values.
+/*
+ListGCPDiskTypesOK describes a response with status code 200, with default header values.
 
 GCPDiskTypeList
 */
@@ -108,7 +109,8 @@ func NewListGCPDiskTypesDefault(code int) *ListGCPDiskTypesDefault {
 	}
 }
 
-/* ListGCPDiskTypesDefault describes a response with status code -1, with default header values.
+/*
+ListGCPDiskTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

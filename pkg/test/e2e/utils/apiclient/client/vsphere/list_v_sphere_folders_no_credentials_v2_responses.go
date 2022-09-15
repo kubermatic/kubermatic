@@ -46,7 +46,8 @@ func NewListVSphereFoldersNoCredentialsV2OK() *ListVSphereFoldersNoCredentialsV2
 	return &ListVSphereFoldersNoCredentialsV2OK{}
 }
 
-/* ListVSphereFoldersNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListVSphereFoldersNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 VSphereFolder
 */
@@ -108,7 +109,8 @@ func NewListVSphereFoldersNoCredentialsV2Default(code int) *ListVSphereFoldersNo
 	}
 }
 
-/* ListVSphereFoldersNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListVSphereFoldersNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */

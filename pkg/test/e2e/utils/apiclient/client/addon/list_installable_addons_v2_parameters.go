@@ -52,10 +52,12 @@ func NewListInstallableAddonsV2ParamsWithHTTPClient(client *http.Client) *ListIn
 	}
 }
 
-/* ListInstallableAddonsV2Params contains all the parameters to send to the API endpoint
-   for the list installable addons v2 operation.
+/*
+ListInstallableAddonsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list installable addons v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListInstallableAddonsV2Params struct {
 

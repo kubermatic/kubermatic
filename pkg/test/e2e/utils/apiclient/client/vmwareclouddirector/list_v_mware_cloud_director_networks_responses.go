@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorNetworksOK() *ListVMwareCloudDirectorNetworksOK {
 	return &ListVMwareCloudDirectorNetworksOK{}
 }
 
-/* ListVMwareCloudDirectorNetworksOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorNetworksOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorNetworkList
 */
@@ -108,7 +109,8 @@ func NewListVMwareCloudDirectorNetworksDefault(code int) *ListVMwareCloudDirecto
 	}
 }
 
-/* ListVMwareCloudDirectorNetworksDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

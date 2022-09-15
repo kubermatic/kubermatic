@@ -34,7 +34,7 @@ type ClientService interface {
 }
 
 /*
-  CreateOrUpdateBackupCredentials Creates or updates backup credentials for a given seed
+CreateOrUpdateBackupCredentials Creates or updates backup credentials for a given seed
 */
 func (a *Client) CreateOrUpdateBackupCredentials(params *CreateOrUpdateBackupCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateBackupCredentialsOK, error) {
 	// TODO: Validate the params before sending

@@ -52,10 +52,12 @@ func NewRestartMachineDeploymentParamsWithHTTPClient(client *http.Client) *Resta
 	}
 }
 
-/* RestartMachineDeploymentParams contains all the parameters to send to the API endpoint
-   for the restart machine deployment operation.
+/*
+RestartMachineDeploymentParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the restart machine deployment operation.
+
+	Typically these are written to a http.Request.
 */
 type RestartMachineDeploymentParams struct {
 

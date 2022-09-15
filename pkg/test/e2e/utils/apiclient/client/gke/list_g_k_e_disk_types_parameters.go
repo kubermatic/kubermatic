@@ -52,10 +52,12 @@ func NewListGKEDiskTypesParamsWithHTTPClient(client *http.Client) *ListGKEDiskTy
 	}
 }
 
-/* ListGKEDiskTypesParams contains all the parameters to send to the API endpoint
-   for the list g k e disk types operation.
+/*
+ListGKEDiskTypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e disk types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEDiskTypesParams struct {
 	timeout    time.Duration

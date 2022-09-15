@@ -52,10 +52,12 @@ func NewListAlibabaZonesNoCredentialsV2ParamsWithHTTPClient(client *http.Client)
 	}
 }
 
-/* ListAlibabaZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list alibaba zones no credentials v2 operation.
+/*
+ListAlibabaZonesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba zones no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaZonesNoCredentialsV2Params struct {
 

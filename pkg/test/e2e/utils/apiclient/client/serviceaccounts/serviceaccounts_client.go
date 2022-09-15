@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  AddServiceAccountToProject Adds the given service account to the given project
+AddServiceAccountToProject Adds the given service account to the given project
 */
 func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddServiceAccountToProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectPa
 }
 
 /*
-  DeleteServiceAccount Deletes service account for the given project
+DeleteServiceAccount Deletes service account for the given project
 */
 func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountOK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authIn
 }
 
 /*
-  ListServiceAccounts List Service Accounts for the given project
+ListServiceAccounts List Service Accounts for the given project
 */
 func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error) {
 	// TODO: Validate the params before sending
@@ -154,7 +154,7 @@ func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo
 }
 
 /*
-  UpdateServiceAccount Updates service account for the given project
+UpdateServiceAccount Updates service account for the given project
 */
 func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountOK, error) {
 	// TODO: Validate the params before sending

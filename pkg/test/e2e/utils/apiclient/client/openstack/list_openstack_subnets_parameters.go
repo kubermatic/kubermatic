@@ -53,10 +53,12 @@ func NewListOpenstackSubnetsParamsWithHTTPClient(client *http.Client) *ListOpens
 	}
 }
 
-/* ListOpenstackSubnetsParams contains all the parameters to send to the API endpoint
-   for the list openstack subnets operation.
+/*
+ListOpenstackSubnetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack subnets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSubnetsParams struct {
 

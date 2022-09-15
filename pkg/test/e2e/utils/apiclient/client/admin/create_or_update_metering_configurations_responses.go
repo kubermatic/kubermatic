@@ -58,7 +58,8 @@ func NewCreateOrUpdateMeteringConfigurationsOK() *CreateOrUpdateMeteringConfigur
 	return &CreateOrUpdateMeteringConfigurationsOK{}
 }
 
-/* CreateOrUpdateMeteringConfigurationsOK describes a response with status code 200, with default header values.
+/*
+CreateOrUpdateMeteringConfigurationsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewCreateOrUpdateMeteringConfigurationsUnauthorized() *CreateOrUpdateMeteri
 	return &CreateOrUpdateMeteringConfigurationsUnauthorized{}
 }
 
-/* CreateOrUpdateMeteringConfigurationsUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateOrUpdateMeteringConfigurationsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewCreateOrUpdateMeteringConfigurationsForbidden() *CreateOrUpdateMeteringC
 	return &CreateOrUpdateMeteringConfigurationsForbidden{}
 }
 
-/* CreateOrUpdateMeteringConfigurationsForbidden describes a response with status code 403, with default header values.
+/*
+CreateOrUpdateMeteringConfigurationsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewCreateOrUpdateMeteringConfigurationsDefault(code int) *CreateOrUpdateMet
 	}
 }
 
-/* CreateOrUpdateMeteringConfigurationsDefault describes a response with status code -1, with default header values.
+/*
+CreateOrUpdateMeteringConfigurationsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

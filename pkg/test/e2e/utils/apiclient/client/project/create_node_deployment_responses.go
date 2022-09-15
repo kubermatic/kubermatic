@@ -58,7 +58,8 @@ func NewCreateNodeDeploymentCreated() *CreateNodeDeploymentCreated {
 	return &CreateNodeDeploymentCreated{}
 }
 
-/* CreateNodeDeploymentCreated describes a response with status code 201, with default header values.
+/*
+CreateNodeDeploymentCreated describes a response with status code 201, with default header values.
 
 NodeDeployment
 */
@@ -120,7 +121,8 @@ func NewCreateNodeDeploymentUnauthorized() *CreateNodeDeploymentUnauthorized {
 	return &CreateNodeDeploymentUnauthorized{}
 }
 
-/* CreateNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateNodeDeploymentForbidden() *CreateNodeDeploymentForbidden {
 	return &CreateNodeDeploymentForbidden{}
 }
 
-/* CreateNodeDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+CreateNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateNodeDeploymentDefault(code int) *CreateNodeDeploymentDefault {
 	}
 }
 
-/* CreateNodeDeploymentDefault describes a response with status code -1, with default header values.
+/*
+CreateNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

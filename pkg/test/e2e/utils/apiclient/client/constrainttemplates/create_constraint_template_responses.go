@@ -58,7 +58,8 @@ func NewCreateConstraintTemplateOK() *CreateConstraintTemplateOK {
 	return &CreateConstraintTemplateOK{}
 }
 
-/* CreateConstraintTemplateOK describes a response with status code 200, with default header values.
+/*
+CreateConstraintTemplateOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -120,7 +121,8 @@ func NewCreateConstraintTemplateUnauthorized() *CreateConstraintTemplateUnauthor
 	return &CreateConstraintTemplateUnauthorized{}
 }
 
-/* CreateConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateConstraintTemplateForbidden() *CreateConstraintTemplateForbidden {
 	return &CreateConstraintTemplateForbidden{}
 }
 
-/* CreateConstraintTemplateForbidden describes a response with status code 403, with default header values.
+/*
+CreateConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateConstraintTemplateDefault(code int) *CreateConstraintTemplateDefau
 	}
 }
 
-/* CreateConstraintTemplateDefault describes a response with status code -1, with default header values.
+/*
+CreateConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

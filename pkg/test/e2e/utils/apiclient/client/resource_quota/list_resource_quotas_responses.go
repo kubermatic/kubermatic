@@ -58,7 +58,8 @@ func NewListResourceQuotasOK() *ListResourceQuotasOK {
 	return &ListResourceQuotasOK{}
 }
 
-/* ListResourceQuotasOK describes a response with status code 200, with default header values.
+/*
+ListResourceQuotasOK describes a response with status code 200, with default header values.
 
 ResourceQuota
 */
@@ -118,7 +119,8 @@ func NewListResourceQuotasUnauthorized() *ListResourceQuotasUnauthorized {
 	return &ListResourceQuotasUnauthorized{}
 }
 
-/* ListResourceQuotasUnauthorized describes a response with status code 401, with default header values.
+/*
+ListResourceQuotasUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListResourceQuotasForbidden() *ListResourceQuotasForbidden {
 	return &ListResourceQuotasForbidden{}
 }
 
-/* ListResourceQuotasForbidden describes a response with status code 403, with default header values.
+/*
+ListResourceQuotasForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListResourceQuotasDefault(code int) *ListResourceQuotasDefault {
 	}
 }
 
-/* ListResourceQuotasDefault describes a response with status code -1, with default header values.
+/*
+ListResourceQuotasDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

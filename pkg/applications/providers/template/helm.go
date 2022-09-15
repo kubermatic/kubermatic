@@ -164,9 +164,12 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 
 // getReleaseName computes the release name from the applicationInstallation.
 // The releaseName length must be less or equal to 53. So we first start to compute this release Name:
-// 		releaseName := applicationInstallation.Namespace + "-" + applicationInstallation.Name
+//
+//	releaseName := applicationInstallation.Namespace + "-" + applicationInstallation.Name
+//
 // If the length is more 53 characters then we fall back to:
-//		releaseName := applicationInstallation.Name[:43] + "-" + sha1Sum(applicationInstallation.Namespace )[:9]
+//
+//	releaseName := applicationInstallation.Name[:43] + "-" + sha1Sum(applicationInstallation.Namespace )[:9]
 func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstallation) string {
 	// tech note: in fact releaseName must respect more constrainst to be valid cf https://github.com/helm/helm/blob/v3.9.0/pkg/chartutil/validate_name.go#L66
 	namespacedName := applicationInstallation.Namespace + "-" + applicationInstallation.Name

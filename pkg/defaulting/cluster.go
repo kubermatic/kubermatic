@@ -41,6 +41,7 @@ import (
 //  2. Seed's spec.componentsOverrides
 //  3. KubermaticConfiguration's spec.userCluster
 //  4. Constants in pkg/controller/operator/defaults
+//
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically), but the Seed
 // does not yet need to be defaulted (to the values of the KubermaticConfiguration).

@@ -46,7 +46,8 @@ func NewListGKEZonesOK() *ListGKEZonesOK {
 	return &ListGKEZonesOK{}
 }
 
-/* ListGKEZonesOK describes a response with status code 200, with default header values.
+/*
+ListGKEZonesOK describes a response with status code 200, with default header values.
 
 GKEZoneList
 */
@@ -108,7 +109,8 @@ func NewListGKEZonesDefault(code int) *ListGKEZonesDefault {
 	}
 }
 
-/* ListGKEZonesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

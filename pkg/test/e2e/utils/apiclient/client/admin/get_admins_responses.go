@@ -58,7 +58,8 @@ func NewGetAdminsOK() *GetAdminsOK {
 	return &GetAdminsOK{}
 }
 
-/* GetAdminsOK describes a response with status code 200, with default header values.
+/*
+GetAdminsOK describes a response with status code 200, with default header values.
 
 Admin
 */
@@ -118,7 +119,8 @@ func NewGetAdminsUnauthorized() *GetAdminsUnauthorized {
 	return &GetAdminsUnauthorized{}
 }
 
-/* GetAdminsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAdminsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetAdminsForbidden() *GetAdminsForbidden {
 	return &GetAdminsForbidden{}
 }
 
-/* GetAdminsForbidden describes a response with status code 403, with default header values.
+/*
+GetAdminsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetAdminsDefault(code int) *GetAdminsDefault {
 	}
 }
 
-/* GetAdminsDefault describes a response with status code -1, with default header values.
+/*
+GetAdminsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

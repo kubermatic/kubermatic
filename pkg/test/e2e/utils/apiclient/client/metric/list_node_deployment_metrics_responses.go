@@ -58,7 +58,8 @@ func NewListNodeDeploymentMetricsOK() *ListNodeDeploymentMetricsOK {
 	return &ListNodeDeploymentMetricsOK{}
 }
 
-/* ListNodeDeploymentMetricsOK describes a response with status code 200, with default header values.
+/*
+ListNodeDeploymentMetricsOK describes a response with status code 200, with default header values.
 
 NodeMetric
 */
@@ -118,7 +119,8 @@ func NewListNodeDeploymentMetricsUnauthorized() *ListNodeDeploymentMetricsUnauth
 	return &ListNodeDeploymentMetricsUnauthorized{}
 }
 
-/* ListNodeDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListNodeDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListNodeDeploymentMetricsForbidden() *ListNodeDeploymentMetricsForbidden
 	return &ListNodeDeploymentMetricsForbidden{}
 }
 
-/* ListNodeDeploymentMetricsForbidden describes a response with status code 403, with default header values.
+/*
+ListNodeDeploymentMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListNodeDeploymentMetricsDefault(code int) *ListNodeDeploymentMetricsDef
 	}
 }
 
-/* ListNodeDeploymentMetricsDefault describes a response with status code -1, with default header values.
+/*
+ListNodeDeploymentMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

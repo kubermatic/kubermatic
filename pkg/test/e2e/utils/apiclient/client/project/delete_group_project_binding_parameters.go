@@ -52,10 +52,12 @@ func NewDeleteGroupProjectBindingParamsWithHTTPClient(client *http.Client) *Dele
 	}
 }
 
-/* DeleteGroupProjectBindingParams contains all the parameters to send to the API endpoint
-   for the delete group project binding operation.
+/*
+DeleteGroupProjectBindingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete group project binding operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteGroupProjectBindingParams struct {
 

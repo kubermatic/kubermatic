@@ -52,10 +52,12 @@ func NewGetAddonV2ParamsWithHTTPClient(client *http.Client) *GetAddonV2Params {
 	}
 }
 
-/* GetAddonV2Params contains all the parameters to send to the API endpoint
-   for the get addon v2 operation.
+/*
+GetAddonV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get addon v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type GetAddonV2Params struct {
 

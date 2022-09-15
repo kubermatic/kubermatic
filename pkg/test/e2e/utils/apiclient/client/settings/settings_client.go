@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  GetCurrentUserSettings returns settings of the current user
+GetCurrentUserSettings returns settings of the current user
 */
 func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, au
 }
 
 /*
-  PatchCurrentUserSettings updates settings of the current user
+PatchCurrentUserSettings updates settings of the current user
 */
 func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending

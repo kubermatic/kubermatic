@@ -48,7 +48,7 @@ var applicationInstallerRecorder fake.ApplicationInstallerRecorder
 func TestApplicationInstallerController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Application Intallation controller test suite")
+	RunSpecs(t, "Application Installation controller test suite")
 }
 
 var _ = BeforeSuite(func() {

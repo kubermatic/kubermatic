@@ -52,10 +52,12 @@ func NewListAccessibleAddonsParamsWithHTTPClient(client *http.Client) *ListAcces
 	}
 }
 
-/* ListAccessibleAddonsParams contains all the parameters to send to the API endpoint
-   for the list accessible addons operation.
+/*
+ListAccessibleAddonsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list accessible addons operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAccessibleAddonsParams struct {
 	timeout    time.Duration

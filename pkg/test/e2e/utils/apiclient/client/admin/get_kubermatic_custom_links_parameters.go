@@ -52,10 +52,12 @@ func NewGetKubermaticCustomLinksParamsWithHTTPClient(client *http.Client) *GetKu
 	}
 }
 
-/* GetKubermaticCustomLinksParams contains all the parameters to send to the API endpoint
-   for the get kubermatic custom links operation.
+/*
+GetKubermaticCustomLinksParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get kubermatic custom links operation.
+
+	Typically these are written to a http.Request.
 */
 type GetKubermaticCustomLinksParams struct {
 	timeout    time.Duration

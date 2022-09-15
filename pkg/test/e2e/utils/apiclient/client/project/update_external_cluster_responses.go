@@ -60,7 +60,8 @@ func NewUpdateExternalClusterOK() *UpdateExternalClusterOK {
 	return &UpdateExternalClusterOK{}
 }
 
-/* UpdateExternalClusterOK describes a response with status code 200, with default header values.
+/*
+UpdateExternalClusterOK describes a response with status code 200, with default header values.
 
 ExternalCluster
 */
@@ -122,7 +123,8 @@ func NewUpdateExternalClusterUnauthorized() *UpdateExternalClusterUnauthorized {
 	return &UpdateExternalClusterUnauthorized{}
 }
 
-/* UpdateExternalClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -172,7 +174,8 @@ func NewUpdateExternalClusterForbidden() *UpdateExternalClusterForbidden {
 	return &UpdateExternalClusterForbidden{}
 }
 
-/* UpdateExternalClusterForbidden describes a response with status code 403, with default header values.
+/*
+UpdateExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -224,7 +227,8 @@ func NewUpdateExternalClusterDefault(code int) *UpdateExternalClusterDefault {
 	}
 }
 
-/* UpdateExternalClusterDefault describes a response with status code -1, with default header values.
+/*
+UpdateExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -288,7 +292,8 @@ func (o *UpdateExternalClusterDefault) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*UpdateExternalClusterBody update external cluster body
+/*
+UpdateExternalClusterBody update external cluster body
 swagger:model UpdateExternalClusterBody
 */
 type UpdateExternalClusterBody struct {

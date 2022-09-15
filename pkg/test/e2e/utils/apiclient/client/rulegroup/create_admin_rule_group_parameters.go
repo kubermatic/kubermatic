@@ -54,10 +54,12 @@ func NewCreateAdminRuleGroupParamsWithHTTPClient(client *http.Client) *CreateAdm
 	}
 }
 
-/* CreateAdminRuleGroupParams contains all the parameters to send to the API endpoint
-   for the create admin rule group operation.
+/*
+CreateAdminRuleGroupParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create admin rule group operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateAdminRuleGroupParams struct {
 

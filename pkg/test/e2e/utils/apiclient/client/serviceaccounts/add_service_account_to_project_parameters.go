@@ -54,10 +54,12 @@ func NewAddServiceAccountToProjectParamsWithHTTPClient(client *http.Client) *Add
 	}
 }
 
-/* AddServiceAccountToProjectParams contains all the parameters to send to the API endpoint
-   for the add service account to project operation.
+/*
+AddServiceAccountToProjectParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add service account to project operation.
+
+	Typically these are written to a http.Request.
 */
 type AddServiceAccountToProjectParams struct {
 

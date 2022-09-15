@@ -52,10 +52,12 @@ func NewUpdateExternalClusterParamsWithHTTPClient(client *http.Client) *UpdateEx
 	}
 }
 
-/* UpdateExternalClusterParams contains all the parameters to send to the API endpoint
-   for the update external cluster operation.
+/*
+UpdateExternalClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update external cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateExternalClusterParams struct {
 

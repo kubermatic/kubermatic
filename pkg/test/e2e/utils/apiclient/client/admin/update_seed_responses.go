@@ -61,7 +61,8 @@ func NewUpdateSeedOK() *UpdateSeedOK {
 	return &UpdateSeedOK{}
 }
 
-/* UpdateSeedOK describes a response with status code 200, with default header values.
+/*
+UpdateSeedOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -123,7 +124,8 @@ func NewUpdateSeedUnauthorized() *UpdateSeedUnauthorized {
 	return &UpdateSeedUnauthorized{}
 }
 
-/* UpdateSeedUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -173,7 +175,8 @@ func NewUpdateSeedForbidden() *UpdateSeedForbidden {
 	return &UpdateSeedForbidden{}
 }
 
-/* UpdateSeedForbidden describes a response with status code 403, with default header values.
+/*
+UpdateSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -225,7 +228,8 @@ func NewUpdateSeedDefault(code int) *UpdateSeedDefault {
 	}
 }
 
-/* UpdateSeedDefault describes a response with status code -1, with default header values.
+/*
+UpdateSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -289,7 +293,8 @@ func (o *UpdateSeedDefault) readResponse(response runtime.ClientResponse, consum
 	return nil
 }
 
-/*UpdateSeedBody update seed body
+/*
+UpdateSeedBody update seed body
 swagger:model UpdateSeedBody
 */
 type UpdateSeedBody struct {

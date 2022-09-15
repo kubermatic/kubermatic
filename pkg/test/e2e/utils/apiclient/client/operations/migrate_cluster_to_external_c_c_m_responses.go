@@ -58,7 +58,8 @@ func NewMigrateClusterToExternalCCMOK() *MigrateClusterToExternalCCMOK {
 	return &MigrateClusterToExternalCCMOK{}
 }
 
-/* MigrateClusterToExternalCCMOK describes a response with status code 200, with default header values.
+/*
+MigrateClusterToExternalCCMOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewMigrateClusterToExternalCCMUnauthorized() *MigrateClusterToExternalCCMUn
 	return &MigrateClusterToExternalCCMUnauthorized{}
 }
 
-/* MigrateClusterToExternalCCMUnauthorized describes a response with status code 401, with default header values.
+/*
+MigrateClusterToExternalCCMUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewMigrateClusterToExternalCCMForbidden() *MigrateClusterToExternalCCMForbi
 	return &MigrateClusterToExternalCCMForbidden{}
 }
 
-/* MigrateClusterToExternalCCMForbidden describes a response with status code 403, with default header values.
+/*
+MigrateClusterToExternalCCMForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewMigrateClusterToExternalCCMDefault(code int) *MigrateClusterToExternalCC
 	}
 }
 
-/* MigrateClusterToExternalCCMDefault describes a response with status code -1, with default header values.
+/*
+MigrateClusterToExternalCCMDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

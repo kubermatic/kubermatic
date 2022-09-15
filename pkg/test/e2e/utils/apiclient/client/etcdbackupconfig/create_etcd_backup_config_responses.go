@@ -58,7 +58,8 @@ func NewCreateEtcdBackupConfigCreated() *CreateEtcdBackupConfigCreated {
 	return &CreateEtcdBackupConfigCreated{}
 }
 
-/* CreateEtcdBackupConfigCreated describes a response with status code 201, with default header values.
+/*
+CreateEtcdBackupConfigCreated describes a response with status code 201, with default header values.
 
 EtcdBackupConfig
 */
@@ -120,7 +121,8 @@ func NewCreateEtcdBackupConfigUnauthorized() *CreateEtcdBackupConfigUnauthorized
 	return &CreateEtcdBackupConfigUnauthorized{}
 }
 
-/* CreateEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewCreateEtcdBackupConfigForbidden() *CreateEtcdBackupConfigForbidden {
 	return &CreateEtcdBackupConfigForbidden{}
 }
 
-/* CreateEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+CreateEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewCreateEtcdBackupConfigDefault(code int) *CreateEtcdBackupConfigDefault {
 	}
 }
 
-/* CreateEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+CreateEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

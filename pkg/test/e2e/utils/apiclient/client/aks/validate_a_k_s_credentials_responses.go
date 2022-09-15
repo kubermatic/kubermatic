@@ -46,7 +46,8 @@ func NewValidateAKSCredentialsOK() *ValidateAKSCredentialsOK {
 	return &ValidateAKSCredentialsOK{}
 }
 
-/* ValidateAKSCredentialsOK describes a response with status code 200, with default header values.
+/*
+ValidateAKSCredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -98,7 +99,8 @@ func NewValidateAKSCredentialsDefault(code int) *ValidateAKSCredentialsDefault {
 	}
 }
 
-/* ValidateAKSCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ValidateAKSCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

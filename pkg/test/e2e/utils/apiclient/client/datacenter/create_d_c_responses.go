@@ -61,7 +61,8 @@ func NewCreateDCCreated() *CreateDCCreated {
 	return &CreateDCCreated{}
 }
 
-/* CreateDCCreated describes a response with status code 201, with default header values.
+/*
+CreateDCCreated describes a response with status code 201, with default header values.
 
 Datacenter
 */
@@ -123,7 +124,8 @@ func NewCreateDCUnauthorized() *CreateDCUnauthorized {
 	return &CreateDCUnauthorized{}
 }
 
-/* CreateDCUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -173,7 +175,8 @@ func NewCreateDCForbidden() *CreateDCForbidden {
 	return &CreateDCForbidden{}
 }
 
-/* CreateDCForbidden describes a response with status code 403, with default header values.
+/*
+CreateDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -225,7 +228,8 @@ func NewCreateDCDefault(code int) *CreateDCDefault {
 	}
 }
 
-/* CreateDCDefault describes a response with status code -1, with default header values.
+/*
+CreateDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -289,7 +293,8 @@ func (o *CreateDCDefault) readResponse(response runtime.ClientResponse, consumer
 	return nil
 }
 
-/*CreateDCBody create d c body
+/*
+CreateDCBody create d c body
 swagger:model CreateDCBody
 */
 type CreateDCBody struct {

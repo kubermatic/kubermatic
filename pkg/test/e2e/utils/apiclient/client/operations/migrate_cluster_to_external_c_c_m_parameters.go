@@ -52,10 +52,12 @@ func NewMigrateClusterToExternalCCMParamsWithHTTPClient(client *http.Client) *Mi
 	}
 }
 
-/* MigrateClusterToExternalCCMParams contains all the parameters to send to the API endpoint
-   for the migrate cluster to external c c m operation.
+/*
+MigrateClusterToExternalCCMParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the migrate cluster to external c c m operation.
+
+	Typically these are written to a http.Request.
 */
 type MigrateClusterToExternalCCMParams struct {
 

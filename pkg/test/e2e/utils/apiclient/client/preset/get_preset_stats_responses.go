@@ -64,7 +64,8 @@ func NewGetPresetStatsOK() *GetPresetStatsOK {
 	return &GetPresetStatsOK{}
 }
 
-/* GetPresetStatsOK describes a response with status code 200, with default header values.
+/*
+GetPresetStatsOK describes a response with status code 200, with default header values.
 
 PresetStats
 */
@@ -126,7 +127,8 @@ func NewGetPresetStatsUnauthorized() *GetPresetStatsUnauthorized {
 	return &GetPresetStatsUnauthorized{}
 }
 
-/* GetPresetStatsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetPresetStatsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -176,7 +178,8 @@ func NewGetPresetStatsForbidden() *GetPresetStatsForbidden {
 	return &GetPresetStatsForbidden{}
 }
 
-/* GetPresetStatsForbidden describes a response with status code 403, with default header values.
+/*
+GetPresetStatsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -226,7 +229,8 @@ func NewGetPresetStatsNotFound() *GetPresetStatsNotFound {
 	return &GetPresetStatsNotFound{}
 }
 
-/* GetPresetStatsNotFound describes a response with status code 404, with default header values.
+/*
+GetPresetStatsNotFound describes a response with status code 404, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -278,7 +282,8 @@ func NewGetPresetStatsDefault(code int) *GetPresetStatsDefault {
 	}
 }
 
-/* GetPresetStatsDefault describes a response with status code -1, with default header values.
+/*
+GetPresetStatsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

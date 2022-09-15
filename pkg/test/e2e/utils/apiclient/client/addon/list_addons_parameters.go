@@ -52,10 +52,12 @@ func NewListAddonsParamsWithHTTPClient(client *http.Client) *ListAddonsParams {
 	}
 }
 
-/* ListAddonsParams contains all the parameters to send to the API endpoint
-   for the list addons operation.
+/*
+ListAddonsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list addons operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAddonsParams struct {
 

@@ -46,7 +46,8 @@ func NewListAlibabaInstanceTypesNoCredentialsOK() *ListAlibabaInstanceTypesNoCre
 	return &ListAlibabaInstanceTypesNoCredentialsOK{}
 }
 
-/* ListAlibabaInstanceTypesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAlibabaInstanceTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AlibabaInstanceTypeList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaInstanceTypesNoCredentialsDefault(code int) *ListAlibabaInsta
 	}
 }
 
-/* ListAlibabaInstanceTypesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAlibabaInstanceTypesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

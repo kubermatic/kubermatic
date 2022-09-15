@@ -52,10 +52,12 @@ func NewListOpenstackSubnetsNoCredentialsV2ParamsWithHTTPClient(client *http.Cli
 	}
 }
 
-/* ListOpenstackSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list openstack subnets no credentials v2 operation.
+/*
+ListOpenstackSubnetsNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack subnets no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSubnetsNoCredentialsV2Params struct {
 

@@ -36,7 +36,7 @@ type ClientService interface {
 }
 
 /*
-  ListOperatingSystemProfiles lists operating system profiles
+ListOperatingSystemProfiles lists operating system profiles
 */
 func (a *Client) ListOperatingSystemProfiles(params *ListOperatingSystemProfilesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOperatingSystemProfilesOK, error) {
 	// TODO: Validate the params before sending
@@ -74,7 +74,7 @@ func (a *Client) ListOperatingSystemProfiles(params *ListOperatingSystemProfiles
 }
 
 /*
-  ListOperatingSystemProfilesForCluster Lists all available Operating System Profiles for a cluster
+ListOperatingSystemProfilesForCluster Lists all available Operating System Profiles for a cluster
 */
 func (a *Client) ListOperatingSystemProfilesForCluster(params *ListOperatingSystemProfilesForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOperatingSystemProfilesForClusterOK, error) {
 	// TODO: Validate the params before sending

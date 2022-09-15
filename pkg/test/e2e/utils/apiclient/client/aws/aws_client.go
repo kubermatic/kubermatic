@@ -48,7 +48,7 @@ type ClientService interface {
 }
 
 /*
-  ListAWSSecurityGroups Lists available AWS Security Groups
+ListAWSSecurityGroups Lists available AWS Security Groups
 */
 func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
@@ -86,7 +86,7 @@ func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, auth
 }
 
 /*
-  ListAWSSizes lists available a w s sizes
+ListAWSSizes lists available a w s sizes
 */
 func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -124,7 +124,7 @@ func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.Clien
 }
 
 /*
-  ListAWSSizesNoCredentials Lists available AWS sizes
+ListAWSSizesNoCredentials Lists available AWS sizes
 */
 func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -162,7 +162,7 @@ func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsPara
 }
 
 /*
-  ListAWSSizesNoCredentialsV2 Lists available AWS sizes
+ListAWSSizesNoCredentialsV2 Lists available AWS sizes
 */
 func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -200,7 +200,7 @@ func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2
 }
 
 /*
-  ListAWSSubnets Lists available AWS subnets
+ListAWSSubnets Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsOK, error) {
 	// TODO: Validate the params before sending
@@ -238,7 +238,7 @@ func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.C
 }
 
 /*
-  ListAWSSubnetsNoCredentials Lists available AWS subnets
+ListAWSSubnetsNoCredentials Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -276,7 +276,7 @@ func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentials
 }
 
 /*
-  ListAWSSubnetsNoCredentialsV2 Lists available AWS subnets
+ListAWSSubnetsNoCredentialsV2 Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSSubnetsNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -314,7 +314,7 @@ func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentia
 }
 
 /*
-  ListAWSVPCS Lists available AWS vpc's
+ListAWSVPCS Lists available AWS vpc's
 */
 func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAWSVPCSOK, error) {
 	// TODO: Validate the params before sending

@@ -58,7 +58,8 @@ func NewGetApplicationInstallationOK() *GetApplicationInstallationOK {
 	return &GetApplicationInstallationOK{}
 }
 
-/* GetApplicationInstallationOK describes a response with status code 200, with default header values.
+/*
+GetApplicationInstallationOK describes a response with status code 200, with default header values.
 
 ApplicationInstallation
 */
@@ -120,7 +121,8 @@ func NewGetApplicationInstallationUnauthorized() *GetApplicationInstallationUnau
 	return &GetApplicationInstallationUnauthorized{}
 }
 
-/* GetApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
+/*
+GetApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetApplicationInstallationForbidden() *GetApplicationInstallationForbidd
 	return &GetApplicationInstallationForbidden{}
 }
 
-/* GetApplicationInstallationForbidden describes a response with status code 403, with default header values.
+/*
+GetApplicationInstallationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetApplicationInstallationDefault(code int) *GetApplicationInstallationD
 	}
 }
 
-/* GetApplicationInstallationDefault describes a response with status code -1, with default header values.
+/*
+GetApplicationInstallationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

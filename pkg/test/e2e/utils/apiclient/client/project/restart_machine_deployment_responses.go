@@ -58,7 +58,8 @@ func NewRestartMachineDeploymentOK() *RestartMachineDeploymentOK {
 	return &RestartMachineDeploymentOK{}
 }
 
-/* RestartMachineDeploymentOK describes a response with status code 200, with default header values.
+/*
+RestartMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -120,7 +121,8 @@ func NewRestartMachineDeploymentUnauthorized() *RestartMachineDeploymentUnauthor
 	return &RestartMachineDeploymentUnauthorized{}
 }
 
-/* RestartMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+RestartMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewRestartMachineDeploymentForbidden() *RestartMachineDeploymentForbidden {
 	return &RestartMachineDeploymentForbidden{}
 }
 
-/* RestartMachineDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+RestartMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewRestartMachineDeploymentDefault(code int) *RestartMachineDeploymentDefau
 	}
 }
 
-/* RestartMachineDeploymentDefault describes a response with status code -1, with default header values.
+/*
+RestartMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

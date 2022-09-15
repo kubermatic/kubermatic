@@ -52,10 +52,12 @@ func NewListEKSSubnetsParamsWithHTTPClient(client *http.Client) *ListEKSSubnetsP
 	}
 }
 
-/* ListEKSSubnetsParams contains all the parameters to send to the API endpoint
-   for the list e k s subnets operation.
+/*
+ListEKSSubnetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s subnets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSSubnetsParams struct {
 

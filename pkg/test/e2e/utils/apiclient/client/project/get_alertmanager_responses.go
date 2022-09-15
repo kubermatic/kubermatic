@@ -58,7 +58,8 @@ func NewGetAlertmanagerOK() *GetAlertmanagerOK {
 	return &GetAlertmanagerOK{}
 }
 
-/* GetAlertmanagerOK describes a response with status code 200, with default header values.
+/*
+GetAlertmanagerOK describes a response with status code 200, with default header values.
 
 Alertmanager
 */
@@ -120,7 +121,8 @@ func NewGetAlertmanagerUnauthorized() *GetAlertmanagerUnauthorized {
 	return &GetAlertmanagerUnauthorized{}
 }
 
-/* GetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewGetAlertmanagerForbidden() *GetAlertmanagerForbidden {
 	return &GetAlertmanagerForbidden{}
 }
 
-/* GetAlertmanagerForbidden describes a response with status code 403, with default header values.
+/*
+GetAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewGetAlertmanagerDefault(code int) *GetAlertmanagerDefault {
 	}
 }
 
-/* GetAlertmanagerDefault describes a response with status code -1, with default header values.
+/*
+GetAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

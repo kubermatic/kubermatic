@@ -46,7 +46,8 @@ func NewListAKSLocationsOK() *ListAKSLocationsOK {
 	return &ListAKSLocationsOK{}
 }
 
-/* ListAKSLocationsOK describes a response with status code 200, with default header values.
+/*
+ListAKSLocationsOK describes a response with status code 200, with default header values.
 
 AKSLocationList
 */
@@ -108,7 +109,8 @@ func NewListAKSLocationsDefault(code int) *ListAKSLocationsDefault {
 	}
 }
 
-/* ListAKSLocationsDefault describes a response with status code -1, with default header values.
+/*
+ListAKSLocationsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

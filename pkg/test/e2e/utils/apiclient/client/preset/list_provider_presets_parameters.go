@@ -53,10 +53,12 @@ func NewListProviderPresetsParamsWithHTTPClient(client *http.Client) *ListProvid
 	}
 }
 
-/* ListProviderPresetsParams contains all the parameters to send to the API endpoint
-   for the list provider presets operation.
+/*
+ListProviderPresetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list provider presets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListProviderPresetsParams struct {
 

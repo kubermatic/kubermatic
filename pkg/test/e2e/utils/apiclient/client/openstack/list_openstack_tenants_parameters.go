@@ -53,10 +53,12 @@ func NewListOpenstackTenantsParamsWithHTTPClient(client *http.Client) *ListOpens
 	}
 }
 
-/* ListOpenstackTenantsParams contains all the parameters to send to the API endpoint
-   for the list openstack tenants operation.
+/*
+ListOpenstackTenantsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack tenants operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackTenantsParams struct {
 

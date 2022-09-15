@@ -52,10 +52,12 @@ func NewListKubeVirtVMIPresetsParamsWithHTTPClient(client *http.Client) *ListKub
 	}
 }
 
-/* ListKubeVirtVMIPresetsParams contains all the parameters to send to the API endpoint
-   for the list kube virt VM i presets operation.
+/*
+ListKubeVirtVMIPresetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list kube virt VM i presets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListKubeVirtVMIPresetsParams struct {
 

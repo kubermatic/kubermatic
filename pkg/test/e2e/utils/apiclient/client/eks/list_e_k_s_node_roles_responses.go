@@ -58,7 +58,8 @@ func NewListEKSNodeRolesOK() *ListEKSNodeRolesOK {
 	return &ListEKSNodeRolesOK{}
 }
 
-/* ListEKSNodeRolesOK describes a response with status code 200, with default header values.
+/*
+ListEKSNodeRolesOK describes a response with status code 200, with default header values.
 
 EKSNodeRoleList
 */
@@ -118,7 +119,8 @@ func NewListEKSNodeRolesUnauthorized() *ListEKSNodeRolesUnauthorized {
 	return &ListEKSNodeRolesUnauthorized{}
 }
 
-/* ListEKSNodeRolesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSNodeRolesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewListEKSNodeRolesForbidden() *ListEKSNodeRolesForbidden {
 	return &ListEKSNodeRolesForbidden{}
 }
 
-/* ListEKSNodeRolesForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSNodeRolesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewListEKSNodeRolesDefault(code int) *ListEKSNodeRolesDefault {
 	}
 }
 
-/* ListEKSNodeRolesDefault describes a response with status code -1, with default header values.
+/*
+ListEKSNodeRolesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

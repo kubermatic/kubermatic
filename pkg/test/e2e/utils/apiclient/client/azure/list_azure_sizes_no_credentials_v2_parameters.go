@@ -52,10 +52,12 @@ func NewListAzureSizesNoCredentialsV2ParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* ListAzureSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
-   for the list azure sizes no credentials v2 operation.
+/*
+ListAzureSizesNoCredentialsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure sizes no credentials v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureSizesNoCredentialsV2Params struct {
 

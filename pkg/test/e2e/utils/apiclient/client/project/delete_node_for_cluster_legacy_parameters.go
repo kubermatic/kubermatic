@@ -52,10 +52,12 @@ func NewDeleteNodeForClusterLegacyParamsWithHTTPClient(client *http.Client) *Del
 	}
 }
 
-/* DeleteNodeForClusterLegacyParams contains all the parameters to send to the API endpoint
-   for the delete node for cluster legacy operation.
+/*
+DeleteNodeForClusterLegacyParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete node for cluster legacy operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteNodeForClusterLegacyParams struct {
 

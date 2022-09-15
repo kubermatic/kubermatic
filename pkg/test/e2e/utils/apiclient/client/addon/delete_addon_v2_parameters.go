@@ -52,10 +52,12 @@ func NewDeleteAddonV2ParamsWithHTTPClient(client *http.Client) *DeleteAddonV2Par
 	}
 }
 
-/* DeleteAddonV2Params contains all the parameters to send to the API endpoint
-   for the delete addon v2 operation.
+/*
+DeleteAddonV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete addon v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteAddonV2Params struct {
 

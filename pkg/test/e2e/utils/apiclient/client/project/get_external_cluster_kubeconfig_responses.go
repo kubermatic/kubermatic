@@ -58,7 +58,8 @@ func NewGetExternalClusterKubeconfigOK() *GetExternalClusterKubeconfigOK {
 	return &GetExternalClusterKubeconfigOK{}
 }
 
-/* GetExternalClusterKubeconfigOK describes a response with status code 200, with default header values.
+/*
+GetExternalClusterKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -118,7 +119,8 @@ func NewGetExternalClusterKubeconfigUnauthorized() *GetExternalClusterKubeconfig
 	return &GetExternalClusterKubeconfigUnauthorized{}
 }
 
-/* GetExternalClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
+/*
+GetExternalClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -168,7 +170,8 @@ func NewGetExternalClusterKubeconfigForbidden() *GetExternalClusterKubeconfigFor
 	return &GetExternalClusterKubeconfigForbidden{}
 }
 
-/* GetExternalClusterKubeconfigForbidden describes a response with status code 403, with default header values.
+/*
+GetExternalClusterKubeconfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -220,7 +223,8 @@ func NewGetExternalClusterKubeconfigDefault(code int) *GetExternalClusterKubecon
 	}
 }
 
-/* GetExternalClusterKubeconfigDefault describes a response with status code -1, with default header values.
+/*
+GetExternalClusterKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

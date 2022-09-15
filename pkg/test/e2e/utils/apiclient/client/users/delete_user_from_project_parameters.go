@@ -52,10 +52,12 @@ func NewDeleteUserFromProjectParamsWithHTTPClient(client *http.Client) *DeleteUs
 	}
 }
 
-/* DeleteUserFromProjectParams contains all the parameters to send to the API endpoint
-   for the delete user from project operation.
+/*
+DeleteUserFromProjectParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete user from project operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteUserFromProjectParams struct {
 

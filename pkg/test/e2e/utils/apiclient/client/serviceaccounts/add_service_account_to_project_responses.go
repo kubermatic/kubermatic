@@ -58,7 +58,8 @@ func NewAddServiceAccountToProjectCreated() *AddServiceAccountToProjectCreated {
 	return &AddServiceAccountToProjectCreated{}
 }
 
-/* AddServiceAccountToProjectCreated describes a response with status code 201, with default header values.
+/*
+AddServiceAccountToProjectCreated describes a response with status code 201, with default header values.
 
 ServiceAccount
 */
@@ -120,7 +121,8 @@ func NewAddServiceAccountToProjectUnauthorized() *AddServiceAccountToProjectUnau
 	return &AddServiceAccountToProjectUnauthorized{}
 }
 
-/* AddServiceAccountToProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+AddServiceAccountToProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -170,7 +172,8 @@ func NewAddServiceAccountToProjectForbidden() *AddServiceAccountToProjectForbidd
 	return &AddServiceAccountToProjectForbidden{}
 }
 
-/* AddServiceAccountToProjectForbidden describes a response with status code 403, with default header values.
+/*
+AddServiceAccountToProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -222,7 +225,8 @@ func NewAddServiceAccountToProjectDefault(code int) *AddServiceAccountToProjectD
 	}
 }
 
-/* AddServiceAccountToProjectDefault describes a response with status code -1, with default header values.
+/*
+AddServiceAccountToProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

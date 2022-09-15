@@ -58,7 +58,8 @@ func NewDeleteAllowedRegistryOK() *DeleteAllowedRegistryOK {
 	return &DeleteAllowedRegistryOK{}
 }
 
-/* DeleteAllowedRegistryOK describes a response with status code 200, with default header values.
+/*
+DeleteAllowedRegistryOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteAllowedRegistryUnauthorized() *DeleteAllowedRegistryUnauthorized {
 	return &DeleteAllowedRegistryUnauthorized{}
 }
 
-/* DeleteAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteAllowedRegistryUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteAllowedRegistryForbidden() *DeleteAllowedRegistryForbidden {
 	return &DeleteAllowedRegistryForbidden{}
 }
 
-/* DeleteAllowedRegistryForbidden describes a response with status code 403, with default header values.
+/*
+DeleteAllowedRegistryForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteAllowedRegistryDefault(code int) *DeleteAllowedRegistryDefault {
 	}
 }
 
-/* DeleteAllowedRegistryDefault describes a response with status code -1, with default header values.
+/*
+DeleteAllowedRegistryDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

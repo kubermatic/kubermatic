@@ -46,7 +46,8 @@ func NewListAlibabaZonesNoCredentialsOK() *ListAlibabaZonesNoCredentialsOK {
 	return &ListAlibabaZonesNoCredentialsOK{}
 }
 
-/* ListAlibabaZonesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAlibabaZonesNoCredentialsOK describes a response with status code 200, with default header values.
 
 AlibabaZoneList
 */
@@ -108,7 +109,8 @@ func NewListAlibabaZonesNoCredentialsDefault(code int) *ListAlibabaZonesNoCreden
 	}
 }
 
-/* ListAlibabaZonesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAlibabaZonesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */

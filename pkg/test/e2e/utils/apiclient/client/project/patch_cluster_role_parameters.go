@@ -52,10 +52,12 @@ func NewPatchClusterRoleParamsWithHTTPClient(client *http.Client) *PatchClusterR
 	}
 }
 
-/* PatchClusterRoleParams contains all the parameters to send to the API endpoint
-   for the patch cluster role operation.
+/*
+PatchClusterRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch cluster role operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchClusterRoleParams struct {
 

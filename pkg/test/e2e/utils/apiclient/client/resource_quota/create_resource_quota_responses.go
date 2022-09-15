@@ -61,7 +61,8 @@ func NewCreateResourceQuotaCreated() *CreateResourceQuotaCreated {
 	return &CreateResourceQuotaCreated{}
 }
 
-/* CreateResourceQuotaCreated describes a response with status code 201, with default header values.
+/*
+CreateResourceQuotaCreated describes a response with status code 201, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -111,7 +112,8 @@ func NewCreateResourceQuotaUnauthorized() *CreateResourceQuotaUnauthorized {
 	return &CreateResourceQuotaUnauthorized{}
 }
 
-/* CreateResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -161,7 +163,8 @@ func NewCreateResourceQuotaForbidden() *CreateResourceQuotaForbidden {
 	return &CreateResourceQuotaForbidden{}
 }
 
-/* CreateResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+CreateResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -213,7 +216,8 @@ func NewCreateResourceQuotaDefault(code int) *CreateResourceQuotaDefault {
 	}
 }
 
-/* CreateResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+CreateResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -277,7 +281,8 @@ func (o *CreateResourceQuotaDefault) readResponse(response runtime.ClientRespons
 	return nil
 }
 
-/*CreateResourceQuotaBody create resource quota body
+/*
+CreateResourceQuotaBody create resource quota body
 swagger:model CreateResourceQuotaBody
 */
 type CreateResourceQuotaBody struct {

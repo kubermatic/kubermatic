@@ -52,10 +52,12 @@ func NewDeleteClusterRoleParamsWithHTTPClient(client *http.Client) *DeleteCluste
 	}
 }
 
-/* DeleteClusterRoleParams contains all the parameters to send to the API endpoint
-   for the delete cluster role operation.
+/*
+DeleteClusterRoleParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete cluster role operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteClusterRoleParams struct {
 

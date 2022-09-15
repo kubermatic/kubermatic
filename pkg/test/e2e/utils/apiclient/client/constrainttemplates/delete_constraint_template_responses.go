@@ -58,7 +58,8 @@ func NewDeleteConstraintTemplateOK() *DeleteConstraintTemplateOK {
 	return &DeleteConstraintTemplateOK{}
 }
 
-/* DeleteConstraintTemplateOK describes a response with status code 200, with default header values.
+/*
+DeleteConstraintTemplateOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -108,7 +109,8 @@ func NewDeleteConstraintTemplateUnauthorized() *DeleteConstraintTemplateUnauthor
 	return &DeleteConstraintTemplateUnauthorized{}
 }
 
-/* DeleteConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -158,7 +160,8 @@ func NewDeleteConstraintTemplateForbidden() *DeleteConstraintTemplateForbidden {
 	return &DeleteConstraintTemplateForbidden{}
 }
 
-/* DeleteConstraintTemplateForbidden describes a response with status code 403, with default header values.
+/*
+DeleteConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
@@ -210,7 +213,8 @@ func NewDeleteConstraintTemplateDefault(code int) *DeleteConstraintTemplateDefau
 	}
 }
 
-/* DeleteConstraintTemplateDefault describes a response with status code -1, with default header values.
+/*
+DeleteConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
