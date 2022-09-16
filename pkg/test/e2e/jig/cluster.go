@@ -500,7 +500,7 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
 	}
 
 	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); err != nil && !apierrors.IsAlreadyExists(err) {
+	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return fmt.Errorf("failed to ensure addon: %w", err)
 	}
 

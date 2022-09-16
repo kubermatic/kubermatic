@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -50,7 +51,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/kubectl/pkg/cmd/cp"
+	"k8s.io/kubectl/pkg/cmd/util"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -280,6 +283,8 @@ func verifyMetrics(ctx context.Context, metricsClient *metrics.Clientset, log *z
 }
 
 type PodExec struct {
+	util.Factory
+
 	RestConfig *rest.Config
 	*kubernetes.Clientset
 }
@@ -288,23 +293,45 @@ func NewPodExec(config *rest.Config, clientset *kubernetes.Clientset) *PodExec {
 	config.APIPath = "/api"                                   // Make sure we target /api and not just /
 	config.GroupVersion = &schema.GroupVersion{Version: "v1"} // this targets the core api groups so the url path will be /api/v1
 	config.NegotiatedSerializer = serializer.WithoutConversionCodecFactory{CodecFactory: scheme.Codecs}
+
 	return &PodExec{
+		Factory:    util.NewFactory(genericclioptions.NewTestConfigFlags()),
 		RestConfig: config,
 		Clientset:  clientset,
 	}
 }
 
+// KubernetesClientSet() implements part of util.Factory.
+func (p *PodExec) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+	return &testClientConfig{}
+}
+
+// KubernetesClientSet() implements part of util.Factory.
+func (p *PodExec) KubernetesClientSet() (*kubernetes.Clientset, error) {
+	return p.Clientset, nil
+}
+
+// ToRESTConfig() implements part of util.Factory.
+func (p *PodExec) ToRESTConfig() (*rest.Config, error) {
+	return p.RestConfig, nil
+}
+
 func (p *PodExec) PodCopyFile(src string, dst string, containername string) error {
 	ioStreams := genericclioptions.NewTestIOStreamsDiscard()
 	copyOptions := cp.NewCopyOptions(ioStreams)
-	copyOptions.Clientset = p.Clientset
-	copyOptions.ClientConfig = p.RestConfig
+
+	// inject args into options
+	if err := copyOptions.Complete(p, &cobra.Command{}, []string{src, dst}); err != nil {
+		return fmt.Errorf("could not prepare copy operation: %w", err)
+	}
+
 	copyOptions.Container = containername
 	copyOptions.NoPreserve = true
-	err := copyOptions.Run([]string{src, dst})
-	if err != nil {
+
+	if err := copyOptions.Run(); err != nil {
 		return fmt.Errorf("could not run copy operation: %w", err)
 	}
+
 	return nil
 }
 
@@ -358,4 +385,24 @@ func createUserCluster(
 	clusterConfig, err := testJig.ClusterRESTConfig(ctx)
 
 	return cluster, clusterClient, clusterConfig, cleanup, log, err
+}
+
+type testClientConfig struct{}
+
+var _ clientcmd.ClientConfig = &testClientConfig{}
+
+func (cc *testClientConfig) Namespace() (string, bool, error) {
+	return "", false, nil
+}
+
+func (cc *testClientConfig) RawConfig() (clientcmdapi.Config, error) {
+	return clientcmdapi.Config{}, nil
+}
+
+func (cc *testClientConfig) ClientConfig() (*rest.Config, error) {
+	return nil, nil
+}
+
+func (cc *testClientConfig) ConfigAccess() clientcmd.ConfigAccess {
+	return nil
 }
