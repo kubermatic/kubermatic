@@ -75,7 +75,7 @@ spec:
       country: DE
       spec:
         vsphere:
-          cluster: 10.10.0.100
+          cluster: Kubermatic
           datacenter: Hamburg
           datastore: alpha1
           endpoint: https://10.10.0.100
