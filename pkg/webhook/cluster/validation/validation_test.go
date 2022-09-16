@@ -1418,7 +1418,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.23.9"),
+				Version: test.LatestKubernetesVersionForRelease("1.23", &config),
 			}.Build(),
 			oldCluster: rawClusterGen{
 				Name:      "foo",
