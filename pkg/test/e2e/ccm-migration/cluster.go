@@ -44,7 +44,7 @@ import (
 
 const (
 	clusterReadinessCheckPeriod = 10 * time.Second
-	clusterReadinessTimeout     = 15 * time.Minute
+	clusterReadinessTimeout     = 10 * time.Minute
 
 	machineDeploymentName      = "ccm-migration-e2e"
 	machineDeploymentNamespace = "kube-system"
@@ -79,7 +79,13 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 	}
 	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
 
-	if err := c.createCluster(cloudSpec); err != nil {
+	project, err := c.createProject(context.TODO())
+	if err != nil {
+		return err
+	}
+	c.Log.Debugw("Project created", "name", project.Name)
+
+	if err := c.createCluster(project, cloudSpec); err != nil {
 		return err
 	}
 	c.Log.Debugw("Cluster created", "name", c.Name)
@@ -88,9 +94,10 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 }
 
 func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
-	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
+	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
 		osCredentials.authURL,
 		osCredentials.username,
+		osCredentials.password,
 		osCredentials.project,
 		osCredentials.region,
 		osCredentials.domain,
@@ -160,10 +167,30 @@ func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) 
 	return nil
 }
 
-func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.SeedClient.Create(ctx, project); err != nil {
+		return nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	return project, nil
+}
+
+func (c *ClusterJig) createCluster(project *kubermaticv1.Project, cloudSpec kubermaticv1.CloudSpec) error {
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: cloudSpec,
