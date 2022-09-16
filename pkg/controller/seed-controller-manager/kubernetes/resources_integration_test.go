@@ -126,7 +126,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.5"),
+			Version: *semver.NewSemverOrDie("1.22.14"),
 		},
 	}
 
