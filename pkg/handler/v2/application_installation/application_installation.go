@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +38,10 @@ import (
 func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(listApplicationInstallationsReq)
+		req, ok := request.(listApplicationInstallationsReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -68,7 +72,10 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter, projec
 func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(createApplicationInstallationReq)
+		req, ok := request.(createApplicationInstallationReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -102,7 +109,10 @@ func CreateApplicationInstallation(userInfoGetter provider.UserInfoGetter, proje
 func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteApplicationInstallationReq)
+		req, ok := request.(deleteApplicationInstallationReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -138,7 +148,10 @@ func DeleteApplicationInstallation(userInfoGetter provider.UserInfoGetter, proje
 func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getApplicationInstallationReq)
+		req, ok := request.(getApplicationInstallationReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -164,7 +177,10 @@ func GetApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectP
 func UpdateApplicationInstallation(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(updateApplicationInstallationReq)
+		req, ok := request.(updateApplicationInstallationReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
