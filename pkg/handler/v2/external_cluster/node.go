@@ -391,7 +391,7 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 			}
 		}
 		if cloud.EKS != nil {
-			err := deleteEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
+			err := deleteEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.EKS.CredentialsReference, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -839,7 +839,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 			if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 				return nil, err
 			}
-			return patchEKSMachineDeployment(&mdToPatch, &patchedMD, secretKeySelector, cluster)
+			return patchEKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster)
 		}
 		if cloud.GKE != nil {
 			md, err := getGKENodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.GKE.CredentialsReference, clusterProvider)
@@ -906,7 +906,7 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 			return createAKSNodePool(ctx, cloud.AKS, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
 		}
 		if cloud.EKS != nil {
-			return createEKSNodePool(cloud.EKS, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
+			return createEKSNodePool(ctx, cloud.EKS, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
 		}
 
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")

@@ -22,13 +22,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/iam"
+	iam "github.com/aws/aws-sdk-go-v2/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 )
 
 func TestBackfillOwnershipTags(t *testing.T) {
@@ -60,9 +60,9 @@ func TestBackfillOwnershipTags(t *testing.T) {
 // 7. reconcile, i.e. backfill, again to see if "double tagging" does not cause problems
 
 func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
-	cs := getTestClientSet(t)
-	provider := newCloudProvider(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
+	provider := newCloudProvider(t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -142,19 +142,19 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 }
 
 func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
-	cs := getTestClientSet(t)
-	provider := newCloudProvider(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
+	provider := newCloudProvider(t)
 
 	profileName := "adopt-me-" + rand.String(10)
 	finalizer := instanceProfileCleanupFinalizer
 
 	// create an instance profile
 	createProfileInput := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: aws.String(profileName),
+		InstanceProfileName: pointer.String(profileName),
 	}
 
-	if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
+	if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
 		t.Fatalf("Failed to create dummy instance profile: %v", err)
 	}
 
@@ -218,20 +218,20 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 }
 
 func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
-	cs := getTestClientSet(t)
-	provider := newCloudProvider(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
+	provider := newCloudProvider(t)
 
 	roleName := "adopt-me-" + rand.String(10)
 	finalizer := controlPlaneRoleCleanupFinalizer
 
 	// create a role
 	createRoleInput := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: aws.String(assumeRolePolicy),
-		RoleName:                 aws.String(roleName),
+		AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
+		RoleName:                 pointer.String(roleName),
 	}
 
-	if _, err := cs.IAM.CreateRole(createRoleInput); err != nil {
+	if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {
 		t.Fatalf("Failed to create dummy role: %v", err)
 	}
 

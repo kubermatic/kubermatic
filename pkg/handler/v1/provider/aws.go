@@ -393,9 +393,8 @@ func listAWSVPCS(ctx context.Context, accessKeyID, secretAccessKey string, assum
 				CidrBlock:     *cidr.CidrBlock,
 			}
 			if cidr.CidrBlockState != nil {
-				if cidr.CidrBlockState.State != nil {
-					cidrBlock.State = *cidr.CidrBlockState.State
-				}
+				cidrBlock.State = string(cidr.CidrBlockState.State)
+
 				if cidr.CidrBlockState.StatusMessage != nil {
 					cidrBlock.StatusMessage = *cidr.CidrBlockState.StatusMessage
 				}
@@ -411,9 +410,7 @@ func listAWSVPCS(ctx context.Context, accessKeyID, secretAccessKey string, assum
 				},
 			}
 			if cidr.Ipv6CidrBlockState != nil {
-				if cidr.Ipv6CidrBlockState.State != nil {
-					cidrBlock.State = *cidr.Ipv6CidrBlockState.State
-				}
+				cidrBlock.State = string(cidr.Ipv6CidrBlockState.State)
 				if cidr.Ipv6CidrBlockState.StatusMessage != nil {
 					cidrBlock.StatusMessage = *cidr.Ipv6CidrBlockState.StatusMessage
 				}
@@ -427,10 +424,10 @@ func listAWSVPCS(ctx context.Context, accessKeyID, secretAccessKey string, assum
 			VpcID:                       *vpc.VpcId,
 			CidrBlock:                   *vpc.CidrBlock,
 			DhcpOptionsID:               *vpc.DhcpOptionsId,
-			InstanceTenancy:             *vpc.InstanceTenancy,
+			InstanceTenancy:             string(vpc.InstanceTenancy),
 			IsDefault:                   *vpc.IsDefault,
 			OwnerID:                     *vpc.OwnerId,
-			State:                       *vpc.State,
+			State:                       string(vpc.State),
 			Tags:                        tags,
 			Ipv6CidrBlockAssociationSet: Ipv6CidrBlocList,
 			CidrBlockAssociationSet:     cidrBlockList,

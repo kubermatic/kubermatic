@@ -19,36 +19,40 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+
+	"k8s.io/utils/pointer"
 )
 
 func TestIsNotFound(t *testing.T) {
-	cs := getTestClientSet(t)
+	ctx := context.Background()
+
+	cs := getTestClientSet(ctx, t)
 	errs := []error{}
 
-	_, err := cs.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice([]string{"does-not-exist"}),
+	_, err := cs.EC2.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+		GroupIds: []string{"does-not-exist"},
 	})
 	errs = append(errs, err)
 
-	_, err = cs.EC2.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
-		RouteTableIds: aws.StringSlice([]string{"does-not-exist"}),
+	_, err = cs.EC2.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{
+		RouteTableIds: []string{"does-not-exist"},
 	})
 	errs = append(errs, err)
 
-	_, err = cs.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{
-		VpcIds: aws.StringSlice([]string{"does-not-exist"}),
+	_, err = cs.EC2.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
+		VpcIds: []string{"does-not-exist"},
 	})
 	errs = append(errs, err)
 
-	_, err = cs.IAM.GetRole(&iam.GetRoleInput{RoleName: aws.String("does-not-exist")})
+	_, err = cs.IAM.GetRole(ctx, &iam.GetRoleInput{RoleName: pointer.String("does-not-exist")})
 	errs = append(errs, err)
 
-	_, err = cs.IAM.GetInstanceProfile(&iam.GetInstanceProfileInput{InstanceProfileName: aws.String("does-not-exist")})
+	_, err = cs.IAM.GetInstanceProfile(ctx, &iam.GetInstanceProfileInput{InstanceProfileName: pointer.String("does-not-exist")})
 	errs = append(errs, err)
 
 	for _, err := range errs {

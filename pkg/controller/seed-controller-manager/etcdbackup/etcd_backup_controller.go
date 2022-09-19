@@ -566,7 +566,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				}
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination, storeContainer)
-				if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+				if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
 				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
@@ -649,7 +649,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	destination *kubermaticv1.BackupDestination, deleteContainer *corev1.Container) error {
 	if deleteContainer != nil {
 		job := r.backupDeleteJob(backupConfig, cluster, backup, destination, deleteContainer)
-		if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+		if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning

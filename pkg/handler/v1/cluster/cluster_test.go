@@ -820,7 +820,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: test.GenDefaultVersions(),
+				Versions: defaulting.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}

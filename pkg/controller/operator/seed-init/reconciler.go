@@ -34,7 +34,6 @@ import (
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -208,10 +207,7 @@ func (r *Reconciler) createOnSeed(ctx context.Context, obj ctrlruntimeclient.Obj
 	objCopy.SetGeneration(0)
 
 	err := client.Create(ctx, objCopy)
-	if apierrors.IsAlreadyExists(err) {
-		// An AlreadyExists error can occur on shared master/seed systems.
-		return nil
-	}
 
-	return err
+	// An AlreadyExists error can occur on shared master/seed systems.
+	return ctrlruntimeclient.IgnoreAlreadyExists(err)
 }

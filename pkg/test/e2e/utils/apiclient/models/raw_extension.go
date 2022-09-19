@@ -12,24 +12,29 @@ package models
 // various plugin types.
 //
 // Internal package:
+//
 // type MyAPIObject struct {
 // runtime.TypeMeta `json:",inline"`
 // MyPlugin runtime.Object `json:"myPlugin"`
 // }
+//
 // type PluginA struct {
 // AOption string `json:"aOption"`
 // }
 //
 // External package:
+//
 // type MyAPIObject struct {
 // runtime.TypeMeta `json:",inline"`
 // MyPlugin runtime.RawExtension `json:"myPlugin"`
 // }
+//
 // type PluginA struct {
 // AOption string `json:"aOption"`
 // }
 //
 // On the wire, the JSON will look something like this:
+//
 // {
 // "kind":"MyAPIObject",
 // "apiVersion":"v1",

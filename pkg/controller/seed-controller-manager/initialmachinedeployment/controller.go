@@ -228,11 +228,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, log *za
 		// in case we created the MD before but then failed to cleanup the Cluster resource's
 		// annotations, we can silently ignore AlreadyExists errors here and then re-try removing
 		// the annotation afterwards
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-
-		return err
+		return ctrlruntimeclient.IgnoreAlreadyExists(err)
 	}
 
 	log.Info("Created initial MachineDeployment")

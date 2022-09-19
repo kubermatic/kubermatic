@@ -20,45 +20,46 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
-func ec2ClusterTag(clusterName string) *ec2.Tag {
-	return &ec2.Tag{
-		Key:   aws.String(kubernetesClusterTagPrefix + clusterName),
-		Value: aws.String(""),
+func ec2ClusterTag(clusterName string) ec2types.Tag {
+	return ec2types.Tag{
+		Key:   pointer.String(kubernetesClusterTagPrefix + clusterName),
+		Value: pointer.String(""),
 	}
 }
 
-func ec2OwnershipTag(clusterName string) *ec2.Tag {
-	return &ec2.Tag{
-		Key:   aws.String(ownershipTagPrefix + clusterName),
-		Value: aws.String(""),
+func ec2OwnershipTag(clusterName string) ec2types.Tag {
+	return ec2types.Tag{
+		Key:   pointer.String(ownershipTagPrefix + clusterName),
+		Value: pointer.String(""),
 	}
 }
 
-func iamOwnershipTag(clusterName string) *iam.Tag {
-	return &iam.Tag{
-		Key:   aws.String(ownershipTagPrefix + clusterName),
-		Value: aws.String(""),
+func iamOwnershipTag(clusterName string) iamtypes.Tag {
+	return iamtypes.Tag{
+		Key:   pointer.String(ownershipTagPrefix + clusterName),
+		Value: pointer.String(""),
 	}
 }
 
-func reconcileClusterTags(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileClusterTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// tagging happens after a successful reconciliation, so we can rely on these fields not being empty
-	resourceIDs := []*string{
-		&cluster.Spec.Cloud.AWS.SecurityGroupID,
-		&cluster.Spec.Cloud.AWS.RouteTableID,
+	resourceIDs := []string{
+		cluster.Spec.Cloud.AWS.SecurityGroupID,
+		cluster.Spec.Cloud.AWS.RouteTableID,
 	}
 
-	sOut, err := client.DescribeSubnetsWithContext(ctx, &ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
+	sOut, err := client.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{
+		Filters: []ec2types.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
 	})
 	if err != nil {
 		return cluster, fmt.Errorf("failed to list subnets: %w", err)
@@ -66,13 +67,13 @@ func reconcileClusterTags(ctx context.Context, client ec2iface.EC2API, cluster *
 
 	var subnetIDs []string
 	for _, subnet := range sOut.Subnets {
-		resourceIDs = append(resourceIDs, subnet.SubnetId)
-		subnetIDs = append(subnetIDs, *subnet.SubnetId)
+		resourceIDs = append(resourceIDs, pointer.StringDeref(subnet.SubnetId, ""))
+		subnetIDs = append(subnetIDs, pointer.StringDeref(subnet.SubnetId, ""))
 	}
 
-	_, err = client.CreateTagsWithContext(ctx, &ec2.CreateTagsInput{
+	_, err = client.CreateTags(ctx, &ec2.CreateTagsInput{
 		Resources: resourceIDs,
-		Tags:      []*ec2.Tag{ec2ClusterTag(cluster.Name)},
+		Tags:      []ec2types.Tag{ec2ClusterTag(cluster.Name)},
 	})
 	if err != nil {
 		return cluster, fmt.Errorf("failed to tag resources (one of securityGroup (%s), routeTable (%s) and/or subnets (%v)): %w",
@@ -82,7 +83,7 @@ func reconcileClusterTags(ctx context.Context, client ec2iface.EC2API, cluster *
 	return cluster, nil
 }
 
-func cleanUpTags(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
+func cleanUpTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster) error {
 	// Instead of trying to keep track of all the things we might have
 	// tagged, we instead simply list all tagged resources. It's a few
 	// more API calls, but saves us a lot of trouble in the code w.r.t.
@@ -96,51 +97,51 @@ func cleanUpTags(ctx context.Context, client ec2iface.EC2API, cluster *kubermati
 
 	tag := ec2ClusterTag(cluster.Name)
 
-	resourceIDs := []*string{}
-	filters := []*ec2.Filter{
+	resourceIDs := []string{}
+	filters := []ec2types.Filter{
 		ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID),
 		{
-			Name:   aws.String("tag-key"),
-			Values: aws.StringSlice([]string{*tag.Key}),
+			Name:   pointer.String("tag-key"),
+			Values: []string{pointer.StringDeref(tag.Key, "")},
 		},
 	}
 
 	// list subnets (we do not create subnets, but we tagged all of them
 	// to make the AWS CCM LoadBalancer integration work)
-	subnets, err := client.DescribeSubnetsWithContext(ctx, &ec2.DescribeSubnetsInput{Filters: filters})
+	subnets, err := client.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list subnets: %w", err)
 	}
 
 	for _, subnet := range subnets.Subnets {
-		resourceIDs = append(resourceIDs, subnet.SubnetId)
+		resourceIDs = append(resourceIDs, pointer.StringDeref(subnet.SubnetId, ""))
 	}
 
 	// list security groups
-	securityGroups, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{Filters: filters})
+	securityGroups, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list security groups: %w", err)
 	}
 
 	for _, group := range securityGroups.SecurityGroups {
-		resourceIDs = append(resourceIDs, group.GroupId)
+		resourceIDs = append(resourceIDs, pointer.StringDeref(group.GroupId, ""))
 	}
 
 	// list route tables
-	routeTables, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{Filters: filters})
+	routeTables, err := client.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list route tables: %w", err)
 	}
 
 	for _, rt := range routeTables.RouteTables {
-		resourceIDs = append(resourceIDs, rt.RouteTableId)
+		resourceIDs = append(resourceIDs, pointer.StringDeref(rt.RouteTableId, ""))
 	}
 
 	// remove tag
 	if len(resourceIDs) > 0 {
-		_, err = client.DeleteTagsWithContext(ctx, &ec2.DeleteTagsInput{
+		_, err = client.DeleteTags(ctx, &ec2.DeleteTagsInput{
 			Resources: resourceIDs,
-			Tags:      []*ec2.Tag{tag},
+			Tags:      []ec2types.Tag{tag},
 		})
 	}
 

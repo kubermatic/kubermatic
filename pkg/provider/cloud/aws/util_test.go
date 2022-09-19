@@ -34,13 +34,13 @@ const (
 	awsRegionEnvName = "AWS_REGION"
 )
 
-func getTestClientSet(t *testing.T) *ClientSet {
+func getTestClientSet(ctx context.Context, t *testing.T) *ClientSet {
 	endpoint := os.Getenv("AWS_TEST_ENDPOINT")
 	if endpoint == "" {
 		t.Skip("Skipping because $AWS_TEST_ENDPOINT is not set.")
 	}
 
-	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), "", "", os.Getenv(awsRegionEnvName), endpoint)
+	cs, err := getClientSet(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), "", "", os.Getenv(awsRegionEnvName), endpoint)
 	if err != nil {
 		t.Fatalf("Failed to create AWS ClientSet: %v", err)
 	}

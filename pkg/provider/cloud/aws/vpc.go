@@ -21,28 +21,29 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
-func ec2VPCFilter(vpcID string) *ec2.Filter {
-	return &ec2.Filter{
-		Name:   aws.String("vpc-id"),
-		Values: aws.StringSlice([]string{vpcID}),
+func ec2VPCFilter(vpcID string) ec2types.Filter {
+	return ec2types.Filter{
+		Name:   pointer.String("vpc-id"),
+		Values: []string{vpcID},
 	}
 }
 
-func reconcileVPC(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileVPC(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 
 	// check if the VPC exists, if we have an ID cached
 	if vpcID != "" {
-		out, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
-			VpcIds: aws.StringSlice([]string{vpcID}),
+		out, err := client.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
+			VpcIds: []string{vpcID},
 		})
 		if err != nil && !isNotFound(err) {
 			return nil, fmt.Errorf("failed to list VPCs: %w", err)
@@ -70,11 +71,11 @@ func reconcileVPC(ctx context.Context, client ec2iface.EC2API, cluster *kubermat
 	})
 }
 
-func getDefaultVPC(ctx context.Context, client ec2iface.EC2API) (*ec2.Vpc, error) {
-	vpcOut, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
-		Filters: []*ec2.Filter{{
-			Name:   aws.String("isDefault"),
-			Values: aws.StringSlice([]string{"true"}),
+func getDefaultVPC(ctx context.Context, client *ec2.Client) (*ec2types.Vpc, error) {
+	vpcOut, err := client.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
+		Filters: []ec2types.Filter{{
+			Name:   pointer.String("isDefault"),
+			Values: []string{"true"},
 		}},
 	})
 
@@ -86,12 +87,12 @@ func getDefaultVPC(ctx context.Context, client ec2iface.EC2API) (*ec2.Vpc, error
 		return nil, errors.New("unable to find default VPC")
 	}
 
-	return vpcOut.Vpcs[0], nil
+	return &vpcOut.Vpcs[0], nil
 }
 
-func getVPCByID(ctx context.Context, client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
-	vpcOut, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
-		VpcIds: aws.StringSlice([]string{vpcID}),
+func getVPCByID(ctx context.Context, client *ec2.Client, vpcID string) (*ec2types.Vpc, error) {
+	vpcOut, err := client.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
+		VpcIds: []string{vpcID},
 	})
 
 	if err != nil {
@@ -102,5 +103,5 @@ func getVPCByID(ctx context.Context, client ec2iface.EC2API, vpcID string) (*ec2
 		return nil, fmt.Errorf("unable to find specified VPC with ID %q", vpcID)
 	}
 
-	return vpcOut.Vpcs[0], nil
+	return &vpcOut.Vpcs[0], nil
 }

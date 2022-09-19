@@ -27,7 +27,6 @@ import (
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -58,15 +57,13 @@ func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Serv
 	// Create the namespace to host the service
 	ns := n.newNamespaceTemplate()
 	n.Log.Debugw("Creating namespace", "service", ns)
-	if err := n.Client.Create(ctx, ns); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return nil, err
-		}
-	} else {
-		// Set back namespace name in case it was generated
-		n.Namespace = ns.Name
-		n.Log.Debugw("Setting generated namespace to ServiceJig", "namespace", n.Namespace)
+	if err := n.Client.Create(ctx, ns); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, err
 	}
+
+	// Set back namespace name in case it was generated
+	n.Namespace = ns.Name
+	n.Log.Debugw("Setting generated namespace to ServiceJig", "namespace", n.Namespace)
 
 	svc.Namespace = n.Namespace
 	n.Log.Debugw("Creating nodeport service", "service", svc)

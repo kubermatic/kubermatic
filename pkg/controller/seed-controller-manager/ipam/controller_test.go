@@ -141,7 +141,7 @@ func TestReconcileCluster(t *testing.T) {
 					},
 					Spec: kubermaticv1.IPAMPoolSpec{
 						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-							"test-dc-2": {
+							"test-dc-1": {
 								Type:             "prefix",
 								PoolCIDR:         "192.168.1.0/27",
 								AllocationPrefix: 28,
@@ -241,6 +241,40 @@ func TestReconcileCluster(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			name:    "delete allocation with datacenter not present in the IPAM pool spec",
+			cluster: generateTestCluster("test-cluster-1", "test-dc-1"),
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-pool-1",
+					},
+					Spec: kubermaticv1.IPAMPoolSpec{
+						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-1",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "test-dc-1",
+						Addresses: []string{"192.168.1.0-192.168.1.7"},
+					},
+				},
+			},
+			expectedClusterAllocations: &kubermaticv1.IPAMAllocationList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "IPAMAllocationList",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
+				Items: []kubermaticv1.IPAMAllocation{},
 			},
 		},
 		{

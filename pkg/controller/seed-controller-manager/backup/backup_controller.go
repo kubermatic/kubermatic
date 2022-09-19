@@ -243,12 +243,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		// Need to cleanup
 		if kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
 			if controllerEnabled {
-				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); err != nil {
-					// Otherwise we end up in a loop when we are able to create the job but not
-					// remove the finalizer.
-					if !apierrors.IsAlreadyExists(err) {
-						return err
-					}
+				// IgnoreAlreadyExists, otherwise we end up in a loop when we are able to
+				// create the job but not remove the finalizer.
+				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+					return err
 				}
 			}
 

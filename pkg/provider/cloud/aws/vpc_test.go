@@ -26,7 +26,8 @@ import (
 )
 
 func TestGetDefaultVPC(t *testing.T) {
-	cs := getTestClientSet(t)
+	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	result, err := getDefaultVPC(context.Background(), cs.EC2)
 	if err != nil {
@@ -39,8 +40,8 @@ func TestGetDefaultVPC(t *testing.T) {
 }
 
 func TestGetVPCByID(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	t.Run("default-vpc", func(t *testing.T) {
 		defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
@@ -68,8 +69,8 @@ func TestGetVPCByID(t *testing.T) {
 }
 
 func TestReconcileVPC(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {

@@ -167,7 +167,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := eks.GetClusterStatus(secretKeySelector, cloud.EKS)
+		status, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
