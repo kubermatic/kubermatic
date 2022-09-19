@@ -18672,33 +18672,6 @@
         ],
         "summary": "List AKS recommended Locations.",
         "operationId": "listAKSLocations",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "TenantID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "SubscriptionID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "ClientID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "ClientSecret",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          }
-        ],
         "responses": {
           "200": {
             "description": "AKSLocationList",
@@ -18757,33 +18730,6 @@
         ],
         "summary": "List resource groups in an Azure subscription.",
         "operationId": "listAKSResourceGroups",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "TenantID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "SubscriptionID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "ClientID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "ClientSecret",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          }
-        ],
         "responses": {
           "200": {
             "description": "AzureResourceGroupList",

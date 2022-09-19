@@ -60,22 +60,6 @@ ListAKSResourceGroupsParams contains all the parameters to send to the API endpo
 	Typically these are written to a http.Request.
 */
 type ListAKSResourceGroupsParams struct {
-
-	// ClientID.
-	ClientID *string
-
-	// ClientSecret.
-	ClientSecret *string
-
-	// Credential.
-	Credential *string
-
-	// SubscriptionID.
-	SubscriptionID *string
-
-	// TenantID.
-	TenantID *string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -129,61 +113,6 @@ func (o *ListAKSResourceGroupsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithClientID adds the clientID to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) WithClientID(clientID *string) *ListAKSResourceGroupsParams {
-	o.SetClientID(clientID)
-	return o
-}
-
-// SetClientID adds the clientId to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) SetClientID(clientID *string) {
-	o.ClientID = clientID
-}
-
-// WithClientSecret adds the clientSecret to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) WithClientSecret(clientSecret *string) *ListAKSResourceGroupsParams {
-	o.SetClientSecret(clientSecret)
-	return o
-}
-
-// SetClientSecret adds the clientSecret to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) SetClientSecret(clientSecret *string) {
-	o.ClientSecret = clientSecret
-}
-
-// WithCredential adds the credential to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) WithCredential(credential *string) *ListAKSResourceGroupsParams {
-	o.SetCredential(credential)
-	return o
-}
-
-// SetCredential adds the credential to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) SetCredential(credential *string) {
-	o.Credential = credential
-}
-
-// WithSubscriptionID adds the subscriptionID to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) WithSubscriptionID(subscriptionID *string) *ListAKSResourceGroupsParams {
-	o.SetSubscriptionID(subscriptionID)
-	return o
-}
-
-// SetSubscriptionID adds the subscriptionId to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) SetSubscriptionID(subscriptionID *string) {
-	o.SubscriptionID = subscriptionID
-}
-
-// WithTenantID adds the tenantID to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) WithTenantID(tenantID *string) *ListAKSResourceGroupsParams {
-	o.SetTenantID(tenantID)
-	return o
-}
-
-// SetTenantID adds the tenantId to the list a k s resource groups params
-func (o *ListAKSResourceGroupsParams) SetTenantID(tenantID *string) {
-	o.TenantID = tenantID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ListAKSResourceGroupsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -191,46 +120,6 @@ func (o *ListAKSResourceGroupsParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
-
-	if o.ClientID != nil {
-
-		// header param ClientID
-		if err := r.SetHeaderParam("ClientID", *o.ClientID); err != nil {
-			return err
-		}
-	}
-
-	if o.ClientSecret != nil {
-
-		// header param ClientSecret
-		if err := r.SetHeaderParam("ClientSecret", *o.ClientSecret); err != nil {
-			return err
-		}
-	}
-
-	if o.Credential != nil {
-
-		// header param Credential
-		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
-			return err
-		}
-	}
-
-	if o.SubscriptionID != nil {
-
-		// header param SubscriptionID
-		if err := r.SetHeaderParam("SubscriptionID", *o.SubscriptionID); err != nil {
-			return err
-		}
-	}
-
-	if o.TenantID != nil {
-
-		// header param TenantID
-		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
-			return err
-		}
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
