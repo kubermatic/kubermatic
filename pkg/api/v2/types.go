@@ -937,6 +937,7 @@ type EKSInstanceType struct {
 	Memory     float32 `json:"memory,omitempty"`
 	VCPUs      int     `json:"vcpus,omitempty"`
 	GPUs       int     `json:"gpus,omitempty"`
+	Arch       string  `json:"arch,omitempty"`
 }
 
 // EKSSubnetList represents an array of EKS subnet.
@@ -1065,7 +1066,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	//
 	// Subnets is a required field
-	Subnets []*string `json:"subnets" required:"true"`
+	Subnets []string `json:"subnets" required:"true"`
 
 	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
 	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
@@ -1094,6 +1095,9 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	AmiType string `json:"amiType,omitempty"`
 
+	// The architecture of the machine image.
+	Architecture string `json:"architecture,omitempty"`
+
 	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`
 
@@ -1116,7 +1120,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
 	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+	InstanceTypes []string `json:"instanceTypes,omitempty"`
 
 	// The Kubernetes labels to be applied to the nodes in the node group when they
 	// are created.

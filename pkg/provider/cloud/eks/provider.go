@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	aws "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -33,6 +34,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
@@ -293,15 +295,25 @@ func UpgradeClusterVersion(client *awsprovider.ClientSet, version *semverlib.Ver
 func CreateNodeGroup(client *awsprovider.ClientSet,
 	clusterName, nodeGroupName string,
 	eksMDCloudSpec *apiv2.EKSMachineDeploymentCloudSpec) error {
+	var amiType string
+	switch {
+	case len(eksMDCloudSpec.AmiType) > 0:
+		amiType = eksMDCloudSpec.AmiType
+	case eksMDCloudSpec.Architecture == handlercommon.EKSARM64Architecture:
+		amiType = string(ekstypes.AMITypesAl2Arm64)
+	case eksMDCloudSpec.Architecture == handlercommon.EKSX86_64Architecture:
+		amiType = string(ekstypes.AMITypesAl2X8664)
+	}
+
 	createInput := &eks.CreateNodegroupInput{
 		ClusterName:   aws.String(clusterName),
 		NodegroupName: aws.String(nodeGroupName),
-		Subnets:       eksMDCloudSpec.Subnets,
+		Subnets:       aws.StringSlice(eksMDCloudSpec.Subnets),
 		NodeRole:      aws.String(eksMDCloudSpec.NodeRole),
-		AmiType:       aws.String(eksMDCloudSpec.AmiType),
+		AmiType:       aws.String(amiType),
 		CapacityType:  aws.String(eksMDCloudSpec.CapacityType),
 		DiskSize:      aws.Int64(eksMDCloudSpec.DiskSize),
-		InstanceTypes: eksMDCloudSpec.InstanceTypes,
+		InstanceTypes: aws.StringSlice(eksMDCloudSpec.InstanceTypes),
 		Labels:        eksMDCloudSpec.Labels,
 		ScalingConfig: &eks.NodegroupScalingConfig{
 			DesiredSize: aws.Int64(eksMDCloudSpec.ScalingConfig.DesiredSize),

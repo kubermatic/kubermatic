@@ -154,7 +154,7 @@ func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPC
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential, architecture string) (apiv2.EKSInstanceTypeList, error) {
 	instanceTypes := apiv2.EKSInstanceTypeList{}
 
 	if data == nil {
@@ -169,12 +169,19 @@ func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2
 	for _, i := range *data {
 		for _, r := range instanceTypesResults {
 			if i.InstanceType == *r.InstanceType {
+				if len(architecture) > 0 {
+					if len(i.Arch) == 0 || i.Arch[0] != architecture {
+						continue
+					}
+				}
+
 				instanceTypes = append(instanceTypes, apiv2.EKSInstanceType{
 					Name:       i.InstanceType,
 					PrettyName: i.PrettyName,
 					Memory:     i.Memory,
 					VCPUs:      i.VCPU,
 					GPUs:       i.GPU,
+					Arch:       i.Arch[0],
 				})
 				break
 			}
@@ -249,6 +256,35 @@ func ListEKSNodeRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.
 	if err != nil {
 		return nil, err
 	}
+	///
+	// var filters []*ec2service.Filter
+	// amiName := "AL2_x86_64"
+	// values := []*string{
+	// 	&amiName,
+	// }
+	// filter := &ec2service.Filter{
+	// 	Name: to.StringPtr("name"),
+	// 	Values: values,
+	// }
+	fmt.Println("////////////////////////")
+	// filters = append(filters, filter)
+	// out, err := client.EC2.DescribeImages(&ec2service.DescribeImagesInput{
+	// 	Filters: filters,
+	// })
+	out, err := client.EC2.DescribeImages(&ec2service.DescribeImagesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, img := range out.Images {
+		// && *img.Name == "AL2_x86_64"
+		if *img.Architecture == "x86_64" {
+			fmt.Println("//////////////////////// name", *img.Name)
+			fmt.Println("//////////////////////// name", *img.ImageType)
+			fmt.Println("//////////////////////// name", *img.Architecture)
+		}
+		// fmt.Println("//////////////////////// Architecture", *img.Architecture)
+	}
+	//
 	rolesOutput, err := client.IAM.ListRoles(&iam.ListRolesInput{})
 	if err != nil {
 		return nil, err

@@ -6011,7 +6011,7 @@ func (r Routing) validateEKSCredentials() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes eks listEKSInstanceTypesNoCredentials
 //
-//	Gets the EKS Instance types for node group.
+//	Gets the EKS Instance types for node group based on architecture.
 //
 //
 //	Produces:
@@ -6028,7 +6028,7 @@ func (r Routing) listEKSInstanceTypesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.EKSInstanceTypesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
-		externalcluster.DecodeEKSNoCredentialReq,
+		externalcluster.DecodeEKSNoCredentialSizeReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6594,6 +6594,30 @@ func (r Routing) listAdminRuleGroups() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id} project getExternalClusterMachineDeployment
+//
+//	Gets an external cluster machine deployments.
+//
+//	 Produces:
+//	 - application/json
+//
+//	 Responses:
+//	   default: errorResponse
+//	   200: ExternalClusterMachineDeployment
+//	   401: empty
+//	   403: empty
+func (r Routing) getExternalClusterMachineDeployment() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GetMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeGetMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route POST /api/v2/seeds/{seed_name}/rulegroups rulegroup createAdminRuleGroup
 //
 //	Creates a rule group that will belong to the given Seed
@@ -6694,30 +6718,6 @@ func (r Routing) patchExternalClusterMachineDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.PatchMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodePatchMachineDeploymentReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments/{machinedeployment_id} project getExternalClusterMachineDeployment
-//
-//	Gets an external cluster machine deployments.
-//
-//	 Produces:
-//	 - application/json
-//
-//	 Responses:
-//	   default: errorResponse
-//	   200: ExternalClusterMachineDeployment
-//	   401: empty
-//	   403: empty
-func (r Routing) getExternalClusterMachineDeployment() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GetMachineDeploymentEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
-		externalcluster.DecodeGetMachineDeploymentReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

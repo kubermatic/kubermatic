@@ -24,7 +24,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/service/eks/types"
+	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/go-kit/kit/endpoint"
@@ -34,6 +34,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -159,6 +160,43 @@ func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
+// eksNoCredentialSizeReq represent a request for EKS VM sizes.
+// swagger:parameters listEKSInstanceTypesNoCredentials
+type eksNoCredentialSizeReq struct {
+	GetClusterReq
+
+	// architecture query parameter. Supports: arm64 and x86_64 types.
+	// in: query
+	Architecture string `json:"architecture,omitempty"`
+}
+
+func DecodeEKSNoCredentialSizeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req eksNoCredentialSizeReq
+	re, err := DecodeGetReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = re.(GetClusterReq)
+
+	req.Architecture = r.URL.Query().Get("architecture")
+	if len(req.Architecture) > 0 {
+		if req.Architecture == handlercommon.EKSARM64Architecture || req.Architecture == handlercommon.EKSX86_64Architecture {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query parameter, unsupported architecture: %s", req.Architecture)
+	}
+
+	return req, nil
+}
+
+func (req eksNoCredentialSizeReq) Validate() error {
+	if err := req.GetClusterReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // eksSubnetsNoCredentialReq represent a request for EKS resources
 // swagger:parameters listEKSSubnetsNoCredentials
 type eksSubnetsNoCredentialReq struct {
@@ -180,7 +218,6 @@ func DecodeEKSSubnetsNoCredentialReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-// Validate validates eksSubnetsNoCredentialReq request.
 func (req eksSubnetsNoCredentialReq) Validate() error {
 	if err := req.GetClusterReq.Validate(); err != nil {
 		return err
@@ -563,12 +600,12 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 	}
 
 	md.Cloud.EKS = &apiv2.EKSMachineDeploymentCloudSpec{
-		Subnets:       nodeGroup.Subnets,
+		Subnets:       aws.StringValueSlice(nodeGroup.Subnets),
 		NodeRole:      aws.StringValue(nodeGroup.NodeRole),
 		AmiType:       aws.StringValue(nodeGroup.AmiType),
 		CapacityType:  aws.StringValue(nodeGroup.CapacityType),
 		DiskSize:      aws.Int64Value(nodeGroup.DiskSize),
-		InstanceTypes: nodeGroup.InstanceTypes,
+		InstanceTypes: aws.StringValueSlice(nodeGroup.InstanceTypes),
 		Labels:        nodeGroup.Labels,
 		Tags:          nodeGroup.Tags,
 		Version:       aws.StringValue(nodeGroup.Version),
@@ -661,10 +698,14 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(eksNoCredentialReq)
+		req, ok := request.(eksNoCredentialSizeReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -694,7 +735,7 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,
 		}
-		return providercommon.ListInstanceTypes(ctx, credential)
+		return providercommon.ListInstanceTypes(ctx, credential, req.Architecture)
 	}
 }
 
@@ -746,6 +787,7 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
+
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -876,7 +918,7 @@ func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 
 func EKSAMITypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var ami types.AMITypes = EKSAMITypes
+		var ami ekstypes.AMITypes = EKSAMITypes
 		var amiTypes apiv2.EKSAMITypeList
 
 		for _, amiType := range ami.Values() {
@@ -892,7 +934,7 @@ func EKSAMITypesEndpoint() endpoint.Endpoint {
 
 func EKSCapacityTypesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var capacityType types.CapacityTypes = EKSCapacityTypes
+		var capacityType ekstypes.CapacityTypes = EKSCapacityTypes
 		var capacityTypes apiv2.EKSCapacityTypeList
 
 		for _, c := range capacityType.Values() {
