@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strings"
 
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -38,6 +39,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -152,7 +154,7 @@ func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRol
 		// that matches condition.
 		var subnetIpv6 string
 		for _, v := range s.Ipv6CidrBlockAssociationSet {
-			if *v.Ipv6CidrBlockState.State == "associated" {
+			if v.Ipv6CidrBlockState.State == ec2types.SubnetCidrBlockStateCodeAssociated {
 				subnetIpv6 = *v.Ipv6CidrBlock
 				break
 			}
@@ -166,8 +168,8 @@ func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRol
 			IPv4CIDR:                *s.CidrBlock,
 			IPv6CIDR:                subnetIpv6,
 			Tags:                    subnetTags,
-			State:                   *s.State,
-			AvailableIPAddressCount: *s.AvailableIpAddressCount,
+			State:                   string(s.State),
+			AvailableIPAddressCount: int64(pointer.Int32Deref(s.AvailableIpAddressCount, 0)),
 			DefaultForAz:            *s.DefaultForAz,
 		})
 	}

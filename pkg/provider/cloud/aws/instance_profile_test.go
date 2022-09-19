@@ -22,17 +22,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 )
 
 func TestEnsureInstanceProfile(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -77,10 +78,10 @@ func TestEnsureInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: aws.String(profileName),
+			InstanceProfileName: pointer.String(profileName),
 		}
 
-		if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
+		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
 			t.Fatalf("CreateInstanceProfile should not have errored, but returned %v", err)
 		}
 
@@ -102,7 +103,7 @@ func TestEnsureInstanceProfile(t *testing.T) {
 	})
 }
 
-func profileHasRole(profile *iam.InstanceProfile, roleName string) bool {
+func profileHasRole(profile *iamtypes.InstanceProfile, roleName string) bool {
 	for _, role := range profile.Roles {
 		if *role.RoleName == roleName {
 			return true
@@ -113,8 +114,8 @@ func profileHasRole(profile *iam.InstanceProfile, roleName string) bool {
 }
 
 func TestReconcileWorkerInstanceProfile(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -187,10 +188,10 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: aws.String(profileName),
+			InstanceProfileName: pointer.String(profileName),
 		}
 
-		if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
+		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
 			t.Fatalf("CreateInstanceProfile should not have errored, but returned %v", err)
 		}
 
@@ -229,8 +230,8 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 }
 
 func TestCleanUpWorkerInstanceProfile(t *testing.T) {
-	cs := getTestClientSet(t)
 	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -311,10 +312,10 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: aws.String(profileName),
+			InstanceProfileName: pointer.String(profileName),
 		}
 
-		if _, err := cs.IAM.CreateInstanceProfile(createProfileInput); err != nil {
+		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
 			t.Fatalf("CreateInstanceProfile should not have errored, but returned %v", err)
 		}
 

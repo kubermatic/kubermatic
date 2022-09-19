@@ -690,7 +690,7 @@ type EKSKubernetesNetworkConfigResponse struct {
 	// IP family is always ipv4, unless you have a 1.21 or later cluster running
 	// version 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when
 	// you created the cluster.
-	IpFamily *string `json:"ipFamily,omitempty"`
+	IpFamily string `json:"ipFamily,omitempty"`
 
 	// The CIDR block that Kubernetes pod and service IP addresses are assigned
 	// from. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a
@@ -788,12 +788,12 @@ type VpcConfigRequest struct {
 	// your nodes and the Kubernetes control plane.
 	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
 	// in the Amazon EKS User Guide .
-	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
+	SecurityGroupIds []string `json:"securityGroupIds" required:"true"`
 
 	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
 	// elastic network interfaces in these subnets to allow communication between
 	// your nodes and the Kubernetes control plane.
-	SubnetIds []*string `json:"subnetIds" required:"true"`
+	SubnetIds []string `json:"subnetIds" required:"true"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
@@ -1065,7 +1065,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	//
 	// Subnets is a required field
-	Subnets []*string `json:"subnets" required:"true"`
+	Subnets []string `json:"subnets" required:"true"`
 
 	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
 	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
@@ -1102,7 +1102,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// or the node group deployment will fail. For more information about using
 	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	DiskSize int64 `json:"diskSize,omitempty"`
+	DiskSize int32 `json:"diskSize,omitempty"`
 
 	// Specify the instance types for a node group. If you specify a GPU instance
 	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you
@@ -1116,17 +1116,17 @@ type EKSMachineDeploymentCloudSpec struct {
 	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
 	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+	InstanceTypes []string `json:"instanceTypes,omitempty"`
 
 	// The Kubernetes labels to be applied to the nodes in the node group when they
 	// are created.
-	Labels map[string]*string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// The metadata applied to the node group to assist with categorization and
 	// organization. Each tag consists of a key and an optional value. You define
 	// both. Node group tags do not propagate to any other resources associated
 	// with the node group, such as the Amazon EC2 instances or subnets.
-	Tags map[string]*string `json:"tags,omitempty"`
+	Tags map[string]string `json:"tags,omitempty"`
 
 	// The scaling configuration details for the Auto Scaling group that is created
 	// for your node group.
@@ -1144,17 +1144,17 @@ type EKSMachineDeploymentCloudSpec struct {
 
 type EKSNodegroupScalingConfig struct {
 	// The current number of nodes that the managed node group should maintain.
-	DesiredSize int64 `json:"desiredSize,omitempty"`
+	DesiredSize int32 `json:"desiredSize,omitempty"`
 
 	// The maximum number of nodes that the managed node group can scale out to.
 	// For information about the maximum number that you can specify, see Amazon
 	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
 	// in the Amazon EKS User Guide.
-	MaxSize int64 `json:"maxSize,omitempty"`
+	MaxSize int32 `json:"maxSize,omitempty"`
 
 	// The minimum number of nodes that the managed node group can scale in to.
 	// This number must be greater than zero.
-	MinSize int64 `json:"minSize,omitempty"`
+	MinSize int32 `json:"minSize,omitempty"`
 }
 
 type AKSMachineDeploymentCloudSpec struct {

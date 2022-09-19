@@ -18,17 +18,17 @@ import (
 type EKSNodegroupScalingConfig struct {
 
 	// The current number of nodes that the managed node group should maintain.
-	DesiredSize int64 `json:"desiredSize,omitempty"`
+	DesiredSize int32 `json:"desiredSize,omitempty"`
 
 	// The maximum number of nodes that the managed node group can scale out to.
 	// For information about the maximum number that you can specify, see Amazon
 	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
 	// in the Amazon EKS User Guide.
-	MaxSize int64 `json:"maxSize,omitempty"`
+	MaxSize int32 `json:"maxSize,omitempty"`
 
 	// The minimum number of nodes that the managed node group can scale in to.
 	// This number must be greater than zero.
-	MinSize int64 `json:"minSize,omitempty"`
+	MinSize int32 `json:"minSize,omitempty"`
 }
 
 // Validate validates this e k s nodegroup scaling config

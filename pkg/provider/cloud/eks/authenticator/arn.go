@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"strings"
 
-	awsarn "github.com/aws/aws-sdk-go/aws/arn"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
+	awsarn "github.com/aws/aws-sdk-go-v2/aws/arn"
 )
+
+// extracted from boto/botocore: https://github.com/boto/botocore/blob/51c5b99680c7db7f10b5b70b222b6f7860bebdd4/botocore/data/endpoints.json
+var partitions = []string{"aws", "aws-cn", "aws-us-gov", "aws-iso", "aws-iso-b"}
 
 // Canonicalize validates IAM resources are appropriate for the authenticator
 // and converts STS assumed roles into the IAM role resource.
@@ -74,8 +76,8 @@ func CanonicalizeARN(arn string) (string, error) {
 }
 
 func checkPartition(partition string) error {
-	for _, p := range endpoints.DefaultPartitions() {
-		if partition == p.ID() {
+	for _, p := range partitions {
+		if partition == p {
 			return nil
 		}
 	}

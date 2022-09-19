@@ -26109,7 +26109,7 @@
         "diskSize": {
           "description": "The root device disk size (in GiB) for your node group instances. The default\ndisk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,\nor the node group deployment will fail. For more information about using\nlaunch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
           "type": "integer",
-          "format": "int64",
+          "format": "int32",
           "x-go-name": "DiskSize"
         },
         "instanceTypes": {
@@ -26191,19 +26191,19 @@
         "desiredSize": {
           "description": "The current number of nodes that the managed node group should maintain.",
           "type": "integer",
-          "format": "int64",
+          "format": "int32",
           "x-go-name": "DesiredSize"
         },
         "maxSize": {
           "description": "The maximum number of nodes that the managed node group can scale out to.\nFor information about the maximum number that you can specify, see Amazon\nEKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)\nin the Amazon EKS User Guide.",
           "type": "integer",
-          "format": "int64",
+          "format": "int32",
           "x-go-name": "MaxSize"
         },
         "minSize": {
           "description": "The minimum number of nodes that the managed node group can scale in to.\nThis number must be greater than zero.",
           "type": "integer",
-          "format": "int64",
+          "format": "int32",
           "x-go-name": "MinSize"
         }
       },
