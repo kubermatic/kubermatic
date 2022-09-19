@@ -25,6 +25,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	aws "github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/smithy-go"
@@ -469,10 +470,20 @@ func ValidateCredentials(ctx context.Context, credential resources.EKSCredential
 
 func DecodeError(err error) error {
 	// Generic AWS Error with Code, Message, and original error (if any).
-	var aerr smithy.APIError
-	if errors.As(err, &aerr) {
-		return utilerrors.New(500, fmt.Sprintf("%s: %s", aerr.ErrorCode(), aerr.ErrorMessage()))
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		// attempt to parse error as HTTP response error to extract status code
+		var httpResponseErr *awshttp.ResponseError
+		if errors.As(err, &httpResponseErr) {
+			return utilerrors.New(httpResponseErr.HTTPStatusCode(), fmt.Sprintf("%s: %s", apiErr.ErrorCode(), apiErr.ErrorMessage()))
+		}
+
+		// fall back to returning API error information with HTTP 500
+		return utilerrors.New(500, fmt.Sprintf("%s: %s", apiErr.ErrorCode(), apiErr.ErrorMessage()))
+
 	}
 
+	// we were unable to parse the error as API error, returning the raw error as last resort
 	return err
 }
