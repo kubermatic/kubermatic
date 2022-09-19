@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	ControllerName = "kp-seed-lifecycle-controller"
+	ControllerName = "kkp-seed-lifecycle-controller"
 
 	// We must only enqueue this one key.
 	queueKey = ControllerName
