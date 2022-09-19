@@ -27,6 +27,7 @@ import (
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/aws/smithy-go"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -35,6 +36,7 @@ import (
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/pointer"
@@ -150,7 +152,7 @@ func GetCredentialsForCluster(cloud *kubermaticv1.ExternalClusterEKSCloudSpec, s
 func GetCluster(ctx context.Context, client *awsprovider.ClientSet, eksClusterName string) (*ekstypes.Cluster, error) {
 	clusterOutput, err := client.EKS.DescribeCluster(ctx, &eks.DescribeClusterInput{Name: &eksClusterName})
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	return clusterOutput.Cluster, nil
 }
@@ -186,7 +188,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 	}
 	clusterOutput, err := client.EKS.DescribeCluster(ctx, &eks.DescribeClusterInput{Name: &clusterName})
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	if clusterOutput == nil || clusterOutput.Cluster == nil {
@@ -209,7 +211,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(ctx, nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -242,7 +244,7 @@ func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSp
 	_, err := client.EKS.CreateCluster(ctx, input)
 
 	if err != nil {
-		return err
+		return DecodeError(err)
 	}
 	return nil
 }
@@ -250,14 +252,14 @@ func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSp
 func ListClusters(ctx context.Context, client *awsprovider.ClientSet) ([]string, error) {
 	res, err := client.EKS.ListClusters(ctx, &eks.ListClustersInput{})
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	return res.Clusters, nil
 }
 
 func DeleteCluster(ctx context.Context, client *awsprovider.ClientSet, eksClusterName string) error {
 	_, err := client.EKS.DeleteCluster(ctx, &eks.DeleteClusterInput{Name: &eksClusterName})
-	return err
+	return DecodeError(err)
 }
 
 func UpgradeClusterVersion(ctx context.Context, client *awsprovider.ClientSet, version *semverlib.Version, eksClusterName string) error {
@@ -269,7 +271,7 @@ func UpgradeClusterVersion(ctx context.Context, client *awsprovider.ClientSet, v
 	}
 	_, err := client.EKS.UpdateClusterVersion(ctx, &updateInput)
 
-	return err
+	return DecodeError(err)
 }
 
 func CreateNodeGroup(ctx context.Context,
@@ -294,7 +296,7 @@ func CreateNodeGroup(ctx context.Context,
 	}
 	_, err := client.EKS.CreateNodegroup(ctx, createInput)
 
-	return err
+	return DecodeError(err)
 }
 
 func ListNodegroups(ctx context.Context, client *awsprovider.ClientSet, clusterName string) ([]string, error) {
@@ -303,7 +305,7 @@ func ListNodegroups(ctx context.Context, client *awsprovider.ClientSet, clusterN
 	}
 	nodeOutput, err := client.EKS.ListNodegroups(ctx, nodeInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	nodeGroups := nodeOutput.Nodegroups
 
@@ -318,7 +320,7 @@ func DescribeNodeGroup(ctx context.Context, client *awsprovider.ClientSet, clust
 
 	nodeGroupOutput, err := client.EKS.DescribeNodegroup(ctx, nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 	nodeGroup := nodeGroupOutput.Nodegroup
 
@@ -334,7 +336,7 @@ func UpgradeNodeGroup(ctx context.Context, client *awsprovider.ClientSet, cluste
 
 	updateOutput, err := client.EKS.UpdateNodegroupVersion(ctx, &nodeGroupInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	return updateOutput, nil
@@ -375,7 +377,7 @@ func ResizeNodeGroup(ctx context.Context, client *awsprovider.ClientSet, cluster
 
 	updateOutput, err := client.EKS.UpdateNodegroupConfig(ctx, &configInput)
 	if err != nil {
-		return nil, err
+		return nil, DecodeError(err)
 	}
 
 	return updateOutput, nil
@@ -388,7 +390,7 @@ func DeleteNodegroup(ctx context.Context, client *awsprovider.ClientSet, cluster
 	}
 	_, err := client.EKS.DeleteNodegroup(ctx, &deleteNGInput)
 
-	return err
+	return DecodeError(err)
 }
 
 func ListUpgrades(ctx context.Context,
@@ -461,6 +463,16 @@ func ValidateCredentials(ctx context.Context, credential resources.EKSCredential
 		return err
 	}
 	_, err = ListClusters(ctx, client)
+
+	return DecodeError(err)
+}
+
+func DecodeError(err error) error {
+	// Generic AWS Error with Code, Message, and original error (if any).
+	var aerr smithy.APIError
+	if errors.As(err, &aerr) {
+		return utilerrors.New(500, fmt.Sprintf("%s: %s", aerr.ErrorCode(), aerr.ErrorMessage()))
+	}
 
 	return err
 }
