@@ -283,11 +283,15 @@ func (g generator) GetWithOptions(ctx context.Context, options *GetTokenOptions)
 				return Token{}, err
 			}
 
-			userIDParts := strings.Split(*resp.UserId, ":")
+			if resp != nil && resp.UserId != nil {
+				userIDParts := strings.Split(*resp.UserId, ":")
 
-			assumeOptFuncs = append(assumeOptFuncs, func(opts *stscreds.AssumeRoleOptions) {
-				opts.RoleARN = userIDParts[1]
-			})
+				if len(userIDParts) == 2 {
+					assumeOptFuncs = append(assumeOptFuncs, func(opts *stscreds.AssumeRoleOptions) {
+						opts.RoleSessionName = userIDParts[1]
+					})
+				}
+			}
 
 		} else if options.SessionName != "" {
 			assumeOptFuncs = append(assumeOptFuncs, func(opts *stscreds.AssumeRoleOptions) {
