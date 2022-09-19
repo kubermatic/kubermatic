@@ -481,7 +481,6 @@ func DecodeError(err error) error {
 
 		// fall back to returning API error information with HTTP 500
 		return utilerrors.New(500, fmt.Sprintf("%s: %s", apiErr.ErrorCode(), apiErr.ErrorMessage()))
-
 	}
 
 	// we were unable to parse the error as API error, returning the raw error as last resort
