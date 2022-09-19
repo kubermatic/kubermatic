@@ -80,11 +80,25 @@ cd kubermatic
 There are a couple of scripts in the `hacks` directory to aid in running the components locally
 for testing purposes.
 
-You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
-`worker-name=<<hostname-of-your-laptop>>` label to the cluster. This will make your locally
-running controllers manage the cluster.
+#### Running components locally
 
-#### Running locally
+##### user-cluster-controller-manager
+
+In order to instrument the seed-controller to allow for a local user-cluster-controller-manager, you need to add a `worker-name` label with your local machine's name as its value. Additionally, you need to scale down the already running deployment.
+
+```sh
+# Using a kubeconfig, which points to the seed-cluster
+export cluster_id="<id-of-your-user-cluster>"
+kubectl label cluster ${cluster_id} worker-name=$(uname -n)
+kubectl scale deployment -n cluster-${cluster_id} usercluster-controller --replicas=0
+```
+
+Afterwards, you can start your local user-cluster-controller-manager.
+
+```sh
+# Using a kubeconfig, which points to the seed-cluster
+./hack/run-user-cluster-controller-manager.sh
+```
 
 ##### kubermatic-api
 
