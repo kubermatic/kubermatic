@@ -102,7 +102,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
 }
 
-func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
+func GetKubeconfigFromSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
 	filePrefix := "external-cluster"
 
 	kubeconfigReference := cluster.Spec.KubeconfigReference

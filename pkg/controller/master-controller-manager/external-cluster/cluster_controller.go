@@ -21,27 +21,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -128,7 +118,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	cloud := cluster.Spec.CloudSpec
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 
 	if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 		if cluster.Spec.KubeconfigReference != nil {
@@ -146,18 +135,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
-			// repeat after some time to get/store kubeconfig
-			return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// the kubeconfig token is valid 1h, it will update token every 30min
-			return reconcile.Result{RequeueAfter: time.Minute * 30}, r.ensureGKEKubeconfig(ctx, cluster)
-		}
 	}
 
 	if cloud.EKS != nil {
@@ -167,18 +144,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
-			// repeat after some time to get/store kubeconfig
-			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
-		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// the kubeconfig token is valid 14min, it will update token every 10min
-			return reconcile.Result{RequeueAfter: time.Minute * 10}, r.ensureEKSKubeconfig(ctx, cluster)
-		}
 	}
 
 	if cloud.AKS != nil {
@@ -187,18 +152,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
-		}
-		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
-			// repeat after some time to get/store kubeconfig
-			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
-		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// reconcile to update kubeconfig for cases like starting a stopped cluster
-			return reconcile.Result{RequeueAfter: time.Minute * 2}, r.ensureAKSKubeconfig(ctx, cluster)
 		}
 	}
 
@@ -258,95 +211,6 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 
 	// We successfully deleted the secret
 	return nil
-}
-
-func (r *Reconciler) ensureGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetGKECredentials(ctx, r.Client, cluster)
-	if err != nil {
-		return err
-	}
-	config, err := gke.GetClusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
-	if err != nil {
-		return err
-	}
-
-	return r.ensureKubeconfigSecret(ctx, config, cluster)
-}
-
-func (r *Reconciler) ensureEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetEKSCredentials(ctx, r.Client, cluster)
-	if err != nil {
-		return err
-	}
-	config, err := eks.GetClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
-	if err != nil {
-		return err
-	}
-
-	return r.ensureKubeconfigSecret(ctx, config, cluster)
-}
-
-func (r *Reconciler) ensureAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAKSCredentials(ctx, r.Client, cluster)
-	if err != nil {
-		return err
-	}
-	config, err := aks.GetClusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
-	if err != nil {
-		return err
-	}
-
-	return r.ensureKubeconfigSecret(ctx, config, cluster)
-}
-
-func (r *Reconciler) ensureKubeconfigSecret(ctx context.Context, config *api.Config, cluster *kubermaticv1.ExternalCluster) error {
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add finalizer: %w", err)
-	}
-
-	kubeconfig, err := clientcmd.Write(*config)
-	if err != nil {
-		return err
-	}
-
-	secretData := map[string][]byte{
-		resources.ExternalClusterKubeconfig: kubeconfig,
-	}
-
-	creators := []reconciling.NamedSecretCreatorGetter{
-		kubeconfigSecretCreatorGetter(cluster, secretData),
-	}
-
-	if err := reconciling.ReconcileSecrets(ctx, creators, resources.KubermaticNamespace, r); err != nil {
-		return fmt.Errorf("failed to ensure Secret: %w", err)
-	}
-
-	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      cluster.GetKubeconfigSecretName(),
-			Namespace: resources.KubermaticNamespace,
-		},
-	}
-
-	return r.Update(ctx, cluster)
-}
-
-func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
-		return cluster.GetKubeconfigSecretName(), func(existing *corev1.Secret) (*corev1.Secret, error) {
-			if existing.Labels == nil {
-				existing.Labels = map[string]string{}
-			}
-
-			existing.Labels[kubermaticv1.ProjectIDLabelKey] = cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-			existing.Data = secretData
-
-			return existing, nil
-		}
-	}
 }
 
 func isHttpError(err error, status int) bool {

@@ -40,10 +40,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8s.io/client-go/tools/clientcmd/api"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -1158,7 +1161,12 @@ func AreExternalClustersEnabled(ctx context.Context, provider provider.SettingsP
 	return settings.Spec.EnableExternalClusterImport
 }
 
-func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	clusterProvider provider.ExternalClusterProvider,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+	settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -1178,7 +1186,91 @@ func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvid
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		providerName := string(cluster.Spec.CloudSpec.ProviderName)
 
-		return handlercommon.GetKubeconfigEndpoint(ctx, cluster, privilegedClusterProvider)
+		byo := string(kubermaticv1.ExternalClusterBringYourOwnProvider)
+		kubeOne := string(kubermaticv1.ExternalClusterKubeOneProvider)
+
+		aks := string(kubermaticv1.ExternalClusterAKSProvider)
+		eks := string(kubermaticv1.ExternalClusterEKSProvider)
+		gke := string(kubermaticv1.ExternalClusterGKEProvider)
+
+		if sets.NewString(byo, kubeOne).Has(providerName) {
+			config, err := handlercommon.GetKubeconfigFromSecret(ctx, cluster, privilegedClusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			return config, nil
+		} else if providerName == gke {
+			filePrefix := "external-cluster"
+			config, err := ensureGKEKubeconfig(ctx, privilegedClusterProvider, cluster)
+			if err != nil {
+				return nil, err
+			}
+			return &encodeKubeConifgResponse{clientCfg: config, filePrefix: filePrefix}, nil
+		} else if providerName == eks {
+			filePrefix := "external-cluster"
+			config, err := ensureEKSKubeconfig(ctx, privilegedClusterProvider, cluster)
+			if err != nil {
+				return nil, err
+			}
+			return &encodeKubeConifgResponse{clientCfg: config, filePrefix: filePrefix}, nil
+		} else if providerName == aks {
+			filePrefix := "external-cluster"
+			config, err := ensureAKSKubeconfig(ctx, privilegedClusterProvider, cluster)
+			if err != nil {
+				return nil, err
+			}
+			return &encodeKubeConifgResponse{clientCfg: config, filePrefix: filePrefix}, nil
+		}
+
+		return nil, fmt.Errorf("cluster provider not supported: %s", providerName)
 	}
+}
+
+type encodeKubeConifgResponse struct {
+	clientCfg  *clientcmdapi.Config
+	filePrefix string
+}
+
+func ensureGKEKubeconfig(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, cluster *kubermaticv1.ExternalCluster) (*api.Config, error) {
+	cloud := cluster.Spec.CloudSpec
+	cred, err := resources.GetGKECredentials(ctx, privilegedClusterProvider.GetMasterClient(), cluster)
+	if err != nil {
+		return nil, err
+	}
+	config, err := gke.GetClusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func ensureEKSKubeconfig(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, cluster *kubermaticv1.ExternalCluster) (*api.Config, error) {
+	cloud := cluster.Spec.CloudSpec
+	cred, err := resources.GetEKSCredentials(ctx, privilegedClusterProvider.GetMasterClient(), cluster)
+	if err != nil {
+		return nil, err
+	}
+	config, err := eks.GetClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func ensureAKSKubeconfig(ctx context.Context, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, cluster *kubermaticv1.ExternalCluster) (*api.Config, error) {
+	cloud := cluster.Spec.CloudSpec
+	cred, err := resources.GetAKSCredentials(ctx, privilegedClusterProvider.GetMasterClient(), cluster)
+	if err != nil {
+		return nil, err
+	}
+	config, err := aks.GetClusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
