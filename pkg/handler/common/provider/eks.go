@@ -45,7 +45,6 @@ func init() {
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
 const (
-	RegionEndpoint      = "eu-central-1"
 	EKSClusterPolicy    = "AmazonEKSClusterPolicy"
 	EKSWorkerNodePolicy = "AmazonEKSWorkerNodePolicy"
 )
@@ -198,7 +197,7 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
 	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", RegionEndpoint)
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}

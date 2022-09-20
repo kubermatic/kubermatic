@@ -121,10 +121,6 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.listEKSClusterRoles())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/noderoles").
-		Handler(r.listEKSNodeRoles())
-
-	mux.Methods(http.MethodGet).
 		Path("/providers/eks/versions").
 		Handler(r.listEKSVersions())
 
@@ -1070,6 +1066,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/vpcs").
 		Handler(r.listEKSVPCsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/noderoles").
+		Handler(r.listEKSNodeRolesNoCredentials())
 
 	// Defines an endpoint to retrieve the cluster networking defaults for the given provider and CNI.
 	mux.Methods(http.MethodGet).
@@ -6084,6 +6084,30 @@ func (r Routing) listEKSVPCsNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/noderoles eks listEKSNodeRolesNoCredentials
+//
+//		List EKS Node IAM Roles.
+//
+//	    Produces:
+//	    - application/json
+//
+//	    Responses:
+//	      default: errorResponse
+//	      200: EKSNodeRoleList
+//	      401: empty
+//	      403: empty
+func (r Routing) listEKSNodeRolesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSNodeRolesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeEKSNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/aks/validatecredentials aks validateAKSCredentials
 //
 // Validates AKS credentials
@@ -6327,7 +6351,7 @@ func (r Routing) listEKSRegions() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
-		externalcluster.DecodeEKSTypesReq,
+		externalcluster.DecodeEKSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6352,30 +6376,6 @@ func (r Routing) listEKSClusterRoles() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSClusterRolesEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSCommonReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/providers/eks/noderoles eks listEKSNodeRoles
-//
-//	List EKS Node IAM Roles.
-//
-//	Produces:
-//	- application/json
-//
-//	Responses:
-//	  default: errorResponse
-//	  200: EKSNodeRoleList
-//	  401: empty
-//	  403: empty
-func (r Routing) listEKSNodeRoles() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(externalcluster.ListEKSNodeRolesEndpoint(r.userInfoGetter, r.presetProvider)),
-		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

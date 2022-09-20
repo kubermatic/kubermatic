@@ -60,6 +60,25 @@ ListGKEDiskTypesParams contains all the parameters to send to the API endpoint
 	Typically these are written to a http.Request.
 */
 type ListGKEDiskTypesParams struct {
+
+	/* Credential.
+
+	   The credential name used in the preset for the GCP provider
+	*/
+	Credential *string
+
+	/* ServiceAccount.
+
+	   The plain GCP service account
+	*/
+	ServiceAccount *string
+
+	/* Zone.
+
+	   The zone name
+	*/
+	Zone *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +132,39 @@ func (o *ListGKEDiskTypesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) WithCredential(credential *string) *ListGKEDiskTypesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithServiceAccount adds the serviceAccount to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) WithServiceAccount(serviceAccount *string) *ListGKEDiskTypesParams {
+	o.SetServiceAccount(serviceAccount)
+	return o
+}
+
+// SetServiceAccount adds the serviceAccount to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) SetServiceAccount(serviceAccount *string) {
+	o.ServiceAccount = serviceAccount
+}
+
+// WithZone adds the zone to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) WithZone(zone *string) *ListGKEDiskTypesParams {
+	o.SetZone(zone)
+	return o
+}
+
+// SetZone adds the zone to the list g k e disk types params
+func (o *ListGKEDiskTypesParams) SetZone(zone *string) {
+	o.Zone = zone
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListGKEDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +172,30 @@ func (o *ListGKEDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.ServiceAccount != nil {
+
+		// header param ServiceAccount
+		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
+			return err
+		}
+	}
+
+	if o.Zone != nil {
+
+		// header param Zone
+		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
