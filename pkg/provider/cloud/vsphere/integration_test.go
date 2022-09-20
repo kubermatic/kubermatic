@@ -33,7 +33,8 @@ var (
 
 func getTestDC() *kubermaticv1.DatacenterSpecVSphere {
 	return &kubermaticv1.DatacenterSpecVSphere{
-		Datacenter: vSphereDatacenter,
-		Endpoint:   vSphereEndpoint,
+		Endpoint:      vSphereEndpoint,
+		AllowInsecure: true,
+		Datacenter:    vSphereDatacenter,
 	}
 }
