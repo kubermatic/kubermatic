@@ -21,7 +21,6 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
-{{ if gt .Cluster.Version.Minor 19 }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -391,7 +390,6 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
-{{ end }}
 {{ end }}
 {{ end }}
 {{ end }}
