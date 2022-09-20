@@ -21,6 +21,19 @@
 
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
+{{ $version := "UNSUPPORTED" }}
+
+{{ if eq .Cluster.MajorMinorVersion "1.22" }}
+{{ $version = "v4.2.0"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.23" }}
+{{ $version = "v4.3.0"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.24" }}
+{{ $version = "v4.3.0"}}
+{{ end }}
+
+{{ if not (eq $version "UNSUPPORTED") }}
 ---
 apiVersion: v1
 kind: Secret
@@ -118,7 +131,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-do-plugin
-          image: '{{ Image "digitalocean/do-csi-plugin:v4.2.0" }}'
+          image: '{{ Image (printf "digitalocean/do-csi-plugin:" $version) }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--token=$(DIGITALOCEAN_ACCESS_TOKEN)"
@@ -429,4 +442,5 @@ roleRef:
   name: csi-do-node-driver-registrar-role
   apiGroup: rbac.authorization.k8s.io
 
+{{ end }}
 {{ end }}
