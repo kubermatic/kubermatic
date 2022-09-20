@@ -1,0 +1,22 @@
+# This is a KKP-specific headless alertmanager service, used to work around
+# the Cortex helm chart bug in chart versions below v1.0.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cortex-alertmanager-headless-kkp
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: http-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: http-metrics
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: alertmanager
+    app.kubernetes.io/instance: cortex
+    app.kubernetes.io/name: cortex
+  sessionAffinity: None
+  type: ClusterIP

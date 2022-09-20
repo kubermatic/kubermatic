@@ -1,0 +1,1831 @@
+---
+# Source: cortex/charts/cortex/templates/distributor/distributor-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-distributor
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: distributor
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: distributor
+  maxUnavailable: 1
+---
+# Source: cortex/charts/cortex/templates/ingester/ingester-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-ingester
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ingester
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: ingester
+  maxUnavailable: 1
+---
+# Source: cortex/charts/cortex/templates/nginx/nginx-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-nginx
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: nginx
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: nginx
+  maxUnavailable: 1
+---
+# Source: cortex/charts/cortex/templates/querier/querier-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-querier
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: querier
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: querier
+  maxUnavailable: 1
+---
+# Source: cortex/charts/cortex/templates/query-frontend/query-poddisruptionbudget.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-query-frontend
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: query-frontend
+  maxUnavailable: 1
+---
+# Source: cortex/charts/cortex/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-cortex
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    {}
+automountServiceAccountToken: true
+---
+# Source: cortex/charts/memcached-blocks-index/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: cortex/charts/memcached-blocks-metadata/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: cortex/charts/memcached-blocks/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: cortex/charts/cortex/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: release-name-cortex
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGVuYWJsZV9hcGk6IGZhbHNlCiAgZXh0ZXJuYWxfdXJsOiAvYXBpL3Byb20vYWxlcnRtYW5hZ2VyCiAgc3RvcmFnZToge30KYXBpOgogIHByb21ldGhldXNfaHR0cF9wcmVmaXg6IC9wcm9tZXRoZXVzCiAgcmVzcG9uc2VfY29tcHJlc3Npb25fZW5hYmxlZDogdHJ1ZQphdXRoX2VuYWJsZWQ6IGZhbHNlCmNodW5rX3N0b3JlOgogIGNodW5rX2NhY2hlX2NvbmZpZzoKICAgIG1lbWNhY2hlZDoKICAgICAgZXhwaXJhdGlvbjogMWgKICAgIG1lbWNhY2hlZF9jbGllbnQ6CiAgICAgIHRpbWVvdXQ6IDFzCmRpc3RyaWJ1dG9yOgogIHBvb2w6CiAgICBoZWFsdGhfY2hlY2tfaW5nZXN0ZXJzOiB0cnVlCiAgc2hhcmRfYnlfYWxsX2xhYmVsczogdHJ1ZQpmcm9udGVuZDoKICBsb2dfcXVlcmllc19sb25nZXJfdGhhbjogMTBzCmluZ2VzdGVyOgogIGxpZmVjeWNsZXI6CiAgICBmaW5hbF9zbGVlcDogMHMKICAgIGpvaW5fYWZ0ZXI6IDBzCiAgICBudW1fdG9rZW5zOiA1MTIKICAgIHJpbmc6CiAgICAgIGt2c3RvcmU6CiAgICAgICAgY29uc3VsOgogICAgICAgICAgY29uc2lzdGVudF9yZWFkczogdHJ1ZQogICAgICAgICAgaG9zdDogY29uc3VsOjg1MDAKICAgICAgICAgIGh0dHBfY2xpZW50X3RpbWVvdXQ6IDIwcwogICAgICAgIHByZWZpeDogY29sbGVjdG9ycy8KICAgICAgICBzdG9yZTogY29uc3VsCiAgICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMwogIG1heF90cmFuc2Zlcl9yZXRyaWVzOiAwCmluZ2VzdGVyX2NsaWVudDoKICBncnBjX2NsaWVudF9jb25maWc6CiAgICBtYXhfcmVjdl9tc2dfc2l6ZTogMTA0ODU3NjAwCiAgICBtYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAwCmxpbWl0czoKICBlbmZvcmNlX21ldHJpY19uYW1lOiBmYWxzZQogIG1heF9xdWVyeV9sb29rYmFjazogMHMKICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczogW10KcXVlcmllcjoKICBhY3RpdmVfcXVlcnlfdHJhY2tlcl9kaXI6IC9kYXRhL2NvcnRleC9xdWVyaWVyCiAgcXVlcnlfaW5nZXN0ZXJzX3dpdGhpbjogMTJoCiAgc3RvcmVfZ2F0ZXdheV9hZGRyZXNzZXM6IHwtCiAgICAKcXVlcnlfcmFuZ2U6CiAgYWxpZ25fcXVlcmllc193aXRoX3N0ZXA6IHRydWUKICBjYWNoZV9yZXN1bHRzOiB0cnVlCiAgcmVzdWx0c19jYWNoZToKICAgIGNhY2hlOgogICAgICBtZW1jYWNoZWQ6CiAgICAgICAgZXhwaXJhdGlvbjogMWgKICAgICAgbWVtY2FjaGVkX2NsaWVudDoKICAgICAgICB0aW1lb3V0OiAxcwogIHNwbGl0X3F1ZXJpZXNfYnlfaW50ZXJ2YWw6IDI0aApydWxlcjoKICBlbmFibGVfYWxlcnRtYW5hZ2VyX2Rpc2NvdmVyeTogZmFsc2UKICBlbmFibGVfYXBpOiBmYWxzZQogIHN0b3JhZ2U6IHt9CnJ1bnRpbWVfY29uZmlnOgogIGZpbGU6IC9ldGMvY29ydGV4LXJ1bnRpbWUtY29uZmlnL3J1bnRpbWVfY29uZmlnLnlhbWwKc2NoZW1hOgogIGNvbmZpZ3M6CiAgLSBjaHVua3M6CiAgICAgIHBlcmlvZDogMTY4aAogICAgICBwcmVmaXg6IGNodW5rc18KICAgIGZyb206ICIyMDIwLTExLTAxIgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMTY4aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBjYXNzYW5kcmEKICAgIHNjaGVtYTogdjEwCiAgICBzdG9yZTogY2Fzc2FuZHJhCnNlcnZlcjoKICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgZ3JwY19zZXJ2ZXJfbWF4X2NvbmN1cnJlbnRfc3RyZWFtczogMTAwMAogIGdycGNfc2VydmVyX21heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MDAKICBncnBjX3NlcnZlcl9tYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAwCiAgaHR0cF9saXN0ZW5fcG9ydDogODA4MApzdG9yYWdlOgogIGF6dXJlOiB7fQogIGNhc3NhbmRyYToKICAgIGF1dGg6IHRydWUKICAgIGtleXNwYWNlOiBjb3J0ZXgKICBlbmdpbmU6IGNodW5rcwogIGluZGV4X3F1ZXJpZXNfY2FjaGVfY29uZmlnOgogICAgbWVtY2FjaGVkOgogICAgICBleHBpcmF0aW9uOiAxaAogICAgbWVtY2FjaGVkX2NsaWVudDoKICAgICAgdGltZW91dDogMXMKc3RvcmVfZ2F0ZXdheToge30KdGFibGVfbWFuYWdlcjoKICByZXRlbnRpb25fZGVsZXRlc19lbmFibGVkOiBmYWxzZQogIHJldGVudGlvbl9wZXJpb2Q6IDBz
+---
+# Source: cortex/charts/cortex/templates/nginx/nginx-config.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: release-name-cortex-nginx
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: nginx
+data:
+  nginx.conf: |-
+    worker_processes  5;  ## Default: 1
+    error_log  /dev/stderr;
+    pid        /tmp/nginx.pid;
+    worker_rlimit_nofile 8192;
+
+    events {
+      worker_connections  4096;  ## Default: 1024
+    }
+
+    http {
+      default_type application/octet-stream;
+      client_max_body_size 1M;
+      log_format   main '$remote_addr - $remote_user [$time_local]  $status '
+        '"$request" $body_bytes_sent "$http_referer" '
+        '"$http_user_agent" "$http_x_forwarded_for" $http_x_scope_orgid';
+      access_log   /dev/stderr  main;
+      sendfile     on;
+      tcp_nopush   on;
+      resolver kube-dns.kube-system.svc.cluster.local;
+
+      server { # simple reverse-proxy
+        listen 80;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        proxy_http_version 1.1;
+
+        
+
+        location = /healthz {
+          # auth_basic off is not set here, even when a basic auth directive is
+          # included in the server block, as Nginx's NGX_HTTP_REWRITE_PHASE
+          # (point when this return statement is evaluated) comes before the
+          # NGX_HTTP_ACCESS_PHASE (point when basic auth is evaluated). Thus,
+          # this return statement returns a response before basic auth is
+          # evaluated.
+          return 200 'alive';
+        }
+
+        # Distributor Config
+        location = /ring {
+          proxy_pass      http://release-name-cortex-distributor.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location = /all_user_stats {
+          proxy_pass      http://release-name-cortex-distributor.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location = /api/prom/push {
+          proxy_pass      http://release-name-cortex-distributor.default.svc.cluster.local:8080$request_uri;
+        }
+
+        ## New Remote write API. Ref: https://cortexmetrics.io/docs/api/#remote-write
+        location = /api/v1/push {
+          proxy_pass      http://release-name-cortex-distributor.default.svc.cluster.local:8080$request_uri;
+        }
+
+        # Alertmanager Config
+        location ~ /api/prom/alertmanager/.* {
+          proxy_pass      http://release-name-cortex-alertmanager.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location ~ /api/v1/alerts {
+          proxy_pass      http://release-name-cortex-alertmanager.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location ~ /multitenant_alertmanager/status {
+          proxy_pass      http://release-name-cortex-alertmanager.default.svc.cluster.local:8080$request_uri;
+        }
+
+        # Ruler Config
+        location ~ /api/v1/rules {
+          proxy_pass      http://release-name-cortex-ruler.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location ~ /ruler/ring {
+          proxy_pass      http://release-name-cortex-ruler.default.svc.cluster.local:8080$request_uri;
+        }
+
+        # Config Config
+        location ~ /api/prom/configs/.* {
+          proxy_pass      http://release-name-cortex-configs.default.svc.cluster.local:8080$request_uri;
+        }
+
+        # Query Config
+        location ~ /api/prom/.* {
+          proxy_pass      http://release-name-cortex-query-frontend.default.svc.cluster.local:8080$request_uri;
+        }
+
+        ## New Query frontend APIs as per https://cortexmetrics.io/docs/api/#querier--query-frontend
+        location ~ ^/prometheus/api/v1/(read|metadata|labels|series|query_range|query) {
+          proxy_pass      http://release-name-cortex-query-frontend.default.svc.cluster.local:8080$request_uri;
+        }
+
+        location ~ /prometheus/api/v1/label/.* {
+          proxy_pass      http://release-name-cortex-query-frontend.default.svc.cluster.local:8080$request_uri;
+        }
+      }
+    }
+---
+# Source: cortex/charts/cortex/templates/runtime-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cortex-runtime-config
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  runtime_config.yaml: |
+    {}
+---
+# Source: cortex/charts/cortex/templates/alertmanager/alertmanager-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-alertmanager
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: alertmanager
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: alertmanager
+---
+# Source: cortex/charts/cortex/templates/distributor/distributor-svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-distributor-headless
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: distributor
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9095
+      protocol: TCP
+      name: grpc
+      targetPort: grpc
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: distributor
+---
+# Source: cortex/charts/cortex/templates/distributor/distributor-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-distributor
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: distributor
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: distributor
+---
+# Source: cortex/charts/cortex/templates/ingester/ingester-svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-ingester-headless
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ingester
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 9095
+      protocol: TCP
+      name: grpc
+      targetPort: grpc
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: ingester
+---
+# Source: cortex/charts/cortex/templates/ingester/ingester-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-ingester
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ingester
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: ingester
+---
+# Source: cortex/charts/cortex/templates/nginx/nginx-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-nginx
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: nginx
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: nginx
+---
+# Source: cortex/charts/cortex/templates/querier/querier-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-querier
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: querier
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: querier
+---
+# Source: cortex/charts/cortex/templates/query-frontend/query-frontend-svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-query-frontend-headless
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9095
+      protocol: TCP
+      name: grpc
+      targetPort: grpc
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: query-frontend
+---
+# Source: cortex/charts/cortex/templates/query-frontend/query-frontend-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-query-frontend
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: query-frontend
+---
+# Source: cortex/charts/cortex/templates/ruler/ruler-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-ruler
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ruler
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: ruler
+---
+# Source: cortex/charts/cortex/templates/svc-memberlist-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-memberlist
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 7946
+      protocol: TCP
+      name: gossip
+      targetPort: gossip
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/part-of: memberlist
+---
+# Source: cortex/charts/cortex/templates/table-manager/table-manager-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cortex-table-manager
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: table-manager
+  annotations:
+    {}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/component: table-manager
+---
+# Source: cortex/charts/memcached-blocks-index/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-index
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/memcached-blocks-metadata/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/memcached-blocks/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/templates/cortex-alertmanager-headless-kkp.yaml
+# This is a KKP-specific headless alertmanager service, used to work around
+# the Cortex helm chart bug in chart versions below v1.0.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cortex-alertmanager-headless-kkp
+spec:
+  clusterIP: None
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: http-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: http-metrics
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: alertmanager
+    app.kubernetes.io/instance: cortex
+    app.kubernetes.io/name: cortex
+  sessionAffinity: None
+  type: ClusterIP
+---
+# Source: cortex/charts/cortex/templates/alertmanager/alertmanager-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-alertmanager
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: alertmanager
+    app.kubernetes.io/part-of: memberlist
+  annotations:
+    {}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: alertmanager
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: alertmanager
+        app.kubernetes.io/part-of: memberlist
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=alertmanager"
+            - "-config.file=/etc/cortex/cortex.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: "/data"
+              subPath: 
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: gossip
+              containerPort: 7946
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        {}
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/templates/distributor/distributor-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-distributor
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/part-of: memberlist
+  annotations:
+    {}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: distributor
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: distributor
+        app.kubernetes.io/part-of: memberlist
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=distributor"
+            - "-config.file=/etc/cortex/cortex.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: "/data"
+              subPath: 
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: gossip
+              containerPort: 7946
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - distributor
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/templates/ingester/ingester-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-ingester
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ingester
+    app.kubernetes.io/part-of: memberlist
+  annotations:
+    {}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: ingester
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: ingester
+        app.kubernetes.io/part-of: memberlist
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=ingester"
+            - "-config.file=/etc/cortex/cortex.yaml"
+            
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: "/data"
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+            - name: gossip
+              containerPort: 7946
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /ready
+              port: http-metrics
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+              scheme: HTTP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+          lifecycle:
+            preStop:
+              httpGet:
+                path: /ingester/shutdown
+                port: http-metrics
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - ingester
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 240
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/templates/nginx/nginx-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-nginx
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: nginx
+  annotations:
+    {}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: nginx
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: nginx
+      annotations:
+        checksum/config: 339df495623736167893ab2e4ef4395e50a0db14b96a3151be5b45a86bd7844d
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: ""
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: nginx
+          image: "nginx:1.21"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx
+          ports:
+            - name: http-metrics
+              containerPort: 80
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /healthz
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: false
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        {}
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: release-name-cortex-nginx
+---
+# Source: cortex/charts/cortex/templates/querier/querier-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-querier
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: querier
+  annotations:
+    {}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: querier
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: querier
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=querier"
+            - "-config.file=/etc/cortex/cortex.yaml"
+            - "-querier.frontend-address=release-name-cortex-query-frontend-headless.default.svc.cluster.local:9095"
+            
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: "/data"
+              subPath: 
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - querier
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/templates/query-frontend/query-frontend-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-query-frontend
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+  annotations:
+    {}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: query-frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: query-frontend
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=query-frontend"
+            - "-config.file=/etc/cortex/cortex.yaml"
+            
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - query-frontend
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+---
+# Source: cortex/charts/cortex/templates/ruler/ruler-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-ruler
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/part-of: memberlist
+  annotations:
+    {}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: ruler
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: ruler
+        app.kubernetes.io/part-of: memberlist
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=ruler"
+            - "-config.file=/etc/cortex/cortex.yaml"
+            - "-ruler.alertmanager-url=http://release-name-cortex-alertmanager.default.svc.cluster.local:8080/api/prom/alertmanager/"
+            
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: /data
+              subPath: 
+            - name: tmp
+              mountPath: /rules
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: gossip
+              containerPort: 7946
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        {}
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: tmp
+          emptyDir: {}
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/templates/table-manager/table-manager-dep.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cortex-table-manager
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-0.7.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: table-manager
+  annotations:
+    {}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: table-manager
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: cortex-0.7.0
+        app.kubernetes.io/name: cortex
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "v1.10.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: table-manager
+      annotations:
+        checksum/config: 46c7a33ac576f66924d71fd31c0ee2d7c31ca76b5745c0e54ad6f38dd8ff95ce
+        prometheus.io/port: http-metrics
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: release-name-cortex
+      initContainers:
+        []
+      containers:
+        - name: cortex
+          image: "quay.io/cortexproject/cortex:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-target=table-manager"
+            - "-config.file=/etc/cortex/cortex.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cortex
+            - name: runtime-config
+              mountPath: /etc/cortex-runtime-config
+            - name: storage
+              mountPath: "/data"
+              subPath: 
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /ready
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+          resources:
+            {}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+      nodeSelector:
+        {}
+      affinity:
+        {}
+      tolerations:
+        []
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - name: config
+          secret:
+            secretName: release-name-cortex
+        - name: runtime-config
+          configMap:
+            name: release-name-cortex-runtime-config
+        - name: storage
+          emptyDir: {}
+---
+# Source: cortex/charts/memcached-blocks-index/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-index
+      app.kubernetes.io/instance: release-name
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-index
+        helm.sh/chart: memcached-blocks-index-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-index
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: release-name-memcached-blocks-index
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: false
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/memcached-blocks-metadata/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-metadata
+      app.kubernetes.io/instance: release-name
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-metadata
+        helm.sh/chart: memcached-blocks-metadata-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-metadata
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: release-name-memcached-blocks-metadata
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: false
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/memcached-blocks/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks
+      app.kubernetes.io/instance: release-name
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks
+        helm.sh/chart: memcached-blocks-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: release-name-memcached-blocks
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: false
+      volumes:
+        - name: tmp
+          emptyDir: {}

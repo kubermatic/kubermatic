@@ -1,0 +1,20 @@
+---
+# Source: mla-secrets/templates/grafana-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana
+type: Opaque
+data:
+  admin-user: "YWRtaW4="
+  admin-password: "c3Ryb25nUGFzc3dvcmQ="
+---
+# Source: mla-secrets/templates/minio-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio
+type: Opaque
+data:
+  rootUser: "bWVtb3JhYmxlQWNjZXNzS2V5"
+  rootPassword: "c3Ryb25nUGFzc3dvcmQ="
