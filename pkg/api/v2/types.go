@@ -932,11 +932,12 @@ type EKSInstanceTypeList []EKSInstanceType
 // EKSInstanceType is the object representing EKS nodegroup instancetype..
 // swagger:model EKSInstanceType
 type EKSInstanceType struct {
-	Name       string  `json:"name"`
-	PrettyName string  `json:"pretty_name,omitempty"`
-	Memory     float32 `json:"memory,omitempty"`
-	VCPUs      int     `json:"vcpus,omitempty"`
-	GPUs       int     `json:"gpus,omitempty"`
+	Name         string  `json:"name"`
+	PrettyName   string  `json:"pretty_name,omitempty"`
+	Memory       float32 `json:"memory,omitempty"`
+	VCPUs        int     `json:"vcpus,omitempty"`
+	GPUs         int     `json:"gpus,omitempty"`
+	Architecture string  `json:"architecture,omitempty"`
 }
 
 // EKSSubnetList represents an array of EKS subnet.
@@ -1093,6 +1094,9 @@ type EKSMachineDeploymentCloudSpec struct {
 	// EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
 	AmiType string `json:"amiType,omitempty"`
+
+	// The architecture of the machine image.
+	Architecture string `json:"architecture,omitempty"`
 
 	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`

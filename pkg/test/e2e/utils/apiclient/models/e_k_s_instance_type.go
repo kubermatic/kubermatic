@@ -17,6 +17,9 @@ import (
 // swagger:model EKSInstanceType
 type EKSInstanceType struct {
 
+	// architecture
+	Architecture string `json:"architecture,omitempty"`
+
 	// g p us
 	GPUs int64 `json:"gpus,omitempty"`
 

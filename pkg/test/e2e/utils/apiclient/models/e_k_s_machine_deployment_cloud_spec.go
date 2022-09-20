@@ -29,6 +29,9 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	AmiType string `json:"amiType,omitempty"`
 
+	// The architecture of the machine image.
+	Architecture string `json:"architecture,omitempty"`
+
 	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`
 

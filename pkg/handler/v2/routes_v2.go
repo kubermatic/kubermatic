@@ -6011,7 +6011,7 @@ func (r Routing) validateEKSCredentials() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes eks listEKSInstanceTypesNoCredentials
 //
-//	Gets the EKS Instance types for node group.
+//	Gets the EKS Instance types for node group based on architecture.
 //
 //
 //	Produces:
@@ -6028,7 +6028,7 @@ func (r Routing) listEKSInstanceTypesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.EKSInstanceTypesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
-		externalcluster.DecodeEKSNoCredentialReq,
+		externalcluster.DecodeEKSNoCredentialSizeReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6351,7 +6351,7 @@ func (r Routing) listEKSClusterRoles() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSClusterRolesEndpoint(r.userInfoGetter, r.presetProvider)),
-		externalcluster.DecodeEKSTypesReq,
+		externalcluster.DecodeEKSCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
