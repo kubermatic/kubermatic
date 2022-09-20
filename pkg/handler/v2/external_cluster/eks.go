@@ -25,8 +25,6 @@ import (
 	"strings"
 
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/go-kit/kit/endpoint"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -43,15 +41,19 @@ import (
 	eksprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
+	RegionEndpoint   = "eu-central-1"
 	EKSAMITypes      = "Amazon Linux 2"
 	EKSCustomAMIType = "CUSTOM"
 	EKSCapacityTypes = "SPOT"
 )
 
 // EKSCommonReq represent a request with common parameters for EKS.
+// swagger:parameters listEKSRegions listEKSClusterRoles
 type EKSCommonReq struct {
 	// in: header
 	// name: AccessKeyID
@@ -75,7 +77,7 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 // EKSTypesReq represent a request for EKS types.
-// swagger:parameters validateEKSCredentials listEKSRegion listEKSVPCS
+// swagger:parameters validateEKSCredentials listEKSVPCS
 type EKSTypesReq struct {
 	EKSCommonReq
 	// in: header
@@ -103,15 +105,22 @@ type EKSClusterListReq struct {
 	EKSTypesReq
 }
 
-func (req EKSTypesReq) Validate() error {
-	if len(req.Region) == 0 {
-		return fmt.Errorf("Region cannot be empty")
-	}
+func (req EKSCommonReq) Validate() error {
 	if len(req.Credential) != 0 {
 		return nil
 	}
 	if len(req.AccessKeyID) == 0 || len(req.SecretAccessKey) == 0 {
 		return fmt.Errorf("EKS Credentials cannot be empty")
+	}
+	return nil
+}
+
+func (req EKSTypesReq) Validate() error {
+	if len(req.Region) == 0 {
+		return fmt.Errorf("region cannot be empty")
+	}
+	if err := req.EKSCommonReq.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -144,7 +153,7 @@ func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, e
 }
 
 // eksNoCredentialReq represent a request for EKS resources
-// swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials
+// swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials listEKSNodeRolesNoCredentials
 type eksNoCredentialReq struct {
 	GetClusterReq
 }
@@ -218,6 +227,7 @@ func DecodeEKSSubnetsNoCredentialReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
+// Validate validates eksSubnetsNoCredentialReq request.
 func (req eksSubnetsNoCredentialReq) Validate() error {
 	if err := req.GetClusterReq.Validate(); err != nil {
 		return err
@@ -237,6 +247,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
+
 		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
@@ -305,11 +316,19 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 
 func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
+		req, ok := request.(EKSCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		eksTypesReq := EKSTypesReq{
+			EKSCommonReq: req,
+			Region:       RegionEndpoint,
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -320,11 +339,19 @@ func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 
 func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
+		req, ok := request.(EKSCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		eksTypesReq := EKSTypesReq{
+			EKSCommonReq: req,
+			Region:       RegionEndpoint,
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -427,7 +454,7 @@ func DecodeEKSReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSpec, eksCloudSpec *apiv2.EKSCloudSpec) error {
-	client, err := awsprovider.GetClientSet(eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
 	if err != nil {
 		return err
 	}
@@ -442,7 +469,7 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 		}
 	}
 
-	return eksprovider.CreateCluster(client, clusterSpec, eksCloudSpec.Name)
+	return eksprovider.CreateCluster(ctx, client, clusterSpec, eksCloudSpec.Name)
 }
 
 func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -480,19 +507,19 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchEKSCluster(oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalCluster, error) {
+func patchEKSCluster(ctx context.Context, oldCluster, newCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalCluster, error) {
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	newVersion := newCluster.Spec.Version.Semver()
-	err = eksprovider.UpgradeClusterVersion(client, newVersion, cloudSpec.Name)
+	err = eksprovider.UpgradeClusterVersion(ctx, client, newVersion, cloudSpec.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -507,14 +534,14 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	clusterName := cloudSpec.Name
 
-	nodeGroups, err := eksprovider.ListNodegroups(client, clusterName)
+	nodeGroups, err := eksprovider.ListNodegroups(ctx, client, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -527,9 +554,9 @@ func getEKSNodeGroups(ctx context.Context, cluster *kubermaticv1.ExternalCluster
 	}
 
 	for _, nodeGroupName := range nodeGroups {
-		readyReplicasCount := kuberneteshelper.GetNodeGroupReadyCount(nodes, resources.EKSNodeGroupNameLabel, *nodeGroupName)
+		readyReplicasCount := kuberneteshelper.GetNodeGroupReadyCount(nodes, resources.EKSNodeGroupNameLabel, nodeGroupName)
 
-		nodeGroup, err := eksprovider.DescribeNodeGroup(client, clusterName, *nodeGroupName)
+		nodeGroup, err := eksprovider.DescribeNodeGroup(ctx, client, clusterName, nodeGroupName)
 		if err != nil {
 			return nil, err
 		}
@@ -547,7 +574,7 @@ func getEKSNodeGroup(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +589,7 @@ func getEKSMachineDeployment(ctx context.Context,
 	clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
 	clusterName := cluster.Spec.CloudSpec.EKS.Name
 
-	nodeGroup, err := eksprovider.DescribeNodeGroup(client, clusterName, nodeGroupName)
+	nodeGroup, err := eksprovider.DescribeNodeGroup(ctx, client, clusterName, nodeGroupName)
 	if err != nil {
 		return nil, err
 	}
@@ -578,17 +605,17 @@ func getEKSMachineDeployment(ctx context.Context,
 	return &machineDeployment, err
 }
 
-func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
+func createMachineDeploymentFromEKSNodePool(nodeGroup *ekstypes.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
 	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
-				ID:   aws.StringValue(nodeGroup.NodegroupName),
-				Name: aws.StringValue(nodeGroup.NodegroupName),
+				ID:   pointer.StringDeref(nodeGroup.NodegroupName, ""),
+				Name: pointer.StringDeref(nodeGroup.NodegroupName, ""),
 			},
 			Spec: apiv1.NodeDeploymentSpec{
 				Template: apiv1.NodeSpec{
 					Versions: apiv1.NodeVersionInfo{
-						Kubelet: aws.StringValue(nodeGroup.Version),
+						Kubelet: pointer.StringDeref(nodeGroup.Version, ""),
 					},
 				},
 			},
@@ -600,15 +627,15 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 	}
 
 	md.Cloud.EKS = &apiv2.EKSMachineDeploymentCloudSpec{
-		Subnets:       aws.StringValueSlice(nodeGroup.Subnets),
-		NodeRole:      aws.StringValue(nodeGroup.NodeRole),
-		AmiType:       aws.StringValue(nodeGroup.AmiType),
-		CapacityType:  aws.StringValue(nodeGroup.CapacityType),
-		DiskSize:      aws.Int64Value(nodeGroup.DiskSize),
-		InstanceTypes: aws.StringValueSlice(nodeGroup.InstanceTypes),
+		Subnets:       nodeGroup.Subnets,
+		NodeRole:      pointer.StringDeref(nodeGroup.NodeRole, ""),
+		AmiType:       string(nodeGroup.AmiType),
+		CapacityType:  string(nodeGroup.CapacityType),
+		DiskSize:      pointer.Int32Deref(nodeGroup.DiskSize, 0),
+		InstanceTypes: nodeGroup.InstanceTypes,
 		Labels:        nodeGroup.Labels,
 		Tags:          nodeGroup.Tags,
-		Version:       aws.StringValue(nodeGroup.Version),
+		Version:       pointer.StringDeref(nodeGroup.Version, ""),
 	}
 
 	if nodeGroup.CreatedAt != nil {
@@ -617,25 +644,23 @@ func createMachineDeploymentFromEKSNodePool(nodeGroup *eks.Nodegroup, readyRepli
 
 	scalingConfig := nodeGroup.ScalingConfig
 	if scalingConfig != nil {
-		md.NodeDeployment.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
-		md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+		md.NodeDeployment.Status.Replicas = pointer.Int32Deref(scalingConfig.DesiredSize, 0)
+		md.Spec.Replicas = pointer.Int32Deref(scalingConfig.DesiredSize, 0)
 		md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
-			DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
-			MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
-			MinSize:     aws.Int64Value(scalingConfig.MinSize),
+			DesiredSize: pointer.Int32Deref(scalingConfig.DesiredSize, 0),
+			MaxSize:     pointer.Int32Deref(scalingConfig.MaxSize, 0),
+			MinSize:     pointer.Int32Deref(scalingConfig.MinSize, 0),
 		}
 	}
 
-	if nodeGroup.Status != nil {
-		md.Phase = apiv2.ExternalClusterMDPhase{
-			State: eksprovider.ConvertMDStatus(*nodeGroup.Status),
-		}
+	md.Phase = apiv2.ExternalClusterMDPhase{
+		State: eksprovider.ConvertMDStatus(nodeGroup.Status),
 	}
 
 	return md
 }
 
-func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchEKSMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
 	cloudSpec := cluster.Spec.CloudSpec.EKS
 
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
@@ -643,7 +668,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -659,7 +684,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 	currentVersion := oldMD.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := newMD.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredReplicas != currentReplicas {
-		_, err = eksprovider.ResizeNodeGroup(client, clusterName, nodeGroupName, int64(currentReplicas), int64(desiredReplicas))
+		_, err = eksprovider.ResizeNodeGroup(ctx, client, clusterName, nodeGroupName, currentReplicas, desiredReplicas)
 		if err != nil {
 			return nil, err
 		}
@@ -669,7 +694,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 	}
 
 	if desiredVersion != currentVersion {
-		_, err = eksprovider.UpgradeNodeGroup(client, &clusterName, &nodeGroupName, &currentVersion, &desiredVersion)
+		_, err = eksprovider.UpgradeNodeGroup(ctx, client, &clusterName, &nodeGroupName, &currentVersion, &desiredVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -680,7 +705,7 @@ func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeploym
 	return newMD, nil
 }
 
-func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
+func deleteEKSNodeGroup(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeGroupName string, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector, clusterProvider provider.ExternalClusterProvider) error {
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cluster.Spec.CloudSpec.EKS, secretKeySelector)
 	if err != nil {
 		return err
@@ -688,12 +713,12 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 
 	clusterCloudSpec := cluster.Spec.CloudSpec
 	eksClusterCloudSpec := clusterCloudSpec.EKS
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", eksClusterCloudSpec.Region)
 	if err != nil {
 		return err
 	}
 
-	return eksprovider.DeleteNodegroup(client, eksClusterCloudSpec.Name, nodeGroupName)
+	return eksprovider.DeleteNodegroup(ctx, client, eksClusterCloudSpec.Name, nodeGroupName)
 }
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -702,10 +727,6 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		if err := req.Validate(); err != nil {
-			return nil, utilerrors.NewBadRequest(err.Error())
-		}
-
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -735,6 +756,7 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,
 		}
+
 		return providercommon.ListInstanceTypes(ctx, credential, req.Architecture)
 	}
 }
@@ -821,17 +843,54 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 	}
 }
 
+func EKSNodeRolesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(eksNoCredentialReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
+			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
+		}
+
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		cred := resources.EKSCredential{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+			Region:          RegionEndpoint,
+		}
+
+		return providercommon.ListEKSNodeRoles(ctx, cred)
+	}
+}
+
 func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalCluster, error) {
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
-	cluster, err := eksprovider.GetCluster(client, cloudSpec.Name)
+	cluster, err := eksprovider.GetCluster(ctx, client, cloudSpec.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -840,13 +899,13 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	}
 
 	clusterSpec := &apiv2.EKSClusterSpec{
-		Version:   aws.StringValue(cluster.Version),
+		Version:   pointer.StringDeref(cluster.Version, ""),
 		CreatedAt: cluster.CreatedAt,
 	}
 
 	if cluster.KubernetesNetworkConfig != nil {
 		clusterSpec.KubernetesNetworkConfig = &apiv2.EKSKubernetesNetworkConfigResponse{
-			IpFamily:        cluster.KubernetesNetworkConfig.IpFamily,
+			IpFamily:        string(cluster.KubernetesNetworkConfig.IpFamily),
 			ServiceIpv4Cidr: cluster.KubernetesNetworkConfig.ServiceIpv4Cidr,
 			ServiceIpv6Cidr: cluster.KubernetesNetworkConfig.ServiceIpv6Cidr,
 		}
@@ -876,7 +935,7 @@ func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeplo
 	return nil
 }
 
-func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+func createEKSNodePool(ctx context.Context, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
 		return nil, err
 	}
@@ -886,12 +945,12 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec, mach
 	if err != nil {
 		return nil, err
 	}
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	err = eksprovider.CreateNodeGroup(client, cloudSpec.Name, machineDeployment.Name, eksMDCloudSpec)
+	err = eksprovider.CreateNodeGroup(ctx, client, cloudSpec.Name, machineDeployment.Name, eksMDCloudSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -908,12 +967,12 @@ func deleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 		return err
 	}
 
-	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
+	client, err := awsprovider.GetClientSet(ctx, accessKeyID, secretAccessKey, "", "", cloudSpec.Region)
 	if err != nil {
 		return err
 	}
 
-	return eksprovider.DeleteCluster(client, cloudSpec.Name)
+	return eksprovider.DeleteCluster(ctx, client, cloudSpec.Name)
 }
 
 func EKSAMITypesEndpoint() endpoint.Endpoint {

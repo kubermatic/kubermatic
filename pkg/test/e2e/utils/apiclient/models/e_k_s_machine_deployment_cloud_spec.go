@@ -44,7 +44,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// or the node group deployment will fail. For more information about using
 	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	DiskSize int64 `json:"diskSize,omitempty"`
+	DiskSize int32 `json:"diskSize,omitempty"`
 
 	// Specify the instance types for a node group. If you specify a GPU instance
 	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you

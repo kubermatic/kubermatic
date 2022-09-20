@@ -640,7 +640,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
 				return nil, err
 			}
-			return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
+			return patchEKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
 		}
 		if cloud.AKS != nil {
 			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
@@ -1049,7 +1049,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status.State = apiv2.RunningExternalClusterState
 	} else {
 		if cloud.EKS != nil {
-			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud.EKS)
+			eksStatus, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ErrorExternalClusterState,

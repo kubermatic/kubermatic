@@ -17,137 +17,113 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/smithy-go"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
+)
+
+const (
+	maxRetries = 3
 )
 
 type ClientSet struct {
-	EC2 ec2iface.EC2API
-	EKS eksiface.EKSAPI
-	IAM iamiface.IAMAPI
+	EC2 *ec2.Client
+	EKS *eks.Client
+	IAM *iam.Client
 }
 
-func ValidateCredentials(accessKeyID, secretAccessKey string) error {
-	config := aws.NewConfig().WithRegion("us-east-2").WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).WithMaxRetries(3)
-	awsSession, err := session.NewSession(config)
+type endpointResolver struct {
+	Url string
+}
+
+func (e *endpointResolver) ResolveEndpoint(service, region string, options ...interface{}) (aws.Endpoint, error) {
+	return aws.Endpoint{
+		URL:           e.Url,
+		SigningName:   service,
+		SigningRegion: region,
+	}, nil
+}
+
+func ValidateCredentials(ctx context.Context, accessKeyID, secretAccessKey string) error {
+	cfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion("us-east-2"),
+		awsconfig.WithCredentialsProvider(awscredentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+		awsconfig.WithRetryMaxAttempts(maxRetries),
+	)
+
 	if err != nil {
 		return err
 	}
-	client := ec2.New(awsSession)
-	_, err = client.DescribeRegions(&ec2.DescribeRegionsInput{})
+
+	client := ec2.NewFromConfig(cfg)
+	_, err = client.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
 	return err
 }
 
-func GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
-	return getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
+func GetClientSet(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
+	return getClientSet(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
 }
 
-func getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
-	config := aws.
-		NewConfig().
-		WithRegion(region).
-		WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
-		WithMaxRetries(3)
+func GetAWSConfig(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (aws.Config, error) {
+	cfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion(region),
+		awsconfig.WithCredentialsProvider(awscredentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+		awsconfig.WithRetryMaxAttempts(maxRetries),
+	)
 
-	// Overriding the API endpoint is mostly useful for integration tests,
-	// when running against a localstack container, for example.
-	if endpoint != "" {
-		config = config.WithEndpoint(endpoint)
-	}
-
-	awsSession, err := session.NewSession(config)
 	if err != nil {
-		return awsSession, err
+		return aws.Config{}, err
 	}
 
-	// Assume IAM role of e.g. external AWS account if configured
+	if endpoint != "" {
+		resolver := endpointResolver{Url: endpoint}
+		cfg.EndpointResolverWithOptions = &resolver
+	}
+
 	if assumeRoleARN != "" {
-		return getAssumeRoleSession(awsSession, assumeRoleARN, assumeRoleExternalID, region, endpoint)
+		stsSvc := sts.NewFromConfig(cfg)
+		creds := stscreds.NewAssumeRoleProvider(stsSvc, assumeRoleARN,
+			func(o *stscreds.AssumeRoleOptions) {
+				o.ExternalID = pointer.String(assumeRoleExternalID)
+			},
+		)
+
+		cfg.Credentials = creds
 	}
 
-	return awsSession, nil
+	return cfg, nil
 }
 
-func getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*ClientSet, error) {
-	sess, err := getAWSSession(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint)
+func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*ClientSet, error) {
+	cfg, err := GetAWSConfig(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
 	return &ClientSet{
-		EC2: ec2.New(sess),
-		EKS: eks.New(sess),
-		IAM: iam.New(sess),
+		EC2: ec2.NewFromConfig(cfg),
+		EKS: eks.NewFromConfig(cfg),
+		IAM: iam.NewFromConfig(cfg),
 	}, nil
 }
 
 var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
 
 func isNotFound(err error) bool {
-	var awsErr awserr.Error
+	var aerr smithy.APIError
 
-	return errors.As(err, &awsErr) && notFoundErrors.Has(awsErr.Code())
-}
-
-// getAssumeRoleSession uses an existing AWS session to assume an IAM role which may be in an external AWS account.
-func getAssumeRoleSession(awsSession *session.Session, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
-	assumeRoleOutput, err := getAssumeRoleCredentials(awsSession, assumeRoleARN, assumeRoleExternalID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve temporary AWS credentials for assumed role: %w", err)
-	}
-
-	assumedRoleConfig := aws.NewConfig()
-	assumedRoleConfig = assumedRoleConfig.WithRegion(region)
-	assumedRoleConfig = assumedRoleConfig.WithCredentials(credentials.NewStaticCredentials(*assumeRoleOutput.Credentials.AccessKeyId,
-		*assumeRoleOutput.Credentials.SecretAccessKey,
-		*assumeRoleOutput.Credentials.SessionToken))
-	assumedRoleConfig = assumedRoleConfig.WithMaxRetries(3)
-
-	if endpoint != "" {
-		assumedRoleConfig = assumedRoleConfig.WithEndpoint(endpoint)
-	}
-
-	awsSession, err = session.NewSession(assumedRoleConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create API session with temporary credentials for an assumed IAM role: %w", err)
-	}
-
-	return awsSession, err
-}
-
-// getAssumeRoleCredentials calls the AWS Security Token Service to retrieve temporary credentials for an assumed IAM role.
-func getAssumeRoleCredentials(session *session.Session, assumeRoleARN string, assumeRoleExternalID string) (*sts.AssumeRoleOutput, error) {
-	stsSession := sts.New(session)
-	sessionName := "kubermatic-machine-controller-assume-role"
-
-	assumeRoleInput := sts.AssumeRoleInput{
-		RoleArn:         &assumeRoleARN,
-		RoleSessionName: &sessionName,
-	}
-
-	// External IDs are optional
-	if assumeRoleExternalID != "" {
-		assumeRoleInput.ExternalId = &assumeRoleExternalID
-	}
-
-	output, err := stsSession.AssumeRole(&assumeRoleInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call AWS STS to assume IAM role: %w", err)
-	}
-
-	return output, nil
+	return errors.As(err, &aerr) && notFoundErrors.Has(aerr.ErrorCode())
 }
