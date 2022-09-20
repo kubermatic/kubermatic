@@ -28,15 +28,15 @@ REALDIR="$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))" && pwd)"
 source ${REALDIR}/lib.sh
 
 cd ${BASEDIR}
-chartname=$(yq '.name' Chart.yaml)
+chartname=$(yq e '.name' Chart.yaml)
 echodate "(Golden master) Testing ${chartname}..."
 exitCode=0
 
 set +o errexit
-helm version
+echodate "using helm: $(helm version)"
 echodate "Fetching dependencies..."
 i=0
-for url in $(yq '.dependencies.[].repository' Chart.yaml); do
+for url in $(yq e '.dependencies.[].repository' Chart.yaml); do
   i=$((i + 1))
   helm repo add ${chartname}-dep-${i} ${url}
 done
