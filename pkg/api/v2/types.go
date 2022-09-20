@@ -1895,3 +1895,17 @@ type ClusterServiceAccount struct {
 	apiv1.ObjectMeta `json:",inline"`
 	Namespace        string `json:"namespace,omitempty"`
 }
+
+// ApplicationDefinition is the object representing an ApplicationDefinitionListItem.
+// swagger:model ApplicationDefinitionListItem
+type ApplicationDefinitionListItem struct {
+	Name string `json:"name"`
+
+	Spec ApplicationDefinitionListItemSpec `json:"spec"`
+}
+
+// ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
+type ApplicationDefinitionListItemSpec struct {
+	// Description of the application. what is its purpose
+	Description string `json:"description"`
+}

@@ -24206,6 +24206,32 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ApplicationDefinitionListItem": {
+      "type": "object",
+      "title": "ApplicationDefinition is the object representing an ApplicationDefinitionListItem.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ApplicationDefinitionListItemSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationDefinitionListItemSpec": {
+      "type": "object",
+      "title": "ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.",
+      "properties": {
+        "description": {
+          "description": "Description of the application. what is its purpose",
+          "type": "string",
+          "x-go-name": "Description"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ApplicationDefinitionSpec": {
       "type": "object",
       "title": "ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.",

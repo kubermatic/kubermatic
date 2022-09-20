@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -35,21 +34,20 @@ func ListApplicationDefinitions(applicationDefinitionProvider provider.Applicati
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		definitions := make([]*apiv2.ApplicationDefinition, len(defList.Items))
+		definitions := make([]*apiv2.ApplicationDefinitionListItem, len(defList.Items))
 		for i := range defList.Items {
-			definitions[i] = convertInternalToExternal(&defList.Items[i])
+			definitions[i] = convertInternalToAPIApplicationDefinitionForList(&defList.Items[i])
 		}
 
 		return definitions, nil
 	}
 }
 
-func convertInternalToExternal(appDef *appskubermaticv1.ApplicationDefinition) *apiv2.ApplicationDefinition {
-	return &apiv2.ApplicationDefinition{
-		ObjectMeta: apiv1.ObjectMeta{
-			CreationTimestamp: apiv1.Time(appDef.CreationTimestamp),
-			Name:              appDef.Name,
+func convertInternalToAPIApplicationDefinitionForList(appDef *appskubermaticv1.ApplicationDefinition) *apiv2.ApplicationDefinitionListItem {
+	return &apiv2.ApplicationDefinitionListItem{
+		Name: appDef.Name,
+		Spec: apiv2.ApplicationDefinitionListItemSpec{
+			Description: appDef.Spec.Description,
 		},
-		Spec: &appDef.Spec,
 	}
 }
