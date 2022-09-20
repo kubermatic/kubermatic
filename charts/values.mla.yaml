@@ -1,0 +1,652 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+consul:
+  client:
+    enabled: false
+  server:
+    replicas: 3
+    # we need a more relaxed affinity as the default one, so
+    # the chart can be run on the e2e clusters which have
+    # fewer nodes than consul replicas
+    affinity: |
+      podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app: {{ template "consul.name" . }}
+                      release: "{{ .Release.Name }}"
+                      component: server
+                  topologyKey: kubernetes.io/hostname
+cortex:
+  ingress:
+    enabled: false
+
+  distributor:
+    replicas: 2
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+
+  ruler:
+    replicas: 1
+    extraArgs:
+      ruler.storage.s3.access-key-id: $(ACCESS_KEY)
+      ruler.storage.s3.secret-access-key: $(SECRET_KEY)
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    resources:
+      requests:
+        cpu: 5m
+
+  compactor:
+    replicas: 1
+    persistentVolume:
+      enabled: true
+      storageClass: "kubermatic-fast"
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+
+  store_gateway:
+    replicas: 1
+    persistentVolume:
+      enabled: true
+      storageClass: "kubermatic-fast"
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    resources:
+      requests:
+        cpu: 5m
+
+  ingester:
+    replicas: 3
+    statefulSet:
+      enabled: true
+    persistentVolume:
+      enabled: true
+      storageClass: "kubermatic-fast"
+      size: 10Gi
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    podAnnotations:
+      prometheus.io/port: "8080"
+
+  querier:
+    replicas: 1
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    resources:
+      requests:
+        cpu: 5m
+
+  query_frontend:
+    replicas: 1
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    resources:
+      requests:
+        cpu: 5m
+
+  tags:
+    blocks-storage-memcached: true
+
+  nginx:
+    enabled: false
+
+  alertmanager:
+    replicas: 2
+    statefulSet:
+      enabled: true
+    persistentVolume:
+      enabled: true
+      storageClass: "kubermatic-fast"
+    extraArgs:
+      alertmanager.storage.s3.access-key-id: $(ACCESS_KEY)
+      alertmanager.storage.s3.secret-access-key: $(SECRET_KEY)
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    podAnnotations:
+      prometheus.io/port: "8080"
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: storage
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: target
+                    operator: In
+                    values:
+                      - alertmanager
+              topologyKey: "kubernetes.io/hostname"
+
+  config:
+    auth_enabled: true
+    ingester:
+      lifecycler:
+        ring:
+          kvstore:
+            store: memberlist
+    distributor:
+      ha_tracker:
+        enable_ha_tracker: true
+        # consul is required as ha_tracker does not support memberlist
+        kvstore:
+          store: consul
+          consul:
+            host: consul-consul-server:8500
+      ring:
+        kvstore:
+          store: memberlist
+    store_gateway:
+      sharding_enabled: true
+      sharding_ring:
+        replication_factor: 2
+        kvstore:
+          store: memberlist
+    compactor:
+      block_deletion_marks_migration_enabled: false
+      data_dir: /data/cortex/compactor
+      compaction_interval: 30m
+      sharding_enabled: true
+      sharding_ring:
+        kvstore:
+          store: memberlist
+    memberlist:
+      join_members:
+        - cortex-ingester-headless
+    runtime_config:
+      period: "10s"
+      file: "/etc/cortex-runtime-cfg/runtime-config.yaml"
+    ruler:
+      enable_alertmanager_discovery: true
+      # This is a KKP-specific headless alertmanager service, used to work around the Cortex helm chart bug in chart versions below v1.0.0
+      alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless-kkp/api/prom/alertmanager/
+      enable_api: true
+      ring:
+        kvstore:
+          store: memberlist
+      storage:
+        type: s3
+        s3:
+          bucketnames: "cortex-ruler"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
+    alertmanager:
+      enable_api: true
+      data_dir: /data/cortex/alert-data
+      storage:
+        type: s3
+        s3:
+          bucketnames: "alertmanager"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
+    querier:
+      query_store_after: 360m
+      query_ingesters_within: 365m
+    storage:
+      engine: blocks
+    blocks_storage:
+      backend: s3
+      bucket_store:
+        bucket_index:
+          enabled: true
+        sync_dir: /data
+        ignore_deletion_mark_delay: 1h
+      s3:
+        bucket_name: "cortex"
+        endpoint: "minio:9000"
+        insecure: true
+      tsdb:
+        dir: /data
+        retention_period: 365m
+        close_idle_tsdb_timeout: 365m
+        wal_compression_enabled: true
+        flush_blocks_on_shutdown: true
+    limits:
+      max_query_lookback: 168h
+      accept_ha_samples: true
+      max_label_names_per_series: 40
+
+  runtimeconfigmap:
+    # -- If true, a configmap for the `runtime_config` will be created.
+    # If false, the configmap _must_ exist already on the cluster or pods will fail to create.
+    create: false
+
+  memcached-blocks-metadata:
+    resources:
+      requests:
+        cpu: 5m
+    serviceAccount:
+      create: false
+
+  memcached-blocks-index:
+    resources:
+      requests:
+        cpu: 5m
+    serviceAccount:
+      create: false
+
+  memcached-blocks:
+    resources:
+      requests:
+        cpu: 5m
+    serviceAccount:
+      create: false
+grafana:
+  service:
+    type: ClusterIP
+
+  replicas: 1
+
+  admin:
+    existingSecret: grafana
+    userKey: admin-user
+    passwordKey: admin-password
+
+  persistence:
+    type: statefulset
+    enabled: true
+    storageClassName: "kubermatic-fast"
+
+  grafana.ini:
+    auth.proxy:
+      enabled: true
+      header_name: "X-Forwarded-Email"
+      header_property: "username"
+      auto_sign_up: "true"
+
+  # Uncomment the following lines to enable alerting feature (alpha)
+  #  plugins:
+  #    enable_alpha: true
+  #  feature_toggles:
+  #    enable: ngalert
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        folder: ''
+        org_id: 1
+        type: file
+        disableDeletion: false
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+  dashboards:
+    default:
+loki-distributed:
+  loki:
+    config: |
+      server:
+        http_listen_port: 3100
+      distributor:
+        ring:
+          kvstore:
+            store: memberlist
+      memberlist:
+        join_members:
+          - {{ include "loki.fullname" . }}-memberlist
+      ingester:
+        lifecycler:
+          ring:
+            kvstore:
+              store: memberlist
+            replication_factor: 3
+        chunk_idle_period: 30m
+        chunk_block_size: 262144
+        chunk_encoding: snappy
+        chunk_retain_period: 1m
+        max_transfer_retries: 0
+        wal:
+          dir: /var/loki/wal
+      limits_config:
+        enforce_metric_name: false
+        reject_old_samples: true
+        reject_old_samples_max_age: 168h
+        max_cache_freshness_per_query: 10m
+      schema_config:
+        configs:
+          - chunks:
+              period: 360h
+              prefix: loki_chunk_
+            from: "2021-02-01"
+            index:
+              period: 24h
+              prefix: loki_index_
+            object_store: aws
+            schema: v11
+            store: boltdb-shipper
+      storage_config:
+        boltdb_shipper:
+          shared_store: aws
+          active_index_directory: /var/loki/index
+          cache_location: /var/loki/cache
+          cache_ttl: 168h
+        aws:
+          bucketnames: "loki"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
+      chunk_store_config:
+        max_look_back_period: 168h
+      table_manager:
+        creation_grace_period: 3h
+        poll_interval: 10m
+        retention_deletes_enabled: false
+        retention_period: 0s
+      query_range:
+        align_queries_with_step: true
+        max_retries: 5
+        split_queries_by_interval: 15m
+        cache_results: true
+        results_cache:
+          cache:
+            enable_fifocache: true
+            fifocache:
+              max_size_items: 1024
+              validity: 24h
+      frontend_worker:
+        frontend_address: {{ include "loki.queryFrontendFullname" . }}:9095
+      frontend:
+        log_queries_longer_than: 5s
+        compress_responses: true
+      compactor:
+        shared_store: aws
+      ruler:
+        enable_api: true
+        storage:
+          type: s3
+          s3:
+            bucketnames: "loki-ruler"
+            endpoint: "minio:9000"
+            s3forcepathstyle: true
+            insecure: true
+        ring:
+          kvstore:
+            store: memberlist
+        rule_path: /tmp/loki/scratch
+        # This is a KKP-specific headless alertmanager service, used to work around the Cortex helm chart bug in chart versions below v1.0.0
+        alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless-kkp/api/prom/alertmanager/
+
+  tableManager:
+    enabled: true
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+    extraEnvFrom:
+      - secretRef:
+          name: minio
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+
+  memcachedExporter:
+    enabled: true
+
+  memcachedChunks:
+    enabled: true
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
+
+  memcachedFrontend:
+    enabled: true
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
+
+  memcachedIndexQueries:
+    enabled: true
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
+
+  memcachedIndexWrites:
+    enabled: true
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
+
+  distributor:
+    replicas: 2
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+  ingester:
+    replicas: 3
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+    extraEnvFrom:
+      - secretRef:
+          name: minio
+    persistence:
+      enabled: true
+      storageClass: "kubermatic-fast"
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+  querier:
+    replicas: 1
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+    extraEnvFrom:
+      - secretRef:
+          name: minio
+    persistence:
+      enabled: true
+      storageClass: "kubermatic-fast"
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+  queryFrontend:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+  gateway:
+    enabled: false
+
+  ruler:
+    enabled: true
+    replicas: 1
+    extraArgs:
+      - -ruler.storage.s3.access-key-id=$(rootUser)
+      - -ruler.storage.s3.secret-access-key=$(rootPassword)
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+      - -ruler.alertmanager-discovery
+    extraEnvFrom:
+      - secretRef:
+          name: minio
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+  compactor:
+    enabled: true
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+    extraEnvFrom:
+      - secretRef:
+          name: minio
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+
+lifecycleMgr:
+  buckets:
+    - name: cortex
+      expirationDays: 8
+    - name: loki
+      expirationDays: 8
+minio:
+  DeploymentUpdate:
+    type: Recreate
+  replicas: 1
+  existingSecret: minio
+  persistence:
+    enabled: true
+    storageClass: "kubermatic-fast"
+    size: 50Gi
+  buckets:
+    - name: alertmanager
+      policy: public
+    - name: cortex
+      policy: public
+    - name: cortex-ruler
+      policy: public
+    - name: loki
+      policy: public
+    - name: loki-ruler
+      policy: public
+
+mlaSecrets:
+  grafana:
+    ## Set enabled to false if you want to re-use an existing secret for grafana.
+    enabled: true
+    adminuser: admin
+
+  minio:
+    ## Set enabled to false if you want to re-use an existing secret for minio.
+    enabled: true
