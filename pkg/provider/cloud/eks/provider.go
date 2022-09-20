@@ -33,6 +33,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
@@ -43,7 +44,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-const EKSNodeGroupStatus = "ACTIVE"
+const (
+	EKSNodeGroupStatus = "ACTIVE"
+)
 
 func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, region, endpoint string) (*awsprovider.ClientSet, error) {
 	cfg, err := awsprovider.GetAWSConfig(ctx, accessKeyID, secretAccessKey, "", "", region, endpoint)
@@ -279,20 +282,32 @@ func CreateNodeGroup(ctx context.Context,
 	client *awsprovider.ClientSet,
 	clusterName, nodeGroupName string,
 	eksMDCloudSpec *apiv2.EKSMachineDeploymentCloudSpec) error {
+	// AmiType value is fetched from user provided AmiType value in eksMDCloudSpec
+	// If user does not provides the AmiType, then AmiType is determined using the user provided machine Architecture, if provided.
+	var amiType string
+	switch {
+	case len(eksMDCloudSpec.AmiType) > 0:
+		amiType = eksMDCloudSpec.AmiType
+	case eksMDCloudSpec.Architecture == handlercommon.EKSARM64Architecture:
+		amiType = string(ekstypes.AMITypesAl2Arm64)
+	case eksMDCloudSpec.Architecture == handlercommon.EKSX86_64Architecture:
+		amiType = string(ekstypes.AMITypesAl2X8664)
+	}
+
 	createInput := &eks.CreateNodegroupInput{
 		ClusterName:   aws.String(clusterName),
 		NodegroupName: aws.String(nodeGroupName),
 		Subnets:       eksMDCloudSpec.Subnets,
 		NodeRole:      aws.String(eksMDCloudSpec.NodeRole),
-		AmiType:       ekstypes.AMITypes(eksMDCloudSpec.AmiType),
+		AmiType:       ekstypes.AMITypes(amiType),
 		CapacityType:  ekstypes.CapacityTypes(eksMDCloudSpec.CapacityType),
-		DiskSize:      pointer.Int32(eksMDCloudSpec.DiskSize),
+		DiskSize:      aws.Int32(eksMDCloudSpec.DiskSize),
 		InstanceTypes: eksMDCloudSpec.InstanceTypes,
 		Labels:        eksMDCloudSpec.Labels,
 		ScalingConfig: &ekstypes.NodegroupScalingConfig{
-			DesiredSize: pointer.Int32(eksMDCloudSpec.ScalingConfig.DesiredSize),
-			MaxSize:     pointer.Int32(eksMDCloudSpec.ScalingConfig.MaxSize),
-			MinSize:     pointer.Int32(eksMDCloudSpec.ScalingConfig.MinSize),
+			DesiredSize: aws.Int32(eksMDCloudSpec.ScalingConfig.DesiredSize),
+			MaxSize:     aws.Int32(eksMDCloudSpec.ScalingConfig.MaxSize),
+			MinSize:     aws.Int32(eksMDCloudSpec.ScalingConfig.MinSize),
 		},
 	}
 	_, err := client.EKS.CreateNodegroup(ctx, createInput)

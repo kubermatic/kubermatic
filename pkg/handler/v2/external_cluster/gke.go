@@ -738,6 +738,36 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 	return nil
 }
 
+// GKEVMReq represent a request for GKE VM.
+// swagger:parameters listGKEImages listGKEVMSizes listGKEDiskTypes
+type GKEVMReq struct {
+	GKECommonReq
+	// The zone name
+	// in: header
+	// name: Zone
+	Zone string
+}
+
+// GKEVersionsReq represent a request for GKE versions.
+// swagger:parameters listGKEVersions
+type GKEVersionsReq struct {
+	GKECommonReq
+	// The zone name
+	// in: header
+	// name: Zone
+	Zone string
+	// The Mode is how you want GKE Control plane version to be managed.
+	// Manual: Manually manage the version upgrades.
+	// Auto: automatically manage the cluster's control plane version.
+	// in: header
+	// name: Mode
+	Mode string
+	// The ReleaseChannel
+	// in: header
+	// name: ReleaseChannel
+	ReleaseChannel string
+}
+
 func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(GKEVersionsReq)
@@ -805,16 +835,6 @@ func (req GKEVersionsReq) Validate() error {
 	return nil
 }
 
-// GKEVMReq represent a request for GKE VM.
-// swagger:parameters listGKEImages listGKEVMSizes listGKEDiskTypes
-type GKEVMReq struct {
-	GKECommonReq
-	// The zone name
-	// in: header
-	// name: Zone
-	Zone string
-}
-
 func DecodeGKEVMReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GKEVMReq
 
@@ -827,26 +847,6 @@ func DecodeGKEVMReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.Zone = r.Header.Get("Zone")
 
 	return req, nil
-}
-
-// GKEVersionsReq represent a request for GKE versions.
-// swagger:parameters listGKEVersions
-type GKEVersionsReq struct {
-	GKECommonReq
-	// The zone name
-	// in: header
-	// name: Zone
-	Zone string
-	// The Mode is how you want GKE Control plane version to be managed.
-	// Manual: Manually manage the version upgrades.
-	// Auto: automatically manage the cluster's control plane version.
-	// in: header
-	// name: Mode
-	Mode string
-	// The ReleaseChannel
-	// in: header
-	// name: ReleaseChannel
-	ReleaseChannel string
 }
 
 func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -863,13 +863,6 @@ func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, erro
 	req.Mode = r.Header.Get("Mode")
 
 	return req, nil
-}
-
-// GKEClusterListReq represent a request for GKE cluster list.
-// swagger:parameters listGKEClusters
-type GKEClusterListReq struct {
-	common.ProjectReq
-	GKECommonReq
 }
 
 func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -893,19 +886,6 @@ func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, e
 // swagger:parameters validateGKECredentials
 type GKETypesReq struct {
 	GKECommonReq
-}
-
-// GKECommonReq represent a request with common parameters for GKE.
-// swagger:parameters validateGKECredentials listGKEZones
-type GKECommonReq struct {
-	// The plain GCP service account
-	// in: header
-	// name: ServiceAccount
-	ServiceAccount string
-	// The credential name used in the preset for the GCP provider
-	// in: header
-	// name: Credential
-	Credential string
 }
 
 func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -993,6 +973,25 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 		}
 		return gkeprovider.ListZones(ctx, sa)
 	}
+}
+
+// GKECommonReq represent a request with common parameters for GKE.
+type GKECommonReq struct {
+	// The plain GCP service account
+	// in: header
+	// name: ServiceAccount
+	ServiceAccount string
+	// The credential name used in the preset for the GCP provider
+	// in: header
+	// name: Credential
+	Credential string
+}
+
+// GKEClusterListReq represent a request for GKE cluster list.
+// swagger:parameters listGKEClusters
+type GKEClusterListReq struct {
+	common.ProjectReq
+	GKECommonReq
 }
 
 func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {

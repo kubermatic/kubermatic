@@ -32,6 +32,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -166,6 +167,43 @@ func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, 
 	req.GetClusterReq = re.(GetClusterReq)
 
 	return req, nil
+}
+
+// eksNoCredentialSizeReq represent a request for EKS VM sizes.
+// swagger:parameters listEKSInstanceTypesNoCredentials
+type eksNoCredentialSizeReq struct {
+	GetClusterReq
+
+	// architecture query parameter. Supports: arm64 and x86_64 types.
+	// in: query
+	Architecture string `json:"architecture,omitempty"`
+}
+
+func DecodeEKSNoCredentialSizeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req eksNoCredentialSizeReq
+	re, err := DecodeGetReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = re.(GetClusterReq)
+
+	req.Architecture = r.URL.Query().Get("architecture")
+	if len(req.Architecture) > 0 {
+		if req.Architecture == handlercommon.EKSARM64Architecture || req.Architecture == handlercommon.EKSX86_64Architecture {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query parameter, unsupported architecture: %s", req.Architecture)
+	}
+
+	return req, nil
+}
+
+func (req eksNoCredentialSizeReq) Validate() error {
+	if err := req.GetClusterReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // eksSubnetsNoCredentialReq represent a request for EKS resources
@@ -685,7 +723,7 @@ func deleteEKSNodeGroup(ctx context.Context, cluster *kubermaticv1.ExternalClust
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(eksNoCredentialReq)
+		req, ok := request.(eksNoCredentialSizeReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
@@ -718,7 +756,8 @@ func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.User
 			SecretAccessKey: secretAccessKey,
 			Region:          cloudSpec.Region,
 		}
-		return providercommon.ListInstanceTypes(ctx, credential)
+
+		return providercommon.ListInstanceTypes(ctx, credential, req.Architecture)
 	}
 }
 

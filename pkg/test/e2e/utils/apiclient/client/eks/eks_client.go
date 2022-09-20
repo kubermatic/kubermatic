@@ -172,7 +172,7 @@ func (a *Client) ListEKSClusterRoles(params *ListEKSClusterRolesParams, authInfo
 }
 
 /*
-ListEKSInstanceTypesNoCredentials gets the e k s instance types for node group
+ListEKSInstanceTypesNoCredentials gets the e k s instance types for node group based on architecture
 */
 func (a *Client) ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSInstanceTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
