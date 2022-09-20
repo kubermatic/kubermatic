@@ -1896,7 +1896,7 @@ type ClusterServiceAccount struct {
 	Namespace        string `json:"namespace,omitempty"`
 }
 
-// ApplicationDefinition is the object representing an ApplicationDefinitionListItem.
+// ApplicationDefinitionListItem is the object representing an ApplicationDefinitionListItem.
 // swagger:model ApplicationDefinitionListItem
 type ApplicationDefinitionListItem struct {
 	Name string `json:"name"`
@@ -1904,7 +1904,7 @@ type ApplicationDefinitionListItem struct {
 	Spec ApplicationDefinitionListItemSpec `json:"spec"`
 }
 
-// ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
+// ApplicationDefinitionListItemSpec defines the desired state of ApplicationDefinitionListItemSpec.
 type ApplicationDefinitionListItemSpec struct {
 	// Description of the application. what is its purpose
 	Description string `json:"description"`
