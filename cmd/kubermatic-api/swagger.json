@@ -24364,6 +24364,53 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ApplicationInstallationListItem": {
+      "type": "object",
+      "title": "ApplicationInstallationListItem is the object representing an ApplicationInstallationListItem.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ApplicationInstallationListItemSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ApplicationInstallationListItemStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationInstallationListItemSpec": {
+      "type": "object",
+      "title": "ApplicationInstallationListItemSpec is the object representing an ApplicationInstallationListItemSpec.",
+      "properties": {
+        "applicationRef": {
+          "$ref": "#/definitions/ApplicationRef"
+        },
+        "namespace": {
+          "$ref": "#/definitions/NamespaceSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ApplicationInstallationListItemStatus": {
+      "type": "object",
+      "properties": {
+        "conditions": {
+          "description": "Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApplicationInstallationCondition"
+          },
+          "x-go-name": "Conditions"
+        },
+        "method": {
+          "$ref": "#/definitions/TemplateMethod"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ApplicationInstallationSpec": {
       "type": "object",
       "properties": {

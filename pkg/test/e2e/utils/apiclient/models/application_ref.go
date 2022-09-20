@@ -19,8 +19,7 @@ import (
 // swagger:model ApplicationRef
 type ApplicationRef struct {
 
-	// Name of the Application.
-	// Should be a valid lowercase RFC1123 domain name
+	// Name of the Application
 	// Pattern: =`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	Name string `json:"name,omitempty"`
 

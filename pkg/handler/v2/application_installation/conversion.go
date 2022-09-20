@@ -74,6 +74,45 @@ func convertInternalToAPIApplicationInstallation(in *appskubermaticv1.Applicatio
 	return out
 }
 
+func convertInternalToAPIApplicationInstallationForList(in *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallationListItem {
+	out := &apiv2.ApplicationInstallationListItem{
+		Name: in.Name,
+		Spec: &apiv2.ApplicationInstallationListItemSpec{
+			Namespace: apiv2.NamespaceSpec{
+				Name:        in.Spec.Namespace.Name,
+				Create:      in.Spec.Namespace.Create,
+				Labels:      in.Spec.Namespace.Labels,
+				Annotations: in.Spec.Namespace.Annotations,
+			},
+			ApplicationRef: in.Spec.ApplicationRef,
+		},
+		Status: &apiv2.ApplicationInstallationListItemStatus{
+			Method: in.Status.Method,
+		},
+	}
+
+	// TODO @vgramer decide if we want to extract this into a separate method, as duplicate code is used in convertInternalToAPIApplicationInstallation
+	// TODO personally I don't have a strong preference
+	var apiCondition []apiv2.ApplicationInstallationCondition
+	for condType, condition := range in.Status.Conditions {
+		apiCondition = append(apiCondition, apiv2.ApplicationInstallationCondition{
+			Type:               condType,
+			Status:             condition.Status,
+			LastHeartbeatTime:  apiv1.NewTime(condition.LastHeartbeatTime.Time),
+			LastTransitionTime: apiv1.NewTime(condition.LastTransitionTime.Time),
+			Reason:             condition.Reason,
+			Message:            condition.Message,
+		})
+	}
+	// ensure a stable sorting order
+	sort.Slice(apiCondition, func(i, j int) bool {
+		return apiCondition[i].Type < apiCondition[j].Type
+	})
+	out.Status.Conditions = apiCondition
+
+	return out
+}
+
 func convertAPItoInternalApplicationInstallationBody(app *apiv2.ApplicationInstallationBody) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{

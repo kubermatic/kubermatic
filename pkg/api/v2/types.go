@@ -1751,6 +1751,34 @@ type ApplicationInstallation struct {
 	Status *ApplicationInstallationStatus `json:"status"`
 }
 
+// ApplicationInstallationListItem is the object representing an ApplicationInstallationListItem.
+// swagger:model ApplicationInstallationListItem
+type ApplicationInstallationListItem struct {
+	Name string `json:"name"`
+
+	Spec *ApplicationInstallationListItemSpec `json:"spec"`
+
+	Status *ApplicationInstallationListItemStatus `json:"status"`
+}
+
+// ApplicationInstallationListItemSpec is the object representing an ApplicationInstallationListItemSpec.
+// swagger:model ApplicationInstallationListItemSpec
+type ApplicationInstallationListItemSpec struct {
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
+
+	// ApplicationRef is a reference to identify which Application should be deployed
+	ApplicationRef appskubermaticv1.ApplicationRef `json:"applicationRef"`
+}
+
+type ApplicationInstallationListItemStatus struct {
+	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
+	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
+
+	// Method used to install the application
+	Method appskubermaticv1.TemplateMethod `json:"method"`
+}
+
 // ApplicationInstallationBody is the object representing the POST/PUT payload of an ApplicationInstallation
 // swagger:model ApplicationInstallationBody
 type ApplicationInstallationBody struct {

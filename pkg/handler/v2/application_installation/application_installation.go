@@ -60,9 +60,9 @@ func ListApplicationInstallations(userInfoGetter provider.UserInfoGetter, projec
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		installations := make([]*apiv2.ApplicationInstallation, len(installList.Items))
+		installations := make([]*apiv2.ApplicationInstallationListItem, len(installList.Items))
 		for i := range installList.Items {
-			installations[i] = convertInternalToAPIApplicationInstallation(&installList.Items[i])
+			installations[i] = convertInternalToAPIApplicationInstallationForList(&installList.Items[i])
 		}
 
 		return installations, nil
