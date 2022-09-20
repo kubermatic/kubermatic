@@ -276,7 +276,7 @@ var _ clusterSpec = openstack{}
 func (a openstack) getImage(osName string) string {
 	switch osName {
 	case Ubuntu:
-		return "Ubuntu Focal 20.04 (2021-07-01)"
+		return "kubermatic-ubuntu"
 	case CentOS:
 		return "machine-controller-e2e-centos"
 	case Flatcar:
@@ -300,7 +300,7 @@ func (a openstack) NodeSpec() models.NodeCloudSpec {
 		Openstack: &models.OpenstackNodeSpec{
 			AvailabilityZone:          "fes1",
 			Flavor:                    pointer.String("l1c.small"),
-			Image:                     pointer.String("Ubuntu Focal 20.04 (2021-07-01)"),
+			Image:                     pointer.String("kubermatic-ubuntu"),
 			InstanceReadyCheckPeriod:  "5s",
 			InstanceReadyCheckTimeout: "120s",
 			RootDiskSizeGB:            0,
@@ -416,7 +416,7 @@ var _ clusterSpec = vsphere{}
 func (a vsphere) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Vsphere: &models.VSphereNodeSpec{
-			Template:   "kkp-ubuntu-20.04",
+			Template:   "kkp-ubuntu-22.04",
 			CPUs:       2,
 			Memory:     4096,
 			DiskSizeGB: 10,

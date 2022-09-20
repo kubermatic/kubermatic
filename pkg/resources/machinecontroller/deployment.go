@@ -51,7 +51,9 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.54.0"
+	// Ref: https://github.com/kubermatic/machine-controller/commit/f405d185a750771118e20c9121c098abe04dc3fc
+	// TODO: Update this to a semver tag before release.
+	Tag = "f405d185a750771118e20c9121c098abe04dc3fc"
 )
 
 type machinecontrollerData interface {

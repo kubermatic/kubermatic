@@ -65,8 +65,6 @@ spec:
       spec:
         aws:
           region: eu-central-1
-          images:
-            ubuntu: ami-092f628832a8d22a5 # ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220523
     hetzner-hel1:
       location: Helsinki 1 DC 6
       country: DE
@@ -108,7 +106,7 @@ spec:
             centos: kkp-centos-7
             flatcar: kkp-flatcar-3033.2.2
             rhel: kkp-rhel-8.6
-            ubuntu: kkp-ubuntu-20.04
+            ubuntu: kkp-ubuntu-22.04
             rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
@@ -165,7 +163,7 @@ spec:
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
-            ubuntu: kubermatic-e2e-ubuntu
+            ubuntu: kubermatic-ubuntu
           nodeSizeRequirements:
             minimumMemory: 0
             minimumVCPUs: 0
@@ -183,7 +181,7 @@ spec:
           enforceFloatingIP: true
           images:
             centos: "CentOS 8 (2021-07-05)"
-            ubuntu: "Ubuntu Focal 20.04 (2021-07-01)"
+            ubuntu: "kubermatic-ubuntu"
             flatcar: "Flatcar Stable (2022-08-05)"
           nodeSizeRequirements:
             minimumMemory: 0
