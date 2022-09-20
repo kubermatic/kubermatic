@@ -486,7 +486,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			}
 		}
 		if cloud.EKS != nil {
-			apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud.EKS)
+			apiCluster, err = getEKSClusterDetails(apiCluster, secretKeySelector, cloud.EKS)
 			if err != nil {
 				return nil, err
 			}

@@ -33,6 +33,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
@@ -42,7 +43,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-const EKSNodeGroupStatus = "ACTIVE"
+const (
+	EKSNodeGroupStatus = "ACTIVE"
+)
 
 func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
 	config := aws.
@@ -293,12 +296,24 @@ func UpgradeClusterVersion(client *awsprovider.ClientSet, version *semverlib.Ver
 func CreateNodeGroup(client *awsprovider.ClientSet,
 	clusterName, nodeGroupName string,
 	eksMDCloudSpec *apiv2.EKSMachineDeploymentCloudSpec) error {
+	// AmiType value is fetched from user provided AmiType value in eksMDCloudSpec
+	// If user does not provides the AmiType, then AmiType is determined using the user provided machine Architecture, if provided.
+	var amiType string
+	switch {
+	case len(eksMDCloudSpec.AmiType) > 0:
+		amiType = eksMDCloudSpec.AmiType
+	case eksMDCloudSpec.Architecture == handlercommon.EKSARM64Architecture:
+		amiType = string(eks.AMITypesAl2Arm64)
+	case eksMDCloudSpec.Architecture == handlercommon.EKSX86_64Architecture:
+		amiType = string(eks.AMITypesAl2X8664)
+	}
+
 	createInput := &eks.CreateNodegroupInput{
 		ClusterName:   aws.String(clusterName),
 		NodegroupName: aws.String(nodeGroupName),
 		Subnets:       eksMDCloudSpec.Subnets,
 		NodeRole:      aws.String(eksMDCloudSpec.NodeRole),
-		AmiType:       aws.String(eksMDCloudSpec.AmiType),
+		AmiType:       aws.String(amiType),
 		CapacityType:  aws.String(eksMDCloudSpec.CapacityType),
 		DiskSize:      aws.Int64(eksMDCloudSpec.DiskSize),
 		InstanceTypes: eksMDCloudSpec.InstanceTypes,

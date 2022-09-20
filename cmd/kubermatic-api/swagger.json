@@ -13916,13 +13916,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13934,6 +13927,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18010,7 +18010,7 @@
         "tags": [
           "eks"
         ],
-        "summary": "Gets the EKS Instance types for node group.",
+        "summary": "Gets the EKS Instance types for node group based on architecture.",
         "operationId": "listEKSInstanceTypesNoCredentials",
         "parameters": [
           {
@@ -18026,6 +18026,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x86_64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18060,6 +18067,22 @@
         ],
         "summary": "List EKS Node IAM Roles.",
         "operationId": "listEKSNodeRolesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSNodeRoleList",
@@ -19171,43 +19194,28 @@
         ],
         "summary": "List EKS Cluster Service Roles.",
         "operationId": "listEKSClusterRoles",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSClusterRoleList",
             "schema": {
               "$ref": "#/definitions/EKSClusterRoleList"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/providers/eks/noderoles": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "eks"
-        ],
-        "summary": "List EKS Node IAM Roles.",
-        "operationId": "listEKSNodeRoles",
-        "responses": {
-          "200": {
-            "description": "EKSNodeRoleList",
-            "schema": {
-              "$ref": "#/definitions/EKSNodeRoleList"
             }
           },
           "401": {
@@ -19235,6 +19243,23 @@
         ],
         "summary": "List EKS regions.",
         "operationId": "listEKSRegions",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSRegionList",
@@ -26045,6 +26070,10 @@
       "type": "object",
       "title": "EKSInstanceType is the object representing EKS nodegroup instancetype..",
       "properties": {
+        "architecture": {
+          "type": "string",
+          "x-go-name": "Architecture"
+        },
         "gpus": {
           "type": "integer",
           "format": "int64",
@@ -26108,6 +26137,11 @@
           "description": "The AMI type for your node group. GPU instance types should use the AL2_x86_64_GPU\nAMI type. Non-GPU instances should use the AL2_x86_64 AMI type. Arm instances\nshould use the AL2_ARM_64 AMI type. All types use the Amazon EKS optimized\nAmazon Linux 2 AMI. If you specify launchTemplate, and your launch template\nuses a custom AMI, then don't specify amiType, or the node group deployment\nwill fail. For more information about using launch templates with Amazon\nEKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
           "type": "string",
           "x-go-name": "AmiType"
+        },
+        "architecture": {
+          "description": "The architecture of the machine image.",
+          "type": "string",
+          "x-go-name": "Architecture"
         },
         "capacityType": {
           "description": "The capacity type for your node group. Possible values ON_DEMAND | SPOT",

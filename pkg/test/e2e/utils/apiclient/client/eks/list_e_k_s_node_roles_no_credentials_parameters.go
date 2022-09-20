@@ -58,6 +58,13 @@ func NewListEKSNodeRolesNoCredentialsParamsWithHTTPClient(client *http.Client) *
    Typically these are written to a http.Request.
 */
 type ListEKSNodeRolesNoCredentialsParams struct {
+
+	// ClusterID.
+	ClusterID string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +118,28 @@ func (o *ListEKSNodeRolesNoCredentialsParams) SetHTTPClient(client *http.Client)
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the list e k s node roles no credentials params
+func (o *ListEKSNodeRolesNoCredentialsParams) WithClusterID(clusterID string) *ListEKSNodeRolesNoCredentialsParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the list e k s node roles no credentials params
+func (o *ListEKSNodeRolesNoCredentialsParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithProjectID adds the projectID to the list e k s node roles no credentials params
+func (o *ListEKSNodeRolesNoCredentialsParams) WithProjectID(projectID string) *ListEKSNodeRolesNoCredentialsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list e k s node roles no credentials params
+func (o *ListEKSNodeRolesNoCredentialsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListEKSNodeRolesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +147,16 @@ func (o *ListEKSNodeRolesNoCredentialsParams) WriteToRequest(r runtime.ClientReq
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

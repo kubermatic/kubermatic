@@ -58,6 +58,16 @@ func NewListEKSRegionsParamsWithHTTPClient(client *http.Client) *ListEKSRegionsP
    Typically these are written to a http.Request.
 */
 type ListEKSRegionsParams struct {
+
+	// AccessKeyID.
+	AccessKeyID *string
+
+	// Credential.
+	Credential *string
+
+	// SecretAccessKey.
+	SecretAccessKey *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +121,39 @@ func (o *ListEKSRegionsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAccessKeyID adds the accessKeyID to the list e k s regions params
+func (o *ListEKSRegionsParams) WithAccessKeyID(accessKeyID *string) *ListEKSRegionsParams {
+	o.SetAccessKeyID(accessKeyID)
+	return o
+}
+
+// SetAccessKeyID adds the accessKeyId to the list e k s regions params
+func (o *ListEKSRegionsParams) SetAccessKeyID(accessKeyID *string) {
+	o.AccessKeyID = accessKeyID
+}
+
+// WithCredential adds the credential to the list e k s regions params
+func (o *ListEKSRegionsParams) WithCredential(credential *string) *ListEKSRegionsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list e k s regions params
+func (o *ListEKSRegionsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithSecretAccessKey adds the secretAccessKey to the list e k s regions params
+func (o *ListEKSRegionsParams) WithSecretAccessKey(secretAccessKey *string) *ListEKSRegionsParams {
+	o.SetSecretAccessKey(secretAccessKey)
+	return o
+}
+
+// SetSecretAccessKey adds the secretAccessKey to the list e k s regions params
+func (o *ListEKSRegionsParams) SetSecretAccessKey(secretAccessKey *string) {
+	o.SecretAccessKey = secretAccessKey
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListEKSRegionsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +161,30 @@ func (o *ListEKSRegionsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 	var res []error
+
+	if o.AccessKeyID != nil {
+
+		// header param AccessKeyID
+		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.SecretAccessKey != nil {
+
+		// header param SecretAccessKey
+		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

@@ -150,10 +150,11 @@ func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPC
 		}
 		vpcs = append(vpcs, vpc)
 	}
+
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+func ListInstanceTypes(cred resources.EKSCredential, architecture string) (apiv2.EKSInstanceTypeList, error) {
 	instanceTypes := apiv2.EKSInstanceTypeList{}
 
 	if data == nil {
@@ -167,13 +168,20 @@ func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2
 
 	for _, i := range *data {
 		for _, r := range instanceTypesResults {
-			if i.InstanceType == *r.InstanceType {
+			if i.InstanceType == to.String(r.InstanceType) {
+				if len(architecture) > 0 {
+					if len(i.Arch) == 0 || i.Arch[0] != architecture {
+						continue
+					}
+				}
+
 				instanceTypes = append(instanceTypes, apiv2.EKSInstanceType{
-					Name:       i.InstanceType,
-					PrettyName: i.PrettyName,
-					Memory:     i.Memory,
-					VCPUs:      i.VCPU,
-					GPUs:       i.GPU,
+					Name:         i.InstanceType,
+					PrettyName:   i.PrettyName,
+					Memory:       i.Memory,
+					VCPUs:        i.VCPU,
+					GPUs:         i.GPU,
+					Architecture: i.Arch[0],
 				})
 				break
 			}
@@ -183,7 +191,7 @@ func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2
 	return instanceTypes, nil
 }
 
-func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSRegionList, error) {
+func ListEKSRegions(cred resources.EKSCredential) (apiv2.EKSRegionList, error) {
 	regionInput := &ec2service.DescribeRegionsInput{}
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
