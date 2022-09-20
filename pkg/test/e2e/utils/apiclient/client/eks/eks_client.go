@@ -38,6 +38,8 @@ type ClientService interface {
 
 	ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesOK, error)
 
+	ListEKSNodeRolesNoCredentials(params *ListEKSNodeRolesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesNoCredentialsOK, error)
+
 	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
 
 	ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error)
@@ -244,6 +246,44 @@ func (a *Client) ListEKSNodeRoles(params *ListEKSNodeRolesParams, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEKSNodeRolesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSNodeRolesNoCredentials lists e k s node i a m roles
+*/
+func (a *Client) ListEKSNodeRolesNoCredentials(params *ListEKSNodeRolesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSNodeRolesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSNodeRolesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSNodeRolesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/noderoles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSNodeRolesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSNodeRolesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSNodeRolesNoCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

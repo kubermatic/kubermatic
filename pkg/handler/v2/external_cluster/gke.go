@@ -739,7 +739,7 @@ func deleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeyS
 }
 
 // GKEVMReq represent a request for GKE VM.
-// swagger:parameters listGKEImages listGKEVMSizes
+// swagger:parameters listGKEImages listGKEVMSizes listGKEDiskTypes
 type GKEVMReq struct {
 	GKECommonReq
 	// The zone name
@@ -915,6 +915,10 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
@@ -992,11 +996,15 @@ type GKEClusterListReq struct {
 
 func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var err error
 		req, ok := request.(GKETypesReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		var err error
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		sa := req.ServiceAccount
 		if len(req.Credential) > 0 {
 			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)

@@ -300,6 +300,10 @@ func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
 		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err

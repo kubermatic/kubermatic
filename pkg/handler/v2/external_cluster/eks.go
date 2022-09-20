@@ -45,6 +45,7 @@ import (
 )
 
 const (
+	RegionEndpoint   = "eu-central-1"
 	EKSAMITypes      = "Amazon Linux 2"
 	EKSCustomAMIType = "CUSTOM"
 	EKSCapacityTypes = "SPOT"
@@ -296,22 +297,40 @@ func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetP
 	}
 }
 
-func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func EKSNodeRolesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
+		req, ok := request.(eksNoCredentialReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
-		if err := req.Validate(); err != nil {
-			return nil, utilerrors.NewBadRequest(err.Error())
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		cloudSpec := cluster.Spec.CloudSpec.EKS
+		if cloudSpec == nil {
+			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
+		}
+
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(cloudSpec, secretKeySelector)
 		if err != nil {
 			return nil, err
 		}
 
-		return providercommon.ListEKSNodeRoles(ctx, *credential)
+		cred := resources.EKSCredential{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+			Region:          RegionEndpoint,
+		}
+
+		return providercommon.ListEKSNodeRoles(cred)
 	}
 }
 
