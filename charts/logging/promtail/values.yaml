@@ -146,6 +146,18 @@ promtail:
           - role: pod
           pipeline_stages:
           - cri: {}
+          - match:
+              selector: '{app="events"}'
+              stages:
+                - json:
+                    expressions:
+                      clusterID: clusterID
+                      projectID: projectID
+                      seed: seed
+                - labels:
+                    clusterID:
+                    projectID:
+                    seed:
           relabel_configs:
           - action: drop
             regex: .+
