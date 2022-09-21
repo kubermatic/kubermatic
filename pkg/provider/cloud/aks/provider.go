@@ -21,10 +21,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -356,6 +358,59 @@ func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) err
 	_, err = aksClient.NewListPager(nil).NextPage(ctx)
 
 	return DecodeError(err)
+}
+
+func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCredentials, resourceGroup string) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	permissionsClient, err := armauthorization.NewPermissionsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	var requiredPermissions = map[string]bool{
+		"Microsoft.ContainerService/managedClusters/read":                              false,
+		"Microsoft.ContainerService/managedClusters/write":                             false,
+		"Microsoft.ContainerService/managedClusters/delete":                            false,
+		"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
+	}
+
+	pager := permissionsClient.NewListForResourceGroupPager(resourceGroup, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return DecodeError(err)
+		}
+		for _, permission := range nextResult.Value {
+			for _, action := range permission.Actions {
+				switch *action {
+				case "*",
+					"Microsoft.ContainerService/*",
+					"Microsoft.ContainerService/managedClusters/*":
+					// if it's a wildcard permission, then the user can execute all necessary actions, so just return
+					return nil
+				default:
+					// checking and saving if user has a required permission
+					_, hasRequiredPermission := requiredPermissions[*action]
+					if hasRequiredPermission {
+						requiredPermissions[*action] = true
+					}
+				}
+			}
+		}
+	}
+
+	// checking if user has all required permissions
+	for permission, hasRequiredPermission := range requiredPermissions {
+		if !hasRequiredPermission {
+			return utilerrors.New(http.StatusForbidden, fmt.Sprintf("Missing permission: %s", permission))
+		}
+	}
+
+	return nil
 }
 
 func DecodeError(err error) error {
