@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.19.1 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-1 containerize ./hack/update-codegen.sh
 
 echodate "Running go generate"
 go generate ./pkg/...
