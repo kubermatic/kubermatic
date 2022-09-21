@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.11.6 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
+#   helm template cilium cilium/cilium --version 1.11.9 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
 #     --set hubble.tls.auto.method=cronJob --set hubble.relay.enabled=true --set hubble.ui.enabled=true \
 #     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 #
@@ -479,7 +479,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-agent
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.6@sha256:f7f93c26739b6641a3fa3d76b1e1605b15989f25d06625260099e01c8243f54c"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -567,6 +567,7 @@ spec:
               - /cni-uninstall.sh
         securityContext:
           privileged: true
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - name: bpf-maps
           mountPath: /sys/fs/bpf
@@ -597,7 +598,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.6@sha256:f7f93c26739b6641a3fa3d76b1e1605b15989f25d06625260099e01c8243f54c"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -623,8 +624,34 @@ spec:
           mountPath: /hostbin
         securityContext:
           privileged: true
+      - name: apply-sysctl-overwrites
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: BIN_PATH
+          value: /opt/cni/bin
+        command:
+        - sh
+        - -ec
+        # The statically linked Go program binary is invoked to avoid any
+        # dependency on utilities like sh that can be missing on certain
+        # distros installed on the underlying host. Copy the binary to the
+        # same directory where we install cilium cni plugin so that exec permissions
+        # are available.
+        - |
+          cp /usr/bin/cilium-sysctlfix /hostbin/cilium-sysctlfix;
+          nsenter --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-sysctlfix";
+          rm /hostbin/cilium-sysctlfix
+        volumeMounts:
+        - name: hostproc
+          mountPath: /hostproc
+        - name: cni-path
+          mountPath: /hostbin
+        terminationMessagePolicy: FallbackToLogsOnError
+        securityContext:
+          privileged: true
       - name: clean-cilium-state
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.6@sha256:f7f93c26739b6641a3fa3d76b1e1605b15989f25d06625260099e01c8243f54c"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -647,6 +674,7 @@ spec:
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
         {{ end }}
+        terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           privileged: true
         volumeMounts:
