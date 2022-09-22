@@ -9,6 +9,21 @@
 - [v2.19.6](#v2196)
 - [v2.19.7](#v2197)
 - [v2.19.8](#v2198)
+- [v2.19.9](#v2199)
+
+## [v2.19.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.9)
+
+### Bugfixes
+
+- Add additional header to prevent KKP dashboard from being shown in an iframe ([#4796](https://github.com/kubermatic/dashboard/pull/4796))
+- Allow proxy mode change by CNI migration ([#10717](https://github.com/kubermatic/kubermatic/pull/10717))
+- Fix an issue with vSphere CSI driver using improved-csi-idempotency that's currently not supported by KKP ([#10793](https://github.com/kubermatic/kubermatic/pull/10793))
+- Update KubeVirt logo to mark technology preview ([#4810](https://github.com/kubermatic/dashboard/pull/4810))
+
+### Chore
+
+- Add support for Kubernetes 1.22.15; existing clusters using these Kubernetes releases will be automatically updated as any previous version is affected by CVEs ([#11029](https://github.com/kubermatic/kubermatic/pull/11029))
+
 
 ## [v2.19.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.8)
 

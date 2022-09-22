@@ -7,6 +7,31 @@
 - [v2.20.4](#v2204)
 - [v2.20.5](#v2205)
 - [v2.20.6](#v2206)
+- [v2.20.7](#v2207)
+
+## [v2.20.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.7)
+
+### API Changes
+
+- Extend disk configuration for provider Anexia ([#10915](https://github.com/kubermatic/kubermatic/pull/10915))
+
+### Bugfixes
+
+- Add additional header to prevent KKP dashboard from being shown in an iframe ([#4796](https://github.com/kubermatic/dashboard/pull/4796))
+- Allow proxy mode change by CNI migration ([#10717](https://github.com/kubermatic/kubermatic/pull/10717))
+- Fix an issue with vSphere CSI driver using improved-csi-idempotency that's currently not supported by KKP ([#10792](https://github.com/kubermatic/kubermatic/pull/10792))
+- Fix kubermatic-webhook failing to start on external seed clusters ([#10959](https://github.com/kubermatic/kubermatic/pull/10959))
+- Update KubeVirt logo to mark technology preview ([#4810](https://github.com/kubermatic/dashboard/pull/4810))
+
+### Chore
+
+- Add support for Kubernetes 1.22.15, 1.23.12; existing clusters using these Kubernetes releases will be automatically updated as any previous version is affected by CVEs ([#11028](https://github.com/kubermatic/kubermatic/pull/11028))
+
+### Updates
+
+- Update OpenStack version for k8s 1.23 to fix services ports mapping issue ([#11037](https://github.com/kubermatic/kubermatic/pull/11037))
+- Update machine-controller to v1.45.4 ([#10915](https://github.com/kubermatic/kubermatic/pull/10915))
+
 
 ## [v2.20.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.6)
 

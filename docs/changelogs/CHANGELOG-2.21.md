@@ -1,6 +1,37 @@
 # Kubermatic 2.21
 
 - [v2.21.0](#v2210)
+- [v2.21.1](#v2211)
+
+## [v2.21.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.1)
+
+### API Changes
+
+- Extend disk configuration for Anexia provider ([#10916](https://github.com/kubermatic/kubermatic/pull/10916))
+
+### New Feature
+
+- Seed-proxy: increase memory limit from 32Mi to 64Mi ([#10984](https://github.com/kubermatic/kubermatic/pull/10984))
+
+### Bugfixes
+
+- A race condition bug in `etcd-launcher` that can trigger on user cluster initialisation and that prevents the last etcd node from joining the etcd cluster has been fixed ([#10932](https://github.com/kubermatic/kubermatic/pull/10932))
+- Fix Openstack `api/v1/providers/openstack/tenants` API endpoint for some cases where "couldn't get projects: couldn't get tenants for region XX: couldn't get identity endpoint: No suitable endpoint could be found in the service catalog." was wrongly returned ([#10968](https://github.com/kubermatic/kubermatic/pull/10968))
+- Fix for listing Operating System Profiles for Equinix Metal ([#4969](https://github.com/kubermatic/dashboard/pull/4969))
+- Fix issue in KKP API where deleting all datacenters from a Seed and then trying to add a new one would cause a panic ([#10953](https://github.com/kubermatic/kubermatic/pull/10953))
+- Fix kubermatic-webhook failing to start on external seed clusters ([#10958](https://github.com/kubermatic/kubermatic/pull/10958))
+- Fix upgrades for external seeds that have clusters with no `enableOperatingSystemManager` flag yet, resulting in the seed-operator not being able to fully upgrade the seed cluster to 2.21 ([#10948](https://github.com/kubermatic/kubermatic/pull/10948))
+- Prefer InternalIP when connecting to Kubelet for Hetzner dual-stack clusters ([#10937](https://github.com/kubermatic/kubermatic/pull/10937))
+- Update OpenStack version for k8s 1.23 to fix services ports mapping issue ([#11022](https://github.com/kubermatic/kubermatic/pull/11022))
+
+### Chore
+
+- Add support for Kubernetes 1.22.15, 1.23.12 and 1.24.6; existing clusters using these Kubernetes releases will be automatically updated as any previous version is affected by CVEs ([#11027](https://github.com/kubermatic/kubermatic/pull/11027))
+
+### Updates
+
+- Update Cilium 1.12 to v1.12.1 ([#10952](https://github.com/kubermatic/kubermatic/pull/10952))
+
 
 ## [v2.21.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.0)
 
