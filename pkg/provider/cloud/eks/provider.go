@@ -28,6 +28,7 @@ import (
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	eksv1 "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/smithy-go"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -60,23 +61,22 @@ func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, region, end
 }
 
 func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, clusterName, region string) (*api.Config, error) {
-	cfg, err := awsprovider.GetAWSConfig(ctx, accessKeyID, secretAccessKey, "", "", region, "")
+	sess, err := awsprovider.GetEKSConfig(ctx, accessKeyID, secretAccessKey, "", "", region, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %w", err)
 	}
 
-	cs := awsprovider.ClientSet{EKS: eks.NewFromConfig(cfg)}
+	eksvc := eksv1.New(sess)
 
-	clusterInput := &eks.DescribeClusterInput{
+	clusterInput := &eksv1.DescribeClusterInput{
 		Name: aws.String(clusterName),
 	}
-	clusterOutput, err := cs.EKS.DescribeCluster(ctx, clusterInput)
+	clusterOutput, err := eksvc.DescribeCluster(clusterInput)
 	if err != nil {
 		return nil, fmt.Errorf("error calling DescribeCluster: %w", err)
 	}
 
 	cluster := clusterOutput.Cluster
-	eksclusterName := cluster.Name
 
 	config := api.Config{
 		APIVersion: "v1",
@@ -92,16 +92,17 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 	}
 
 	opts := &authenticator.GetTokenOptions{
-		ClusterID: *eksclusterName,
-		Config:    &cfg,
+		ClusterID: clusterName,
+		Region:    region,
+		// Session:   sess,
 	}
-	token, err := gen.GetWithOptions(ctx, opts)
+	token, err := gen.GetWithOptions(opts)
 	if err != nil {
 		return nil, err
 	}
 
 	// example: eks_eu-central-1_cluster-1 => https://XX.XX.XX.XX
-	name := fmt.Sprintf("eks_%s_%s", region, *eksclusterName)
+	name := fmt.Sprintf("eks_%s_%s", region, clusterName)
 
 	cert, err := base64.StdEncoding.DecodeString(pointer.StringDeref(cluster.CertificateAuthority.Data, ""))
 	if err != nil {

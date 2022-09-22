@@ -29,6 +29,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	awsv1 "github.com/aws/aws-sdk-go/aws"
+	awscredentialsv1 "github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/smithy-go"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -75,6 +78,20 @@ func ValidateCredentials(ctx context.Context, accessKeyID, secretAccessKey strin
 
 func GetClientSet(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
 	return getClientSet(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
+}
+
+func GetEKSConfig(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (*session.Session, error) {
+	config := awsv1.
+		NewConfig().
+		WithRegion(region).
+		WithCredentials(awscredentialsv1.NewStaticCredentials(accessKeyID, secretAccessKey, "")).
+		WithMaxRetries(maxRetries)
+
+	if endpoint != "" {
+		config = config.WithEndpoint(endpoint)
+	}
+
+	return session.NewSession(config)
 }
 
 func GetAWSConfig(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, endpoint string) (aws.Config, error) {

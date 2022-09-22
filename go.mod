@@ -375,3 +375,5 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
+
+require github.com/aws/aws-sdk-go v1.44.37
