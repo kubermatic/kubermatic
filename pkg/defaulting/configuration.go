@@ -216,20 +216,20 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.23.11"),
+		Default: semver.NewSemverOrDie("v1.23.12"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			newSemver("v1.22.9"),
 			newSemver("v1.22.12"),
-			newSemver("v1.22.14"),
+			newSemver("v1.22.15"),
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			newSemver("v1.23.9"),
-			newSemver("v1.23.11"),
+			newSemver("v1.23.12"),
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
-			newSemver("v1.24.5"),
+			newSemver("v1.24.6"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -254,8 +254,8 @@ var (
 				// - CVE-2021-44717 (fixed >= 1.22.5)
 				// - CVE-2022-3172 (fixed >= 1.22.14)
 				// - CVE-2021-25749 (fixed >= 1.22.14)
-				From:      ">= 1.22.0, < 1.22.14",
-				To:        "1.22.14",
+				From:      ">= 1.22.0, < 1.22.15",
+				To:        "1.22.15",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
@@ -274,8 +274,8 @@ var (
 				// Auto-upgrade because of CVEs:
 				// - CVE-2022-3172 (fixed >= 1.23.11)
 				// - CVE-2021-25749 (fixed >= 1.23.11)
-				From:      ">= 1.23.0, < 1.23.11",
-				To:        "1.23.11",
+				From:      ">= 1.23.0, < 1.23.12",
+				To:        "1.23.12",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
@@ -293,8 +293,8 @@ var (
 				// Auto-upgrade because of CVEs:
 				// - CVE-2022-3172 (fixed >= 1.24.5)
 				// - CVE-2021-25749 (fixed >= 1.24.5)
-				From:      ">= 1.24.0, < 1.24.5",
-				To:        "1.24.5",
+				From:      ">= 1.24.0, < 1.24.6",
+				To:        "1.24.6",
 				Automatic: pointer.BoolPtr(true),
 			},
 		},
