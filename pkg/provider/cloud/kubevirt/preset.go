@@ -21,7 +21,7 @@ import (
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
-	kvmanifests "k8c.io/kubermatic/v2/pkg/resources/cloudcontroller/kubevirtmanifests"
+	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

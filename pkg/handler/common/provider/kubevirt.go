@@ -36,8 +36,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
+	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	kvmanifests "k8c.io/kubermatic/v2/pkg/resources/cloudcontroller/kubevirtmanifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 

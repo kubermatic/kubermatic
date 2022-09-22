@@ -21,7 +21,7 @@ import (
 
 	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 
-	kvmanifests "k8c.io/kubermatic/v2/pkg/resources/cloudcontroller/kubevirtmanifests"
+	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
