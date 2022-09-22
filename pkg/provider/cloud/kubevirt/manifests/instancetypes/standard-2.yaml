@@ -15,7 +15,7 @@
 apiVersion: instancetype.kubevirt.io/v1alpha1
 kind: VirtualMachineInstancetype
 metadata:
-  name: kubermatic-standard
+  name: standard-2
 spec:
   cpu:
     guest: 2

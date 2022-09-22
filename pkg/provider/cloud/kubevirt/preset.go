@@ -62,7 +62,7 @@ func reconcilePresets(ctx context.Context, namespace string, client ctrlruntimec
 
 // GetKubermaticStandardPresets returns the Kubermatic standard VirtualMachineInstancePresets.
 func GetKubermaticStandardPresets(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kubevirtv1.VirtualMachineInstancePreset {
-	objs := kvmanifests.KubernetesFromYaml(client, getter)
+	objs := kvmanifests.RuntimeFromYaml(client, getter)
 	presets := make([]kubevirtv1.VirtualMachineInstancePreset, 0, len(objs))
 	for _, obj := range objs {
 		presets = append(presets, *obj.(*kubevirtv1.VirtualMachineInstancePreset))

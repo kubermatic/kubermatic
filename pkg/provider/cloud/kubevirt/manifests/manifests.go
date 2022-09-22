@@ -28,22 +28,22 @@ import (
 )
 
 var (
-	//go:embed preset
-	standardPresetsFs    embed.FS
-	standardPresetFolder = "preset"
+	//go:embed presets
+	standardPresetsFs embed.FS
+	standardPresetDir = "presets"
 
-	//go:embed instancetype
-	standardInstancetypeFs     embed.FS
-	standardInstancetypeFolder = "instancetype"
+	//go:embed instancetypes
+	standardInstancetypeFs  embed.FS
+	standardInstancetypeDir = "instancetypes"
 
-	//go:embed preference
-	standardPreferenceFs     embed.FS
-	standardPreferenceFolder = "preference"
+	//go:embed preferences
+	standardPreferenceFs  embed.FS
+	standardPreferenceDir = "preferences"
 )
 
 type ManifestFS struct {
-	Fs     embed.FS
-	Folder string
+	Fs  embed.FS
+	Dir string
 }
 
 type ManifestFSGetter interface {
@@ -54,8 +54,8 @@ type StandardPresetGetter struct{}
 
 func (s *StandardPresetGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     standardPresetsFs,
-		Folder: standardPresetFolder,
+		Fs:  standardPresetsFs,
+		Dir: standardPresetDir,
 	}
 }
 
@@ -63,8 +63,8 @@ type StandardInstancetypeGetter struct{}
 
 func (s *StandardInstancetypeGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     standardInstancetypeFs,
-		Folder: standardInstancetypeFolder,
+		Fs:  standardInstancetypeFs,
+		Dir: standardInstancetypeDir,
 	}
 }
 
@@ -72,31 +72,31 @@ type StandardPreferenceGetter struct{}
 
 func (s *StandardPreferenceGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     standardPreferenceFs,
-		Folder: standardPreferenceFolder,
+		Fs:  standardPreferenceFs,
+		Dir: standardPreferenceDir,
 	}
 }
 
-// KubernetesFromYaml returns a list of Kubernetes runtime objects from their yaml templates.
+// RuntimeFromYaml returns a list of Kubernetes runtime objects from their yaml templates.
 // It returns the objects for all files included in the ManifestFS folder, skipping (with error log) the yaml files
-// that would not correct yaml files.
-func KubernetesFromYaml(client ctrlruntimeclient.Client, manifestFsGetter ManifestFSGetter) []runtime.Object {
+// that would not contain correct yaml files.
+func RuntimeFromYaml(client ctrlruntimeclient.Client, manifestFsGetter ManifestFSGetter) []runtime.Object {
 	decode := serializer.NewCodecFactory(client.Scheme()).UniversalDeserializer().Decode
 
 	manifestFs := manifestFsGetter.GetManifestFS()
-	files, _ := manifestFs.Fs.ReadDir(manifestFs.Folder)
+	files, _ := manifestFs.Fs.ReadDir(manifestFs.Dir)
 	objects := make([]runtime.Object, 0, len(files))
 
 	for _, f := range files {
-		manifest, err := manifestFs.Fs.ReadFile(path.Join(manifestFs.Folder, f.Name()))
+		manifest, err := manifestFs.Fs.ReadFile(path.Join(manifestFs.Dir, f.Name()))
 		if err != nil {
-			kubermaticlog.Logger.Errorf("Could not read the content of the manifest file %v [skipping it] - %v", path.Join(manifestFs.Folder, f.Name()), err)
+			kubermaticlog.Logger.Errorf("Could not read the content of the manifest file %v [skipping it] - %v", path.Join(manifestFs.Dir, f.Name()), err)
 			continue
 		}
 		obj, _, err := decode(manifest, nil, nil)
 		// Skip and log but continue with others
 		if err != nil {
-			kubermaticlog.Logger.Errorf("Skipping manifest %v as an error occurred reading it [skipping it]- %v", path.Join(manifestFs.Folder, f.Name()), err)
+			kubermaticlog.Logger.Errorf("Skipping manifest %v as an error occurred reading it [skipping it]- %v", path.Join(manifestFs.Dir, f.Name()), err)
 			continue
 		}
 		objects = append(objects, obj)

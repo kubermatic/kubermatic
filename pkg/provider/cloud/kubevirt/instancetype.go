@@ -58,7 +58,7 @@ func reconcileInstancetypes(ctx context.Context, namespace string, client ctrlru
 
 // GetKubermaticStandardInstancetypes returns the Kubermatic standard VirtualMachineInstancetypes.
 func GetKubermaticStandardInstancetypes(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1alpha1.VirtualMachineInstancetype {
-	objs := kvmanifests.KubernetesFromYaml(client, getter)
+	objs := kvmanifests.RuntimeFromYaml(client, getter)
 	instancetypes := make([]kvinstancetypev1alpha1.VirtualMachineInstancetype, 0, len(objs))
 	for _, obj := range objs {
 		instancetypes = append(instancetypes, *obj.(*kvinstancetypev1alpha1.VirtualMachineInstancetype))

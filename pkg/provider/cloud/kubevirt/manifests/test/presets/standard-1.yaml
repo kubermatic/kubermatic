@@ -15,7 +15,7 @@
 apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstancePreset
 metadata:
-  name: kubermatic-standard-1
+  name: standard-1
 spec:
   domain:
     resources:
@@ -27,4 +27,4 @@ spec:
         memory: 8Gi
   selector:
     matchLabels:
-      kubevirt.io/flavor: kubermatic-standard-1
+      kubevirt.io/flavor: standard-1

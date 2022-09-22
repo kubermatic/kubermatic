@@ -58,7 +58,7 @@ func reconcilePreferences(ctx context.Context, namespace string, client ctrlrunt
 
 // GetKubermaticStandardPreferences returns the Kubermatic standard VirtualMachinePreferences.
 func GetKubermaticStandardPreferences(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kvinstancetypev1alpha1.VirtualMachinePreference {
-	objs := kvmanifests.KubernetesFromYaml(client, getter)
+	objs := kvmanifests.RuntimeFromYaml(client, getter)
 	preferences := make([]kvinstancetypev1alpha1.VirtualMachinePreference, 0, len(objs))
 	for _, obj := range objs {
 		preferences = append(preferences, *obj.(*kvinstancetypev1alpha1.VirtualMachinePreference))

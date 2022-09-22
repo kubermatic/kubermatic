@@ -15,7 +15,7 @@
 apiVersion: instancetype.kubevirt.io/v1alpha1
 kind: VirtualMachinePreference
 metadata:
-  name: kubermatic-standard
+  name: sockets-advantage
 spec:
   cpu:
     preferredCPUTopology: preferSockets

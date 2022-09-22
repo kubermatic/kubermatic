@@ -37,21 +37,17 @@ import (
 
 var (
 	fakeclient ctrlruntimeclient.Client
-	//go:embed test/presetOk
-	testPresetFS     embed.FS
-	testPresetFolder = path.Join("test", "presetOk")
+	//go:embed test/presets
+	testPresetFS  embed.FS
+	testPresetDir = path.Join("test", "presets")
 
-	//go:embed test/presetOkKo
-	tesOkKoPresetFS      embed.FS
-	testOkKoPresetFolder = path.Join("test", "presetOkKo")
+	//go:embed test/instancetypes
+	tesInstancetypeFS   embed.FS
+	testInstancetypeDir = path.Join("test", "instancetypes")
 
-	//go:embed test/instancetype
-	tesOkInstancetypeFS      embed.FS
-	testOkInstancetypeFolder = path.Join("test", "instancetype")
-
-	//go:embed test/preference
-	tesOkPreferenceFS      embed.FS
-	testOkPreferenceFolder = path.Join("test", "preference")
+	//go:embed test/preferences
+	tesPreferenceFS   embed.FS
+	testPreferenceDir = path.Join("test", "preferences")
 )
 
 func init() {
@@ -63,38 +59,30 @@ func init() {
 		Build()
 }
 
-type testOkPresetGetter ManifestFS
-type testOkKoPresetGetter ManifestFS
+type testPresetGetter ManifestFS
 
-func (s *testOkPresetGetter) GetManifestFS() *ManifestFS {
+func (s *testPresetGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     testPresetFS,
-		Folder: testPresetFolder,
+		Fs:  testPresetFS,
+		Dir: testPresetDir,
 	}
 }
 
-func (s *testOkKoPresetGetter) GetManifestFS() *ManifestFS {
+type testInstancetypeGetter ManifestFS
+
+func (s *testInstancetypeGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     tesOkKoPresetFS,
-		Folder: testOkKoPresetFolder,
+		Fs:  tesInstancetypeFS,
+		Dir: testInstancetypeDir,
 	}
 }
 
-type testOkInstancetypeGetter ManifestFS
+type testPreferenceGetter ManifestFS
 
-func (s *testOkInstancetypeGetter) GetManifestFS() *ManifestFS {
+func (s *testPreferenceGetter) GetManifestFS() *ManifestFS {
 	return &ManifestFS{
-		Fs:     tesOkInstancetypeFS,
-		Folder: testOkInstancetypeFolder,
-	}
-}
-
-type testOkPreferenceGetter ManifestFS
-
-func (s *testOkPreferenceGetter) GetManifestFS() *ManifestFS {
-	return &ManifestFS{
-		Fs:     tesOkPreferenceFS,
-		Folder: testOkPreferenceFolder,
+		Fs:  tesPreferenceFS,
+		Dir: testPreferenceDir,
 	}
 }
 
@@ -106,36 +94,30 @@ func TestKubernetesFromYaml(t *testing.T) {
 		want   []runtime.Object
 	}{
 		{
-			name:   "test 2 presets no failure", // returns kubermatic-standard-1 and kubermatic-standard-2, both are valid
+			name:   "test presets - 2 OK - 1 invalid", // should return the presets kubermatic-standard-1 and kubermatic-standard-2 (ok), skipping the invalid one
 			client: fakeclient,
 			want:   getPreset1_2(),
-			getter: &testOkPresetGetter{},
+			getter: &testPresetGetter{},
 		},
 		{
-			name:   "test 2 presets - 1 KO", // should return the preset kubermatic-standard-1 (ok), skipping to KO one
+			name:   "test instantype - 1 OK- 1 invalid", // should return the instancetype kubermatic-standard-1, skipping the invalid one
 			client: fakeclient,
-			want:   getPreset1(),
-			getter: &testOkKoPresetGetter{},
+			want:   getInstancetype(2, "8Gi", "standard-1"),
+			getter: &testInstancetypeGetter{},
 		},
 		{
-			name:   "test instancetype - OK",
+			name:   "test preference 1 OK- 1 invalid", // should return the preference kubermatic-standard-1, skipping the invalid one
 			client: fakeclient,
-			want:   getInstancetype(2, "8Gi", "kubermatic-standard"),
-			getter: &testOkInstancetypeGetter{},
-		},
-		{
-			name:   "test preference - OK",
-			client: fakeclient,
-			want:   getPreference("kubermatic-standard"),
-			getter: &testOkPreferenceGetter{},
+			want:   getPreference("standard-1"),
+			getter: &testPreferenceGetter{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := KubernetesFromYaml(tt.client, tt.getter)
+			got := RuntimeFromYaml(tt.client, tt.getter)
 			if !reflect.DeepEqual(got, tt.want) {
-				log(t, "KubernetesFromYaml() - Got %v", got)
-				log(t, "KubernetesFromYaml() - Want %v", tt.want)
+				log(t, "RuntimeFromYaml() - Got:", got)
+				log(t, "RuntimeFromYaml() - Want:", tt.want)
 			}
 		})
 	}
@@ -150,14 +132,8 @@ func log(t *testing.T, text string, objs []runtime.Object) {
 
 func getPreset1_2() []runtime.Object {
 	objs := make([]runtime.Object, 0)
-	objs = append(objs, getPreset("2", "8Gi", "kubermatic-standard-1"))
-	objs = append(objs, getPreset("4", "16Gi", "kubermatic-standard-2"))
-	return objs
-}
-
-func getPreset1() []runtime.Object {
-	objs := make([]runtime.Object, 0)
-	objs = append(objs, getPreset("2", "8Gi", "kubermatic-standard-1"))
+	objs = append(objs, getPreset("2", "8Gi", "standard-1"))
+	objs = append(objs, getPreset("4", "16Gi", "standard-2"))
 	return objs
 }
 

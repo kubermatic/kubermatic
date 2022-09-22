@@ -15,9 +15,9 @@
 apiVersion: instancetype.kubevirt.io/v1alpha1
 kind: VirtualMachineInstancetype
 metadata:
-  name: kubermatic-standard
+  name: standard-8
 spec:
   cpu:
-    guest: 2
+    guest: 8
   memory:
-    guest: 8Gi
+    guest: 32Gi
