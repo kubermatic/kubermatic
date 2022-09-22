@@ -360,7 +360,7 @@ func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) err
 	return DecodeError(err)
 }
 
-func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCredentials, resourceGroup string) error {
+func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCredentials, resourceGroup string, isCreation bool) error {
 	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
 		return DecodeError(err)
@@ -374,8 +374,10 @@ func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCrede
 	var requiredPermissions = map[string]bool{
 		"Microsoft.ContainerService/managedClusters/read":                              false,
 		"Microsoft.ContainerService/managedClusters/write":                             false,
-		"Microsoft.ContainerService/managedClusters/delete":                            false,
 		"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
+	}
+	if isCreation {
+		requiredPermissions["Microsoft.ContainerService/managedClusters/delete"] = false
 	}
 
 	pager := permissionsClient.NewListForResourceGroupPager(resourceGroup, nil)
