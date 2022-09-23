@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
+	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -108,7 +109,7 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 	}
 
 	// Add a standard preset to the list
-	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
+	vmiPresets.Items = append(vmiPresets.Items, kubevirt.GetKubermaticStandardPresets(client, &kvmanifests.StandardPresetGetter{})...)
 
 	res := apiv2.VirtualMachineInstancePresetList{}
 	for _, vmiPreset := range vmiPresets.Items {
@@ -174,7 +175,7 @@ func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevir
 	}
 
 	// Add a standard preset to the list
-	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
+	vmiPresets.Items = append(vmiPresets.Items, kubevirt.GetKubermaticStandardPresets(client, &kvmanifests.StandardPresetGetter{})...)
 
 	for _, vmiPreset := range vmiPresets.Items {
 		if strings.EqualFold(vmiPreset.Name, flavor) {

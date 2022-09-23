@@ -24,6 +24,7 @@ import (
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	kubevirtv1 "kubevirt.io/api/core/v1"
+	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
@@ -1431,6 +1432,80 @@ func ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx context.Context, named
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubevirtv1.VirtualMachineInstancePreset{}, false); err != nil {
 			return fmt.Errorf("failed to ensure VirtualMachineInstancePreset %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator defines an interface to create/update VirtualMachineInstancetypes
+type KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator = func(existing *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error)
+
+// NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter = func() (name string, create KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator)
+
+// KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper adds a wrapper so the KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper(create KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kvinstancetypev1alpha1.VirtualMachineInstancetype))
+		}
+		return create(&kvinstancetypev1alpha1.VirtualMachineInstancetype{})
+	}
+}
+
+// ReconcileKvInstancetypeV1alpha1VirtualMachineInstancetypes will create and update the KvInstancetypeV1alpha1VirtualMachineInstancetypes coming from the passed KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator slice
+func ReconcileKvInstancetypeV1alpha1VirtualMachineInstancetypes(ctx context.Context, namedGetters []NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kvinstancetypev1alpha1.VirtualMachineInstancetype{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachineInstancetype %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KvInstancetypeV1alpha1VirtualMachinePreferenceCreator defines an interface to create/update VirtualMachinePreferences
+type KvInstancetypeV1alpha1VirtualMachinePreferenceCreator = func(existing *kvinstancetypev1alpha1.VirtualMachinePreference) (*kvinstancetypev1alpha1.VirtualMachinePreference, error)
+
+// NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter = func() (name string, create KvInstancetypeV1alpha1VirtualMachinePreferenceCreator)
+
+// KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper adds a wrapper so the KvInstancetypeV1alpha1VirtualMachinePreferenceCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper(create KvInstancetypeV1alpha1VirtualMachinePreferenceCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kvinstancetypev1alpha1.VirtualMachinePreference))
+		}
+		return create(&kvinstancetypev1alpha1.VirtualMachinePreference{})
+	}
+}
+
+// ReconcileKvInstancetypeV1alpha1VirtualMachinePreferences will create and update the KvInstancetypeV1alpha1VirtualMachinePreferences coming from the passed KvInstancetypeV1alpha1VirtualMachinePreferenceCreator slice
+func ReconcileKvInstancetypeV1alpha1VirtualMachinePreferences(ctx context.Context, namedGetters []NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kvinstancetypev1alpha1.VirtualMachinePreference{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachinePreference %s/%s: %w", namespace, name, err)
 		}
 	}
 

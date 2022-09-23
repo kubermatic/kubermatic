@@ -236,6 +236,18 @@ func main() {
 				APIVersionPrefix:   "KubeVirtV1",
 			},
 			{
+				ResourceName:       "VirtualMachineInstancetype",
+				ImportAlias:        "kvinstancetypev1alpha1",
+				ResourceImportPath: "kubevirt.io/api/instancetype/v1alpha1",
+				APIVersionPrefix:   "KvInstancetypeV1alpha1",
+			},
+			{
+				ResourceName:       "VirtualMachinePreference",
+				ImportAlias:        "kvinstancetypev1alpha1",
+				ResourceImportPath: "kubevirt.io/api/instancetype/v1alpha1",
+				APIVersionPrefix:   "KvInstancetypeV1alpha1",
+			},
+			{
 				ResourceName:     "Preset",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
