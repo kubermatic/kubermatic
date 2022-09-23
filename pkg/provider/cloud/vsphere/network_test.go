@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-test/deep"
+	"golang.org/x/exp/slices"
+
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
@@ -68,8 +70,14 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
-				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)
+			for _, expectedNetworkInfo := range test.expectedNetworkInfos {
+				index := slices.Index(networkInfos, expectedNetworkInfo)
+				if index < 0 {
+					t.Fatalf("Expected Network not found:\n%v", expectedNetworkInfo)
+				}
+				if !diff.SemanticallyEqual(expectedNetworkInfo, networkInfos[index]) {
+					t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(expectedNetworkInfo, networkInfos[index]))
+				}
 			}
 		})
 	}
