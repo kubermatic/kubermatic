@@ -315,6 +315,7 @@ func (g generator) GetWithSTS(ctx context.Context, clusterID string, stsAPI *sts
 	presignedURLRequest, err := presignClient.PresignGetCallerIdentity(ctx, &sts.GetCallerIdentityInput{}, func(presignOpts *sts.PresignOptions) {
 		presignOpts.ClientOptions = append(presignOpts.ClientOptions, func(stsOpts *sts.Options) {
 			stsOpts.APIOptions = append(stsOpts.APIOptions, smithyhttp.SetHeaderValue(clusterIDHeader, clusterID))
+			stsOpts.APIOptions = append(stsOpts.APIOptions, smithyhttp.SetHeaderValue("X-Amz-Expires", "60"))
 		})
 	})
 
