@@ -460,17 +460,19 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
+	// If Spec is not nil, it is interpreted as create cluster on the provider.
+	isCreation := (spec != nil && spec.AKSClusterSpec != nil)
+
 	if err := aks.ValidateCredentialsPermissions(ctx, resources.AKSCredentials{
 		TenantID:       cloud.AKS.TenantID,
 		ClientID:       cloud.AKS.ClientID,
 		SubscriptionID: cloud.AKS.SubscriptionID,
 		ClientSecret:   cloud.AKS.ClientSecret,
-	}, cloud.AKS.ResourceGroup); err != nil {
+	}, cloud.AKS.ResourceGroup, isCreation); err != nil {
 		return nil, err
 	}
 
-	// If Spec is not nil, it is interpreted as create cluster on the provider.
-	if spec != nil && spec.AKSClusterSpec != nil {
+	if isCreation {
 		if err := checkCreateClusterReqValidity(cloud.AKS, spec.AKSClusterSpec); err != nil {
 			return nil, err
 		}
