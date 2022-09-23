@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.23.12"),
+		Default: semver.NewSemverOrDie("v1.24.6"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
@@ -230,6 +230,8 @@ var (
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
 			newSemver("v1.24.6"),
+			// Kubernetes 1.25
+			newSemver("v1.25.2"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -296,6 +298,17 @@ var (
 				From:      ">= 1.24.0, < 1.24.6",
 				To:        "1.24.6",
 				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.24.*",
+				To:   "1.25.*",
+			},
+			// ======= 1.25 =======
+			{
+				// Allow to change to any patch version
+				From: "1.25.*",
+				To:   "1.25.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
