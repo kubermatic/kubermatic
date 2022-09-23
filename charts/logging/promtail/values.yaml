@@ -147,7 +147,7 @@ promtail:
           pipeline_stages:
           - cri: {}
           - match:
-              selector: '{app="events"}'
+              selector: '{app="k8c-events-lokiloader"}'
               stages:
                 - json:
                     expressions:
