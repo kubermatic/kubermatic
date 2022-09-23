@@ -27,6 +27,7 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -1613,7 +1614,7 @@ type ApplicationInstallation struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
 
 	Status *ApplicationInstallationStatus `json:"status"`
 }
@@ -1625,7 +1626,45 @@ type ApplicationInstallationBody struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
+}
+
+type ApplicationInstallationSpec struct {
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
+
+	// ApplicationRef is a reference to identify which Application should be deployed
+	ApplicationRef appskubermaticv1.ApplicationRef `json:"applicationRef"`
+
+	// Values describe overrides for manifest-rendering. It's a free yaml field.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Values runtime.RawExtension `json:"values,omitempty"`
+	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+}
+
+// NamespaceSpec describe the desired state of the namespace where application will be created.
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+	Name string `json:"name"`
+
+	// +kubebuilder:default:=true
+
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	Create bool `json:"create"`
+
+	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // ApplicationInstallationStatus is the object representing the status of an Application.

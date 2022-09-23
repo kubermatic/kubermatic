@@ -60,7 +60,7 @@ type ApplicationInstallationList struct {
 
 type ApplicationInstallationSpec struct {
 	// Namespace describe the desired state of the namespace where application will be created.
-	Namespace NamespaceSpec `json:"namespace"`
+	Namespace AppNamespaceSpec `json:"namespace"`
 
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
@@ -71,8 +71,8 @@ type ApplicationInstallationSpec struct {
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 }
 
-// NamespaceSpec describe the desired state of the namespace where application will be created.
-type NamespaceSpec struct {
+// AppNamespaceSpec describe the desired state of the namespace where application will be created.
+type AppNamespaceSpec struct {
 	// Name is the namespace to deploy the Application into.
 	// Should be a valid lowercase RFC1123 domain name
 	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
