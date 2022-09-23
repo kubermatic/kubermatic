@@ -1775,6 +1775,9 @@ type ApplicationInstallationListItemStatus struct {
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
 	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
 
+	// ApplicationVersion contains information installing / removing application
+	ApplicationVersion *appskubermaticv1.ApplicationVersion `json:"applicationVersion,omitempty"`
+
 	// Method used to install the application
 	Method appskubermaticv1.TemplateMethod `json:"method"`
 }

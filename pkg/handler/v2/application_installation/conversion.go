@@ -87,7 +87,8 @@ func convertInternalToAPIApplicationInstallationForList(in *appskubermaticv1.App
 			ApplicationRef: in.Spec.ApplicationRef,
 		},
 		Status: &apiv2.ApplicationInstallationListItemStatus{
-			Method: in.Status.Method,
+			Method:             in.Status.Method,
+			ApplicationVersion: in.Status.ApplicationVersion,
 		},
 	}
 
