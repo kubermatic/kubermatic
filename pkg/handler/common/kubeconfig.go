@@ -429,11 +429,15 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 	return rsp, nil
 }
 
+func KubeconfigSecretName(userEmailID string) string {
+	return fmt.Sprintf("kubeconfig-%s", userEmailID)
+}
+
 func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, config *clientcmdapi.Config, email string) error {
 	// encode email address to unique ID for the secret name
 	hasher := md5.New()
 	hasher.Write([]byte(email))
-	kubeconfigSecretName := hex.EncodeToString(hasher.Sum(nil))
+	kubeconfigSecretName := KubeconfigSecretName(hex.EncodeToString(hasher.Sum(nil)))
 	kubeconfig, err := clientcmd.Write(*config)
 	if err != nil {
 		return err

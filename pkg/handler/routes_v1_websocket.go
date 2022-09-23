@@ -184,7 +184,6 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		}
 
 		userEmailID := wsh.EncodeUserEmailtoID(authenticatedUser.Email)
-		podAndKubeconfigSecretName := userEmailID
 		k8sClient, err := clusterProvider.GetAdminK8sClientForUserCluster(ctx, cluster)
 		if err != nil {
 			return
@@ -200,7 +199,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		kubeconfigSecret := &corev1.Secret{}
 		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: metav1.NamespaceSystem,
-			Name:      podAndKubeconfigSecretName,
+			Name:      handlercommon.KubeconfigSecretName(userEmailID),
 		}, kubeconfigSecret); err != nil {
 			log.Logger.Debug(err)
 			return
@@ -212,7 +211,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			return
 		}
 
-		writer(ctx, ws, client, k8sClient, cfg, podAndKubeconfigSecretName)
+		writer(ctx, ws, client, k8sClient, cfg, userEmailID)
 	}
 }
 

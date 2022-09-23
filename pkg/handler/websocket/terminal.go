@@ -24,10 +24,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -43,10 +45,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const END_OF_TRANSMISSION = "\u0004"
-const timeout = 2 * time.Minute
-
-const webTerminalStorage = "web-terminal-storage"
+const (
+	END_OF_TRANSMISSION    = "\u0004"
+	timeout                = 2 * time.Minute
+	webTerminalStorage     = "web-terminal-storage"
+	podLifetime            = 30 * time.Minute
+	expirationTimestampKey = "ExpirationTimestamp"
+)
 
 // PtyHandler is what remote command expects from a pty.
 type PtyHandler interface {
@@ -146,20 +151,29 @@ func (t TerminalSession) Toast(p string) error {
 	return nil
 }
 
+func appName(userEmailID string) string {
+	return fmt.Sprintf("webterminal-%s", userEmailID)
+}
+
 // startProcess is called by terminal session creation.
 // Executed cmd in the container specified in request and connects it up with the ptyHandler (a session).
-func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *rest.Config, podName string, cmd []string, ptyHandler PtyHandler, websocketConn *websocket.Conn) error {
+func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *rest.Config, userEmailID string, cmd []string, ptyHandler PtyHandler, websocketConn *websocket.Conn) error {
+	appName := appName(userEmailID)
+
 	// check if WEB terminal Pod exists, if not create
 	pod := &corev1.Pod{}
 	if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 		Namespace: metav1.NamespaceSystem,
-		Name:      podName,
+		Name:      appName,
 	}, pod); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		// create Pod if not found
-		if err := client.Create(ctx, genWEBTerminalPod(podName)); err != nil {
+		// create Configmap and Pod if not found
+		if err := client.Create(ctx, genWebTerminalConfigMap(appName)); err != nil {
+			return err
+		}
+		if err := client.Create(ctx, genWebTerminalPod(appName, userEmailID)); err != nil {
 			return err
 		}
 	}
@@ -168,7 +182,7 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		pod := &corev1.Pod{}
 		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: metav1.NamespaceSystem,
-			Name:      podName,
+			Name:      appName,
 		}, pod); err != nil {
 			return false
 		}
@@ -186,7 +200,7 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 
 	req := k8sClient.CoreV1().RESTClient().Post().
 		Resource("pods").
-		Name(podName).
+		Name(appName).
 		Namespace(metav1.NamespaceSystem).
 		SubResource("exec")
 
@@ -217,16 +231,33 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 	return nil
 }
 
-func genWEBTerminalPod(podName string) *corev1.Pod {
+func genWebTerminalConfigMap(appName string) *corev1.ConfigMap {
+	expirationTime := time.Now().Add(podLifetime)
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: metav1.NamespaceSystem,
+			Labels: map[string]string{
+				"app": appName,
+			},
+		},
+		Data: map[string]string{
+			expirationTimestampKey: strconv.FormatInt(expirationTime.Unix(), 10),
+		},
+	}
+}
+
+func genWebTerminalPod(appName, userEmailID string) *corev1.Pod {
 	pod := &corev1.Pod{}
-	pod.Name = podName
+	pod.Name = appName
 	pod.Namespace = metav1.NamespaceSystem
 	pod.Spec = corev1.PodSpec{}
-	pod.Spec.Volumes = getVolumes(podName)
+	pod.Spec.Volumes = getVolumes(userEmailID)
 	pod.Spec.InitContainers = []corev1.Container{}
 	pod.Spec.Containers = []corev1.Container{
 		{
-			Name:    podName,
+			Name:    appName,
 			Image:   resources.RegistryQuay + "/kubermatic/web-terminal:0.2.0",
 			Command: []string{"/bin/bash", "-c", "--"},
 			Args:    []string{"while true; do sleep 30; done;"},
@@ -259,13 +290,13 @@ func genWEBTerminalPod(podName string) *corev1.Pod {
 	return pod
 }
 
-func getVolumes(kubeconfigSecret string) []corev1.Volume {
+func getVolumes(userEmailID string) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.WEBTerminalKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: kubeconfigSecret,
+					SecretName: handlercommon.KubeconfigSecretName(userEmailID),
 				},
 			},
 		},
@@ -297,7 +328,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *restclient.Config, podName string) {
+func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *restclient.Config, userEmailID string) {
 	defer ws.Close()
 
 	if err := startProcess(
@@ -305,7 +336,7 @@ func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.
 		client,
 		k8sClient,
 		cfg,
-		podName,
+		userEmailID,
 		[]string{"bash", "-c", "cd /data/terminal && /bin/bash"},
 		TerminalSession{
 			websocketConn: ws,
