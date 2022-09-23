@@ -15,6 +15,7 @@
 # This file was generated, DO NOT EDIT.
 # Run `make aws-ebs-csi-driver` instead.
 
-{{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "aws" }}
+# CSIMigrationAWS is only enabled in KKP starting with Kubernetes 1.25
+# See https://github.com/kubermatic/kubermatic/pull/11049
 {{ if gt .Cluster.Version.Minor 24 }}

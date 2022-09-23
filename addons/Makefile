@@ -54,7 +54,7 @@ aws-ebs-csi-driver:
 	helm repo update
 	mkdir -p csi/aws-ebs
 	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
-	helm template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
 	  >> $(OUTPUT_FILE)
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)

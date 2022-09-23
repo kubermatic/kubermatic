@@ -15,8 +15,9 @@
 # This file was generated, DO NOT EDIT.
 # Run `make aws-ebs-csi-driver` instead.
 
-{{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "aws" }}
+# CSIMigrationAWS is only enabled in KKP starting with Kubernetes 1.25
+# See https://github.com/kubermatic/kubermatic/pull/11049
 {{ if gt .Cluster.Version.Minor 24 }}
 ---
 # Source: aws-ebs-csi-driver/templates/poddisruptionbudget-controller.yaml
@@ -24,7 +25,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: ebs-csi-controller
-  namespace: default
+  namespace: kube-system
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
     app.kubernetes.io/instance: aws-ebs-csi-driver
@@ -45,7 +46,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ebs-csi-controller-sa
-  namespace: default
+  namespace: kube-system
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
     app.kubernetes.io/instance: aws-ebs-csi-driver
@@ -59,7 +60,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ebs-csi-node-sa
-  namespace: default
+  namespace: kube-system
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
     app.kubernetes.io/instance: aws-ebs-csi-driver
@@ -243,7 +244,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: ebs-csi-controller-sa
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: ebs-external-attacher-role
@@ -264,7 +265,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: ebs-csi-node-sa
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: ebs-csi-node-role
@@ -285,7 +286,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: ebs-csi-controller-sa
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: ebs-external-provisioner-role
@@ -306,7 +307,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: ebs-csi-controller-sa
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: ebs-external-resizer-role
@@ -327,7 +328,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: ebs-csi-controller-sa
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: ebs-external-snapshotter-role
@@ -339,7 +340,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: ebs-csi-node
-  namespace: default
+  namespace: kube-system
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
     app.kubernetes.io/instance: aws-ebs-csi-driver
@@ -485,7 +486,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: ebs-csi-controller
-  namespace: default
+  namespace: kube-system
   labels:
     app.kubernetes.io/name: aws-ebs-csi-driver
     app.kubernetes.io/instance: aws-ebs-csi-driver
