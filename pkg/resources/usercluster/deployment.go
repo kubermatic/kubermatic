@@ -136,12 +136,15 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-dns-cluster-ip", dnsClusterIP,
 				"-overwrite-registry", data.ImageRegistry(""),
 				"-version", data.Cluster().Spec.Version.String(),
-				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
+
+			if email := data.Cluster().Status.UserEmail; email != "" {
+				args = append(args, "-owner-email", email)
+			}
 
 			if data.Cluster().Spec.DebugLog {
 				args = append(args, "-log-debug=true")

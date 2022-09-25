@@ -156,9 +156,6 @@ func main() {
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
 
-	if runOp.ownerEmail == "" {
-		log.Fatal("-owner-email must be set")
-	}
 	if runOp.namespace == "" {
 		log.Fatal("-namespace must be set")
 	}
@@ -354,10 +351,14 @@ func main() {
 	}
 	log.Info("Registered rolecloner controller")
 
-	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
-		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
+	if runOp.ownerEmail != "" {
+		if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
+			log.Fatalw("Failed to register owner-binding-creator controller", zap.Error(err))
+		}
+		log.Info("Registered owner-binding-creator controller")
+	} else {
+		log.Info("No -owner-email given, skipping owner-binding-creator controller")
 	}
-	log.Info("Registered ownerbindingcreator controller")
 
 	if runOp.ccmMigration {
 		if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
