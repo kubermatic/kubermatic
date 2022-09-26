@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -350,7 +349,7 @@ func TestLoadFiles(t *testing.T) {
 						},
 					}
 
-					if features[kubermaticv1.ClusterFeatureExternalCloudProvider] && !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, cluster) {
+					if features[kubermaticv1.ClusterFeatureExternalCloudProvider] && !resources.ExternalCloudControllerFeatureSupported(dc, &cluster.Spec.Cloud, cluster.Spec.Version) {
 						t.Log("Unsupported configuration")
 						return
 					}

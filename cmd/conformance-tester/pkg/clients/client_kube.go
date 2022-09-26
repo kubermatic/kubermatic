@@ -29,7 +29,7 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -194,9 +194,9 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 	}
 
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(scenario.Datacenter(), cluster, version.NewFromConfiguration(c.opts.KubermaticConfiguration).GetIncompatibilities()...) {
+	if resources.ExternalCloudControllerFeatureSupported(scenario.Datacenter(), &cluster.Spec.Cloud, cluster.Spec.Version, version.NewFromConfiguration(c.opts.KubermaticConfiguration).GetIncompatibilities()...) {
 		cluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if cloudcontroller.ExternalCloudControllerClusterName(cluster) {
+		if resources.ExternalCloudControllerClusterName(cluster) {
 			cluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 		}
 		if cluster.Spec.Cloud.VSphere != nil {

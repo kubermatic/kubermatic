@@ -222,6 +222,20 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
 	}
 
+	// External CCM is not supported for all providers and all Kubernetes versions.
+	if newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		// External CCM must only be enabled when the cluster has reached a given
+		// version, so this check must depend on the status if possible.
+		clusterVersion := newCluster.Status.Versions.ControlPlane
+		if clusterVersion == "" {
+			clusterVersion = newCluster.Spec.Version
+		}
+
+		if resources.ExternalCloudControllerFeatureSupported(dc, &newCluster.Spec.Cloud, clusterVersion, versionManager.GetIncompatibilities()...) {
+			allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), true, "external cloud-controller-manager is not supported for this cluster / provider combination"))
+		}
+	}
+
 	// Validate EtcdLauncher feature flag immutability.
 	// Once the feature flag is enabled, it must not be disabled.
 	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher],

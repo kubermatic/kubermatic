@@ -181,12 +181,3 @@ func getAzureFlags(data *resources.TemplateData) []string {
 	}
 	return flags
 }
-
-// AzureCloudControllerSupported checks if this version of Kubernetes is supported
-// by our implementation of the external cloud controller.
-func AzureCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getAzureVersion(version); err != nil {
-		return false
-	}
-	return true
-}

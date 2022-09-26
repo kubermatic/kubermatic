@@ -184,12 +184,3 @@ func getOSVersion(version semver.Semver) (string, error) {
 		return v1240, nil
 	}
 }
-
-// OpenStackCloudControllerSupported checks if this version of Kubernetes is supported
-// by our implementation of the external cloud controller.
-func OpenStackCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getOSVersion(version); err != nil {
-		return false
-	}
-	return true
-}
