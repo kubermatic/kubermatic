@@ -145,10 +145,10 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
+func MigrateToExternalCCMEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider, configGetter)
+		return handlercommon.MigrateToExternalCCMEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider, configGetter)
 	}
 }
 

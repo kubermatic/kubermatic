@@ -703,7 +703,7 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 }
 
-func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
+func MigrateToExternalCCMEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
 	clusterID string, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter,
 ) (interface{}, error) {

@@ -5200,7 +5200,7 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.MigrateEndpointToExternalCCM(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.kubermaticConfigGetter)),
+		)(cluster.MigrateToExternalCCMEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.kubermaticConfigGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
