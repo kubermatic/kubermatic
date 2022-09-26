@@ -46,7 +46,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ExternalClusterSpec specifies the data for a new external kubernetes cluster.
+              description: Spec describes the desired cluster state.
               properties:
                 cloudSpec:
                   description: CloudSpec contains provider specific fields
@@ -54,11 +54,13 @@ spec:
                     aks:
                       properties:
                         clientID:
+                          description: 'ClientID: The service principal used to access Azure. Can be read from `credentialsReference` instead.'
                           type: string
                         clientSecret:
+                          description: 'ClientSecret: The client secret corresponding to the given service principal. Can be read from `credentialsReference` instead.'
                           type: string
                         credentialsReference:
-                          description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
+                          description: CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
                           properties:
                             apiVersion:
                               description: API version of the referent.
@@ -86,16 +88,21 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         location:
+                          description: 'Location: The geo-location where the resource lives'
                           type: string
                         name:
                           type: string
                         resourceGroup:
+                          description: 'ResourceGroup: The resource group that will be used to look up and create resources for the cluster in. If set to empty string at cluster creation, a new resource group will be created and this field will be updated to the generated resource group''s name.'
                           type: string
                         subscriptionID:
+                          description: 'SubscriptionID: The Azure Subscription used for this cluster. Can be read from `credentialsReference` instead.'
                           type: string
                         tenantID:
+                          description: 'TenantID: The Azure Active Directory Tenant used for this cluster. Can be read from `credentialsReference` instead.'
                           type: string
                       required:
+                        - credentialsReference
                         - location
                         - name
                         - resourceGroup
@@ -105,6 +112,7 @@ spec:
                     eks:
                       properties:
                         accessKeyID:
+                          description: 'AccessKeyID: AWS Access key ID Can be read from `credentialsReference` instead.'
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -138,9 +146,27 @@ spec:
                           type: string
                         region:
                           type: string
+                        roleArn:
+                          description: 'ControlPlaneRoleARN: The Amazon Resource Name (ARN) of the IAM role that provides permissions for the Kubernetes control plane to make calls to Amazon Web Services API operations on your behalf.'
+                          type: string
                         secretAccessKey:
+                          description: 'SecretAccessKey: AWS Secret Access Key Can be read from `credentialsReference` instead.'
+                          type: string
+                        securityGroupIDs:
+                          description: 'SecurityGroupIDs: The security groups associated with the cross-account elastic network interfaces that are used to allow communication between your nodes and the Kubernetes control plane.'
+                          items:
+                            type: string
+                          type: array
+                        subnetIDs:
+                          description: 'SubnetIDs: The subnets associated with your cluster.'
+                          items:
+                            type: string
+                          type: array
+                        vpcID:
+                          description: 'VPCID: The VPC associated with your cluster.'
                           type: string
                       required:
+                        - credentialsReference
                         - name
                         - region
                       type: object
@@ -177,11 +203,15 @@ spec:
                         name:
                           type: string
                         serviceAccount:
+                          description: 'ServiceAccount: The Google Cloud Platform Service Account. Can be read from `credentialsReference` instead.'
                           type: string
                         zone:
+                          description: 'Zone: The name of the Google Compute Engine zone (https://cloud.google.com/compute/docs/zones#available) in which the cluster resides.'
                           type: string
                       required:
+                        - credentialsReference
                         - name
+                        - zone
                       type: object
                     kubeone:
                       properties:
@@ -290,6 +320,33 @@ spec:
                   required:
                     - providerName
                   type: object
+                clusterNetwork:
+                  description: ExternalClusterNetworkingConfig specifies the different networking parameters for a external cluster.
+                  properties:
+                    pods:
+                      description: The network ranges from which POD networks are allocated. It can contain one IPv4 and/or one IPv6 CIDR. If both address families are specified, the first one defines the primary address family.
+                      properties:
+                        cidrBlocks:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                        - cidrBlocks
+                      type: object
+                    services:
+                      description: The network ranges from which service VIPs are allocated. It can contain one IPv4 and/or one IPv6 CIDR. If both address families are specified, the first one defines the primary address family.
+                      properties:
+                        cidrBlocks:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                        - cidrBlocks
+                      type: object
+                  required:
+                    - pods
+                    - services
+                  type: object
                 humanReadableName:
                   description: HumanReadableName is the cluster name provided by the user
                   type: string
@@ -329,11 +386,12 @@ spec:
                   type: string
               required:
                 - cloudSpec
+                - clusterNetwork
                 - humanReadableName
                 - pause
               type: object
             status:
-              description: ExternalClusterStatus denotes status information about an ExternalCluster.
+              description: Status contains reconciliation information for the cluster.
               properties:
                 condition:
                   description: Conditions contains conditions an externalcluster is in, its primary use case is status signaling for controller
