@@ -47,6 +47,20 @@ parameters:
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "aws" }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: ebs-sc
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+volumeBindingMode: WaitForFirstConsumer
+{{ else }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -59,6 +73,7 @@ provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2
 volumeBindingMode: WaitForFirstConsumer
+{{ end }}
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "vsphere" }}

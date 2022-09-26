@@ -70,6 +70,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		}
 		return supported
 
+	case cluster.Spec.Cloud.AWS != nil:
+		return true
+
 	case cluster.Spec.Cloud.Anexia != nil:
 		return true
 

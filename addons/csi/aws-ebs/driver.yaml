@@ -16,9 +16,7 @@
 # Run `make aws-ebs-csi-driver` instead.
 
 {{ if eq .Cluster.CloudProviderName "aws" }}
-# CSIMigrationAWS is only enabled in KKP starting with Kubernetes 1.25
-# See https://github.com/kubermatic/kubermatic/pull/11049
-{{ if gt .Cluster.Version.Minor 24 }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
 ---
 # Source: aws-ebs-csi-driver/templates/poddisruptionbudget-controller.yaml
 apiVersion: policy/v1beta1
@@ -534,6 +532,7 @@ spec:
           args:
             - controller
             - --endpoint=$(CSI_ENDPOINT)
+            - --k8s-tag-cluster-id={{ .Cluster.Name }}
             - --logtostderr
             - --v=2
           env:
@@ -674,6 +673,5 @@ spec:
   attachRequired: true
   podInfoOnMount: false
   fsGroupPolicy: File
-{{ end }}
 {{ end }}
 {{ end }}
