@@ -85,7 +85,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -111,7 +111,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
-			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"%s","cloud":{"version":"%s","fake":{"token":"dummy_token"},"dc":"fake-dc","enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"containerRuntime":"containerd"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`, version, version),
+			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"%s","cloud":{"version":"%s","fake":{"token":"dummy_token"},"dc":"fake-dc","containerRuntime":"containerd"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`, version, version),
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -171,7 +171,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 10a: create a cluster in email-restricted datacenter, to which the user does have access - legacy single domain restriction with requiredEmailDomains",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -185,7 +185,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 10b: create a cluster in email-restricted datacenter, to which the user does have access - domain array restriction with `requiredEmailDomains`",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -199,7 +199,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 11: create a cluster in audit-logging-enforced datacenter, without explicitly enabling audit logging",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"audited-dc"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -213,7 +213,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 12: the admin user can create cluster for any project",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","spec":{"version":"%s","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -266,7 +266,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 15: cluster is created with preset annotation",
 			Body:             fmt.Sprintf(`{"cluster":{"name":"keen-snyder","credential":"fake","spec":{"version":"%s","cloud":{"fake":{},"dc":"fake-dc"}}}}`, version),
-			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","annotations":{"presetName":"fake"},"creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"enableUserSSHKeyAgent":true,"enableOperatingSystemManager":true,"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
+			ExpectedResponse: fmt.Sprintf(`{"id":"%%s","name":"keen-snyder","annotations":{"presetName":"fake"},"creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"%s","oidc":{},"kubernetesDashboard":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"ipFamily":"IPv4","services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","ipvs":{"strictArp":true},"nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.23"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`, version),
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,

@@ -275,6 +275,8 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 				jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
@@ -335,6 +337,8 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
@@ -381,7 +385,11 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: defaultPatches,
+			wantPatches: append(
+				defaultPatches,
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+			),
 		},
 		{
 			name: "Default features",
@@ -424,6 +432,8 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -468,6 +478,7 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
 			),
 		},
@@ -515,6 +526,7 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
 			),
 		},
@@ -563,6 +575,8 @@ func TestHandle(t *testing.T) {
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -631,6 +645,7 @@ func TestHandle(t *testing.T) {
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -706,6 +721,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal)),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -781,6 +797,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.22"),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -817,6 +834,9 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -861,6 +881,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
 			),
 		},
@@ -904,6 +925,9 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			),
 		},
 		{
@@ -943,6 +967,9 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			),
 		},
 		{
@@ -989,6 +1016,9 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
@@ -1065,6 +1095,7 @@ func TestHandle(t *testing.T) {
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
 			),
 		},
 		{
@@ -1111,7 +1142,10 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(defaultPatches, defaultNetworkingPatches...),
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatches...),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+			),
 		},
 		{
 			name: "Update non-OpenStack cluster to enable CCM/CSI migration",
@@ -1157,7 +1191,10 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+			),
 		},
 		{
 			name: "Update cluster with CNI none",
@@ -1203,7 +1240,10 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+				jsonpatch.NewOperation("add", "/spec/enableUserSSHKeyAgent", true),
+			),
 		},
 	}
 	for _, tt := range tests {
