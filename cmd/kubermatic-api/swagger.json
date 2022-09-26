@@ -24727,6 +24727,9 @@
         "eventRateLimitConfig": {
           "$ref": "#/definitions/EventRateLimitConfig"
         },
+        "exposeStrategy": {
+          "$ref": "#/definitions/ExposeStrategy"
+        },
         "kubernetesDashboard": {
           "$ref": "#/definitions/KubernetesDashboard"
         },
