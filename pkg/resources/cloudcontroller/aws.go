@@ -80,7 +80,8 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 				{
 					Name:  ccmContainerName,
 					Image: data.ImageRegistry(resources.RegistryK8S) + "/provider-aws/cloud-controller-manager:" + ccmVersion,
-					Args: []string{
+					Command: []string{
+						"/bin/aws-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=aws",
 						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
