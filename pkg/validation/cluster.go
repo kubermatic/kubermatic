@@ -231,7 +231,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 			clusterVersion = newCluster.Spec.Version
 		}
 
-		if resources.ExternalCloudControllerFeatureSupported(dc, &newCluster.Spec.Cloud, clusterVersion, versionManager.GetIncompatibilities()...) {
+		if !resources.ExternalCloudControllerFeatureSupported(dc, &newCluster.Spec.Cloud, clusterVersion, versionManager.GetIncompatibilities()...) {
 			allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), true, "external cloud-controller-manager is not supported for this cluster / provider combination"))
 		}
 	}
