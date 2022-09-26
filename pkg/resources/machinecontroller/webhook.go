@@ -68,8 +68,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 				args = append(args, "-use-osm")
 			}
 
-			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-			if externalCloudProvider {
+			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 				args = append(args, "-node-external-cloud-provider")
 			}
 

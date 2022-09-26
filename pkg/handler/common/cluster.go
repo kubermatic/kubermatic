@@ -276,28 +276,8 @@ func GenerateCluster(
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 	partialCluster.Spec = *spec
 
-	if body.Cluster.Spec.EnableUserSSHKeyAgent == nil {
-		partialCluster.Spec.EnableUserSSHKeyAgent = pointer.BoolPtr(true)
-	} else {
-		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
-	}
-
-	// OSM is enabled by default.
-	if body.Cluster.Spec.EnableOperatingSystemManager == nil {
-		partialCluster.Spec.EnableOperatingSystemManager = pointer.BoolPtr(true)
-	} else {
-		partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
-	}
-
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-		if partialCluster.Spec.Cloud.VSphere != nil {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
-	}
+	partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
+	partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
 
 	return partialCluster, nil
 }
@@ -739,6 +719,10 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		return nil, err
 	}
 
+	if oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		return nil, utilerrors.NewBadRequest("external CCM already enabled")
+	}
+
 	config, err := configGetter(ctx)
 	if err != nil {
 		return nil, err
@@ -751,10 +735,6 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 
 	if !cloudcontroller.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
 		return nil, utilerrors.NewBadRequest("external CCM not supported by the given provider")
-	}
-
-	if ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
-		return nil, utilerrors.NewBadRequest("external CCM already enabled, cannot be disabled")
 	}
 
 	newCluster := oldCluster.DeepCopy()

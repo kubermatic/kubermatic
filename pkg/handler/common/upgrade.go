@@ -68,9 +68,9 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
+
 	var updateConditions []kubermaticv1.ConditionType
-	externalCloudProvider := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-	if externalCloudProvider {
+	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
 	}
 

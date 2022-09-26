@@ -31,6 +31,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -85,19 +87,25 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	cluster := &kubermaticv1.Cluster{}
 	oldCluster := &kubermaticv1.Cluster{}
 
+	config, seed, err := h.getConfigs(ctx)
+	if err != nil {
+		h.log.Error(err, "cluster mutation failed")
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+	}
+
 	switch req.Operation {
 	case admissionv1.Create:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		err := h.applyDefaults(ctx, cluster)
+		err := h.applyDefaults(ctx, cluster, config, seed)
 		if err != nil {
 			h.log.Error(err, "cluster mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
-		if err := h.mutateCreate(cluster); err != nil {
+		if err := h.mutateCreate(cluster, config, seed); err != nil {
 			h.log.Error(err, "cluster mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
@@ -112,7 +120,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		if cluster.DeletionTimestamp == nil {
 			// apply defaults to the existing clusters
-			err := h.applyDefaults(ctx, cluster)
+			err := h.applyDefaults(ctx, cluster, config, seed)
 			if err != nil {
 				h.log.Error(err, "cluster mutation failed")
 				return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
@@ -139,15 +147,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster) error {
-	seed, provider, fieldErr := h.buildDefaultingDependencies(ctx, c)
+func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
+	provider, fieldErr := h.getCloudProvider(ctx, c, seed)
 	if fieldErr != nil {
 		return fieldErr
-	}
-
-	config, err := h.configGetter(ctx)
-	if err != nil {
-		return err
 	}
 
 	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, h.client, seed)
@@ -159,7 +162,7 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 }
 
 // mutateCreate is an addition to regular defaulting for new clusters.
-func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	if newCluster.Spec.Features == nil {
 		newCluster.Spec.Features = map[string]bool{}
 	}
@@ -167,6 +170,24 @@ func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error 
 	// Network policies for Apiserver are deployed by default
 	if _, ok := newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
 		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
+	}
+
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&newCluster.Spec, seed)
+	if fieldErr != nil {
+		return fieldErr
+	}
+
+	// Ensure that for new clusters the externalCCM is enabled when possible.
+	if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, newCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+
+		if cloudcontroller.ExternalCloudControllerClusterName(newCluster) {
+			newCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
+		}
+
+		if newCluster.Spec.Cloud.VSphere != nil {
+			newCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+		}
 	}
 
 	return nil
@@ -249,29 +270,39 @@ func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
 	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
 }
 
-func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
+func (h *AdmissionHandler) getConfigs(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, *kubermaticv1.Seed, error) {
+	config, err := h.configGetter(ctx)
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
 	seed, err := h.seedGetter()
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
+
 	if seed == nil {
 		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
 	}
 
+	return config, seed, nil
+}
+
+func (h *AdmissionHandler) getCloudProvider(ctx context.Context, c *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (provider.CloudProvider, *field.Error) {
 	if h.disableProviderMutation {
-		return seed, nil, nil
+		return nil, nil
 	}
 
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
 	if fieldErr != nil {
-		return nil, nil, fieldErr
+		return nil, fieldErr
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, field.InternalError(nil, err)
 	}
 
-	return seed, cloudProvider, nil
+	return cloudProvider, nil
 }

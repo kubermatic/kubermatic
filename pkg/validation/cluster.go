@@ -128,10 +128,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 
-	externalCCM := false
-	if val, ok := spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
-		externalCCM = val
-	}
+	externalCCM := spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
 	// general cloud spec logic
 	if errs := ValidateCloudSpec(spec.Cloud, dc, spec.ClusterNetwork.IPFamily, parentFieldPath.Child("cloud"), externalCCM); len(errs) > 0 {

@@ -224,8 +224,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		}
 	}
 
-	externalCloudProvider := features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-	if externalCloudProvider {
+	if features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		flags = append(flags, "-node-external-cloud-provider")
 	}
 

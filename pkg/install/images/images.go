@@ -149,7 +149,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
 
-	if val, ok := templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok && val {
+	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
 	}
 

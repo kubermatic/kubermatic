@@ -35,7 +35,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// DefaultClusterSpec defaults the cluster spec when creating a new cluster.
+// DefaultClusterSpec defaults the cluster spec when creating/updting a cluster.
 // Defaults are taken from, in order:
 //  1. ClusterTemplate (if given)
 //  2. Seed's spec.componentsOverrides
@@ -126,6 +126,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		spec.EnableOperatingSystemManager = pointer.Bool(true)
 	}
 
+	// UserSSHKeyAgent is enabled by default.
+	if spec.EnableUserSSHKeyAgent == nil {
+		spec.EnableUserSSHKeyAgent = pointer.Bool(true)
+	}
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
@@ -138,14 +143,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
-
-	// Always enable external CCM
-	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
-		if spec.Features == nil {
-			spec.Features = map[string]bool{}
-		}
-		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-	}
 
 	return nil
 }
