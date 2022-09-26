@@ -80,6 +80,13 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
     "
 fi
 
+if [[ "$PROVIDER_TO_TEST" == "aws" ]]; then
+  EXTRA_ARGS="-aws-access-key-id=$AWS_ACCESS_KEY_ID
+    -aws-secret-access-key=$AWS_SECRET_ACCESS_KEY
+    -aws-kkp-datacenter=aws-eu-central-1a"
+  ;;
+fi
+
 # run tests
 echodate "Running CCM tests..."
 
