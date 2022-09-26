@@ -1,5 +1,5 @@
 apiVersion: v2
-version: 0.7.0
+version: v9.9.9-dev
 appVersion: v1.10.0
 description: 'Horizontally scalable, highly available, multi-tenant, long term Prometheus.'
 home: https://cortexmetrics.io/

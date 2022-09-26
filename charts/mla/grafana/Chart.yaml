@@ -8,7 +8,7 @@ name: grafana
 sources:
 - https://github.com/grafana/grafana
 type: application
-version: 6.17.5
+version: v9.9.9-dev
 dependencies:
   - name: grafana
     repository: https://grafana.github.io/helm-charts
