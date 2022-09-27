@@ -61,7 +61,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
-        image: k8s.gcr.io/kube-scheduler:v1.22.1
+        image: registry.k8s.io/kube-scheduler:v1.22.1
         livenessProbe:
           failureThreshold: 8
           httpGet:
