@@ -28,6 +28,7 @@ import (
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -146,7 +147,8 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
 	}
 
-	if err := ensureOrgUser(ctx, grafanaClient, project, userProjectBinding); err != nil {
+	if err := ensureOrgUser(ctx, grafanaClient, project, userProjectBinding.Spec.UserEmail,
+		rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)); err != nil {
 		if strings.Contains(err.Error(), "project should have grafana org annotation set") {
 			log.Warnf("unable to ensure Grafana Org/User, retrying in 30s: %s", err.Error())
 			return reconcile.Result{RequeueAfter: time.Second * 30}, nil

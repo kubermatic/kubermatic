@@ -30,12 +30,16 @@ import (
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -56,6 +60,7 @@ type userGrafanaReconciler struct {
 }
 
 func newUserGrafanaReconciler(
+	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -94,7 +99,65 @@ func newUserGrafanaReconciler(
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
 		return fmt.Errorf("failed to watch Users: %w", err)
 	}
+
+	// watch UserProjectBindings
+	if err = c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(ctx, reconciler.Client))); err != nil {
+		return fmt.Errorf("failed to watch userprojectbindings: %w", err)
+	}
+
+	// watch GroupProjectBindings
+	if err = c.Watch(&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(ctx, reconciler.Client))); err != nil {
+		return fmt.Errorf("failed to watch groupprojectbindings: %w", err)
+	}
 	return err
+}
+
+// enqueueUserForUserProjectBinding enqueues users connected with the userprojectbinding
+func enqueueUserForUserProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
+	return func(o ctrlruntimeclient.Object) []reconcile.Request {
+		var res []reconcile.Request
+		upb, ok := o.(*kubermaticv1.UserProjectBinding)
+		if !ok {
+			utilruntime.HandleError(fmt.Errorf("object is not an UserProjectBinding: %T", o))
+			return res
+		}
+
+		userList := &kubermaticv1.UserList{}
+		if err := c.List(ctx, userList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list users: %w", err))
+			return res
+		}
+		for _, user := range userList.Items {
+			if upb.Spec.UserEmail == user.Spec.Email {
+				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
+			}
+		}
+		return res
+	}
+}
+
+// enqueueUserForGroupProjectBinding enqueues users connected with the groupprojectbinding
+func enqueueUserForGroupProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
+	return func(o ctrlruntimeclient.Object) []reconcile.Request {
+		var res []reconcile.Request
+		gpb, ok := o.(*kubermaticv1.GroupProjectBinding)
+		if !ok {
+			utilruntime.HandleError(fmt.Errorf("object is not an GroupProjectBinding: %T", o))
+			return res
+		}
+
+		userList := &kubermaticv1.UserList{}
+		if err := c.List(ctx, userList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list users: %w", err))
+			return res
+		}
+		for _, user := range userList.Items {
+			if slices.Contains(user.Spec.Groups, gpb.Spec.Group) {
+				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
+			}
+		}
+		return res
+	}
 }
 
 func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -202,6 +265,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 }
 
 func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User, grafanaClient *grafanasdk.Client) error {
+	// get user
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err
@@ -225,6 +289,8 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	if status, err := grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
 		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
+
+	// if admin flipped, give/remove user from all orgs and update grafana admin
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
 		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
 		projectList := &kubermaticv1.ProjectList{}
@@ -247,28 +313,66 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				}
 			}
 		}
-		if !grafanaUser.IsGrafanaAdmin {
-			userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
-			if err := r.List(ctx, userProjectBindingList); err != nil {
-				return err
-			}
-			for _, userProjectBinding := range userProjectBindingList.Items {
-				if userProjectBinding.Spec.UserEmail != user.Spec.Email {
-					continue
-				}
-				project := &kubermaticv1.Project{}
-				if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
-					return fmt.Errorf("failed to get project: %w", err)
-				}
-				if err := ensureOrgUser(ctx, grafanaClient, project, &userProjectBinding); err != nil {
-					return err
-				}
-			}
-		}
 		status, err := grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
+
+	// TODO prune user from orgs it is not a member of anymore
+	if !grafanaUser.IsGrafanaAdmin {
+		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
+		if err != nil {
+			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
+		}
+
+		for projectName, role := range projectRoles {
+			project := &kubermaticv1.Project{}
+			if err := r.Get(ctx, types.NamespacedName{Name: projectName}, project); err != nil {
+				return fmt.Errorf("failed to get project %q: %w", projectName, err)
+			}
+
+			if err := ensureOrgUser(ctx, grafanaClient, project, user.Spec.Email, role); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
+}
+
+func getProjectRolesForUser(ctx context.Context, client ctrlruntimeclient.Client, user *kubermaticv1.User) (map[string]grafanasdk.RoleType, error) {
+	projectMap := make(map[string]grafanasdk.RoleType)
+
+	// get projects/roles by userProjectBinding
+	upbList := &kubermaticv1.UserProjectBindingList{}
+	if err := client.List(ctx, upbList); err != nil {
+		return projectMap, err
+	}
+	for _, upb := range upbList.Items {
+		if upb.Spec.UserEmail == user.Spec.Email {
+			projectMap[upb.Spec.ProjectID] = groupToRole[rbac.ExtractGroupPrefix(upb.Spec.Group)]
+		}
+	}
+
+	// get projects/roles by groupProjectBinding
+	gpbList := &kubermaticv1.GroupProjectBindingList{}
+	if err := client.List(ctx, gpbList); err != nil {
+		return projectMap, err
+	}
+	userGroups := sets.NewString(user.Spec.Groups...)
+	for _, gpb := range gpbList.Items {
+		if userGroups.Has(gpb.Spec.Group) {
+			role := groupToRole[gpb.Spec.Role]
+
+			if upbRole, ok := projectMap[gpb.Spec.ProjectID]; ok && role != upbRole {
+				// we have 3 roles, viewer, editor and owner. Editor and owner get translated to the editor grafana role,
+				// so if the roles are different, means they are not both viewers, so we can set editor role here.
+				role = grafanasdk.ROLE_EDITOR
+			}
+			projectMap[gpb.Spec.ProjectID] = role
+		}
+	}
+
+	return projectMap, nil
 }
