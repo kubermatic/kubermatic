@@ -1603,6 +1603,45 @@ type VirtualMachineInstancePreset struct {
 	Spec string `json:"spec,omitempty"`
 }
 
+// VirtualMachineInstancetypeList represents a list of VirtualMachineInstancetype.
+// VirtualMachineInstancetype are divided into 2 categories: "custom" or "kubermatic".
+// swagger:model VirtualMachineInstancetypeList
+type VirtualMachineInstancetypeList struct {
+	Instancetypes map[VirtualMachineInstancetypeCategory][]VirtualMachineInstancetype `json:"instancetypes,omitempty"`
+}
+
+// VirtualMachineInstancetypeCategory defines a category of VirtualMachineInstancetype.
+type VirtualMachineInstancetypeCategory string
+
+const (
+
+	// cluster-wide resources (KubeVirt VirtualMachineClusterInstancetype).
+	InstancetypeCustom VirtualMachineInstancetypeCategory = "custom"
+
+	// namespaced resources (KubeVirt VirtualMachineInstancetype).
+	InstancetypeKubermatic VirtualMachineInstancetypeCategory = "kubermatic"
+)
+
+// VirtualMachineInstanctype represents a KubeVirt VirtualMachineInstanctype
+// swagger:model VirtualMachineInstancetype
+type VirtualMachineInstancetype struct {
+	Name string `json:"name,omitempty"`
+	// Spec contains the kvinstancetypealpha1v1.VirtualMachineInstanctype.Spec object marshalled
+	// Required by UI to not embed the whole kubevirt.io API object, but a marshalled spec.
+	Spec string `json:"spec,omitempty"`
+}
+
+// VirtualMachinePreference represents a KubeVirt VirtualMachinePreference
+// swagger:model VirtualMachinePreference
+type VirtualMachinePreference VirtualMachineInstancetype
+
+// VirtualMachinePreferenceList represents a list of VirtualMachinePreference.
+// VirtualMachinePreference are divided into 2 categories: "custom" or "kubermatic".
+// swagger:model VirtualMachinePreferenceList
+type VirtualMachinePreferenceList struct {
+	Preferences map[VirtualMachineInstancetypeCategory][]VirtualMachinePreference `json:"preferences,omitempty"`
+}
+
 // StorageClassList represents a list of Kubernetes StorageClass.
 // swagger:model StorageClassList
 type StorageClassList []StorageClass
