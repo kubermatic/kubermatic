@@ -313,8 +313,21 @@ var (
 				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
+
+			// External CCM on AWS requires Kubernetes 1.24+
 			{
-				// External CCM on AWS requires Kubernetes 1.24+
+				Provider:  kubermaticv1.AWSCloudProvider,
+				Version:   "< 1.24.0",
+				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.SupportOperation,
+			},
+			{
+				Provider:  kubermaticv1.AWSCloudProvider,
+				Version:   "< 1.24.0",
+				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
 				Provider:  kubermaticv1.AWSCloudProvider,
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
