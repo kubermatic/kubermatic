@@ -146,6 +146,14 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 			spec.Features = map[string]bool{}
 		}
 		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+
+		if resources.ExternalCloudControllerClusterName(&spec.Cloud) {
+			spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
+		}
+
+		if spec.Cloud.VSphere != nil {
+			spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+		}
 	}
 
 	return nil

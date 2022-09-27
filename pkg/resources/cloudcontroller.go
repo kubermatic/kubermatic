@@ -115,11 +115,13 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 
 // ExternalCloudControllerClusterName checks if the ClusterFeatureCCMClusterName is supported
 // for the cloud provider.
-func ExternalCloudControllerClusterName(cluster *kubermaticv1.Cluster) bool {
+func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool {
 	switch {
-	case cluster.Spec.Cloud.Openstack != nil:
+	case cloudSpec.Openstack != nil:
 		return true
-	case cluster.Spec.Cloud.Azure != nil:
+	case cloudSpec.Azure != nil:
+		return true
+	case cloudSpec.AWS != nil:
 		return true
 	default:
 		return false

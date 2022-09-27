@@ -289,16 +289,6 @@ func GenerateCluster(
 		partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
 	}
 
-	if resources.ExternalCloudControllerFeatureSupported(dc, &partialCluster.Spec.Cloud, partialCluster.Spec.Version, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if resources.ExternalCloudControllerClusterName(partialCluster) {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-		if partialCluster.Spec.Cloud.VSphere != nil {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
-	}
-
 	return partialCluster, nil
 }
 
