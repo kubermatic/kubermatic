@@ -330,8 +330,6 @@ spec:
                           items:
                             type: string
                           type: array
-                      required:
-                        - cidrBlocks
                       type: object
                     services:
                       description: The network ranges from which service VIPs are allocated. It can contain one IPv4 and/or one IPv6 CIDR. If both address families are specified, the first one defines the primary address family.
@@ -340,12 +338,7 @@ spec:
                           items:
                             type: string
                           type: array
-                      required:
-                        - cidrBlocks
                       type: object
-                  required:
-                    - pods
-                    - services
                   type: object
                 humanReadableName:
                   description: HumanReadableName is the cluster name provided by the user
@@ -386,7 +379,6 @@ spec:
                   type: string
               required:
                 - cloudSpec
-                - clusterNetwork
                 - humanReadableName
                 - pause
               type: object

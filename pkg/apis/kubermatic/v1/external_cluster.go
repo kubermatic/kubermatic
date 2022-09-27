@@ -111,7 +111,7 @@ type ExternalClusterSpec struct {
 	// CloudSpec contains provider specific fields
 	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
 
-	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork"`
+	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
 
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
@@ -128,17 +128,17 @@ type ExternalClusterNetworkingConfig struct {
 	// The network ranges from which service VIPs are allocated.
 	// It can contain one IPv4 and/or one IPv6 CIDR.
 	// If both address families are specified, the first one defines the primary address family.
-	Services NetworkRanges `json:"services"`
+	Services ExternalClusterNetworkRanges `json:"services,omitempty"`
 
 	// The network ranges from which POD networks are allocated.
 	// It can contain one IPv4 and/or one IPv6 CIDR.
 	// If both address families are specified, the first one defines the primary address family.
-	Pods NetworkRanges `json:"pods"`
+	Pods ExternalClusterNetworkRanges `json:"pods,omitempty"`
 }
 
 // ExternalClusterNetworkRanges represents ranges of network addresses.
 type ExternalClusterNetworkRanges struct {
-	CIDRBlocks []string `json:"cidrBlocks"`
+	CIDRBlocks []string `json:"cidrBlocks,omitempty"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
