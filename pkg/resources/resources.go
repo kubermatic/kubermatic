@@ -400,6 +400,8 @@ const (
 
 	// RegistryK8SGCR defines the kubernetes specific docker registry at google.
 	RegistryK8SGCR = "k8s.gcr.io"
+	// RegistryK8S defines the (new) official registry hosted by the Kubernetes project.
+	RegistryK8S = "registry.k8s.io"
 	// RegistryEUGCR defines the docker registry at google EU.
 	RegistryEUGCR = "eu.gcr.io"
 	// RegistryUSGCR defines the docker registry at google US.

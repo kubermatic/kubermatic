@@ -150,7 +150,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
+				Image:   data.ImageRegistry(resources.RegistryK8S) + "/kube-apiserver:v" + version.String(),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,

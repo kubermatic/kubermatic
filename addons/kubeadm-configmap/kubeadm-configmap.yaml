@@ -29,7 +29,7 @@ data:
     apiVersion: kubeadm.k8s.io/v1beta3
     {{- end }}
     certificatesDir: /etc/kubernetes/pki
-    imageRepository: k8s.gcr.io
+    imageRepository: registry.k8s.io
     kind: ClusterConfiguration
     kubernetesVersion: {{ .Cluster.Version }}
   ClusterStatus: |

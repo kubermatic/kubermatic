@@ -646,7 +646,7 @@ spec:
       serviceAccount: snapshot-controller
       containers:
       - name: snapshot-controller
-        image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:v4.2.1
+        image: {{ Registry "registry.k8s.io" }}/sig-storage/snapshot-controller:v4.2.1
         imagePullPolicy: IfNotPresent
         args:
         - --v=5
@@ -689,7 +689,7 @@ spec:
     spec:
       containers:
       - name: snapshot-validation
-        image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v4.2.1
+        image: {{ Registry "registry.k8s.io" }}/sig-storage/snapshot-validation-webhook:v4.2.1
         imagePullPolicy: IfNotPresent
         args:
           - --tls-cert-file=/etc/snapshot-validation-webhook/certs/cert.pem
