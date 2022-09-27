@@ -984,6 +984,9 @@ type ClusterSpec struct {
 
 	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
 	CNIPlugin *kubermaticv1.CNIPluginSettings `json:"cniPlugin,omitempty"`
+
+	// ExposeStrategy is the strategy used to expose a cluster control plane.
+	ExposeStrategy kubermaticv1.ExposeStrategy `json:"exposeStrategy"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -1011,6 +1014,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
 		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
+		ExposeStrategy                       kubermaticv1.ExposeStrategy            `json:"exposeStrategy,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName:      cs.Cloud.DatacenterName,
@@ -1050,6 +1054,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
 		CNIPlugin:                            cs.CNIPlugin,
+		ExposeStrategy:                       cs.ExposeStrategy,
 	})
 
 	return ret, err
