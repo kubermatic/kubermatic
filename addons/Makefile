@@ -25,7 +25,7 @@ hubble:
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.12.1 \
+	  --version 1.12.2 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
@@ -52,4 +52,4 @@ metallb: OUTPUT_FILE=metallb/00_metallb.yaml
 metallb:
 	cat metallb/_header.txt > $(OUTPUT_FILE)
 	wget -q -O- https://raw.githubusercontent.com/metallb/metallb/v0.13.3/config/manifests/metallb-native.yaml >> $(OUTPUT_FILE)
-	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)	
+	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)
