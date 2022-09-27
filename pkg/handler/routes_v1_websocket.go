@@ -234,8 +234,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			err = errors.New("reached the maximum number of terminal active connections for the user")
 			log.Logger.Debug(err)
 			w.WriteHeader(http.StatusTooManyRequests)
-			w.Write([]byte(err.Error()))
-			return
+			_, _ = w.Write([]byte(err.Error()))
 		}
 		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
 		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
