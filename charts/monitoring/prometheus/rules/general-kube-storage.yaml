@@ -1,0 +1,132 @@
+# This file has been generated, DO NOT EDIT.
+
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+groups:
+  - name: kubernetes-storage
+    rules:
+      - alert: KubePersistentVolumeFillingUp
+        annotations:
+          description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+        summary: PersistentVolume is filling up.
+        expr: |
+          (
+            kubelet_volume_stats_available_bytes{job="kubelet"}
+              /
+            kubelet_volume_stats_capacity_bytes{job="kubelet"}
+          ) < 0.05
+          and
+          kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+        for: 1m
+        labels:
+          severity: critical
+      - alert: KubePersistentVolumeFillingUp
+        annotations:
+          description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+        summary: PersistentVolume is filling up.
+        expr: |
+          (
+            kubelet_volume_stats_available_bytes{job="kubelet"}
+              /
+            kubelet_volume_stats_capacity_bytes{job="kubelet"}
+          ) < 0.07
+          and
+          kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+        for: 1m
+        labels:
+          severity: warning
+      - alert: KubePersistentVolumeFillingUp
+        annotations:
+          description: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value | humanizePercentage }} is available.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+          summary: PersistentVolume is filling up.
+        expr: |
+          (
+            kubelet_volume_stats_available_bytes{job="kubelet"}
+              /
+            kubelet_volume_stats_capacity_bytes{job="kubelet"}
+          ) < 0.15
+          and
+          kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+          and
+          predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+        for: 1h
+        labels:
+          severity: warning
+      - alert: KubePersistentVolumeInodesFillingUp
+        annotations:
+          description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage }} free inodes.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+          summary: PersistentVolumeInodes are filling up.
+        expr: |
+          (
+            kubelet_volume_stats_inodes_free{job="kubelet"}
+              /
+            kubelet_volume_stats_inodes{job="kubelet"}
+          ) < 0.03
+          and
+          kubelet_volume_stats_inodes_used{job="kubelet"} > 0
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+        for: 1m
+        labels:
+          severity: critical
+      - alert: KubePersistentVolumeInodesFillingUp
+        annotations:
+          description: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to run out of inodes within four days. Currently {{ $value | humanizePercentage }} of its inodes are free.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+          summary: PersistentVolumeInodes are filling up.
+        expr: |
+          (
+            kubelet_volume_stats_inodes_free{job="kubelet"}
+              /
+            kubelet_volume_stats_inodes{job="kubelet"}
+          ) < 0.15
+          and
+          kubelet_volume_stats_inodes_used{job="kubelet"} > 0
+          and
+          predict_linear(kubelet_volume_stats_inodes_free{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+          unless on(namespace, persistentvolumeclaim)
+          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+        for: 1h
+        labels:
+          severity: warning
+      - alert: KubePersistentVolumeErrors
+        annotations:
+          description: The persistent volume {{ $labels.persistentvolume }} has status {{ $labels.phase }}.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeerrors
+          summary: PersistentVolume is having issues with provisioning.
+        expr: |
+          kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
+        for: 5m
+        labels:
+          severity: critical
