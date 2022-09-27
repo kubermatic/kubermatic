@@ -83,7 +83,7 @@ fi
 if [[ "$PROVIDER_TO_TEST" == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=$AWS_E2E_TESTS_KEY_ID
     -aws-secret-access-key=$AWS_E2E_TESTS_SECRET
-    -aws-kkp-datacenter=aws-eu-central-1a
+    -aws-seed-datacenter=aws-eu-central-1a
     "
 fi
 

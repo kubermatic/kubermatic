@@ -58,10 +58,12 @@ type testOptions struct {
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
 	azureSeedDatacenter   string
+	awsSeedDatacenter     string
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
 	azureCredentials   providers.AzureCredentialsType
+	awsCredentials     providers.AWSCredentialsType
 }
 
 var (
@@ -78,6 +80,7 @@ func init() {
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
 	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
+	flag.StringVar(&options.awsSeedDatacenter, "aws-seed-datacenter", "", "aws seed datacenter")
 
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
@@ -93,6 +96,9 @@ func init() {
 	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
 	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
 	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
+
+	flag.StringVar(&options.awsCredentials.AccessKeyID, "aws-access-key-id", "", "AWS access key ID")
+	flag.StringVar(&options.awsCredentials.SecretAccessKey, "aws-secret-access-key", "", "AWS secret access key")
 
 	options.logOptions.AddFlags(flag.CommandLine)
 }
@@ -135,6 +141,8 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlru
 		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
 	case kubermaticv1.AzureCloudProvider:
 		clusterJig = providers.NewClusterJigAzure(seedClient, logger, options.kubernetesVersion, options.azureSeedDatacenter, options.azureCredentials)
+	case kubermaticv1.AWSCloudProvider:
+		clusterJig = providers.NewClusterJigAWS(seedClient, logger, options.kubernetesVersion, options.awsSeedDatacenter, options.awsCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
