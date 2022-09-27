@@ -330,17 +330,17 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				},
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2/users", nil),
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/2/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 				{
