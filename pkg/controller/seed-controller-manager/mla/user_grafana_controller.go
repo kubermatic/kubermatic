@@ -324,7 +324,6 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	}
 
 	// handle regular user
-
 	projectMap := map[string]*kubermaticv1.Project{}
 	for _, project := range projectList.Items {
 		projectMap[project.Name] = project.DeepCopy()
@@ -392,8 +391,8 @@ func getProjectRolesForUser(ctx context.Context, client ctrlruntimeclient.Client
 			role := groupToRole[gpb.Spec.Role]
 
 			if upbRole, ok := projectMap[gpb.Spec.ProjectID]; ok && role != upbRole {
-				// we have 3 roles, viewer, editor and owner. Editor and owner get translated to the editor grafana role,
-				// so if the roles are different, means they are not both viewers, so we can set editor role here.
+				// we use 2 roles in grafana viewer and editor, so if the roles are different,
+				// means they are not both viewers, so we can set editor role here.
 				role = grafanasdk.ROLE_EDITOR
 			}
 			projectMap[gpb.Spec.ProjectID] = role
