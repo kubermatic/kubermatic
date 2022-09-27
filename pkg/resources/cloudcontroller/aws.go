@@ -86,6 +86,7 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-config=/etc/kubernetes/cloud/config",
 						"--cloud-provider=aws",
+						fmt.Sprintf("--cluster-name=%s", data.Cluster().Name),
 						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
 					},
 					Env: append(
