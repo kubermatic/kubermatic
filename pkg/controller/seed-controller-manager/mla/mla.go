@@ -127,7 +127,6 @@ func Add(
 		return fmt.Errorf("failed to prepare Grafana client: %w", err)
 	}
 
-	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, clientProvider)
 	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), clientProvider, mlaNamespace, log, overwriteRegistry)
@@ -146,9 +145,6 @@ func Add(
 		}
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla org grafana controller: %w", err)
-		}
-		if err := newOrgUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgUserGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla org user garafana controller: %w", err)
 		}
 		if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, datasourceGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla datasource grafana controller: %w", err)
@@ -172,7 +168,6 @@ func Add(
 			datasourceGrafanaController,
 			dashboardGrafanaController,
 			alertmanagerController,
-			orgUserGrafanaController,
 			orgGrafanaController,
 			userGrafanaController,
 			ruleGroupController,
