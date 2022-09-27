@@ -88,7 +88,7 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 					Containers: []corev1.Container{
 						{
 							Name:  "busybox",
-							Image: "k8s.gcr.io/busybox",
+							Image: "registry.k8s.io/busybox",
 							Args: []string{
 								"/bin/sh",
 								"-c",

@@ -119,7 +119,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 				{
 					Name: resources.DNSResolverDeploymentName,
 					// like etcd, this component follows the apiserver version and not the controller-manager version
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()),
+					Image: data.ImageRegistry(resources.RegistryK8S) + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
