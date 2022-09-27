@@ -235,6 +235,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			log.Logger.Debug(err)
 			w.WriteHeader(http.StatusTooManyRequests)
 			_, _ = w.Write([]byte(err.Error()))
+			return
 		}
 		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
 		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
