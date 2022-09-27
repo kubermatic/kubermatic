@@ -387,6 +387,8 @@ spec:
         runAsGroup: 0
         runAsNonRoot: false
         runAsUser: 0
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ebs-plugin
           image: {{ Registry "public.ecr.aws" }}/ebs-csi-driver/aws-ebs-csi-driver:v1.11.3
@@ -525,6 +527,8 @@ spec:
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ebs-plugin
           image: {{ Registry "public.ecr.aws" }}/ebs-csi-driver/aws-ebs-csi-driver:v1.11.3
