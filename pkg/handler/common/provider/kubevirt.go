@@ -241,6 +241,10 @@ func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota k
 	return filteredVMIPresets
 }
 
+func isCPUSpecified(cpu *kubevirtv1.CPU) bool {
+	return cpu != nil && (cpu.Cores != 0 || cpu.Threads != 0 || cpu.Sockets != 0)
+}
+
 // GetKubeVirtPresetResourceDetails extracts cpu and mem resource requests from the kubevirt preset
 // for CPU, take the value by priority:
 // - check if spec.cpu is set, if socket and threads are set then do the calculation, use that
@@ -254,7 +258,7 @@ func GetKubeVirtPresetResourceDetails(presetSpec kubevirtv1.VirtualMachineInstan
 	// Get CPU
 	cpuReq := resource.Quantity{}
 
-	if presetSpec.Domain.CPU != nil {
+	if isCPUSpecified(presetSpec.Domain.CPU) {
 		if !presetSpec.Domain.Resources.Requests.Cpu().IsZero() || !presetSpec.Domain.Resources.Limits.Cpu().IsZero() {
 			return resource.Quantity{}, resource.Quantity{}, errors.New("should not specify both spec.domain.cpu and spec.domain.resources.[requests/limits].cpu in VMIPreset")
 		}
