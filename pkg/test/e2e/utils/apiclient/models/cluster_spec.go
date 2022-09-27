@@ -72,6 +72,9 @@ type ClusterSpec struct {
 	// event rate limit config
 	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
+	// expose strategy
+	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
+
 	// kubernetes dashboard
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
@@ -119,6 +122,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateEventRateLimitConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateExposeStrategy(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -272,6 +279,23 @@ func (m *ClusterSpec) validateEventRateLimitConfig(formats strfmt.Registry) erro
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateExposeStrategy(formats strfmt.Registry) error {
+	if swag.IsZero(m.ExposeStrategy) { // not required
+		return nil
+	}
+
+	if err := m.ExposeStrategy.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("exposeStrategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("exposeStrategy")
+		}
+		return err
 	}
 
 	return nil
@@ -436,6 +460,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateKubernetesDashboard(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -565,6 +593,20 @@ func (m *ClusterSpec) contextValidateEventRateLimitConfig(ctx context.Context, f
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateExposeStrategy(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ExposeStrategy.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("exposeStrategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("exposeStrategy")
+		}
+		return err
 	}
 
 	return nil

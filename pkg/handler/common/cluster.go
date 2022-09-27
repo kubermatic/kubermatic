@@ -540,6 +540,7 @@ func PatchEndpoint(
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
 	newInternalCluster.Spec.ClusterNetwork.KonnectivityEnabled = patchedCluster.Spec.ClusterNetwork.KonnectivityEnabled
 	newInternalCluster.Spec.CNIPlugin = patchedCluster.Spec.CNIPlugin
+	newInternalCluster.Spec.ExposeStrategy = patchedCluster.Spec.ExposeStrategy
 	newInternalCluster.Spec.EnableOperatingSystemManager = patchedCluster.Spec.EnableOperatingSystemManager
 	newInternalCluster.Spec.KubernetesDashboard = patchedCluster.Spec.KubernetesDashboard
 
@@ -1096,6 +1097,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			ContainerRuntime:                     internalCluster.Spec.ContainerRuntime,
 			ClusterNetwork:                       &internalCluster.Spec.ClusterNetwork,
 			CNIPlugin:                            internalCluster.Spec.CNIPlugin,
+			ExposeStrategy:                       internalCluster.Spec.ExposeStrategy,
 		},
 		Status: apiv1.ClusterStatus{
 			Version:              internalCluster.Status.Versions.ControlPlane,
