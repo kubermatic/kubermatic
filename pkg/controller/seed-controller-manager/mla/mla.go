@@ -94,8 +94,7 @@ func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
 // * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * org user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
-// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
+// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
 // * rule group controller - manager rule groups that will be used to generate alerts.
