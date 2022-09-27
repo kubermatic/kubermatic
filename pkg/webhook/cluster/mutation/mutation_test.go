@@ -817,6 +817,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			),
 		},
 		{
@@ -904,6 +905,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			),
 		},
 		{
@@ -943,6 +945,7 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 			),
 		},
 		{
@@ -989,6 +992,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
+				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
