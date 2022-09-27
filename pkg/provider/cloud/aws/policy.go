@@ -400,9 +400,8 @@ var (
   `
 
 	controlPlanePolicy = fmt.Sprintf(
-		`{"Version": "2012-10-17", "Statement": [%s, %s]}`,
+		`{"Version": "2012-10-17", "Statement": [%s]}`,
 		legacyControlPlanePolicyStatements,
-		externalCCMControlPlanePolicyStatements,
 	)
 
 	controlPlanePolicyTpl = template.Must(template.New("control-plane-policy").Parse(controlPlanePolicy))
