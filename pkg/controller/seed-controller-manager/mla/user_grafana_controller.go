@@ -112,7 +112,7 @@ func newUserGrafanaReconciler(
 	return err
 }
 
-// enqueueUserForUserProjectBinding enqueues users connected with the userprojectbinding
+// enqueueUserForUserProjectBinding enqueues users connected with the userprojectbinding.
 func enqueueUserForUserProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
 	return func(o ctrlruntimeclient.Object) []reconcile.Request {
 		var res []reconcile.Request
@@ -136,7 +136,7 @@ func enqueueUserForUserProjectBinding(ctx context.Context, c ctrlruntimeclient.C
 	}
 }
 
-// enqueueUserForGroupProjectBinding enqueues users connected with the groupprojectbinding
+// enqueueUserForGroupProjectBinding enqueues users connected with the groupprojectbinding.
 func enqueueUserForGroupProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
 	return func(o ctrlruntimeclient.Object) []reconcile.Request {
 		var res []reconcile.Request
@@ -327,7 +327,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 
 	projectMap := map[string]*kubermaticv1.Project{}
 	for _, project := range projectList.Items {
-		projectMap[project.Name] = &project
+		projectMap[project.Name] = project.DeepCopy()
 	}
 	if !user.Spec.IsAdmin {
 		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
