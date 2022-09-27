@@ -329,7 +329,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	for _, project := range projectList.Items {
 		projectMap[project.Name] = &project
 	}
-	if !grafanaUser.IsGrafanaAdmin {
+	if !user.Spec.IsAdmin {
 		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
 		if err != nil {
 			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
@@ -350,7 +350,9 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 			delete(projectMap, projectName)
 		}
 
-		// prune from project orgs user does not belong to
+		// Prune from project orgs user does not belong to.
+		// This is not very effective as it goes through all orgs and deletes the user which may not be present
+		// from them. Unfortunately there is no API to get all orgs for an user so that we could compare it.
 		for _, project := range projectMap {
 			org, err := getOrgByProject(ctx, grafanaClient, project)
 			if err != nil {
