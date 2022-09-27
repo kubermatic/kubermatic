@@ -291,13 +291,15 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 
+	projectList := &kubermaticv1.ProjectList{}
+	if err := r.List(ctx, projectList); err != nil {
+		return err
+	}
+
 	// if admin flipped, give/remove user from all orgs and update grafana admin
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
 		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
-		projectList := &kubermaticv1.ProjectList{}
-		if err := r.List(ctx, projectList); err != nil {
-			return err
-		}
+
 		// we also needs to remove user if IsAdmin is false, but keep in orgs with userprojectbingings
 		for _, project := range projectList.Items {
 			org, err := getOrgByProject(ctx, grafanaClient, &project)
@@ -321,20 +323,40 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		}
 	}
 
-	// TODO prune user from orgs it is not a member of anymore
+	// handle regular user
+
+	projectMap := map[string]*kubermaticv1.Project{}
+	for _, project := range projectList.Items {
+		projectMap[project.Name] = &project
+	}
 	if !grafanaUser.IsGrafanaAdmin {
 		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
 		if err != nil {
 			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
 		}
 
+		// add to project orgs
 		for projectName, role := range projectRoles {
-			project := &kubermaticv1.Project{}
-			if err := r.Get(ctx, types.NamespacedName{Name: projectName}, project); err != nil {
-				return fmt.Errorf("failed to get project %q: %w", projectName, err)
+			project, ok := projectMap[projectName]
+			if !ok {
+				// don't stop reconciling if there is an upb/gbp which was not cleaned up properly
+				r.log.Warnw("user-bound project not found", "user", user.Name, "project", project.Name)
+				continue
 			}
-
 			if err := ensureOrgUser(ctx, grafanaClient, project, user.Spec.Email, role); err != nil {
+				return err
+			}
+			// handled, remove the key for pruning phase
+			delete(projectMap, projectName)
+		}
+
+		// prune from project orgs user does not belong to
+		for _, project := range projectMap {
+			org, err := getOrgByProject(ctx, grafanaClient, project)
+			if err != nil {
+				return err
+			}
+			if err := removeUserFromOrg(ctx, grafanaClient, org, grafanaUser); err != nil {
 				return err
 			}
 		}
