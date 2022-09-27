@@ -100,20 +100,32 @@ func TestEnsureRole(t *testing.T) {
 	t.Run("role-does-not-exist-yet", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 		roleName := controlPlaneRoleName(cluster.Name)
-		policies := map[string]string{workerPolicyName: workerRolePolicy}
+
+		policy, err := getControlPlanePolicy(cluster.Name)
+		if err != nil {
+			t.Fatalf("failed to build the worker policy: %v", err)
+		}
+
+		policies := map[string]string{workerPolicyName: policy}
 
 		if err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
 		assertOwnership(ctx, t, cs.IAM, cluster, roleName, true)
-		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, workerRolePolicy)
+		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, policy)
 	})
 
 	t.Run("add-policy-to-foreign-existing-role", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 		roleName := controlPlaneRoleName(cluster.Name)
-		policies := map[string]string{workerPolicyName: workerRolePolicy}
+
+		policy, err := getControlPlanePolicy(cluster.Name)
+		if err != nil {
+			t.Fatalf("failed to build the worker policy: %v", err)
+		}
+
+		policies := map[string]string{workerPolicyName: policy}
 
 		// create a role that the controller is then hopefully going to adopt
 		createRoleInput := &iam.CreateRoleInput{
@@ -132,7 +144,7 @@ func TestEnsureRole(t *testing.T) {
 		}
 
 		assertOwnership(ctx, t, cs.IAM, cluster, roleName, false) // role was pre-existing, so we should not add an owner tag
-		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, workerRolePolicy)
+		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, policy)
 	})
 }
 
@@ -147,8 +159,13 @@ func TestReconcileWorkerRole(t *testing.T) {
 		t.Fatalf("reconcileWorkerRole should have not errored, but returned %v", err)
 	}
 
+	policy, err := getControlPlanePolicy(cluster.Name)
+	if err != nil {
+		t.Fatalf("failed to build the worker policy: %v", err)
+	}
+
 	assertOwnership(ctx, t, cs.IAM, cluster, roleName, true)
-	assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, workerRolePolicy)
+	assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, policy)
 }
 
 func TestReconcileControlPlaneRole(t *testing.T) {

@@ -38,7 +38,10 @@ var (
 	// The role for worker nodes.
 	// Based on https://github.com/kubernetes/kops/blob/master/docs/iam_roles.md
 	// Both actions cannot be restricted by tag filtering.
-	workerRolePolicy = `{
+	//
+	// All but the first statement are based on the AWS EBS CSI Driver on
+	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/example-iam-policy.json
+	workerRolePolicyTpl = template.Must(template.New("worker-policy").Parse(`{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -50,19 +53,158 @@ var (
       "Resource": [
         "*"
       ]
+    },
+
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSnapshot",
+        "ec2:AttachVolume",
+        "ec2:DetachVolume",
+        "ec2:ModifyVolume",
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeInstances",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeTags",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeVolumesModifications"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateTags"
+      ],
+      "Resource": [
+        "arn:aws:ec2:*:*:volume/*",
+        "arn:aws:ec2:*:*:snapshot/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "ec2:CreateAction": [
+            "CreateVolume",
+            "CreateSnapshot"
+          ]
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteTags"
+      ],
+      "Resource": [
+        "arn:aws:ec2:*:*:volume/*",
+        "arn:aws:ec2:*:*:snapshot/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/{{ .EBSCSIClusterTag }}": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/CSIVolumeName": "*"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/{{ .ClusterTag }}": "owned"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/{{ .EBSCSIClusterTag }}": "true"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/CSIVolumeName": "*"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/{{ .ClusterTag }}": "owned"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteSnapshot"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/CSIVolumeSnapshotName": "*"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteSnapshot"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "ec2:ResourceTag/{{ .EBSCSIClusterTag }}": "true"
+        }
+      }
     }
   ]
 }
-`
+`))
 
 	// The role for control plane. This combines the legacy rules for the in-tree
-	// provider and then the rules for the external CCM and CSI driver. The rules
-	// overlap in parts, but are kept as separate blocks for easier maintenance.
+	// provider and then the rules for the external CCM. The rules overlap in parts,
+	// but are kept as separate blocks for easier maintenance.
 	// All rules are deployed at all times, as cloud providers only reconcile after
 	// some time has passed and during that time a migration to the external CCM
 	// might get stuck.
-	// Once all AWS clusters have been migrated to the external CCM / CSI, the first
-	// chunk of rules can be removed.
 
 	// Legacy rules
 	// Based on https://github.com/kubernetes/kops/blob/master/docs/iam_roles.md
@@ -257,169 +399,32 @@ var (
     }
   `
 
-	// EBS CSI driver rules
-	// Based on https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/example-iam-policy.json
-	csiDriverControlPlanePolicyStatements = `
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateSnapshot",
-        "ec2:AttachVolume",
-        "ec2:DetachVolume",
-        "ec2:ModifyVolume",
-        "ec2:DescribeAvailabilityZones",
-        "ec2:DescribeInstances",
-        "ec2:DescribeSnapshots",
-        "ec2:DescribeTags",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeVolumesModifications"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateTags"
-      ],
-      "Resource": [
-        "arn:aws:ec2:*:*:volume/*",
-        "arn:aws:ec2:*:*:snapshot/*"
-      ],
-      "Condition": {
-        "StringEquals": {
-          "ec2:CreateAction": [
-            "CreateVolume",
-            "CreateSnapshot"
-          ]
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteTags"
-      ],
-      "Resource": [
-        "arn:aws:ec2:*:*:volume/*",
-        "arn:aws:ec2:*:*:snapshot/*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/{{ .EBSCSIClusterTag }}": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/{{ .ClusterTag }}": "owned"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/{{ .EBSCSIClusterTag }}": "true"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteVolume"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/{{ .ClusterTag }}": "owned"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteSnapshot"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/CSIVolumeSnapshotName": "*"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DeleteSnapshot"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:ResourceTag/{{ .EBSCSIClusterTag }}": "true"
-        }
-      }
-    }
-  `
-
 	controlPlanePolicy = fmt.Sprintf(
-		`{"Version": "2012-10-17", "Statement": [%s, %s, %s]}`,
+		`{"Version": "2012-10-17", "Statement": [%s, %s]}`,
 		legacyControlPlanePolicyStatements,
 		externalCCMControlPlanePolicyStatements,
-		csiDriverControlPlanePolicyStatements,
 	)
 
 	controlPlanePolicyTpl = template.Must(template.New("control-plane-policy").Parse(controlPlanePolicy))
 )
 
+func getWorkerPolicy(clusterName string) (string, error) {
+	return renderPolicy(clusterName, workerRolePolicyTpl)
+}
+
 func getControlPlanePolicy(clusterName string) (string, error) {
+	return renderPolicy(clusterName, controlPlanePolicyTpl)
+}
+
+func renderPolicy(clusterName string, tpl *template.Template) (string, error) {
 	tag := ec2ClusterTag(clusterName)
 
 	buf := &bytes.Buffer{}
-	err := controlPlanePolicyTpl.Execute(buf, policyTplData{
+	err := tpl.Execute(buf, policyTplData{
 		ClusterTag:       *tag.Key,
 		EBSCSIClusterTag: fmt.Sprintf("ebs.csi.aws.com/%s", clusterName),
 	})
+
 	return buf.String(), err
 }
 
