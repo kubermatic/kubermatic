@@ -19,7 +19,7 @@ groups:
       - alert: KubePersistentVolumeFillingUp
         annotations:
           description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
         expr: |
           (
@@ -39,7 +39,7 @@ groups:
       - alert: KubePersistentVolumeFillingUp
         annotations:
           description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
         expr: |
           (
@@ -59,7 +59,7 @@ groups:
       - alert: KubePersistentVolumeFillingUp
         annotations:
           description: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value | humanizePercentage }} is available.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
           summary: PersistentVolume is filling up.
         expr: |
           (
@@ -81,7 +81,7 @@ groups:
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
           description: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage }} free inodes.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeinodesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
           summary: PersistentVolumeInodes are filling up.
         expr: |
           (
@@ -101,7 +101,7 @@ groups:
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
           description: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to run out of inodes within four days. Currently {{ $value | humanizePercentage }} of its inodes are free.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeinodesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
           summary: PersistentVolumeInodes are filling up.
         expr: |
           (
@@ -123,7 +123,7 @@ groups:
       - alert: KubePersistentVolumeErrors
         annotations:
           description: The persistent volume {{ $labels.persistentvolume }} has status {{ $labels.phase }}.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepersistentvolumeerrors
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeerrors
           summary: PersistentVolume is having issues with provisioning.
         expr: |
           kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
