@@ -18,6 +18,7 @@ package externalcluster
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -357,6 +358,64 @@ func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetP
 		}
 
 		return providercommon.ListEKSClusterRoles(ctx, *credential)
+	}
+}
+
+// createClusterRoleReq represents a request to create a cluster service role
+// swagger:parameters createEKSClusterRole
+type createClusterRoleReq struct {
+	EKSCommonReq
+
+	// in: body
+	// required: true
+	Body ClusterServiceRole
+}
+
+type ClusterServiceRole struct {
+	Name string
+}
+
+func DecodeCreateClusterRoleReq(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req createClusterRoleReq
+
+	commonReq, err := DecodeEKSCommonReq(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	req.EKSCommonReq = commonReq.(EKSCommonReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func CreateEKSClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(createClusterRoleReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		eksTypesReq := EKSTypesReq{
+			EKSCommonReq: req.EKSCommonReq,
+			Region:       RegionEndpoint,
+		}
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		clusterole, err := eksprovider.CreateClusterRole(ctx, *credential, req.Body.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		return clusterole, nil
 	}
 }
 

@@ -28,6 +28,7 @@ import (
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/smithy-go"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -500,4 +501,42 @@ func DecodeError(err error) error {
 
 	// we were unable to parse the error as API error, returning the raw error as last resort
 	return err
+}
+
+func CreateClusterRole(ctx context.Context, credential resources.EKSCredential, roleName string) (*apiv2.EKSClusterRole, error) {
+	client, err := awsprovider.GetClientSet(ctx, credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	createRoleInput := &iam.CreateRoleInput{
+		AssumeRolePolicyDocument: aws.String(eksAssumeRolePolicy),
+		RoleName:                 aws.String(roleName),
+	}
+
+	createRoleOutput, err := client.IAM.CreateRole(ctx, createRoleInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cluster service role: %w", err)
+	}
+
+	// attach policies
+	for _, policyArn := range eksPolicies {
+		_, err := client.IAM.AttachRolePolicy(ctx, &iam.AttachRolePolicyInput{
+			PolicyArn: &policyArn,
+			RoleName:  &roleName,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if createRoleOutput != nil && createRoleOutput.Role != nil {
+		clusterRole := &apiv2.EKSClusterRole{
+			RoleName: *createRoleOutput.Role.RoleName,
+			Arn:      *createRoleOutput.Role.Arn,
+		}
+		return clusterRole, nil
+	}
+
+	return nil, fmt.Errorf("failed to create cluster service role")
 }
