@@ -77,7 +77,8 @@ func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org gra
 			Role:         string(role),
 		}
 		if status, err := grafanaClient.UpdateOrgUser(ctx, userRole, org.ID, orgUser.ID); err != nil {
-			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err,
+				pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 		}
 	}
 
@@ -87,7 +88,8 @@ func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org gra
 func removeUserFromOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User) error {
 	status, err := grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
-		return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err,
+			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 	return nil
 }
@@ -112,7 +114,8 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 		Role:         role,
 	}
 	if status, err := grafanaClient.AddOrgUser(ctx, userRole, orgID); err != nil {
-		return fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		return fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err,
+			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 	return nil
 }
@@ -126,8 +129,8 @@ func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *g
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
 			log.Errorw("unable to set dashboard",
 				zap.Error(err),
-				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
-				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
+				"status", pointer.StringDeref(status.Status, "no status"),
+				"message", pointer.StringDeref(status.Message, "no message"))
 			return err
 		}
 	}
@@ -147,8 +150,8 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient
 		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
 			log.Errorw("unable to delete dashboard",
 				zap.Error(err),
-				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
-				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
+				"status", pointer.StringDeref(status.Status, "no status"),
+				"message", pointer.StringDeref(status.Message, "no message"))
 			return err
 		}
 	}

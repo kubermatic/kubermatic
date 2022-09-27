@@ -256,7 +256,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 			status, err := grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
 			if err != nil {
 				return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 			}
 		}
 	}
@@ -287,7 +287,8 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 
 	// delete user from default org
 	if status, err := grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
-		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err,
+			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 
 	// if admin flipped, give/remove user from all orgs and update grafana admin
@@ -315,7 +316,8 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		}
 		status, err := grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
-			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err,
+				pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 		}
 	}
 
