@@ -691,11 +691,12 @@ func TestLoadFiles(t *testing.T) {
 					deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 					deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 					for _, create := range deploymentCreators {
-						_, creator := create()
+						objName, creator := create()
 						res, err := creator(&appsv1.Deployment{})
 						if err != nil {
 							t.Fatalf("failed to create Deployment: %v", err)
 						}
+						res.Name = objName
 						fixturePath := tc.fixturePath("deployment", res.Name)
 
 						verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)

@@ -21,13 +21,13 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -39,6 +39,10 @@ var (
 		Requests: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("300Mi"),
 			corev1.ResourceCPU:    resource.MustParse("200m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
 )
@@ -69,13 +73,10 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, err
 			}
 
-			f := false
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
-
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
-
 			ccmVersion := getAWSCCMVersion(data.Cluster().Spec.Version)
 
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
@@ -83,11 +84,13 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 					Command: []string{
 						"/bin/aws-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
+						"--cloud-config=/etc/kubernetes/cloud/config",
 						"--cloud-provider=aws",
 						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
 					},
-					Env: []corev1.EnvVar{
-						{
+					Env: append(
+						getEnvVars(),
+						corev1.EnvVar{
 							Name: "AWS_ACCESS_KEY_ID",
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
@@ -98,7 +101,7 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 								},
 							},
 						},
-						{
+						corev1.EnvVar{
 							Name: "AWS_SECRET_ACCESS_KEY",
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
@@ -109,22 +112,13 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 								},
 							},
 						},
-					},
-					VolumeMounts: getVolumeMounts(),
+					),
+					VolumeMounts: getVolumeMounts(true),
 				},
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				ccmContainerName: awsResourceRequirements.DeepCopy(),
-			}
-
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)

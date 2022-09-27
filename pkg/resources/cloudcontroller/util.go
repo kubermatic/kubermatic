@@ -31,7 +31,7 @@ const (
 	v1240 = "1.24.0"
 )
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled bool, mountCloudConfig bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.CloudControllerManagerKubeconfigSecretName,
@@ -41,6 +41,26 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		},
+		{
+			Name: resources.CABundleConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CABundleConfigMapName,
+					},
+				},
+			},
+		},
+	}
+	if mountCloudConfig {
+		vs = append(vs, corev1.Volume{
+			Name: resources.CloudConfigSeedSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
+				},
+			},
+		})
 	}
 	if !isKonnectivityEnabled {
 		vs = append(vs, corev1.Volume{
@@ -55,12 +75,36 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 	return vs
 }
 
-func getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func getVolumeMounts(mountCloudConfig bool) []corev1.VolumeMount {
+	mounts := []corev1.VolumeMount{
 		{
 			Name:      resources.CloudControllerManagerKubeconfigSecretName,
 			MountPath: "/etc/kubernetes/kubeconfig",
 			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CABundleConfigMapName,
+			MountPath: "/etc/kubermatic/certs",
+			ReadOnly:  true,
+		},
+	}
+
+	if mountCloudConfig {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      resources.CloudConfigSeedSecretName,
+			MountPath: "/etc/kubernetes/cloud",
+			ReadOnly:  true,
+		})
+	}
+
+	return mounts
+}
+
+func getEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name:  "SSL_CERT_FILE",
+			Value: "/etc/kubermatic/certs/ca-bundle.pem",
 		},
 	}
 }

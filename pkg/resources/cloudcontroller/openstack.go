@@ -22,7 +22,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,58 +75,21 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-
 			version, err := getOSVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
-				corev1.Volume{
-					Name: resources.CloudConfigSeedSecretName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: resources.CloudConfigSeedSecretName,
-						},
-					},
-				},
-				corev1.Volume{
-					Name: resources.CABundleConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CABundleConfigMapName,
-							},
-						},
-					},
-				},
-			)
-
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
-					Command: []string{"/bin/openstack-cloud-controller-manager"},
-					Args:    getOSFlags(data),
-					Env: []corev1.EnvVar{
-						{
-							Name:  "SSL_CERT_FILE",
-							Value: "/etc/kubermatic/certs/ca-bundle.pem",
-						},
-					},
-					VolumeMounts: append(getVolumeMounts(),
-						corev1.VolumeMount{
-							Name:      resources.CloudConfigSeedSecretName,
-							MountPath: "/etc/kubernetes/cloud",
-							ReadOnly:  true,
-						},
-						corev1.VolumeMount{
-							Name:      resources.CABundleConfigMapName,
-							MountPath: "/etc/kubermatic/certs",
-							ReadOnly:  true,
-						},
-					),
+					Name:         ccmContainerName,
+					Image:        data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
+					Command:      []string{"/bin/openstack-cloud-controller-manager"},
+					Args:         getOSFlags(data),
+					Env:          getEnvVars(),
+					VolumeMounts: getVolumeMounts(true),
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser: pointer.Int64(1001),
 					},
@@ -136,15 +98,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				ccmContainerName: osResourceRequirements.DeepCopy(),
-			}
-
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
