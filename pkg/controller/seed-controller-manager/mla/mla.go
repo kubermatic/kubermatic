@@ -156,7 +156,7 @@ func Add(
 		if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, alertmanagerController); err != nil {
 			return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
 		}
-		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
+		if err := newUserGrafanaReconciler(ctx, mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla user grafana controller: %w", err)
 		}
 		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {

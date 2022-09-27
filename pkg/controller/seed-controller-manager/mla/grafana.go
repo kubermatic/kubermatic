@@ -26,7 +26,6 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
@@ -93,14 +92,11 @@ func removeUserFromOrg(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	return nil
 }
 
-func ensureOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	user, err := grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
+func ensureOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project, email string, role grafanasdk.RoleType) error {
+	user, err := grafanaClient.LookupUser(ctx, email)
 	if err != nil {
 		return err
 	}
-
-	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
-	role := groupToRole[group]
 
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
