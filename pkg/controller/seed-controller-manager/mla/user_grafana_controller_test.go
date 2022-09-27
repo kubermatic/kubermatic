@@ -218,6 +218,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
+					name:     "update permissions",
+					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
+				},
+				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
@@ -236,11 +241,6 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					name:     "add org user",
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
