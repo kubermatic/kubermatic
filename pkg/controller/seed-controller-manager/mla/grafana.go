@@ -26,7 +26,6 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
@@ -78,7 +77,8 @@ func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org gra
 			Role:         string(role),
 		}
 		if status, err := grafanaClient.UpdateOrgUser(ctx, userRole, org.ID, orgUser.ID); err != nil {
-			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err,
+				pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 		}
 	}
 
@@ -88,19 +88,17 @@ func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org gra
 func removeUserFromOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User) error {
 	status, err := grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
-		return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err,
+			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 	return nil
 }
 
-func ensureOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	user, err := grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
+func ensureOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project, email string, role grafanasdk.RoleType) error {
+	user, err := grafanaClient.LookupUser(ctx, email)
 	if err != nil {
 		return err
 	}
-
-	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
-	role := groupToRole[group]
 
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
@@ -116,7 +114,8 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 		Role:         role,
 	}
 	if status, err := grafanaClient.AddOrgUser(ctx, userRole, orgID); err != nil {
-		return fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		return fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err,
+			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 	return nil
 }
@@ -130,8 +129,8 @@ func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *g
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
 			log.Errorw("unable to set dashboard",
 				zap.Error(err),
-				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
-				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
+				"status", pointer.StringDeref(status.Status, "no status"),
+				"message", pointer.StringDeref(status.Message, "no message"))
 			return err
 		}
 	}
@@ -151,8 +150,8 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient
 		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
 			log.Errorw("unable to delete dashboard",
 				zap.Error(err),
-				"status", pointer.StringPtrDerefOr(status.Status, "no status"),
-				"message", pointer.StringPtrDerefOr(status.Message, "no message"))
+				"status", pointer.StringDeref(status.Status, "no status"),
+				"message", pointer.StringDeref(status.Message, "no message"))
 			return err
 		}
 	}
