@@ -41,8 +41,7 @@ import (
 )
 
 const (
-	awsSecretPrefixName  = "credentials-aws"
-	awsCCMDeploymentName = "aws-cloud-controller-manager"
+	awsSecretPrefixName = "credentials-aws"
 )
 
 func NewClusterJigAWS(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials AWSCredentialsType) *AWSClusterJig {
@@ -186,6 +185,8 @@ func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpe
 		SecurityGroupIDs:     []types.ConfigVarString{{Value: spec.SecurityGroupID}},
 		InstanceProfile:      types.ConfigVarString{Value: spec.InstanceProfileName},
 		InstanceType:         types.ConfigVarString{Value: "t2.medium"},
+		DiskSize:             100,
+		DiskType:             types.ConfigVarString{Value: "gp2"},
 		AssignPublicIP:       pointer.Bool(true),
 	})
 	if err != nil {
