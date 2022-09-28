@@ -100,7 +100,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 	mutator := NewMutator(h.client, h.configGetter, h.seedGetter, h.caBundle)
 
-	mutated, mutateErr := mutator.Mutate(ctx, nil, cluster)
+	mutated, mutateErr := mutator.Mutate(ctx, oldCluster, cluster)
 	if mutateErr != nil {
 		h.log.Error(mutateErr, "cluster mutation failed")
 

@@ -19,6 +19,7 @@ package cloudcontroller
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -75,20 +76,25 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 
 			ccmVersion := getAWSCCMVersion(data.Cluster().Spec.Version)
 
+			flags := []string{
+				"/bin/aws-cloud-controller-manager",
+				"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
+				"--cloud-config=/etc/kubernetes/cloud/config",
+				"--cloud-provider=aws",
+				fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
+			}
+
+			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
+				flags = append(flags, "--cluster-name", data.Cluster().Name)
+			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryK8S) + "/provider-aws/cloud-controller-manager:" + ccmVersion,
-					Command: []string{
-						"/bin/aws-cloud-controller-manager",
-						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
-						"--cloud-config=/etc/kubernetes/cloud/config",
-						"--cloud-provider=aws",
-						fmt.Sprintf("--cluster-name=%s", data.Cluster().Name),
-						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
-					},
+					Name:    ccmContainerName,
+					Image:   data.ImageRegistry(resources.RegistryK8S) + "/provider-aws/cloud-controller-manager:" + ccmVersion,
+					Command: flags,
 					Env: append(
 						getEnvVars(),
 						corev1.EnvVar{
