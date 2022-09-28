@@ -74,7 +74,7 @@ func (o testOptions) KubernetesVersion() semver.Semver {
 	}
 
 	// was only "1.23" or "v1.25" specified?
-	regex := regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
+	regex := regexp.MustCompile(`^v?[0-9]+\.[0-9]+$`)
 	if regex.MatchString(o.kubernetesRelease) {
 		return *test.LatestKubernetesVersionForRelease(o.kubernetesRelease, nil)
 	}
