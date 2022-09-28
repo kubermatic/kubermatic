@@ -23,11 +23,12 @@ import (
 
 	"go.uber.org/zap"
 
-	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
@@ -37,9 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/kustomize/kyaml/sets"
 )
 
 const (
@@ -121,7 +120,7 @@ func (c *AWSClusterJig) CreateMachineDeployment(ctx context.Context, userClient 
 		return fmt.Errorf("failed to find the specified datacenter: %w", err)
 	}
 
-	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.cluster.Spec.Cloud.AWS, datacenter.Spec.AWS)); err != nil {
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(ctx, &c.cluster, datacenter)); err != nil {
 		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
@@ -175,38 +174,43 @@ func (c *AWSCredentialsType) GenerateSecretData(datacenter *kubermaticv1.Datacen
 	}
 }
 
-func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpec, datacenter *kubermaticv1.DatacenterSpecAWS) []byte {
+func (c *AWSCredentialsType) GenerateProviderSpec(ctx context.Context, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) []byte {
 	os := types.OperatingSystemUbuntu
+	cloudSpec := cluster.Spec.Cloud.AWS
 
-	subnets, err := aws.GetSubnets(context.Background(), c.AccessKeyID, c.SecretAccessKey, "", "", datacenter.Region, spec.VPCID)
+	subnets, err := aws.GetSubnets(ctx, c.AccessKeyID, c.SecretAccessKey, cloudSpec.AssumeRoleARN, cloudSpec.AssumeRoleExternalID, datacenter.Spec.AWS.Region, cloudSpec.VPCID)
 	if err != nil {
 		panic(fmt.Errorf("failed to list subnets: %v", err))
 	}
 
-	if n := len(subnets); n < 3 {
-		panic(fmt.Errorf("expected to get at least three subnets, got %d", n))
+	if len(subnets) == 0 {
+		panic("expected to get at least one subnet")
 	}
 
-	allAZs := sets.String{}
-	for _, subnet := range subnets {
-		allAZs.Insert(*subnet.AvailabilityZone)
+	subnet := subnets[0]
+
+	// re-use the existing abstraction, even though it created a dependency on the KKP API
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: apiv1.OperatingSystemSpec{
+			Ubuntu: &apiv1.UbuntuSpec{},
+		},
+		Cloud: apiv1.NodeCloudSpec{
+			AWS: &apiv1.AWSNodeSpec{
+				InstanceType:     "t2.medium",
+				VolumeType:       "gp2",
+				VolumeSize:       100,
+				AvailabilityZone: *subnet.AvailabilityZone,
+				SubnetID:         *subnet.SubnetId,
+			},
+		},
 	}
 
-	providerSpec, err := json.Marshal(awstypes.RawConfig{
-		AccessKeyID:          types.ConfigVarString{Value: c.AccessKeyID},
-		SecretAccessKey:      types.ConfigVarString{Value: c.SecretAccessKey},
-		AssumeRoleARN:        types.ConfigVarString{Value: c.AssumeRoleARN},
-		AssumeRoleExternalID: types.ConfigVarString{Value: c.AssumeRoleExternalID},
-		VpcID:                types.ConfigVarString{Value: spec.VPCID},
-		Region:               types.ConfigVarString{Value: datacenter.Region},
-		SecurityGroupIDs:     []types.ConfigVarString{{Value: spec.SecurityGroupID}},
-		AvailabilityZone:     types.ConfigVarString{Value: allAZs.List()[0]},
-		InstanceProfile:      types.ConfigVarString{Value: spec.InstanceProfileName},
-		InstanceType:         types.ConfigVarString{Value: "t2.medium"},
-		DiskSize:             100,
-		DiskType:             types.ConfigVarString{Value: "gp2"},
-		AssignPublicIP:       pointer.Bool(true),
-	})
+	providerConfig, err := machine.GetAWSProviderConfig(cluster, nodeSpec, datacenter)
+	if err != nil {
+		panic(fmt.Errorf("failed to create provider config: %v", err))
+	}
+
+	providerSpec, err := json.Marshal(providerConfig)
 	if err != nil {
 		panic(fmt.Sprintf("JSON marshalling failed: %v", err))
 	}
