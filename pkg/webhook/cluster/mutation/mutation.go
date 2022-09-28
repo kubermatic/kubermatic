@@ -72,10 +72,8 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	var (
-		cluster    *kubermaticv1.Cluster
-		oldCluster *kubermaticv1.Cluster
-	)
+	cluster := &kubermaticv1.Cluster{}
+	var oldCluster *kubermaticv1.Cluster
 
 	switch req.Operation {
 	case admissionv1.Create:
@@ -88,6 +86,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
+		oldCluster = &kubermaticv1.Cluster{}
 		if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
