@@ -72,7 +72,7 @@ const (
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
-func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versions []*version.Version, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.HumanReadableName == "" {
@@ -86,6 +86,11 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 			validVersions []string
 			versionValid  bool
 		)
+
+		versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName))
+		if err != nil {
+			allErrs = append(allErrs, field.InternalError(parentFieldPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
+		}
 
 		for _, availableVersion := range versions {
 			validVersions = append(validVersions, availableVersion.Version.String())
@@ -106,6 +111,13 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	if spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !enabledFeatures.Enabled(features.TunnelingExposeStrategy) {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
+	}
+
+	// External CCM is not supported for all providers and all Kubernetes versions.
+	if spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		if !resources.ExternalCloudControllerFeatureSupported(dc, &spec.Cloud, spec.Version, versionManager.GetIncompatibilities()...) {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), true, "external cloud-controller-manager is not supported for this cluster / provider combination"))
+		}
 	}
 
 	if spec.CNIPlugin != nil {
@@ -161,12 +173,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName))
-	if err != nil {
-		allErrs = append(allErrs, field.InternalError(parentFieldPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
-	}
-
-	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versions, parentFieldPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versionManager, parentFieldPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -188,13 +195,8 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
-	versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(oldCluster.Spec.Cloud.ProviderName))
-	if err != nil {
-		allErrs = append(allErrs, field.InternalError(specPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
-	}
-
 	// perform general basic checks on the new cluster spec
-	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versions, specPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versionManager, specPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 

@@ -1808,8 +1808,10 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
-					Token: "thisis.reallyreallyfake",
+					Token:   "thisis.reallyreallyfake",
+					Network: "this-is-required-for-ccm",
 				},
 			},
 			Features: map[string]bool{

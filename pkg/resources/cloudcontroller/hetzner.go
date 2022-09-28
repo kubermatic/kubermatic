@@ -21,12 +21,12 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -69,16 +69,13 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				return nil, err
 			}
 
-			f := false
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
-
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
 			if network == "" {
 				network = data.DC().Spec.Hetzner.Network
 			}
 
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
-
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), false)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
@@ -91,16 +88,9 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						// "false" as we use IPAM in kube-controller-manager
 						"--allocate-node-cidrs=false",
 					},
-					Env: []corev1.EnvVar{
-						{
-							Name: "NODE_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "spec.nodeName",
-								},
-							},
-						},
-						{
+					Env: append(
+						getEnvVars(),
+						corev1.EnvVar{
 							Name: "HCLOUD_TOKEN",
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
@@ -111,11 +101,11 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 								},
 							},
 						},
-						{
+						corev1.EnvVar{
 							Name:  "HCLOUD_NETWORK",
 							Value: network,
 						},
-						{
+						corev1.EnvVar{
 							// Required since Hetzner CCM v1.11.0.
 							// By default, the Hetzner CCM tries to validate is the control plane node
 							// attached to the configured Hetzner network. This is causing the Hetzner
@@ -125,8 +115,8 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 							Name:  "HCLOUD_NETWORK_DISABLE_ATTACHED_CHECK",
 							Value: "true",
 						},
-					},
-					VolumeMounts: getVolumeMounts(),
+					),
+					VolumeMounts: getVolumeMounts(false),
 				},
 			}
 
@@ -139,15 +129,6 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
-			}
-
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)

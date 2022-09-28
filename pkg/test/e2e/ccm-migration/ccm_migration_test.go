@@ -226,10 +226,9 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 	}
 
 	newCluster := cluster.DeepCopy()
-	newCluster.Spec.Features = map[string]bool{
-		kubermaticv1.ClusterFeatureExternalCloudProvider: true,
-		kubermaticv1.ClusterFeatureEtcdLauncher:          true,
-	}
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = true
+
 	if err := seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster)); err != nil {
 		return fmt.Errorf("failed to patch cluster: %w", err)
 	}

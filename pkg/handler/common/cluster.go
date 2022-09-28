@@ -42,7 +42,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -287,16 +287,6 @@ func GenerateCluster(
 		partialCluster.Spec.EnableOperatingSystemManager = pointer.BoolPtr(true)
 	} else {
 		partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
-	}
-
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-		if partialCluster.Spec.Cloud.VSphere != nil {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
 	}
 
 	return partialCluster, nil
@@ -750,7 +740,7 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	if !cloudcontroller.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
+	if !resources.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
 		return nil, utilerrors.NewBadRequest("external CCM not supported by the given provider")
 	}
 
@@ -1223,7 +1213,7 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, incompatibilities ...*version.ProviderIncompatibility) apiv1.ExternalCCMMigrationStatus {
-	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
+	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], resources.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
 	case externalCCMEnabled:
 		if kubermaticv1helper.NeedCCMMigration(cluster) {
 			return apiv1.ExternalCCMMigrationInProgress
