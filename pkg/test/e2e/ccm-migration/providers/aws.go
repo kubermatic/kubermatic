@@ -182,6 +182,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpe
 		AssumeRoleARN:        types.ConfigVarString{Value: c.AssumeRoleARN},
 		AssumeRoleExternalID: types.ConfigVarString{Value: c.AssumeRoleExternalID},
 		VpcID:                types.ConfigVarString{Value: spec.VPCID},
+		Region:               types.ConfigVarString{Value: datacenter.Region},
 		SecurityGroupIDs:     []types.ConfigVarString{{Value: spec.SecurityGroupID}},
 		InstanceProfile:      types.ConfigVarString{Value: spec.InstanceProfileName},
 		InstanceType:         types.ConfigVarString{Value: "t2.medium"},
