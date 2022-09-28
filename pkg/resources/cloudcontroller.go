@@ -118,8 +118,6 @@ func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool 
 		return true
 	case cloudSpec.Azure != nil:
 		return true
-	case cloudSpec.AWS != nil:
-		return true
 	default:
 		return false
 	}
