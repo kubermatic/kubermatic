@@ -152,9 +152,6 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 
 		case newCluster.Spec.Cloud.Azure != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
-
-		case newCluster.Spec.Cloud.AWS != nil:
-			addCCMCSIMigrationAnnotations(newCluster)
 		}
 
 		if resources.ExternalCloudControllerClusterName(&newCluster.Spec.Cloud) {
