@@ -65,7 +65,7 @@ type AWSNodeSpec struct {
 
 	// size of the volume in gb. Only one volume will be created
 	// Required: true
-	VolumeSize *int64 `json:"diskSize"`
+	VolumeSize *int32 `json:"diskSize"`
 
 	// volume type
 	// Example: gp2, io1, st1, sc1, standard

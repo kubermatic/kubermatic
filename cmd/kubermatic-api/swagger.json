@@ -22312,7 +22312,7 @@
         "diskSize": {
           "description": "size of the volume in gb. Only one volume will be created",
           "type": "integer",
-          "format": "int64",
+          "format": "int32",
           "x-go-name": "VolumeSize"
         },
         "instanceType": {

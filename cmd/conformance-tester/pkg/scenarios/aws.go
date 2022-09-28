@@ -89,7 +89,7 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := awsInstanceType
 	volumeType := awsVolumeType
-	volumeSize := int64(awsVolumeSize)
+	volumeSize := int32(awsVolumeSize)
 
 	listVPCParams := &awsapiclient.ListAWSVPCSParams{
 		Context:         ctx,

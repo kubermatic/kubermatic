@@ -469,7 +469,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 
 	if replicas > 0 {
 		instanceType := "t3.small"
-		volumeSize := int64(25)
+		volumeSize := int32(25)
 		volumeType := "standard"
 
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
