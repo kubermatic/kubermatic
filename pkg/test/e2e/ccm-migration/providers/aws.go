@@ -180,7 +180,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(ctx context.Context, cluster *
 
 	subnets, err := aws.GetSubnets(ctx, c.AccessKeyID, c.SecretAccessKey, cloudSpec.AssumeRoleARN, cloudSpec.AssumeRoleExternalID, datacenter.Spec.AWS.Region, cloudSpec.VPCID)
 	if err != nil {
-		panic(fmt.Errorf("failed to list subnets: %v", err))
+		panic(fmt.Sprintf("failed to list subnets: %v", err))
 	}
 
 	if len(subnets) == 0 {
@@ -207,7 +207,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(ctx context.Context, cluster *
 
 	providerConfig, err := machine.GetAWSProviderConfig(cluster, nodeSpec, datacenter)
 	if err != nil {
-		panic(fmt.Errorf("failed to create provider config: %v", err))
+		panic(fmt.Sprintf("failed to create provider config: %v", err))
 	}
 
 	providerSpec, err := json.Marshal(providerConfig)
