@@ -517,7 +517,6 @@ func TestMutator(t *testing.T) {
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
-				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
 		{
@@ -578,7 +577,6 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal)),
-				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
 		{
@@ -639,7 +637,6 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.22"),
-				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
 		{
@@ -663,7 +660,7 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
@@ -695,7 +692,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
-				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
 			),
 		},
@@ -726,7 +723,7 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
@@ -754,7 +751,7 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
-				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
 		},
@@ -789,7 +786,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
-				jsonpatch.NewOperation("replace", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
@@ -859,10 +856,7 @@ func TestMutator(t *testing.T) {
 				},
 			}.Do(),
 			wantAllowed: true,
-			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
-			),
+			wantPatches: append(defaultPatches, defaultNetworkingPatches...),
 		},
 		{
 			name: "Update non-OpenStack cluster to enable CCM/CSI migration",
@@ -1011,10 +1005,7 @@ func (r rawClusterGen) Do() *kubermaticv1.Cluster {
 			Name: r.Name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: r.Version,
-			Features: map[string]bool{
-				kubermaticv1.ClusterFeatureExternalCloudProvider: r.ExternalCloudProvider,
-			},
+			Version:        r.Version,
 			Cloud:          r.CloudSpec,
 			ClusterNetwork: r.NetworkConfig,
 			CNIPlugin:      r.CNIPluginSpec,
@@ -1026,7 +1017,22 @@ func (r rawClusterGen) Do() *kubermaticv1.Cluster {
 		},
 	}
 
+	// Only set this when enabled, a `false` value in r.ExternalCloudProvider does not
+	// mean we should _disable_ the CCM explicitly, just that we do not set the feature
+	// at all.
+	if r.ExternalCloudProvider {
+		if r.Features == nil {
+			r.Features = map[string]bool{}
+		}
+
+		r.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	}
+
 	for k, v := range r.Features {
+		if c.Spec.Features == nil {
+			c.Spec.Features = map[string]bool{}
+		}
+
 		c.Spec.Features[k] = v
 	}
 
