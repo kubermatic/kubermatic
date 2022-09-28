@@ -26,6 +26,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
@@ -38,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/kustomize/kyaml/sets"
 )
 
 const (
@@ -176,6 +178,20 @@ func (c *AWSCredentialsType) GenerateSecretData(datacenter *kubermaticv1.Datacen
 func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpec, datacenter *kubermaticv1.DatacenterSpecAWS) []byte {
 	os := types.OperatingSystemUbuntu
 
+	subnets, err := aws.GetSubnets(context.Background(), c.AccessKeyID, c.SecretAccessKey, "", "", datacenter.Region, spec.VPCID)
+	if err != nil {
+		panic(fmt.Errorf("failed to list subnets: %v", err))
+	}
+
+	if n := len(subnets); n < 3 {
+		panic(fmt.Errorf("expected to get at least three subnets, got %d", n))
+	}
+
+	allAZs := sets.String{}
+	for _, subnet := range subnets {
+		allAZs.Insert(*subnet.AvailabilityZone)
+	}
+
 	providerSpec, err := json.Marshal(awstypes.RawConfig{
 		AccessKeyID:          types.ConfigVarString{Value: c.AccessKeyID},
 		SecretAccessKey:      types.ConfigVarString{Value: c.SecretAccessKey},
@@ -184,6 +200,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpe
 		VpcID:                types.ConfigVarString{Value: spec.VPCID},
 		Region:               types.ConfigVarString{Value: datacenter.Region},
 		SecurityGroupIDs:     []types.ConfigVarString{{Value: spec.SecurityGroupID}},
+		AvailabilityZone:     types.ConfigVarString{Value: allAZs.List()[0]},
 		InstanceProfile:      types.ConfigVarString{Value: spec.InstanceProfileName},
 		InstanceType:         types.ConfigVarString{Value: "t2.medium"},
 		DiskSize:             100,

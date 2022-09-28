@@ -23,7 +23,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -34,7 +33,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -69,17 +67,7 @@ type testOptions struct {
 }
 
 func (o testOptions) KubernetesVersion() semver.Semver {
-	if o.kubernetesRelease == "" {
-		return *defaulting.DefaultKubernetesVersioning.Default
-	}
-
-	// was only "1.23" or "v1.25" specified?
-	regex := regexp.MustCompile(`^v?[0-9]+\.[0-9]+$`)
-	if regex.MatchString(o.kubernetesRelease) {
-		return *test.LatestKubernetesVersionForRelease(o.kubernetesRelease, nil)
-	}
-
-	return *semver.NewSemverOrDie(o.kubernetesRelease)
+	return *test.ParseVersionOrRelease(o.kubernetesRelease, nil)
 }
 
 var (
