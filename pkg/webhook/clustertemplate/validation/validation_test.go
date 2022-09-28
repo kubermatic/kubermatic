@@ -761,7 +761,8 @@ func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
-					Token: "thisis.reallyreallyfake",
+					Token:   "thisis.reallyreallyfake",
+					Network: "this-is-required-for-external-ccm-to-work",
 				},
 			},
 			Features: map[string]bool{
