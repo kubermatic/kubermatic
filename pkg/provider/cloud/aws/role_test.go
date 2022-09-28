@@ -159,7 +159,7 @@ func TestReconcileWorkerRole(t *testing.T) {
 		t.Fatalf("reconcileWorkerRole should have not errored, but returned %v", err)
 	}
 
-	policy, err := getControlPlanePolicy(cluster.Name)
+	policy, err := getWorkerPolicy(cluster.Name)
 	if err != nil {
 		t.Fatalf("failed to build the worker policy: %v", err)
 	}

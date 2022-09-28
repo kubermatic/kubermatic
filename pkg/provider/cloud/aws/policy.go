@@ -199,15 +199,9 @@ var (
 }
 `))
 
-	// The role for control plane. This combines the legacy rules for the in-tree
-	// provider and then the rules for the external CCM. The rules overlap in parts,
-	// but are kept as separate blocks for easier maintenance.
-	// All rules are deployed at all times, as cloud providers only reconcile after
-	// some time has passed and during that time a migration to the external CCM
-	// might get stuck.
-
-	// Legacy rules
-	// Based on https://github.com/kubernetes/kops/blob/master/docs/iam_roles.md
+	// The role for control plane.
+	// Based on https://github.com/kubernetes/kops/blob/master/docs/iam_roles.md and
+	// https://github.com/kubernetes/cloud-provider-aws/blob/master/docs/prerequisites.md#iam-policies
 	// We're using 2 filters:
 	// - RequestTag  = Makes sure the tag exists on the create request
 	// - ResourceTag = Makes sure the tag exists on the resource that should be modified
@@ -217,194 +211,123 @@ var (
 	// - EC2 modify actions with the ResourceTag filter
 	// - ELB create actions with the RequestTag filter
 	// - ELB modify actions with the ResourceTag filter.
-	legacyControlPlanePolicyStatements = `
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DescribeInstances",
-        "ec2:DescribeRegions",
-        "ec2:DescribeRouteTables",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeSubnets",
-        "ec2:DescribeVolumes",
-        "ec2:CreateSecurityGroup",
-        "ec2:DescribeVolumesModifications",
-        "ec2:ModifyInstanceAttribute",
-        "ec2:ModifyVolume",
-        "ec2:DescribeVpcs"
-      ],
-      "Resource": [
-        "*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateVolume",
-        "ec2:CreateRoute"
-      ],
-      "Resource": [
-        "*"
-      ],
-      "Condition": {
-        "Null": {
-          "ec2:RequestTag/{{ .ClusterTag }}": "false"
+	controlPlanePolicyTpl = template.Must(template.New("control-plane-policy").Parse(`{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:DescribeInstances",
+          "ec2:DescribeRegions",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVolumes",
+          "ec2:CreateSecurityGroup",
+          "ec2:DescribeVolumesModifications",
+          "ec2:ModifyInstanceAttribute",
+          "ec2:ModifyVolume",
+          "ec2:DescribeVpcs"
+        ],
+        "Resource": [
+          "*"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:CreateVolume",
+          "ec2:CreateRoute"
+        ],
+        "Resource": [
+          "*"
+        ],
+        "Condition": {
+          "Null": {
+            "ec2:RequestTag/{{ .ClusterTag }}": "false"
+          }
+        }
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:CreateTags",
+          "ec2:AttachVolume",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:DeleteRoute",
+          "ec2:DeleteSecurityGroup",
+          "ec2:DeleteVolume",
+          "ec2:DetachVolume",
+          "ec2:RevokeSecurityGroupIngress"
+        ],
+        "Resource": [
+          "*"
+        ],
+        "Condition": {
+          "Null": {
+            "ec2:ResourceTag/{{ .ClusterTag }}": "false"
+          }
+        }
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateLoadBalancerPolicy",
+          "elasticloadbalancing:CreateLoadBalancerListeners",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateTargetGroup"
+        ],
+        "Resource": [
+          "*"
+        ],
+        "Condition": {
+          "Null": {
+            "aws:RequestTag/{{ .ClusterTag }}": "false"
+          }
+        }
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:AttachLoadBalancerToSubnets",
+          "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
+          "elasticloadbalancing:ConfigureHealthCheck",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:DeleteLoadBalancerListeners",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DetachLoadBalancerFromSubnets",
+          "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+          "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeLoadBalancerPolicies",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
+        ],
+        "Resource": [
+          "*"
+        ],
+        "Condition": {
+          "Null": {
+            "aws:ResourceTag/{{ .ClusterTag }}": "false"
+          }
         }
       }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateTags",
-        "ec2:AttachVolume",
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:DeleteRoute",
-        "ec2:DeleteSecurityGroup",
-        "ec2:DeleteVolume",
-        "ec2:DetachVolume",
-        "ec2:RevokeSecurityGroupIngress"
-      ],
-      "Resource": [
-        "*"
-      ],
-      "Condition": {
-        "Null": {
-          "ec2:ResourceTag/{{ .ClusterTag }}": "false"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:CreateLoadBalancerPolicy",
-        "elasticloadbalancing:CreateLoadBalancerListeners",
-        "elasticloadbalancing:CreateListener",
-        "elasticloadbalancing:CreateTargetGroup"
-      ],
-      "Resource": [
-        "*"
-      ],
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/{{ .ClusterTag }}": "false"
-        }
-      }
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:AttachLoadBalancerToSubnets",
-        "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
-        "elasticloadbalancing:ConfigureHealthCheck",
-        "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:DeleteLoadBalancerListeners",
-        "elasticloadbalancing:DescribeLoadBalancers",
-        "elasticloadbalancing:DescribeLoadBalancerAttributes",
-        "elasticloadbalancing:DetachLoadBalancerFromSubnets",
-        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-        "elasticloadbalancing:ModifyLoadBalancerAttributes",
-        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-        "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:DeleteListener",
-        "elasticloadbalancing:DeleteTargetGroup",
-        "elasticloadbalancing:DeregisterTargets",
-        "elasticloadbalancing:DescribeListeners",
-        "elasticloadbalancing:DescribeLoadBalancerPolicies",
-        "elasticloadbalancing:DescribeTargetGroups",
-        "elasticloadbalancing:DescribeTargetHealth",
-        "elasticloadbalancing:ModifyListener",
-        "elasticloadbalancing:ModifyTargetGroup",
-        "elasticloadbalancing:RegisterTargets",
-        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
-      ],
-      "Resource": [
-        "*"
-      ],
-      "Condition": {
-        "Null": {
-          "aws:ResourceTag/{{ .ClusterTag }}": "false"
-        }
-      }
-    }
-  `
-
-	// External CCM rules
-	// Based on https://github.com/kubernetes/cloud-provider-aws/blob/master/docs/prerequisites.md#iam-policies
-	externalCCMControlPlanePolicyStatements = `
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeLaunchConfigurations",
-        "autoscaling:DescribeTags",
-        "ec2:DescribeInstances",
-        "ec2:DescribeRegions",
-        "ec2:DescribeRouteTables",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeSubnets",
-        "ec2:DescribeVolumes",
-        "ec2:CreateSecurityGroup",
-        "ec2:CreateTags",
-        "ec2:CreateVolume",
-        "ec2:ModifyInstanceAttribute",
-        "ec2:ModifyVolume",
-        "ec2:AttachVolume",
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:CreateRoute",
-        "ec2:DeleteRoute",
-        "ec2:DeleteSecurityGroup",
-        "ec2:DeleteVolume",
-        "ec2:DetachVolume",
-        "ec2:RevokeSecurityGroupIngress",
-        "ec2:DescribeVpcs",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:AttachLoadBalancerToSubnets",
-        "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
-        "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:CreateLoadBalancerPolicy",
-        "elasticloadbalancing:CreateLoadBalancerListeners",
-        "elasticloadbalancing:ConfigureHealthCheck",
-        "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:DeleteLoadBalancerListeners",
-        "elasticloadbalancing:DescribeLoadBalancers",
-        "elasticloadbalancing:DescribeLoadBalancerAttributes",
-        "elasticloadbalancing:DetachLoadBalancerFromSubnets",
-        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-        "elasticloadbalancing:ModifyLoadBalancerAttributes",
-        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-        "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:CreateListener",
-        "elasticloadbalancing:CreateTargetGroup",
-        "elasticloadbalancing:DeleteListener",
-        "elasticloadbalancing:DeleteTargetGroup",
-        "elasticloadbalancing:DescribeListeners",
-        "elasticloadbalancing:DescribeLoadBalancerPolicies",
-        "elasticloadbalancing:DescribeTargetGroups",
-        "elasticloadbalancing:DescribeTargetHealth",
-        "elasticloadbalancing:ModifyListener",
-        "elasticloadbalancing:ModifyTargetGroup",
-        "elasticloadbalancing:RegisterTargets",
-        "elasticloadbalancing:DeregisterTargets",
-        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
-        "iam:CreateServiceLinkedRole",
-        "kms:DescribeKey"
-      ],
-      "Resource": [
-        "*"
-      ]
-    }
-  `
-
-	controlPlanePolicy = fmt.Sprintf(
-		`{"Version": "2012-10-17", "Statement": [%s]}`,
-		legacyControlPlanePolicyStatements,
-	)
-
-	controlPlanePolicyTpl = template.Must(template.New("control-plane-policy").Parse(controlPlanePolicy))
+    ]
+  }
+  `))
 )
 
 func getWorkerPolicy(clusterName string) (string, error) {
