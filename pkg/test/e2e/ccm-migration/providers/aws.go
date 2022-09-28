@@ -42,7 +42,9 @@ import (
 )
 
 const (
-	awsSecretPrefixName = "credentials-aws"
+	awsSecretPrefixName  = "credentials-aws"
+	awsCCMDeploymentName = "aws-cloud-controller-manager"
+	awsCSIDaemonSetName  = "ebs-csi-node"
 )
 
 func NewClusterJigAWS(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger, version semver.Semver, seedDatacenter string, credentials AWSCredentialsType) *AWSClusterJig {
@@ -132,16 +134,16 @@ func (c *AWSClusterJig) Cleanup(ctx context.Context, userClient ctrlruntimeclien
 
 func (c *AWSClusterJig) CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
-	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: azureCCMDeploymentName}, ccmDeploy); err != nil {
-		return false, fmt.Errorf("failed to get %s deployment: %w", azureCCMDeploymentName, err)
+	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: c.cluster.Status.NamespaceName, Name: awsCCMDeploymentName}, ccmDeploy); err != nil {
+		return false, fmt.Errorf("failed to get %s deployment: %w", awsCCMDeploymentName, err)
 	}
 	if ccmDeploy.Status.AvailableReplicas == 1 {
 		return true, nil
 	}
 
 	nodeDaemonSet := &appsv1.DaemonSet{}
-	if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceSystem, Name: azureNodeDaemonSetName}, nodeDaemonSet); err != nil {
-		return false, fmt.Errorf("failed to get %s daemonset: %w", azureNodeDaemonSetName, err)
+	if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceSystem, Name: awsCSIDaemonSetName}, nodeDaemonSet); err != nil {
+		return false, fmt.Errorf("failed to get %s daemonset: %w", awsCSIDaemonSetName, err)
 	}
 
 	if nodeDaemonSet.Status.NumberReady == nodeDaemonSet.Status.DesiredNumberScheduled {
