@@ -1719,6 +1719,20 @@ func GenDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.R
 	}
 }
 
+func GenDefaultServiceAccoutnRoleBinding(name string, namespace string, roleID string, subjects []rbacv1.Subject) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+			Namespace: namespace,
+		},
+		Subjects: subjects,
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
 func GenDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1749,6 +1763,19 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 				Name: group,
 			},
 		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func GenDefaultServiceAccountClusterRoleBinding(name string, roleID string, subjects []rbacv1.Subject) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+		},
+		Subjects: subjects,
 		RoleRef: rbacv1.RoleRef{
 			Name: roleID,
 		},

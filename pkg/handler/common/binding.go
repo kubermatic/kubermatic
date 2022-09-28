@@ -82,6 +82,9 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
 			return nil, utilerrors.NewBadRequest("group %s already connected to role %s", roleUser.Group, roleID)
 		}
+		if roleUser.ServiceAccount != "" && subject.Name == roleUser.ServiceAccount && subject.Namespace == roleUser.ServiceAccountNamespace {
+			return nil, utilerrors.NewBadRequest("service account %s/%s already connected to the role %s", roleUser.ServiceAccountNamespace, roleUser.ServiceAccount, roleID)
+		}
 	}
 
 	if roleUser.UserEmail != "" {
@@ -98,6 +101,15 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 				Kind:     rbacv1.GroupKind,
 				APIGroup: rbacv1.GroupName,
 				Name:     roleUser.Group,
+			})
+	}
+	if roleUser.ServiceAccount != "" {
+		existingRoleBinding.Subjects = append(existingRoleBinding.Subjects,
+			rbacv1.Subject{
+				Kind:      rbacv1.ServiceAccountKind,
+				APIGroup:  "",
+				Name:      roleUser.ServiceAccount,
+				Namespace: roleUser.ServiceAccountNamespace,
 			})
 	}
 
@@ -150,6 +162,9 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
 			return nil, utilerrors.NewBadRequest("group %s already connected to the cluster role %s", clusterRoleUser.Group, roleID)
 		}
+		if clusterRoleUser.ServiceAccount != "" && subject.Name == clusterRoleUser.ServiceAccount && subject.Namespace == clusterRoleUser.ServiceAccountNamespace {
+			return nil, utilerrors.NewBadRequest("service account %s/%s already connected to the cluster role %s", clusterRoleUser.ServiceAccountNamespace, clusterRoleUser.ServiceAccount, roleID)
+		}
 	}
 
 	if clusterRoleUser.UserEmail != "" {
@@ -166,6 +181,16 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 				Kind:     rbacv1.GroupKind,
 				APIGroup: rbacv1.GroupName,
 				Name:     clusterRoleUser.Group,
+			})
+	}
+
+	if clusterRoleUser.ServiceAccount != "" {
+		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
+			rbacv1.Subject{
+				Kind:      rbacv1.ServiceAccountKind,
+				APIGroup:  "",
+				Name:      clusterRoleUser.ServiceAccount,
+				Namespace: clusterRoleUser.ServiceAccountNamespace,
 			})
 	}
 
@@ -217,6 +242,9 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 			continue
 		}
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
+			continue
+		}
+		if roleUser.ServiceAccount != "" && subject.Name == roleUser.ServiceAccount && subject.Namespace == roleUser.ServiceAccountNamespace {
 			continue
 		}
 		newSubjects = append(newSubjects, subject)
@@ -271,6 +299,9 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 			continue
 		}
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
+			continue
+		}
+		if clusterRoleUser.ServiceAccount != "" && subject.Name == clusterRoleUser.ServiceAccount && subject.Namespace == clusterRoleUser.ServiceAccountNamespace {
 			continue
 		}
 		newSubjects = append(newSubjects, subject)

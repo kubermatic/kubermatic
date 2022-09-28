@@ -34,7 +34,7 @@ import (
 
 func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(roleUserReq)
+		req := request.(RoleUserReq)
 
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
@@ -46,7 +46,7 @@ func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privileged
 
 func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(roleUserReq)
+		req := request.(RoleUserReq)
 
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
@@ -65,7 +65,7 @@ func ListRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilege
 
 func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleUserReq)
+		req := request.(ClusterRoleUserReq)
 
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
@@ -77,7 +77,7 @@ func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, pri
 
 func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleUserReq)
+		req := request.(ClusterRoleUserReq)
 
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
@@ -95,19 +95,31 @@ func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, pr
 }
 
 // Validate validates roleUserReq request.
-func (req roleUserReq) Validate() error {
+func (req RoleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
-	if req.Body.UserEmail == "" && req.Body.Group == "" {
-		return fmt.Errorf("either user email or group must be set")
+	if req.Body.UserEmail == "" && req.Body.Group == "" && req.Body.ServiceAccount == "" && req.Body.ServiceAccountNamespace == "" {
+		return fmt.Errorf("either user email, group or service account must be set")
+	}
+
+	if req.Body.UserEmail != "" && (req.Body.Group != "" || req.Body.ServiceAccount != "" || req.Body.ServiceAccountNamespace != "") {
+		return fmt.Errorf("user email can not be used in conjunction with group or service account")
+	}
+
+	if req.Body.Group != "" && (req.Body.ServiceAccount != "" || req.Body.ServiceAccountNamespace != "") {
+		return fmt.Errorf("group can not be used in conjunction with email or service account")
+	}
+
+	if (req.Body.ServiceAccount == "" && req.Body.ServiceAccountNamespace != "") || (req.Body.ServiceAccount != "" && req.Body.ServiceAccountNamespace == "") {
+		return fmt.Errorf("both service account and service account namespace must be defined")
 	}
 	return nil
 }
 
-// roleUserReq defines HTTP request for bindUserToRole endpoint
+// RoleUserReq defines HTTP request for bindUserToRole endpoint
 // swagger:parameters bindUserToRoleV2 unbindUserFromRoleBindingV2
-type roleUserReq struct {
+type RoleUserReq struct {
 	common.ProjectReq
 	// in: path
 	// required: true
@@ -123,14 +135,14 @@ type roleUserReq struct {
 }
 
 // GetSeedCluster returns the SeedCluster object.
-func (req roleUserReq) GetSeedCluster() apiv1.SeedCluster {
+func (req RoleUserReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
 }
 
 func DecodeRoleUserReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req roleUserReq
+	var req RoleUserReq
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
@@ -196,20 +208,31 @@ func DecodeListBindingReq(c context.Context, r *http.Request) (interface{}, erro
 }
 
 // Validate validates clusterRoleUserReq request.
-func (req clusterRoleUserReq) Validate() error {
+func (req ClusterRoleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
-	if req.Body.UserEmail == "" && req.Body.Group == "" {
-		return fmt.Errorf("either user email or group must be set")
+	if req.Body.UserEmail == "" && req.Body.Group == "" && req.Body.ServiceAccount == "" && req.Body.ServiceAccountNamespace == "" {
+		return fmt.Errorf("either user email or group or service account must be set")
 	}
 
+	if req.Body.UserEmail != "" && (req.Body.Group != "" || req.Body.ServiceAccount != "" || req.Body.ServiceAccountNamespace != "") {
+		return fmt.Errorf("user email can not be used in conjunction with group or service account")
+	}
+
+	if req.Body.Group != "" && (req.Body.ServiceAccount != "" || req.Body.ServiceAccountNamespace != "") {
+		return fmt.Errorf("group can not be used in conjunction with email or service account")
+	}
+
+	if (req.Body.ServiceAccount == "" && req.Body.ServiceAccountNamespace != "") || (req.Body.ServiceAccount != "" && req.Body.ServiceAccountNamespace == "") {
+		return fmt.Errorf("both service account and service account namespace must be defined")
+	}
 	return nil
 }
 
-// clusterRoleUserReq defines HTTP request for bindUserToClusterRoleV2 endpoint
+// ClusterRoleUserReq defines HTTP request for bindUserToClusterRoleV2 endpoint
 // swagger:parameters bindUserToClusterRoleV2 unbindUserFromClusterRoleBindingV2
-type clusterRoleUserReq struct {
+type ClusterRoleUserReq struct {
 	common.ProjectReq
 	// in: path
 	// required: true
@@ -222,14 +245,14 @@ type clusterRoleUserReq struct {
 }
 
 // GetSeedCluster returns the SeedCluster object.
-func (req clusterRoleUserReq) GetSeedCluster() apiv1.SeedCluster {
+func (req ClusterRoleUserReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
 }
 
 func DecodeClusterRoleUserReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req clusterRoleUserReq
+	var req ClusterRoleUserReq
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
