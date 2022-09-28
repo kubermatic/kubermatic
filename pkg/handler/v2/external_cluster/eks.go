@@ -24,6 +24,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/go-kit/kit/endpoint"
 
@@ -453,10 +455,10 @@ func DecodeEKSReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSpec, eksCloudSpec *apiv2.EKSCloudSpec) error {
+func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSpec, eksCloudSpec *apiv2.EKSCloudSpec) (*eks.CreateClusterOutput, error) {
 	client, err := awsprovider.GetClientSet(ctx, eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	clusterSpec := eksClusterSpec
@@ -465,7 +467,7 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
 		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
-			return fmt.Errorf("required field is missing %v", fields.Type().Field(i).Tag)
+			return nil, fmt.Errorf("required field is missing %v", fields.Type().Field(i).Tag)
 		}
 	}
 
@@ -483,8 +485,10 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
+	var createClusterOutput *eks.CreateClusterOutput
+	var err error
 	if spec != nil && spec.EKSClusterSpec != nil {
-		if err := createNewEKSCluster(ctx, spec.EKSClusterSpec, cloud.EKS); err != nil {
+		if createClusterOutput, err = createNewEKSCluster(ctx, spec.EKSClusterSpec, cloud.EKS); err != nil {
 			return nil, err
 		}
 		isImported = resources.ExternalClusterIsImportedFalse
@@ -496,6 +500,17 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 			Name:   cloud.EKS.Name,
 			Region: cloud.EKS.Region,
 		},
+	}
+
+	if spec != nil && spec.EKSClusterSpec != nil {
+		eksClusterSpec := spec.EKSClusterSpec
+		newCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{
+			aws.ToString(createClusterOutput.Cluster.KubernetesNetworkConfig.ServiceIpv4Cidr),
+		}
+		newCluster.Spec.CloudSpec.EKS.ControlPlaneRoleARN = eksClusterSpec.RoleArn
+		newCluster.Spec.CloudSpec.EKS.VPCID = eksClusterSpec.ResourcesVpcConfig.VpcId
+		newCluster.Spec.CloudSpec.EKS.SubnetIDs = eksClusterSpec.ResourcesVpcConfig.SubnetIds
+		newCluster.Spec.CloudSpec.EKS.SecurityGroupIDs = eksClusterSpec.ResourcesVpcConfig.SecurityGroupIds
 	}
 
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
@@ -915,7 +930,7 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
 			SecurityGroupIds: cluster.ResourcesVpcConfig.SecurityGroupIds,
 			SubnetIds:        cluster.ResourcesVpcConfig.SubnetIds,
-			VpcId:            cluster.ResourcesVpcConfig.VpcId,
+			VpcId:            aws.ToString(cluster.ResourcesVpcConfig.VpcId),
 		}
 	}
 

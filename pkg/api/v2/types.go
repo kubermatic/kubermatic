@@ -781,7 +781,7 @@ type AKSClusterStatus struct {
 
 type VpcConfigRequest struct {
 	// The VPC associated with your cluster.
-	VpcId *string `json:"vpcId,omitempty"`
+	VpcId string `json:"vpcId"`
 
 	// Specify one or more security groups for the cross-account elastic network
 	// interfaces that Amazon EKS creates to use to allow communication between

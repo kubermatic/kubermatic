@@ -235,7 +235,7 @@ func ListMachineDeploymentUpgrades(ctx context.Context,
 	return upgrades, nil
 }
 
-func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterSpec, eksClusterName string) error {
+func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSpec *apiv2.EKSClusterSpec, eksClusterName string) (*eks.CreateClusterOutput, error) {
 	input := &eks.CreateClusterInput{
 		Name: aws.String(eksClusterName),
 		ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
@@ -245,12 +245,12 @@ func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSp
 		RoleArn: aws.String(clusterSpec.RoleArn),
 		Version: aws.String(clusterSpec.Version),
 	}
-	_, err := client.EKS.CreateCluster(ctx, input)
-
+	createClusterOutput, err := client.EKS.CreateCluster(ctx, input)
 	if err != nil {
-		return DecodeError(err)
+		return nil, DecodeError(err)
 	}
-	return nil
+
+	return createClusterOutput, nil
 }
 
 func ListClusters(ctx context.Context, client *awsprovider.ClientSet) ([]string, error) {

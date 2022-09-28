@@ -247,6 +247,7 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 			Zone: cloud.GKE.Zone,
 		},
 	}
+
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
