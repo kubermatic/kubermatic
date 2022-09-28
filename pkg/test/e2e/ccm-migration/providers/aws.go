@@ -185,6 +185,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(spec *kubermaticv1.AWSCloudSpe
 		VpcID:                types.ConfigVarString{Value: spec.VPCID},
 		SecurityGroupIDs:     []types.ConfigVarString{{Value: spec.SecurityGroupID}},
 		InstanceProfile:      types.ConfigVarString{Value: spec.InstanceProfileName},
+		InstanceType:         types.ConfigVarString{Value: "t2.medium"},
 		AssignPublicIP:       pointer.Bool(true),
 	})
 	if err != nil {
