@@ -81,9 +81,12 @@ if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
 fi
 
 if [[ "$PROVIDER_TO_TEST" == "aws" ]]; then
+  # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
+  # ask for a 1.24.x cluster
   EXTRA_ARGS="-aws-access-key-id=$AWS_E2E_TESTS_KEY_ID
     -aws-secret-access-key=$AWS_E2E_TESTS_SECRET
     -aws-seed-datacenter=aws-eu-central-1a
+    -cluster-version=1.24
     "
 fi
 

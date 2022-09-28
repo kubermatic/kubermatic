@@ -23,6 +23,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -37,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -51,7 +53,7 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	logOptions        log.Options
-	kubernetesVersion semver.Semver
+	kubernetesRelease string
 
 	provider string
 
@@ -66,16 +68,30 @@ type testOptions struct {
 	awsCredentials     providers.AWSCredentialsType
 }
 
+func (o testOptions) KubernetesVersion() semver.Semver {
+	if o.kubernetesRelease == "" {
+		return *defaulting.DefaultKubernetesVersioning.Default
+	}
+
+	// was only "1.23" or "v1.25" specified?
+	regex := regexp.MustCompile(`^v[0-9]+\.[0-9]+$`)
+	if regex.MatchString(o.kubernetesRelease) {
+		return *test.LatestKubernetesVersionForRelease(o.kubernetesRelease, nil)
+	}
+
+	return *semver.NewSemverOrDie(o.kubernetesRelease)
+}
+
 var (
 	options = testOptions{
-		kubernetesVersion: *defaulting.DefaultKubernetesVersioning.Default,
-		logOptions:        e2eutils.DefaultLogOptions,
+		logOptions: e2eutils.DefaultLogOptions,
 	}
 )
 
 func init() {
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
 	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
+	flag.StringVar(&options.kubernetesRelease, "cluster-version", "", "Kubernetes version or release for the usercluster")
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
@@ -133,16 +149,17 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlru
 	var clusterJig providers.ClusterJigInterface
 
 	logger := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
+	version := options.KubernetesVersion()
 
 	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
-		clusterJig = providers.NewClusterJigOpenstack(seedClient, logger, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
+		clusterJig = providers.NewClusterJigOpenstack(seedClient, logger, version, options.osSeedDatacenter, options.osCredentials)
 	case kubermaticv1.VSphereCloudProvider:
-		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
+		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, version, options.vsphereSeedDatacenter, options.vSphereCredentials)
 	case kubermaticv1.AzureCloudProvider:
-		clusterJig = providers.NewClusterJigAzure(seedClient, logger, options.kubernetesVersion, options.azureSeedDatacenter, options.azureCredentials)
+		clusterJig = providers.NewClusterJigAzure(seedClient, logger, version, options.azureSeedDatacenter, options.azureCredentials)
 	case kubermaticv1.AWSCloudProvider:
-		clusterJig = providers.NewClusterJigAWS(seedClient, logger, options.kubernetesVersion, options.awsSeedDatacenter, options.awsCredentials)
+		clusterJig = providers.NewClusterJigAWS(seedClient, logger, version, options.awsSeedDatacenter, options.awsCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
