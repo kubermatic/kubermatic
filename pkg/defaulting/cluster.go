@@ -27,7 +27,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -139,22 +138,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
-
-	// Always enable external CCM for supported providers in new clusters
-	if resources.ExternalCloudControllerFeatureSupported(datacenter, &spec.Cloud, spec.Version, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		if spec.Features == nil {
-			spec.Features = map[string]bool{}
-		}
-		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-
-		if resources.ExternalCloudControllerClusterName(&spec.Cloud) {
-			spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-
-		if spec.Cloud.VSphere != nil {
-			spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
-	}
 
 	return nil
 }
