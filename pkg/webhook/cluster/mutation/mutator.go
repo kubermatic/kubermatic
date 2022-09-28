@@ -111,8 +111,14 @@ func (m *Mutator) mutateCreate(newCluster *kubermaticv1.Cluster, config *kuberma
 		return fieldErr
 	}
 
-	// Always enable external CCM for supported providers in new clusters
-	if resources.ExternalCloudControllerFeatureSupported(datacenter, &newCluster.Spec.Cloud, newCluster.Spec.Version, version.NewFromConfiguration(config).GetIncompatibilities()...) {
+	// Always enable external CCM for supported providers in new clusters unless the user
+	// explicitly disabled the external CCM. For regular users this is not important (most
+	// won't disable the CCM), but the ccm-migration e2e tests require to create a cluster
+	// without external CCM.
+	supported := resources.ExternalCloudControllerFeatureSupported(datacenter, &newCluster.Spec.Cloud, newCluster.Spec.Version, version.NewFromConfiguration(config).GetIncompatibilities()...)
+	enabled, configured := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+
+	if supported && (enabled || !configured) {
 		newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 
 		if resources.ExternalCloudControllerClusterName(&newCluster.Spec.Cloud) {
