@@ -20,6 +20,12 @@ type RoleUser struct {
 	// group
 	Group string `json:"group,omitempty"`
 
+	// service account
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// service account namespace
+	ServiceAccountNamespace string `json:"serviceAccountNamespace,omitempty"`
+
 	// user email
 	UserEmail string `json:"userEmail,omitempty"`
 }

@@ -24678,6 +24678,14 @@
           "type": "string",
           "x-go-name": "Group"
         },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "serviceAccountNamespace": {
+          "type": "string",
+          "x-go-name": "ServiceAccountNamespace"
+        },
         "userEmail": {
           "type": "string",
           "x-go-name": "UserEmail"
@@ -32159,6 +32167,14 @@
         "group": {
           "type": "string",
           "x-go-name": "Group"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "serviceAccountNamespace": {
+          "type": "string",
+          "x-go-name": "ServiceAccountNamespace"
         },
         "userEmail": {
           "type": "string",

@@ -2550,15 +2550,19 @@ type ClusterRoleName struct {
 // RoleUser defines associated user with role
 // swagger:model RoleUser
 type RoleUser struct {
-	UserEmail string `json:"userEmail"`
-	Group     string `json:"group"`
+	UserEmail               string `json:"userEmail"`
+	Group                   string `json:"group"`
+	ServiceAccount          string `json:"serviceAccount"`
+	ServiceAccountNamespace string `json:"serviceAccountNamespace"`
 }
 
 // ClusterRoleUser defines associated user with cluster role
 // swagger:model ClusterRoleUser
 type ClusterRoleUser struct {
-	UserEmail string `json:"userEmail"`
-	Group     string `json:"group"`
+	UserEmail               string `json:"userEmail"`
+	Group                   string `json:"group"`
+	ServiceAccount          string `json:"serviceAccount"`
+	ServiceAccountNamespace string `json:"serviceAccountNamespace"`
 }
 
 // Role defines RBAC role for the user cluster
