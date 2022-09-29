@@ -34,6 +34,9 @@ spec:
         - '{"command":"cloud-controller-manager","args":["--allocate-node-cidrs=false","--configure-cloud-routes=false","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=4","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=azure","--leader-elect=true","--route-reconciliation-period=10s","--port=10267","--controllers=*,-cloud-node"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubermatic/certs/ca-bundle.pem
         image: mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.24.0
         livenessProbe:
           failureThreshold: 3
@@ -56,6 +59,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
           readOnly: true
         - mountPath: /etc/kubernetes/cloud
           name: cloud-config
@@ -119,12 +125,15 @@ spec:
       - name: cloud-controller-manager-kubeconfig
         secret:
           secretName: cloud-controller-manager-kubeconfig
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - name: cloud-config
         secret:
           secretName: cloud-config
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

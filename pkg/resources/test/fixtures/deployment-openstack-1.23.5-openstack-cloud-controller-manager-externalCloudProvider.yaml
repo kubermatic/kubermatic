@@ -52,11 +52,11 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig
           readOnly: true
-        - mountPath: /etc/kubernetes/cloud
-          name: cloud-config
-          readOnly: true
         - mountPath: /etc/kubermatic/certs
           name: ca-bundle
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
@@ -117,15 +117,15 @@ spec:
       - name: cloud-controller-manager-kubeconfig
         secret:
           secretName: cloud-controller-manager-kubeconfig
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
-      - name: cloud-config
-        secret:
-          secretName: cloud-config
       - configMap:
           name: ca-bundle
         name: ca-bundle
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

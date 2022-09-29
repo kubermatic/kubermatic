@@ -62,9 +62,9 @@ func TestValidateClusterSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, []*version.Version{{
+			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, version.New([]*version.Version{{
 				Version: semverlib.MustParse("1.2.3"),
-			}}, nil).ToAggregate()
+			}}, nil, nil), nil).ToAggregate()
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)

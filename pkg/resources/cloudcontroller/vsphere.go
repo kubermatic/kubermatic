@@ -22,7 +22,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,50 +75,21 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				return nil, err
 			}
 
+			version := getVSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
+			container := getVSphereCCMContainer(version, data)
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-
-			version := getVsphereCPIVersion(data.Cluster().Status.Versions.ControlPlane)
-
-			container := getCPIContainer(version, data)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
 			}
-
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-			}
-
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
-				corev1.Volume{
-					Name: resources.CloudConfigSeedSecretName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: resources.CloudConfigSeedSecretName,
-						},
-					},
-				},
-				corev1.Volume{
-					Name: resources.CABundleConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CABundleConfigMapName,
-							},
-						},
-					},
-				},
-			)
 
 			return dep, nil
 		}
 	}
 }
 
-func getCPIContainer(version string, data *resources.TemplateData) corev1.Container {
+func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1.Container {
 	controllerManagerImage := fmt.Sprintf("%s/cloud-provider-vsphere/cpi/release/manager:v%s", data.ImageRegistry(resources.RegistryGCR), version)
 	c := corev1.Container{
 		Name:  ccmContainerName,
@@ -133,27 +103,12 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 		Args: []string{
 			"--v=2",
 			"--cloud-provider=vsphere",
-			"--cloud-config=/etc/cloud/config",
+			"--cloud-config=/etc/kubernetes/cloud/config",
 			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "SSL_CERT_FILE",
-				Value: "/etc/kubermatic/certs/ca-bundle.pem",
-			},
-		},
-		VolumeMounts: append(getVolumeMounts(),
-			corev1.VolumeMount{
-				MountPath: "/etc/cloud",
-				Name:      resources.CloudConfigSeedSecretName,
-			},
-			corev1.VolumeMount{
-				Name:      resources.CABundleConfigMapName,
-				MountPath: "/etc/kubermatic/certs",
-				ReadOnly:  true,
-			},
-		),
-		Resources: vsphereCPIResourceRequirements,
+		Env:          getEnvVars(),
+		VolumeMounts: getVolumeMounts(true),
+		Resources:    vsphereCPIResourceRequirements,
 	}
 	if data.Cluster().IsDualStack() {
 		c.Env = append(c.Env, corev1.EnvVar{
@@ -168,7 +123,7 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	return c
 }
 
-func getVsphereCPIVersion(version semver.Semver) string {
+func getVSphereCCMVersion(version semver.Semver) string {
 	switch version.MajorMinor() {
 	case v121:
 		return "1.21.3"

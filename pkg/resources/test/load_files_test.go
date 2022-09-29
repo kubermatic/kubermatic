@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -53,6 +52,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
@@ -101,38 +101,33 @@ type testCase struct {
 }
 
 // name returns the name for the current test case.
-func (tc testCase) name() string {
-	b := strings.Builder{}
-	b.WriteString("resources-")
-	b.WriteString(tc.provider)
-	b.WriteRune('-')
-	b.WriteString(tc.version.String())
+func (tc testCase) enabledFeatures() string {
+	features := sets.NewString()
 	for f, active := range tc.features {
 		if active {
-			b.WriteRune('-')
-			b.WriteString(f)
+			features.Insert(f)
 		}
 	}
-	return b.String()
+
+	return strings.Join(features.List(), "-")
+}
+
+// name returns the name for the current test case.
+func (tc testCase) name() string {
+	name := fmt.Sprintf("resources-%s-%s", tc.provider, tc.version)
+	if features := tc.enabledFeatures(); len(features) > 0 {
+		name += "-" + features
+	}
+	return name
 }
 
 // fixturePath returns the path to the fixture for the targeted resource.
 func (tc testCase) fixturePath(resType, resName string) string {
-	b := strings.Builder{}
-	b.WriteString(resType)
-	b.WriteRune('-')
-	b.WriteString(tc.provider)
-	b.WriteRune('-')
-	b.WriteString(tc.version.String())
-	b.WriteRune('-')
-	b.WriteString(resName)
-	for f, active := range tc.features {
-		if active {
-			b.WriteRune('-')
-			b.WriteString(f)
-		}
+	path := fmt.Sprintf("%s-%s-%s-%s", resType, tc.provider, tc.version, resName)
+	if features := tc.enabledFeatures(); len(features) > 0 {
+		path += "-" + features
 	}
-	return b.String()
+	return path
 }
 
 func TestLoadFiles(t *testing.T) {
@@ -350,7 +345,7 @@ func TestLoadFiles(t *testing.T) {
 						},
 					}
 
-					if features[kubermaticv1.ClusterFeatureExternalCloudProvider] && !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, cluster) {
+					if features[kubermaticv1.ClusterFeatureExternalCloudProvider] && !resources.ExternalCloudControllerFeatureSupported(dc, &cluster.Spec.Cloud, cluster.Spec.Version) {
 						t.Log("Unsupported configuration")
 						return
 					}
@@ -692,11 +687,12 @@ func TestLoadFiles(t *testing.T) {
 					deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 					deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 					for _, create := range deploymentCreators {
-						_, creator := create()
+						objName, creator := create()
 						res, err := creator(&appsv1.Deployment{})
 						if err != nil {
 							t.Fatalf("failed to create Deployment: %v", err)
 						}
+						res.Name = objName
 						fixturePath := tc.fixturePath("deployment", res.Name)
 
 						verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)

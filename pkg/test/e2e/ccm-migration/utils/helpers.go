@@ -108,6 +108,11 @@ func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kuberma
 			ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 			HumanReadableName: "test",
 			Version:           version,
+			Features: map[string]bool{
+				// normally new clusters would get the external CCM enabled by default,
+				// but for this test scenario we must create a cluster without external CCM.
+				kubermaticv1.ClusterFeatureExternalCloudProvider: false,
+			},
 		},
 	}
 }

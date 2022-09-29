@@ -139,14 +139,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
 
-	// Always enable external CCM
-	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
-		if spec.Features == nil {
-			spec.Features = map[string]bool{}
-		}
-		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-	}
-
 	return nil
 }
 
