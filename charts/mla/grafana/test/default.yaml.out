@@ -1,97 +1,13 @@
 ---
-# Source: grafana/charts/grafana/templates/podsecuritypolicy.yaml
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: release-name-grafana
-  labels:
-    helm.sh/chart: grafana-6.17.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
-    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
-    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
-    apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    # Default set from Docker, with DAC_OVERRIDE and CHOWN
-      - ALL
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'csi'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'MustRunAs'
-    ranges:
-      # Forbid adding the root group.
-      - min: 1
-        max: 65535
-  fsGroup:
-    rule: 'MustRunAs'
-    ranges:
-      # Forbid adding the root group.
-      - min: 1
-        max: 65535
-  readOnlyRootFilesystem: false
----
-# Source: grafana/charts/grafana/templates/tests/test-podsecuritypolicy.yaml
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: release-name-grafana-test
-  labels:
-    helm.sh/chart: grafana-6.17.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  allowPrivilegeEscalation: true
-  privileged: false
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  fsGroup:
-    rule: RunAsAny
-  seLinux:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  runAsUser:
-    rule: RunAsAny
-  volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - projected
-  - csi
-  - secret
----
 # Source: grafana/charts/grafana/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana
   namespace: default
@@ -101,10 +17,10 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana-test
   namespace: default
@@ -116,10 +32,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 data:
   grafana.ini: |
@@ -134,6 +50,8 @@ data:
     logs = /var/log/grafana
     plugins = /var/lib/grafana/plugins
     provisioning = /etc/grafana/provisioning
+    [server]
+    domain = ''
 ---
 # Source: grafana/charts/grafana/templates/tests/test-configmap.yaml
 apiVersion: v1
@@ -142,17 +60,17 @@ metadata:
   name: release-name-grafana-test
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 data:
   run.sh: |-
     @test "Test Health" {
       url="http://release-name-grafana/api/health"
 
-      code=$(wget --server-response --spider --timeout 10 --tries 1 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
+      code=$(wget --server-response --spider --timeout 90 --tries 10 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
       [ "$code" == "200" ]
     }
 ---
@@ -161,10 +79,10 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana-clusterrole
 rules: []
@@ -175,10 +93,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: release-name-grafana-clusterrolebinding
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
@@ -196,10 +114,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:      ['extensions']
@@ -214,10 +132,10 @@ metadata:
   name: release-name-grafana-test
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 rules:
 - apiGroups:      ['policy']
@@ -232,10 +150,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -253,10 +171,10 @@ metadata:
   name: release-name-grafana-test
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -274,10 +192,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -286,7 +204,6 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 3000
-
   selector:
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
@@ -298,10 +215,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -318,11 +235,10 @@ spec:
         app.kubernetes.io/name: grafana
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: 1de26864c75e0b5f81d289ce7f6fe83911ef9431b939976fc2b1f8a551e1bfb9
+        checksum/config: d20080b9f6d1b4d2031d84877546cf9a7c310d1346186bd946efa051737a87ed
         checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-    spec:
-      
+    spec:      
       serviceAccountName: release-name-grafana
       automountServiceAccountToken: true
       securityContext:
@@ -332,7 +248,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: grafana
-          image: "grafana/grafana:8.2.3"
+          image: "grafana/grafana:9.1.5"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: config
@@ -341,9 +257,6 @@ spec:
             - name: storage
               mountPath: "/var/lib/grafana"
           ports:
-            - name: service
-              containerPort: 80
-              protocol: TCP
             - name: grafana
               containerPort: 3000
               protocol: TCP
@@ -358,7 +271,6 @@ spec:
                 secretKeyRef:
                   name: grafana
                   key: admin-password
-            
             - name: GF_PATHS_DATA
               value: /var/lib/grafana/
             - name: GF_PATHS_LOGS
@@ -378,8 +290,6 @@ spec:
             httpGet:
               path: /api/health
               port: 3000
-          resources:
-            {}
       volumes:
         - name: config
           configMap:
@@ -393,13 +303,14 @@ kind: Pod
 metadata:
   name: release-name-grafana-test
   labels:
-    helm.sh/chart: grafana-6.17.5
+    helm.sh/chart: grafana-6.38.5
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "8.2.3"
+    app.kubernetes.io/version: "9.1.5"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
   namespace: default
 spec:
   serviceAccountName: release-name-grafana-test
