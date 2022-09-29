@@ -74,6 +74,8 @@ type DeployOptions struct {
 
 	MlaSkipMinio             bool
 	MlaSkipMinioLifecycleMgr bool
+	MlaForceMlaSecrets       bool
+	MlaIncludeIap            bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -127,8 +129,10 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
 
-	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinio, "skip-minio", false, "skip installation of UserCluster MLA Minio")
-	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinioLifecycleMgr, "skip-minio-lifecycle-mgr", false, "skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinio, "skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
+	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinioLifecycleMgr, "skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MlaForceMlaSecrets, "force-mla-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
+	cmd.PersistentFlags().BoolVar(&opt.MlaIncludeIap, "include-mla-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
 	return cmd
 }
@@ -214,6 +218,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			AllowEditionChange:                 opt.AllowEditionChange,
 			MlaSkipMinio:                       opt.MlaSkipMinio,
 			MlaSkipMinioLifecycleMgr:           opt.MlaSkipMinioLifecycleMgr,
+			MlaForceSecrets:                    opt.MlaForceMlaSecrets,
+			MlaIncludeIap:                      opt.MlaIncludeIap,
 			Versions:                           versions,
 		}
 

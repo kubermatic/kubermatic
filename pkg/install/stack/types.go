@@ -56,6 +56,8 @@ type DeployOptions struct {
 
 	MlaSkipMinio             bool
 	MlaSkipMinioLifecycleMgr bool
+	MlaForceSecrets          bool
+	MlaIncludeIap            bool
 }
 
 type Stack interface {

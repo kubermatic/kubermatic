@@ -18,13 +18,14 @@ package userclustermla
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
-	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
@@ -33,7 +34,7 @@ func (m *UserClusterMLA) ValidateState(ctx context.Context, opt stack.DeployOpti
 }
 
 func (*UserClusterMLA) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
-	helmFailures := validateHelmValues(helmValues)
+	helmFailures := validateHelmValues(helmValues, opt)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
@@ -41,19 +42,34 @@ func (*UserClusterMLA) ValidateConfiguration(config *kubermaticv1.KubermaticConf
 	return config, helmValues, helmFailures
 }
 
-func validateHelmValues(helmValues *yamled.Document) []error {
+func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []error {
 	failures := []error{}
 
-	path := yamled.Path{"minio", "credentials", "accessKey"}
-	accessKey, _ := helmValues.GetString(path)
-	if err := common.ValidateRandomSecret(accessKey, path.String()); err != nil {
-		failures = append(failures, err)
-	}
+	if opt.MlaIncludeIap {
+		path := yamled.Path{"iap", "deployments", "grafana", "client_secret"}
+		grafanaClientSecret, _ := helmValues.GetString(path)
+		if err := ValidateIapBlockSecret(grafanaClientSecret, path.String()); err != nil {
+			failures = append(failures, err)
+		}
 
-	path = yamled.Path{"minio", "credentials", "secretKey"}
-	secretKey, _ := helmValues.GetString(path)
-	if err := common.ValidateRandomSecret(secretKey, path.String()); err != nil {
-		failures = append(failures, err)
+		path = yamled.Path{"iap", "deployments", "grafana", "encryption_key"}
+		grafanaEncryptionKey, _ := helmValues.GetString(path)
+		if err := ValidateIapBlockSecret(grafanaEncryptionKey, path.String()); err != nil {
+			failures = append(failures, err)
+		}
+
+		path = yamled.Path{"iap", "deployments", "alertmanager", "client_secret"}
+		alertmanagerClientSecret, _ := helmValues.GetString(path)
+		if err := ValidateIapBlockSecret(alertmanagerClientSecret, path.String()); err != nil {
+			failures = append(failures, err)
+		}
+
+		path = yamled.Path{"iap", "deployments", "alertmanager", "encryption_key"}
+		alertmanagerEncryptionKey, _ := helmValues.GetString(path)
+		if err := ValidateIapBlockSecret(alertmanagerEncryptionKey, path.String()); err != nil {
+			failures = append(failures, err)
+		}
+
 	}
 
 	return failures
@@ -61,4 +77,37 @@ func validateHelmValues(helmValues *yamled.Document) []error {
 
 func prefixError(prefix string, e error) error {
 	return fmt.Errorf("%s%w", prefix, e)
+}
+
+func ValidateIapBlockSecret(value string, path string) error {
+	if value == "" || isBlockSecret(value) {
+		secret, err := randomString()
+		if err == nil {
+			return fmt.Errorf("%s must be a non-empty secret of 16, 24 or 32 characters, for example: %s", path, secret)
+		}
+
+		return fmt.Errorf("%s must be a non-empty secret", path)
+	}
+
+	return nil
+}
+
+func isBlockSecret(value string) bool {
+	switch len(value) {
+	case 16, 24, 32:
+		return true
+	}
+	return false
+}
+
+func randomString() (string, error) {
+	c := 24
+	b := make([]byte, c)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
