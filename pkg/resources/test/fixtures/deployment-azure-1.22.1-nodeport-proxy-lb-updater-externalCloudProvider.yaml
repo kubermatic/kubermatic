@@ -5,6 +5,7 @@ metadata:
   labels:
     app: nodeport-proxy-lb-updater
   name: nodeport-proxy-lb-updater
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

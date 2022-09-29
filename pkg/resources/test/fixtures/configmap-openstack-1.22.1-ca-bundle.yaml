@@ -22,3 +22,5 @@ data:
     -----END CERTIFICATE-----
 metadata:
   creationTimestamp: null
+  name: ca-bundle
+  namespace: cluster-de-test-01

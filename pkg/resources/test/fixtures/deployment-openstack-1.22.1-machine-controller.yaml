@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller
   name: machine-controller
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

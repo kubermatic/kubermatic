@@ -5,6 +5,7 @@ metadata:
   labels:
     app: openstack-cloud-controller-manager
   name: openstack-cloud-controller-manager
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller-webhook
   name: machine-controller-webhook
+  namespace: cluster-de-test-01
 spec:
   ports:
   - port: 443

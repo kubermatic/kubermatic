@@ -5,6 +5,7 @@ metadata:
   labels:
     app: vsphere-cloud-controller-manager
   name: vsphere-cloud-controller-manager
+  namespace: cluster-de-test-01
 spec:
   selector:
     matchLabels:

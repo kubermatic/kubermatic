@@ -3,6 +3,7 @@
 metadata:
   creationTimestamp: null
   name: etcd
+  namespace: cluster-de-test-01
 spec:
   podManagementPolicy: Parallel
   replicas: 3

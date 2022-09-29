@@ -5,6 +5,7 @@ metadata:
   labels:
     app: kubernetes-dashboard
   name: kubernetes-dashboard
+  namespace: cluster-de-test-01
 spec:
   replicas: 2
   selector:

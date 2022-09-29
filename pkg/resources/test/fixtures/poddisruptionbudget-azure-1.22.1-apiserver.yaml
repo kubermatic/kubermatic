@@ -2,6 +2,8 @@
 
 metadata:
   creationTimestamp: null
+  name: apiserver
+  namespace: cluster-de-test-01
 spec:
   maxUnavailable: 1
   selector:

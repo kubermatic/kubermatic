@@ -5,6 +5,7 @@ metadata:
   labels:
     app: operating-system-manager
   name: operating-system-manager
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

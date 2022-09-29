@@ -5,6 +5,7 @@ metadata:
   labels:
     app: scheduler
   name: scheduler
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

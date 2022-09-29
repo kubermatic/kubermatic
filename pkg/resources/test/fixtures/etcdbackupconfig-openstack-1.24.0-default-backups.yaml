@@ -4,6 +4,8 @@ metadata:
   creationTimestamp: null
   labels:
     project-id: my-project
+  name: default-backups
+  namespace: cluster-de-test-01
 spec:
   cluster:
     apiVersion: kubermatic.k8c.io/v1

@@ -60,10 +60,13 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var update = flag.Bool("update", false, "Update test fixtures")
+var (
+	update     = flag.Bool("update", false, "Update test fixtures")
+	fixtureDir = "fixtures"
+)
 
 func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
-	path := filepath.Join("./fixtures", resFile+".yaml")
+	path := filepath.Join(fixtureDir, resFile+".yaml")
 	jsonRes, err := json.Marshal(testObj)
 	if err != nil {
 		t.Fatal(err)
@@ -261,6 +264,30 @@ func TestLoadFiles(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	if *update {
+		if err := os.RemoveAll(fixtureDir); err != nil {
+			t.Fatalf("Failed to remove all old fixtures: %v", err)
+		}
+		if err := os.MkdirAll(fixtureDir, 0755); err != nil {
+			t.Fatalf("Failed to create fixture directory: %v", err)
+		}
+	}
+
+	entries, err := os.ReadDir(fixtureDir)
+	if err != nil {
+		t.Fatalf("Failed to list existing fixtures: %v", err)
+	}
+
+	allFiles := sets.NewString()
+	for _, e := range entries {
+		allFiles.Insert(e.Name())
+	}
+
+	markFixtureUsed := func(fixtureName string) {
+		filename := fixtureName + ".yaml"
+		allFiles.Delete(filename)
 	}
 
 	for _, ver := range versions {
@@ -687,16 +714,18 @@ func TestLoadFiles(t *testing.T) {
 					deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 					deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 					for _, create := range deploymentCreators {
-						objName, creator := create()
+						name, creator := create()
 						res, err := creator(&appsv1.Deployment{})
 						if err != nil {
 							t.Fatalf("failed to create Deployment: %v", err)
 						}
-						res.Name = objName
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
+
 						fixturePath := tc.fixturePath("deployment", res.Name)
 
 						verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)
-
+						markFixtureUsed(fixturePath)
 						checkTestResult(t, fixturePath, res)
 					}
 
@@ -709,8 +738,12 @@ func TestLoadFiles(t *testing.T) {
 						if err != nil {
 							t.Fatalf("failed to create ConfigMap: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
-						checkTestResult(t, tc.fixturePath("configmap", name), res)
+						fixturePath := tc.fixturePath("configmap", res.Name)
+						markFixtureUsed(fixturePath)
+						checkTestResult(t, fixturePath, res)
 					}
 
 					serviceCreators := kubernetescontroller.GetServiceCreators(data)
@@ -720,24 +753,32 @@ func TestLoadFiles(t *testing.T) {
 						if err != nil {
 							t.Fatalf("failed to create Service: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
-						checkTestResult(t, tc.fixturePath("service", name), res)
+						fixturePath := tc.fixturePath("service", res.Name)
+						markFixtureUsed(fixturePath)
+						checkTestResult(t, fixturePath, res)
 					}
 
 					var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
 					statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, false)...)
 					statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 					for _, creatorGetter := range statefulSetCreators {
-						_, create := creatorGetter()
+						name, create := creatorGetter()
 						res, err := create(&appsv1.StatefulSet{})
 						if err != nil {
 							t.Fatalf("failed to create StatefulSet: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
 						fixturePath := tc.fixturePath("statefulset", res.Name)
 						if err != nil {
 							t.Fatalf("failed to create StatefulSet for %s: %v", fixturePath, err)
 						}
+
+						markFixtureUsed(fixturePath)
 
 						// Verify that every StatefulSet has the ImagePullSecret set
 						if len(res.Spec.Template.Spec.ImagePullSecrets) == 0 {
@@ -755,21 +796,26 @@ func TestLoadFiles(t *testing.T) {
 						if err != nil {
 							t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
 						fixturePath := tc.fixturePath("poddisruptionbudget", name)
 						if err != nil {
 							t.Fatalf("failed to create PodDisruptionBudget for %s: %v", fixturePath, err)
 						}
 
+						markFixtureUsed(fixturePath)
 						checkTestResult(t, fixturePath, res)
 					}
 
 					for _, creatorGetter := range kubernetescontroller.GetCronJobCreators(data) {
-						_, create := creatorGetter()
+						name, create := creatorGetter()
 						res, err := create(&batchv1.CronJob{})
 						if err != nil {
 							t.Fatalf("failed to create CronJob: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
 						fixturePath := tc.fixturePath("cronjob", res.Name)
 						if err != nil {
@@ -781,26 +827,34 @@ func TestLoadFiles(t *testing.T) {
 							t.Errorf("CronJob %s is missing the ImagePullSecret on the PodTemplate", res.Name)
 						}
 
+						markFixtureUsed(fixturePath)
 						checkTestResult(t, fixturePath, res)
 					}
 
 					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, test.GenTestSeed()) {
-						_, create := creatorGetter()
+						name, create := creatorGetter()
 						res, err := create(&kubermaticv1.EtcdBackupConfig{})
 						if err != nil {
 							t.Fatalf("failed to create EtcdBackupConfig: %v", err)
 						}
+						res.Name = name
+						res.Namespace = cluster.Status.NamespaceName
 
 						fixturePath := tc.fixturePath("etcdbackupconfig", res.Name)
 						if err != nil {
 							t.Fatalf("failed to create EtcdBackupConfig for %s: %v", fixturePath, err)
 						}
 
+						markFixtureUsed(fixturePath)
 						checkTestResult(t, fixturePath, res)
 					}
 				})
 			}
 		}
+	}
+
+	if leftover := allFiles.List(); len(leftover) > 0 {
+		t.Fatalf("Leftover fixtures found that do not belong to any of the configured testcases: %v", leftover)
 	}
 }
 
