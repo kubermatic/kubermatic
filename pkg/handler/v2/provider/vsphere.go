@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"k8s.io/utils/pointer"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -67,7 +68,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

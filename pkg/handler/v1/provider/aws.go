@@ -32,6 +32,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 // AWSCommonReq represent a request with common parameters for AWS.
@@ -219,7 +221,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -341,7 +343,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

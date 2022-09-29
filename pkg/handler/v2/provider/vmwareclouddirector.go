@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"k8s.io/utils/pointer"
 
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -201,7 +202,7 @@ func getVMwareCloudDirectorCredentialsFromReq(ctx context.Context, req VMwareClo
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

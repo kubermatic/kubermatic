@@ -96,6 +96,11 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 		}
 
 		for _, preset := range presets {
+			// skip presets limited to projects unless an admin is requesting this information
+			if len(preset.Spec.Projects) > 0 && !userInfo.IsAdmin {
+				continue
+			}
+
 			enabled := preset.Spec.IsEnabled()
 
 			if !preset.Spec.IsEnabled() && !req.Disabled {
@@ -315,6 +320,11 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		for _, preset := range presets {
+			// skip presets limited to projects unless an admin is requesting this information
+			if len(preset.Spec.Projects) > 0 && !userInfo.IsAdmin {
+				continue
+			}
+
 			providerType := kubermaticv1.ProviderType(req.ProviderName)
 			providerPreset := kubermaticv1helper.GetProviderPreset(&preset, providerType)
 

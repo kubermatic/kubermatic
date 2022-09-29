@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -320,7 +321,7 @@ func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider 
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

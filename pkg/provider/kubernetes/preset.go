@@ -121,12 +121,20 @@ func (m *PresetProvider) UpdatePreset(ctx context.Context, preset *kubermaticv1.
 	return m.patcher(ctx, preset)
 }
 
-// GetPresets returns presets which belong to the specific email group and for all users.
+// GetPreset returns all presets which belong to the specific email group or projectID. Passing `nil` for `projectID` means that
+// all presets are considered (i.e. no filtering based on project association takes places). This should only be used in administrative
+// contexts.
+// For code that cannot provide project information and should not have access to project-scoped presets, pass a pointer to an empty string
+// (e.g. `pointer.String("")`) instead. This will enable project ID filtering, but no preset with project associations will be returned.
 func (m *PresetProvider) GetPresets(ctx context.Context, userInfo *provider.UserInfo, projectID *string) ([]kubermaticv1.Preset, error) {
 	return m.getter(ctx, userInfo, projectID)
 }
 
-// GetPreset returns preset with the name which belong to the specific email group.
+// GetPreset returns a preset based on its name which belong to the specific email group or projectID. Passing `nil` for `projectID` means that
+// all presets are considered (i.e. no filtering based on project association takes places). This should only be used in administrative
+// contexts.
+// For code that cannot provide project information and should not have access to project-scoped presets, pass a pointer to an empty string
+// (e.g. `pointer.String("")`) instead. This will enable project ID filtering, but no preset with project associations will be returned.
 func (m *PresetProvider) GetPreset(ctx context.Context, userInfo *provider.UserInfo, projectID *string, name string) (*kubermaticv1.Preset, error) {
 	presets, err := m.getter(ctx, userInfo, projectID)
 	if err != nil {
@@ -155,7 +163,7 @@ func filterOutPresets(userInfo *provider.UserInfo, projectID *string, list *kube
 
 	for _, preset := range list.Items {
 		// by default, we "match" the project as we might either not be filtering based on projectID
-		// or the preset does not have a project limitation in place.
+		// or the preset does not have a project association in place.
 		matchesProject := true
 
 		if projectID != nil && preset.Spec.Projects != nil && len(preset.Spec.Projects) > 0 {

@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"k8s.io/utils/pointer"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -119,7 +120,7 @@ func getAzureCredentialsFromReq(ctx context.Context, req azureCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

@@ -192,7 +192,7 @@ func TestGetPreset(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			preset, err := provider.GetPreset(context.Background(), &tc.userInfo, tc.presetName)
+			preset, err := provider.GetPreset(context.Background(), &tc.userInfo, nil, tc.presetName)
 			if len(tc.expectedError) > 0 {
 				if err == nil {
 					t.Fatalf("expected error")
@@ -527,7 +527,7 @@ func TestGetPresets(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			presets, err := provider.GetPresets(context.Background(), &tc.userInfo)
+			presets, err := provider.GetPresets(context.Background(), &tc.userInfo, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -875,7 +875,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, tc.presetName, tc.cloudSpec, tc.dc)
+			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, nil, tc.presetName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {

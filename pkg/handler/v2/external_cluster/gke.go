@@ -41,6 +41,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -1029,7 +1030,7 @@ func getSAFromPreset(ctx context.Context,
 	if err != nil {
 		return "", common.KubernetesErrorToHTTPError(err)
 	}
-	preset, err := presetProvider.GetPreset(ctx, userInfo, presetName)
+	preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), presetName)
 	if err != nil {
 		return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
 	}

@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"k8s.io/utils/pointer"
 
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -59,7 +60,7 @@ func kubeconfigFromRequest(ctx context.Context, request interface{}, presetsProv
 		return "", common.KubernetesErrorToHTTPError(err)
 	}
 	if len(req.Credential) > 0 {
-		preset, err := presetsProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetsProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
