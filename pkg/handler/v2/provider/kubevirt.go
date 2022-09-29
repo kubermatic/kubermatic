@@ -70,6 +70,7 @@ func kubeconfigFromRequest(ctx context.Context, request interface{}, presetsProv
 	return kubeconfig, nil
 }
 
+// Deprecated: in favor of KubeVirtInstancetypesEndpoint.
 // KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials).
 func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -103,6 +104,7 @@ func KubeVirtPreferencesEndpoint(presetsProvider provider.PresetProvider, userIn
 	}
 }
 
+// Deprecated: in favor of KubeVirtInstancetypesWithClusterCredentialsEndpoint.
 // KubeVirtVMIPresetsWithClusterCredentialsEndpoint handles the request to list available KubeVirtVMIPresets (cluster credentials).
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
