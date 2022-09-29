@@ -47,6 +47,22 @@ aws-node-termination-handler:
 	cat aws-node-termination-handler/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
 
+.PHONY: aws-ebs-csi-driver
+aws-ebs-csi-driver: OUTPUT_FILE=csi/aws-ebs/driver.yaml
+aws-ebs-csi-driver:
+	helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver || true
+	helm repo update
+	mkdir -p csi/aws-ebs
+	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
+	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
+	  >> $(OUTPUT_FILE)
+	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
+	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
+	sed -i 's/k8s.gcr.io/{{ Registry "k8s.gcr.io" }}/g' $(OUTPUT_FILE)
+
 .PHONY: metallb
 metallb: OUTPUT_FILE=metallb/00_metallb.yaml
 metallb:
