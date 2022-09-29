@@ -656,6 +656,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+		if cluster.Spec.Cloud.AWS != nil {
+			featureFlags = append(featureFlags, "CSIMigrationAWS=true")
+		}
 		if cluster.Spec.Cloud.Azure != nil {
 			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
 		}

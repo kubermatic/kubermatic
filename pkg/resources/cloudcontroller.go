@@ -50,6 +50,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 
 		fallthrough
 
+	case cloudSpec.AWS != nil:
+		fallthrough
+
 	case cloudSpec.Anexia != nil:
 		fallthrough
 
@@ -117,6 +120,8 @@ func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool 
 	case cloudSpec.Openstack != nil:
 		return true
 	case cloudSpec.Azure != nil:
+		return true
+	case cloudSpec.AWS != nil:
 		return true
 	default:
 		return false
