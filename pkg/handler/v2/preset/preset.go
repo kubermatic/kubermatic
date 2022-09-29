@@ -66,7 +66,7 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 		}
 
 		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
-		presets, err := presetProvider.GetPresets(ctx, userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo, nil)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -472,7 +472,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
