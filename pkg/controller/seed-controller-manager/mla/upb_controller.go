@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,10 +41,7 @@ import (
 type userProjectBindingReconciler struct {
 	ctrlruntimeclient.Client
 
-	log                          *zap.SugaredLogger
-	workerName                   string
-	versions                     kubermatic.Versions
-	userProjectBindingController *userGrafanaController
+	log *zap.SugaredLogger
 }
 
 func newUserProjectBindingReconciler(
