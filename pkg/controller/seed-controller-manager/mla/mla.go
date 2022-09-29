@@ -160,6 +160,9 @@ func Add(
 		if err := newRuleGroupSyncReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupSyncController); err != nil {
 			return fmt.Errorf("failed to create rule group controller %w", err)
 		}
+		if err := newUserProjectBindingReconciler(mgr, log, numWorkers); err != nil {
+			return fmt.Errorf("failed to create user project binding controller")
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
