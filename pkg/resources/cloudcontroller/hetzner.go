@@ -91,6 +91,14 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					Env: append(
 						getEnvVars(),
 						corev1.EnvVar{
+							Name: "NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						corev1.EnvVar{
 							Name: "HCLOUD_TOKEN",
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
