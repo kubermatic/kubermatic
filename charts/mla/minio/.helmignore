@@ -22,4 +22,3 @@
 # OWNERS file for Kubernetes
 OWNERS
 test/
-charts/
