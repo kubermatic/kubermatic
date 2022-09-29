@@ -1754,7 +1754,7 @@ type AWSNodeSpec struct {
 	InstanceType string `json:"instanceType"`
 	// size of the volume in gb. Only one volume will be created
 	// required: true
-	VolumeSize int64 `json:"diskSize"`
+	VolumeSize int32 `json:"diskSize"`
 	// type of the volume. for example: gp2, io1, st1, sc1, standard
 	// required: true
 	VolumeType string `json:"volumeType"`
@@ -1812,7 +1812,7 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 
 	res := struct {
 		InstanceType                     string            `json:"instanceType"`
-		VolumeSize                       int64             `json:"diskSize"`
+		VolumeSize                       int32             `json:"diskSize"`
 		VolumeType                       string            `json:"volumeType"`
 		AMI                              string            `json:"ami"`
 		Tags                             map[string]string `json:"tags"`
