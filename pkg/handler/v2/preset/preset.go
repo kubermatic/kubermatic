@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"strings"
 
-	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -541,7 +540,7 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -677,7 +676,7 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 			return nil, utilerrors.New(http.StatusForbidden, "only admins can delete preset providers")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
@@ -757,7 +756,7 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewBadRequest("preset was not found.")
 		}
@@ -830,7 +829,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewBadRequest("preset was not found.")
