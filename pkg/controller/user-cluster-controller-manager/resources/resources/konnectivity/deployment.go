@@ -52,7 +52,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
-			version = "v0.0.31"
+			version = "v0.0.33"
 		)
 
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
