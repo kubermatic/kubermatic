@@ -33,10 +33,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -51,33 +51,40 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	logOptions        log.Options
-	kubernetesVersion semver.Semver
+	kubernetesRelease string
 
 	provider string
 
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
 	azureSeedDatacenter   string
+	awsSeedDatacenter     string
 
 	osCredentials      providers.OpenstackCredentialsType
 	vSphereCredentials providers.VsphereCredentialsType
 	azureCredentials   providers.AzureCredentialsType
+	awsCredentials     providers.AWSCredentialsType
+}
+
+func (o testOptions) KubernetesVersion() semver.Semver {
+	return *test.ParseVersionOrRelease(o.kubernetesRelease, nil)
 }
 
 var (
 	options = testOptions{
-		kubernetesVersion: *defaulting.DefaultKubernetesVersioning.Default,
-		logOptions:        e2eutils.DefaultLogOptions,
+		logOptions: e2eutils.DefaultLogOptions,
 	}
 )
 
 func init() {
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
 	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
+	flag.StringVar(&options.kubernetesRelease, "cluster-version", "", "Kubernetes version or release for the usercluster")
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
 	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
+	flag.StringVar(&options.awsSeedDatacenter, "aws-seed-datacenter", "", "aws seed datacenter")
 
 	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
@@ -93,6 +100,9 @@ func init() {
 	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
 	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
 	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
+
+	flag.StringVar(&options.awsCredentials.AccessKeyID, "aws-access-key-id", "", "AWS access key ID")
+	flag.StringVar(&options.awsCredentials.SecretAccessKey, "aws-secret-access-key", "", "AWS secret access key")
 
 	options.logOptions.AddFlags(flag.CommandLine)
 }
@@ -127,14 +137,17 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlru
 	var clusterJig providers.ClusterJigInterface
 
 	logger := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
+	version := options.KubernetesVersion()
 
 	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
-		clusterJig = providers.NewClusterJigOpenstack(seedClient, logger, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
+		clusterJig = providers.NewClusterJigOpenstack(seedClient, logger, version, options.osSeedDatacenter, options.osCredentials)
 	case kubermaticv1.VSphereCloudProvider:
-		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
+		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, version, options.vsphereSeedDatacenter, options.vSphereCredentials)
 	case kubermaticv1.AzureCloudProvider:
-		clusterJig = providers.NewClusterJigAzure(seedClient, logger, options.kubernetesVersion, options.azureSeedDatacenter, options.azureCredentials)
+		clusterJig = providers.NewClusterJigAzure(seedClient, logger, version, options.azureSeedDatacenter, options.azureCredentials)
+	case kubermaticv1.AWSCloudProvider:
+		clusterJig = providers.NewClusterJigAWS(seedClient, logger, version, options.awsSeedDatacenter, options.awsCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
