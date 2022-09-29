@@ -3942,6 +3942,8 @@ func (r Routing) listAnexiaTemplatesNoCredentials() http.Handler {
 //	Responses:
 //	  default: errorResponse
 //	  200: VirtualMachineInstancePresetList
+//
+// Deprecated: in favor of listKubeVirtInstancetypesNoCredentials.
 func (r Routing) listKubeVirtVMIPresetsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -6549,6 +6551,8 @@ func (r Routing) listAKSClusters() http.Handler {
 //	Responses:
 //	  default: errorResponse
 //	  200: VirtualMachineInstancePresetList
+//
+// Deprecated: in favor of listKubeVirtInstancetypes.
 func (r Routing) listKubeVirtVMIPresets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
