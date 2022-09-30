@@ -86,6 +86,9 @@ type DatacenterSpec struct {
 	// openstack
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
 
+	// operating system profiles
+	OperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
+
 	// packet
 	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 
@@ -145,6 +148,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOpenstack(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOperatingSystemProfiles(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -394,6 +401,25 @@ func (m *DatacenterSpec) validateOpenstack(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *DatacenterSpec) validateOperatingSystemProfiles(formats strfmt.Registry) error {
+	if swag.IsZero(m.OperatingSystemProfiles) { // not required
+		return nil
+	}
+
+	if m.OperatingSystemProfiles != nil {
+		if err := m.OperatingSystemProfiles.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("operatingSystemProfiles")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("operatingSystemProfiles")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *DatacenterSpec) validatePacket(formats strfmt.Registry) error {
 	if swag.IsZero(m.Packet) { // not required
 		return nil
@@ -500,6 +526,10 @@ func (m *DatacenterSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 	}
 
 	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOperatingSystemProfiles(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -708,6 +738,20 @@ func (m *DatacenterSpec) contextValidateOpenstack(ctx context.Context, formats s
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) contextValidateOperatingSystemProfiles(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.OperatingSystemProfiles.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("operatingSystemProfiles")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("operatingSystemProfiles")
+		}
+		return err
 	}
 
 	return nil

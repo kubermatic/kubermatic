@@ -327,6 +327,11 @@ spec:
                               - nodeSizeRequirements
                               - region
                             type: object
+                          operatingSystemProfiles:
+                            additionalProperties:
+                              type: string
+                            description: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+                            type: object
                           packet:
                             description: DatacenterSpecPacket describes a Packet datacenter.
                             properties:
