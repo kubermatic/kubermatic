@@ -114,6 +114,13 @@ data:
     
     
     
+    # Create the buckets
+    createBucket alertmanager public  
+    createBucket cortex public  
+    createBucket cortex-ruler public  
+    createBucket loki public  
+    createBucket loki-ruler public  
+    
   add-user: |-
     #!/bin/sh
     set -e ; # Have script exit in the event of a failed command.
@@ -310,7 +317,8 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "500Gi"
+      storage: "50Gi"
+  storageClassName: "kubermatic-fast"
 ---
 # Source: minio/charts/minio/templates/console-service.yaml
 apiVersion: v1
@@ -370,10 +378,7 @@ metadata:
     heritage: Helm
 spec:
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 100%
-      maxUnavailable: 0
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:
@@ -387,7 +392,7 @@ spec:
         release: release-name
       annotations:
         checksum/secrets: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-        checksum/config: dd64a9e510171f07546c6324e554dc1733bce5625dc8c3dcffe2a28ba36ddece
+        checksum/config: fc04da9d5c4bdc60790de9651b76a03757b184c5bfd33589fab4802d4a901cfe
     spec:
       securityContext:
         runAsUser: 1000
@@ -438,6 +443,53 @@ spec:
         - name: minio-user
           secret:
             secretName: minio
+---
+# Source: minio/charts/minio/templates/post-install-create-bucket-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-minio-make-bucket-job
+  namespace: "default"
+  labels:
+    app: minio-make-bucket-job
+    chart: minio-3.6.6
+    release: release-name
+    heritage: Helm
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: minio-job
+        release: release-name
+    spec:
+      restartPolicy: OnFailure      
+      volumes:
+        - name: minio-configuration
+          projected:
+            sources:
+            - configMap:
+                name: release-name-minio
+            - secret:
+                name: minio
+      containers:
+      - name: minio-mc
+        image: "quay.io/minio/mc:RELEASE.2022-04-16T21-11-21Z"
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "/config/initialize"]
+        env:
+          - name: MINIO_ENDPOINT
+            value: release-name-minio
+          - name: MINIO_PORT
+            value: "9000"
+        volumeMounts:
+          - name: minio-configuration
+            mountPath: /config
+        resources:
+          requests:
+            memory: 128Mi
 ---
 # Source: minio/charts/minio/templates/post-install-create-user-job.yaml
 apiVersion: batch/v1

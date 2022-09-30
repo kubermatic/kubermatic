@@ -11,16 +11,12 @@ loki-distributed:
     dnsService: "kube-dns"
     # -- configures DNS service namespace
     dnsNamespace: "kube-system"
-
   # -- Overrides the chart's name
   nameOverride: null
-
   # -- Overrides the chart's computed fullname
   fullnameOverride: null
-
   # -- Image pull secrets for Docker images
   imagePullSecrets: []
-
   loki:
     # Configures the readiness probe for all of the Loki pods
     readinessProbe:
@@ -60,26 +56,21 @@ loki-distributed:
     # -- Config file contents for Loki
     # @default -- See values.yaml
     config: |
-      auth_enabled: false
-
       server:
         http_listen_port: 3100
-
       distributor:
         ring:
           kvstore:
             store: memberlist
-
       memberlist:
         join_members:
           - {{ include "loki.fullname" . }}-memberlist
-
       ingester:
         lifecycler:
           ring:
             kvstore:
               store: memberlist
-            replication_factor: 1
+            replication_factor: 3
         chunk_idle_period: 30m
         chunk_block_size: 262144
         chunk_encoding: snappy
@@ -87,43 +78,41 @@ loki-distributed:
         max_transfer_retries: 0
         wal:
           dir: /var/loki/wal
-
       limits_config:
         enforce_metric_name: false
         reject_old_samples: true
         reject_old_samples_max_age: 168h
         max_cache_freshness_per_query: 10m
-
       schema_config:
         configs:
-          - from: 2020-09-07
-            store: boltdb-shipper
-            object_store: filesystem
-            schema: v11
+          - chunks:
+              period: 360h
+              prefix: loki_chunk_
+            from: "2021-02-01"
             index:
-              prefix: loki_index_
               period: 24h
-
+              prefix: loki_index_
+            object_store: aws
+            schema: v11
+            store: boltdb-shipper
       storage_config:
         boltdb_shipper:
-          shared_store: filesystem
+          shared_store: aws
           active_index_directory: /var/loki/index
           cache_location: /var/loki/cache
           cache_ttl: 168h
-          {{- if .Values.indexGateway.enabled }}
-          index_gateway_client:
-            server_address: dns:///{{ include "loki.indexGatewayFullname" . }}:9095
-          {{- end }}
-        filesystem:
-          directory: /var/loki/chunks
-
+        aws:
+          bucketnames: "loki"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
       chunk_store_config:
-        max_look_back_period: 0s
-
+        max_look_back_period: 168h
       table_manager:
+        creation_grace_period: 3h
+        poll_interval: 10m
         retention_deletes_enabled: false
         retention_period: 0s
-
       query_range:
         align_queries_with_step: true
         max_retries: 5
@@ -135,30 +124,28 @@ loki-distributed:
             fifocache:
               max_size_items: 1024
               validity: 24h
-
       frontend_worker:
         frontend_address: {{ include "loki.queryFrontendFullname" . }}:9095
-
       frontend:
         log_queries_longer_than: 5s
         compress_responses: true
-        tail_proxy_url: http://{{ include "loki.querierFullname" . }}:3100
-
       compactor:
-        shared_store: filesystem
-
+        shared_store: aws
       ruler:
+        enable_api: true
         storage:
-          type: local
-          local:
-            directory: /etc/loki/rules
+          type: s3
+          s3:
+            bucketnames: "loki-ruler"
+            endpoint: "minio:9000"
+            s3forcepathstyle: true
+            insecure: true
         ring:
           kvstore:
             store: memberlist
         rule_path: /tmp/loki/scratch
-        alertmanager_url: https://alertmanager.xx
-        external_url: https://alertmanager.xx
-
+        # This is a KKP-specific headless alertmanager service, used to work around the Cortex helm chart bug in chart versions below v1.0.0
+        alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless-kkp/api/prom/alertmanager/
   serviceAccount:
     # -- Specifies whether a ServiceAccount should be created
     create: true
@@ -171,12 +158,10 @@ loki-distributed:
     annotations: {}
     # -- Set this toggle to false to opt out of automounting API credentials for the service account
     automountServiceAccountToken: true
-
   # RBAC configuration
   rbac:
     # -- If enabled, a PodSecurityPolicy is created
     pspEnabled: false
-
   # ServiceMonitor configuration
   serviceMonitor:
     # -- If enabled, ServiceMonitor resources for Prometheus Operator are created
@@ -200,7 +185,6 @@ loki-distributed:
     scheme: http
     # -- ServiceMonitor will use these tlsConfig settings to make the health check requests
     tlsConfig: null
-
   # Rules for the Prometheus Operator
   prometheusRule:
     # -- If enabled, a PrometheusRule resource for Prometheus Operator is created
@@ -221,11 +205,10 @@ loki-distributed:
     #       expr: sum(rate(loki_request_duration_seconds_bucket[1m])) by (le, job, route)
     #     - record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
     #       expr: sum(rate(container_cpu_usage_seconds_total[1m])) by (node, namespace, pod, container)
-
   # Configuration for the ingester
   ingester:
     # -- Number of replicas for the ingester
-    replicas: 1
+    replicas: 3
     image:
       # -- The Docker registry for the ingester image. Overrides `loki.image.registry`
       registry: null
@@ -236,15 +219,21 @@ loki-distributed:
     # -- The name of the PriorityClass for ingester pods
     priorityClassName: null
     # -- Annotations for ingester pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for ingestor service
     serviceLabels: {}
     # -- Additional CLI args for the ingester
-    extraArgs: []
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
     # -- Environment variables to add to the ingester pods
     extraEnv: []
     # -- Environment variables from secrets or configmaps to add to the ingester pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+          name: minio
     # -- Volume mounts to add to the ingester pods
     extraVolumeMounts: []
     # -- Volumes to add to the ingester pods
@@ -277,7 +266,7 @@ loki-distributed:
     tolerations: []
     persistence:
       # -- Enable creating PVCs which is required when using boltdb-shipper
-      enabled: false
+      enabled: true
       # -- Size of persistent disk
       size: 10Gi
       # -- Storage class to be used.
@@ -285,12 +274,11 @@ loki-distributed:
       # If set to "-", storageClassName: "", which disables dynamic provisioning.
       # If empty or set to null, no storageClassName spec is
       # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
-      storageClass: null
-
+      storageClass: "kubermatic-fast"
   # Configuration for the distributor
   distributor:
     # -- Number of replicas for the distributor
-    replicas: 1
+    replicas: 2
     autoscaling:
       # -- Enable autoscaling for the distributor
       enabled: false
@@ -312,7 +300,9 @@ loki-distributed:
     # -- The name of the PriorityClass for distributor pods
     priorityClassName: null
     # -- Annotations for distributor pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for distributor service
     serviceLabels: {}
     # -- Additional CLI args for the distributor
@@ -349,7 +339,6 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for distributor pods
     tolerations: []
-
   # Configuration for the querier
   querier:
     # -- Number of replicas for the querier
@@ -375,15 +364,21 @@ loki-distributed:
     # -- The name of the PriorityClass for querier pods
     priorityClassName: null
     # -- Annotations for querier pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for querier service
     serviceLabels: {}
     # -- Additional CLI args for the querier
-    extraArgs: []
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
     # -- Environment variables to add to the querier pods
     extraEnv: []
     # -- Environment variables from secrets or configmaps to add to the querier pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+          name: minio
     # -- Volume mounts to add to the querier pods
     extraVolumeMounts: []
     # -- Volumes to add to the querier pods
@@ -414,7 +409,7 @@ loki-distributed:
     tolerations: []
     persistence:
       # -- Enable creating PVCs for the querier cache
-      enabled: false
+      enabled: true
       # -- Size of persistent disk
       size: 10Gi
       # -- Storage class to be used.
@@ -422,8 +417,7 @@ loki-distributed:
       # If set to "-", storageClassName: "", which disables dynamic provisioning.
       # If empty or set to null, no storageClassName spec is
       # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
-      storageClass: null
-
+      storageClass: "kubermatic-fast"
   # Configuration for the query-frontend
   queryFrontend:
     # -- Number of replicas for the query-frontend
@@ -449,7 +443,9 @@ loki-distributed:
     # -- The name of the PriorityClass for query-frontend pods
     priorityClassName: null
     # -- Annotations for query-frontend pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for query-frontend service
     serviceLabels: {}
     # -- Additional CLI args for the query-frontend
@@ -486,11 +482,10 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for query-frontend pods
     tolerations: []
-
   # Configuration for the table-manager
   tableManager:
     # -- Specifies whether the table-manager should be enabled
-    enabled: false
+    enabled: true
     image:
       # -- The Docker registry for the table-manager image. Overrides `loki.image.registry`
       registry: null
@@ -501,15 +496,21 @@ loki-distributed:
     # -- The name of the PriorityClass for table-manager pods
     priorityClassName: null
     # -- Annotations for table-manager pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for table-manager service
     serviceLabels: {}
     # -- Additional CLI args for the table-manager
-    extraArgs: []
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
     # -- Environment variables to add to the table-manager pods
     extraEnv: []
     # -- Environment variables from secrets or configmaps to add to the table-manager pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+          name: minio
     # -- Volume mounts to add to the table-manager pods
     extraVolumeMounts: []
     # -- Volumes to add to the table-manager pods
@@ -538,11 +539,10 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for table-manager pods
     tolerations: []
-
   # Configuration for the gateway
   gateway:
     # -- Specifies whether the gateway should be enabled
-    enabled: true
+    enabled: false
     # -- Number of replicas for the gateway
     replicas: 1
     # -- Enable logging of 2xx and 3xx HTTP requests
@@ -777,11 +777,10 @@ loki-distributed:
             {{- end }}
           }
         }
-
   # Configuration for the compactor
   compactor:
     # -- Specifies whether compactor should be enabled
-    enabled: false
+    enabled: true
     image:
       # -- The Docker registry for the compactor image. Overrides `loki.image.registry`
       registry: null
@@ -792,15 +791,21 @@ loki-distributed:
     # -- The name of the PriorityClass for compactor pods
     priorityClassName: null
     # -- Annotations for compactor pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for compactor service
     serviceLabels: {}
     # -- Additional CLI args for the compactor
-    extraArgs: []
+    extraArgs:
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
     # -- Environment variables to add to the compactor pods
     extraEnv: []
     # -- Environment variables from secrets or configmaps to add to the compactor pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+          name: minio
     # -- Volume mounts to add to the compactor pods
     extraVolumeMounts: []
     # -- Volumes to add to the compactor pods
@@ -836,11 +841,10 @@ loki-distributed:
       annotations: {}
       # -- Set this toggle to false to opt out of automounting API credentials for the service account
       automountServiceAccountToken: true
-
   # Configuration for the ruler
   ruler:
     # -- Specifies whether the ruler should be enabled
-    enabled: false
+    enabled: true
     # -- Number of replicas for the ruler
     replicas: 1
     image:
@@ -853,15 +857,24 @@ loki-distributed:
     # -- The name of the PriorityClass for ruler pods
     priorityClassName: null
     # -- Annotations for ruler pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
     # -- Labels for ruler service
     serviceLabels: {}
     # -- Additional CLI args for the ruler
-    extraArgs: []
+    extraArgs:
+      - -ruler.storage.s3.access-key-id=$(rootUser)
+      - -ruler.storage.s3.secret-access-key=$(rootPassword)
+      - -s3.access-key-id=$(rootUser)
+      - -s3.secret-access-key=$(rootPassword)
+      - -ruler.alertmanager-discovery
     # -- Environment variables to add to the ruler pods
     extraEnv: []
     # -- Environment variables from secrets or configmaps to add to the ruler pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+          name: minio
     # -- Volume mounts to add to the ruler pods
     extraVolumeMounts: []
     # -- Volumes to add to the ruler pods
@@ -903,71 +916,70 @@ loki-distributed:
       storageClass: null
     # -- Directories containing rules files
     directories: {}
-      # tenant_foo:
-      #   rules1.txt: |
-      #     groups:
-      #       - name: should_fire
-      #         rules:
-      #           - alert: HighPercentageError
-      #             expr: |
-      #               sum(rate({app="foo", env="production"} |= "error" [5m])) by (job)
-      #                 /
-      #               sum(rate({app="foo", env="production"}[5m])) by (job)
-      #                 > 0.05
-      #             for: 10m
-      #             labels:
-      #               severity: warning
-      #             annotations:
-      #               summary: High error rate
-      #       - name: credentials_leak
-      #         rules:
-      #           - alert: http-credentials-leaked
-      #             annotations:
-      #               message: "{{ $labels.job }} is leaking http basic auth credentials."
-      #             expr: 'sum by (cluster, job, pod) (count_over_time({namespace="prod"} |~ "http(s?)://(\\w+):(\\w+)@" [5m]) > 0)'
-      #             for: 10m
-      #             labels:
-      #               severity: critical
-      #   rules2.txt: |
-      #     groups:
-      #       - name: example
-      #         rules:
-      #         - alert: HighThroughputLogStreams
-      #           expr: sum by(container) (rate({job=~"loki-dev/.*"}[1m])) > 1000
-      #           for: 2m
-      # tenant_bar:
-      #   rules1.txt: |
-      #     groups:
-      #       - name: should_fire
-      #         rules:
-      #           - alert: HighPercentageError
-      #             expr: |
-      #               sum(rate({app="foo", env="production"} |= "error" [5m])) by (job)
-      #                 /
-      #               sum(rate({app="foo", env="production"}[5m])) by (job)
-      #                 > 0.05
-      #             for: 10m
-      #             labels:
-      #               severity: warning
-      #             annotations:
-      #               summary: High error rate
-      #       - name: credentials_leak
-      #         rules:
-      #           - alert: http-credentials-leaked
-      #             annotations:
-      #               message: "{{ $labels.job }} is leaking http basic auth credentials."
-      #             expr: 'sum by (cluster, job, pod) (count_over_time({namespace="prod"} |~ "http(s?)://(\\w+):(\\w+)@" [5m]) > 0)'
-      #             for: 10m
-      #             labels:
-      #               severity: critical
-      #   rules2.txt: |
-      #     groups:
-      #       - name: example
-      #         rules:
-      #         - alert: HighThroughputLogStreams
-      #           expr: sum by(container) (rate({job=~"loki-dev/.*"}[1m])) > 1000
-      #           for: 2m
-
+    # tenant_foo:
+    #   rules1.txt: |
+    #     groups:
+    #       - name: should_fire
+    #         rules:
+    #           - alert: HighPercentageError
+    #             expr: |
+    #               sum(rate({app="foo", env="production"} |= "error" [5m])) by (job)
+    #                 /
+    #               sum(rate({app="foo", env="production"}[5m])) by (job)
+    #                 > 0.05
+    #             for: 10m
+    #             labels:
+    #               severity: warning
+    #             annotations:
+    #               summary: High error rate
+    #       - name: credentials_leak
+    #         rules:
+    #           - alert: http-credentials-leaked
+    #             annotations:
+    #               message: "{{ $labels.job }} is leaking http basic auth credentials."
+    #             expr: 'sum by (cluster, job, pod) (count_over_time({namespace="prod"} |~ "http(s?)://(\\w+):(\\w+)@" [5m]) > 0)'
+    #             for: 10m
+    #             labels:
+    #               severity: critical
+    #   rules2.txt: |
+    #     groups:
+    #       - name: example
+    #         rules:
+    #         - alert: HighThroughputLogStreams
+    #           expr: sum by(container) (rate({job=~"loki-dev/.*"}[1m])) > 1000
+    #           for: 2m
+    # tenant_bar:
+    #   rules1.txt: |
+    #     groups:
+    #       - name: should_fire
+    #         rules:
+    #           - alert: HighPercentageError
+    #             expr: |
+    #               sum(rate({app="foo", env="production"} |= "error" [5m])) by (job)
+    #                 /
+    #               sum(rate({app="foo", env="production"}[5m])) by (job)
+    #                 > 0.05
+    #             for: 10m
+    #             labels:
+    #               severity: warning
+    #             annotations:
+    #               summary: High error rate
+    #       - name: credentials_leak
+    #         rules:
+    #           - alert: http-credentials-leaked
+    #             annotations:
+    #               message: "{{ $labels.job }} is leaking http basic auth credentials."
+    #             expr: 'sum by (cluster, job, pod) (count_over_time({namespace="prod"} |~ "http(s?)://(\\w+):(\\w+)@" [5m]) > 0)'
+    #             for: 10m
+    #             labels:
+    #               severity: critical
+    #   rules2.txt: |
+    #     groups:
+    #       - name: example
+    #         rules:
+    #         - alert: HighThroughputLogStreams
+    #           expr: sum by(container) (rate({job=~"loki-dev/.*"}[1m])) > 1000
+    #           for: 2m
   # Configuration for the index-gateway
   indexGateway:
     # -- Specifies whether the index-gateway should be enabled
@@ -1032,7 +1044,6 @@ loki-distributed:
       # If empty or set to null, no storageClassName spec is
       # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
       storageClass: null
-
   memcached:
     image:
       # -- The Docker registry for the memcached
@@ -1056,10 +1067,9 @@ loki-distributed:
         drop:
           - ALL
       allowPrivilegeEscalation: false
-
   memcachedExporter:
     # -- Specifies whether the Memcached Exporter should be enabled
-    enabled: false
+    enabled: true
     image:
       # -- The Docker registry for the Memcached Exporter
       registry: docker.io
@@ -1071,16 +1081,17 @@ loki-distributed:
       pullPolicy: IfNotPresent
     # -- Memcached Exporter resource requests and limits
     resources: {}
-
   memcachedChunks:
     # -- Specifies whether the Memcached chunks cache should be enabled
-    enabled: false
+    enabled: true
     # -- Number of replicas for memcached-chunks
     replicas: 1
     # -- The name of the PriorityClass for memcached-chunks pods
     priorityClassName: null
     # -- Annotations for memcached-chunks pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
     # -- Labels for memcached-chunks service
     serviceLabels: {}
     # -- Additional CLI args for memcached-chunks
@@ -1114,16 +1125,17 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for memcached-chunks pods
     tolerations: []
-
   memcachedFrontend:
     # -- Specifies whether the Memcached frontend cache should be enabled
-    enabled: false
+    enabled: true
     # -- Number of replicas for memcached-frontend
     replicas: 1
     # -- The name of the PriorityClass for memcached-frontend pods
     priorityClassName: null
     # -- Annotations for memcached-frontend pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
     # -- Labels for memcached-frontend service
     serviceLabels: {}
     # -- Additional CLI args for memcached-frontend
@@ -1157,16 +1169,17 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for memcached-frontend pods
     tolerations: []
-
   memcachedIndexQueries:
     # -- Specifies whether the Memcached index queries cache should be enabled
-    enabled: false
+    enabled: true
     # -- Number of replicas for memcached-index-queries
     replicas: 1
     # -- The name of the PriorityClass for memcached-index-queries pods
     priorityClassName: null
     # -- Annotations for memcached-index-queries pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
     # -- Labels for memcached-index-queries service
     serviceLabels: {}
     # -- Additional CLI args for memcached-index-queries
@@ -1200,16 +1213,17 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for memcached-index-queries pods
     tolerations: []
-
   memcachedIndexWrites:
     # -- Specifies whether the Memcached index writes cache should be enabled
-    enabled: false
+    enabled: true
     # -- Number of replicas for memcached-index-writes
     replicas: 1
     # -- The name of the PriorityClass for memcached-index-writes pods
     priorityClassName: null
     # -- Annotations for memcached-index-writes pods
-    podAnnotations: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9150"
     # -- Labels for memcached-index-writes service
     serviceLabels: {}
     # -- Additional CLI args for memcached-index-writes
@@ -1243,7 +1257,6 @@ loki-distributed:
     nodeSelector: {}
     # -- Tolerations for memcached-index-writes pods
     tolerations: []
-
   networkPolicy:
     # -- Specifies whether Network Policies should be created
     enabled: false

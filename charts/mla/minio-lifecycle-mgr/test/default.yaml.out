@@ -21,6 +21,34 @@ metadata:
 data:
   ensure-lifecycle.sh: |
     mc alias set minio http://minio:9000 $rootUser $rootPassword
+    mc ilm import minio/cortex <<EOF
+    {
+      "Rules": [
+        {
+          "Expiration": {
+            "Days": 8
+          },
+          "ID": "cortex-expiration",
+          "Status": "Enabled"
+        }
+      ]
+    }
+    EOF
+    mc ilm ls minio/cortex
+    mc ilm import minio/loki <<EOF
+    {
+      "Rules": [
+        {
+          "Expiration": {
+            "Days": 8
+          },
+          "ID": "loki-expiration",
+          "Status": "Enabled"
+        }
+      ]
+    }
+    EOF
+    mc ilm ls minio/loki
 ---
 # Source: minio-lifecycle-mgr/templates/lifecycle-mgr-cronjob.yaml
 # Copyright 2021 The Kubermatic Kubernetes Platform contributors.

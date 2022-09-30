@@ -11,16 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 lifecycleMgr:
   minio:
     endpoint: http://minio:9000
     secretName: minio
   buckets:
-#    - name: cortex
-#      expirationDays: 15
-#    - name: loki
-#      expirationDays: 15
+    - name: cortex
+      expirationDays: 8
+    - name: loki
+      expirationDays: 8
+  #    - name: cortex
+  #      expirationDays: 15
+  #    - name: loki
+  #      expirationDays: 15
 
   ## Node labels for pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
