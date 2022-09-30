@@ -627,3 +627,5 @@ metadata:
   creationTimestamp: null
   labels:
     app: prometheus
+  name: prometheus
+  namespace: cluster-de-test-01

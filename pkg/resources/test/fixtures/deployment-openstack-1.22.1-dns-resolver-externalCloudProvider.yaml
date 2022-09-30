@@ -5,6 +5,7 @@ metadata:
   labels:
     app: dns-resolver
   name: dns-resolver
+  namespace: cluster-de-test-01
 spec:
   replicas: 2
   selector:

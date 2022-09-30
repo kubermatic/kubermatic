@@ -5,6 +5,7 @@ metadata:
   labels:
     app: usercluster-webhook
   name: usercluster-webhook
+  namespace: cluster-de-test-01
 spec:
   ports:
   - name: seed

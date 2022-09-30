@@ -3,6 +3,7 @@
 metadata:
   creationTimestamp: null
   name: etcd-defragger
+  namespace: cluster-de-test-01
 spec:
   concurrencyPolicy: Forbid
   jobTemplate:
