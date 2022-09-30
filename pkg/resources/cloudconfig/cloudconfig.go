@@ -205,6 +205,9 @@ func CloudConfig(
 			return cloudConfig, err
 		}
 
+		// cheat and add flags not part of the machine-controller type
+		cloudConfig = fmt.Sprintf("%s\nuse-metadata-server = false", cloudConfig)
+
 	case cloud.Kubevirt != nil:
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
