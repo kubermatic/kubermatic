@@ -54,7 +54,7 @@ func gcpDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryDocker) + "/opsdockerimage/gcp-controller-manager:1edadd08fb75221f975961642cfde871dba8fe90",
+					Image: data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubermatic:gcpccm1",
 					Command: []string{
 						"/gcp-controller-manager",
 						"--gce-config=/etc/kubernetes/cloud/config",
