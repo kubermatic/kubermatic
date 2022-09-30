@@ -62,7 +62,7 @@ func NewMutator(client ctrlruntimeclient.Client, configGetter provider.Kubermati
 func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, *field.Error) {
 	// do not perform mutations on clusters in deletion
 	if newCluster.DeletionTimestamp != nil {
-		return nil, nil
+		return newCluster, nil
 	}
 
 	seed, provider, fieldErr := m.buildDefaultingDependencies(ctx, newCluster)
