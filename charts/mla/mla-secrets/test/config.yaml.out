@@ -7,7 +7,7 @@ metadata:
 type: Opaque
 data:
   admin-user: "YWRtaW4="
-  admin-password: "OVBUSnVnTGxKWnl6RVE2MFFnQzdsMmV6NzZqM1I4WFBPeFBkSVN0Wg=="
+  admin-password: "c3Ryb25ncGFzc3dvcmQ="
 ---
 # Source: mla-secrets/templates/minio-secret.yaml
 apiVersion: v1
@@ -16,5 +16,5 @@ metadata:
   name: minio
 type: Opaque
 data:
-  rootUser: "ckV1SkcyNTYxTGRnT253SXgydmM="
-  rootPassword: "Rkx4TVNmZWh5T0ZTWWlJWVpPdzR3QWNVSnJaVEZXZ3pCdm8yUVpDSQ=="
+  rootUser: "YWNjZXNza2V5"
+  rootPassword: "c2VjcmV0a2V5"
