@@ -21,9 +21,8 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
-
-	"golang.org/x/exp/slices"
 
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
@@ -70,14 +69,17 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, expectedNetworkInfo := range test.expectedNetworkInfos {
-				index := slices.Index(networkInfos, expectedNetworkInfo)
-				if index < 0 {
-					t.Fatalf("Expected Network not found:\n%v", expectedNetworkInfo)
-				}
-				if !diff.SemanticallyEqual(expectedNetworkInfo, networkInfos[index]) {
-					t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(expectedNetworkInfo, networkInfos[index]))
-				}
+
+			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
+				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
+			})
+
+			sort.Slice(networkInfos, func(i, j int) bool {
+				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
+			})
+
+			if changes := diff.ObjectDiff(test.expectedNetworkInfos, networkInfos); changes != "" {
+				t.Errorf("Got network infos differ from expected ones. Diff: %v", changes)
 			}
 		})
 	}

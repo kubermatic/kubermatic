@@ -83,7 +83,6 @@ require (
 	go.etcd.io/etcd/etcdutl/v3 v3.5.4
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
-	golang.org/x/exp v0.0.0-20220921164117-439092de6870
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/tools v0.1.12
 	gomodules.xyz/jsonpatch/v2 v2.2.0
