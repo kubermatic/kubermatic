@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
+	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,6 +56,14 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 
 	// Add Annotations to Machine Deployment
 	md.Annotations = nd.Annotations
+
+	osp := getOperatingSystemProfile(nd, dc)
+	if osp != "" {
+		if md.Annotations == nil {
+			md.Annotations = make(map[string]string)
+		}
+		md.Annotations[osmresources.MachineDeploymentOSPAnnotation] = osp
+	}
 
 	md.Namespace = metav1.NamespaceSystem
 	md.Finalizers = []string{metav1.FinalizerDeleteDependents}
@@ -268,6 +277,32 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	}
 
 	return &config, nil
+}
+
+func getOperatingSystemProfile(nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter) string {
+	if dc.Spec.DefaultOperatingSystemProfiles == nil {
+		return ""
+	}
+
+	// OS specifics
+	switch {
+	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemUbuntu]
+	case nd.Spec.Template.OperatingSystem.CentOS != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemCentOS]
+	case nd.Spec.Template.OperatingSystem.SLES != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemSLES]
+	case nd.Spec.Template.OperatingSystem.RHEL != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRHEL]
+	case nd.Spec.Template.OperatingSystem.Flatcar != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemFlatcar]
+	case nd.Spec.Template.OperatingSystem.RockyLinux != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRockyLinux]
+	case nd.Spec.Template.OperatingSystem.AmazonLinux != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemAmazonLinux2]
+	default:
+		return ""
+	}
 }
 
 func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) error {
