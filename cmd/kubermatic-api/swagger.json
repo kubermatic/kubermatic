@@ -14406,6 +14406,90 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/instancetypes": {
+      "get": {
+        "description": "Lists available VirtualMachineInstancetype",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "kubevirt"
+        ],
+        "operationId": "listKubeVirtInstancetypesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VirtualMachineInstancetypeList",
+            "schema": {
+              "$ref": "#/definitions/VirtualMachineInstancetypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/preferences": {
+      "get": {
+        "description": "Lists available VirtualMachinePreference",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "kubevirt"
+        ],
+        "operationId": "listKubeVirtPreferencesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VirtualMachinePreferenceList",
+            "schema": {
+              "$ref": "#/definitions/VirtualMachinePreferenceList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses": {
       "get": {
         "description": "List Storage Classes",
@@ -19787,6 +19871,70 @@
             "description": "GKEZoneList",
             "schema": {
               "$ref": "#/definitions/GKEZoneList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/kubevirt/instancetypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "kubevirt"
+        ],
+        "summary": "Lists available KubeVirt VirtualMachineInstancetype.",
+        "operationId": "listKubeVirtInstancetypes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Kubeconfig",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VirtualMachineInstancetypeList",
+            "schema": {
+              "$ref": "#/definitions/VirtualMachineInstancetypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/kubevirt/preferences": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "kubevirt"
+        ],
+        "summary": "Lists available KubeVirt VirtualMachinePreference.",
+        "operationId": "listKubeVirtPreferences",
+        "responses": {
+          "200": {
+            "description": "VirtualMachinePreferenceList",
+            "schema": {
+              "$ref": "#/definitions/VirtualMachinePreferenceList"
             }
           },
           "default": {
@@ -33520,6 +33668,62 @@
       "title": "VirtualMachineInstancePresetList represents a list of VirtualMachineInstancePreset.",
       "items": {
         "$ref": "#/definitions/VirtualMachineInstancePreset"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "VirtualMachineInstancetype": {
+      "description": "VirtualMachineInstanctype represents a KubeVirt VirtualMachineInstanctype",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "description": "Spec contains the kvinstancetypealpha1v1.VirtualMachineInstanctype.Spec object marshalled\nRequired by UI to not embed the whole kubevirt.io API object, but a marshalled spec.",
+          "type": "string",
+          "x-go-name": "Spec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "VirtualMachineInstancetypeList": {
+      "description": "VirtualMachineInstancetype are divided into 2 categories: \"custom\" or \"kubermatic\".",
+      "type": "object",
+      "title": "VirtualMachineInstancetypeList represents a list of VirtualMachineInstancetype.",
+      "properties": {
+        "instancetypes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/VirtualMachineInstancetype"
+            }
+          },
+          "x-go-name": "Instancetypes"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "VirtualMachinePreference": {
+      "description": "VirtualMachinePreference represents a KubeVirt VirtualMachinePreference",
+      "$ref": "#/definitions/VirtualMachineInstancetype"
+    },
+    "VirtualMachinePreferenceList": {
+      "description": "VirtualMachinePreference are divided into 2 categories: \"custom\" or \"kubermatic\".",
+      "type": "object",
+      "title": "VirtualMachinePreferenceList represents a list of VirtualMachinePreference.",
+      "properties": {
+        "preferences": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/VirtualMachinePreference"
+            }
+          },
+          "x-go-name": "Preferences"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

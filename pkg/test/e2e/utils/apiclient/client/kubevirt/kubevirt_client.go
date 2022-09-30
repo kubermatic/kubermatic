@@ -28,6 +28,14 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListKubeVirtInstancetypes(params *ListKubeVirtInstancetypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtInstancetypesOK, error)
+
+	ListKubeVirtInstancetypesNoCredentials(params *ListKubeVirtInstancetypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtInstancetypesNoCredentialsOK, error)
+
+	ListKubeVirtPreferences(params *ListKubeVirtPreferencesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtPreferencesOK, error)
+
+	ListKubeVirtPreferencesNoCredentials(params *ListKubeVirtPreferencesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtPreferencesNoCredentialsOK, error)
+
 	ListKubeVirtVMIPresets(params *ListKubeVirtVMIPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsOK, error)
 
 	ListKubeVirtVMIPresetsNoCredentials(params *ListKubeVirtVMIPresetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtVMIPresetsNoCredentialsOK, error)
@@ -37,6 +45,158 @@ type ClientService interface {
 	ListKubevirtStorageClassesNoCredentials(params *ListKubevirtStorageClassesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubevirtStorageClassesNoCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+ListKubeVirtInstancetypes lists available kube virt virtual machine instancetype
+*/
+func (a *Client) ListKubeVirtInstancetypes(params *ListKubeVirtInstancetypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtInstancetypesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListKubeVirtInstancetypesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listKubeVirtInstancetypes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/kubevirt/instancetypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListKubeVirtInstancetypesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListKubeVirtInstancetypesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListKubeVirtInstancetypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListKubeVirtInstancetypesNoCredentials Lists available VirtualMachineInstancetype
+*/
+func (a *Client) ListKubeVirtInstancetypesNoCredentials(params *ListKubeVirtInstancetypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtInstancetypesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListKubeVirtInstancetypesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listKubeVirtInstancetypesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/instancetypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListKubeVirtInstancetypesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListKubeVirtInstancetypesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListKubeVirtInstancetypesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListKubeVirtPreferences lists available kube virt virtual machine preference
+*/
+func (a *Client) ListKubeVirtPreferences(params *ListKubeVirtPreferencesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtPreferencesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListKubeVirtPreferencesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listKubeVirtPreferences",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/kubevirt/preferences",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListKubeVirtPreferencesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListKubeVirtPreferencesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListKubeVirtPreferencesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListKubeVirtPreferencesNoCredentials Lists available VirtualMachinePreference
+*/
+func (a *Client) ListKubeVirtPreferencesNoCredentials(params *ListKubeVirtPreferencesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListKubeVirtPreferencesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListKubeVirtPreferencesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listKubeVirtPreferencesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/preferences",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListKubeVirtPreferencesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListKubeVirtPreferencesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListKubeVirtPreferencesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
