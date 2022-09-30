@@ -56,6 +56,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 	case cloudSpec.Azure != nil:
 		fallthrough
 
+	case cloudSpec.GCP != nil:
+		fallthrough
+
 	case cloudSpec.Kubevirt != nil:
 		fallthrough
 

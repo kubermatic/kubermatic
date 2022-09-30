@@ -659,6 +659,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.Azure != nil {
 			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
 		}
+		if cluster.Spec.Cloud.GCP != nil {
+			featureFlags = append(featureFlags, "CSIMigrationGCP=true")
+		}
 
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.

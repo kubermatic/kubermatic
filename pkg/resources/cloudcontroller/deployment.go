@@ -57,6 +57,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
 		creatorGetter = kubevirtDeploymentCreator(data)
+
+	case data.Cluster().Spec.Cloud.GCP != nil:
+		creatorGetter = gcpDeploymentCreator(data)
 	}
 
 	if creatorGetter != nil {
