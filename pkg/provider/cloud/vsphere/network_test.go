@@ -20,6 +20,7 @@ package vsphere
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -67,6 +68,14 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
+				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
+			})
+
+			sort.Slice(networkInfos, func(i, j int) bool {
+				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
+			})
 
 			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
 				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)
