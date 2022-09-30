@@ -704,7 +704,7 @@ type PresetProvider interface {
 	GetPresets(ctx context.Context, userInfo *UserInfo, projectID *string) ([]kubermaticv1.Preset, error)
 	GetPreset(ctx context.Context, userInfo *UserInfo, projectID *string, name string) (*kubermaticv1.Preset, error)
 	DeletePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
-	SetCloudCredentials(ctx context.Context, userInfo *UserInfo, projectID *string, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
+	SetCloudCredentials(ctx context.Context, userInfo *UserInfo, projectID string, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 
 // AdmissionPluginsProvider declares the set of methods for interacting with admission plugins.

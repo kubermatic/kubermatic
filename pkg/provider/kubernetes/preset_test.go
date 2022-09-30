@@ -549,6 +549,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		name              string
 		presetName        string
 		userInfo          provider.UserInfo
+		projectID         string
 		expectedError     string
 		cloudSpec         kubermaticv1.CloudSpec
 		expectedCloudSpec *kubermaticv1.CloudSpec
@@ -875,7 +876,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, nil, tc.presetName, tc.cloudSpec, tc.dc)
+			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, tc.projectID, tc.presetName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {

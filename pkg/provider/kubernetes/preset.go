@@ -191,8 +191,8 @@ func filterOutPresets(userInfo *provider.UserInfo, projectID *string, list *kube
 	return result, nil
 }
 
-func (m *PresetProvider) SetCloudCredentials(ctx context.Context, userInfo *provider.UserInfo, projectID *string, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(ctx, userInfo, projectID, presetName)
+func (m *PresetProvider) SetCloudCredentials(ctx context.Context, userInfo *provider.UserInfo, projectID string, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, &projectID, presetName)
 	if err != nil {
 		return nil, err
 	}
