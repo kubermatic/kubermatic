@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -537,8 +538,8 @@ func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.Nod
 			DNSConfig: dc.Spec.Kubevirt.DNSConfig.DeepCopy(),
 		},
 		Affinity: kubevirt.Affinity{
-			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},
-			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset},
+			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},     //nolint:staticcheck
+			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset}, //nolint:staticcheck
 			NodeAffinityPreset: kubevirt.NodeAffinityPreset{
 				Type: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Type},
 				Key:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Key},
@@ -557,7 +558,15 @@ func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.Nod
 	for _, val := range nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Values {
 		config.Affinity.NodeAffinityPreset.Values = append(config.Affinity.NodeAffinityPreset.Values, providerconfig.ConfigVarString{Value: val})
 	}
-
+	config.TopologySpreadConstraints = make([]kubevirt.TopologySpreadConstraint, 0, len(nodeSpec.Cloud.Kubevirt.TopologySpreadConstraints))
+	for _, tsc := range nodeSpec.Cloud.Kubevirt.TopologySpreadConstraints {
+		constraint := kubevirt.TopologySpreadConstraint{
+			MaxSkew:           providerconfig.ConfigVarString{Value: strconv.Itoa(tsc.MaxSkew)},
+			TopologyKey:       providerconfig.ConfigVarString{Value: tsc.TopologyKey},
+			WhenUnsatisfiable: providerconfig.ConfigVarString{Value: tsc.WhenUnsatisfiable},
+		}
+		config.TopologySpreadConstraints = append(config.TopologySpreadConstraints, constraint)
+	}
 	return config, nil
 }
 

@@ -35,9 +35,13 @@ type KubevirtNodeSpec struct {
 	Memory *string `json:"memory"`
 
 	// PodAffinityPreset describes pod affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAffinityPreset string `json:"podAffinityPreset,omitempty"`
 
 	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAntiAffinityPreset string `json:"podAntiAffinityPreset,omitempty"`
 
 	// PrimaryDiskOSImage states the source from which the imported image will be downloaded.
@@ -57,6 +61,9 @@ type KubevirtNodeSpec struct {
 
 	// SecondaryDisks contains list of secondary-disks
 	SecondaryDisks []*SecondaryDisks `json:"secondaryDisks"`
+
+	// TopologySpreadConstraints describes topology spread constraints for VMs.
+	TopologySpreadConstraints []*TopologySpreadConstraint `json:"topologySpreadConstraints"`
 
 	// node affinity preset
 	NodeAffinityPreset *NodeAffinityPreset `json:"nodeAffinityPreset,omitempty"`
@@ -87,6 +94,10 @@ func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSecondaryDisks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTopologySpreadConstraints(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -171,6 +182,32 @@ func (m *KubevirtNodeSpec) validateSecondaryDisks(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *KubevirtNodeSpec) validateTopologySpreadConstraints(formats strfmt.Registry) error {
+	if swag.IsZero(m.TopologySpreadConstraints) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.TopologySpreadConstraints); i++ {
+		if swag.IsZero(m.TopologySpreadConstraints[i]) { // not required
+			continue
+		}
+
+		if m.TopologySpreadConstraints[i] != nil {
+			if err := m.TopologySpreadConstraints[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("topologySpreadConstraints" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("topologySpreadConstraints" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *KubevirtNodeSpec) validateNodeAffinityPreset(formats strfmt.Registry) error {
 	if swag.IsZero(m.NodeAffinityPreset) { // not required
 		return nil
@@ -198,6 +235,10 @@ func (m *KubevirtNodeSpec) ContextValidate(ctx context.Context, formats strfmt.R
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateTopologySpreadConstraints(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateNodeAffinityPreset(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -218,6 +259,26 @@ func (m *KubevirtNodeSpec) contextValidateSecondaryDisks(ctx context.Context, fo
 					return ve.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
 				} else if ce, ok := err.(*errors.CompositeError); ok {
 					return ce.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *KubevirtNodeSpec) contextValidateTopologySpreadConstraints(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.TopologySpreadConstraints); i++ {
+
+		if m.TopologySpreadConstraints[i] != nil {
+			if err := m.TopologySpreadConstraints[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("topologySpreadConstraints" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("topologySpreadConstraints" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
