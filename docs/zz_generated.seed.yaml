@@ -183,6 +183,15 @@ spec:
           # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
           # default with the in-tree cloud provider.
           useOctavia: true
+        # DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+        operatingSystemProfiles:
+          amzn2: ""
+          centos: ""
+          flatcar: ""
+          rhel: ""
+          rockylinux: ""
+          sles: ""
+          ubuntu: ""
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://metal.equinix.com/developers/docs/locations/facilities/

@@ -25598,6 +25598,9 @@
         "openstack": {
           "$ref": "#/definitions/DatacenterSpecOpenstack"
         },
+        "operatingSystemProfiles": {
+          "$ref": "#/definitions/OperatingSystemProfileList"
+        },
         "packet": {
           "$ref": "#/definitions/DatacenterSpecPacket"
         },
@@ -31254,6 +31257,14 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "OperatingSystemProfileList": {
+      "type": "object",
+      "title": "OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "OperatingSystemSpec": {
       "type": "object",

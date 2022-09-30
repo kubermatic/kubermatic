@@ -426,6 +426,9 @@ type DatacenterSpec struct {
 	// too high means that *if* a resource at a cloud provider is removed/changed outside
 	// of KKP, it will take this long to fix it.
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
+
+	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+	DefaultOperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
 }
 
 var (
@@ -495,6 +498,9 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
+
+// OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.
+type OperatingSystemProfileList map[providerconfig.OperatingSystem]string
 
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {

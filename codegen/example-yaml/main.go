@@ -111,9 +111,11 @@ func main() {
 
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
+	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
+		operatingSystemProfileList[operatingSystem] = ""
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -143,6 +145,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						RequiredEmails:                 []string{},
+						DefaultOperatingSystemProfiles: operatingSystemProfileList,
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: imageList,
 						},

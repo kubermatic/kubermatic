@@ -105,6 +105,9 @@ type DatacenterSpec struct {
 
 	// IPv6Enabled is a flag to indicate if the ipv6 is enabled for the datacenter.
 	IPv6Enabled bool `json:"ipv6Enabled"`
+
+	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+	DefaultOperatingSystemProfiles kubermaticv1.OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
