@@ -46,6 +46,7 @@ groups:
         for: 1m
         labels:
           severity: critical
+          resource: "{{ $labels.instance }}"
           service: kubelet
       - alert: KubePersistentVolumeFillingUp
         annotations:
@@ -67,6 +68,7 @@ groups:
         for: 1m
         labels:
           severity: warning
+          resource: "{{ $labels.instance }}"
           service: kubelet
       - alert: KubePersistentVolumeFillingUp
         annotations:
@@ -90,6 +92,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: "{{ $labels.instance }}"
           service: kubelet
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
@@ -111,6 +114,7 @@ groups:
         for: 1m
         labels:
           severity: critical
+          resource: "{{ $labels.instance }}"
           service: kubelet
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
@@ -134,6 +138,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          resource: "{{ $labels.instance }}"
           service: kubelet
       - alert: KubePersistentVolumeErrors
         annotations:
@@ -145,6 +150,7 @@ groups:
         for: 5m
         labels:
           severity: critical
+          resource: "{{ $labels.instance }}"
           service: kubelet
 
       - alert: KubeletTooManyPods
