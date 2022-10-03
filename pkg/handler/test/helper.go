@@ -1719,7 +1719,7 @@ func GenDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.R
 	}
 }
 
-func GenDefaultServiceAccoutnRoleBinding(name string, namespace string, roleID string, subjects []rbacv1.Subject) *rbacv1.RoleBinding {
+func GenServiceAccountRoleBinding(name string, namespace string, roleID string, subjects []rbacv1.Subject) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -1769,7 +1769,7 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 	}
 }
 
-func GenDefaultServiceAccountClusterRoleBinding(name string, roleID string, subjects []rbacv1.Subject) *rbacv1.ClusterRoleBinding {
+func GenServiceAccountClusterRoleBinding(name string, roleID string, subjects []rbacv1.Subject) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,

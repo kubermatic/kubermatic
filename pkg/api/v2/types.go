@@ -1860,3 +1860,10 @@ type OperatingSystemProfile struct {
 	OperatingSystem         string   `json:"operatingSystem"`
 	SupportedCloudProviders []string `json:"supportedCloudProviders,omitempty"`
 }
+
+// ClusterServiceAccount represent a k8s service account to access cluster.
+// swagger:model ClusterServiceAccount
+type ClusterServiceAccount struct {
+	apiv1.ObjectMeta `json:",inline"`
+	Namespace        string `json:"namespace,omitempty"`
+}
