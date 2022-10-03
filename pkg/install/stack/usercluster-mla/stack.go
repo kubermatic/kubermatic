@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -233,9 +234,9 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	}
 
 	runtimeConfigMap := &corev1.ConfigMap{
-		Data: map[string]string{"runtime-config.yaml": ""},
+		Data: map[string]string{mla.RuntimeConfigFileName: ""},
 	}
-	runtimeConfigMap.Name = "cortex-runtime-config"
+	runtimeConfigMap.Name = mla.RuntimeConfigMap
 	runtimeConfigMap.Namespace = CortexNamespace
 
 	if err := ctrlruntimeclient.IgnoreAlreadyExists(kubeClient.Create(ctx, runtimeConfigMap)); err != nil {
