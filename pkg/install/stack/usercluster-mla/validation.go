@@ -69,7 +69,6 @@ func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []
 		if err := ValidateIapBlockSecret(alertmanagerEncryptionKey, path.String()); err != nil {
 			failures = append(failures, err)
 		}
-
 	}
 
 	return failures
