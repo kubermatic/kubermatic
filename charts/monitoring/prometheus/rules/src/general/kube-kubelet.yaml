@@ -46,6 +46,7 @@ groups:
         for: 1m
         labels:
           severity: critical
+          service: kubelet
       - alert: KubePersistentVolumeFillingUp
         annotations:
           message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
@@ -66,6 +67,7 @@ groups:
         for: 1m
         labels:
           severity: warning
+          service: kubelet
       - alert: KubePersistentVolumeFillingUp
         annotations:
           message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value | humanizePercentage }} is available.
@@ -88,6 +90,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          service: kubelet
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
           message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage }} free inodes.
@@ -108,6 +111,7 @@ groups:
         for: 1m
         labels:
           severity: critical
+          service: kubelet
       - alert: KubePersistentVolumeInodesFillingUp
         annotations:
           message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to run out of inodes within four days. Currently {{ $value | humanizePercentage }} of its inodes are free.
@@ -130,6 +134,7 @@ groups:
         for: 1h
         labels:
           severity: warning
+          service: kubelet
       - alert: KubePersistentVolumeErrors
         annotations:
           message: The persistent volume {{ $labels.persistentvolume }} has status {{ $labels.phase }}.
@@ -140,6 +145,7 @@ groups:
         for: 5m
         labels:
           severity: critical
+          service: kubelet
 
       - alert: KubeletTooManyPods
         annotations:
