@@ -397,7 +397,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, data.IsKonnectivityEnabled()))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
-	if cloudProviderName != "" && cloudProviderName != "external" {
+	if cloudProviderName != "" && cloudProviderName != resources.CloudProviderExternalFlag {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}

@@ -430,7 +430,7 @@ spec:
             privileged: true
             readOnlyRootFilesystem: true
         - name: node-driver-registrar
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.5.1
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-node-driver-registrar:v2.5.1
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -451,7 +451,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock
@@ -592,7 +592,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v3.1.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-provisioner:v3.1.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -612,7 +612,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: csi-attacher
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-attacher:v3.4.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -629,7 +629,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: csi-resizer
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-resizer:v1.4.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -646,7 +646,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock

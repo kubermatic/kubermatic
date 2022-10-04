@@ -98,6 +98,9 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// introduced in Kubermatic.
 		return !isOTC(dc.Spec.Openstack)
 
+	case cluster.Spec.Cloud.AWS != nil:
+		fallthrough
+
 	case cluster.Spec.Cloud.VSphere != nil:
 		fallthrough
 

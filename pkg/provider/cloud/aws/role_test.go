@@ -106,14 +106,14 @@ func TestEnsureRole(t *testing.T) {
 			t.Fatalf("failed to build the worker policy: %v", err)
 		}
 
-		policies := map[string]string{workerPolicyName: policy}
+		policies := map[string]string{controlPlanePolicyName: policy}
 
 		if err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
 		assertOwnership(ctx, t, cs.IAM, cluster, roleName, true)
-		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, policy)
+		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, controlPlanePolicyName, policy)
 	})
 
 	t.Run("add-policy-to-foreign-existing-role", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestEnsureRole(t *testing.T) {
 			t.Fatalf("failed to build the worker policy: %v", err)
 		}
 
-		policies := map[string]string{workerPolicyName: policy}
+		policies := map[string]string{controlPlanePolicyName: policy}
 
 		// create a role that the controller is then hopefully going to adopt
 		createRoleInput := &iam.CreateRoleInput{
@@ -144,7 +144,7 @@ func TestEnsureRole(t *testing.T) {
 		}
 
 		assertOwnership(ctx, t, cs.IAM, cluster, roleName, false) // role was pre-existing, so we should not add an owner tag
-		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, workerPolicyName, policy)
+		assertRoleHasPolicy(ctx, t, cs.IAM, roleName, controlPlanePolicyName, policy)
 	})
 }
 

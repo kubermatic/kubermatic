@@ -61,7 +61,7 @@ aws-ebs-csi-driver:
 	  >> $(OUTPUT_FILE)
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
-	sed -i 's/k8s.gcr.io/{{ Registry "k8s.gcr.io" }}/g' $(OUTPUT_FILE)
+	sed -i 's/k8s.gcr.io/{{ Registry "registry.k8s.io" }}/g' $(OUTPUT_FILE)
 
 .PHONY: metallb
 metallb: OUTPUT_FILE=metallb/00_metallb.yaml
