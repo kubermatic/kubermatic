@@ -179,7 +179,34 @@ echodate "Kubermatic is ready."
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
-hack/ci/setup-mla.sh
+echodate "Starting the deployment of User Cluster MLA..."
+MLA_HELM_VALUES_FILE="$(mktemp)"
+cat > "${MLA_HELM_VALUES_FILE}" <<EOF
+cortex:
+  ingester:
+    replicas: 1
+  distributor:
+    replicas: 1
+  alertmanager:
+    replicas: 1
+
+loki-distributed:
+  ingester:
+    replicas: 1
+  distributor:
+    replicas: 1
+EOF
+
+./_build/kubermatic-installer deploy usercluster-mla \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$MLA_HELM_VALUES_FILE" \
+  --helm-timeout 1500s
+
+sleep 5
+echodate "Waiting for MLA to deploy Seed components..."
+retry 8 check_all_deployments_ready mla
+
+echodate "MLA is ready."
 
 echodate "Exposing Grafana to localhost..."
 kubectl port-forward --address 0.0.0.0 -n mla svc/grafana 3000:80 > /dev/null &
