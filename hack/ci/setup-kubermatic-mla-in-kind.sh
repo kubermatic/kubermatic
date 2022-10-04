@@ -181,7 +181,7 @@ appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 echodate "Starting the deployment of User Cluster MLA..."
 MLA_HELM_VALUES_FILE="$(mktemp)"
-cat > "${MLA_HELM_VALUES_FILE}" <<EOF
+cat > "${MLA_HELM_VALUES_FILE}" << EOF
 cortex:
   ingester:
     replicas: 1
