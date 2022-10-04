@@ -41,7 +41,7 @@ const (
 	EtcdRestorePhaseEtcdLauncherNotEnabled EtcdRestorePhase = "EtcdRestorePhaseEtcdLauncherNotEnabled"
 )
 
-// +kubebuilder:validation:Enum=Started;StsRebuilding;Completed
+// +kubebuilder:validation:Enum=Started;StsRebuilding;Completed;EtcdRestorePhaseEtcdLauncherNotEnabled
 
 // EtcdRestorePhase represents the lifecycle phase of an EtcdRestore.
 type EtcdRestorePhase string
