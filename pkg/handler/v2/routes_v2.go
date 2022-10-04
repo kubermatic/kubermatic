@@ -590,7 +590,295 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.resetAlertmanager())
 
 	// Defines a set of HTTP endpoints for various cloud providers
-	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	// These endpoints are required to use project-scoped presets as credentials
+
+	// GKE endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/images").
+		Handler(r.listProjectGKEImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/zones").
+		Handler(r.listProjectGKEZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/vmsizes").
+		Handler(r.listProjectGKEVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/disktypes").
+		Handler(r.listProjectGKEDiskTypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/versions").
+		Handler(r.listProjectGKEVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/validatecredentials").
+		Handler(r.validateProjectGKECredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/validatecredentials").
+		Handler(r.validateProjectEKSCredentials())
+
+	// EKS endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/vpcs").
+		Handler(r.listProjectEKSVPCS())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/subnets").
+		Handler(r.listProjectEKSSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/securitygroups").
+		Handler(r.listProjectEKSSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/regions").
+		Handler(r.listProjectEKSRegions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/clusterroles").
+		Handler(r.listProjectEKSClusterRoles())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/versions").
+		Handler(r.listProjectEKSVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/amitypes").
+		Handler(r.listProjectEKSAMITypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/capacitytypes").
+		Handler(r.listProjectEKSCapacityTypes())
+
+	// AKS credentials
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/validatecredentials").
+		Handler(r.validateProjectAKSCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/vmsizes").
+		Handler(r.listProjectAKSVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/resourcegroups").
+		Handler(r.listProjectAKSResourceGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/locations").
+		Handler(r.listProjectAKSLocations())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/modes").
+		Handler(r.listProjectAKSNodePoolModes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/versions").
+		Handler(r.listProjectAKSVersions())
+
+	// Kubevirt endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/kubevirt/vmflavors").
+		Handler(r.listProjectKubeVirtVMIPresets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/kubevirt/instancetypes").
+		Handler(r.listProjectKubeVirtInstancetypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/kubevirt/preferences").
+		Handler(r.listProjectKubeVirtPreferences())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/kubevirt/storageclasses").
+		Handler(r.listProjectKubevirtStorageClasses())
+
+	// Azure endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/sizes").
+		Handler(r.listProjectAzureSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/availabilityzones").
+		Handler(r.listProjectAzureSKUAvailabilityZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/securitygroups").
+		Handler(r.listProjectAzureSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/resourcegroups").
+		Handler(r.listProjectAzureResourceGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/routetables").
+		Handler(r.listProjectAzureRouteTables())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/subnets").
+		Handler(r.listProjectAzureSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/azure/vnets").
+		Handler(r.listProjectAzureVnets())
+
+	// vSphere endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vsphere/networks").
+		Handler(r.listProjectVSphereNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vsphere/folders").
+		Handler(r.listProjectVSphereFolders())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vsphere/datastores").
+		Handler(r.listProjectVSphereDatastores())
+
+	// Nutanix endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/nutanix/{dc}/clusters").
+		Handler(r.listProjectNutanixClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/nutanix/{dc}/projects").
+		Handler(r.listProjectNutanixProjects())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/nutanix/{dc}/subnets").
+		Handler(r.listProjectNutanixSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/nutanix/{dc}/categories").
+		Handler(r.listProjectNutanixCategories())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/nutanix/{dc}/categories/{category}/values").
+		Handler(r.listProjectNutanixCategoryValues())
+
+	// VMware Cloud Director endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/networks").
+		Handler(r.listProjectVMwareCloudDirectorNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/storageprofiles").
+		Handler(r.listProjectVMwareCloudDirectorStorageProfiles())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/catalogs").
+		Handler(r.listProjectVMwareCloudDirectorCatalogs())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/templates/{catalog_name}").
+		Handler(r.listProjectVMwareCloudDirectorTemplates())
+
+	// AWS endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aws/sizes").
+		Handler(r.listProjectAWSSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aws/{dc}/subnets").
+		Handler(r.listProjectAWSSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aws/{dc}/vpcs").
+		Handler(r.listProjectAWSVPCS())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aws/{dc}/securitygroups").
+		Handler(r.listProjectAWSSecurityGroups())
+
+	// GCP endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gcp/disktypes").
+		Handler(r.listProjectGCPDiskTypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gcp/sizes").
+		Handler(r.listProjectGCPSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gcp/{dc}/zones").
+		Handler(r.listProjectGCPZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gcp/networks").
+		Handler(r.listProjectGCPNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gcp/{dc}/subnetworks").
+		Handler(r.listProjectGCPSubnetworks())
+
+	// Digitalocean endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/digitalocean/sizes").
+		Handler(r.listProjectDigitaloceanSizes())
+
+	// Openstack endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/sizes").
+		Handler(r.listProjectOpenstackSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/tenants").
+		Handler(r.listProjectOpenstackTenants())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/networks").
+		Handler(r.listProjectOpenstackNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/securitygroups").
+		Handler(r.listProjectOpenstackSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/subnets").
+		Handler(r.listProjectOpenstackSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/openstack/availabilityzones").
+		Handler(r.listProjectOpenstackAvailabilityZones())
+
+	// Equinix Metal (Packet) endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/packet/sizes").
+		Handler(r.listProjectPacketSizes())
+
+	// Hetzner endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/hetzner/sizes").
+		Handler(r.listProjectHetznerSizes())
+
+	// Alibaba endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/alibaba/instancetypes").
+		Handler(r.listProjectAlibabaInstanceTypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/alibaba/zones").
+		Handler(r.listProjectAlibabaZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/alibaba/vswitches").
+		Handler(r.listProjectAlibabaVSwitches())
+
+	// Anexia endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/anexia/vlans").
+		Handler(r.listProjectAnexiaVlans())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/anexia/templates").
+		Handler(r.listProjectAnexiaTemplates())
+
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under
+	// /providers/* and /projects/{project_id}/providers/*.
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes").
 		Handler(r.listAWSSizesNoCredentials())
@@ -1068,7 +1356,7 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/clusters/{cluster_id}/backupdestinations").
 		Handler(r.getBackupDestinationNames())
 
-	// Defines endpoints for CNI versionsS
+	// Defines endpoints for CNI versions
 	mux.Methods(http.MethodGet).
 		Path("/cni/{cni_plugin_type}/versions").
 		Handler(r.listVersionsByCNIPlugin())
