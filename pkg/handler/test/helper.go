@@ -1046,6 +1046,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "private-do1",
+				ProviderName:   string(kubermaticv1.FakeCloudProvider),
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
 			Version:               version,
@@ -1383,6 +1384,7 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "OpenstackDatacenter",
+		ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			Username:       "username",
 			Password:       "password",
@@ -1401,6 +1403,7 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 func GenClusterWithOpenstackProjectAuth(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "OpenstackDatacenter",
+		ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			Username:       "username",
 			Password:       "password",
