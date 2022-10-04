@@ -52,7 +52,7 @@ func TestListApplicationInstallations(t *testing.T) {
 		ClusterID                 string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
-		ExpectedResponse          []*apiv2.ApplicationInstallation
+		ExpectedResponse          []apiv2.ApplicationInstallationListItem
 		ExpectedHTTPStatusCode    int
 	}{
 		{
@@ -67,13 +67,10 @@ func TestListApplicationInstallations(t *testing.T) {
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse: []*apiv2.ApplicationInstallation{
+			ExpectedResponse: []apiv2.ApplicationInstallationListItem{
 				{
-					ObjectMeta: apiv1.ObjectMeta{
-						Name: "app1",
-					},
-					Namespace: app1TargetNamespace,
-					Spec: &apiv2.ApplicationInstallationSpec{
+					Name: "app1",
+					Spec: &apiv2.ApplicationInstallationListItemSpec{
 						Namespace: apiv2.NamespaceSpec{
 							Name:   app1TargetNamespace,
 							Create: true,
@@ -85,14 +82,11 @@ func TestListApplicationInstallations(t *testing.T) {
 							},
 						},
 					},
-					Status: &apiv2.ApplicationInstallationStatus{},
+					Status: &apiv2.ApplicationInstallationListItemStatus{},
 				},
 				{
-					ObjectMeta: apiv1.ObjectMeta{
-						Name: "app2",
-					},
-					Namespace: app2TargetNamespace,
-					Spec: &apiv2.ApplicationInstallationSpec{
+					Name: "app2",
+					Spec: &apiv2.ApplicationInstallationListItemSpec{
 						Namespace: apiv2.NamespaceSpec{
 							Name:   app2TargetNamespace,
 							Create: true,
@@ -104,7 +98,7 @@ func TestListApplicationInstallations(t *testing.T) {
 							},
 						},
 					},
-					Status: &apiv2.ApplicationInstallationStatus{},
+					Status: &apiv2.ApplicationInstallationListItemStatus{},
 				},
 			},
 		},
