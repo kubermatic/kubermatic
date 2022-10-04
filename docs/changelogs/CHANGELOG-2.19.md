@@ -10,6 +10,13 @@
 - [v2.19.7](#v2197)
 - [v2.19.8](#v2198)
 - [v2.19.9](#v2199)
+- [v2.19.10](#v21910)
+
+## [v2.19.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.10)
+
+### Bugfixes
+
+- etcd-launcher is now capable of automatically rejoining the etcd ring when a member is removed during the peer TLS migration ([#9322](https://github.com/kubermatic/kubermatic/pull/9322))
 
 ## [v2.19.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.9)
 

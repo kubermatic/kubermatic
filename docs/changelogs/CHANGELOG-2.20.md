@@ -8,6 +8,16 @@
 - [v2.20.5](#v2205)
 - [v2.20.6](#v2206)
 - [v2.20.7](#v2207)
+- [v2.20.8](#v2208)
+
+## [v2.20.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.8)
+
+### Bugfixes
+
+- etcd-launcher is now capable of automatically rejoining the etcd ring when a member is removed during the peer TLS migration ([#9322](https://github.com/kubermatic/kubermatic/pull/9322))
+- Fix usercluster-controller crashing when `.status.userEmail` on `Cluster` objects is not set ([#11047](https://github.com/kubermatic/kubermatic/pull/11047))
+- Fix API error in extended disk configuration for provider Anexia ([#11051](https://github.com/kubermatic/kubermatic/pull/11051))
+
 
 ## [v2.20.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.7)
 
