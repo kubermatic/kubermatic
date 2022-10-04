@@ -5,6 +5,7 @@ metadata:
   labels:
     app: aws-cloud-controller-manager
   name: aws-cloud-controller-manager
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:

@@ -83,6 +83,7 @@ var (
 
 	cloudProviders = map[string]kubermaticv1.CloudSpec{
 		"azure": {
+			ProviderName: string(kubermaticv1.AzureCloudProvider),
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:        "az-tenant-id",
 				SubscriptionID:  "az-subscription-id",
@@ -98,17 +99,20 @@ var (
 			},
 		},
 		"vsphere": {
+			ProviderName: string(kubermaticv1.VSphereCloudProvider),
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username: "vs-username",
 				Password: "vs-password",
 			},
 		},
 		"digitalocean": {
+			ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: "do-token",
 			},
 		},
 		"aws": {
+			ProviderName: string(kubermaticv1.AWSCloudProvider),
 			AWS: &kubermaticv1.AWSCloudSpec{
 				AccessKeyID:          "aws-access-key-id",
 				SecretAccessKey:      "aws-secret-access-key",
@@ -122,6 +126,7 @@ var (
 			},
 		},
 		"openstack": {
+			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				SubnetID:       "openstack-subnet-id",
 				Username:       "openstack-username",
@@ -135,6 +140,7 @@ var (
 			},
 		},
 		"bringyourown": {
+			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
 	}

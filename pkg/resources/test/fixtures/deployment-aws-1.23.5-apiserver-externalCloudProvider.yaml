@@ -5,6 +5,7 @@ metadata:
   labels:
     app: apiserver
   name: apiserver
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
