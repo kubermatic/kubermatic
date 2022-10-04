@@ -38,7 +38,7 @@ const (
 	EtcdRestorePhaseCompleted EtcdRestorePhase = "Completed"
 
 	// EtcdRestorePhaseEtcdLauncherNotEnabled value indicating that etcd-launcher is not enabled.
-	EtcdRestorePhaseEtcdLauncherNotEnabled EtcdRestorePhase = "EtcdRestorePhaseEtcdLauncherNotEnabled"
+	EtcdRestorePhaseEtcdLauncherNotEnabled EtcdRestorePhase = "EtcdLauncherNotEnabled"
 )
 
 // +kubebuilder:validation:Enum=Started;StsRebuilding;Completed;EtcdRestorePhaseEtcdLauncherNotEnabled
