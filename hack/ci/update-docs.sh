@@ -42,14 +42,19 @@ cd $TARGET_DIR
 mkdir -p data/kubermatic/master
 mkdir -p content/kubermatic/master/data
 
-cp ../docs/zz_generated.seed.yaml content/kubermatic/master/data/seed.yaml
-cp ../docs/zz_generated.kubermaticConfiguration.yaml content/kubermatic/master/data/kubermaticConfiguration.yaml
+for resource in seed kubermaticConfiguration applicationDefinition applicationInstallation; do
+  for edition in ce ee; do
+    cp ../docs/zz_generated.$resource.$edition.yaml content/kubermatic/master/data/$resource.$edition.yaml
+  done
+
+  # for backwards compatibility with the scripting in the docs repository
+  cp ../docs/zz_generated.$resource.ce.yaml content/kubermatic/master/data/$resource.yaml
+done
+
 cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondata.go
 cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/master/data/prometheusdata.go
 cp ../cmd/kubermatic-api/swagger.json content/kubermatic/master/data/swagger.json
 cp ../addonresources.json content/kubermatic/master/data/addonresources.json
-cp ../docs/zz_generated.applicationDefinition.yaml content/kubermatic/master/data/applicationDefinition.yaml
-cp ../docs/zz_generated.applicationInstallation.yaml content/kubermatic/master/data/applicationInstallation.yaml
 
 # re-create Prometheus runbook
 make runbook
