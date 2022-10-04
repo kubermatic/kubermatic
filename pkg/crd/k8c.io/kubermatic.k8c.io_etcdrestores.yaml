@@ -90,7 +90,7 @@ spec:
                     - Started
                     - StsRebuilding
                     - Completed
-                    - EtcdRestorePhaseEtcdLauncherNotEnabled
+                    - EtcdLauncherNotEnabled
                   type: string
                 restoreTime:
                   format: date-time
