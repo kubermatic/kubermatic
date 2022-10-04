@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"k8s.io/utils/pointer"
 
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -33,6 +32,8 @@ import (
 	vcd "k8c.io/kubermatic/v2/pkg/provider/cloud/vmwareclouddirector"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 type VMwareCloudDirectorCommonReq struct {

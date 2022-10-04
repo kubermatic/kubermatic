@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -31,6 +30,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 type NutanixCommonReq struct {

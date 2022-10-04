@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"k8s.io/utils/pointer"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -30,6 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
