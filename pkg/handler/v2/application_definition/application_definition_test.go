@@ -37,7 +37,7 @@ func TestListApplicationDefinitions(t *testing.T) {
 		ExistingAPIUser    *apiv1.User
 		ExistingObjects    []ctrlruntimeclient.Object
 		ExpectedHTTPStatus int
-		ExpectedAppDefs    []apiv2.ApplicationDefinition
+		ExpectedAppDefs    []apiv2.ApplicationDefinitionListItem
 	}{
 		{
 			Name:            "admin can list all applicationdefinitions",
@@ -48,9 +48,9 @@ func TestListApplicationDefinitions(t *testing.T) {
 				genKubermaticUser("John", "john@acme.com", true),
 			),
 			ExpectedHTTPStatus: http.StatusOK,
-			ExpectedAppDefs: []apiv2.ApplicationDefinition{
-				test.GenApiApplicationDefinition("appdef1"),
-				test.GenApiApplicationDefinition("appdef2"),
+			ExpectedAppDefs: []apiv2.ApplicationDefinitionListItem{
+				test.GenApiApplicationDefinitionListItem("appdef1"),
+				test.GenApiApplicationDefinitionListItem("appdef2"),
 			},
 		},
 		{
@@ -61,9 +61,9 @@ func TestListApplicationDefinitions(t *testing.T) {
 				test.GenApplicationDefinition("appdef2"),
 			),
 			ExpectedHTTPStatus: http.StatusOK,
-			ExpectedAppDefs: []apiv2.ApplicationDefinition{
-				test.GenApiApplicationDefinition("appdef1"),
-				test.GenApiApplicationDefinition("appdef2"),
+			ExpectedAppDefs: []apiv2.ApplicationDefinitionListItem{
+				test.GenApiApplicationDefinitionListItem("appdef1"),
+				test.GenApiApplicationDefinitionListItem("appdef2"),
 			},
 		},
 	}

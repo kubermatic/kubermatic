@@ -584,9 +584,9 @@ func (k NewApplicationInstallationWrapper) EqualOrDie(expected NewApplicationIns
 	}
 }
 
-// NewApplicationDefinitionWrapper wraps []apiv2.ApplicationDefinition
+// NewApplicationDefinitionWrapper wraps []apiv2.ApplicationDefinitionListItem
 // to provide convenient methods for tests.
-type NewApplicationDefinitionWrapper []apiv2.ApplicationDefinition
+type NewApplicationDefinitionWrapper []apiv2.ApplicationDefinitionListItem
 
 // DecodeOrDie reads and decodes json data from the reader.
 func (k *NewApplicationDefinitionWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewApplicationDefinitionWrapper {
