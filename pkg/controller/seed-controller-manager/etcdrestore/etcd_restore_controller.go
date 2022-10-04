@@ -172,6 +172,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster,
 	seed *kubermaticv1.Seed) (*reconcile.Result, error) {
 	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseEtcdLauncherNotEnabled
 		return nil, fmt.Errorf("etcdLauncher not enabled on cluster: %q", cluster.Name)
 	}
 
