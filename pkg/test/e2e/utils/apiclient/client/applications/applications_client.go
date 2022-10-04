@@ -32,6 +32,8 @@ type ClientService interface {
 
 	DeleteApplicationInstallation(params *DeleteApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteApplicationInstallationOK, error)
 
+	GetApplicationDefinition(params *GetApplicationDefinitionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationDefinitionOK, error)
+
 	GetApplicationInstallation(params *GetApplicationInstallationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationInstallationOK, error)
 
 	ListApplicationDefinitions(params *ListApplicationDefinitionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListApplicationDefinitionsOK, error)
@@ -116,6 +118,44 @@ func (a *Client) DeleteApplicationInstallation(params *DeleteApplicationInstalla
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteApplicationInstallationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+GetApplicationDefinition Gets the given ApplicationDefinition
+*/
+func (a *Client) GetApplicationDefinition(params *GetApplicationDefinitionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetApplicationDefinitionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetApplicationDefinitionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getApplicationDefinition",
+		Method:             "GET",
+		PathPattern:        "/api/v2/applicationdefinitions/{appdef_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetApplicationDefinitionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetApplicationDefinitionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetApplicationDefinitionDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

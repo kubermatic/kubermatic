@@ -22,6 +22,9 @@ type ApplicationInstallationListItemStatus struct {
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
 	Conditions []*ApplicationInstallationCondition `json:"conditions"`
 
+	// application version
+	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
+
 	// method
 	Method TemplateMethod `json:"method,omitempty"`
 }
@@ -31,6 +34,10 @@ func (m *ApplicationInstallationListItemStatus) Validate(formats strfmt.Registry
 	var res []error
 
 	if err := m.validateConditions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateApplicationVersion(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -70,6 +77,25 @@ func (m *ApplicationInstallationListItemStatus) validateConditions(formats strfm
 	return nil
 }
 
+func (m *ApplicationInstallationListItemStatus) validateApplicationVersion(formats strfmt.Registry) error {
+	if swag.IsZero(m.ApplicationVersion) { // not required
+		return nil
+	}
+
+	if m.ApplicationVersion != nil {
+		if err := m.ApplicationVersion.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("applicationVersion")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("applicationVersion")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ApplicationInstallationListItemStatus) validateMethod(formats strfmt.Registry) error {
 	if swag.IsZero(m.Method) { // not required
 		return nil
@@ -92,6 +118,10 @@ func (m *ApplicationInstallationListItemStatus) ContextValidate(ctx context.Cont
 	var res []error
 
 	if err := m.contextValidateConditions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateApplicationVersion(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -120,6 +150,22 @@ func (m *ApplicationInstallationListItemStatus) contextValidateConditions(ctx co
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ApplicationInstallationListItemStatus) contextValidateApplicationVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ApplicationVersion != nil {
+		if err := m.ApplicationVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("applicationVersion")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("applicationVersion")
+			}
+			return err
+		}
 	}
 
 	return nil

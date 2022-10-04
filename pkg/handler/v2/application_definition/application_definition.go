@@ -21,10 +21,12 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func ListApplicationDefinitions(applicationDefinitionProvider provider.ApplicationDefinitionProvider) endpoint.Endpoint {
@@ -43,11 +45,37 @@ func ListApplicationDefinitions(applicationDefinitionProvider provider.Applicati
 	}
 }
 
+func GetApplicationDefinition(applicationDefinitionProvider provider.ApplicationDefinitionProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req, ok := request.(getApplicationDefinitionReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+
+		appdef, err := applicationDefinitionProvider.GetUnsecured(ctx, req.AppDefName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToAPIApplicationDefinition(appdef), nil
+	}
+}
+
 func convertInternalToAPIApplicationDefinitionForList(appDef *appskubermaticv1.ApplicationDefinition) *apiv2.ApplicationDefinitionListItem {
 	return &apiv2.ApplicationDefinitionListItem{
 		Name: appDef.Name,
 		Spec: apiv2.ApplicationDefinitionListItemSpec{
 			Description: appDef.Spec.Description,
 		},
+	}
+}
+
+func convertInternalToAPIApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition) *apiv2.ApplicationDefinition {
+	return &apiv2.ApplicationDefinition{
+		ObjectMeta: apiv1.ObjectMeta{
+			CreationTimestamp: apiv1.Time(appDef.CreationTimestamp),
+			Name:              appDef.Name,
+		},
+		Spec: &appDef.Spec,
 	}
 }

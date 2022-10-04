@@ -9199,6 +9199,38 @@
         }
       }
     },
+    "/api/v2/applicationdefinitions/{appdef_name}": {
+      "get": {
+        "description": "Gets the given ApplicationDefinition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "applications"
+        ],
+        "operationId": "getApplicationDefinition",
+        "responses": {
+          "200": {
+            "description": "ApplicationDefinition",
+            "schema": {
+              "$ref": "#/definitions/ApplicationDefinition"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/cni/{cni_plugin_type}/versions": {
       "get": {
         "description": "Lists all CNI Plugin versions that are supported for a given CNI plugin type",
@@ -24423,6 +24455,9 @@
     "ApplicationInstallationListItemStatus": {
       "type": "object",
       "properties": {
+        "applicationVersion": {
+          "$ref": "#/definitions/ApplicationVersion"
+        },
         "conditions": {
           "description": "Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API",
           "type": "array",
@@ -30538,7 +30573,7 @@
       "title": "NamespaceSpec describe the desired state of the namespace where application will be created.",
       "properties": {
         "annotations": {
-          "description": "Annotations of the namespace",
+          "description": "Annotations of the namespace\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -30546,12 +30581,12 @@
           "x-go-name": "Annotations"
         },
         "create": {
-          "description": "Create defines whether the namespace should be created if it does not exist.",
+          "description": "Create defines whether the namespace should be created if it does not exist. Defaults to true",
           "type": "boolean",
           "x-go-name": "Create"
         },
         "labels": {
-          "description": "Labels of the namespace",
+          "description": "Labels of the namespace\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -30559,13 +30594,13 @@
           "x-go-name": "Labels"
         },
         "name": {
-          "description": "Name is the namespace to deploy the Application into",
+          "description": "Name is the namespace to deploy the Application into.\nShould be a valid lowercase RFC1123 domain name",
           "type": "string",
           "pattern": "=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`",
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NetworkDefaults": {
       "type": "object",

@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ApplicationDefinitionListItemSpec ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
+// ApplicationDefinitionListItemSpec ApplicationDefinitionListItemSpec defines the desired state of ApplicationDefinitionListItemSpec.
 //
 // swagger:model ApplicationDefinitionListItemSpec
 type ApplicationDefinitionListItemSpec struct {

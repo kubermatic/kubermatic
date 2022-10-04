@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ApplicationDefinitionListItem ApplicationDefinition is the object representing an ApplicationDefinitionListItem.
+// ApplicationDefinitionListItem ApplicationDefinitionListItem is the object representing an ApplicationDefinitionListItem.
 //
 // swagger:model ApplicationDefinitionListItem
 type ApplicationDefinitionListItem struct {

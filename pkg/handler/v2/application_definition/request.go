@@ -15,3 +15,37 @@ limitations under the License.
 */
 
 package applicationdefinition
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
+
+type getApplicationDefinitionReq struct {
+	// in: path
+	AppDefName string `json:"appdef_name"`
+}
+
+func DecodeGetApplicationDefinition(c context.Context, r *http.Request) (interface{}, error) {
+	var req getApplicationDefinitionReq
+
+	appDefName, err := DecodeApplicationDefinitionName(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.AppDefName = appDefName
+
+	return req, nil
+}
+
+func DecodeApplicationDefinitionName(c context.Context, r *http.Request) (string, error) {
+	appDefName := mux.Vars(r)["appdef_name"]
+	if appDefName == "" {
+		return "", fmt.Errorf("'appDefName' parameter is required but was not provided")
+	}
+
+	return appDefName, nil
+}

@@ -1326,7 +1326,16 @@ type PrivilegedIPAMPoolProvider interface {
 
 type ApplicationDefinitionProvider interface {
 	// List returns a list of ApplicationDefinitions for the KKP installation.
-	ListUnsecured(context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(ctx context.Context) (*appskubermaticv1.ApplicationDefinitionList, error)
+
+	// Get returns a  ApplicationDefinition based on name.
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	GetUnsecured(ctx context.Context, appDefName string) (*appskubermaticv1.ApplicationDefinition, error)
 }
 
 type PrivilegedOperatingSystemProfileProvider interface {

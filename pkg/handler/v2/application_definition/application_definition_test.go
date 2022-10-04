@@ -17,6 +17,8 @@ limitations under the License.
 package applicationdefinition_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -91,6 +93,75 @@ func TestListApplicationDefinitions(t *testing.T) {
 			wrapAppDef.Sort()
 
 			wrapAppDef.EqualOrDie(wrapExpAppDef, t)
+		})
+	}
+}
+
+func TestGetApplicationDefinition(t *testing.T) {
+	t.Parallel()
+	const app1Name = "app1"
+	const app2Name = "app2"
+	testcases := []struct {
+		Name                      string
+		AppDefName                string
+		ExistingKubermaticObjects []ctrlruntimeclient.Object
+		ExistingAPIUser           *apiv1.User
+		ExpectedResponse          apiv2.ApplicationDefinition
+		ExpectedHTTPStatusCode    int
+	}{
+		{
+			Name:       "admin can get an existing appplicationdefinition",
+			AppDefName: app1Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationDefinition(app1Name),
+				test.GenApplicationDefinition(app2Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse:       test.GenApiApplicationDefinition(app1Name),
+		},
+		{
+			Name:       "user can get an existing appplicationdefinition",
+			AppDefName: app1Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenApplicationDefinition(app1Name),
+				test.GenApplicationDefinition(app2Name),
+			),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse:       test.GenApiApplicationDefinition(app1Name),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/applicationdefinitions/%s", tc.AppDefName)
+			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedHTTPStatusCode {
+				t.Errorf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, res.Code, res.Body.String())
+				return
+			}
+
+			if res.Code == http.StatusOK {
+				b, err := json.Marshal(tc.ExpectedResponse)
+				if err != nil {
+					t.Fatalf("failed to marshal expected response: %v", err)
+				}
+				test.CompareWithResult(t, res, string(b))
+			}
 		})
 	}
 }
