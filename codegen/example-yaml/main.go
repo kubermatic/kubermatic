@@ -33,6 +33,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +48,9 @@ func main() {
 	if flag.NArg() < 2 {
 		log.Fatal("Usage: go run main.go SRC_ROOT TARGET")
 	}
+
+	ed := edition.KubermaticEdition
+	log.Printf("Generating for %s", ed)
 
 	root := flag.Arg(0)
 	target := flag.Arg(1)
@@ -90,7 +94,7 @@ func main() {
 	for name, data := range examples {
 		log.Printf("Creating example YAML for %s resources...", name)
 
-		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
+		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.%s.yaml", name, strings.ToLower(ed.ShortString())))
 
 		f, err := os.Create(filename)
 		if err != nil {
