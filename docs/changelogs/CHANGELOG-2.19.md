@@ -10,7 +10,7 @@
 - [v2.19.7](#v2197)
 - [v2.19.8](#v2198)
 - [v2.19.9](#v2199)
-- [v2.19.9](#v21910)
+- [v2.19.10](#v21910)
 
 ## [v2.19.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.10)
 
