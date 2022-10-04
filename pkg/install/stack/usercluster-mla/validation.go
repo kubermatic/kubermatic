@@ -45,7 +45,7 @@ func (*UserClusterMLA) ValidateConfiguration(config *kubermaticv1.KubermaticConf
 func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []error {
 	failures := []error{}
 
-	if opt.MlaIncludeIap {
+	if opt.MLAIncludeIap {
 		path := yamled.Path{"iap", "deployments", "grafana", "client_secret"}
 		grafanaClientSecret, _ := helmValues.GetString(path)
 		if err := ValidateIapBlockSecret(grafanaClientSecret, path.String()); err != nil {

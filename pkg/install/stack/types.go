@@ -54,10 +54,10 @@ type DeployOptions struct {
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
 
-	MlaSkipMinio             bool
-	MlaSkipMinioLifecycleMgr bool
-	MlaForceSecrets          bool
-	MlaIncludeIap            bool
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceSecrets          bool
+	MLAIncludeIap            bool
 }
 
 type Stack interface {

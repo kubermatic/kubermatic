@@ -34,44 +34,44 @@ import (
 )
 
 const (
-	UserClusterMlaNamespace    = "mla"
-	UserClusterMlaChartsPrefix = "mla"
+	UserClusterMLANamespace    = "mla"
+	UserClusterMLAChartsPrefix = "mla"
 
-	MlaSecretsChartName   = "mla-secrets"
-	MlaSecretsReleaseName = MlaSecretsChartName
-	MlaSecretsNamespace   = UserClusterMlaNamespace
+	MLASecretsChartName   = "mla-secrets"
+	MLASecretsReleaseName = MLASecretsChartName
+	MLASecretsNamespace   = UserClusterMLANamespace
 
 	AlertmanagerProxyChartName   = "alertmanager-proxy"
 	AlertmanagerProxyReleaseName = AlertmanagerProxyChartName
-	AlertmanagerProxyNamespace   = UserClusterMlaNamespace
+	AlertmanagerProxyNamespace   = UserClusterMLANamespace
 
 	ConsulChartName   = "consul"
 	ConsulReleaseName = ConsulChartName
-	ConsulNamespace   = UserClusterMlaNamespace
+	ConsulNamespace   = UserClusterMLANamespace
 
 	CortexChartName   = "cortex"
 	CortexReleaseName = CortexChartName
-	CortexNamespace   = UserClusterMlaNamespace
+	CortexNamespace   = UserClusterMLANamespace
 
 	GrafanaChartName   = "grafana"
 	GrafanaReleaseName = GrafanaChartName
-	GrafanaNamespace   = UserClusterMlaNamespace
+	GrafanaNamespace   = UserClusterMLANamespace
 
 	LokiChartName   = "loki-distributed"
 	LokiReleaseName = LokiChartName
-	LokiNamespace   = UserClusterMlaNamespace
+	LokiNamespace   = UserClusterMLANamespace
 
 	MinioChartName   = "minio"
 	MinioReleaseName = MinioChartName
-	MinioNamespace   = UserClusterMlaNamespace
+	MinioNamespace   = UserClusterMLANamespace
 
 	MinioLifecycleMgrChartName   = "minio-lifecycle-mgr"
 	MinioLifecycleMgrReleaseName = MinioLifecycleMgrChartName
-	MinioLifecycleMgrNamespace   = UserClusterMlaNamespace
+	MinioLifecycleMgrNamespace   = UserClusterMLANamespace
 
-	MlaIapChartName   = "iap"
-	MlaIapReleaseName = MlaIapChartName
-	MlaIapNamespace   = UserClusterMlaNamespace
+	MLAIAPChartName   = "iap"
+	MLAIAPReleaseName = MLAIAPChartName
+	MLAIAPNamespace   = UserClusterMLANamespace
 )
 
 type UserClusterMLA struct{}
@@ -87,7 +87,7 @@ func (*UserClusterMLA) Name() string {
 }
 
 func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) error {
-	if err := deployMlaSecrets(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+	if err := deployMLASecrets(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy MLA Secrets: %w", err)
 	}
 
@@ -119,8 +119,8 @@ func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) er
 		return fmt.Errorf("failed to deploy Minio Bucket Lifecycle Manager: %w", err)
 	}
 
-	if opt.MlaIncludeIap {
-		if err := deployMlaIap(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+	if opt.MLAIncludeIap {
+		if err := deployMLAIap(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 			return fmt.Errorf("failed to deploy IAP: %w", err)
 		}
 	}
@@ -128,31 +128,31 @@ func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) er
 	return nil
 }
 
-func deployMlaSecrets(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+func deployMLASecrets(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying MLA Secrets…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, MlaSecretsChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, MLASecretsChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MlaSecretsNamespace); err != nil {
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MLASecretsNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MlaSecretsNamespace, MlaSecretsReleaseName)
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MLASecretsNamespace, MLASecretsReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	// If secrets upgrade wasn't forced and there's no newer version, don't upgrade the secrets
-	if !opt.MlaForceSecrets && (release != nil && !release.Version.LessThan(chart.Version)) {
+	if !opt.MLAForceSecrets && (release != nil && !release.Version.LessThan(chart.Version)) {
 		logger.Info("⏭️  Skipped.")
 		return nil
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MlaSecretsNamespace, MlaSecretsReleaseName, opt.HelmValues, true, (opt.MlaForceSecrets || opt.ForceHelmReleaseUpgrade), opt.DisableDependencyUpdate, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MLASecretsNamespace, MLASecretsReleaseName, opt.HelmValues, true, (opt.MLAForceSecrets || opt.ForceHelmReleaseUpgrade), opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -165,7 +165,7 @@ func deployAlertmanagerProxy(ctx context.Context, logger *logrus.Entry, kubeClie
 	logger.Info("📦 Deploying Alertmanager Proxy…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, AlertmanagerProxyChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, AlertmanagerProxyChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -192,7 +192,7 @@ func deployConsul(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	logger.Info("📦 Deploying Consul…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, ConsulChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, ConsulChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -219,7 +219,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	logger.Info("📦 Deploying Cortex…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, CortexChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, CortexChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -256,7 +256,7 @@ func deployGrafana(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrun
 	logger.Info("📦 Deploying Grafana…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, GrafanaChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, GrafanaChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -283,7 +283,7 @@ func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntim
 	logger.Info("📦 Deploying Loki…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, LokiChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, LokiChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -310,7 +310,7 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 	logger.Info("📦 Deploying Minio…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, MinioChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, MinioChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -337,7 +337,7 @@ func deployMinioLifecycleMgr(ctx context.Context, logger *logrus.Entry, kubeClie
 	logger.Info("📦 Deploying Minio Bucket Lifecycle Manager…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMlaChartsPrefix, MinioLifecycleMgrChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, UserClusterMLAChartsPrefix, MinioLifecycleMgrChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -360,25 +360,25 @@ func deployMinioLifecycleMgr(ctx context.Context, logger *logrus.Entry, kubeClie
 	return nil
 }
 
-func deployMlaIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+func deployMLAIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying IAP…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MlaIapChartName))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MLAIAPChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MlaIapNamespace); err != nil {
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MLAIAPNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MlaIapNamespace, MlaIapReleaseName)
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MLAIAPNamespace, MLAIAPReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MlaIapNamespace, MlaIapReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MLAIAPNamespace, MLAIAPReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 

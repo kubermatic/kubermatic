@@ -72,10 +72,10 @@ type DeployOptions struct {
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
 
-	MlaSkipMinio             bool
-	MlaSkipMinioLifecycleMgr bool
-	MlaForceMlaSecrets       bool
-	MlaIncludeIap            bool
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceMLASecrets       bool
+	MLAIncludeIap            bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -129,10 +129,10 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
 
-	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinio, "skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
-	cmd.PersistentFlags().BoolVar(&opt.MlaSkipMinioLifecycleMgr, "skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
-	cmd.PersistentFlags().BoolVar(&opt.MlaForceMlaSecrets, "force-mla-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
-	cmd.PersistentFlags().BoolVar(&opt.MlaIncludeIap, "include-mla-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "force-mla-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
+	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "include-mla-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
 	return cmd
 }
