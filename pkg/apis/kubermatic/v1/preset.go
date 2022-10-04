@@ -74,8 +74,7 @@ type PresetSpec struct {
 	// KKP API.
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
-	// Projects is a list of project IDs that this preset is limited to. This
-	// is mutually exclusive with `requiredEmails`.
+	// Projects is a list of project IDs that this preset is limited to.
 	Projects []string `json:"projects,omitempty"`
 
 	// Only enabled presets will be available in the KKP dashboard.

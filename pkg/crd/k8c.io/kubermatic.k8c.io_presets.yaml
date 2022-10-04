@@ -366,6 +366,11 @@ spec:
                     - apiKey
                     - projectID
                   type: object
+                projects:
+                  description: Projects is a list of project IDs that this preset is limited to.
+                  items:
+                    type: string
+                  type: array
                 requiredEmails:
                   description: RequiredEmails is a list of e-mail addresses that this presets should be restricted to. Each item in the list can be either a full e-mail address or just a domain name. This restriction is only enforced in the KKP API.
                   items:

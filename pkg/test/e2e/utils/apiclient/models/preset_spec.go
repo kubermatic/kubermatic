@@ -21,6 +21,9 @@ type PresetSpec struct {
 	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
+	// Projects is a list of project IDs that this preset is limited to.
+	Projects []string `json:"projects"`
+
 	// RequiredEmails is a list of e-mail addresses that this presets should
 	// be restricted to. Each item in the list can be either a full e-mail
 	// address or just a domain name. This restriction is only enforced in the

@@ -5120,6 +5120,11 @@ func (in *PresetSpec) DeepCopyInto(out *PresetSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.Projects != nil {
+		in, out := &in.Projects, &out.Projects
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Enabled != nil {
 		in, out := &in.Enabled, &out.Enabled
 		*out = new(bool)
