@@ -40,6 +40,7 @@ type DeployOptions struct {
 	RawKubermaticConfiguration *unstructured.Unstructured
 	ForceHelmReleaseUpgrade    bool
 	ChartsDirectory            string
+	AllowEditionChange         bool
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
