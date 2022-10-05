@@ -40,7 +40,9 @@ $sed -i "s/,omitempty/,$dummy/g" pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/c
 # there are some fields that we do actually want to ignore
 $sed -i 's/omitgenyaml/omitempty/g' pkg/apis/kubermatic/v1/*.go
 
-go run codegen/example-yaml/main.go . docs
+for edition in ce ee; do
+  go run -tags $edition codegen/example-yaml/main.go . docs
+done
 
 # revert our changes
 $sed -i 's/omitempty/omitgenyaml/g' pkg/apis/kubermatic/v1/*.go

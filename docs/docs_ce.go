@@ -1,5 +1,7 @@
+//go:build !ee
+
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +20,8 @@ package docs
 
 import _ "embed"
 
-//go:embed zz_generated.kubermaticConfiguration.yaml
+//go:embed zz_generated.kubermaticConfiguration.ce.yaml
 var ExampleKubermaticConfiguration string
 
-//go:embed zz_generated.seed.yaml
+//go:embed zz_generated.seed.ce.yaml
 var ExampleSeedConfiguration string
