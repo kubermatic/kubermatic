@@ -266,7 +266,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	}
 
 	rsp := createOIDCKubeconfigRsp{}
-	scopes := []string{"openid", "email"}
+	scopes := []string{"openid", "email", "groups"}
 	if oidcCfg.OfflineAccessAsScope {
 		scopes = append(scopes, "offline_access")
 	}
@@ -402,7 +402,7 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 	}
 
 	rsp := createOIDCKubeconfigRsp{}
-	scopes := []string{"openid", "email"}
+	scopes := []string{"openid", "email", "groups"}
 	if oidcCfg.OfflineAccessAsScope {
 		scopes = append(scopes, "offline_access")
 	}
