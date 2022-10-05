@@ -329,8 +329,6 @@ func getVolumeMounts() []corev1.VolumeMount {
 
 // Terminal is called for any new websocket connection.
 func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *restclient.Config, userEmailID string) {
-	defer ws.Close()
-
 	if err := startProcess(
 		ctx,
 		client,

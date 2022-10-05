@@ -154,6 +154,10 @@ type connections struct {
 	mutex  sync.Mutex
 }
 
+type TermWsError struct {
+	Message string `json:"message"`
+}
+
 func newConnections() *connections {
 	return &connections{
 		active: make(map[string]int),
@@ -228,18 +232,6 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		}
 		projectID := projectReq.(common.ProjectReq).ProjectID
 
-		// Checking user active connections for project cluster
-		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
-		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
-			err = errors.New("reached the maximum number of terminal active connections for the user")
-			log.Logger.Debug(err)
-			w.WriteHeader(http.StatusTooManyRequests)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
-		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
-
 		request := terminalReq{
 			ClusterID: clusterID,
 		}
@@ -276,18 +268,34 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		if err != nil {
 			return
 		}
+
+		ws, err := upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+		defer ws.Close()
+
+		// Checking user active connections for project cluster
+		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
+		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
+			err = errors.New("reached the maximum number of terminal active connections for the user")
+			log.Logger.Debug(err)
+			_ = ws.WriteJSON(TermWsError{Message: err.Error()})
+			_ = ws.Close()
+			return
+		}
+		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
+		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
+
 		kubeconfigSecret := &corev1.Secret{}
 		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: metav1.NamespaceSystem,
 			Name:      handlercommon.KubeconfigSecretName(userEmailID),
 		}, kubeconfigSecret); err != nil {
 			log.Logger.Debug(err)
-			return
-		}
-
-		ws, err := upgrader.Upgrade(w, req, nil)
-		if err != nil {
-			log.Logger.Debug(err)
+			_ = ws.WriteJSON(TermWsError{Message: err.Error()})
+			_ = ws.Close()
 			return
 		}
 
