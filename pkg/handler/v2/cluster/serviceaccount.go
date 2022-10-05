@@ -51,7 +51,7 @@ func ListClusterSAEndpoint(userInfoGetter provider.UserInfoGetter, projectProvid
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listClusterSAReq)
 		if !ok {
-			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not cas request of type %T to listClusterSAReq", request))
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -82,7 +82,7 @@ func CreateClusterSAEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(CreateClusterSAReq)
 		if !ok {
-			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not cas request of type %T to CreateClusterSAReq", request))
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -128,7 +128,7 @@ func DeleteClusterSAKubeconigEndpoint(userInfoGetter provider.UserInfoGetter, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ClusterSAReq)
 		if !ok {
-			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not cas request of type %T to ClusterSAReq", request))
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
