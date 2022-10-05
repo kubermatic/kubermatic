@@ -94,7 +94,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of found images")
 
-	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Address of the registry to push to, for example localhost:5000")
+	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
@@ -114,10 +114,6 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		if options.AddonsImage != "" && options.AddonsPath != "" {
 			return errors.New("--addons-image and --addons-path must not be set at the same time")
-		}
-
-		if options.AddonsImage == "" && options.AddonsPath == "" {
-			return errors.New("either --addons-image or --addons-path must be set")
 		}
 
 		// error out early if there is no useful Helm binary
