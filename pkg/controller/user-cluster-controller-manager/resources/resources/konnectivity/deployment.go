@@ -73,6 +73,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 				},
 			}
 
+			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			ds.Spec.Template.Spec.ServiceAccountName = resources.KonnectivityServiceAccountName
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
