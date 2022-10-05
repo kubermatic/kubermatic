@@ -23,19 +23,20 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 type etcdRunningData interface {
-	ImageRegistry(defaultRegistry string) string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
 func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 	return corev1.Container{
 		Name:  "etcd-running",
-		Image: data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag(data.Cluster()),
+		Image: registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + etcd.ImageTag(data.Cluster()))),
 		Command: []string{
 			"/bin/sh",
 			"-ec",

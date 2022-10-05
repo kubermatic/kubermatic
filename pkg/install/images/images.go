@@ -165,9 +165,9 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	var daemonsetCreators []reconciling.NamedDaemonSetCreatorGetter
 	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
 		kubermaticVersions,
-		templateData.ImageRegistry,
+		templateData.RewriteImage,
 	))
-	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.ImageRegistry))
+	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()

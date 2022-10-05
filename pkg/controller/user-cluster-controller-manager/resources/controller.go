@@ -109,7 +109,7 @@ func Add(
 		namespace:              namespace,
 		clusterURL:             clusterURL,
 		clusterIsPaused:        clusterIsPaused,
-		overwriteRegistryFunc:  registry.GetOverwriteFunc(overwriteRegistry),
+		imageRewriter:          registry.GetImageRewriterFunc(overwriteRegistry),
 		openvpnServerPort:      openvpnServerPort,
 		kasSecurePort:          kasSecurePort,
 		tunnelingAgentIP:       tunnelingAgentIP,
@@ -280,7 +280,7 @@ type reconciler struct {
 	namespace              string
 	clusterURL             *url.URL
 	clusterIsPaused        userclustercontrollermanager.IsPausedChecker
-	overwriteRegistryFunc  registry.WithOverwriteFunc
+	imageRewriter          registry.ImageRewriter
 	openvpnServerPort      uint32
 	kasSecurePort          uint32
 	tunnelingAgentIP       net.IP

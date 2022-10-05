@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -79,7 +80,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion,
+					Image: registry.Must(data.RewriteImage(resources.RegistryDocker + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion)),
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",

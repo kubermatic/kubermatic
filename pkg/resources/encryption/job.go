@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ done
 )
 
 type encryptionData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 }
 
 func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, secret *corev1.Secret, res []string, key string) batchv1.Job {
@@ -74,7 +75,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 					Containers: []corev1.Container{
 						{
 							Name:    "encryption-runner",
-							Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.2.0",
+							Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/util:2.2.0")),
 							Command: []string{"/bin/bash", "-c"},
 							Args: []string{
 								fmt.Sprintf(encryptionJobScript, resourceList),

@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
@@ -95,7 +95,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), imageName, tag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
@@ -158,7 +158,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				},
 				{
 					Name:            "prometheus-config-reloader",
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), reloaderImageName, reloaderTag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						// Full usage of prometheus-config-reloader:

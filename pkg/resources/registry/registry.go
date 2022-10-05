@@ -21,13 +21,27 @@ import (
 	"fmt"
 
 	"github.com/docker/distribution/reference"
-	"k8c.io/kubermatic/v2/pkg/resources"
 )
+
+const (
+	// RegistryDocker exists to prevent an import loop between the resources and this package.
+	RegistryDocker = "docker.io"
+)
+
+func Must(s string, err error) string {
+	if err != nil {
+		panic(err)
+	}
+
+	return s
+}
 
 // WithOverwriteFunc is a function that takes a string and either returns that string or a defined override value.
 type WithOverwriteFunc func(string) string
 
 // GetOverwriteFunc returns a WithOverwriteFunc based on the given override value.
+// This function is deprecated and should not be used anymore. Use the much more
+// flexible GetImageRewriterFunc instead.
 func GetOverwriteFunc(overwriteRegistry string) WithOverwriteFunc {
 	if overwriteRegistry == "" {
 		return func(s string) string {
@@ -66,14 +80,14 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 	domain := reference.Domain(named)
 	origDomain := domain
 	if origDomain == "" {
-		origDomain = resources.RegistryDocker
+		origDomain = RegistryDocker
 	}
 
 	if overwriteRegistry != "" {
 		domain = overwriteRegistry
 	}
 	if domain == "" {
-		domain = resources.RegistryDocker
+		domain = RegistryDocker
 	}
 
 	// construct name image name

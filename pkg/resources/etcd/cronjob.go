@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ import (
 
 type cronJobCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	GetClusterRef() metav1.OwnerReference
 }
 
@@ -57,7 +58,7 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "defragger",
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
+					Image:   registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + ImageTag(data.Cluster()))),
 					Command: command,
 					VolumeMounts: []corev1.VolumeMount{
 						{

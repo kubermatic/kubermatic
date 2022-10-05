@@ -19,6 +19,7 @@ package vpnsidecar
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -38,7 +39,7 @@ var (
 )
 
 type openvpnData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
@@ -50,7 +51,7 @@ type openvpnData interface {
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:    name,
-		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v2.5.2-r0",
+		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:v2.5.2-r0")),
 		Command: []string{"/usr/sbin/openvpn"},
 		Args: []string{
 			"--client",

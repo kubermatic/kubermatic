@@ -62,7 +62,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 }
 
 // DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
@@ -91,7 +91,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.MetricsServerDeploymentName,
-					Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryK8S), imageName, imageTag),
+					Image:   registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, imageName, imageTag))),
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubelet-insecure-tls",

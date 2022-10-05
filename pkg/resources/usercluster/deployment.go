@@ -61,7 +61,8 @@ const name = "usercluster-controller"
 // easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	GetLegacyOverwriteRegistry() string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
 	GetOpenVPNServerPort() (int32, error)
@@ -142,7 +143,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-cluster-url", address.URL,
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
-				"-overwrite-registry", data.ImageRegistry(""),
+				"-overwrite-registry", data.GetLegacyOverwriteRegistry(),
 				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				"-application-cache", resources.ApplicationCacheMountPath,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),

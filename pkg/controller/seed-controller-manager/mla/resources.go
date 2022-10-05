@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -313,7 +314,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/" + image + ":" + version,
+					Image:           registry.Must(data.RewriteImage(resources.RegistryDocker + "/" + image + ":" + version)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{

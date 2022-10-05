@@ -933,11 +933,11 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
 
 	if r.nodeLocalDNSCache {
-		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.imageRewriter))
 	}
 
 	if r.userSSHKeyAgent {
-		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.imageRewriter))
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
@@ -945,7 +945,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
 		}
-		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, configHash, r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -954,7 +954,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(data.loggingRequirements, r.overwriteRegistryFunc),
+			promtail.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
@@ -1006,7 +1006,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			kubernetesdashboard.DeploymentCreator(r.overwriteRegistryFunc),
+			kubernetesdashboard.DeploymentCreator(r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", kubernetesdashboard.Namespace, err)
@@ -1014,7 +1014,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
-		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.overwriteRegistryFunc),
+		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.imageRewriter),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1024,8 +1024,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.overwriteRegistryFunc, data.gatekeeperCtrlRequirements),
-			gatekeeper.AuditDeploymentCreator(r.overwriteRegistryFunc, data.gatekeeperAuditRequirements),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.imageRewriter, data.gatekeeperCtrlRequirements),
+			gatekeeper.AuditDeploymentCreator(r.imageRewriter, data.gatekeeperAuditRequirements),
 		}
 
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -1035,7 +1035,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.overwriteRegistryFunc),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -1044,8 +1044,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.isKonnectivityEnabled {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.overwriteRegistryFunc),
-			metricsserver.DeploymentCreator(r.overwriteRegistryFunc), // deploy metrics-server in user cluster
+			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.imageRewriter),
+			metricsserver.DeploymentCreator(r.imageRewriter), // deploy metrics-server in user cluster
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)

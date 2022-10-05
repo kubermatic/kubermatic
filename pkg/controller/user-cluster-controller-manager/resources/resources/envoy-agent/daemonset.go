@@ -52,7 +52,7 @@ const (
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet.
-func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash string, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash string, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Name = resources.EnvoyAgentDaemonSetName
@@ -74,9 +74,19 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 				Annotations: map[string]string{"checksum/config": configHash},
 			}
 
+			initContainers, err := getInitContainers(agentIP, versions, imageRewriter)
+			if err != nil {
+				return nil, err
+			}
+
+			containers, err := getContainers(versions, imageRewriter)
+			if err != nil {
+				return nil, err
+			}
+
 			ds.Spec.Template.Spec = corev1.PodSpec{
-				InitContainers: getInitContainers(agentIP, versions, registryWithOverwrite),
-				Containers:     getContainers(versions, registryWithOverwrite),
+				InitContainers: initContainers,
+				Containers:     containers,
 				// TODO(youssefazrak) needed?
 				PriorityClassName:             "system-cluster-critical",
 				DNSPolicy:                     corev1.DNSClusterFirst,
@@ -110,7 +120,12 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 	}
 }
 
-func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
+	image, err := imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic))
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
@@ -119,7 +134,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOver
 	return []corev1.Container{
 		{
 			Name:    resources.EnvoyAgentCreateInterfaceInitContainerName,
-			Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
+			Image:   image,
 			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -134,7 +149,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOver
 		},
 		{
 			Name:    resources.EnvoyAgentAssignAddressInitContainerName,
-			Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic),
+			Image:   image,
 			Command: []string{"sh", "-c", fmt.Sprintf("ip addr add %s/32 dev envoyagent scope host || true", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -147,14 +162,19 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, registryWithOver
 				},
 			},
 		},
-	}
+	}, nil
 }
 
-func getContainers(versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
+	image, err := imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Kubermatic))
+	if err != nil {
+		return nil, err
+	}
+
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), envoyImageName, versions.Envoy),
+			Image:           image,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of
@@ -181,7 +201,7 @@ func getContainers(versions kubermatic.Versions, registryWithOverwrite registry.
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func getVolumes() []corev1.Volume {

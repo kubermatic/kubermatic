@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,7 +61,7 @@ type operatingSystemManagerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	Cluster() *kubermaticv1.Cluster
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
 	GetCSIMigrationFeatureGates() []string
 	DC() *kubermaticv1.Datacenter
@@ -154,7 +155,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/operating-system-manager"))
 			if r := data.OperatingSystemManagerImageRepository(); r != "" {
 				repository = r
 			}

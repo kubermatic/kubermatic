@@ -81,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
-func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -110,7 +110,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
-			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
+			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, imageRewriter)
 			var err error
 			if resourceOverride != nil {
 				overridesRequirements := map[string]*corev1.ResourceRequirements{
@@ -141,7 +141,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
-func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -186,10 +186,10 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 	}
 }
 
-func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{{
 		Name:            controllerName,
-		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, tag))),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
@@ -273,10 +273,10 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 	}}
 }
 
-func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{{
 		Name:            auditName,
-		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, tag))),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
