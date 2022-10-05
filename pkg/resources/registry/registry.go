@@ -20,7 +20,7 @@ package registry
 import (
 	"fmt"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/distribution/v3/reference"
 )
 
 const (
