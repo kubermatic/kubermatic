@@ -374,7 +374,7 @@ func (d *TemplateData) GetLegacyOverwriteRegistry() string {
 	return d.OverwriteRegistry
 }
 
-// ImageRewriter returns a Docker image rewriter
+// ImageRewriter returns a Docker image rewriter.
 func (d *TemplateData) ImageRewriter() registry.ImageRewriter {
 	return registry.GetImageRewriterFunc(d.OverwriteRegistry)
 }

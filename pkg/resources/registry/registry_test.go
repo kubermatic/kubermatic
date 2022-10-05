@@ -56,7 +56,7 @@ func TestImageRewriter(t *testing.T) {
 			expected:  addDigest("docker.io/foo/bar:v1.2.3"),
 		},
 		{
-			name:      "untagged digests are kept if the registry is unchanged (with default registy)",
+			name:      "untagged digests are kept if the registry is unchanged (with default registry)",
 			overwrite: "",
 			input:     addDigest("foo/bar"),
 			expected:  addDigest("docker.io/foo/bar"),
