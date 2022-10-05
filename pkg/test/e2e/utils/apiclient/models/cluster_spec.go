@@ -57,6 +57,9 @@ type ClusterSpec struct {
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
+	// api server allowed IP ranges
+	APIServerAllowedIPRanges *NetworkRanges `json:"apiServerAllowedIPRanges,omitempty"`
+
 	// audit logging
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
@@ -102,6 +105,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateMachineNetworks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAPIServerAllowedIPRanges(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -184,6 +191,25 @@ func (m *ClusterSpec) validateMachineNetworks(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateAPIServerAllowedIPRanges(formats strfmt.Registry) error {
+	if swag.IsZero(m.APIServerAllowedIPRanges) { // not required
+		return nil
+	}
+
+	if m.APIServerAllowedIPRanges != nil {
+		if err := m.APIServerAllowedIPRanges.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("apiServerAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("apiServerAllowedIPRanges")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -440,6 +466,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAPIServerAllowedIPRanges(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAuditLogging(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -513,6 +543,22 @@ func (m *ClusterSpec) contextValidateMachineNetworks(ctx context.Context, format
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateAPIServerAllowedIPRanges(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.APIServerAllowedIPRanges != nil {
+		if err := m.APIServerAllowedIPRanges.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("apiServerAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("apiServerAllowedIPRanges")
+			}
+			return err
+		}
 	}
 
 	return nil

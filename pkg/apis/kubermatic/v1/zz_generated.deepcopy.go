@@ -1190,6 +1190,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.APIServerAllowedIPRanges != nil {
+		in, out := &in.APIServerAllowedIPRanges, &out.APIServerAllowedIPRanges
+		*out = new(NetworkRanges)
+		(*in).DeepCopyInto(*out)
+	}
 	in.ComponentsOverride.DeepCopyInto(&out.ComponentsOverride)
 	out.OIDC = in.OIDC
 	if in.Features != nil {

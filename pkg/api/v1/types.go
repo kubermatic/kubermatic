@@ -991,6 +991,12 @@ type ClusterSpec struct {
 
 	// ExposeStrategy is the strategy used to expose a cluster control plane.
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"exposeStrategy"`
+
+	// APIServerAllowedIPRanges is a list of IP ranges allowed to access the API server.
+	// Applicable only if the expose strategy of the cluster is LoadBalancer.
+	// If not configured, access to the API server is unrestricted.
+	// +optional
+	APIServerAllowedIPRanges *kubermaticv1.NetworkRanges `json:"apiServerAllowedIPRanges"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -1019,6 +1025,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
 		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
 		ExposeStrategy                       kubermaticv1.ExposeStrategy            `json:"exposeStrategy,omitempty"`
+		APIServerAllowedIPRanges             *kubermaticv1.NetworkRanges            `json:"apiserverallowedIPRanges,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName:      cs.Cloud.DatacenterName,
@@ -1059,6 +1066,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ClusterNetwork:                       cs.ClusterNetwork,
 		CNIPlugin:                            cs.CNIPlugin,
 		ExposeStrategy:                       cs.ExposeStrategy,
+		APIServerAllowedIPRanges:             cs.APIServerAllowedIPRanges,
 	})
 
 	return ret, err
