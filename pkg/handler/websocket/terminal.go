@@ -171,14 +171,20 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		}
 		// create Configmap and Pod if not found
 		if err := client.Create(ctx, genWebTerminalConfigMap(appName)); err != nil {
-			return err
+			if !apierrors.IsAlreadyExists(err) {
+				return err
+			}
+			err := client.Update(ctx, genWebTerminalConfigMap(appName))
+			if err != nil {
+				return err
+			}
 		}
 		if err := client.Create(ctx, genWebTerminalPod(appName, userEmailID)); err != nil {
 			return err
 		}
 	}
 
-	if !waitForPod(5*time.Second, timeout, func() bool {
+	if !WaitFor(5*time.Second, timeout, func() bool {
 		pod := &corev1.Pod{}
 		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: metav1.NamespaceSystem,
@@ -351,8 +357,8 @@ func EncodeUserEmailtoID(email string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-// waitForPod is a function to wait until WEB terminal Pod is running.
-func waitForPod(interval time.Duration, timeout time.Duration, callback func() bool) bool {
+// WaitFor is a function to wait until callback function return true.
+func WaitFor(interval time.Duration, timeout time.Duration, callback func() bool) bool {
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
 		return callback(), nil
 	})

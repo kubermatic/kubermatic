@@ -52,6 +52,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
+		return true
 		origin := r.Header["Origin"]
 		if len(origin) == 0 {
 			return true
@@ -152,10 +153,6 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 type connections struct {
 	active map[string]int
 	mutex  sync.Mutex
-}
-
-type TermWsError struct {
-	Message string `json:"message"`
 }
 
 func newConnections() *connections {
@@ -281,21 +278,30 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
 			err = errors.New("reached the maximum number of terminal active connections for the user")
 			log.Logger.Debug(err)
-			_ = ws.WriteJSON(TermWsError{Message: err.Error()})
-			_ = ws.Close()
+			_ = ws.WriteJSON(wsh.TerminalMessage{
+				Op:   "msg",
+				Data: err.Error(),
+			})
 			return
 		}
 		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
 		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
 
-		kubeconfigSecret := &corev1.Secret{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
-			Namespace: metav1.NamespaceSystem,
-			Name:      handlercommon.KubeconfigSecretName(userEmailID),
-		}, kubeconfigSecret); err != nil {
-			log.Logger.Debug(err)
-			_ = ws.WriteJSON(TermWsError{Message: err.Error()})
-			_ = ws.Close()
+		if !wsh.WaitFor(5*time.Second, 2*time.Minute, func() bool {
+			kubeconfigSecret := &corev1.Secret{}
+			if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
+				Namespace: metav1.NamespaceSystem,
+				Name:      handlercommon.KubeconfigSecretName(userEmailID),
+			}, kubeconfigSecret); err != nil {
+				log.Logger.Debug(err)
+				_ = ws.WriteJSON(wsh.TerminalMessage{
+					Op:   "msg",
+					Data: "kubeconfig secret does not exist",
+				})
+				return false
+			}
+			return true
+		}) {
 			return
 		}
 
