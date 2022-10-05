@@ -161,7 +161,7 @@ fi
 # there are no cloud providers in that preloaded image.
 # As a solution, we remove the preloaded image after starting the kind
 # cluster, which will force KKP to pull the correct image.
-docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi k8s.gcr.io/kube-controller-manager:{}" || true
+docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi registry.k8s.io/kube-controller-manager:{}" || true
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as
