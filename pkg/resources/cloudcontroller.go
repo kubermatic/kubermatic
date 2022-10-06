@@ -29,8 +29,8 @@ import (
 // want to verify against the spec'ed (desired) version or the current version
 // in the ClusterStatus.
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudSpec *kubermaticv1.CloudSpec, clusterVersion semver.Semver, incompatibilities ...*version.ProviderIncompatibility) bool {
-	switch {
-	case cloudSpec.Openstack != nil:
+	switch t := kubermaticv1.ProviderType(cloudSpec.ProviderName); t {
+	case kubermaticv1.OpenstackCloudProvider:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
 		// of LBs fail as documented in the issue below:
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
@@ -43,24 +43,19 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 		// introduced in Kubermatic.
 		return !isOTC(dc.Spec.Openstack)
 
-	case cloudSpec.Hetzner != nil:
+	case kubermaticv1.HetznerCloudProvider:
 		if cloudSpec.Hetzner.Network == "" && dc.Spec.Hetzner.Network == "" {
 			return false
 		}
 
 		fallthrough
 
-	case cloudSpec.Anexia != nil:
-		fallthrough
-
-	case cloudSpec.Azure != nil:
-		fallthrough
-
-	case cloudSpec.Kubevirt != nil:
-		fallthrough
-
-	case cloudSpec.VSphere != nil:
-		supported, err := version.IsSupported(clusterVersion.Semver(), kubermaticv1.ProviderType(cloudSpec.ProviderName), incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+	case kubermaticv1.AWSCloudProvider,
+		kubermaticv1.AnexiaCloudProvider,
+		kubermaticv1.AzureCloudProvider,
+		kubermaticv1.KubevirtCloudProvider,
+		kubermaticv1.VSphereCloudProvider:
+		supported, err := version.IsSupported(clusterVersion.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
@@ -81,8 +76,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		v = cluster.Spec.Version
 	}
 
-	switch {
-	case cluster.Spec.Cloud.Openstack != nil:
+	switch t := kubermaticv1.ProviderType(cluster.Spec.Cloud.ProviderName); t {
+	case kubermaticv1.OpenstackCloudProvider:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
 		// of LBs fail as documented in the issue below:
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
@@ -95,11 +90,10 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// introduced in Kubermatic.
 		return !isOTC(dc.Spec.Openstack)
 
-	case cluster.Spec.Cloud.VSphere != nil:
-		fallthrough
-
-	case cluster.Spec.Cloud.Azure != nil:
-		supported, err := version.IsSupported(v.Semver(), kubermaticv1.AzureCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+	case kubermaticv1.AWSCloudProvider,
+		kubermaticv1.VSphereCloudProvider,
+		kubermaticv1.AzureCloudProvider:
+		supported, err := version.IsSupported(v.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
@@ -113,10 +107,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 // ExternalCloudControllerClusterName checks if the ClusterFeatureCCMClusterName is supported
 // for the cloud provider.
 func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool {
-	switch {
-	case cloudSpec.Openstack != nil:
-		return true
-	case cloudSpec.Azure != nil:
+	switch kubermaticv1.ProviderType(cloudSpec.ProviderName) {
+	case kubermaticv1.OpenstackCloudProvider, kubermaticv1.AzureCloudProvider, kubermaticv1.AWSCloudProvider:
 		return true
 	default:
 		return false

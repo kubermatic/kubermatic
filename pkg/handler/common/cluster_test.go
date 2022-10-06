@@ -48,7 +48,8 @@ func TestExternalCCMMigration(t *testing.T) {
 			Cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+						Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
@@ -77,7 +78,8 @@ func TestExternalCCMMigration(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+						Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
@@ -105,7 +107,8 @@ func TestExternalCCMMigration(t *testing.T) {
 			Cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+						Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
@@ -125,7 +128,8 @@ func TestExternalCCMMigration(t *testing.T) {
 			Cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Fake: &kubermaticv1.FakeCloudSpec{},
+						ProviderName: string(kubermaticv1.FakeCloudProvider),
+						Fake:         &kubermaticv1.FakeCloudSpec{},
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
@@ -151,7 +155,8 @@ func TestExternalCCMMigration(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+						Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
@@ -185,7 +190,8 @@ func TestExternalCCMMigration(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+						Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,

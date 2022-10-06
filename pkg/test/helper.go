@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
 	"go.uber.org/zap"
@@ -99,6 +101,42 @@ func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []semver.Semv
 	}
 
 	return cfg.Spec.Versions.Versions
+}
+
+const (
+	versionLatest = "latest"
+	versionStable = "stable"
+)
+
+var releaseOnly = regexp.MustCompile(`^v?[0-9]+\.[0-9]+$`)
+
+// ParseVersionOrRelease returns the most recent supported patch release
+// for a given release branch (i.e. release="1.24" might return "1.24.7"). Passing nil for the
+// KubermaticConfiguration is fine and in this case the compiled-in defaults will be used.
+// If the release is empty, the default version is returned.
+func ParseVersionOrRelease(release string, cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+	switch {
+	case strings.ToLower(release) == versionLatest:
+		return LatestKubernetesVersion(cfg)
+
+	case strings.ToLower(release) == versionStable:
+		return LatestStableKubernetesVersion(cfg)
+
+	case release == "":
+		if cfg == nil {
+			return defaulting.DefaultKubernetesVersioning.Default
+		}
+
+		return cfg.Spec.Versions.Default
+
+	// was only "1.23" or "v1.25" specified?
+	case releaseOnly.MatchString(release):
+		return LatestKubernetesVersionForRelease(release, cfg)
+
+	default:
+	}
+
+	return semver.NewSemverOrDie(release)
 }
 
 // LatestKubernetesVersion returns the most recent supported patch release. Passing nil

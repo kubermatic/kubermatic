@@ -40,6 +40,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	var creatorGetter reconciling.NamedDeploymentCreatorGetter
 
 	switch {
+	case data.Cluster().Spec.Cloud.AWS != nil:
+		creatorGetter = awsDeploymentCreator(data)
+
 	case data.Cluster().Spec.Cloud.Azure != nil:
 		creatorGetter = azureDeploymentCreator(data)
 

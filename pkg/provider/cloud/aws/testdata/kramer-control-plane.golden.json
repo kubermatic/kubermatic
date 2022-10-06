@@ -1,8 +1,6 @@
 {
-  "Version": "2012-10-17",
   "Statement": [
     {
-      "Effect": "Allow",
       "Action": [
         "ec2:DescribeInstances",
         "ec2:DescribeRegions",
@@ -16,27 +14,27 @@
         "ec2:ModifyVolume",
         "ec2:DescribeVpcs"
       ],
+      "Effect": "Allow",
       "Resource": [
         "*"
       ]
     },
     {
-      "Effect": "Allow",
       "Action": [
         "ec2:CreateVolume",
         "ec2:CreateRoute"
       ],
-      "Resource": [
-        "*"
-      ],
       "Condition": {
         "Null": {
-          "ec2:RequestTag/kubernetes.io/cluster/cluster-ajcnaw": "false"
+          "ec2:RequestTag/kubernetes.io/cluster/kramer": "false"
         }
-      }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
     },
     {
-      "Effect": "Allow",
       "Action": [
         "ec2:CreateTags",
         "ec2:AttachVolume",
@@ -47,17 +45,17 @@
         "ec2:DetachVolume",
         "ec2:RevokeSecurityGroupIngress"
       ],
-      "Resource": [
-        "*"
-      ],
       "Condition": {
         "Null": {
-          "ec2:ResourceTag/kubernetes.io/cluster/cluster-ajcnaw": "false"
+          "ec2:ResourceTag/kubernetes.io/cluster/kramer": "false"
         }
-      }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
     },
     {
-      "Effect": "Allow",
       "Action": [
         "elasticloadbalancing:CreateLoadBalancer",
         "elasticloadbalancing:CreateLoadBalancerPolicy",
@@ -65,17 +63,17 @@
         "elasticloadbalancing:CreateListener",
         "elasticloadbalancing:CreateTargetGroup"
       ],
-      "Resource": [
-        "*"
-      ],
       "Condition": {
         "Null": {
-          "aws:RequestTag/kubernetes.io/cluster/cluster-ajcnaw": "false"
+          "aws:RequestTag/kubernetes.io/cluster/kramer": "false"
         }
-      }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
     },
     {
-      "Effect": "Allow",
       "Action": [
         "elasticloadbalancing:AddTags",
         "elasticloadbalancing:AttachLoadBalancerToSubnets",
@@ -103,14 +101,16 @@
         "elasticloadbalancing:RegisterTargets",
         "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
       ],
-      "Resource": [
-        "*"
-      ],
       "Condition": {
         "Null": {
-          "aws:ResourceTag/kubernetes.io/cluster/cluster-ajcnaw": "false"
+          "aws:ResourceTag/kubernetes.io/cluster/kramer": "false"
         }
-      }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
     }
-  ]
+  ],
+  "Version": "2012-10-17"
 }

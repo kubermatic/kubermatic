@@ -52,7 +52,7 @@ import (
 )
 
 const (
-	cloudProviderExternalFlag = "external"
+	CloudProviderExternalFlag = "external"
 )
 
 type CABundle interface {
@@ -540,7 +540,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			logger.Debugw("controller-manager command", "args", cmd.Args)
 
 			// If no --cloud-provider flag is provided in-tree cloud provider is disabled.
-			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == CloudProviderExternalFlag {
 				logger.Debug("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
@@ -596,27 +596,30 @@ func getContainer(d *appsv1.Deployment, containerName string) *corev1.Container 
 func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider bool) string {
 	switch {
 	case cluster.Spec.Cloud.AWS != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return CloudProviderExternalFlag
+		}
 		return "aws"
 	case cluster.Spec.Cloud.VSphere != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
 		if externalCloudProvider {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "azure"
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
 		if externalCloudProvider {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "openstack"
 	case cluster.Spec.Cloud.Hetzner != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return ""
 	default:
@@ -655,6 +658,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		}
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
+		}
+		if cluster.Spec.Cloud.AWS != nil {
+			featureFlags = append(featureFlags, "CSIMigrationAWS=true")
 		}
 		if cluster.Spec.Cloud.Azure != nil {
 			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")

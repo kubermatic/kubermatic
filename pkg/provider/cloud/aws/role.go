@@ -42,7 +42,12 @@ func workerRoleName(clusterName string) string {
 }
 
 func reconcileWorkerRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster) error {
-	policies := map[string]string{workerPolicyName: workerRolePolicy}
+	policy, err := getWorkerPolicy(cluster.Name)
+	if err != nil {
+		return fmt.Errorf("failed to build the worker policy: %w", err)
+	}
+
+	policies := map[string]string{workerPolicyName: policy}
 	roleName := workerRoleName(cluster.Name)
 
 	return ensureRole(ctx, client, cluster, roleName, policies)
