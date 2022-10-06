@@ -123,6 +123,35 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	}
 }
 
+func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AzureCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.AzureCloudProvider),
+			Azure: &kubermaticv1.AzureCloudSpec{
+				TenantID:       credentials.TenantID,
+				SubscriptionID: credentials.SubscriptionID,
+				ClientID:       credentials.ClientID,
+				ClientSecret:   credentials.ClientSecret,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithAzure("Standard_B1ms")
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
 func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials HetznerCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
@@ -141,6 +170,64 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
 		WithHetzner("cx21")
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
+func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials OpenstackCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Username:       credentials.Username,
+				Password:       credentials.Password,
+				Project:        credentials.Tenant,
+				Domain:         credentials.Domain,
+				Network:        credentials.Network,
+				FloatingIPPool: credentials.FloatingIPPool,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithOpenstack("m1.small")
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
+func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials VSphereCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.VSphereCloudProvider),
+			VSphere: &kubermaticv1.VSphereCloudSpec{
+				Username: credentials.Username,
+				Password: credentials.Password,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithVSphere(2, 4096, 10)
 
 	return &TestJig{
 		ProjectJig: projectJig,

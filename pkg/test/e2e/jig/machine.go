@@ -27,7 +27,10 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
+	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -146,9 +149,29 @@ func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *Mach
 	return j.WithProviderSpec(cfg)
 }
 
+func (j *MachineJig) WithAzure(vmSize string) *MachineJig {
+	return j.WithProviderSpec(azuretypes.RawConfig{
+		VMSize: providerconfig.ConfigVarString{Value: vmSize},
+	})
+}
+
 func (j *MachineJig) WithHetzner(instanceSize string) *MachineJig {
 	return j.WithProviderSpec(hetznertypes.RawConfig{
 		ServerType: providerconfig.ConfigVarString{Value: instanceSize},
+	})
+}
+
+func (j *MachineJig) WithOpenstack(flavor string) *MachineJig {
+	return j.WithProviderSpec(openstacktypes.RawConfig{
+		Flavor: providerconfig.ConfigVarString{Value: flavor},
+	})
+}
+
+func (j *MachineJig) WithVSphere(cpus int, memory int, diskSizeGB int) *MachineJig {
+	return j.WithProviderSpec(vspheretypes.RawConfig{
+		CPUs:       int32(cpus),
+		MemoryMB:   int64(memory),
+		DiskSizeGB: pointer.Int64(int64(diskSizeGB)),
 	})
 }
 

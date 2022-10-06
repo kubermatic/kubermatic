@@ -27,13 +27,13 @@ type CommonCredentials struct {
 	KKPDatacenter string
 }
 
-func env(key string) string {
+func env(key string) (string, error) {
 	value := os.Getenv(key)
 	if len(value) == 0 {
-		panic(fmt.Sprintf("No %s environment variable set.", key))
+		return "", fmt.Errorf("no %s environment variable defined", key)
 	}
 
-	return value
+	return value, nil
 }
 
 type AWSCredentials struct {
@@ -47,19 +47,17 @@ func (c *AWSCredentials) AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&c.KKPDatacenter, "aws-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for AWS clusters")
 }
 
-func (c *AWSCredentials) Parse() error {
+func (c *AWSCredentials) Parse() (err error) {
 	if c.KKPDatacenter == "" {
 		return errors.New("no -aws-kkp-datacenter flag given")
 	}
 
-	c.AccessKeyID = env("AWS_E2E_TESTS_KEY_ID")
-	if c.AccessKeyID == "" {
-		return errors.New("no AWS_E2E_TESTS_KEY_ID environment variable defined")
+	if c.AccessKeyID, err = env("AWS_E2E_TESTS_KEY_ID"); err != nil {
+		return err
 	}
 
-	c.SecretAccessKey = env("AWS_E2E_TESTS_SECRET")
-	if c.SecretAccessKey == "" {
-		return errors.New("no AWS_E2E_TESTS_SECRET environment variable defined")
+	if c.SecretAccessKey, err = env("AWS_E2E_TESTS_SECRET"); err != nil {
+		return err
 	}
 
 	return nil
@@ -75,17 +73,14 @@ func (c *HetznerCredentials) AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&c.KKPDatacenter, "hetzner-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Hetzner clusters")
 }
 
-func (c *HetznerCredentials) Parse() error {
+func (c *HetznerCredentials) Parse() (err error) {
 	if c.KKPDatacenter == "" {
 		return errors.New("no -hhetzner-kkp-datacenter flag given")
 	}
 
-	c.Token = os.Getenv("HCLOUD_TOKEN")
-	if len(c.Token) == 0 {
-		c.Token = os.Getenv("HZ_TOKEN")
-		if len(c.Token) == 0 {
-			c.Token = os.Getenv("HZ_E2E_TOKEN")
-			if len(c.Token) == 0 {
+	if c.Token, err = env("HCLOUD_TOKEN"); err != nil {
+		if c.Token, err = env("HZ_TOKEN"); err != nil {
+			if c.Token, err = env("HZ_E2E_TOKEN"); err != nil {
 				return errors.New("no HCLOUD_TOKEN, HZ_TOKEN or HZ_E2E_TOKEN environment variable defined")
 			}
 		}
@@ -107,29 +102,99 @@ func (c *AzureCredentials) AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&c.KKPDatacenter, "azure-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Azure clusters")
 }
 
-func (c *AzureCredentials) Parse() error {
+func (c *AzureCredentials) Parse() (err error) {
 	if c.KKPDatacenter == "" {
 		return errors.New("no -azure-kkp-datacenter flag given")
 	}
 
-	c.TenantID = env("AZURE_E2E_TESTS_TENANT_ID")
-	if c.TenantID == "" {
-		return errors.New("no AZURE_E2E_TESTS_TENANT_ID environment variable defined")
+	if c.TenantID, err = env("AZURE_E2E_TESTS_TENANT_ID"); err != nil {
+		return err
 	}
 
-	c.SubscriptionID = env("AZURE_E2E_TESTS_SUBSCRIPTION_ID")
-	if c.SubscriptionID == "" {
-		return errors.New("no AZURE_E2E_TESTS_SUBSCRIPTION_ID environment variable defined")
+	if c.SubscriptionID, err = env("AZURE_E2E_TESTS_SUBSCRIPTION_ID"); err != nil {
+		return err
 	}
 
-	c.ClientID = env("AZURE_E2E_TESTS_CLIENT_ID")
-	if c.ClientID == "" {
-		return errors.New("no AZURE_E2E_TESTS_CLIENT_ID environment variable defined")
+	if c.ClientID, err = env("AZURE_E2E_TESTS_CLIENT_ID"); err != nil {
+		return err
 	}
 
-	c.ClientSecret = env("AZURE_E2E_TESTS_CLIENT_SECRET")
-	if c.ClientSecret == "" {
-		return errors.New("no AZURE_E2E_TESTS_CLIENT_SECRET environment variable defined")
+	if c.ClientSecret, err = env("AZURE_E2E_TESTS_CLIENT_SECRET"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type OpenstackCredentials struct {
+	CommonCredentials
+
+	Username       string
+	Password       string
+	Tenant         string
+	Domain         string
+	FloatingIPPool string
+	Network        string
+}
+
+func (c *OpenstackCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "openstack-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Openstack clusters")
+}
+
+func (c *OpenstackCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -openstack-kkp-datacenter flag given")
+	}
+
+	if c.Username, err = env("OS_E2E_USERNAME"); err != nil {
+		return err
+	}
+
+	if c.Password, err = env("OS_E2E_PASSWORD"); err != nil {
+		return err
+	}
+
+	if c.Tenant, err = env("OS_E2E_TENANT"); err != nil {
+		return err
+	}
+
+	if c.Domain, err = env("OS_E2E_DOMAIN"); err != nil {
+		return err
+	}
+
+	if c.FloatingIPPool, err = env("OS_E2E_FLOATINGIPPOOL"); err != nil {
+		return err
+	}
+
+	if c.Network, err = env("OS_E2E_NETWORK"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type VSphereCredentials struct {
+	CommonCredentials
+
+	Username string
+	Password string
+}
+
+func (c *VSphereCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "vsphere-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for vSphere clusters")
+}
+
+func (c *VSphereCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -vsphere-kkp-datacenter flag given")
+	}
+
+	if c.Username, err = env("VSPHERE_E2E_USERNAME"); err != nil {
+		return err
+	}
+
+	if c.Password, err = env("VSPHERE_E2E_PASSWORD"); err != nil {
+		return err
 	}
 
 	return nil
