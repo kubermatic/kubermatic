@@ -234,7 +234,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	}
 
 	runtimeConfigMap := &corev1.ConfigMap{
-		Data: map[string]string{mla.RuntimeConfigFileName: ""},
+		Data: map[string]string{mla.RuntimeConfigFileName: "overrides:\n"},
 	}
 	runtimeConfigMap.Name = mla.RuntimeConfigMap
 	runtimeConfigMap.Namespace = CortexNamespace
