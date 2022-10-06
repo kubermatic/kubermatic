@@ -56,6 +56,8 @@ const (
 	UnsafeCNIUpgradeLabel = "unsafe-cni-upgrade"
 	// UnsafeCNIMigrationLabel allows unsafe CNI type migration.
 	UnsafeCNIMigrationLabel = "unsafe-cni-migration"
+	// UnsafeExposeStrategyMigrationLabel allows unsafe expose strategy migration.
+	UnsafeExposeStrategyMigrationLabel = "unsafe-expose-strategy-migration"
 
 	// MaxClusterNameLength is the maximum allowed length for cluster names.
 	// This is restricted by the many uses of cluster names, from embedding
@@ -232,11 +234,13 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	if oldCluster.Spec.ExposeStrategy != "" {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newCluster.Spec.ExposeStrategy,
-			oldCluster.Spec.ExposeStrategy,
-			specPath.Child("exposeStrategy"),
-		)...)
+		if _, ok := newCluster.Labels[UnsafeExposeStrategyMigrationLabel]; !ok { // allow expose strategy migration if labeled explicitly
+			allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+				newCluster.Spec.ExposeStrategy,
+				oldCluster.Spec.ExposeStrategy,
+				specPath.Child("exposeStrategy"),
+			)...)
+		}
 	}
 
 	if oldCluster.Spec.ComponentsOverride.Apiserver.NodePortRange != "" {
