@@ -189,7 +189,7 @@ func GenerateCluster(
 
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
-		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
+		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, projectID, credentialName, body.Cluster.Spec.Cloud, dc)
 		if err != nil {
 			return nil, utilerrors.NewBadRequest("invalid credentials: %v", err)
 		}

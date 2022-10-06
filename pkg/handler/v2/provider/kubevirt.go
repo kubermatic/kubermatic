@@ -28,6 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 // KubeVirtGenericReq represent a request with common parameters for KubeVirt.
@@ -59,7 +61,7 @@ func kubeconfigFromRequest(ctx context.Context, request interface{}, presetsProv
 		return "", common.KubernetesErrorToHTTPError(err)
 	}
 	if len(req.Credential) > 0 {
-		preset, err := presetsProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetsProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

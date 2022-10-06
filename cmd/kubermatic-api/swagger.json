@@ -18550,6 +18550,53 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/presets": {
+      "get": {
+        "description": "Lists presets in a specific project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "listProjectPresets",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "Disabled",
+            "name": "disabled",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PresetList",
+            "schema": {
+              "$ref": "#/definitions/PresetList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/providers/aks/clusters": {
       "get": {
         "description": "Lists AKS clusters",
@@ -18702,6 +18749,66 @@
             "schema": {
               "$ref": "#/definitions/GKEClusterList"
             }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/{provider_name}/presets": {
+      "get": {
+        "description": "Lists presets for the provider in a specific project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "listProjectProviderPresets",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "Disabled",
+            "name": "disabled",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Datacenter",
+            "name": "datacenter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PresetList",
+            "schema": {
+              "$ref": "#/definitions/PresetList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
           },
           "default": {
             "description": "errorResponse",
@@ -31692,6 +31799,14 @@
         },
         "packet": {
           "$ref": "#/definitions/Packet"
+        },
+        "projects": {
+          "description": "Projects is a list of project IDs that this preset is limited to.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Projects"
         },
         "requiredEmails": {
           "description": "RequiredEmails is a list of e-mail addresses that this presets should\nbe restricted to. Each item in the list can be either a full e-mail\naddress or just a domain name. This restriction is only enforced in the\nKKP API.",

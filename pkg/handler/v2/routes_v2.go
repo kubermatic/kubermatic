@@ -862,6 +862,14 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.deleteProviderPreset())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/presets").
+		Handler(r.listProjectPresets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/{provider_name}/presets").
+		Handler(r.listProjectProviderPresets())
+
+	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
 
@@ -4657,6 +4665,56 @@ func (r Routing) listProviderPresets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.ListProviderPresets(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeListProviderPresets,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/presets preset listProjectPresets
+//
+//	Lists presets in a specific project
+//
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: PresetList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectPresets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.ListProjectPresets(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeListProjectPresets,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/{provider_name}/presets preset listProjectProviderPresets
+//
+//	Lists presets for the provider in a specific project
+//
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: PresetList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectProviderPresets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.ListProjectProviderPresets(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeListProjectProviderPresets,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

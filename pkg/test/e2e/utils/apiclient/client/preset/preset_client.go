@@ -40,6 +40,10 @@ type ClientService interface {
 
 	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error)
 
+	ListProjectPresets(params *ListProjectPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectPresetsOK, error)
+
+	ListProjectProviderPresets(params *ListProjectProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectProviderPresetsOK, error)
+
 	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error)
 
 	UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error)
@@ -276,6 +280,82 @@ func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientA
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListPresetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectPresets Lists presets in a specific project
+*/
+func (a *Client) ListProjectPresets(params *ListProjectPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectPresetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectPresetsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectPresets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/presets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectPresetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectPresetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectPresetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectProviderPresets Lists presets for the provider in a specific project
+*/
+func (a *Client) ListProjectProviderPresets(params *ListProjectProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectProviderPresetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectProviderPresetsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectProviderPresets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/{provider_name}/presets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectProviderPresetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectProviderPresetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectProviderPresetsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

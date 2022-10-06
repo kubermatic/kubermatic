@@ -46,13 +46,37 @@ type listPresetsReq struct {
 	Disabled bool `json:"disabled,omitempty"`
 }
 
+// listProjectPresetsReq represents a request for a list of presets in a specific project
+// swagger:parameters listProjectPresets
+type listProjectPresetsReq struct {
+	common.ProjectReq
+	listPresetsReq
+}
+
 func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) {
 	return listPresetsReq{
 		Disabled: r.URL.Query().Get("disabled") == "true",
 	}, nil
 }
 
-// ListProviderPresets returns a list of preset names for the provider.
+func DecodeListProjectPresets(ctx context.Context, r *http.Request) (interface{}, error) {
+	listReq, err := DecodeListPresets(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return listProjectPresetsReq{
+		listPresetsReq: listReq.(listPresetsReq),
+		ProjectReq:     projectReq.(common.ProjectReq),
+	}, nil
+}
+
+// ListPresets returns a list of presets.
 func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listPresetsReq)
@@ -66,7 +90,45 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 		}
 
 		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
-		presets, err := presetProvider.GetPresets(ctx, userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo, nil)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		for _, preset := range presets {
+			// skip presets limited to projects unless an admin is requesting this information
+			if len(preset.Spec.Projects) > 0 && !userInfo.IsAdmin {
+				continue
+			}
+
+			enabled := preset.Spec.IsEnabled()
+
+			if !preset.Spec.IsEnabled() && !req.Disabled {
+				continue
+			}
+
+			presetList.Items = append(presetList.Items, newAPIPreset(&preset, enabled))
+		}
+
+		return presetList, nil
+	}
+}
+
+// ListProjectPresets returns a list of presets for a specific project.
+func ListProjectPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(listProjectPresetsReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
+		presets, err := presetProvider.GetPresets(ctx, userInfo, &req.ProjectID)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -147,7 +209,7 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 			return nil, utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -180,6 +242,13 @@ type listProviderPresetsReq struct {
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
+// listProjectProviderPresetsReq represents a request for a list of presets for a specific project
+// swagger:parameters listProjectProviderPresets
+type listProjectProviderPresetsReq struct {
+	common.ProjectReq
+	listProviderPresetsReq
+}
+
 func (l listProviderPresetsReq) matchesDatacenter(datacenter string) bool {
 	return len(datacenter) == 0 || len(l.Datacenter) == 0 || strings.EqualFold(l.Datacenter, datacenter)
 }
@@ -210,6 +279,23 @@ func DecodeListProviderPresets(ctx context.Context, r *http.Request) (interface{
 	}, nil
 }
 
+func DecodeListProjectProviderPresets(ctx context.Context, r *http.Request) (interface{}, error) {
+	listReq, err := DecodeListProviderPresets(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return listProjectProviderPresetsReq{
+		listProviderPresetsReq: listReq.(listProviderPresetsReq),
+		ProjectReq:             projectReq.(common.ProjectReq),
+	}, nil
+}
+
 // ListProviderPresets returns a list of preset names for the provider.
 func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -228,7 +314,62 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
-		presets, err := presetProvider.GetPresets(ctx, userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo, nil)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		for _, preset := range presets {
+			// skip presets limited to projects unless an admin is requesting this information
+			if len(preset.Spec.Projects) > 0 && !userInfo.IsAdmin {
+				continue
+			}
+
+			providerType := kubermaticv1.ProviderType(req.ProviderName)
+			providerPreset := kubermaticv1helper.GetProviderPreset(&preset, providerType)
+
+			// Preset does not contain requested provider configuration
+			if providerPreset == nil {
+				continue
+			}
+
+			// Preset does not contain requested datacenter
+			if !req.matchesDatacenter(providerPreset.Datacenter) {
+				continue
+			}
+
+			// Skip disabled presets when not requested
+			enabled := preset.Spec.IsEnabled() && providerPreset.IsEnabled()
+			if !req.Disabled && !enabled {
+				continue
+			}
+
+			presetList.Items = append(presetList.Items, newAPIPreset(&preset, enabled))
+		}
+
+		return presetList, nil
+	}
+}
+
+// ListProjectProviderPresets returns a list of presets for a specific provider in a specific project.
+func ListProjectProviderPresets(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(listProjectProviderPresetsReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+		err := req.Validate()
+		if err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
+		presets, err := presetProvider.GetPresets(ctx, userInfo, &req.ProjectID)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -340,7 +481,7 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.Body.Name)
 		if apierrors.IsNotFound(err) {
 			return presetProvider.CreatePreset(ctx, convertAPIToInternalPreset(req.Body))
 		}
@@ -409,7 +550,7 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -472,7 +613,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
@@ -545,7 +686,7 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 			return nil, utilerrors.New(http.StatusForbidden, "only admins can delete preset providers")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
@@ -625,7 +766,7 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if apierrors.IsNotFound(err) {
 			return nil, utilerrors.NewBadRequest("preset was not found.")
 		}
@@ -698,7 +839,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, nil, req.PresetName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil, utilerrors.NewBadRequest("preset was not found.")
