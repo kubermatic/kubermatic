@@ -231,7 +231,6 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 							return fmt.Errorf("failed to get images: %w", err)
 						}
 						imageSet.Insert(imagesWithKonnectivity...)
-
 					}
 				}
 			}
