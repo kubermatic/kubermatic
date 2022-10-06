@@ -53,6 +53,15 @@ const (
 	expirationTimestampKey = "ExpirationTimestamp"
 )
 
+type TerminalConnStatus string
+
+const (
+	KubeconfigSecretMissing TerminalConnStatus = "KUBECONFIG_SECRET_MISSING"
+	WebterminalPodPending   TerminalConnStatus = "WEBTERMINAL_POD_PENDING"
+	WebterminalPodFailed    TerminalConnStatus = "WEBTERMINAL_POD_FAILED"
+	ConnectionPoolExceeded  TerminalConnStatus = "CONNECTION_POOL_EXCEEDED"
+)
+
 // PtyHandler is what remote command expects from a pty.
 type PtyHandler interface {
 	io.Reader
@@ -192,14 +201,24 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		}, pod); err != nil {
 			return false
 		}
-		if err := websocketConn.WriteJSON(TerminalMessage{
-			Op:   "msg",
-			Data: string(pod.Status.Phase),
-		}); err != nil {
-			return false
-		}
 
-		return pod.Status.Phase == corev1.PodRunning
+		var status string
+
+		switch pod.Status.Phase {
+		case corev1.PodRunning:
+			return true
+		case corev1.PodPending:
+			status = string(WebterminalPodPending)
+		case corev1.PodFailed:
+			status = string(WebterminalPodFailed)
+		default:
+			status = fmt.Sprintf("pod in %s phase", pod.Status.Phase)
+		}
+		_ = websocketConn.WriteJSON(TerminalMessage{
+			Op:   "msg",
+			Data: status,
+		})
+		return false
 	}) {
 		return fmt.Errorf("the WEB terminal Pod is not ready")
 	}

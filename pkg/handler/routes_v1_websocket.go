@@ -271,7 +271,10 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			log.Logger.Debug(err)
 			return
 		}
-		defer ws.Close()
+		defer func(ws *websocket.Conn) {
+			_ = ws.WriteJSON(wsh.TerminalMessage{Op: "msg", Data: "connection closed"})
+			_ = ws.Close()
+		}(ws)
 
 		// Checking user active connections for project cluster
 		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
@@ -280,7 +283,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			log.Logger.Debug(err)
 			_ = ws.WriteJSON(wsh.TerminalMessage{
 				Op:   "msg",
-				Data: err.Error(),
+				Data: string(wsh.ConnectionPoolExceeded),
 			})
 			return
 		}
@@ -296,7 +299,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 				log.Logger.Debug(err)
 				_ = ws.WriteJSON(wsh.TerminalMessage{
 					Op:   "msg",
-					Data: "kubeconfig secret does not exist",
+					Data: string(wsh.KubeconfigSecretMissing),
 				})
 				return false
 			}
