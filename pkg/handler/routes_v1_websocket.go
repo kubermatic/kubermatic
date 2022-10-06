@@ -52,7 +52,6 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
 		origin := r.Header["Origin"]
 		if len(origin) == 0 {
 			return true
@@ -271,10 +270,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			log.Logger.Debug(err)
 			return
 		}
-		defer func(ws *websocket.Conn) {
-			_ = ws.WriteJSON(wsh.TerminalMessage{Op: "msg", Data: "connection closed"})
-			_ = ws.Close()
-		}(ws)
+		defer ws.Close()
 
 		// Checking user active connections for project cluster
 		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
