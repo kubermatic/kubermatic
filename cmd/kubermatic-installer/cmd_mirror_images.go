@@ -28,6 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -193,11 +194,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					)
 
 					versionLogger.Debug("Collecting images…")
-					images, err := images.GetImagesForVersion(
+					imagesWithoutKonnectivity, err := images.GetImagesForVersion(
 						versionLogger,
 						clusterVersion,
 						cloudSpec,
 						cniPlugin,
+						false,
 						kubermaticConfig,
 						options.AddonsPath,
 						versions,
@@ -206,7 +208,26 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					if err != nil {
 						return fmt.Errorf("failed to get images: %w", err)
 					}
-					imageSet.Insert(images...)
+					imageSet.Insert(imagesWithoutKonnectivity...)
+
+					if kubermaticConfig.Spec.FeatureGates[features.KonnectivityService] {
+						imagesWithKonnectivity, err := images.GetImagesForVersion(
+							versionLogger,
+							clusterVersion,
+							cloudSpec,
+							cniPlugin,
+							true,
+							kubermaticConfig,
+							options.AddonsPath,
+							versions,
+							caBundle,
+						)
+
+						if err != nil {
+							return fmt.Errorf("failed to get images: %w", err)
+						}
+						imageSet.Insert(imagesWithKonnectivity...)
+					}
 				}
 			}
 		}
