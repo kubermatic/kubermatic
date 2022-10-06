@@ -99,16 +99,6 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				return err == nil, nil
 			})).NotTo(gomega.HaveOccurred())
 			clusterJig.Log.Debug("MachineDeployment created")
-
-			clusterJig.Log.Debug("Waiting for node(s) to be ready...")
-			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
-				ready, err := clusterJig.WaitForNodeToBeReady(userClient)
-				if err != nil {
-					clusterJig.Log.Debug("Failed to check node readiness")
-				}
-				return ready, nil
-			})).NotTo(gomega.HaveOccurred())
-			clusterJig.Log.Debug("Node(s) are ready.")
 		})
 
 		ginkgo.AfterEach(func() {
