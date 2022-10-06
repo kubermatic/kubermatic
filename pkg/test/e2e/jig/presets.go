@@ -49,7 +49,7 @@ func (j *TestJig) Setup(ctx context.Context, waitMode MachineWaitMode) (*kuberma
 	}
 
 	if j.MachineJig != nil {
-		err = j.MachineJig.Create(ctx, waitMode)
+		err = j.MachineJig.Create(ctx, waitMode, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create worker nodes: %w", err)
 		}
@@ -96,18 +96,18 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 	return errors.New("no cluster created yet")
 }
 
-func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, accessKeyID, secretAccessKey string, replicas int, spotMaxPriceUSD *string) *TestJig {
+func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AWSCredentials, replicas int, spotMaxPriceUSD *string) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: DatacenterName(),
+			DatacenterName: credentials.KKPDatacenter,
 			ProviderName:   string(kubermaticv1.AWSCloudProvider),
 			AWS: &kubermaticv1.AWSCloudSpec{
-				SecretAccessKey: secretAccessKey,
-				AccessKeyID:     accessKeyID,
+				AccessKeyID:     credentials.AccessKeyID,
+				SecretAccessKey: credentials.SecretAccessKey,
 			},
 		})
 
@@ -123,16 +123,18 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, acce
 	}
 }
 
-func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, replicas int) *TestJig {
+func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials HetznerCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: DatacenterName(),
+			DatacenterName: credentials.KKPDatacenter,
 			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
-			Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+			Hetzner: &kubermaticv1.HetznerCloudSpec{
+				Token: credentials.Token,
+			},
 		})
 
 	machineJig := NewMachineJig(client, log, nil).
@@ -147,33 +149,14 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	}
 }
 
-func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *TestJig {
+func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials BYOCredentials) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: DatacenterName(),
-			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
-			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
-		})
-
-	return &TestJig{
-		ProjectJig: projectJig,
-		ClusterJig: clusterJig,
-	}
-}
-
-func NewBYOClusterWithFeatures(client ctrlruntimeclient.Client, log *zap.SugaredLogger, features map[string]bool) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
-	clusterJig := NewClusterJig(client, log).
-		WithHumanReadableName("e2e test cluster").
-		WithSSHKeyAgent(false).
-		WithFeatures(features).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: DatacenterName(),
+			DatacenterName: credentials.KKPDatacenter,
 			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
 		})

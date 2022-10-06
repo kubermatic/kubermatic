@@ -160,7 +160,7 @@ const (
 	WaitForReadyPods  MachineWaitMode = "pods"
 )
 
-func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error {
+func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datacenterName string) error {
 	j.log.Infow("Creating MachineDeployment...", "name", j.name, "replicas", j.replicas)
 
 	cluster, err := j.getCluster(ctx)
@@ -178,7 +178,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 		return fmt.Errorf("failed to determine operating system: %w", err)
 	}
 
-	_, datacenter, err := Seed(ctx, j.client)
+	_, datacenter, err := Seed(ctx, j.client, datacenterName)
 	if err != nil {
 		return fmt.Errorf("failed to determine target datacenter: %w", err)
 	}

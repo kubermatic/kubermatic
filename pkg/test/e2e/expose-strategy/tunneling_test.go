@@ -34,12 +34,15 @@ import (
 
 // Options holds the e2e test options.
 var (
+	credentials jig.BYOCredentials
+
 	logOptions  = log.NewDefaultOptions()
 	skipCleanup = false
 )
 
 func init() {
 	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -48,13 +51,17 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
+
 	seedClient, restConfig, seedConfig, err := e2eutils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
 	// create test environment
-	testJig := jig.NewBYOCluster(seedClient, logger)
+	testJig := jig.NewBYOCluster(seedClient, logger, credentials)
 	testJig.ClusterJig.
 		WithTestName("expose-strategy").
 		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).

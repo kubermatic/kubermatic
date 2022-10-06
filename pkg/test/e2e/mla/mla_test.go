@@ -68,12 +68,12 @@ alertmanager_config: |
 )
 
 var (
-	preset     = ""
-	logOptions = log.NewDefaultOptions()
+	credentials jig.HetznerCredentials
+	logOptions  = log.NewDefaultOptions()
 )
 
 func init() {
-	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -82,14 +82,18 @@ func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
+
 	seedClient, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
 	// create test environment
-	testJig := jig.NewHetznerCluster(seedClient, logger, 1)
-	testJig.ClusterJig.WithPreset(preset).WithTestName("mla")
+	testJig := jig.NewHetznerCluster(seedClient, logger, credentials, 1)
+	testJig.ClusterJig.WithTestName("mla")
 
 	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)
@@ -583,7 +587,7 @@ func getGrafanaClient(ctx context.Context, client ctrlruntimeclient.Client) (*gr
 }
 
 func toggleMLAInSeed(ctx context.Context, client ctrlruntimeclient.Client, enable bool) error {
-	seed, _, err := jig.Seed(ctx, client)
+	seed, _, err := jig.Seed(ctx, client, credentials.KKPDatacenter)
 	if err != nil {
 		return fmt.Errorf("failed to get seed: %w", err)
 	}

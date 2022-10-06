@@ -43,14 +43,14 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 
-export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
-export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
+export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
+export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
 
 echodate "Successfully got secrets for dev from Vault"
 
 echodate "Running Konnectivity tests..."
 
 go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity \
-  -datacenter aws-eu-central-1a
+  -aws-kkp-datacenter aws-eu-central-1a
 
 echodate "Konnectivity tests done."

@@ -41,6 +41,6 @@ source hack/ci/setup-kubermatic-backups-in-kind.sh
 
 echodate "Running etcd-launcher tests..."
 
-go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -datacenter byo-kubernetes
+go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -byo-kkp-datacenter byo-kubernetes
 
 echodate "Tests completed successfully!"

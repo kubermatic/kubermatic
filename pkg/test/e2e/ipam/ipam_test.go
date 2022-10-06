@@ -45,12 +45,12 @@ import (
 )
 
 var (
-	preset     = ""
-	logOptions = log.NewDefaultOptions()
+	credentials jig.HetznerCredentials
+	logOptions  = log.NewDefaultOptions()
 )
 
 func init() {
-	flag.StringVar(&preset, "preset", preset, "KKP preset Secret to use (must contain Hetzner token and be located in -namespace)")
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -58,6 +58,10 @@ func init() {
 func TestIPAM(t *testing.T) {
 	ctx := context.Background()
 	log := log.NewFromOptions(logOptions).Sugar()
+
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("failed to get credentials: %v", err)
+	}
 
 	seedClient, _, _, err := utils.GetClients()
 	if err != nil {
@@ -72,7 +76,7 @@ func TestIPAM(t *testing.T) {
 
 	log.Info("Creating first IPAM Pool (for metallb addon)...")
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "metallb", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-		jig.DatacenterName(): {
+		credentials.KKPDatacenter: {
 			Type:            "range",
 			PoolCIDR:        "192.168.1.0/28",
 			AllocationRange: 8,
@@ -85,7 +89,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 1 allocation on first cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
-		DC:        jig.DatacenterName(),
+		DC:        credentials.KKPDatacenter,
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
 	}); err != nil {
 		t.Fatal(err)
@@ -93,7 +97,7 @@ func TestIPAM(t *testing.T) {
 
 	log.Info("Creating second IPAM Pool...")
 	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-		jig.DatacenterName(): {
+		credentials.KKPDatacenter: {
 			Type:             "prefix",
 			PoolCIDR:         "192.169.1.0/27",
 			AllocationPrefix: 28,
@@ -106,7 +110,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 2 allocation on first cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   jig.DatacenterName(),
+		DC:   credentials.KKPDatacenter,
 		CIDR: "192.169.1.0/28",
 	}); err != nil {
 		t.Fatal(err)
@@ -121,7 +125,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 1 allocation on second cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
-		DC:        jig.DatacenterName(),
+		DC:        credentials.KKPDatacenter,
 		Addresses: []string{"192.168.1.8-192.168.1.15"},
 	}); err != nil {
 		t.Fatal(err)
@@ -130,7 +134,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 2 allocation on second cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   jig.DatacenterName(),
+		DC:   credentials.KKPDatacenter,
 		CIDR: "192.169.1.16/28",
 	}); err != nil {
 		t.Fatal(err)
@@ -149,12 +153,12 @@ func TestIPAM(t *testing.T) {
 
 	log.Info("Creating third IPAM Pool...")
 	ipamPool3Datacenters := map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-		jig.DatacenterName(): {
+		credentials.KKPDatacenter: {
 			Type:             "prefix",
 			PoolCIDR:         "193.169.1.0/28",
 			AllocationPrefix: 29,
 		},
-		jig.DatacenterName() + "-dummy": {
+		credentials.KKPDatacenter + "-dummy": {
 			Type:            "range",
 			PoolCIDR:        "194.170.1.0/28",
 			AllocationRange: 8,
@@ -168,7 +172,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 3 allocation on second cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   jig.DatacenterName(),
+		DC:   credentials.KKPDatacenter,
 		CIDR: "193.169.1.0/29",
 	}); err != nil {
 		t.Fatal(err)
@@ -183,14 +187,14 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 3 allocation on third cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   jig.DatacenterName(),
+		DC:   credentials.KKPDatacenter,
 		CIDR: "193.169.1.8/29",
 	}); err != nil {
 		t.Fatal(err)
 	}
 
 	log.Info("Removing cluster datacenter spec from IPAM pool 3...")
-	delete(ipamPool3Datacenters, jig.DatacenterName())
+	delete(ipamPool3Datacenters, credentials.KKPDatacenter)
 	err = updateIPAMPool(ctx, seedClient, ipamPool3.Name, ipamPool3Datacenters)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -206,7 +210,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 1 allocation on third cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
-		DC:        jig.DatacenterName(),
+		DC:        credentials.KKPDatacenter,
 		Addresses: []string{"192.168.1.0-192.168.1.7"},
 	}); err != nil {
 		t.Fatal(err)
@@ -215,7 +219,7 @@ func TestIPAM(t *testing.T) {
 	log.Info("Checking IPAM Pool 2 allocation on third cluster...")
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
-		DC:   jig.DatacenterName(),
+		DC:   credentials.KKPDatacenter,
 		CIDR: "192.169.1.0/28",
 	}); err != nil {
 		t.Fatal(err)
@@ -255,11 +259,10 @@ func createUserCluster(
 	seedClient ctrlruntimeclient.Client,
 	name string,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
-	testJig := jig.NewHetznerCluster(seedClient, log, 1)
+	testJig := jig.NewHetznerCluster(seedClient, log, credentials, 1)
 	testJig.ProjectJig.WithHumanReadableName("IPAM test")
 	testJig.ClusterJig.
 		WithTestName(name).
-		WithPreset(preset).
 		WithAddons(jig.Addon{
 			Name: "metallb",
 			Labels: map[string]string{
