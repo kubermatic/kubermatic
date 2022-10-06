@@ -86,6 +86,7 @@ type WebsocketTerminalWriter func(ctx context.Context, ws *websocket.Conn, clien
 const (
 	maxNumberOfTerminalActiveConnectionsPerUser = 5
 	terminalActiveConnectionsMemoryDuration     = 24 * time.Hour
+	waitForKubeconfigSecretTimeout              = 5 * time.Minute
 )
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
@@ -286,7 +287,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
 		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
 
-		if !wsh.WaitFor(5*time.Second, 2*time.Minute, func() bool {
+		if !wsh.WaitFor(5*time.Second, waitForKubeconfigSecretTimeout, func() bool {
 			kubeconfigSecret := &corev1.Secret{}
 			if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 				Namespace: metav1.NamespaceSystem,
