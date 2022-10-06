@@ -156,17 +156,20 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, datacenterName s
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+	filter := *settings.Spec.MachineDeploymentVMResourceQuota
+	if datacenterName != "" {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+		filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
 	}
 
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %w", err)
-	}
-
-	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
 	return filterVMIPresets(res, filter), nil
 }
 
@@ -459,17 +462,20 @@ func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, datacenterNam
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+	filter := *settings.Spec.MachineDeploymentVMResourceQuota
+	if datacenterName != "" {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+		filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
 	}
 
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %w", err)
-	}
-
-	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
 	return filterInstancetypes(res, filter), nil
 }
 

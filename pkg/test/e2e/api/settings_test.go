@@ -58,13 +58,6 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 				UserProjectsLimit:           0,
 				RestrictProjectCreation:     false,
 				EnableExternalClusterImport: false,
-				MachineDeploymentVMResourceQuota: &kubermaticv1.MachineFlavorFilter{
-					MinCPU:    0,
-					MaxCPU:    0,
-					MinRAM:    0,
-					MaxRAM:    0,
-					EnableGPU: false,
-				},
 			},
 		},
 	}

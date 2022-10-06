@@ -153,13 +153,16 @@ func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userIn
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		filter := *settings.Spec.MachineDeploymentVMResourceQuota
 		datacenterName := req.DatacenterName
-		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %w", err)
-		}
+		if datacenterName != "" {
+			_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+			if err != nil {
+				return nil, fmt.Errorf("error getting dc: %w", err)
+			}
 
-		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+			filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		}
 		return providercommon.ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, req.Region, filter)
 	}
 }

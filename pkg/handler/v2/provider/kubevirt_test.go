@@ -44,6 +44,10 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	kubevirtDatacenterName = "KubevirtDC"
+)
+
 func init() {
 	utilruntime.Must(kvapiv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(kvinstancetypev1alpha1.AddToScheme(scheme.Scheme))
@@ -190,7 +194,7 @@ func TestListPresetEndpoint(t *testing.T) {
 	}{
 		// KUBEVIRT PRESET LIST
 		{
-			Name:               "scenario 1: preset list- kubevirt kubeconfig provided",
+			Name:               "scenario 1: preset list - kubevirt kubeconfig provided",
 			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
 			HTTPRequestHeaders: []KeyValue{{Key: "Kubeconfig", Value: fakeKvConfig}},
@@ -204,7 +208,7 @@ func TestListPresetEndpoint(t *testing.T) {
 			ExpectedResponse:        presetListResponse,
 		},
 		{
-			Name:               "scenario 2: preset list- kubevirt kubeconfig from kubermatic preset",
+			Name:               "scenario 2: preset list - kubevirt kubeconfig from kubermatic preset",
 			HTTPRequestMethod:  http.MethodGet,
 			HTTPRequestURL:     "/api/v2/providers/kubevirt/vmflavors",
 			HTTPRequestHeaders: []KeyValue{{Key: "Credential", Value: "kubermatic-preset"}},
@@ -273,7 +277,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							Kubeconfig: fakeKvConfig,
 						},
@@ -296,7 +300,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							CredentialsReference: &types.GlobalSecretKeySelector{
 								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},
@@ -485,7 +489,7 @@ func TestListInstancetypeNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							Kubeconfig: fakeKvConfig,
 						},
@@ -508,7 +512,7 @@ func TestListInstancetypeNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							CredentialsReference: &types.GlobalSecretKeySelector{
 								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},
@@ -676,7 +680,7 @@ func TestListPreferenceNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							Kubeconfig: fakeKvConfig,
 						},
@@ -699,7 +703,7 @@ func TestListPreferenceNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							CredentialsReference: &types.GlobalSecretKeySelector{
 								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},
@@ -860,7 +864,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							Kubeconfig: fakeKvConfig,
 						},
@@ -884,7 +888,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster(clusterId, clusterName, test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-						DatacenterName: "KubevirtDC",
+						DatacenterName: kubevirtDatacenterName,
 						Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 							CredentialsReference: &types.GlobalSecretKeySelector{
 								ObjectReference: corev1.ObjectReference{Name: credentialref, Namespace: credentialns},

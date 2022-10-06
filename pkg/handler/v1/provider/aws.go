@@ -198,18 +198,20 @@ func AWSSizeEndpoint(settingsProvider provider.SettingsProvider, seedsGetter pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
+		filter := *settings.Spec.MachineDeploymentVMResourceQuota
 		datacenterName := req.DatacenterName
-		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %w", err)
-		}
+		if datacenterName != "" {
+			userInfo, err := userInfoGetter(ctx, "")
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 
-		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+			_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+			if err != nil {
+				return nil, fmt.Errorf("error getting dc: %w", err)
+			}
+			filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		}
 		return providercommon.AWSSizes(req.Region, req.Architecture, filter)
 	}
 }
