@@ -166,7 +166,7 @@ func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRew
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Kubermatic))),
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Envoy))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of
