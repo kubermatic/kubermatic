@@ -70,6 +70,9 @@ type ListAlibabaInstanceTypesParams struct {
 	// Credential.
 	Credential *string
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// Region.
 	Region *string
 
@@ -159,6 +162,17 @@ func (o *ListAlibabaInstanceTypesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
+// WithDatacenterName adds the datacenterName to the list alibaba instance types params
+func (o *ListAlibabaInstanceTypesParams) WithDatacenterName(datacenterName *string) *ListAlibabaInstanceTypesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list alibaba instance types params
+func (o *ListAlibabaInstanceTypesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithRegion adds the region to the list alibaba instance types params
 func (o *ListAlibabaInstanceTypesParams) WithRegion(region *string) *ListAlibabaInstanceTypesParams {
 	o.SetRegion(region)
@@ -198,6 +212,14 @@ func (o *ListAlibabaInstanceTypesParams) WriteToRequest(r runtime.ClientRequest,
 
 		// header param Credential
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
 	}

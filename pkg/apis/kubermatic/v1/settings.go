@@ -67,7 +67,8 @@ type SettingSpec struct {
 	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix"`
 	MlaGrafanaPrefix      string `json:"mlaGrafanaPrefix"`
 
-	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
+	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
@@ -88,19 +89,6 @@ type CleanupOptions struct {
 	// If enforced is set to true, the cleanup of LoadBalancers and PVCs is
 	// enforced.
 	Enforced bool `json:"enforced,omitempty"`
-}
-
-type MachineDeploymentVMResourceQuota struct {
-	// Minimal number of vCPU
-	MinCPU int `json:"minCPU"`
-	// Maximal number of vCPU
-	MaxCPU int `json:"maxCPU"`
-	// Minimal RAM size in GB
-	MinRAM int `json:"minRAM"`
-	// Maximum RAM size in GB
-	MaxRAM int `json:"maxRAM"`
-
-	EnableGPU bool `json:"enableGPU"` //nolint:tagliatelle
 }
 
 type OpaOptions struct {

@@ -29,6 +29,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -38,7 +39,7 @@ import (
 var reStandardSize = regexp.MustCompile("(^cx|^cpx)")
 var reDedicatedSize = regexp.MustCompile("(^ccx)")
 
-func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
+func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -66,10 +67,24 @@ func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return HetznerSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, hetznerToken)
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	if datacenter.Spec.Hetzner == nil {
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
+	}
+
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return HetznerSize(ctx, filter, hetznerToken)
 }
 
-func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.HetznerSizeList, error) {
+func HetznerSize(ctx context.Context, machineFilter kubermaticv1.MachineFlavorFilter, token string) (apiv1.HetznerSizeList, error) {
 	client := hcloud.NewClient(hcloud.WithToken(token))
 
 	listOptions := hcloud.ServerTypeListOpts{
@@ -103,10 +118,10 @@ func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMReso
 		}
 	}
 
-	return filterHetznerByQuota(sizeList, quota), nil
+	return filterHetznerByQuota(sizeList, machineFilter), nil
 }
 
-func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.HetznerSizeList {
+func filterHetznerByQuota(instances apiv1.HetznerSizeList, machineFilter kubermaticv1.MachineFlavorFilter) apiv1.HetznerSizeList {
 	filteredRecords := apiv1.HetznerSizeList{
 		Standard:  []apiv1.HetznerSize{},
 		Dedicated: []apiv1.HetznerSize{},
@@ -117,10 +132,10 @@ func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.Ma
 	for _, r := range instances.Standard {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.Cores, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.Cores, machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(int(r.Memory), machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 
@@ -131,10 +146,10 @@ func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.Ma
 	for _, r := range instances.Dedicated {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.Cores, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.Cores, machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(int(r.Memory), machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 

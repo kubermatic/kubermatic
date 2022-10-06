@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -53,6 +54,18 @@ type AlibabaReq struct {
 	Region string
 }
 
+// AlibabaInstanceTypesReq represent a request for Alibaba instance types.
+// swagger:parameters listAlibabaInstanceTypes
+type AlibabaInstanceTypesReq struct {
+	AlibabaCommonReq
+	// in: header
+	// name: Region
+	Region string
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
+}
+
 // AlibabaNoCredentialReq represent a request for Alibaba instance types.
 // swagger:parameters listAlibabaInstanceTypesNoCredentials listAlibabaZonesNoCredentials
 type AlibabaNoCredentialReq struct {
@@ -72,6 +85,20 @@ func DecodeAlibabaReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	req.AlibabaCommonReq = commonReq.(AlibabaCommonReq)
 
+	req.Region = r.Header.Get("Region")
+	return req, nil
+}
+
+func DecodeAlibabaInstanceTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AlibabaInstanceTypesReq
+
+	commonReq, err := DecodeAlibabaCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AlibabaCommonReq = commonReq.(AlibabaCommonReq)
+	req.DatacenterName = r.Header.Get("DatacenterName")
 	req.Region = r.Header.Get("Region")
 	return req, nil
 }
@@ -99,9 +126,9 @@ func DecodeAlibabaNoCredentialReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AlibabaReq)
+		req := request.(AlibabaInstanceTypesReq)
 
 		accessKeyID := req.AccessKeyID
 		accessKeySecret := req.AccessKeySecret
@@ -126,7 +153,14 @@ func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userIn
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return providercommon.ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, req.Region, settings.Spec.MachineDeploymentVMResourceQuota)
+		datacenterName := req.DatacenterName
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+
+		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		return providercommon.ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, req.Region, filter)
 	}
 }
 

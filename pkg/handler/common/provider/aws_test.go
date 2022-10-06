@@ -29,7 +29,7 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 		name                 string
 		region               string
 		architecture         string
-		resourceQuota        kubermaticv1.MachineDeploymentVMResourceQuota
+		resourceQuota        kubermaticv1.MachineFlavorFilter
 		unexpectedNamePrefix []string
 	}{
 		{
@@ -101,8 +101,8 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 	}
 }
 
-func genDefaultMachineDeploymentVMResourceQuota() kubermaticv1.MachineDeploymentVMResourceQuota {
-	return kubermaticv1.MachineDeploymentVMResourceQuota{
+func genDefaultMachineDeploymentVMResourceQuota() kubermaticv1.MachineFlavorFilter {
+	return kubermaticv1.MachineFlavorFilter{
 		MinCPU:    0,
 		MaxCPU:    20,
 		MinRAM:    0,

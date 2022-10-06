@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -93,7 +94,9 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return providercommon.GetOpenstackSizes(cred, datacenter, settings.Spec.MachineDeploymentVMResourceQuota, caBundle)
+
+		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		return providercommon.GetOpenstackSizes(cred, datacenter, filter, caBundle)
 	}
 }
 

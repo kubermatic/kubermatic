@@ -61,6 +61,9 @@ ListKubeVirtInstancetypesNoCredentialsParams contains all the parameters to send
 */
 type ListKubeVirtInstancetypesNoCredentialsParams struct {
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// ClusterID.
 	ClusterID string
 
@@ -120,6 +123,17 @@ func (o *ListKubeVirtInstancetypesNoCredentialsParams) SetHTTPClient(client *htt
 	o.HTTPClient = client
 }
 
+// WithDatacenterName adds the datacenterName to the list kube virt instancetypes no credentials params
+func (o *ListKubeVirtInstancetypesNoCredentialsParams) WithDatacenterName(datacenterName *string) *ListKubeVirtInstancetypesNoCredentialsParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list kube virt instancetypes no credentials params
+func (o *ListKubeVirtInstancetypesNoCredentialsParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithClusterID adds the clusterID to the list kube virt instancetypes no credentials params
 func (o *ListKubeVirtInstancetypesNoCredentialsParams) WithClusterID(clusterID string) *ListKubeVirtInstancetypesNoCredentialsParams {
 	o.SetClusterID(clusterID)
@@ -149,6 +163,14 @@ func (o *ListKubeVirtInstancetypesNoCredentialsParams) WriteToRequest(r runtime.
 		return err
 	}
 	var res []error
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {

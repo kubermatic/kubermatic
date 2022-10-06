@@ -58,7 +58,7 @@ type SettingSpec struct {
 	CustomLinks CustomLinks `json:"customLinks,omitempty"`
 
 	// machine deployment VM resource quota
-	MachineDeploymentVMResourceQuota *MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota,omitempty"`
+	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
 
 	// mla options
 	MlaOptions *MlaOptions `json:"mlaOptions,omitempty"`

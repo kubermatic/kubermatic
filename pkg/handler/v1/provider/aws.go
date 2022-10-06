@@ -95,12 +95,17 @@ type AWSSizeReq struct {
 	// architecture query parameter. Supports: arm64 and x64 types.
 	// in: query
 	Architecture string `json:"architecture,omitempty"`
+
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
 }
 
 // DecodeAWSSizesReq decodes the base type for a AWS special endpoint request.
 func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSizeReq
 	req.Region = r.Header.Get("Region")
+	req.DatacenterName = r.Header.Get("DatacenterName")
 
 	req.Architecture = r.URL.Query().Get("architecture")
 	if len(req.Architecture) > 0 {
@@ -185,14 +190,27 @@ func DecodeAWSSecurityGroupsReq(c context.Context, r *http.Request) (interface{}
 }
 
 // AWSSizeEndpoint handles the request to list available AWS sizes.
-func AWSSizeEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func AWSSizeEndpoint(settingsProvider provider.SettingsProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSizeReq)
 		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return providercommon.AWSSizes(req.Region, req.Architecture, settings.Spec.MachineDeploymentVMResourceQuota)
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		datacenterName := req.DatacenterName
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+
+		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		return providercommon.AWSSizes(req.Region, req.Architecture, filter)
 	}
 }
 

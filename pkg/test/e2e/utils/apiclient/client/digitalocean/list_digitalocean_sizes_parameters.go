@@ -64,6 +64,9 @@ type ListDigitaloceanSizesParams struct {
 	// Credential.
 	Credential *string
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// DoToken.
 	DoToken *string
 
@@ -131,6 +134,17 @@ func (o *ListDigitaloceanSizesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
+// WithDatacenterName adds the datacenterName to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) WithDatacenterName(datacenterName *string) *ListDigitaloceanSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithDoToken adds the doToken to the list digitalocean sizes params
 func (o *ListDigitaloceanSizesParams) WithDoToken(doToken *string) *ListDigitaloceanSizesParams {
 	o.SetDoToken(doToken)
@@ -154,6 +168,14 @@ func (o *ListDigitaloceanSizesParams) WriteToRequest(r runtime.ClientRequest, re
 
 		// header param Credential
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
 	}

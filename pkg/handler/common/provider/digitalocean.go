@@ -30,6 +30,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	doprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -71,7 +72,7 @@ func DescribeDigitaloceanSize(ctx context.Context, token, sizeName string) (godo
 	return godoSize, fmt.Errorf("digital ocean size:%s not found", sizeName)
 }
 
-func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
+func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -98,10 +99,24 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return DigitaloceanSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, accessToken)
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	if datacenter.Spec.Digitalocean == nil {
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
+	}
+
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return DigitaloceanSize(ctx, filter, accessToken)
 }
 
-func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
+func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineFlavorFilter, token string) (apiv1.DigitaloceanSizeList, error) {
 	sizes, err := ListDigitaloceanSizes(ctx, token)
 	if err != nil {
 		return apiv1.DigitaloceanSizeList{}, err
@@ -146,7 +161,7 @@ func getDigitalOceanClient(ctx context.Context, token string) (*godo.Client, err
 	return client, nil
 }
 
-func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.DigitaloceanSizeList {
+func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, machineFilter kubermaticv1.MachineFlavorFilter) apiv1.DigitaloceanSizeList {
 	filteredRecords := apiv1.DigitaloceanSizeList{
 		Standard:  []apiv1.DigitaloceanSize{},
 		Optimized: []apiv1.DigitaloceanSize{},
@@ -155,10 +170,10 @@ func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kuber
 	for _, r := range instances.Optimized {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.VCPUs, machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(r.Memory/1024, machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 
@@ -169,10 +184,10 @@ func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kuber
 	for _, r := range instances.Standard {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.VCPUs, machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(r.Memory/1024, machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 

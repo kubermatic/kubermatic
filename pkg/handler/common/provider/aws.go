@@ -124,7 +124,8 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
+	filter := handlercommon.DetermineMachineFlavorFilter(dc.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return AWSSizes(dc.Spec.AWS.Region, architecture, filter)
 }
 
 func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
@@ -228,7 +229,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	return subnets, nil
 }
 
-func AWSSizes(region, architecture string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AWSSizeList, error) {
+func AWSSizes(region, architecture string, machineFilter kubermaticv1.MachineFlavorFilter) (apiv1.AWSSizeList, error) {
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
@@ -265,7 +266,7 @@ func AWSSizes(region, architecture string, quota kubermaticv1.MachineDeploymentV
 		})
 	}
 
-	return filterAWSByQuota(sizes, quota), nil
+	return filterMachineFlavorsForAWS(sizes, machineFilter), nil
 }
 
 func isARM64Architecture(physicalProcessor string) bool {
@@ -284,7 +285,7 @@ func isValidArchitecture(architecture, processorType string) bool {
 	return true
 }
 
-func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AWSSizeList {
+func filterMachineFlavorsForAWS(instances apiv1.AWSSizeList, filter kubermaticv1.MachineFlavorFilter) apiv1.AWSSizeList {
 	filteredRecords := apiv1.AWSSizeList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -293,18 +294,18 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 		keep := true
 
 		// Filter too expensive instance types (>1$ per hour) if GPU not enabled
-		if !quota.EnableGPU && r.Price > 1 {
+		if !filter.EnableGPU && r.Price > 1 {
 			continue
 		}
 
-		if !handlercommon.FilterGPU(r.GPUs, quota.EnableGPU) {
+		if !handlercommon.FilterGPU(r.GPUs, filter.EnableGPU) {
 			keep = false
 		}
 
-		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.VCPUs, filter.MinCPU, filter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(int(r.Memory), filter.MinRAM, filter.MaxRAM) {
 			keep = false
 		}
 

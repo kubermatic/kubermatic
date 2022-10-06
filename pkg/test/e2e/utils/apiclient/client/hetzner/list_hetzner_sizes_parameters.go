@@ -64,6 +64,9 @@ type ListHetznerSizesParams struct {
 	// Credential.
 	Credential *string
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// HetznerToken.
 	HetznerToken *string
 
@@ -131,6 +134,17 @@ func (o *ListHetznerSizesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
+// WithDatacenterName adds the datacenterName to the list hetzner sizes params
+func (o *ListHetznerSizesParams) WithDatacenterName(datacenterName *string) *ListHetznerSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list hetzner sizes params
+func (o *ListHetznerSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithHetznerToken adds the hetznerToken to the list hetzner sizes params
 func (o *ListHetznerSizesParams) WithHetznerToken(hetznerToken *string) *ListHetznerSizesParams {
 	o.SetHetznerToken(hetznerToken)
@@ -154,6 +168,14 @@ func (o *ListHetznerSizesParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 		// header param Credential
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
 	}

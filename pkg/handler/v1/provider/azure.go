@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -38,7 +39,7 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 	}
 }
 
-func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -68,7 +69,15 @@ func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return providercommon.AzureSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, req.Location)
+
+		datacenterName := req.DatacenterName
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+
+		filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		return providercommon.AzureSize(ctx, filter, subscriptionID, clientID, clientSecret, tenantID, req.Location)
 	}
 }
 
@@ -165,6 +174,9 @@ type AzureSizeReq struct {
 	// in: header
 	// Credential predefined Kubermatic credential name from the presets
 	Credential string
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
 }
 
 func DecodeAzureSizesReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -176,6 +188,8 @@ func DecodeAzureSizesReq(_ context.Context, r *http.Request) (interface{}, error
 	req.ClientSecret = r.Header.Get("ClientSecret")
 	req.Location = r.Header.Get("Location")
 	req.Credential = r.Header.Get("Credential")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
 	return req, nil
 }
 
