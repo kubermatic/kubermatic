@@ -146,6 +146,10 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
+		if config == nil {
+			return errors.New("please specify your KubermaticConfiguration via --config")
+		}
+
 		kubermaticConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
