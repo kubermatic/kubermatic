@@ -121,10 +121,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 }
 
 func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
-	image, err := imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic))
-	if err != nil {
-		return nil, err
-	}
+	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic)))
 
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
@@ -166,15 +163,10 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter re
 }
 
 func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
-	image, err := imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Kubermatic))
-	if err != nil {
-		return nil, err
-	}
-
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           image,
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Kubermatic))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of

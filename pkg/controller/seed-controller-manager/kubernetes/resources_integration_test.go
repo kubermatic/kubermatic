@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -257,6 +258,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
+		versions:                kubermatic.NewFakeVersions(),
 	}
 
 	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {

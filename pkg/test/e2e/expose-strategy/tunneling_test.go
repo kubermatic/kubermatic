@@ -73,7 +73,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		Log:       logger,
 		Client:    seedClient,
 		Namespace: cluster.Status.NamespaceName,
-		Versions:  kubermatic.NewDefaultVersions(),
+		Versions:  kubermatic.NewFakeVersions(),
 	}
 	if err := agentConfig.DeployAgentPod(ctx); err != nil {
 		t.Fatalf("Failed to deploy agent: %v", err)
