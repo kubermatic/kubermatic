@@ -76,7 +76,8 @@ func convertInternalToAPIApplicationInstallation(in *appskubermaticv1.Applicatio
 
 func convertInternalToAPIApplicationInstallationForList(in *appskubermaticv1.ApplicationInstallation) *apiv2.ApplicationInstallationListItem {
 	out := &apiv2.ApplicationInstallationListItem{
-		Name: in.Name,
+		Name:              in.Name,
+		CreationTimestamp: apiv1.Time(in.CreationTimestamp),
 		Spec: &apiv2.ApplicationInstallationListItemSpec{
 			Namespace: apiv2.NamespaceSpec{
 				Name:        in.Spec.Namespace.Name,
