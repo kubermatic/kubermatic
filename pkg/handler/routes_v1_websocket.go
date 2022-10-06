@@ -18,7 +18,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -276,12 +275,8 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		// Checking user active connections for project cluster
 		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
 		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
-			err = errors.New("reached the maximum number of terminal active connections for the user")
-			log.Logger.Debug(err)
-			_ = ws.WriteJSON(wsh.TerminalMessage{
-				Op:   "msg",
-				Data: string(wsh.ConnectionPoolExceeded),
-			})
+			log.Logger.Debug("reached the maximum number of terminal active connections for the user")
+			wsh.SendMessage(ws, string(wsh.ConnectionPoolExceeded))
 			return
 		}
 		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
@@ -292,15 +287,13 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 				Namespace: metav1.NamespaceSystem,
 				Name:      handlercommon.KubeconfigSecretName(userEmailID),
-			}, kubeconfigSecret); err != nil {
-				log.Logger.Debug(err)
-				_ = ws.WriteJSON(wsh.TerminalMessage{
-					Op:   "msg",
-					Data: string(wsh.KubeconfigSecretMissing),
-				})
-				return false
+			}, kubeconfigSecret); err == nil {
+				// secret exists
+				return true
 			}
-			return true
+			log.Logger.Debug(err)
+			wsh.SendMessage(ws, string(wsh.KubeconfigSecretMissing))
+			return false
 		}) {
 			return
 		}

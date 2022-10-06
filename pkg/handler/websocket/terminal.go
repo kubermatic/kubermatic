@@ -214,10 +214,7 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		default:
 			status = fmt.Sprintf("pod in %s phase", pod.Status.Phase)
 		}
-		_ = websocketConn.WriteJSON(TerminalMessage{
-			Op:   "msg",
-			Data: status,
-		})
+		SendMessage(websocketConn, status)
 		return false
 	}) {
 		return fmt.Errorf("the WEB terminal Pod is not ready")
@@ -382,4 +379,13 @@ func WaitFor(interval time.Duration, timeout time.Duration, callback func() bool
 		return callback(), nil
 	})
 	return err == nil
+}
+
+// SendMessage sends TerminalMessage to the client. It usually contains a context related
+// to the status of background tasks responsible for setting up the terminal.
+func SendMessage(wsConn *websocket.Conn, message string) {
+	_ = wsConn.WriteJSON(TerminalMessage{
+		Op:   "msg",
+		Data: message,
+	})
 }
