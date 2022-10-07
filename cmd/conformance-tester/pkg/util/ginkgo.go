@@ -179,11 +179,11 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 		AppendReport(resultSuite, suite)
 	}
 
-	for _, f := range individualReportFiles {
-		if err := os.Remove(f); err != nil {
-			return nil, fmt.Errorf("failed to remove report file: %w", err)
-		}
-	}
+	// for _, f := range individualReportFiles {
+	// 	if err := os.Remove(f); err != nil {
+	// 		return nil, fmt.Errorf("failed to remove report file: %w", err)
+	// 	}
+	// }
 
 	return resultSuite, nil
 }
