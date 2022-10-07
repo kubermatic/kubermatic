@@ -1084,7 +1084,7 @@ type GKECommonReq struct {
 }
 
 // GKEClusterListReq represent a request for GKE cluster list.
-// swagger:parameters listGKEClusters validateProjectGKECredentials
+// swagger:parameters listGKEClusters validateProjectGKECredentials listProjectGKEZones
 type GKEProjectCommonReq struct {
 	common.ProjectReq
 	GKECommonReq

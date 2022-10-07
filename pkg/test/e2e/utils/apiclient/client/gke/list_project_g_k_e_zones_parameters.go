@@ -60,6 +60,22 @@ ListProjectGKEZonesParams contains all the parameters to send to the API endpoin
 	Typically these are written to a http.Request.
 */
 type ListProjectGKEZonesParams struct {
+
+	/* Credential.
+
+	   The credential name used in the preset for the GCP provider
+	*/
+	Credential *string
+
+	/* ServiceAccount.
+
+	   The plain GCP service account
+	*/
+	ServiceAccount *string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +129,39 @@ func (o *ListProjectGKEZonesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) WithCredential(credential *string) *ListProjectGKEZonesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithServiceAccount adds the serviceAccount to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) WithServiceAccount(serviceAccount *string) *ListProjectGKEZonesParams {
+	o.SetServiceAccount(serviceAccount)
+	return o
+}
+
+// SetServiceAccount adds the serviceAccount to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) SetServiceAccount(serviceAccount *string) {
+	o.ServiceAccount = serviceAccount
+}
+
+// WithProjectID adds the projectID to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) WithProjectID(projectID string) *ListProjectGKEZonesParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list project g k e zones params
+func (o *ListProjectGKEZonesParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListProjectGKEZonesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +169,27 @@ func (o *ListProjectGKEZonesParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.ServiceAccount != nil {
+
+		// header param ServiceAccount
+		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
+			return err
+		}
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
