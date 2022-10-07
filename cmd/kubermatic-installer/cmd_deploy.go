@@ -216,10 +216,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			AllowEditionChange:                 opt.AllowEditionChange,
-			MlaSkipMinio:                       opt.MlaSkipMinio,
-			MlaSkipMinioLifecycleMgr:           opt.MlaSkipMinioLifecycleMgr,
-			MlaForceSecrets:                    opt.MlaForceMlaSecrets,
-			MlaIncludeIap:                      opt.MlaIncludeIap,
+			MLASkipMinio:                       opt.MLASkipMinio,
+			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
+			MLAForceSecrets:                    opt.MLAForceMLASecrets,
+			MLAIncludeIap:                      opt.MLAIncludeIap,
 			Versions:                           versions,
 		}
 
