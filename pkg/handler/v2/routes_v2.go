@@ -5326,7 +5326,7 @@ func (r Routing) listProjectGKEDiskTypes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/providers/gke/disktypes gke listProjectGKEVersions
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/versions gke listProjectGKEVersions
 //
 // Lists GKE versions.
 //
