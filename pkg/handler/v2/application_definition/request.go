@@ -24,6 +24,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// getApplicationDefinitionReq defines HTTP request for getApplicationDefinition
+// swagger:parameters getApplicationDefinition
 type getApplicationDefinitionReq struct {
 	// in: path
 	AppDefName string `json:"appdef_name"`
