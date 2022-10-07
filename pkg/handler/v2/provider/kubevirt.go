@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"k8s.io/utils/pointer"
 
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"

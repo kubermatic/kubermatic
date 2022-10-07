@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"k8s.io/utils/pointer"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
