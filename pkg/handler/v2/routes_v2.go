@@ -617,13 +617,14 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/providers/gke/validatecredentials").
 		Handler(r.validateProjectGKECredentials())
 
-		/*
+		// TODO: implement provider-specific API endpoints and uncomment providers you implement.
 
+		/*
+			// EKS endpoints
 			mux.Methods(http.MethodGet).
 				Path("/projects/{project_id}/providers/eks/validatecredentials").
 				Handler(r.validateProjectEKSCredentials())
 
-			// EKS endpoints
 			mux.Methods(http.MethodGet).
 				Path("/projects/{project_id}/providers/eks/vpcs").
 				Handler(r.listProjectEKSVPCS())
