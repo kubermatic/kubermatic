@@ -53,6 +53,15 @@ const (
 	expirationTimestampKey = "ExpirationTimestamp"
 )
 
+type TerminalConnStatus string
+
+const (
+	KubeconfigSecretMissing TerminalConnStatus = "KUBECONFIG_SECRET_MISSING"
+	WebterminalPodPending   TerminalConnStatus = "WEBTERMINAL_POD_PENDING"
+	WebterminalPodFailed    TerminalConnStatus = "WEBTERMINAL_POD_FAILED"
+	ConnectionPoolExceeded  TerminalConnStatus = "CONNECTION_POOL_EXCEEDED"
+)
+
 // PtyHandler is what remote command expects from a pty.
 type PtyHandler interface {
 	io.Reader
@@ -171,14 +180,20 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		}
 		// create Configmap and Pod if not found
 		if err := client.Create(ctx, genWebTerminalConfigMap(appName)); err != nil {
-			return err
+			if !apierrors.IsAlreadyExists(err) {
+				return err
+			}
+			err := client.Update(ctx, genWebTerminalConfigMap(appName))
+			if err != nil {
+				return err
+			}
 		}
 		if err := client.Create(ctx, genWebTerminalPod(appName, userEmailID)); err != nil {
 			return err
 		}
 	}
 
-	if !waitForPod(5*time.Second, timeout, func() bool {
+	if !WaitFor(5*time.Second, timeout, func() bool {
 		pod := &corev1.Pod{}
 		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: metav1.NamespaceSystem,
@@ -186,14 +201,21 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 		}, pod); err != nil {
 			return false
 		}
-		if err := websocketConn.WriteJSON(TerminalMessage{
-			Op:   "msg",
-			Data: string(pod.Status.Phase),
-		}); err != nil {
-			return false
-		}
 
-		return pod.Status.Phase == corev1.PodRunning
+		var status string
+
+		switch pod.Status.Phase {
+		case corev1.PodRunning:
+			return true
+		case corev1.PodPending:
+			status = string(WebterminalPodPending)
+		case corev1.PodFailed:
+			status = string(WebterminalPodFailed)
+		default:
+			status = fmt.Sprintf("pod in %s phase", pod.Status.Phase)
+		}
+		SendMessage(websocketConn, status)
+		return false
 	}) {
 		return fmt.Errorf("the WEB terminal Pod is not ready")
 	}
@@ -329,8 +351,6 @@ func getVolumeMounts() []corev1.VolumeMount {
 
 // Terminal is called for any new websocket connection.
 func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *restclient.Config, userEmailID string) {
-	defer ws.Close()
-
 	if err := startProcess(
 		ctx,
 		client,
@@ -353,10 +373,19 @@ func EncodeUserEmailtoID(email string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-// waitForPod is a function to wait until WEB terminal Pod is running.
-func waitForPod(interval time.Duration, timeout time.Duration, callback func() bool) bool {
+// WaitFor is a function to wait until callback function return true.
+func WaitFor(interval time.Duration, timeout time.Duration, callback func() bool) bool {
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
 		return callback(), nil
 	})
 	return err == nil
+}
+
+// SendMessage sends TerminalMessage to the client. It usually contains a context related
+// to the status of background tasks responsible for setting up the terminal.
+func SendMessage(wsConn *websocket.Conn, message string) {
+	_ = wsConn.WriteJSON(TerminalMessage{
+		Op:   "msg",
+		Data: message,
+	})
 }

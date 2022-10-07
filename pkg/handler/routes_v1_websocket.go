@@ -18,7 +18,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -86,6 +85,7 @@ type WebsocketTerminalWriter func(ctx context.Context, ws *websocket.Conn, clien
 const (
 	maxNumberOfTerminalActiveConnectionsPerUser = 5
 	terminalActiveConnectionsMemoryDuration     = 24 * time.Hour
+	waitForKubeconfigSecretTimeout              = 5 * time.Minute
 )
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
@@ -228,18 +228,6 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		}
 		projectID := projectReq.(common.ProjectReq).ProjectID
 
-		// Checking user active connections for project cluster
-		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
-		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
-			err = errors.New("reached the maximum number of terminal active connections for the user")
-			log.Logger.Debug(err)
-			w.WriteHeader(http.StatusTooManyRequests)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
-		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
-
 		request := terminalReq{
 			ClusterID: clusterID,
 		}
@@ -276,18 +264,37 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		if err != nil {
 			return
 		}
-		kubeconfigSecret := &corev1.Secret{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
-			Namespace: metav1.NamespaceSystem,
-			Name:      handlercommon.KubeconfigSecretName(userEmailID),
-		}, kubeconfigSecret); err != nil {
-			log.Logger.Debug(err)
-			return
-		}
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
 			log.Logger.Debug(err)
+			return
+		}
+		defer ws.Close()
+
+		// Checking user active connections for project cluster
+		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
+		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
+			log.Logger.Debug("reached the maximum number of terminal active connections for the user")
+			wsh.SendMessage(ws, string(wsh.ConnectionPoolExceeded))
+			return
+		}
+		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
+		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
+
+		if !wsh.WaitFor(5*time.Second, waitForKubeconfigSecretTimeout, func() bool {
+			kubeconfigSecret := &corev1.Secret{}
+			if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
+				Namespace: metav1.NamespaceSystem,
+				Name:      handlercommon.KubeconfigSecretName(userEmailID),
+			}, kubeconfigSecret); err == nil {
+				// secret exists
+				return true
+			}
+			log.Logger.Debug(err)
+			wsh.SendMessage(ws, string(wsh.KubeconfigSecretMissing))
+			return false
+		}) {
 			return
 		}
 
