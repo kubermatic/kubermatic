@@ -22,7 +22,6 @@ import (
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -1757,7 +1756,7 @@ type ApplicationInstallation struct {
 type ApplicationInstallationListItem struct {
 	Name string `json:"name"`
 
-	CreationTimestamp v1.Time `json:"creationTimestamp,omitempty"`
+	CreationTimestamp apiv1.Time `json:"creationTimestamp,omitempty"`
 
 	Spec *ApplicationInstallationListItemSpec `json:"spec"`
 
