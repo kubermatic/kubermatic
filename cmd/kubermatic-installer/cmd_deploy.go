@@ -63,8 +63,9 @@ type DeployOptions struct {
 	SkipDependencies bool
 	Force            bool
 
-	StorageClass     string
-	DisableTelemetry bool
+	StorageClass       string
+	DisableTelemetry   bool
+	AllowEditionChange bool
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
@@ -116,6 +117,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()))
 	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
+	cmd.PersistentFlags().BoolVar(&opt.AllowEditionChange, "allow-edition-change", false, "allow up- or downgrading between Community and Enterprise editions")
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
@@ -200,6 +202,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableNginxIngressMigration:        opt.MigrateNginx,
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
+			AllowEditionChange:                 opt.AllowEditionChange,
 			Versions:                           versions,
 		}
 

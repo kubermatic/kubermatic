@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
@@ -85,6 +86,24 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 
 		if currentSemver.Minor() < minMinorRequired {
 			return append(errs, fmt.Errorf("existing installation is on version %s and must be updated to KKP 2.%d first (sequentially to all minor releases in-between)", currentVersion, kkpMinorVersion))
+		}
+	}
+
+	// If a KubermaticConfiguration exists, check its status to compare editions.
+	if config != nil && config.Status.KubermaticEdition != "" {
+		currentEdition, err := edition.FromString(config.Status.KubermaticEdition)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to validate KKP edition: %w", err))
+		}
+
+		installerEdition := opt.Versions.KubermaticEdition
+
+		if currentEdition != installerEdition {
+			if opt.AllowEditionChange {
+				opt.Logger.Warnf("This installation will change KKP to the %s.", installerEdition)
+			} else {
+				return append(errs, fmt.Errorf("existing installation uses the %s, refusing to change to %s (if this is intended, please add the --allow-edition-change flag)", currentEdition, installerEdition))
+			}
 		}
 	}
 
