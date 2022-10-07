@@ -1138,7 +1138,7 @@ func getSAFromPreset(ctx context.Context,
 	presetName string,
 	projectID string,
 ) (string, error) {
-	userInfo, err := userInfoGetter(ctx, "")
+	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return "", common.KubernetesErrorToHTTPError(err)
 	}
