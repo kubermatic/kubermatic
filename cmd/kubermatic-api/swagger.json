@@ -24960,6 +24960,9 @@
           },
           "x-go-name": "AdmissionPlugins"
         },
+        "apiServerAllowedIPRanges": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
         "auditLogging": {
           "$ref": "#/definitions/AuditLoggingSettings"
         },

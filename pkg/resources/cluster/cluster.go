@@ -80,6 +80,7 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
 		CNIPlugin:                            apiCluster.Spec.CNIPlugin,
 		ExposeStrategy:                       apiCluster.Spec.ExposeStrategy,
+		APIServerAllowedIPRanges:             apiCluster.Spec.APIServerAllowedIPRanges,
 	}
 
 	if apiCluster.Spec.ClusterNetwork != nil {
