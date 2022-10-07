@@ -590,7 +590,300 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Handler(r.resetAlertmanager())
 
 	// Defines a set of HTTP endpoints for various cloud providers
-	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	// These endpoints are required to use project-scoped presets as credentials
+
+	// GKE endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/images").
+		Handler(r.listProjectGKEImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/zones").
+		Handler(r.listProjectGKEZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/vmsizes").
+		Handler(r.listProjectGKEVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/disktypes").
+		Handler(r.listProjectGKEDiskTypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/versions").
+		Handler(r.listProjectGKEVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/validatecredentials").
+		Handler(r.validateProjectGKECredentials())
+
+		// TODO: implement provider-specific API endpoints and uncomment providers you implement.
+
+		/*
+			// EKS endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/validatecredentials").
+				Handler(r.validateProjectEKSCredentials())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/vpcs").
+				Handler(r.listProjectEKSVPCS())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/subnets").
+				Handler(r.listProjectEKSSubnets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/securitygroups").
+				Handler(r.listProjectEKSSecurityGroups())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/regions").
+				Handler(r.listProjectEKSRegions())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/clusterroles").
+				Handler(r.listProjectEKSClusterRoles())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/versions").
+				Handler(r.listProjectEKSVersions())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/amitypes").
+				Handler(r.listProjectEKSAMITypes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/eks/capacitytypes").
+				Handler(r.listProjectEKSCapacityTypes())
+
+			// AKS credentials
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/validatecredentials").
+				Handler(r.validateProjectAKSCredentials())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/vmsizes").
+				Handler(r.listProjectAKSVMSizes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/resourcegroups").
+				Handler(r.listProjectAKSResourceGroups())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/locations").
+				Handler(r.listProjectAKSLocations())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/modes").
+				Handler(r.listProjectAKSNodePoolModes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aks/versions").
+				Handler(r.listProjectAKSVersions())
+
+			// Kubevirt endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/kubevirt/vmflavors").
+				Handler(r.listProjectKubeVirtVMIPresets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/kubevirt/instancetypes").
+				Handler(r.listProjectKubeVirtInstancetypes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/kubevirt/preferences").
+				Handler(r.listProjectKubeVirtPreferences())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/kubevirt/storageclasses").
+				Handler(r.listProjectKubevirtStorageClasses())
+
+			// Azure endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/sizes").
+				Handler(r.listProjectAzureSizes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/availabilityzones").
+				Handler(r.listProjectAzureSKUAvailabilityZones())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/securitygroups").
+				Handler(r.listProjectAzureSecurityGroups())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/resourcegroups").
+				Handler(r.listProjectAzureResourceGroups())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/routetables").
+				Handler(r.listProjectAzureRouteTables())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/subnets").
+				Handler(r.listProjectAzureSubnets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/azure/vnets").
+				Handler(r.listProjectAzureVnets())
+
+			// vSphere endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vsphere/networks").
+				Handler(r.listProjectVSphereNetworks())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vsphere/folders").
+				Handler(r.listProjectVSphereFolders())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vsphere/datastores").
+				Handler(r.listProjectVSphereDatastores())
+
+			// Nutanix endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/nutanix/{dc}/clusters").
+				Handler(r.listProjectNutanixClusters())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/nutanix/{dc}/projects").
+				Handler(r.listProjectNutanixProjects())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/nutanix/{dc}/subnets").
+				Handler(r.listProjectNutanixSubnets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/nutanix/{dc}/categories").
+				Handler(r.listProjectNutanixCategories())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/nutanix/{dc}/categories/{category}/values").
+				Handler(r.listProjectNutanixCategoryValues())
+
+			// VMware Cloud Director endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/networks").
+				Handler(r.listProjectVMwareCloudDirectorNetworks())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/storageprofiles").
+				Handler(r.listProjectVMwareCloudDirectorStorageProfiles())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/catalogs").
+				Handler(r.listProjectVMwareCloudDirectorCatalogs())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/vmwareclouddirector/{dc}/templates/{catalog_name}").
+				Handler(r.listProjectVMwareCloudDirectorTemplates())
+
+			// AWS endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aws/sizes").
+				Handler(r.listProjectAWSSizes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aws/{dc}/subnets").
+				Handler(r.listProjectAWSSubnets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aws/{dc}/vpcs").
+				Handler(r.listProjectAWSVPCS())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/aws/{dc}/securitygroups").
+				Handler(r.listProjectAWSSecurityGroups())
+
+			// GCP endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/gcp/disktypes").
+				Handler(r.listProjectGCPDiskTypes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/gcp/sizes").
+				Handler(r.listProjectGCPSizes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/gcp/{dc}/zones").
+				Handler(r.listProjectGCPZones())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/gcp/networks").
+				Handler(r.listProjectGCPNetworks())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/gcp/{dc}/subnetworks").
+				Handler(r.listProjectGCPSubnetworks())
+
+			// Digitalocean endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/digitalocean/sizes").
+				Handler(r.listProjectDigitaloceanSizes())
+
+			// Openstack endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/sizes").
+				Handler(r.listProjectOpenstackSizes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/tenants").
+				Handler(r.listProjectOpenstackTenants())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/networks").
+				Handler(r.listProjectOpenstackNetworks())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/securitygroups").
+				Handler(r.listProjectOpenstackSecurityGroups())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/subnets").
+				Handler(r.listProjectOpenstackSubnets())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/openstack/availabilityzones").
+				Handler(r.listProjectOpenstackAvailabilityZones())
+
+			// Equinix Metal (Packet) endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/packet/sizes").
+				Handler(r.listProjectPacketSizes())
+
+			// Hetzner endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/hetzner/sizes").
+				Handler(r.listProjectHetznerSizes())
+
+			// Alibaba endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/alibaba/instancetypes").
+				Handler(r.listProjectAlibabaInstanceTypes())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/alibaba/zones").
+				Handler(r.listProjectAlibabaZones())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/alibaba/vswitches").
+				Handler(r.listProjectAlibabaVSwitches())
+
+			// Anexia endpoints
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/anexia/vlans").
+				Handler(r.listProjectAnexiaVlans())
+
+			mux.Methods(http.MethodGet).
+				Path("/projects/{project_id}/providers/anexia/templates").
+				Handler(r.listProjectAnexiaTemplates())
+
+		*/
+
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under
+	// /providers/* and /projects/{project_id}/providers/*.
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes").
 		Handler(r.listAWSSizesNoCredentials())
@@ -1068,7 +1361,7 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/clusters/{cluster_id}/backupdestinations").
 		Handler(r.getBackupDestinationNames())
 
-	// Defines endpoints for CNI versionsS
+	// Defines endpoints for CNI versions
 	mux.Methods(http.MethodGet).
 		Path("/cni/{cni_plugin_type}/versions").
 		Handler(r.listVersionsByCNIPlugin())
@@ -4946,6 +5239,138 @@ func (r Routing) resetAlertmanager() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/images gke listProjectGKEImages
+//
+// Lists GKE image types.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GKEImageList
+func (r Routing) listProjectGKEImages() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectVMReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/zones gke listProjectGKEZones
+//
+// Lists GKE zones.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GKEZoneList
+func (r Routing) listProjectGKEZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/vmsizes gke listProjectGKEVMSizes
+//
+// Lists GKE VM sizes.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GCPMachineSizeList
+func (r Routing) listProjectGKEVMSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEVMSizesEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectVMReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/disktypes gke listProjectGKEDiskTypes
+//
+// Lists GKE machine disk types.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: GKEDiskTypeList
+func (r Routing) listProjectGKEDiskTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEDiskTypesEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectVMReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/versions gke listProjectGKEVersions
+//
+// Lists GKE versions.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []MasterVersion
+func (r Routing) listProjectGKEVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEVersionsEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectVersionsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/validatecredentials gke validateProjectGKECredentials
+//
+// Validates GKE credentials.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+func (r Routing) validateProjectGKECredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeGKEProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/seeds/{seed_name}/settings seed getSeedSettings
 //
 //	Gets the seed settings.
@@ -5972,8 +6397,8 @@ func (r Routing) listGKEClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
-		externalcluster.DecodeGKEClusterListReq,
+		)(externalcluster.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider, false)),
+		externalcluster.DecodeGKEProjectCommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5994,7 +6419,7 @@ func (r Routing) listGKEImages() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(externalcluster.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter, false)),
 		externalcluster.DecodeGKEVMReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6016,7 +6441,7 @@ func (r Routing) listGKEZones() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(externalcluster.GKEZonesEndpoint(r.presetProvider, r.userInfoGetter, false)),
 		externalcluster.DecodeGKECommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6038,7 +6463,7 @@ func (r Routing) listGKEVMSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(externalcluster.GKEVMSizesEndpoint(r.presetProvider, r.userInfoGetter, false)),
 		externalcluster.DecodeGKEVMReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6060,7 +6485,7 @@ func (r Routing) listGKEDiskTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEDiskTypesEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(externalcluster.GKEDiskTypesEndpoint(r.presetProvider, r.userInfoGetter, false)),
 		externalcluster.DecodeGKEVMReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6082,7 +6507,7 @@ func (r Routing) listGKEVersions() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEVersionsEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(externalcluster.GKEVersionsEndpoint(r.presetProvider, r.userInfoGetter, false)),
 		externalcluster.DecodeGKEVersionsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -6104,8 +6529,8 @@ func (r Routing) validateGKECredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
-		externalcluster.DecodeGKETypesReq,
+		)(externalcluster.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter, false)),
+		externalcluster.DecodeGKECommonReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

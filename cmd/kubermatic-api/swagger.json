@@ -13930,13 +13930,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13948,6 +13941,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18748,6 +18748,324 @@
             "description": "GKEClusterList",
             "schema": {
               "$ref": "#/definitions/GKEClusterList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/disktypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Lists GKE machine disk types.",
+        "operationId": "listProjectGKEDiskTypes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEDiskTypeList",
+            "schema": {
+              "$ref": "#/definitions/GKEDiskTypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/images": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Lists GKE image types.",
+        "operationId": "listProjectGKEImages",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEImageList",
+            "schema": {
+              "$ref": "#/definitions/GKEImageList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/validatecredentials": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Validates GKE credentials.",
+        "operationId": "validateProjectGKECredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/versions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Lists GKE versions.",
+        "operationId": "listProjectGKEVersions",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The Mode is how you want GKE Control plane version to be managed.\nManual: Manually manage the version upgrades.\nAuto: automatically manage the cluster's control plane version.",
+            "name": "Mode",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The ReleaseChannel",
+            "name": "ReleaseChannel",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/vmsizes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Lists GKE VM sizes.",
+        "operationId": "listProjectGKEVMSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The zone name",
+            "name": "Zone",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPMachineSizeList",
+            "schema": {
+              "$ref": "#/definitions/GCPMachineSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/providers/gke/zones": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gke"
+        ],
+        "summary": "Lists GKE zones.",
+        "operationId": "listProjectGKEZones",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "The plain GCP service account",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "description": "The credential name used in the preset for the GCP provider",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GKEZoneList",
+            "schema": {
+              "$ref": "#/definitions/GKEZoneList"
             }
           },
           "default": {
