@@ -899,7 +899,6 @@ func DecodeGKEProjectVMReq(c context.Context, r *http.Request) (interface{}, err
 		GKEVMReq:   vmReq.(GKEVMReq),
 		ProjectReq: projectReq.(common.ProjectReq),
 	}, nil
-
 }
 
 func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, error) {
