@@ -35,6 +35,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/install/images/docker"
@@ -43,6 +44,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -56,6 +58,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -105,8 +108,8 @@ func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary str
 	return nil
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
-	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +152,12 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
 
-	if val, ok := templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok && val {
+	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
+	}
+
+	if templateData.IsKonnectivityEnabled() {
+		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetOverwriteFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
@@ -213,7 +220,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -251,9 +258,15 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			Namespace: mockNamespaceName,
 		},
 	}
-	admissionControlConfigMapName := corev1.ConfigMap{
+	admissionControlConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.AdmissionControlConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	konnectivityKubeApiserverEgressConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.KonnectivityKubeApiserverEgress,
 			Namespace: mockNamespaceName,
 		},
 	}
@@ -265,7 +278,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			dnsResolverConfigMap,
 			openvpnClientConfigsConfigMap,
 			auditConfigMap,
-			admissionControlConfigMapName,
+			admissionControlConfigMap,
+			konnectivityKubeApiserverEgressConfigMap,
 		},
 	}
 	apiServerService := corev1.Service{
@@ -298,11 +312,23 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			ClusterIP: "192.0.2.11",
 		},
 	}
+	konnectivityService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.KonnectivityProxyServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{Name: "secure", Port: 443, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(8132)}},
+			ClusterIP: "192.0.2.20",
+		},
+	}
+
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{
 			apiServerService,
 			openvpnserverService,
 			dnsService,
+			konnectivityService,
 		},
 	}
 	secretList := createNamedSecrets([]string{
@@ -334,6 +360,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.AdminKubeconfigSecretName,
 		resources.GatekeeperWebhookServerCertSecretName,
 		resources.OperatingSystemManagerKubeconfigSecretName,
+		resources.KonnectivityKubeconfigSecretName,
+		resources.KonnectivityProxyTLSSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
@@ -359,6 +387,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+	fakeCluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(konnectivityEnabled)
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 
 	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
@@ -371,7 +400,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.EnableUserSSHKeyAgent = pointer.Bool(true)
 	fakeCluster.Spec.EnableOperatingSystemManager = pointer.Bool(true)
 	fakeCluster.Spec.KubernetesDashboard = &kubermaticv1.KubernetesDashboard{
-		Enabled: false,
+		Enabled: true,
 	}
 
 	fakeCluster.Status.NamespaceName = mockNamespaceName
@@ -398,6 +427,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithFailureDomainZoneAntiaffinity(false).
 		WithVersions(kubermaticVersions).
 		WithCABundle(caBundle).
+		WithKonnectivityEnabled(konnectivityEnabled).
 		Build(), nil
 }
 
