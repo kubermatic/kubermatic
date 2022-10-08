@@ -346,6 +346,27 @@ var (
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
+
+			// GCE clusters do not support Kubernetes 1.25 currently because
+			// CSIMigration is enforced and we don't yet deploy the GCP CSI driver.
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.SupportOperation,
+			},
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 		},
 	}
 
