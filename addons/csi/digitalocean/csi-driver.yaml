@@ -32,6 +32,12 @@
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
 {{ $version = "v4.3.0"}}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.24" }}
+{{ $version = "v4.3.0"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.25" }}
+{{ $version = "v4.3.0"}}
+{{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
 ---
@@ -368,7 +374,7 @@ spec:
             - name: registration-dir
               mountPath: /registration/
         - name: csi-do-plugin
-          image: '{{ Image "digitalocean/do-csi-plugin:v4.2.0" }}'
+          image: '{{ Image (printf "digitalocean/do-csi-plugin:" $version) }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--url=$(DIGITALOCEAN_API_URL)"
