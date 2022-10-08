@@ -134,6 +134,6 @@ func getVSphereCCMVersion(version semver.Semver) string {
 		fallthrough
 	//	By default return latest version
 	default:
-		return v1240
+		return "1.24.0"
 	}
 }
