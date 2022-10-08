@@ -117,6 +117,7 @@ spec:
           limits:
             cpu: 100m
             memory: 50Mi
+      priorityClassName: system-cluster-critical
       restartPolicy: Always
       terminationGracePeriodSeconds: 5
       volumes:
