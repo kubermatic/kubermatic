@@ -300,7 +300,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: vsphere-csi-controller
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.5.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -492,7 +492,7 @@ spec:
                 - --mode=kubelet-registration-probe
             initialDelaySeconds: 3
         - name: vsphere-csi-node
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.5.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
