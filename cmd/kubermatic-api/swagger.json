@@ -18924,6 +18924,40 @@
         ],
         "summary": "Lists EKS security groups.",
         "operationId": "listProjectEKSSecurityGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSecurityGroupList",
@@ -18956,6 +18990,40 @@
         ],
         "summary": "Lists EKS subnets.",
         "operationId": "listProjectEKSSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSubnetList",

@@ -601,7 +601,7 @@ type EKSVPCReq struct {
 }
 
 // EKSProjectVPCReq represents a request for resources within a VPC with project context.
-// swagger:parameters listEKSProjectSubnets listEKSProjectSecurityGroups
+// swagger:parameters listProjectEKSSubnets listProjectEKSSecurityGroups
 type EKSProjectVPCReq struct {
 	common.ProjectReq
 	EKSVPCReq

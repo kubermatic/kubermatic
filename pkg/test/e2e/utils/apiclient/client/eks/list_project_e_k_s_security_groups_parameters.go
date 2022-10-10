@@ -60,6 +60,25 @@ ListProjectEKSSecurityGroupsParams contains all the parameters to send to the AP
 	Typically these are written to a http.Request.
 */
 type ListProjectEKSSecurityGroupsParams struct {
+
+	// AccessKeyID.
+	AccessKeyID *string
+
+	// Credential.
+	Credential *string
+
+	// Region.
+	Region *string
+
+	// SecretAccessKey.
+	SecretAccessKey *string
+
+	// VpcID.
+	VpcID *string
+
+	// ProjectID.
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +132,72 @@ func (o *ListProjectEKSSecurityGroupsParams) SetHTTPClient(client *http.Client) 
 	o.HTTPClient = client
 }
 
+// WithAccessKeyID adds the accessKeyID to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithAccessKeyID(accessKeyID *string) *ListProjectEKSSecurityGroupsParams {
+	o.SetAccessKeyID(accessKeyID)
+	return o
+}
+
+// SetAccessKeyID adds the accessKeyId to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetAccessKeyID(accessKeyID *string) {
+	o.AccessKeyID = accessKeyID
+}
+
+// WithCredential adds the credential to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithCredential(credential *string) *ListProjectEKSSecurityGroupsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithRegion adds the region to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithRegion(region *string) *ListProjectEKSSecurityGroupsParams {
+	o.SetRegion(region)
+	return o
+}
+
+// SetRegion adds the region to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetRegion(region *string) {
+	o.Region = region
+}
+
+// WithSecretAccessKey adds the secretAccessKey to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithSecretAccessKey(secretAccessKey *string) *ListProjectEKSSecurityGroupsParams {
+	o.SetSecretAccessKey(secretAccessKey)
+	return o
+}
+
+// SetSecretAccessKey adds the secretAccessKey to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetSecretAccessKey(secretAccessKey *string) {
+	o.SecretAccessKey = secretAccessKey
+}
+
+// WithVpcID adds the vpcID to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithVpcID(vpcID *string) *ListProjectEKSSecurityGroupsParams {
+	o.SetVpcID(vpcID)
+	return o
+}
+
+// SetVpcID adds the vpcId to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetVpcID(vpcID *string) {
+	o.VpcID = vpcID
+}
+
+// WithProjectID adds the projectID to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) WithProjectID(projectID string) *ListProjectEKSSecurityGroupsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list project e k s security groups params
+func (o *ListProjectEKSSecurityGroupsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListProjectEKSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +205,51 @@ func (o *ListProjectEKSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequ
 		return err
 	}
 	var res []error
+
+	if o.AccessKeyID != nil {
+
+		// header param AccessKeyID
+		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.Region != nil {
+
+		// header param Region
+		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
+			return err
+		}
+	}
+
+	if o.SecretAccessKey != nil {
+
+		// header param SecretAccessKey
+		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VpcID != nil {
+
+		// header param VpcId
+		if err := r.SetHeaderParam("VpcId", *o.VpcID); err != nil {
+			return err
+		}
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
