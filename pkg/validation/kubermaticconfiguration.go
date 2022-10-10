@@ -21,7 +21,9 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 
+	"github.com/kcp-dev/logicalcluster/v2"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -29,9 +31,27 @@ import (
 func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// general cloud spec logic
 	if errs := ValidateKubermaticVersioningConfiguration(spec.Versions, field.NewPath("spec", "versions")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
+	}
+
+	if spec.FeatureGates[features.KCPUserManagement] {
+		if errs := ValidateKubermaticConfigurationKCPConfiguration(spec.KCP, field.NewPath("spec", "kcp")); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+
+	return allErrs
+}
+
+func ValidateKubermaticConfigurationKCPConfiguration(config kubermaticv1.KubermaticKCPConfiguration, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	name := logicalcluster.New(config.HomeRootPrefix)
+	if !name.IsValid() {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("homeRootPrefix"), config.HomeRootPrefix, "not a valid logical cluster name"))
+	} else if name == logicalcluster.Wildcard {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("homeRootPrefix"), config.HomeRootPrefix, "cannot use wildcard"))
 	}
 
 	return allErrs

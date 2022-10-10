@@ -34,6 +34,7 @@ spec:
     VerticalPodAutoscaler: true
     DevelopmentEnvironment: true
     OperatingSystemManager: __KUBERMATIC_OSM_ENABLED__
+    KCPUserManagement: true
   ui:
     replicas: 0
   # Dex integration
@@ -41,3 +42,9 @@ spec:
     tokenIssuer: "http://dex.oauth:5556/dex"
     issuerRedirectURL: "http://localhost:8000"
     serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
+  # EE-only kcp tests (require interaction with Users and so are
+  # currently only part of the API tests)
+  kcp:
+    clientCASecretName: kcp-clientauth-ca
+    publicURL: https://kcp.example.com:6443
+    homeRootPrefix: root:users

@@ -110,6 +110,8 @@ type KubermaticConfigurationSpec struct {
 	Versions KubermaticVersioningConfiguration `json:"versions,omitempty"`
 	// VerticalPodAutoscaler configures the Kubernetes VPA integration.
 	VerticalPodAutoscaler KubermaticVPAConfiguration `json:"verticalPodAutoscaler,omitempty"`
+	// (EE-only) KCP configures the kcp integration.
+	KCP KubermaticKCPConfiguration `json:"kcp,omitempty"`
 	// Proxy allows to configure Kubermatic to use proxies to talk to the
 	// world outside of its cluster.
 	Proxy KubermaticProxyConfiguration `json:"proxy,omitempty"`
@@ -438,6 +440,32 @@ type KubermaticVPAComponent struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+// KubermaticKCPConfiguration configures how KKP interacts with kcp.
+type KubermaticKCPConfiguration struct {
+	// CACertificate is the name of a Kubernetes Secret in the same namespace
+	// as KKP that contains the CA used to sign and authenticate the
+	// client certificates issued for each KKP user. The certificate must use RSA.
+	// The secret must contain a "ca.crt" with the PEM-encoded certificate
+	// and a "ca.key" with the PEM-encoded private key.
+	ClientCASecretName string `json:"clientCASecretName"`
+
+	// RootKubeconfigSecretName is the name of a Kubernetes Secret in the same namespace
+	// as KKP that contains the a kubeconfig whose default context provides
+	// admin access to a kcp instance. The cluster's address is only used internally,
+	// kubeconfigs for users will use the rootWorkspaceURL as the base for
+	// their addresses instead.
+	// RootKubeconfigSecretName string `json:"rootKubeconfigSecretName"`
+
+	// PublicURL is the public URL to kcp under which the root workspace and all
+	// user home workspaces are available to endusers. The URL must not end with
+	// a trailing slash.
+	PublicURL string `json:"publicURL"`
+
+	// HomeRootPrefix is the logical name of the workspace under which all user
+	// buckets and workspaces will be placed, for example "root:users".
+	HomeRootPrefix string `json:"homeRootPrefix"`
 }
 
 // KubermaticProxyConfiguration can be used to control how the various

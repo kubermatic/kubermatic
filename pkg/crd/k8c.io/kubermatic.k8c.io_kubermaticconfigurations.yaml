@@ -164,6 +164,23 @@ spec:
                   required:
                     - domain
                   type: object
+                kcp:
+                  description: (EE-only) KCP configures the kcp integration.
+                  properties:
+                    clientCASecretName:
+                      description: CACertificate is the name of a Kubernetes Secret in the same namespace as KKP that contains the CA used to sign and authenticate the client certificates issued for each KKP user. The certificate must use RSA. The secret must contain a "ca.crt" with the PEM-encoded certificate and a "ca.key" with the PEM-encoded private key.
+                      type: string
+                    homeRootPrefix:
+                      description: HomeRootPrefix is the logical name of the workspace under which all user buckets and workspaces will be placed, for example "root:users".
+                      type: string
+                    publicURL:
+                      description: PublicURL is the public URL to kcp under which the root workspace and all user home workspaces are available to endusers. The URL must not end with a trailing slash.
+                      type: string
+                  required:
+                    - clientCASecretName
+                    - homeRootPrefix
+                    - publicURL
+                  type: object
                 masterController:
                   description: MasterController configures the master-controller-manager.
                   properties:

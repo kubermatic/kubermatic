@@ -70,6 +70,10 @@ const (
 	// gate in the future.
 	// This feature perpetually in preview and never ready for production.
 	DevelopmentEnvironment = "DevelopmentEnvironment"
+
+	// (EE only) The KCPUserManagement feature gate enables a controller that creates users in a local
+	// kcp instance and provides preconfigured kubeconfigs as a Secret for each user on the master cluster.
+	KCPUserManagement = "KCPUserManagement"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

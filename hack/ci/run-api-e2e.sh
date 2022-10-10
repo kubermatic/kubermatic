@@ -74,6 +74,17 @@ cat << EOF >> hack/ci/testdata/oauth_values.yaml
 EOF
 
 retry 2 kubectl create ns ${LDAP_NAMESPACE}
+
+# setup a dummy kcp environment by providing a dummy client-auth CA
+if [ "$KUBERMATIC_EDITION" == "ee" ]; then
+  echodate "Creating kcp client-auth CA..."
+  kubectl create namespace kubermatic
+  kubectl create secret generic kcp-clientauth-ca \
+    --namespace=kubermatic \
+    --from-file="ca.crt=hack/ci/testdata/kcp/clientauth-ca.pem" \
+    --from-file="ca.key=hack/ci/testdata/kcp/clientauth-ca-key.pem"
+fi
+
 retry 2 kubectl apply -f hack/ci/testdata/openldap.yaml
 
 source hack/ci/setup-kubermatic-in-kind.sh

@@ -24,6 +24,7 @@ sets:
     patterns:
       - 'k8s.io/**'
       - '*.k8s.io/**'
+      - 'github.com/kcp-dev/**'
   - name: envoy
     patterns:
       - 'github.com/envoyproxy/**'

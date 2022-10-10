@@ -96,6 +96,21 @@ spec:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com
+  # (EE-only) KCP configures the kcp integration.
+  kcp:
+    # CACertificate is the name of a Kubernetes Secret in the same namespace
+    # as KKP that contains the CA used to sign and authenticate the
+    # client certificates issued for each KKP user. The certificate must use RSA.
+    # The secret must contain a "ca.crt" with the PEM-encoded certificate
+    # and a "ca.key" with the PEM-encoded private key.
+    clientCASecretName: ""
+    # HomeRootPrefix is the logical name of the workspace under which all user
+    # buckets and workspaces will be placed, for example "root:users".
+    homeRootPrefix: ""
+    # PublicURL is the public URL to kcp under which the root workspace and all
+    # user home workspaces are available to endusers. The URL must not end with
+    # a trailing slash.
+    publicURL: ""
   # MasterController configures the master-controller-manager.
   masterController:
     # DebugLog enables more verbose logging.

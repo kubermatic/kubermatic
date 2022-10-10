@@ -57,6 +57,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/hetznercloud/hcloud-go v1.35.2
 	github.com/imdario/mergo v0.3.13
+	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3
 	github.com/kubermatic/grafanasdk v0.9.12
 	github.com/kubermatic/machine-controller v1.55.0
 	github.com/minio/minio-go/v7 v7.0.36
