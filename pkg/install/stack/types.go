@@ -53,6 +53,11 @@ type DeployOptions struct {
 	EnableNginxIngressMigration        bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
+
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceSecrets          bool
+	MLAIncludeIap            bool
 }
 
 type Stack interface {

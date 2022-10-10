@@ -1,0 +1,77 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mlaSecrets:
+  minio:
+    ## Set enabled to false if you want to re-use an existing secret for minio.
+    enabled: true
+    ## Set default accesskey, secretkey
+    ## AccessKey and secretKey is generated when not set
+    accessKey: "accesskey"
+    secretKey: "secretkey"
+  grafana:
+    ## Set enabled to false if you want to re-use an existing secret for grafana.
+    enabled: true
+    adminUser: admin
+    adminPassword: strongpassword
+
+iap:
+  oidc_issuer_url: https://kkp.example.com/dex
+  deployments:
+
+    grafana:
+      name: grafana
+      replicas: 1
+      client_id: mla-grafana
+      client_secret: YOUR_CLIENT_SECRET
+      encryption_key: YOUR_ENCRYPTION_KEY
+      config:
+        scope: "groups openid email"
+        email_domains:
+          - '*'
+        ## do not route health endpoint through the proxy
+        skip_auth_regex:
+          - '/api/health'
+        ## auto-register users based on their email address
+        ## Grafana is configured to look for the X-Forwarded-Email header
+        pass_user_headers: true
+        github_org: "YOUR_GITHUB_ORG"
+        github_team: "YOUR_GITHUB_TEAM"
+      upstream_service: grafana.mla.svc.cluster.local
+      upstream_port: 80
+      ingress:
+        host: "grafana.seed-cluster-x.kkp.example.com"
+
+    alertmanager:
+      name: alertmanager
+      replicas: 1
+      client_id: mla-alertmanager
+      client_secret: YOUR_CLIENT_SECRET
+      encryption_key: YOUR_ENCRYPTION_KEY
+      config:
+        scope: "groups openid email"
+        email_domains:
+          - '*'
+        ## do not route health endpoint through the proxy
+        skip_auth_regex:
+          - '/api/health'
+        ## auto-register users based on their email address
+        ## Grafana is configured to look for the X-Forwarded-Email header
+        pass_user_headers: true
+        github_org: "YOUR_GITHUB_ORG"
+        github_team: "YOUR_GITHUB_TEAM"
+      upstream_service: alertmanager-proxy.mla.svc.cluster.local
+      upstream_port: 8080
+      ingress:
+        host: "alertmanager.seed-cluster-x.kkp.example.com"

@@ -243,6 +243,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ce.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     _build/kubermatic-installer* \
@@ -278,6 +279,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ee.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \

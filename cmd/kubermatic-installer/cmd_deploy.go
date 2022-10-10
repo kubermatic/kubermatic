@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
+	userclustermla "k8c.io/kubermatic/v2/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
@@ -70,6 +71,11 @@ type DeployOptions struct {
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
+
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceMLASecrets       bool
+	MLAIncludeIap            bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -79,7 +85,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	}
 
 	cmd := &cobra.Command{
-		Use:          "deploy [kubermatic-master | kubermatic-seed]",
+		Use:          "deploy [kubermatic-master | kubermatic-seed | usercluster-mla]",
 		Short:        "Install or upgrade the current installation to the installer's built-in version",
 		Long:         "Installs or upgrades the current installation to the installer's built-in version",
 		RunE:         DeployFunc(logger, versions, &opt),
@@ -123,6 +129,11 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
 
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
+	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
+
 	return cmd
 }
 
@@ -163,6 +174,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
+		case "usercluster-mla":
+			kubermaticStack = userclustermla.NewStack()
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
 		case "kubermatic-master", "":
@@ -203,6 +216,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			AllowEditionChange:                 opt.AllowEditionChange,
+			MLASkipMinio:                       opt.MLASkipMinio,
+			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
+			MLAForceSecrets:                    opt.MLAForceMLASecrets,
+			MLAIncludeIap:                      opt.MLAIncludeIap,
 			Versions:                           versions,
 		}
 
