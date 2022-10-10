@@ -28,9 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -197,10 +195,6 @@ func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kub
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", seed.Namespace, err)
 	}
 
-	if err := r.deleteResource(ctx, client, SeedServiceAccountName, metav1.NamespaceSystem, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("failed to cleanup ServiceAccount: %w", err)
-	}
-
 	return nil
 }
 
@@ -225,10 +219,6 @@ func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
-	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.Role{}); err != nil {
-		return fmt.Errorf("failed to cleanup Role: %w", err)
-	}
-
 	return nil
 }
 
@@ -239,10 +229,6 @@ func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kuberm
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedMonitoringNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %w", SeedMonitoringNamespace, err)
-	}
-
-	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.RoleBinding{}); err != nil {
-		return fmt.Errorf("failed to cleanup RoleBinding: %w", err)
 	}
 
 	return nil
@@ -374,24 +360,6 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %w", MasterGrafanaNamespace, err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclient.Client, name string, namespace string, obj ctrlruntimeclient.Object) error {
-	key := types.NamespacedName{Name: name, Namespace: namespace}
-
-	if err := client.Get(ctx, key, obj); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %w", key, err)
-		}
-
-		return nil
-	}
-
-	if err := client.Delete(ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %w", key, err)
 	}
 
 	return nil

@@ -95,9 +95,12 @@ func seedSecretCreator(seed *kubermaticv1.Seed) reconciling.NamedSecretCreatorGe
 
 			// ensure Kubernetes has enough info to fill in the SA token
 			sa.Type = corev1.SecretTypeServiceAccountToken
-			sa.Annotations = map[string]string{
-				corev1.ServiceAccountNameKey: SeedServiceAccountName,
+
+			if sa.Annotations == nil {
+				sa.Annotations = map[string]string{}
 			}
+
+			sa.Annotations[corev1.ServiceAccountNameKey] = SeedServiceAccountName
 
 			return sa, nil
 		}
