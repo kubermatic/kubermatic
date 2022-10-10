@@ -61,6 +61,10 @@ const (
 	// inside the seed cluster.
 	SeedServiceAccountName = "seed-proxy"
 
+	// SeedSecretName is the name used for service accounts
+	// inside the seed cluster.
+	SeedSecretName = "seed-proxy-token"
+
 	// SeedMonitoringNamespace is the namespace inside the seed
 	// cluster where Prometheus, Grafana etc. are installed.
 	SeedMonitoringNamespace = "monitoring"
