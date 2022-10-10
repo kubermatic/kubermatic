@@ -304,7 +304,6 @@ spec:
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
-            - "--use-gocsi=false"
           imagePullPolicy: "Always"
           env:
             - name: CSI_ENDPOINT
@@ -496,7 +495,6 @@ spec:
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
-            - "--use-gocsi=false"
           imagePullPolicy: "Always"
           env:
             - name: NODE_NAME
