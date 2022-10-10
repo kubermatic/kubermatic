@@ -52,7 +52,25 @@ type ClientService interface {
 
 	ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVersionsOK, error)
 
+	ListProjectEKSAMITypes(params *ListProjectEKSAMITypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSAMITypesOK, error)
+
+	ListProjectEKSCapacityTypes(params *ListProjectEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSCapacityTypesOK, error)
+
+	ListProjectEKSClusterRoles(params *ListProjectEKSClusterRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSClusterRolesOK, error)
+
+	ListProjectEKSRegions(params *ListProjectEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSRegionsOK, error)
+
+	ListProjectEKSSecurityGroups(params *ListProjectEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSSecurityGroupsOK, error)
+
+	ListProjectEKSSubnets(params *ListProjectEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSSubnetsOK, error)
+
+	ListProjectEKSVPCs(params *ListProjectEKSVPCsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSVPCsOK, error)
+
+	ListProjectEKSVersions(params *ListProjectEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSVersionsOK, error)
+
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
+
+	ValidateProjectEKSCredentials(params *ValidateProjectEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateProjectEKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -514,6 +532,310 @@ func (a *Client) ListEKSVersions(params *ListEKSVersionsParams, authInfo runtime
 }
 
 /*
+ListProjectEKSAMITypes gets the e k s a m i types for node groups
+*/
+func (a *Client) ListProjectEKSAMITypes(params *ListProjectEKSAMITypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSAMITypesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSAMITypesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSAMITypes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/amitypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSAMITypesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSAMITypesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSAMITypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSCapacityTypes gets the e k s capacity types for node groups
+*/
+func (a *Client) ListProjectEKSCapacityTypes(params *ListProjectEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSCapacityTypesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSCapacityTypesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSCapacityTypes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/capacitytypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSCapacityTypesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSCapacityTypesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSCapacityTypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSClusterRoles lists e k s cluster service roles
+*/
+func (a *Client) ListProjectEKSClusterRoles(params *ListProjectEKSClusterRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSClusterRolesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSClusterRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSClusterRoles",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/clusterroles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSClusterRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSClusterRolesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSClusterRolesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSRegions lists e k s regions
+*/
+func (a *Client) ListProjectEKSRegions(params *ListProjectEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSRegionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSRegionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSRegions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/regions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSRegionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSRegionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSRegionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSSecurityGroups lists e k s security groups
+*/
+func (a *Client) ListProjectEKSSecurityGroups(params *ListProjectEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSSecurityGroupsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSSecurityGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSSecurityGroups",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/securitygroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSSecurityGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSSecurityGroupsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSSecurityGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSSubnets lists e k s subnets
+*/
+func (a *Client) ListProjectEKSSubnets(params *ListProjectEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSSubnetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSSubnetsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSSubnets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSSubnetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSSubnetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSSubnetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSVPCs lists e k s v p cs
+*/
+func (a *Client) ListProjectEKSVPCs(params *ListProjectEKSVPCsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSVPCsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSVPCsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSVPCs",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/vpcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSVPCsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSVPCsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSVPCsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectEKSVersions lists e k s versions
+*/
+func (a *Client) ListProjectEKSVersions(params *ListProjectEKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEKSVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectEKSVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectEKSVersions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectEKSVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectEKSVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectEKSVersionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
 ValidateEKSCredentials Validates EKS credentials
 */
 func (a *Client) ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error) {
@@ -548,6 +870,44 @@ func (a *Client) ValidateEKSCredentials(params *ValidateEKSCredentialsParams, au
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ValidateEKSCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ValidateProjectEKSCredentials validates e k s credentials
+*/
+func (a *Client) ValidateProjectEKSCredentials(params *ValidateProjectEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateProjectEKSCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewValidateProjectEKSCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "validateProjectEKSCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/validatecredentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ValidateProjectEKSCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ValidateProjectEKSCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ValidateProjectEKSCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
