@@ -617,45 +617,46 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 		Path("/projects/{project_id}/providers/gke/validatecredentials").
 		Handler(r.validateProjectGKECredentials())
 
+	// EKS endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/validatecredentials").
+		Handler(r.validateProjectEKSCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/vpcs").
+		Handler(r.listProjectEKSVPCs())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/subnets").
+		Handler(r.listProjectEKSSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/securitygroups").
+		Handler(r.listProjectEKSSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/regions").
+		Handler(r.listProjectEKSRegions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/clusterroles").
+		Handler(r.listProjectEKSClusterRoles())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/versions").
+		Handler(r.listProjectEKSVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/amitypes").
+		Handler(r.listProjectEKSAMITypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/capacitytypes").
+		Handler(r.listProjectEKSCapacityTypes())
+
 		// TODO: implement provider-specific API endpoints and uncomment providers you implement.
 
 		/*
-			// EKS endpoints
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/validatecredentials").
-				Handler(r.validateProjectEKSCredentials())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/vpcs").
-				Handler(r.listProjectEKSVPCS())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/subnets").
-				Handler(r.listProjectEKSSubnets())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/securitygroups").
-				Handler(r.listProjectEKSSecurityGroups())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/regions").
-				Handler(r.listProjectEKSRegions())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/clusterroles").
-				Handler(r.listProjectEKSClusterRoles())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/versions").
-				Handler(r.listProjectEKSVersions())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/amitypes").
-				Handler(r.listProjectEKSAMITypes())
-
-			mux.Methods(http.MethodGet).
-				Path("/projects/{project_id}/providers/eks/capacitytypes").
-				Handler(r.listProjectEKSCapacityTypes())
 
 			// AKS credentials
 			mux.Methods(http.MethodGet).
@@ -5366,6 +5367,216 @@ func (r Routing) validateProjectGKECredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter, true)),
 		externalcluster.DecodeGKEProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/validatecredentials eks validateProjectEKSCredentials
+//
+// Validates EKS credentials.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+func (r Routing) validateProjectEKSCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter, true)),
+		externalcluster.DecodeEKSProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/vpcs eks listProjectEKSVPCs
+//
+// List EKS VPCs.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSVPCList
+func (r Routing) listProjectEKSVPCs() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSVPCEndpoint(r.userInfoGetter, r.presetProvider, true)),
+		externalcluster.DecodeEKSProjectTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/subnets eks listProjectEKSSubnets
+//
+// Lists EKS subnets.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSSubnetList
+func (r Routing) listProjectEKSSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSSubnetsEndpoint(r.userInfoGetter, r.presetProvider, true)),
+		externalcluster.DecodeEKSProjectReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/securitygroups eks listProjectEKSSecurityGroups
+//
+//	Lists EKS security groups.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSSecurityGroupList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectEKSSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSSecurityGroupsEndpoint(r.userInfoGetter, r.presetProvider, true)),
+		externalcluster.DecodeEKSProjectReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/regions eks listProjectEKSRegions
+//
+//	Lists EKS regions.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []EKSRegionList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectEKSRegions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider, true)),
+		externalcluster.DecodeEKSProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/clusterroles eks listProjectEKSClusterRoles
+//
+//	Lists EKS cluster service roles.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSClusterRoleList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectEKSClusterRoles() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.ListEKSClusterRolesEndpoint(r.userInfoGetter, r.presetProvider, true)),
+		externalcluster.DecodeEKSProjectCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/versions eks listProjectEKSVersions
+//
+// Lists EKS versions.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []MasterVersion
+func (r Routing) listProjectEKSVersions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSVersionsEndpoint(r.kubermaticConfigGetter, r.externalClusterProvider, true)),
+		common.DecodeProjectRequest,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/amitypes eks listProjectEKSAMITypes
+//
+//	Gets the EKS AMI types for node groups.
+//
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSAMITypeList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectEKSAMITypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSAMITypesEndpoint()),
+		common.DecodeProjectRequest,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/capacitytypes eks listProjectEKSCapacityTypes
+//
+//	Gets the EKS Capacity types for node groups.
+//
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: EKSCapacityTypeList
+//	  401: empty
+//	  403: empty
+func (r Routing) listProjectEKSCapacityTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSCapacityTypesEndpoint()),
+		common.DecodeProjectRequest,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
