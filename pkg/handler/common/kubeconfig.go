@@ -44,6 +44,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	apiserverserviceaccount "k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,6 +60,9 @@ const (
 	csrfCookieName = "csrf_token"
 	cookieMaxAge   = 180
 	oidc           = "oidc"
+
+	// defaultCtx is the name of the default context in kubeconfig.
+	defaultCtx = "default"
 )
 
 var secureCookie *securecookie.SecureCookie
@@ -123,6 +127,94 @@ func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCl
 	}
 
 	return &encodeKubeConifgResponse{clientCfg: cfg, filePrefix: filePrefix}, nil
+}
+
+// GetClusterSAKubeconigEndpoint returns the kubeconfig associated to a service account in the cluster.
+func GetClusterSAKubeconigEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, clusterID string, serviceAccountNamespace, serviceAccountName string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	token, err := getServiceAccountToken(ctx, client, serviceAccountNamespace, serviceAccountName)
+	if err != nil {
+		return nil, err
+	}
+
+	adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForUserCluster(ctx, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// create a kubeconfig that contains service account token
+	saKubeConfig := clientcmdapi.NewConfig()
+
+	// grab admin kubeconfig to read the cluster info
+	var clusterFromAdminKubeCfg *clientcmdapi.Cluster
+	for clusterName, cluster := range adminKubeConfig.Clusters {
+		if clusterName == clusterID {
+			clusterFromAdminKubeCfg = cluster
+		}
+	}
+	if clusterFromAdminKubeCfg == nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster entry in existing kubecfg", clusterID))
+	}
+
+	// create cluster entry
+	clientCmdCluster := clientcmdapi.NewCluster()
+	clientCmdCluster.Server = clusterFromAdminKubeCfg.Server
+	clientCmdCluster.CertificateAuthorityData = clusterFromAdminKubeCfg.CertificateAuthorityData
+	saKubeConfig.Clusters[clusterID] = clientCmdCluster
+
+	// create auth entry
+	userName := "sa-" + serviceAccountName
+	clientCmdAuth := clientcmdapi.NewAuthInfo()
+	clientCmdAuth.Token = token
+	saKubeConfig.AuthInfos[userName] = clientCmdAuth
+
+	// create context
+	clientCmdCtx := clientcmdapi.NewContext()
+	clientCmdCtx.Cluster = clusterID
+	clientCmdCtx.AuthInfo = userName
+	saKubeConfig.Contexts[defaultCtx] = clientCmdCtx
+	saKubeConfig.CurrentContext = defaultCtx
+
+	return &encodeKubeConifgResponse{clientCfg: saKubeConfig, filePrefix: userName}, nil
+}
+
+// getServiceAccountToken returns the token associated to the k8s service account named serviceAccountID in serviceAccountNamespace.
+// An error is returned for the following cases:
+//   - service account does not exist
+//   - service account does not have token associated. (ie no secret annoated with service account's name and uid)
+//   - secret that stores token does not have key "token"
+func getServiceAccountToken(ctx context.Context, client ctrlruntimeclient.Client, serviceAccountNamespace string, serviceAccountName string) (string, error) {
+	serviceAccount := &corev1.ServiceAccount{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: serviceAccountNamespace, Name: serviceAccountName}, serviceAccount); err != nil {
+		return "", common.KubernetesErrorToHTTPError(err)
+	}
+
+	secretList := &corev1.SecretList{}
+	if err := client.List(ctx, secretList, ctrlruntimeclient.InNamespace(serviceAccount.Namespace)); err != nil {
+		return "", common.KubernetesErrorToHTTPError(err)
+	}
+
+	for _, secret := range secretList.Items {
+		if apiserverserviceaccount.IsServiceAccountToken(&secret, serviceAccount) {
+			token := secret.Data[corev1.ServiceAccountTokenKey]
+			if len(token) == 0 {
+				return "", utilerrors.New(http.StatusInternalServerError, "no token defined in the service account's secret")
+			}
+			return string(token), nil
+		}
+	}
+
+	return "", utilerrors.New(http.StatusInternalServerError, "service account has no secret")
 }
 
 func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -247,8 +339,8 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 			clientCmdCtx := clientcmdapi.NewContext()
 			clientCmdCtx.Cluster = req.ClusterID
 			clientCmdCtx.AuthInfo = claims.Email
-			oidcKubeCfg.Contexts["default"] = clientCmdCtx
-			oidcKubeCfg.CurrentContext = "default"
+			oidcKubeCfg.Contexts[defaultCtx] = clientCmdCtx
+			oidcKubeCfg.CurrentContext = defaultCtx
 		}
 
 		// prepare final rsp that holds kubeconfig
@@ -377,8 +469,8 @@ func CreateOIDCKubeconfigSecretEndpoint(ctx context.Context, projectProvider pro
 			clientCmdCtx := clientcmdapi.NewContext()
 			clientCmdCtx.Cluster = req.ClusterID
 			clientCmdCtx.AuthInfo = claims.Email
-			oidcKubeCfg.Contexts["default"] = clientCmdCtx
-			oidcKubeCfg.CurrentContext = "default"
+			oidcKubeCfg.Contexts[defaultCtx] = clientCmdCtx
+			oidcKubeCfg.CurrentContext = defaultCtx
 		}
 
 		// prepare final rsp that holds kubeconfig

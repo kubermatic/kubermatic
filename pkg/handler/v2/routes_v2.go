@@ -1468,6 +1468,23 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles").
 		Handler(r.listOperatingSystemProfilesForCluster())
+
+	// Define endpoints to manage cluster service accounts
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/serviceaccount").
+		Handler(r.listClusterServiceAccount())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/serviceaccount").
+		Handler(r.createClusterServiceAccount())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig").
+		Handler(r.getClusterServiceAccountKubeconfig())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}").
+		Handler(r.deleteClusterServiceAccount())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -8314,6 +8331,112 @@ func (r Routing) listOperatingSystemProfilesForCluster() http.Handler {
 			middleware.PrivilegedOperatingSystemProfile(r.clusterProviderGetter, r.privilegedOperatingSystemProfileProviderGetter, r.seedsGetter),
 		)(operatingsystemprofile.ListOperatingSystemProfilesEndpointForCluster(r.userInfoGetter)),
 		operatingsystemprofile.DecodeListOperatingSystemProfiles,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount project listClusterServiceAccount
+//
+//	List service accounts in cluster.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []ClusterServiceAccount
+//	  401: empty
+//	  403: empty
+func (r Routing) listClusterServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterSAEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		cluster.DecodeListClusterServiceAccount,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount project createClusterServiceAccount
+//
+//	Creates a service account in cluster.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  201: ClusterServiceAccount
+//	  401: empty
+//	  403: empty
+func (r Routing) createClusterServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.CreateClusterSAEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		cluster.DecodeCreateClusterServiceAccount,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// getClusterServiceAccountKubeconfig returns the kubeconfig for the service account.
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig project getClusterServiceAccountKubeconfig
+//
+//	Gets the kubeconfig for the specified service account in cluster.
+//
+//	Produces:
+//	- application/octet-stream
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: Kubeconfig
+//	  401: empty
+//	  403: empty
+func (r Routing) getClusterServiceAccountKubeconfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetClusterSAKubeconigEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		cluster.DecodeClusterSAReq,
+		cluster.EncodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// DeleteClusterServiceAccount delete the service account.
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id} project deleteClusterServiceAccount
+//
+//	Deletes service account in cluster.
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: empty
+//	  401: empty
+//	  403: empty
+func (r Routing) deleteClusterServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.DeleteClusterSAKubeconigEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		cluster.DecodeClusterSAReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

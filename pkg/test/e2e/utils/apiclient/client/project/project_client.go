@@ -44,6 +44,8 @@ type ClientService interface {
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterRoleCreated, error)
 
+	CreateClusterServiceAccount(params *CreateClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterServiceAccountCreated, error)
+
 	CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateCreated, error)
 
 	CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateInstanceCreated, error)
@@ -73,6 +75,8 @@ type ClientService interface {
 	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterOK, error)
 
 	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterRoleOK, error)
+
+	DeleteClusterServiceAccount(params *DeleteClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterServiceAccountOK, error)
 
 	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterTemplateOK, error)
 
@@ -134,6 +138,8 @@ type ClientService interface {
 
 	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterRoleOK, error)
 
+	GetClusterServiceAccountKubeconfig(params *GetClusterServiceAccountKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterServiceAccountKubeconfigOK, error)
+
 	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error)
 
 	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesOK, error)
@@ -193,6 +199,8 @@ type ClientService interface {
 	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesV2OK, error)
 
 	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleV2OK, error)
+
+	ListClusterServiceAccount(params *ListClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterServiceAccountOK, error)
 
 	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterTemplatesOK, error)
 
@@ -620,6 +628,44 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+CreateClusterServiceAccount creates a service account in cluster
+*/
+func (a *Client) CreateClusterServiceAccount(params *CreateClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterServiceAccountCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createClusterServiceAccount",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateClusterServiceAccountCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterServiceAccountDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1192,6 +1238,44 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+DeleteClusterServiceAccount deletes service account in cluster
+*/
+func (a *Client) DeleteClusterServiceAccount(params *DeleteClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterServiceAccountOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteClusterServiceAccount",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteClusterServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterServiceAccountDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -2338,6 +2422,44 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 }
 
 /*
+GetClusterServiceAccountKubeconfig gets the kubeconfig for the specified service account in cluster
+*/
+func (a *Client) GetClusterServiceAccountKubeconfig(params *GetClusterServiceAccountKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterServiceAccountKubeconfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterServiceAccountKubeconfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getClusterServiceAccountKubeconfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterServiceAccountKubeconfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterServiceAccountKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterServiceAccountKubeconfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
 GetClusterTemplate gets cluster template
 */
 func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error) {
@@ -3474,6 +3596,44 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListClusterServiceAccount lists service accounts in cluster
+*/
+func (a *Client) ListClusterServiceAccount(params *ListClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterServiceAccountOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listClusterServiceAccount",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterServiceAccountDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -265,7 +265,7 @@ func TestBindUserToRole(t *testing.T) {
 			),
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
-				test.GenDefaultServiceAccoutnRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -301,7 +301,7 @@ func TestBindUserToRole(t *testing.T) {
 			),
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
-				test.GenDefaultServiceAccoutnRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -438,7 +438,7 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			),
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
-				test.GenDefaultServiceAccoutnRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -456,7 +456,7 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			),
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
-				test.GenDefaultServiceAccoutnRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}, {Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "another-ns"}}),
+				test.GenServiceAccountRoleBinding("test", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}, {Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "another-ns"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -785,7 +785,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultClusterRole("role-1"),
 				test.GenDefaultClusterRole("role-2"),
-				test.GenDefaultServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -802,7 +802,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			),
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultClusterRole("role-1"),
-				test.GenDefaultServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -938,7 +938,7 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultClusterRole("role-1"),
 				test.GenDefaultClusterRole("role-2"),
-				test.GenDefaultServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -956,7 +956,7 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultClusterRole("role-1"),
 				test.GenDefaultClusterRole("role-2"),
-				test.GenDefaultServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}, {Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "another-ns"}}),
+				test.GenServiceAccountClusterRoleBinding("test", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}, {Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "another-ns"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -1053,8 +1053,8 @@ func TestListRoleBinding(t *testing.T) {
 				test.GenDefaultRoleBinding("binding-1", "default", "role-1", "test-1@example.com"),
 				test.GenDefaultRoleBinding("binding-2", "default", "role-2", "test-2@example.com"),
 				test.GenDefaultGroupRoleBinding("binding-3", "default", "role-2", "test"),
-				test.GenDefaultServiceAccoutnRoleBinding("binding-4", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
-				test.GenDefaultServiceAccoutnRoleBinding("binding-5", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "test"}}),
+				test.GenServiceAccountRoleBinding("binding-4", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountRoleBinding("binding-5", "default", "role-1", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "test"}}),
 				test.GenDefaultRoleBinding("binding-1", "test", "role-10", "test-10@example.com"),
 				test.GenDefaultGroupRoleBinding("binding-2", "test", "role-10", "test"),
 			},
@@ -1161,7 +1161,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 				test.GenDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
 				test.GenDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
 				test.GenDefaultGroupClusterRoleBinding("binding-2-2", "role-2", "test-4"),
-				test.GenDefaultServiceAccountClusterRoleBinding("binding-2-3", "role-2", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
+				test.GenServiceAccountClusterRoleBinding("binding-2-3", "role-2", []rbacv1.Subject{{Kind: rbacv1.ServiceAccountKind, Name: "test", Namespace: "default"}}),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
