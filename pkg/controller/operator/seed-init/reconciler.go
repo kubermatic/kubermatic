@@ -185,7 +185,7 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 			if crdObject.Annotations == nil {
 				crdObject.Annotations = map[string]string{}
 			}
-			crdObject.Annotations[resources.VersionLabel] = r.versions.Kubermatic
+			crdObject.Annotations[resources.VersionLabel] = r.versions.KubermaticCommit
 
 			err := r.createOnSeed(ctx, &crdObject, client, crdLog)
 			if err == nil {
