@@ -142,7 +142,7 @@ func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploym
 func getAWSCCMVersion(version semver.Semver) string {
 	switch version.MajorMinor() {
 	case v124:
-		return "v1.24.2"
+		return "v1.24.0"
 	case v125:
 		fallthrough
 	//	By default return latest version
