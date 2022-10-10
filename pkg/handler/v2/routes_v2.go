@@ -8013,7 +8013,7 @@ func (r Routing) patchGroupProjectBinding() http.Handler {
 //
 //	Responses:
 //	  default: errorResponse
-//	  200: []ApplicationInstallation
+//	  200: []ApplicationInstallationListItem
 //	  401: empty
 //	  403: empty
 func (r Routing) listApplicationInstallations() http.Handler {
@@ -8152,7 +8152,7 @@ func (r Routing) updateApplicationInstallation() http.Handler {
 //
 //	Responses:
 //	  default: errorResponse
-//	  200: []ApplicationDefinition
+//	  200: []ApplicationDefinitionListItem
 //	  401: empty
 //	  403: empty
 func (r Routing) listApplicationDefinitions() http.Handler {

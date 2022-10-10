@@ -9176,11 +9176,11 @@
         "operationId": "listApplicationDefinitions",
         "responses": {
           "200": {
-            "description": "ApplicationDefinition",
+            "description": "ApplicationDefinitionListItem",
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ApplicationDefinition"
+                "$ref": "#/definitions/ApplicationDefinitionListItem"
               }
             }
           },
@@ -10760,11 +10760,11 @@
         ],
         "responses": {
           "200": {
-            "description": "ApplicationInstallation",
+            "description": "ApplicationInstallationListItem",
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ApplicationInstallation"
+                "$ref": "#/definitions/ApplicationInstallationListItem"
               }
             }
           },
