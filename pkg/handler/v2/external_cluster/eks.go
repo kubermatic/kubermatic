@@ -52,6 +52,23 @@ const (
 	EKSCapacityTypes = "SPOT"
 )
 
+// EKSProjectReq represents a request with a project context.
+// swagger:parameters listProjectEKSVersions listProjectEKSAMITypes listProjectEKSCapacityTypes
+type EKSProjectReq struct {
+	common.ProjectReq
+}
+
+func DecodeEKSProjectReq(c context.Context, r *http.Request) (interface{}, error) {
+	req, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return EKSProjectReq{
+		ProjectReq: req.(common.ProjectReq),
+	}, nil
+}
+
 // EKSCommonReq represent a request with common parameters for EKS.
 // swagger:parameters listEKSRegions listEKSClusterRoles
 type EKSCommonReq struct {
@@ -66,6 +83,13 @@ type EKSCommonReq struct {
 	Credential string
 }
 
+// EKSProjectCommonReq represents a request with common parameters and project context for EKS.
+// swagger:parameters listProjectEKSRegions listProjectEKSClusterRoles
+type EKSProjectCommonReq struct {
+	common.ProjectReq
+	EKSCommonReq
+}
+
 func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req EKSCommonReq
 
@@ -76,17 +100,41 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// EKSTypesReq represent a request for EKS types.
+func DecodeEKSProjectCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	commonReq, err := DecodeEKSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return EKSProjectCommonReq{
+		ProjectReq:   projectReq.(common.ProjectReq),
+		EKSCommonReq: commonReq.(EKSCommonReq),
+	}, nil
+}
+
+// EKSRegionReq represent a request that includes region information.
 // swagger:parameters validateEKSCredentials listEKSVPCS
-type EKSTypesReq struct {
+type EKSRegionReq struct {
 	EKSCommonReq
 	// in: header
 	// name: Region
 	Region string
 }
 
-func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req EKSTypesReq
+// EKSProjectRegionReq represents a request that includes region information with project context.
+// swagger:parameters validateProjectEKSCredentials listProjectEKSVPCs listEKSClusters listProjectEKSClusterRoles
+type EKSProjectRegionReq struct {
+	common.ProjectReq
+	EKSRegionReq
+}
+
+func DecodeEKSRegionReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSRegionReq
 
 	commonReq, err := DecodeEKSCommonReq(c, r)
 	if err != nil {
@@ -98,11 +146,21 @@ func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-// EKSClusterListReq represent a request for EKS cluster list.
-// swagger:parameters listEKSClusters
-type EKSClusterListReq struct {
-	common.ProjectReq
-	EKSTypesReq
+func DecodeEKSProjectRegionReq(c context.Context, r *http.Request) (interface{}, error) {
+	regionReq, err := DecodeEKSRegionReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return EKSProjectRegionReq{
+		ProjectReq:   projectReq.(common.ProjectReq),
+		EKSRegionReq: regionReq.(EKSRegionReq),
+	}, nil
 }
 
 func (req EKSCommonReq) Validate() error {
@@ -115,7 +173,7 @@ func (req EKSCommonReq) Validate() error {
 	return nil
 }
 
-func (req EKSTypesReq) Validate() error {
+func (req EKSRegionReq) Validate() error {
 	if len(req.Region) == 0 {
 		return fmt.Errorf("region cannot be empty")
 	}
@@ -125,31 +183,14 @@ func (req EKSTypesReq) Validate() error {
 	return nil
 }
 
-func (req EKSReq) Validate() error {
+func (req EKSVPCReq) Validate() error {
 	if len(req.VpcId) == 0 {
 		return fmt.Errorf("EKS VPC ID cannot be empty")
 	}
-	if err := req.EKSTypesReq.Validate(); err != nil {
+	if err := req.EKSRegionReq.Validate(); err != nil {
 		return err
 	}
 	return nil
-}
-
-func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req EKSClusterListReq
-
-	typesReq, err := DecodeEKSTypesReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.EKSTypesReq = typesReq.(EKSTypesReq)
-	pr, err := common.DecodeProjectRequest(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectReq = pr.(common.ProjectReq)
-
-	return req, nil
 }
 
 // eksNoCredentialReq represent a request for EKS resources
@@ -240,7 +281,7 @@ func (req eksSubnetsNoCredentialReq) Validate() error {
 
 func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSClusterListReq)
+		req, ok := request.(EKSProjectRegionReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
@@ -248,7 +289,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req.EKSRegionReq, userInfoGetter, presetProvider, req.ProjectID)
 		if err != nil {
 			return nil, err
 		}
@@ -257,17 +298,34 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 	}
 }
 
-func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSRegionReq
+			projectID string
+		)
+
+		if !withProject {
+			regionReq, ok := request.(EKSRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = regionReq
+		} else {
+			projectReq, ok := request.(EKSProjectRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSRegionReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -276,17 +334,34 @@ func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider p
 	}
 }
 
-func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSVPCReq
+			projectID string
+		)
+
+		if !withProject {
+			vpcReq, ok := request.(EKSVPCReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = vpcReq
+		} else {
+			projectReq, ok := request.(EKSProjectVPCReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSVPCReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req.EKSRegionReq, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -295,17 +370,34 @@ func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 	}
 }
 
-func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSVPCReq
+			projectID string
+		)
+
+		if !withProject {
+			vpcReq, ok := request.(EKSVPCReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = vpcReq
+		} else {
+			projectReq, ok := request.(EKSProjectVPCReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSVPCReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req.EKSRegionReq, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -314,21 +406,38 @@ func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, prese
 	}
 }
 
-func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSCommonReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSCommonReq
+			projectID string
+		)
+
+		if !withProject {
+			commonReq, ok := request.(EKSCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = commonReq
+		} else {
+			projectReq, ok := request.(EKSProjectCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSCommonReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		eksTypesReq := EKSTypesReq{
+		eksTypesReq := EKSRegionReq{
 			EKSCommonReq: req,
 			Region:       RegionEndpoint,
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -337,21 +446,38 @@ func ListEKSRegionsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvid
 	}
 }
 
-func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSCommonReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSCommonReq
+			projectID string
+		)
+
+		if !withProject {
+			commonReq, ok := request.(EKSCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = commonReq
+		} else {
+			projectReq, ok := request.(EKSProjectCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSCommonReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		eksTypesReq := EKSTypesReq{
+		eksTypesReq := EKSRegionReq{
 			EKSCommonReq: req,
 			Region:       RegionEndpoint,
 		}
-		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, eksTypesReq, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -360,17 +486,34 @@ func ListEKSClusterRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetP
 	}
 }
 
-func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSRegionReq
+			projectID string
+		)
+
+		if !withProject {
+			regionReq, ok := request.(EKSRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = regionReq
+		} else {
+			projectReq, ok := request.(EKSProjectRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSRegionReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -379,17 +522,34 @@ func ListEKSNodeRolesEndpoint(userInfoGetter provider.UserInfoGetter, presetProv
 	}
 }
 
-func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(EKSTypesReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       EKSRegionReq
+			projectID string
+		)
+
+		if !withProject {
+			regionReq, ok := request.(EKSRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = regionReq
+		} else {
+			projectReq, ok := request.(EKSProjectRegionReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.EKSRegionReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider)
+		credential, err := getEKSCredentialsFromReq(ctx, req, userInfoGetter, presetProvider, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -402,19 +562,19 @@ func EKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 	}
 }
 
-func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*resources.EKSCredential, error) {
+func getEKSCredentialsFromReq(ctx context.Context, req EKSRegionReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider, projectID string) (*resources.EKSCredential, error) {
 	accessKeyID := req.AccessKeyID
 	secretAccessKey := req.SecretAccessKey
 	region := req.Region
 
-	userInfo, err := userInfoGetter(ctx, "")
+	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	presetName := req.Credential
 	if len(presetName) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), presetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(projectID), presetName)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
 		}
@@ -431,26 +591,49 @@ func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGett
 	}, nil
 }
 
-// EKSSubnetsReq represent a request for EKS subnets.
+// EKSVPCReq represents a request for resources within a VPC.
 // swagger:parameters listEKSSubnets listEKSSecurityGroups
-type EKSReq struct {
-	EKSTypesReq
+type EKSVPCReq struct {
+	EKSRegionReq
 	// in: header
 	// name: VpcId
 	VpcId string
 }
 
-func DecodeEKSReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req EKSReq
+// EKSProjectVPCReq represents a request for resources within a VPC with project context.
+// swagger:parameters listEKSProjectSubnets listEKSProjectSecurityGroups
+type EKSProjectVPCReq struct {
+	common.ProjectReq
+	EKSVPCReq
+}
 
-	typesReq, err := DecodeEKSTypesReq(c, r)
+func DecodeEKSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req EKSVPCReq
+
+	typesReq, err := DecodeEKSRegionReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.EKSTypesReq = typesReq.(EKSTypesReq)
+	req.EKSRegionReq = typesReq.(EKSRegionReq)
 	req.VpcId = r.Header.Get("VpcId")
 
 	return req, nil
+}
+func DecodeEKSProjectVPCReq(c context.Context, r *http.Request) (interface{}, error) {
+	vpcReq, err := DecodeEKSVPCReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return EKSProjectVPCReq{
+		ProjectReq: projectReq.(common.ProjectReq),
+		EKSVPCReq:  vpcReq.(EKSVPCReq),
+	}, nil
 }
 
 func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSpec, eksCloudSpec *apiv2.EKSCloudSpec) error {
