@@ -449,7 +449,7 @@ type KubermaticKCPConfiguration struct {
 	// client certificates issued for each KKP user. The certificate must use RSA.
 	// The secret must contain a "ca.crt" with the PEM-encoded certificate
 	// and a "ca.key" with the PEM-encoded private key.
-	ClientCASecretName string `json:"clientCASecretName"`
+	ClientCASecretName string `json:"clientCaSecretName"`
 
 	// RootKubeconfigSecretName is the name of a Kubernetes Secret in the same namespace
 	// as KKP that contains the a kubeconfig whose default context provides

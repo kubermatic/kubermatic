@@ -61,10 +61,10 @@ limitations under the License.
 // are disallowed in a home workspace name.
 // Home workspace name is derived from the user name, with disallowed characters
 // replaced.
-// Adapted from kcp/pkg/server/home_workspaces.go getHomeLogicalClusterName()
+// Adapted from kcp/pkg/server/home_workspaces.go getHomeLogicalClusterName().
 var reHomeWorkspaceNameDisallowedChars = regexp.MustCompile("[^a-z0-9-]")
 
-// Adapted from kcp/pkg/server/home_workspaces.go getHomeLogicalClusterName()
+// Adapted from kcp/pkg/server/home_workspaces.go getHomeLogicalClusterName().
 func getHomeLogicalClusterName(homePrefix logicalcluster.Name, userName string) logicalcluster.Name {
 	bytes := sha1.Sum([]byte(userName))
 

@@ -103,7 +103,7 @@ spec:
     # client certificates issued for each KKP user. The certificate must use RSA.
     # The secret must contain a "ca.crt" with the PEM-encoded certificate
     # and a "ca.key" with the PEM-encoded private key.
-    clientCASecretName: ""
+    clientCaSecretName: ""
     # HomeRootPrefix is the logical name of the workspace under which all user
     # buckets and workspaces will be placed, for example "root:users".
     homeRootPrefix: ""
