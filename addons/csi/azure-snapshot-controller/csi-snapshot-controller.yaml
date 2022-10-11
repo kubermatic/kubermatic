@@ -46,7 +46,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-snapshot-controller
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/snapshot-controller:v5.0.1
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v5.0.1" }}
           args:
             - "--v=2"
             - "--leader-election=true"

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This does not work, as the chart's templating explodes if
-# we inject a templating directive here. `sed` it is, then.
-#image:
-#  repository: '{{ Image "public.ecr.aws/aws-ec2/aws-node-termination-handler" }}'
+set -euo pipefail
 
-fullnameOverride: "aws-node-termination-handler"
+dqreplacement='"{{ Image \1 }}"'
+sqreplacement=$'\'{{ Image "\1" }}\''
+replacement='{{ Image "\1" }}'
 
-podSecurityContext:
-  seccompProfile:
-    type: RuntimeDefault
+for registry in docker.io quay.io public.ecr.aws; do
+  sed -i "s/\(\"$registry.*\"\)/$dqreplacement/g" $@
+  sed -i "s/\('$registry.*'\)/$sqreplacement/g" $@
 
-nodeSelector:
-  k8c.io/aws-spot: aws-node-termination-handler
+  # the space makes it so that this does not match the
+  # output of the previous two sed invocations
+  sed -i "s/ \($registry.*\)/ $replacement/g" $@
+done

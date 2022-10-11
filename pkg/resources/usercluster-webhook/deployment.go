@@ -53,7 +53,7 @@ var (
 )
 
 type webhookData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	DC() *kubermaticv1.Datacenter
 	KubermaticAPIImage() string

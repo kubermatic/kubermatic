@@ -41,12 +41,12 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func getPrometheusImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryQuay) + "/prometheus/prometheus:v2.37.0"
+func getPrometheusImage(overwriter registry.ImageRewriter) string {
+	return registry.Must(overwriter(resources.RegistryQuay + "/prometheus/prometheus:v2.37.0"))
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
-func prometheusStatefulSet(getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetCreatorGetter {
+func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			if sts.Labels == nil {

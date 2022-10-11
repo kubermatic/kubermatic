@@ -17,11 +17,10 @@ limitations under the License.
 package cloudcontroller
 
 import (
-	"fmt"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -90,7 +89,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 }
 
 func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1.Container {
-	controllerManagerImage := fmt.Sprintf("%s/cloud-provider-vsphere/cpi/release/manager:v%s", data.ImageRegistry(resources.RegistryGCR), version)
+	controllerManagerImage := registry.Must(data.RewriteImage(resources.RegistryGCR + "/cloud-provider-vsphere/cpi/release/manager:v" + version))
 	c := corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,

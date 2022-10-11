@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +58,7 @@ const (
 type machinecontrollerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
 	DC() *kubermaticv1.Datacenter
@@ -135,7 +136,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/machine-controller"
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/machine-controller"))
 			if r := data.MachineControllerImageRepository(); r != "" {
 				repository = r
 			}

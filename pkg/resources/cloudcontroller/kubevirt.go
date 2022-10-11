@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,7 +103,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag,
+					Image:        registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag)),
 					Command:      []string{"/bin/kubevirt-cloud-controller-manager"},
 					Args:         getKVFlags(data),
 					Env:          getEnvVars(),

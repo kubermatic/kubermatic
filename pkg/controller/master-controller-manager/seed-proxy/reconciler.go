@@ -321,7 +321,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 	}
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(seed, secret, registry.GetOverwriteFunc(config.Spec.UserCluster.OverwriteRegistry)),
+		masterDeploymentCreator(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {

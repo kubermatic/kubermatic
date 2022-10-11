@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -48,7 +49,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 
 	return &corev1.Container{
 		Name:            resources.KonnectivityServerContainer,
-		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryEUGCR), name, version),
+		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryEUGCR, name, version))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"/proxy-server",

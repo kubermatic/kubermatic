@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -145,7 +146,7 @@ var (
 )
 
 type nodePortProxyData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	NodePortProxyTag() string
 	Cluster() *kubermaticv1.Cluster
 	SupportsFailureDomainZoneAntiAffinity() bool
@@ -210,7 +211,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "copy-envoy-config",
-					Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+					Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 					Command: []string{
 						"/bin/cp",
 						"/envoy.yaml",
@@ -225,7 +226,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "envoy-manager",
-				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 				Command: []string{"/envoy-manager",
 					"-listen-address=:8001",
 					"-envoy-node-name=$(PODNAME)",
@@ -249,7 +250,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.16.0",
+				Image: registry.Must(data.RewriteImage("envoyproxy/envoy-alpine:v1.16.0")),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
@@ -343,7 +344,7 @@ func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploym
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
 					"-namespaced=true",
 				},
-				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 				Env: []corev1.EnvVar{{
 					Name: "MY_NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{

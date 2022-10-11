@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,7 +62,7 @@ const (
 type kubernetesDashboardData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 }
 
 // DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
@@ -132,7 +133,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 
 	return []corev1.Container{{
 		Name:            name,
-		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/dashboard"},
 		Args: []string{

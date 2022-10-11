@@ -72,7 +72,7 @@ func NewFakeVersions() Versions {
 		Kubermatic:        "v0.0.0-test",
 		UI:                "v1.1.1-test",
 		VPA:               "0.5.0",
-		Envoy:             "v1.16.0",
+		Envoy:             "v1.17.1",
 		KubermaticEdition: edition.KubermaticEdition,
 	}
 }

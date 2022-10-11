@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,7 +103,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/machine-controller"
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/machine-controller"))
 			if r := data.MachineControllerImageRepository(); r != "" {
 				repository = r
 			}

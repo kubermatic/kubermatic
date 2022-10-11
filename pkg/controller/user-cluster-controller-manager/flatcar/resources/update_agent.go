@@ -37,7 +37,7 @@ var (
 	hostPathType            = corev1.HostPathUnset
 )
 
-func AgentDaemonSetCreator(getRegistry registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
+func AgentDaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	var userCore int64 = 500 // UID of the flatcar admin user 'core'
 
 	return func() (string, reconciling.DaemonSetCreator) {
@@ -64,7 +64,7 @@ func AgentDaemonSetCreator(getRegistry registry.WithOverwriteFunc) reconciling.N
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-agent",
-					Image:   getRegistry(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
+					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:v0.7.3")),
 					Command: []string{"/bin/update-agent"},
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser: &userCore,

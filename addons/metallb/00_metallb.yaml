@@ -1593,7 +1593,7 @@ spec:
           value: memberlist
         - name: METALLB_DEPLOYMENT
           value: controller
-        image: {{ Registry "quay.io" }}/metallb/controller:v0.13.3
+        image: {{ Image "quay.io/metallb/controller:v0.13.3" }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -1689,7 +1689,7 @@ spec:
             secretKeyRef:
               key: secretkey
               name: memberlist
-        image: {{ Registry "quay.io" }}/metallb/speaker:v0.13.3
+        image: {{ Image "quay.io/metallb/speaker:v0.13.3" }}
         livenessProbe:
           failureThreshold: 3
           httpGet:

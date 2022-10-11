@@ -45,7 +45,9 @@ const (
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	funcs := sprig.TxtFuncMap()
+	// Registry is deprecated and should not be used anymore.
 	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
+	funcs["Image"] = registry.GetImageRewriterFunc(overwriteRegistry)
 	funcs["join"] = strings.Join
 	return funcs
 }

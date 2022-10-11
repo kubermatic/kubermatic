@@ -157,7 +157,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetOverwriteFunc(templateData.OverwriteRegistry)))
+		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
@@ -165,9 +165,9 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	var daemonsetCreators []reconciling.NamedDaemonSetCreatorGetter
 	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
 		kubermaticVersions,
-		templateData.ImageRegistry,
+		templateData.RewriteImage,
 	))
-	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.ImageRegistry))
+	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()

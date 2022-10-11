@@ -54,13 +54,13 @@ const (
 	meteringName = "metering"
 )
 
-func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:v1.0.0"
+func getMeteringImage(overwriter registry.ImageRewriter) string {
+	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.0"))
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
-	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
+	overwriter := registry.GetImageRewriterFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
 		return undeploy(ctx, client, seed.Namespace)
@@ -83,7 +83,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	return nil
 }
 
-func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.ImageRewriter, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Namespace); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
