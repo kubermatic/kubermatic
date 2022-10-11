@@ -189,7 +189,7 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	authName := "token-based"
 
 	cluster := api.NewCluster()
-	cluster.CertificateAuthorityData = credentials.Data["ca.crt"]
+	cluster.CertificateAuthorityData = credentials.Data[corev1.ServiceAccountRootCAKey]
 	cluster.Server = host
 
 	context := api.NewContext()
@@ -197,7 +197,7 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	context.AuthInfo = authName
 
 	user := api.NewAuthInfo()
-	user.Token = string(credentials.Data["token"])
+	user.Token = string(credentials.Data[corev1.ServiceAccountTokenKey])
 
 	kubeconfig := api.NewConfig()
 	kubeconfig.Clusters[clusterName] = cluster
