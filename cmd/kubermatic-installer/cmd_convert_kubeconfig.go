@@ -22,11 +22,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -40,6 +43,7 @@ import (
 
 const (
 	serviceAccountName = "kubermatic"
+	secretName         = "kubermatic-sa-token"
 )
 
 type ConvertKubeconfigOptions struct {
@@ -80,6 +84,9 @@ func ConvertKubeconfigFunc(logger *logrus.Logger, options *ConvertKubeconfigOpti
 			return fmt.Errorf("failed to read kubeconfig: %w", err)
 		}
 
+		// prevent ugly log lines from being displayed
+		kubermaticlog.Logger = kubermaticlog.New(false, kubermaticlog.FormatConsole).Sugar()
+
 		for clusterName := range kubeconfig.Clusters {
 			clog := logger.WithField("cluster", clusterName)
 
@@ -97,17 +104,18 @@ func ConvertKubeconfigFunc(logger *logrus.Logger, options *ConvertKubeconfigOpti
 			}
 
 			clog = clog.WithField("context", contextName)
-
 			clog.Info("Converting cluster")
 
 			clientConfig, err := clientcmd.NewInteractiveClientConfig(*kubeconfig, contextName, nil, nil, nil).ClientConfig()
 			if err != nil {
-				return fmt.Errorf("failed to create client config: %w", err)
+				clog.Errorf("Invalid context, failed to create client: %v", err)
+				continue
 			}
 
 			token, err := reconcileCluster(context.Background(), clientConfig, options.Namespace, clog)
 			if err != nil {
-				return fmt.Errorf("failed to reconcile: %w", err)
+				clog.Errorf("Invalid context, failed to reconcile: %v", err)
+				continue
 			}
 
 			if err := updateKubeconfig(kubeconfig, clusterName, contextName, token); err != nil {
@@ -125,8 +133,6 @@ func ConvertKubeconfigFunc(logger *logrus.Logger, options *ConvertKubeconfigOpti
 		if err := writeKubeconfig(kubeconfig, output); err != nil {
 			return fmt.Errorf("failed to save kubeconfig: %w", err)
 		}
-
-		logger.Info("All Done")
 
 		return nil
 	})
@@ -199,6 +205,19 @@ func serviceAccountCreatorGetter() (string, reconciling.ServiceAccountCreator) {
 	}
 }
 
+func secretCreatorGetter() (string, reconciling.SecretCreator) {
+	return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+		if existing.Annotations == nil {
+			existing.Annotations = map[string]string{}
+		}
+
+		existing.Annotations[corev1.ServiceAccountNameKey] = serviceAccountName
+		existing.Type = corev1.SecretTypeServiceAccountToken
+
+		return existing, nil
+	}
+}
+
 func clusterRoleCreatorGetterFactory(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return "kubermatic:cluster-admin", func(existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -248,6 +267,13 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 		return "", fmt.Errorf("failed to create ServiceAccount: %w", err)
 	}
 
+	log.Info("Reconciling Secret...")
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{
+		secretCreatorGetter,
+	}, namespace, client); err != nil {
+		return "", fmt.Errorf("failed to create Secret: %w", err)
+	}
+
 	log.Info("Reconciling ClusterRoleBinding...")
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleCreatorGetterFactory(namespace),
@@ -256,24 +282,24 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	}
 
 	log.Info("Retrieving ServiceAccount token...")
-	sa := corev1.ServiceAccount{}
-	if err := client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, &sa); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount: %w", err)
-	}
 
-	if len(sa.Secrets) == 0 {
-		return "", errors.New("ServiceAccount has no token Secret assigned")
-	}
+	var token []byte
 
-	secretName := sa.Secrets[0].Name
-	secret := corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)
-	}
+	err = wait.PollImmediate(ctx, 100*time.Millisecond, 30*time.Second, func() (transient error, terminal error) {
+		secret := corev1.Secret{}
+		if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
+			return nil, fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)
+		}
 
-	token, ok := secret.Data["token"]
-	if !ok {
-		return "", fmt.Errorf("ServiceAccount token Secret %q does not contain token", secretName)
+		var ok bool
+		if token, ok = secret.Data[corev1.ServiceAccountTokenKey]; !ok {
+			return errors.New("Kubernetes has not generated a ServiceAccount token yet"), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to acquire ServiceAccount token: %w", err)
 	}
 
 	return string(token), nil
