@@ -421,6 +421,11 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				}
 			}
 
+			// Check if allowed IP ranges are configured and set the LoadBalancer source ranges
+			if data.Cluster().Spec.APIServerAllowedIPRanges != nil {
+				s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
+			}
+
 			if data.Cluster().Spec.Cloud.AWS != nil {
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
