@@ -20,15 +20,20 @@ import (
 type NamespaceSpec struct {
 
 	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Create defines whether the namespace should be created if it does not exist.
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
 	Create bool `json:"create,omitempty"`
 
 	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Name is the namespace to deploy the Application into
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
 	// Pattern: =`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	Name string `json:"name,omitempty"`
 }

@@ -18,6 +18,9 @@ import (
 // swagger:model ApplicationInstallationListItem
 type ApplicationInstallationListItem struct {
 
+	// creation timestamp
+	CreationTimestamp string `json:"creationTimestamp,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

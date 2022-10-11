@@ -60,6 +60,10 @@ GetApplicationDefinitionParams contains all the parameters to send to the API en
 	Typically these are written to a http.Request.
 */
 type GetApplicationDefinitionParams struct {
+
+	// AppdefName.
+	AppDefName string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +117,17 @@ func (o *GetApplicationDefinitionParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAppDefName adds the appdefName to the get application definition params
+func (o *GetApplicationDefinitionParams) WithAppDefName(appdefName string) *GetApplicationDefinitionParams {
+	o.SetAppDefName(appdefName)
+	return o
+}
+
+// SetAppDefName adds the appdefName to the get application definition params
+func (o *GetApplicationDefinitionParams) SetAppDefName(appdefName string) {
+	o.AppDefName = appdefName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetApplicationDefinitionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +135,11 @@ func (o *GetApplicationDefinitionParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
+
+	// path param appdef_name
+	if err := r.SetPathParam("appdef_name", o.AppDefName); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

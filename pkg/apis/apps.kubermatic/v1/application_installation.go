@@ -97,6 +97,7 @@ type AppNamespaceSpec struct {
 }
 
 // ApplicationRef describes a KKP-wide, unique reference to an Application.
+// swagger:ignore
 type ApplicationRef struct {
 	// Name of the Application.
 	// Should be a valid lowercase RFC1123 domain name

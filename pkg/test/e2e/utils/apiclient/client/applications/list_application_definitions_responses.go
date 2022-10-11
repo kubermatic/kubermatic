@@ -61,10 +61,10 @@ func NewListApplicationDefinitionsOK() *ListApplicationDefinitionsOK {
 /*
 ListApplicationDefinitionsOK describes a response with status code 200, with default header values.
 
-ApplicationDefinition
+ApplicationDefinitionListItem
 */
 type ListApplicationDefinitionsOK struct {
-	Payload []*models.ApplicationDefinition
+	Payload []*models.ApplicationDefinitionListItem
 }
 
 // IsSuccess returns true when this list application definitions o k response has a 2xx status code
@@ -100,7 +100,7 @@ func (o *ListApplicationDefinitionsOK) String() string {
 	return fmt.Sprintf("[GET /api/v2/applicationdefinitions][%d] listApplicationDefinitionsOK  %+v", 200, o.Payload)
 }
 
-func (o *ListApplicationDefinitionsOK) GetPayload() []*models.ApplicationDefinition {
+func (o *ListApplicationDefinitionsOK) GetPayload() []*models.ApplicationDefinitionListItem {
 	return o.Payload
 }
 

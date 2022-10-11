@@ -24526,16 +24526,15 @@
       "title": "ApplicationRef describes a KKP-wide, unique reference to an Application.",
       "properties": {
         "name": {
-          "description": "Name of the Application.\nShould be a valid lowercase RFC1123 domain name",
+          "description": "Name of the Application",
           "type": "string",
-          "pattern": "=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`",
           "x-go-name": "Name"
         },
         "version": {
           "$ref": "#/definitions/Version"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ApplicationSource": {
       "type": "object",
