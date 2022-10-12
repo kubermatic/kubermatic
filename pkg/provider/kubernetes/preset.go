@@ -326,7 +326,7 @@ func generateAWSDownstreamCredentials(ctx context.Context, preset *kubermaticv1.
 
 	client := iam.NewFromConfig(cfg)
 
-	userName := rand.String(10)
+	userName := fmt.Sprintf("tmp-hackathon-%s", rand.String(10))
 
 	_, err = client.CreateUser(ctx, &iam.CreateUserInput{
 		UserName:            aws.String(userName),
