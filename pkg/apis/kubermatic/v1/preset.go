@@ -65,6 +65,7 @@ type PresetSpec struct {
 	GKE                 *GKE                 `json:"gke,omitempty"`
 	EKS                 *EKS                 `json:"eks,omitempty"`
 	AKS                 *AKS                 `json:"aks,omitempty"`
+	GenearateDownstream bool                 `json:"genearateDownstream,omitempty"`
 
 	Fake *Fake `json:"fake,omitempty"`
 

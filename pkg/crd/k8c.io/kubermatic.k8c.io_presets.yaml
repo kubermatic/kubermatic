@@ -227,6 +227,8 @@ spec:
                   required:
                     - serviceAccount
                   type: object
+                genearateDownstream:
+                  type: boolean
                 gke:
                   properties:
                     datacenter:

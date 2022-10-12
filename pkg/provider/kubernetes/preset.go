@@ -216,7 +216,7 @@ func (m *PresetProvider) SetCloudCredentials(ctx context.Context, userInfo *prov
 		return m.setHetznerCredentials(preset, cloud)
 	}
 	if cloud.AWS != nil {
-		return m.setAWSCredentials(preset, cloud)
+		return m.setAWSCredentials(ctx, preset, cloud)
 	}
 	if cloud.GCP != nil {
 		return m.setGCPCredentials(preset, cloud)
@@ -280,9 +280,17 @@ func (m *PresetProvider) setGCPCredentials(preset *kubermaticv1.Preset, cloud ku
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setAWSCredentials(preset *kubermaticv1.Preset, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+func (m *PresetProvider) setAWSCredentials(ctx context.Context, preset *kubermaticv1.Preset, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if preset.Spec.AWS == nil {
 		return nil, emptyCredentialError(preset.Name, "AWS")
+	}
+
+	var err error
+	if preset.Spec.GenearateDownstream {
+		preset, err = generateAWSDownstreamCredentials(ctx, preset)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	credentials := preset.Spec.AWS
@@ -300,6 +308,10 @@ func (m *PresetProvider) setAWSCredentials(preset *kubermaticv1.Preset, cloud ku
 	cloud.AWS.ControlPlaneRoleARN = credentials.ControlPlaneRoleARN
 
 	return &cloud, nil
+}
+
+func generateAWSDownstreamCredentials(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return nil, nil
 }
 
 func (m *PresetProvider) setHetznerCredentials(preset *kubermaticv1.Preset, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
