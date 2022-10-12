@@ -18,7 +18,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"go.anx.io/go-anxcloud/pkg/client"
@@ -26,12 +25,6 @@ import (
 	"go.anx.io/go-anxcloud/pkg/vsphere/provisioning/templates"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -79,65 +72,6 @@ func ListAnexiaTemplates(ctx context.Context, token, locationID string) (apiv1.A
 	}
 
 	return response, nil
-}
-
-func AnexiaVlansWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Anexia == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
-	}
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	token, err := anexia.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-	if err != nil {
-		return nil, err
-	}
-
-	return ListAnexiaVlans(ctx, token)
-}
-
-func AnexiaTemplatesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Anexia == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
-	}
-
-	datacenterName := cluster.Spec.Cloud.DatacenterName
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	token, err := anexia.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-	if err != nil {
-		return nil, err
-	}
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to find Datacenter %q: %v", datacenterName, err))
-	}
-
-	return ListAnexiaTemplates(ctx, token, datacenter.Spec.Anexia.LocationID)
 }
 
 func getClient(token string) (client.Client, error) {

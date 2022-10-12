@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -33,7 +32,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
-	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -43,13 +41,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -58,8 +50,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/kubermatic/v2/pkg/watcher"
-	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -71,14 +61,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	k8sjson "k8s.io/apimachinery/pkg/util/json"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
-	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func init() {
@@ -102,10 +90,6 @@ func init() {
 	}
 	if err := osmv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-
-	middleware.Now = func() time.Time {
-		return UserLastSeen
 	}
 }
 
@@ -165,69 +149,6 @@ func GetUser(email, id, name string) apiv1.User {
 	return u
 }
 
-// newRoutingFunc defines a func that knows how to create and set up routing required for testing
-// this function is temporal until all types end up in their own packages.
-// it is meant to be used by legacy handler.createTestEndpointAndGetClients function.
-type newRoutingFunc func(
-	adminProvider provider.AdminProvider,
-	settingsProvider provider.SettingsProvider,
-	userInfoGetter provider.UserInfoGetter,
-	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter,
-	configGetter provider.KubermaticConfigurationGetter,
-	clusterProviderGetter provider.ClusterProviderGetter,
-	addonProviderGetter provider.AddonProviderGetter,
-	addonConfigProvider provider.AddonConfigProvider,
-	newSSHKeyProvider provider.SSHKeyProvider,
-	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
-	userProvider provider.UserProvider,
-	serviceAccountProvider provider.ServiceAccountProvider,
-	privilegedServiceAccountProvider provider.PrivilegedServiceAccountProvider,
-	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
-	privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider,
-	projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	oidcIssuerVerifier auth.OIDCIssuerVerifier,
-	tokenVerifiers auth.TokenVerifier,
-	tokenExtractors auth.TokenExtractor,
-	prometheusClient prometheusapi.Client,
-	projectMemberProvider *kubernetes.ProjectMemberProvider,
-	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
-	saTokenAuthenticator serviceaccount.TokenAuthenticator,
-	saTokenGenerator serviceaccount.TokenGenerator,
-	eventRecorderProvider provider.EventRecorderProvider,
-	presetProvider provider.PresetProvider,
-	admissionPluginProvider provider.AdmissionPluginsProvider,
-	settingsWatcher watcher.SettingsWatcher,
-	userWatcher watcher.UserWatcher,
-	externalClusterProvider provider.ExternalClusterProvider,
-	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
-	constraintTemplateProvider provider.ConstraintTemplateProvider,
-	constraintProviderGetter provider.ConstraintProviderGetter,
-	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
-	clusterTemplateProvider provider.ClusterTemplateProvider,
-	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter,
-	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
-	kubermaticVersions kubermatic.Versions,
-	defaultConstraintProvider provider.DefaultConstraintProvider,
-	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
-	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
-	etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter,
-	etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter,
-	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
-	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
-	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
-	masterClient ctrlruntimeclient.Client,
-	featureGatesProvider provider.FeatureGatesProvider,
-	seedProvider provider.SeedProvider,
-	resourceQuotaProvider provider.ResourceQuotaProvider,
-	groupProjectBindingProvider provider.GroupProjectBindingProvider,
-	applicationDefinitionProvider provider.ApplicationDefinitionProvider,
-	privilegedIPAMPoolProviderGetter provider.PrivilegedIPAMPoolProviderGetter,
-	privilegedOperatingSystemProfileProviderGetter provider.PrivilegedOperatingSystemProfileProviderGetter,
-	features features.FeatureGate,
-) http.Handler
-
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
 	runtimeObjects := []runtime.Object{}
 	for _, obj := range objs {
@@ -235,419 +156,6 @@ func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
 	}
 
 	return runtimeObjects
-}
-
-func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, kubermaticConfiguration *kubermaticv1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	ctx := context.Background()
-
-	allObjects := kubeObjects
-	allObjects = append(allObjects, machineObjects...)
-	allObjects = append(allObjects, kubermaticObjects...)
-
-	// most tests don't actually use the KubermaticConfiguration, but since they handle the
-	// configGetter, they can still fail if no config exists; to prevent this, we simply
-	// create a dummy, empty config here by default, unless a test defines its own config
-	if kubermaticConfiguration == nil {
-		kubermaticConfiguration = &kubermaticv1.KubermaticConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kubermatic",
-				Namespace: resources.KubermaticNamespace,
-			},
-			Spec: kubermaticv1.KubermaticConfigurationSpec{
-				API: kubermaticv1.KubermaticAPIConfiguration{
-					AccessibleAddons: []string{"addon1", "addon2"},
-				},
-				Versions: kubermaticv1.KubermaticVersioningConfiguration{
-					Versions: []semver.Semver{
-						*semver.NewSemverOrDie("8.8.8"),
-						*semver.NewSemverOrDie("9.9.9"),
-						*semver.NewSemverOrDie("9.9.10"),
-						*semver.NewSemverOrDie("9.11.3"),
-					},
-				},
-			},
-		}
-	}
-
-	allObjects = append(allObjects, kubermaticConfiguration)
-	fakeClient := fakectrlruntimeclient.
-		NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		WithObjects(allObjects...).
-		Build()
-	kubernetesClient := fakerestclient.NewSimpleClientset(getRuntimeObjects(kubeObjects...)...)
-	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-		return fakeClient, nil
-	}
-
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, fakeClient)
-	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	userProvider := kubernetes.NewUserProvider(fakeClient)
-	adminProvider := kubernetes.NewAdminProvider(fakeClient)
-	settingsProvider := kubernetes.NewSettingsProvider(fakeClient)
-	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
-	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
-	if err != nil {
-		return nil, nil, err
-	}
-	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
-	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
-	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
-	resourceQuotaProvider := resourceQuotaProviderFactory(fakeImpersonationClient, fakeClient)
-	groupProjectBindingProvider := groupProjectBindingProviderFactory(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	var verifiers []auth.TokenVerifier
-	var extractors []auth.TokenExtractor
-	{
-		// if the API users is actually a service account use JWTTokenAuthentication
-		// that knows how to extract and verify the token
-		if kubermaticv1helper.IsProjectServiceAccount(user.Email) {
-			saExtractorVerifier := auth.NewServiceAccountAuthClient(
-				auth.NewHeaderBearerTokenExtractor("Authorization"),
-				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
-				serviceAccountTokenProvider,
-			)
-			verifiers = append(verifiers, saExtractorVerifier)
-			extractors = append(extractors, saExtractorVerifier)
-
-			// for normal users we use OIDCClient which is broken at the moment
-			// because the tests don't send a token in the Header instead
-			// the client spits out a hardcoded value
-		} else {
-			fakeOIDCClient := NewFakeOIDCClient(user)
-			verifiers = append(verifiers, fakeOIDCClient)
-			extractors = append(extractors, fakeOIDCClient)
-		}
-	}
-	tokenVerifiers := auth.NewTokenVerifierPlugins(verifiers)
-	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)
-	fakeOIDCClient := NewFakeOIDCClient(user)
-
-	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	kubermaticVersions := kubermatic.NewFakeVersions()
-	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
-	clusterProvider := kubernetes.NewClusterProvider(
-		&restclient.Config{},
-		fakeImpersonationClient,
-		fUserClusterConnection,
-		"",
-		rbac.ExtractGroupPrefix,
-		fakeClient,
-		kubernetesClient,
-		false,
-		kubermaticVersions,
-		GenTestSeed(),
-	)
-	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
-	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
-		if clusterProvider, exists := clusterProviders[seed.Name]; exists {
-			return clusterProvider, nil
-		}
-		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
-	}
-
-	credentialsManager, err := kubernetes.NewPresetProvider(fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(fakeClient)
-
-	if seedsGetter == nil {
-		seedsGetter = CreateTestSeedsGetter(ctx, fakeClient)
-	}
-
-	seedClientGetter := func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-		return fakeClient, nil
-	}
-
-	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
-	// the more complex implementation on the side
-	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	addonProvider := kubernetes.NewAddonProvider(
-		fakeClient,
-		fakeImpersonationClient,
-		configGetter,
-	)
-	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
-	addonProviderGetter := func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
-		if addonProvider, exists := addonProviders[seed.Name]; exists {
-			return addonProvider, nil
-		}
-		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seed.Name)
-	}
-
-	externalClusterProvider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	fakeExternalClusterProvider := &FakeExternalClusterProvider{
-		Provider:   externalClusterProvider,
-		FakeClient: fakeClient,
-	}
-
-	constraintTemplateProvider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	fakeConstraintTemplateProvider := &FakeConstraintTemplateProvider{
-		Provider:   constraintTemplateProvider,
-		FakeClient: fakeClient,
-	}
-
-	privilegedAllowedRegistryProvider, err := kubernetes.NewAllowedRegistryPrivilegedProvider(fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	fakePrivilegedAllowedRegistryProvider := &FakePrivilegedAllowedRegistryProvider{
-		Provider:   privilegedAllowedRegistryProvider,
-		FakeClient: fakeClient,
-	}
-
-	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, resources.KubermaticNamespace)
-	if err != nil {
-		return nil, nil, err
-	}
-	fakeDefaultConstraintProvider := &FakeDefaultConstraintProvider{
-		Provider:   defaultConstraintProvider,
-		FakeClient: fakeClient,
-	}
-
-	constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-	constraintProviders := map[string]provider.ConstraintProvider{"us-central1": constraintProvider}
-	constraintProviderGetter := func(seed *kubermaticv1.Seed) (provider.ConstraintProvider, error) {
-		if constraint, exists := constraintProviders[seed.Name]; exists {
-			return constraint, nil
-		}
-		return nil, fmt.Errorf("can not find constraintprovider for cluster %q", seed.Name)
-	}
-
-	alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, fakeClient)
-	alertmanagerProviders := map[string]provider.AlertmanagerProvider{"us-central1": alertmanagerProvider}
-	alertmanagerProviderGetter := func(seed *kubermaticv1.Seed) (provider.AlertmanagerProvider, error) {
-		if alertmanager, exists := alertmanagerProviders[seed.Name]; exists {
-			return alertmanager, nil
-		}
-		return nil, fmt.Errorf("can not find alertmanagerprovider for cluster %q", seed.Name)
-	}
-
-	clusterTemplateProvider, err := kubernetes.NewClusterTemplateProvider(fakeImpersonationClient, fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, fakeClient)
-	ruleGroupProviders := map[string]provider.RuleGroupProvider{"us-central1": ruleGroupProvider}
-	ruleGroupProviderGetter := func(seed *kubermaticv1.Seed) (provider.RuleGroupProvider, error) {
-		if ruleGroup, exists := ruleGroupProviders[seed.Name]; exists {
-			return ruleGroup, nil
-		}
-		return nil, fmt.Errorf("can not find ruleGroupProvider for cluster %q", seed.Name)
-	}
-
-	clusterTemplateInstanceProvider := kubernetes.NewClusterTemplateInstanceProvider(fakeImpersonationClient, fakeClient)
-	clusterTemplateInstanceProviders := map[string]provider.ClusterTemplateInstanceProvider{"us-central1": clusterTemplateInstanceProvider}
-	clusterTemplateInstanceProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterTemplateInstanceProvider, error) {
-		if instances, exists := clusterTemplateInstanceProviders[seed.Name]; exists {
-			return instances, nil
-		}
-		return nil, fmt.Errorf("can not find clusterTemplateInstanceProvider for seed %q", seed.Name)
-	}
-
-	etcdBackupConfigProvider := kubernetes.NewEtcdBackupConfigProvider(fakeImpersonationClient, fakeClient)
-	etcdBackupConfigProviders := map[string]provider.EtcdBackupConfigProvider{"us-central1": etcdBackupConfigProvider}
-	etcdBackupConfigProviderGetter := func(seed *kubermaticv1.Seed) (provider.EtcdBackupConfigProvider, error) {
-		if etcdBackupConfig, exists := etcdBackupConfigProviders[seed.Name]; exists {
-			return etcdBackupConfig, nil
-		}
-		return nil, fmt.Errorf("can not find etcdBackupConfigProvider for cluster %q", seed.Name)
-	}
-
-	etcdRestoreProvider := kubernetes.NewEtcdRestoreProvider(fakeImpersonationClient, fakeClient)
-	etcdRestoreProviders := map[string]provider.EtcdRestoreProvider{"us-central1": etcdRestoreProvider}
-	etcdRestoreProviderGetter := func(seed *kubermaticv1.Seed) (provider.EtcdRestoreProvider, error) {
-		if etcdRestore, exists := etcdRestoreProviders[seed.Name]; exists {
-			return etcdRestore, nil
-		}
-		return nil, fmt.Errorf("can not find etcdRestoreProvider for cluster %q", seed.Name)
-	}
-
-	etcdBackupConfigProjectProvider := kubernetes.NewEtcdBackupConfigProjectProvider(
-		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
-		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
-	etcdBackupConfigProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdBackupConfigProjectProvider, error) {
-		return etcdBackupConfigProjectProvider, nil
-	}
-
-	etcdRestoreProjectProvider := kubernetes.NewEtcdRestoreProjectProvider(
-		map[string]kubernetes.ImpersonationClient{"us-central1": fakeImpersonationClient},
-		map[string]ctrlruntimeclient.Client{"us-central1": fakeClient})
-	etcdRestoreProjectProviderGetter := func(seed map[string]*kubermaticv1.Seed) (provider.EtcdRestoreProjectProvider, error) {
-		return etcdRestoreProjectProvider, nil
-	}
-
-	backupCredentialsProvider := kubernetes.NewBackupCredentialsProvider(fakeClient)
-	backupCredentialsProviders := map[string]provider.BackupCredentialsProvider{"us-central1": backupCredentialsProvider}
-	backupCredentialsProviderGetter := func(seed *kubermaticv1.Seed) (provider.BackupCredentialsProvider, error) {
-		if backupCredentials, exists := backupCredentialsProviders[seed.Name]; exists {
-			return backupCredentials, nil
-		}
-		return nil, fmt.Errorf("can not find backupCredentialsProvider for cluster %q", seed.Name)
-	}
-
-	privilegedMLAAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(fakeClient)
-	privilegedMLAAdminSettingProviders := map[string]provider.PrivilegedMLAAdminSettingProvider{"us-central1": privilegedMLAAdminSettingProvider}
-	privilegedMLAAdminSettingProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedMLAAdminSettingProvider, error) {
-		if privilegedMLAAdminSetting, exists := privilegedMLAAdminSettingProviders[seed.Name]; exists {
-			return privilegedMLAAdminSetting, nil
-		}
-		return nil, fmt.Errorf("can not find privilegedMLAAdminSettingProvider for cluster %q", seed.Name)
-	}
-
-	seedProvider := kubernetes.NewSeedProvider(fakeClient)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	applicationDefinitionProvider := kubernetes.NewApplicationDefinitionProvider(fakeClient)
-
-	eventRecorderProvider := kubernetes.NewEventRecorder()
-
-	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(ctx, zap.NewNop().Sugar())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	userWatcher, err := kuberneteswatcher.NewUserWatcher(ctx, zap.NewNop().Sugar())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Disable the metrics endpoint in tests
-	var prometheusClient prometheusapi.Client
-
-	featureGates, err := features.NewFeatures(common.StringifyFeatureGates(kubermaticConfiguration))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	featureGatesProvider := kubernetes.NewFeatureGatesProvider(featureGates)
-
-	privilegedIPAMPoolProvider := kubernetes.NewPrivilegedIPAMPoolProvider(fakeClient)
-	privilegedIPAMPoolProviders := map[string]provider.PrivilegedIPAMPoolProvider{"us-central1": privilegedIPAMPoolProvider}
-	privilegedIPAMPoolProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedIPAMPoolProvider, error) {
-		if privilegedIPAMPool, exists := privilegedIPAMPoolProviders[seed.Name]; exists {
-			return privilegedIPAMPool, nil
-		}
-		return nil, fmt.Errorf("can not find privilegedIPAMPoolProvider for cluster %q", seed.Name)
-	}
-
-	privilegedOperatingSystemProfileProvider := kubernetes.NewPrivilegedOperatingSystemProfileProvider(fakeClient, "kubermatic")
-
-	privilegedOperatingSystemProfileProviders := map[string]provider.PrivilegedOperatingSystemProfileProvider{"us-central1": privilegedOperatingSystemProfileProvider}
-	privilegedOperatingSystemProfileProviderGetter := func(seed *kubermaticv1.Seed) (provider.PrivilegedOperatingSystemProfileProvider, error) {
-		if operatingSystemProfiles, exists := privilegedOperatingSystemProfileProviders[seed.Name]; exists {
-			return operatingSystemProfiles, nil
-		}
-		return nil, fmt.Errorf("can not find backupCredentialsProvider for cluster %q", seed.Name)
-	}
-
-	mainRouter := routingFunc(
-		adminProvider,
-		settingsProvider,
-		userInfoGetter,
-		seedsGetter,
-		seedClientGetter,
-		configGetter,
-		clusterProviderGetter,
-		addonProviderGetter,
-		addonConfigProvider,
-		sshKeyProvider,
-		privilegedSSHKeyProvider,
-		userProvider,
-		serviceAccountProvider,
-		serviceAccountProvider,
-		serviceAccountTokenProvider,
-		serviceAccountTokenProvider,
-		projectProvider,
-		privilegedProjectProvider,
-		fakeOIDCClient,
-		tokenVerifiers,
-		tokenExtractors,
-		prometheusClient,
-		projectMemberProvider,
-		projectMemberProvider,
-		tokenAuth,
-		tokenGenerator,
-		eventRecorderProvider,
-		credentialsManager,
-		admissionPluginProvider,
-		settingsWatcher,
-		userWatcher,
-		fakeExternalClusterProvider,
-		externalClusterProvider,
-		fakeConstraintTemplateProvider,
-		constraintProviderGetter,
-		alertmanagerProviderGetter,
-		clusterTemplateProvider,
-		clusterTemplateInstanceProviderGetter,
-		ruleGroupProviderGetter,
-		kubermaticVersions,
-		fakeDefaultConstraintProvider,
-		fakePrivilegedAllowedRegistryProvider,
-		etcdBackupConfigProviderGetter,
-		etcdRestoreProviderGetter,
-		etcdBackupConfigProjectProviderGetter,
-		etcdRestoreProjectProviderGetter,
-		backupCredentialsProviderGetter,
-		privilegedMLAAdminSettingProviderGetter,
-		fakeClient,
-		featureGatesProvider,
-		seedProvider,
-		resourceQuotaProvider,
-		groupProjectBindingProvider,
-		applicationDefinitionProvider,
-		privilegedIPAMPoolProviderGetter,
-		privilegedOperatingSystemProfileProviderGetter,
-		featureGates,
-	)
-
-	return mainRouter, &ClientsSets{fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
-}
-
-// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests.
-func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, config *kubermaticv1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, config, routingFunc)
-}
-
-// CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning.
-func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, config *kubermaticv1.KubermaticConfiguration, routingFunc newRoutingFunc) (http.Handler, error) {
-	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, config, routingFunc)
-	return router, err
 }
 
 func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed {
@@ -2028,12 +1536,16 @@ func GenAllowedRegistry(name, registryPrefix string) *kubermaticv1.AllowedRegist
 	return wr
 }
 
+func GenEtcdBackupConfigID(ebcName, clusterName string) string {
+	return fmt.Sprintf("%s-%s", clusterName, ebcName)
+}
+
 func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 	keep := 5
 	return &apiv2.EtcdBackupConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:              name,
-			ID:                etcdbackupconfig.GenEtcdBackupConfigID(name, clusterID),
+			ID:                GenEtcdBackupConfigID(name, clusterID),
 			Annotations:       nil,
 			CreationTimestamp: apiv1.Date(0001, 01, 01, 00, 00, 0, 0, time.UTC),
 		},

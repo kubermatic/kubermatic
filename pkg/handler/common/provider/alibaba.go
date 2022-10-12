@@ -17,7 +17,6 @@ limitations under the License.
 package provider
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -26,58 +25,12 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const requestScheme = "https"
-
-func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID, region string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
-	}
-
-	datacenterName := cluster.Spec.Cloud.DatacenterName
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := settingsProvider.GetGlobalSettings(ctx)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	return ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, settings.Spec.MachineDeploymentVMResourceQuota)
-}
 
 func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AlibabaInstanceTypeList, error) {
 	// Alibaba has way too many instance types that are not all available in each region
@@ -160,42 +113,6 @@ func filterByQuota(instances apiv1.AlibabaInstanceTypeList, quota kubermaticv1.M
 	return filteredRecords
 }
 
-func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, region string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
-	}
-
-	datacenterName := cluster.Spec.Cloud.DatacenterName
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
-	if err != nil {
-		return nil, err
-	}
-
-	return ListAlibabaZones(accessKeyID, accessKeySecret, region)
-}
-
 func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaZoneList, error) {
 	zones := apiv1.AlibabaZoneList{}
 
@@ -246,42 +163,6 @@ func ListAlibabaVSwitches(accessKeyID, accessKeySecret, region string) (apiv1.Al
 	}
 
 	return vSwitches, nil
-}
-
-func AlibabaVswitchesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, region string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
-	}
-
-	datacenterName := cluster.Spec.Cloud.DatacenterName
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
-	if err != nil {
-		return nil, err
-	}
-
-	return ListAlibabaVSwitches(accessKeyID, accessKeySecret, region)
 }
 
 func getAlibabaClient(accessKeyID, accessKeySecret, region string) (*ecs.Client, error) {

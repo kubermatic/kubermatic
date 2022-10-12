@@ -168,21 +168,6 @@ func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.
 	}
 }
 
-func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-
-	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster, settingsProvider)
-}
-
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
@@ -201,36 +186,6 @@ func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevir
 		}
 	}
 	return nil, fmt.Errorf("KubeVirt VMI preset %q not found", flavor)
-}
-
-func KubeVirtInstancetypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-
-	return KubeVirtInstancetypes(ctx, kvKubeconfig, cluster, settingsProvider)
-}
-
-func KubeVirtPreferencesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-
-	return KubeVirtPreferences(ctx, kvKubeconfig, cluster, settingsProvider)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {

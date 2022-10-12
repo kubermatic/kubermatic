@@ -17,7 +17,6 @@ limitations under the License.
 package provider
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -28,76 +27,11 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // Used to decode response object.
 type plansRoot struct {
 	Plans []packngo.Plan `json:"plans"`
-}
-
-func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Packet == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
-	}
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider")
-	}
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	apiKey, projectID, err := packet.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := settingsProvider.GetGlobalSettings(ctx)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	return PacketSizes(apiKey, projectID, settings.Spec.MachineDeploymentVMResourceQuota)
-}
-
-func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.PacketSizeList, error) {
-	sizes := apiv1.PacketSizeList{}
-	root := new(plansRoot)
-
-	if len(apiKey) == 0 {
-		return sizes, fmt.Errorf("missing required parameter: apiKey")
-	}
-
-	if len(projectID) == 0 {
-		return sizes, fmt.Errorf("missing required parameter: projectID")
-	}
-
-	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
-	req, err := client.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
-	if err != nil {
-		return sizes, err
-	}
-
-	_, err = client.Do(req, root)
-	if err != nil {
-		return sizes, err
-	}
-
-	plans := root.Plans
-	for _, plan := range plans {
-		sizes = append(sizes, toPacketSize(plan))
-	}
-
-	return filterPacketByQuota(sizes, quota), nil
 }
 
 func DescribePacketSize(apiKey, projectID, instanceType string) (packngo.Plan, error) {

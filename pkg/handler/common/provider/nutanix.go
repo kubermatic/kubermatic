@@ -129,33 +129,6 @@ func listNutanixSubnets(ctx context.Context, client *nutanixprovider.ClientSet, 
 	return subnets, nil
 }
 
-func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
-	client, clusterName, projectName, err := getClientSetFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return listNutanixSubnets(ctx, client, clusterName, projectName)
-}
-
-func NutanixCategoriesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
-	client, _, _, err := getClientSetFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return listNutanixCategories(ctx, client)
-}
-
-func NutanixCategoryValuesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, categoryName string) (interface{}, error) {
-	client, _, _, err := getClientSetFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return listNutanixCategoryValues(ctx, client, categoryName)
-}
-
 func getClientSetFromCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (client *nutanixprovider.ClientSet, clusterName string, projectName string, err error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 

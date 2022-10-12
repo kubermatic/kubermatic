@@ -28,7 +28,6 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
-	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -223,8 +222,8 @@ func TestReconcile(t *testing.T) {
 
 			reqLabel := &unstructured.Unstructured{}
 			reqLabel.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   constrainthandler.ConstraintsGroup,
-				Version: constrainthandler.ConstraintsVersion,
+				Group:   "constraints.gatekeeper.sh",
+				Version: "v1beta1",
 				Kind:    kind,
 			})
 			err := tc.userClient.Get(ctx, types.NamespacedName{Name: constraintName}, reqLabel)

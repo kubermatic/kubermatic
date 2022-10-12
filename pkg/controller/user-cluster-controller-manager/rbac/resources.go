@@ -25,7 +25,6 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -151,7 +150,7 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 			Verbs:     verbs,
 		},
 		{
-			APIGroups: []string{constraint.ConstraintsGroup},
+			APIGroups: []string{"constraints.gatekeeper.sh"},
 			Resources: []string{"*"},
 			Verbs:     verbs,
 		},

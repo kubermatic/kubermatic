@@ -18,7 +18,6 @@ package test
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +27,7 @@ import (
 var SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
 // SchemeGroupVersion is group version used to register these objects.
-var SchemeGroupVersion = schema.GroupVersion{Group: constraint.ConstraintsGroup, Version: constraint.ConstraintsVersion}
+var SchemeGroupVersion = schema.GroupVersion{Group: "constraints.gatekeeper.sh", Version: "v1beta1"}
 
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
