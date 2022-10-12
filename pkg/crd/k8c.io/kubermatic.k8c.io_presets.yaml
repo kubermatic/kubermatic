@@ -104,6 +104,8 @@ spec:
                     instanceProfileName:
                       description: Instance profile to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
                       type: string
+                    policyARN:
+                      type: string
                     roleARN:
                       description: ARN to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
                       type: string

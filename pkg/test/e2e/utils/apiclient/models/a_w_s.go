@@ -41,6 +41,9 @@ type AWS struct {
 	// automatically filled in during reconciliation.
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
+	// policy a r n
+	PolicyARN string `json:"policyARN,omitempty"`
+
 	// Route table to use. This can be configured, but if left empty will be
 	// automatically filled in during reconciliation.
 	RouteTableID string `json:"routeTableID,omitempty"`

@@ -21,6 +21,9 @@ type PresetSpec struct {
 	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
+	// genearate downstream
+	GenearateDownstream bool `json:"genearateDownstream,omitempty"`
+
 	// Projects is a list of project IDs that this preset is limited to.
 	Projects []string `json:"projects"`
 

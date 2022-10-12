@@ -20,11 +20,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -311,7 +316,38 @@ func (m *PresetProvider) setAWSCredentials(ctx context.Context, preset *kubermat
 }
 
 func generateAWSDownstreamCredentials(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-	return nil, nil
+	cfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion("us-east-2"),
+		awsconfig.WithCredentialsProvider(awscredentials.NewStaticCredentialsProvider(preset.Spec.AWS.AccessKeyID, preset.Spec.AWS.SecretAccessKey, "")),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	client := iam.NewFromConfig(cfg)
+
+	userName := rand.String(10)
+
+	_, err = client.CreateUser(ctx, &iam.CreateUserInput{
+		UserName:            aws.String(userName),
+		PermissionsBoundary: aws.String(preset.Spec.AWS.PolicyARN),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	createAccessKeyOutput, err := client.CreateAccessKey(ctx, &iam.CreateAccessKeyInput{
+		UserName: aws.String(userName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	newPreset := preset.DeepCopy()
+	newPreset.Spec.AWS.AccessKeyID = *createAccessKeyOutput.AccessKey.AccessKeyId
+	newPreset.Spec.AWS.SecretAccessKey = *createAccessKeyOutput.AccessKey.SecretAccessKey
+
+	return newPreset, nil
 }
 
 func (m *PresetProvider) setHetznerCredentials(preset *kubermaticv1.Preset, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {

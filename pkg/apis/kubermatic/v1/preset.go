@@ -208,6 +208,8 @@ type AWS struct {
 	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 
+	PolicyARN string `json:"policyARN,omitempty"`
+
 	// AWS VPC to use. Must be configured.
 	VPCID string `json:"vpcID,omitempty"`
 	// Route table to use. This can be configured, but if left empty will be

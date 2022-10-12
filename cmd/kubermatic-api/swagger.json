@@ -22987,6 +22987,10 @@
           "type": "string",
           "x-go-name": "InstanceProfileName"
         },
+        "policyARN": {
+          "type": "string",
+          "x-go-name": "PolicyARN"
+        },
         "roleARN": {
           "description": "ARN to use. This can be configured, but if left empty will be\nautomatically filled in during reconciliation.",
           "type": "string",
@@ -32365,6 +32369,10 @@
         },
         "gcp": {
           "$ref": "#/definitions/GCP"
+        },
+        "genearateDownstream": {
+          "type": "boolean",
+          "x-go-name": "GenearateDownstream"
         },
         "gke": {
           "$ref": "#/definitions/GKE"
