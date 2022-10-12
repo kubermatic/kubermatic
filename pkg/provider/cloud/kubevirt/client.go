@@ -19,12 +19,24 @@ package kubevirt
 import (
 	"encoding/base64"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
+	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewClientWithRestConfig(kubeconfig string) (ctrlruntimeclient.Client, *restclient.Config, error) {
+// Client represents a struct that includes controller runtime client and rest configuration.
+type Client struct {
+	ctrlruntimeclient.Client
+	// RestConfig represents a rest client configuration
+	RestConfig *restclient.Config
+}
+
+// NewClient returns controller runtime client that points to KubeVirt infra cluster.
+func NewClient(kubeconfig string) (*Client, error) {
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
 	if err != nil {
 		// if the decoding failed, the kubeconfig is sent already decoded without the need of decoding it,
@@ -34,13 +46,25 @@ func NewClientWithRestConfig(kubeconfig string) (ctrlruntimeclient.Client, *rest
 
 	restConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	client, err := ctrlruntimeclient.New(restConfig, ctrlruntimeclient.Options{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return client, restConfig, nil
+	if err = kubevirtv1.AddToScheme(client.Scheme()); err != nil {
+		return nil, err
+	}
+
+	if err = kvinstancetypev1alpha1.AddToScheme(client.Scheme()); err != nil {
+		return nil, err
+	}
+
+	if err = cdiv1beta1.AddToScheme(client.Scheme()); err != nil {
+		return nil, err
+	}
+
+	return &Client{Client: client, RestConfig: restConfig}, nil
 }

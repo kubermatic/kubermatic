@@ -44,37 +44,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error) {
-	config, err := base64.StdEncoding.DecodeString(kubeconfig)
-	if err != nil {
-		// should not happen, always sent base64 encoded
-		return nil, err
-	}
-
-	clientConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := ctrlruntimeclient.New(clientConfig, ctrlruntimeclient.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	if err := kvinstancetypev1alpha1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
+var NewKubeVirtClient = kubevirt.NewClient
 
 func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (string, error) {
