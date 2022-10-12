@@ -88,6 +88,25 @@ func seedServiceAccountCreator(seed *kubermaticv1.Seed) reconciling.NamedService
 	}
 }
 
+func seedSecretCreator(seed *kubermaticv1.Seed) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return SeedSecretName, func(sa *corev1.Secret) (*corev1.Secret, error) {
+			sa.Labels = defaultLabels(SeedSecretName, seed.Name)
+
+			// ensure Kubernetes has enough info to fill in the SA token
+			sa.Type = corev1.SecretTypeServiceAccountToken
+
+			if sa.Annotations == nil {
+				sa.Annotations = map[string]string{}
+			}
+
+			sa.Annotations[corev1.ServiceAccountNameKey] = SeedServiceAccountName
+
+			return sa, nil
+		}
+	}
+}
+
 func seedMonitoringRoleCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleCreatorGetter {
 	name := seedMonitoringRoleName(seed)
 
