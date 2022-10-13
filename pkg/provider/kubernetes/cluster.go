@@ -29,14 +29,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -46,8 +43,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,7 +60,6 @@ type extractGroupPrefixFunc func(groupName string) string
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation.
 func NewClusterProvider(
-	cfg *restclient.Config,
 	createSeedImpersonatedClient ImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	workerName string,
@@ -83,7 +77,6 @@ func NewClusterProvider(
 		client:                       client,
 		k8sClient:                    k8sClient,
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
-		seedKubeconfig:               cfg,
 		versions:                     versions,
 		seed:                         seed,
 	}
@@ -104,7 +97,6 @@ type ClusterProvider struct {
 	extractGroupPrefix   extractGroupPrefixFunc
 	client               ctrlruntimeclient.Client
 	k8sClient            kubernetes.Interface
-	seedKubeconfig       *restclient.Config
 	versions             kubermatic.Versions
 	seed                 *kubermaticv1.Seed
 }
@@ -288,14 +280,6 @@ func (p *ClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, 
 	return cluster, nil
 }
 
-// IsCluster checks if cluster exist with the given name.
-func (p *ClusterProvider) IsCluster(ctx context.Context, clusterName string) bool {
-	if err := p.client.Get(ctx, types.NamespacedName{Name: clusterName}, &kubermaticv1.Cluster{}); err != nil {
-		return false
-	}
-	return true
-}
-
 // Delete deletes the given cluster.
 func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
@@ -326,63 +310,6 @@ func (p *ClusterProvider) Update(ctx context.Context, project *kubermaticv1.Proj
 	return newCluster, nil
 }
 
-// GetAdminKubeconfigForUserCluster returns the admin kubeconfig for the given cluster.
-func (p *ClusterProvider) GetAdminKubeconfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	secret := &corev1.Secret{}
-	name := types.NamespacedName{
-		Namespace: c.Status.NamespaceName,
-		Name:      resources.AdminKubeconfigSecretName,
-	}
-	if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, name, secret); err != nil {
-		return nil, err
-	}
-
-	return clientcmd.Load(secret.Data[resources.KubeconfigSecretKey])
-}
-
-// GetViewerKubeconfigForUserCluster returns the viewer kubeconfig for the given cluster.
-func (p *ClusterProvider) GetViewerKubeconfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	s := &corev1.Secret{}
-
-	if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
-		return nil, err
-	}
-
-	d := s.Data[resources.KubeconfigSecretKey]
-	if len(d) == 0 {
-		return nil, fmt.Errorf("no kubeconfig found")
-	}
-
-	return clientcmd.Load(d)
-}
-
-// RevokeViewerKubeconfig revokes the viewer token and kubeconfig.
-func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
-	s := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.ViewerTokenSecretName,
-			Namespace: c.Status.NamespaceName,
-		},
-	}
-
-	if err := p.GetSeedClusterAdminRuntimeClient().Delete(ctx, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
-func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
-	oldCluster := c.DeepCopy()
-	c.Status.Address.AdminToken = kuberneteshelper.GenerateToken()
-
-	if err := p.GetSeedClusterAdminRuntimeClient().Status().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return fmt.Errorf("failed to patch cluster with new token: %w", err)
-	}
-
-	return nil
-}
-
 // GetAdminClientForUserCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client you will get has admin privileges.
@@ -390,66 +317,11 @@ func (p *ClusterProvider) GetAdminClientForUserCluster(ctx context.Context, c *k
 	return p.userClusterConnProvider.GetClient(ctx, c)
 }
 
-// GetAdminK8sClientForUserCluster returns a k8s go client to interact with all resources in the given cluster
-//
-// Note that the client you will get has admin privileges.
-func (p *ClusterProvider) GetAdminK8sClientForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
-	return p.userClusterConnProvider.GetK8sClient(ctx, c)
-}
-
 // GetAdminClientConfigForUserCluster returns a client config
 //
 // Note that the client you will get has admin privileges.
 func (p *ClusterProvider) GetAdminClientConfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error) {
 	return p.userClusterConnProvider.GetClientConfig(ctx, c)
-}
-
-// GetClientForUserCluster returns a client to interact with all resources in the given cluster
-//
-// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-// This implies that you have to make sure the user has the appropriate permissions inside the user cluster.
-func (p *ClusterProvider) GetClientForUserCluster(ctx context.Context, userInfo *provider.UserInfo, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
-	return p.userClusterConnProvider.GetClient(ctx, c, p.withImpersonation(userInfo))
-}
-
-func (p *ClusterProvider) GetTokenForUserCluster(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
-	if userInfo.Roles.Has("viewers") && userInfo.Roles.Len() == 1 {
-		s := &corev1.Secret{}
-		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}
-
-		if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, name, s); err != nil {
-			return "", err
-		}
-		return string(s.Data[resources.ViewerTokenSecretKey]), nil
-	} else if userInfo.Roles.HasAny("editors", "owners") {
-		return cluster.Status.Address.AdminToken, nil
-	}
-
-	return "", fmt.Errorf("user role %s not supported", userInfo.Roles.List())
-}
-
-// GetSeedClusterAdminRuntimeClient returns a runtime client to interact with the seed cluster resources.
-//
-// Note that this client has admin privileges in the seed cluster.
-func (p *ClusterProvider) GetSeedClusterAdminRuntimeClient() ctrlruntimeclient.Client {
-	return p.client
-}
-
-// GetSeedClusterAdminClient returns a kubernetes client to interact with the seed cluster resources.
-//
-// Note that this client has admin privileges in the seed cluster.
-func (p *ClusterProvider) GetSeedClusterAdminClient() kubernetes.Interface {
-	return p.k8sClient
-}
-
-func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
-	return func(cfg *restclient.Config) *restclient.Config {
-		cfg.Impersonate = restclient.ImpersonationConfig{
-			UserName: userInfo.Email,
-			Groups:   append(userInfo.Roles.List(), "system:authenticated"),
-		}
-		return cfg
-	}
 }
 
 // GetUnsecured returns a cluster for the project and given name.
@@ -505,34 +377,4 @@ func (p *ClusterProvider) DeleteUnsecured(ctx context.Context, cluster *kubermat
 		PropagationPolicy: &policy,
 	}
 	return p.client.Delete(ctx, cluster, delOpts)
-}
-
-// SeedAdminConfig return an admin kubeconfig for the seed. This function does not perform any kind
-// of access control. Try to not use it.
-func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
-	return p.seedKubeconfig
-}
-
-// ListAll gets all clusters
-//
-// Note that the admin privileges are used to list all clusters.
-func (p *ClusterProvider) ListAll(ctx context.Context, labelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
-	optionsLabelSelector := labels.Everything()
-	if labelSelector != nil {
-		optionsLabelSelector = labelSelector
-	}
-
-	projectClusters := &kubermaticv1.ClusterList{}
-	if err := p.client.List(ctx, projectClusters, ctrlruntimeclient.MatchingLabelsSelector{
-		Selector: optionsLabelSelector,
-	}); err != nil {
-		return nil, fmt.Errorf("failed to list clusters: %w", err)
-	}
-
-	return projectClusters, nil
-}
-
-// GetSeedName gets the seed name of the cluster.
-func (p *ClusterProvider) GetSeedName() string {
-	return p.seed.Name
 }

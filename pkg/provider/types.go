@@ -29,10 +29,8 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -171,9 +169,6 @@ type ClusterProvider interface {
 	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
 	List(ctx context.Context, project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
 
-	// ListAll gets all clusters for the seed
-	ListAll(ctx context.Context, labelSelector labels.Selector) (*kubermaticv1.ClusterList, error)
-
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 	Get(ctx context.Context, userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
@@ -183,62 +178,20 @@ type ClusterProvider interface {
 	// Delete deletes the given cluster
 	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) error
 
-	// GetAdminKubeconfigForUserCluster returns the admin kubeconfig for the given cluster
-	GetAdminKubeconfigForUserCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
-
-	// GetViewerKubeconfigForUserCluster returns the viewer kubeconfig for the given cluster
-	GetViewerKubeconfigForUserCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
-
-	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
-	RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
-
-	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
-	RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
-
 	// GetAdminClientForUserCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminClientForUserCluster(context.Context, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
-	// GetAdminK8sClientForUserCluster returns a k8s go client to interact with all resources in the given cluster
-	//
-	// Note that the client you will get has admin privileges
-	GetAdminK8sClientForUserCluster(context.Context, *kubermaticv1.Cluster) (kubernetes.Interface, error)
-
 	// GetAdminClientConfigForUserCluster returns a client config
 	//
 	// Note that the client you will get has admin privileges.
 	GetAdminClientConfigForUserCluster(ctx context.Context, c *kubermaticv1.Cluster) (*restclient.Config, error)
-
-	// GetClientForUserCluster returns a client to interact with all resources in the given cluster
-	//
-	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-	GetClientForUserCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
-
-	// GetTokenForUserCluster returns a token for the given cluster with permissions granted to group that
-	// user belongs to.
-	GetTokenForUserCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
-
-	// IsCluster checks if cluster exist with the given name
-	IsCluster(ctx context.Context, clusterName string) bool
-
-	// GetSeedName gets the seed name of the cluster
-	GetSeedName() string
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
 // as an admin.
 type PrivilegedClusterProvider interface {
-	// GetSeedClusterAdminRuntimeClient returns a runtime client to interact with all resources in the seed cluster
-	//
-	// Note that the client you will get has admin privileges in the seed cluster
-	GetSeedClusterAdminRuntimeClient() ctrlruntimeclient.Client
-
-	// GetSeedClusterAdminClient returns a kubernetes client to interact with all resources in the seed cluster
-	//
-	// Note that the client you will get has admin privileges in the seed cluster
-	GetSeedClusterAdminClient() kubernetes.Interface
-
 	// GetUnsecured returns a cluster for the project and given name.
 	//
 	// Note that the admin privileges are used to get cluster
@@ -367,21 +320,15 @@ type ExternalClusterProvider interface {
 
 	CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error
 
-	CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error
-
-	CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error
-
 	CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error
 
 	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
-	VersionsEndpoint(ctx context.Context, configGetter KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error)
+	MasterVersions(ctx context.Context, configGetter KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error)
 
 	ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
 
 	GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
-
-	GetProviderPoolNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, providerNodeLabel, providerNodePoolName string) ([]corev1.Node, error)
 
 	IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error)
 }

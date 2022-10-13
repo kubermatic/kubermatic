@@ -104,7 +104,6 @@ func TestCreateCluster(t *testing.T) {
 
 			// act
 			target := kubernetes.NewClusterProvider(
-				&restclient.Config{},
 				fakeImpersonationClient,
 				nil,
 				tc.workerName,

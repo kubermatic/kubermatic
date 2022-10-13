@@ -410,7 +410,7 @@ func ListUpgrades(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	masterVersions, err := clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.EKSProviderType)
+	masterVersions, err := clusterProvider.MasterVersions(ctx, configGetter, kubermaticv1.EKSProviderType)
 	if err != nil {
 		return nil, err
 	}

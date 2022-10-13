@@ -557,7 +557,6 @@ func (j *ClusterJig) getClusterProvider() (*kubernetes.ClusterProvider, error) {
 
 	clusterProvider := kubernetes.NewClusterProvider(
 		nil,
-		nil,
 		userClusterConnectionProvider,
 		"",
 		nil,

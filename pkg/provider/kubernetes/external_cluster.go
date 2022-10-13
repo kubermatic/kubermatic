@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -253,7 +252,7 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
+func (p *ExternalClusterProvider) MasterVersions(ctx context.Context, configGetter provider.KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error) {
 	masterVersions := []apiv1.MasterVersion{}
 	config, err := configGetter(ctx)
 	if err != nil {
@@ -380,25 +379,6 @@ func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secret
 	}, nil
 }
 
-func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
-	cluster *kubermaticv1.ExternalCluster,
-	providerNodeLabel, providerNodePoolName string,
-) ([]corev1.Node, error) {
-	nodes, err := p.ListNodes(ctx, cluster)
-	if err != nil {
-		return nil, utilerrors.NewFromKubernetesError(err)
-	}
-
-	var clusterNodes []corev1.Node
-	for _, node := range nodes.Items {
-		if node.Labels[providerNodeLabel] == providerNodePoolName {
-			clusterNodes = append(clusterNodes, node)
-		}
-	}
-
-	return clusterNodes, err
-}
-
 func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
 	iconfig := clientcmd.NewNonInteractiveClientConfig(
 		*cfg,
@@ -469,50 +449,4 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 
 func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
 	return p.clientPrivileged
-}
-
-func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := resources.KubeOneManifestSecretName
-	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
-	if err != nil {
-		return fmt.Errorf("failed to decode kubeone manifest: %w", err)
-	}
-
-	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, map[string][]byte{
-		resources.KubeOneManifest: manifest,
-	})
-	if err != nil {
-		return err
-	}
-
-	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.ManifestReference = *credentialRef
-
-	return nil
-}
-
-func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := resources.KubeOneSSHSecretName
-	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
-	if err != nil {
-		return fmt.Errorf("failed to decode kubeone ssh key: %w", err)
-	}
-	data := map[string][]byte{
-		resources.KubeOneSSHPrivateKey: privateKey,
-	}
-	if sshKey.Passphrase != "" {
-		data[resources.KubeOneSSHPassphrase] = []byte(sshKey.Passphrase)
-	}
-
-	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, data)
-	if err != nil {
-		return err
-	}
-
-	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
-
-	return nil
 }
