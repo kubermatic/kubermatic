@@ -3,7 +3,6 @@ module k8c.io/kubermatic/v2
 go 1.18
 
 require (
-	code.cloudfoundry.org/go-pubsub v0.0.0-20220601212219-de495fa84c8e
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.3
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0
@@ -34,7 +33,6 @@ require (
 	github.com/envoyproxy/go-control-plane v0.10.3
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/go-kit/kit v0.12.0
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/go-openapi/errors v0.20.3
@@ -289,6 +287,7 @@ require (
 	github.com/peterhellberg/link v1.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/poy/onpar v1.1.2 // indirect
 	github.com/prometheus/client_model v0.2.1-0.20210607210712-147c58e9608a // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
