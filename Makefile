@@ -145,10 +145,6 @@ cover:
 run-controller-manager:
 	./hack/run-controller.sh
 
-.PHONY: run-api-server
-run-api-server:
-	./hack/run-api.sh
-
 .PHONY: run-operator
 run-operator:
 	./hack/run-operator.sh
@@ -167,10 +163,6 @@ check-dependencies:
 	go mod tidy
 	go mod verify
 	git diff --exit-code
-
-.PHONY: gen-api-client
-gen-api-client:
-	./hack/gen-api-client.sh
 
 .PHONY: shfmt
 shfmt:
