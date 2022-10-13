@@ -114,6 +114,51 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			},
 		},
 		{
+			name: "Object update stopped by annotation",
+			existingObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testResourceName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+				var sa *corev1.ConfigMap
+				if existing == nil {
+					sa = &corev1.ConfigMap{}
+				} else {
+					sa = existing.(*corev1.ConfigMap)
+				}
+				sa.Name = testResourceName
+				sa.Namespace = testNamespace
+				sa.Data = map[string]string{
+					"foo": "bar",
+				}
+				return sa, nil
+			},
+			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testResourceName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+		},
+		{
 			name: "Object does not get updated",
 			existingObject: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -191,6 +236,56 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				},
 				Data: map[string]string{
 					"foo": "bar-new",
+				},
+			},
+		},
+		{
+			name:     "Object recreation stopped by annotation",
+			recreate: true,
+			existingObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "123",
+					UID:             "abcd-1234",
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+				var sa *corev1.ConfigMap
+				if existing == nil {
+					sa = &corev1.ConfigMap{}
+				} else {
+					sa = existing.(*corev1.ConfigMap)
+				}
+				sa.Name = testResourceName
+				sa.Namespace = testNamespace
+				sa.Data = map[string]string{
+					"foo": "bar",
+				}
+				return sa, nil
+			},
+			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "123",
+					UID:             "abcd-1234",
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
 				},
 			},
 		},
