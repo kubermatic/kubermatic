@@ -161,8 +161,6 @@ run-master-controller-manager:
 verify:
 	./hack/verify-codegen.sh
 	./hack/verify-import-order.sh
-	./hack/verify-swagger.sh
-	./hack/verify-api-client.sh
 
 .PHONY: check-dependencies
 check-dependencies:

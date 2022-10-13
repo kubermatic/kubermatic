@@ -53,7 +53,6 @@ done
 
 cp ../docs/zz_generated.addondata.go.txt content/kubermatic/main/data/addondata.go
 cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/main/data/prometheusdata.go
-cp ../cmd/kubermatic-api/swagger.json content/kubermatic/main/data/swagger.json
 cp ../addonresources.json content/kubermatic/main/data/addonresources.json
 
 # re-create Prometheus runbook

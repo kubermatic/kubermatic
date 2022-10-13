@@ -75,7 +75,6 @@ if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
   # we do not need actual KKP binaries in the image
   mkdir _build
   touch \
-    _build/kubermatic-api \
     _build/kubermatic-operator \
     _build/kubermatic-installer \
     _build/kubermatic-webhook \

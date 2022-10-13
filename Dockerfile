@@ -29,8 +29,7 @@ RUN wget -O- https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz | tar xzOf - lin
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
 
 # Do not needless copy all binaries into the image.
-COPY ./_build/kubermatic-api \
-     ./_build/kubermatic-operator \
+COPY ./_build/kubermatic-operator \
      ./_build/kubermatic-installer \
      ./_build/kubermatic-webhook \
      ./_build/master-controller-manager \
@@ -39,7 +38,6 @@ COPY ./_build/kubermatic-api \
      ./_build/user-cluster-webhook \
      /usr/local/bin/
 
-COPY ./cmd/kubermatic-api/swagger.json /opt/swagger.json
 COPY ./charts /opt/charts
 
 USER nobody

@@ -187,7 +187,6 @@ type ApplicationInstallationCondition struct {
 
 // +kubebuilder:validation:Enum=ManifestsRetrieved;Ready
 
-// swagger:enum ApplicationInstallationConditionType
 // All condition types must be registered within the `AllApplicationInstallationConditionTypes` variable.
 type ApplicationInstallationConditionType string
 

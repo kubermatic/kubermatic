@@ -100,12 +100,6 @@ Afterwards, you can start your local user-cluster-controller-manager.
 ./hack/run-user-cluster-controller-manager.sh
 ```
 
-##### kubermatic-api
-
-```bash
-./hack/run-api.sh
-```
-
 ##### seed-controller-manager
 
 ```bash

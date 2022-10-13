@@ -189,10 +189,6 @@ TBD
 
 TBD
 
-## update-swagger.sh
-
-TBD
-
 ## update-velero-crds.sh
 
 TBD
@@ -241,8 +237,3 @@ TBD
 ## verify-spelling.sh
 
 TBD
-
-## verify-swagger.sh
-
-TBD
-
