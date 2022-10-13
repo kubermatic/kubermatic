@@ -751,33 +751,6 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 	}
 }
 
-func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
-	return &kubermaticv1.RuleGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.RuleGroupKindName,
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
-		Spec: kubermaticv1.RuleGroupSpec{
-			RuleGroupType: ruleGroupType,
-			Cluster:       corev1.ObjectReference{},
-			Data:          GenerateTestRuleGroupData(name),
-		},
-	}
-}
-
-func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType, isDefault bool) *apiv2.RuleGroup {
-	return &apiv2.RuleGroup{
-		Name:      name,
-		IsDefault: isDefault,
-		Data:      GenerateTestRuleGroupData(name),
-		Type:      ruleGroupType,
-	}
-}
-
 func GenerateTestRuleGroupData(ruleGroupName string) []byte {
 	return []byte(fmt.Sprintf(`
 name: %s
