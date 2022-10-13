@@ -47,7 +47,6 @@ import (
 
 // Options represent combination of flags and ENV options.
 type Options struct {
-	Client     string
 	NamePrefix string
 
 	// these flags control the test scenario matrix;
@@ -111,7 +110,6 @@ type Options struct {
 
 func NewDefaultOptions() *Options {
 	return &Options{
-		Client:                       "kube",
 		ScenarioOptions:              sets.NewString(),
 		Providers:                    sets.NewString(),
 		Releases:                     sets.NewString(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
@@ -139,7 +137,6 @@ func (o *Options) AddFlags() {
 	// user.Current does not work in Alpine
 	pubKeyPath = path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
-	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `kube`")
 	flag.StringVar(&o.ExistingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.Var(flagopts.SetFlag(o.Providers), "providers", "Comma-separated list of providers to test")
@@ -180,10 +177,6 @@ func (o *Options) AddFlags() {
 func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	if o.ExistingClusterLabel != "" && o.ClusterParallelCount != 1 {
 		return errors.New("-cluster-parallel-count must be 1 when testing an existing cluster")
-	}
-
-	if !sets.NewString("api", "kube").Has(o.Client) {
-		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 
 	// restrict to known container runtimes

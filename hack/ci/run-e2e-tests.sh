@@ -43,10 +43,7 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 
 echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
-if [ "${SETUP_MODE:-api}" == "kube" ]; then
-  export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
-fi
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 
 beforeKubermaticSetup=$(nowms)
 source hack/ci/setup-kubermatic-in-kind.sh

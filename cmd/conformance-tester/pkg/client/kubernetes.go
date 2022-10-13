@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package clients
+package client
 
 import (
 	"context"
@@ -38,28 +38,26 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// kubeClient uses a regular Kubernetes client to interact with KKP.
-type kubeClient struct {
+// Client uses a regular Kubernetes client to interact with KKP.
+type Client struct {
 	opts *ctypes.Options
 }
 
-var _ Client = &kubeClient{}
-
-func NewKubeClient(opts *ctypes.Options) Client {
-	return &kubeClient{
+func NewClient(opts *ctypes.Options) *Client {
+	return &Client{
 		opts: opts,
 	}
 }
 
-func (c *kubeClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *Client) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (c *kubeClient) log(log *zap.SugaredLogger) *zap.SugaredLogger {
+func (c *Client) log(log *zap.SugaredLogger) *zap.SugaredLogger {
 	return log.With("client", "kube")
 }
 
-func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
+func (c *Client) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
 	c.log(log).Info("Creating project...")
 
 	project := &kubermaticv1.Project{}
@@ -88,7 +86,7 @@ func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, 
 	return name, nil
 }
 
-func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error {
+func (c *Client) DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error {
 	project := &kubermaticv1.Project{}
 	if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, project); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -132,7 +130,7 @@ func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, 
 	})
 }
 
-func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *Client) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	creators := []reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter{}
 
 	for i, key := range c.opts.PublicKeys {
@@ -161,7 +159,7 @@ func userSSHKeyCreatorGetter(keyName string, project string, publicKey []byte) r
 	}
 }
 
-func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
+func (c *Client) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
 	c.log(log).Info("Creating cluster...")
 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
@@ -255,7 +253,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	return cluster, nil
 }
 
-func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func (c *Client) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	c.log(log).Info("Getting existing MachineDeployments...")
 
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
@@ -300,7 +298,7 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 	return nil
 }
 
-func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
+func (c *Client) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
 	// if there is no timeout, we do not wait for the cluster to be gone
 	if timeout == 0 {
 		c.log(log).Info("Deleting user cluster now...")

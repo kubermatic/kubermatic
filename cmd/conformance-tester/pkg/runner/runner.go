@@ -30,7 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/clients"
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/client"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/tests"
@@ -54,24 +54,16 @@ import (
 type TestRunner struct {
 	log       *zap.SugaredLogger
 	opts      *ctypes.Options
-	kkpClient clients.Client
+	kkpClient *client.Client
 
 	createdProject bool
-}
-
-func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
-	return &TestRunner{
-		log:       log,
-		opts:      opts,
-		kkpClient: clients.NewAPIClient(opts),
-	}
 }
 
 func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
 		log:       log,
 		opts:      opts,
-		kkpClient: clients.NewKubeClient(opts),
+		kkpClient: client.NewClient(opts),
 	}
 }
 

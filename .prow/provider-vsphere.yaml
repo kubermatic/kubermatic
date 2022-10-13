@@ -40,8 +40,6 @@ presubmits:
               value: "vsphere"
             - name: DISTRIBUTIONS
               value: ubuntu
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -86,8 +84,6 @@ presubmits:
               value: "vsphere"
             - name: DISTRIBUTIONS
               value: ubuntu
-            - name: SETUP_MODE
-              value: "kube"
             - name: SCENARIO_OPTIONS
               value: "custom-folder"
             - name: SERVICE_ACCOUNT_KEY
@@ -136,8 +132,6 @@ presubmits:
               value: ubuntu
             - name: SCENARIO_OPTIONS
               value: "datastore-cluster"
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

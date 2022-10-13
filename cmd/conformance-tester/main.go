@@ -102,13 +102,8 @@ func main() {
 	opts.PublicKeys = append(opts.PublicKeys, dynamicSSHPublicKey)
 	opts.HomeDir = homeDir
 
-	// setup test runner, choose between API-based or Kubernetes-based implementations
-	var testRunner *runner.TestRunner
-	if opts.Client == "kube" {
-		testRunner = runner.NewKubeRunner(opts, log)
-	} else {
-		testRunner = runner.NewAPIRunner(opts, log)
-	}
+	// setup test runner
+	testRunner := runner.NewKubeRunner(opts, log)
 
 	// setup runner and KKP clients
 	log.Info("Preparing project...")
