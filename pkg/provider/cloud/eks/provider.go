@@ -253,14 +253,6 @@ func CreateCluster(ctx context.Context, client *awsprovider.ClientSet, clusterSp
 	return nil
 }
 
-func ListClusters(ctx context.Context, client *awsprovider.ClientSet) ([]string, error) {
-	res, err := client.EKS.ListClusters(ctx, &eks.ListClustersInput{})
-	if err != nil {
-		return nil, DecodeError(err)
-	}
-	return res.Clusters, nil
-}
-
 func DeleteCluster(ctx context.Context, client *awsprovider.ClientSet, eksClusterName string) error {
 	_, err := client.EKS.DeleteCluster(ctx, &eks.DeleteClusterInput{Name: &eksClusterName})
 	return DecodeError(err)
@@ -471,16 +463,6 @@ func ConvertMDStatus(status ekstypes.NodegroupStatus) apiv2.ExternalClusterMDSta
 	default:
 		return apiv2.UnknownExternalClusterMDState
 	}
-}
-
-func ValidateCredentials(ctx context.Context, credential resources.EKSCredential) error {
-	client, err := awsprovider.GetClientSet(ctx, credential.AccessKeyID, credential.SecretAccessKey, "", "", credential.Region)
-	if err != nil {
-		return err
-	}
-	_, err = ListClusters(ctx, client)
-
-	return DecodeError(err)
 }
 
 func DecodeError(err error) error {

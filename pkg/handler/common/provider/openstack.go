@@ -270,17 +270,6 @@ func GetOpenstackSecurityGroups(ctx context.Context, userInfo *provider.UserInfo
 	return apiSecurityGroups, nil
 }
 
-func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, err
-	}
-	if cluster.Spec.Cloud.Openstack == nil {
-		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
-	}
-	return cluster, nil
-}
-
 func getOpenstackAuthURLAndRegion(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, datacenterName string) (string, string, error) {
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {

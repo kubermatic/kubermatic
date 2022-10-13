@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -32,13 +31,10 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -74,32 +70,6 @@ var NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error
 	}
 
 	return client, nil
-}
-
-func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (string, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return "", err
-	}
-
-	if cluster.Spec.Cloud.Kubevirt == nil {
-		return "", utilerrors.NewNotFound("cloud spec for ", clusterID)
-	}
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return "", utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	kvKubeconfig, err := kubevirt.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
 // kubeVirtPresets returns the kubevirtv1.VirtualMachineInstancePreset from the `default` namespace, concatenated with Kubermatic standard presets.
@@ -153,7 +123,7 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 	// Quota filtering
 	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 	return filterVMIPresets(res, settings.Spec.MachineDeploymentVMResourceQuota), nil
 }
@@ -208,16 +178,6 @@ func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.Stora
 	}
 
 	return kubevirt.ListStorageClasses(ctx, client, nil)
-}
-
-func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string) (interface{}, error) {
-	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return KubeVirtStorageClasses(ctx, kvKubeconfig)
 }
 
 func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv2.VirtualMachineInstancePresetList {
@@ -399,7 +359,7 @@ func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, cluster *kube
 
 	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	return filterInstancetypes(res, settings.Spec.MachineDeploymentVMResourceQuota), nil

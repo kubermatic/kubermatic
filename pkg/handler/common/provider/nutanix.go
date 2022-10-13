@@ -18,18 +18,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 type NutanixCredentials struct {
@@ -42,7 +34,6 @@ type NutanixClientSet interface {
 	ListNutanixClusters(ctx context.Context) (apiv1.NutanixClusterList, error)
 	ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error)
 	ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error)
-	ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error)
 	ListNutanixCategoryValues(ctx context.Context, categoryName string) (apiv1.NutanixCategoryValueList, error)
 }
 
@@ -127,75 +118,6 @@ func listNutanixSubnets(ctx context.Context, client *nutanixprovider.ClientSet, 
 	}
 
 	return subnets, nil
-}
-
-func getClientSetFromCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (client *nutanixprovider.ClientSet, clusterName string, projectName string, err error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return nil, "", "", err
-	}
-	if cluster.Spec.Cloud.Nutanix == nil {
-		return nil, "", "", utilerrors.NewNotFound("no cloud spec for %s", clusterID)
-	}
-
-	datacenterName := cluster.Spec.Cloud.DatacenterName
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, "", "", utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, "", "", common.KubernetesErrorToHTTPError(err)
-	}
-	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
-	}
-
-	clusterName = cluster.Spec.Cloud.Nutanix.ClusterName
-	projectName = cluster.Spec.Cloud.Nutanix.ProjectName
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	client, err = nutanixprovider.GetClientSet(datacenter.Spec.Nutanix, cluster.Spec.Cloud.Nutanix, secretKeySelector)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to get client set: %w", err)
-	}
-
-	return
-}
-
-func (n *nutanixClientImpl) ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error) {
-	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	return listNutanixCategories(ctx, clientSet)
-}
-
-func listNutanixCategories(ctx context.Context, client *nutanixprovider.ClientSet) (apiv1.NutanixCategoryList, error) {
-	categoryResp, err := nutanixprovider.GetCategories(ctx, client)
-	if err != nil {
-		return nil, err
-	}
-
-	var categories apiv1.NutanixCategoryList
-	for _, category := range categoryResp {
-		// do not list categories used by KKP or KubeOne; they should not be visible in the UI
-		if category.Name != nil && *category.Name != nutanixprovider.ClusterCategoryName && *category.Name != nutanixprovider.ProjectCategoryName && *category.Name != "KubeOneCluster" {
-			categories = append(categories, apiv1.NutanixCategory{
-				Name:          *category.Name,
-				Description:   *category.Description,
-				SystemDefined: *category.SystemDefined,
-			})
-		}
-	}
-
-	return categories, nil
 }
 
 func (n *nutanixClientImpl) ListNutanixCategoryValues(ctx context.Context, categoryName string) (apiv1.NutanixCategoryValueList, error) {

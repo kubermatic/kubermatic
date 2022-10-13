@@ -22,38 +22,21 @@ import (
 	"net/http"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// GetCluster returns the cluster for a given request.
-func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
-	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "no cluster in request")
-	}
-	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	return GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
-}
-
 func GetInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 	if adminUserInfo.IsAdmin {
 		cluster, err := privilegedClusterProvider.GetUnsecured(ctx, project, clusterID, options)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, utilerrors.NewFromKubernetesError(err)
 		}
 		return cluster, nil
 	}
@@ -64,21 +47,21 @@ func GetInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGet
 func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, options)
 	if err != nil {
 		// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
 		// Next request with privileged user checks if the cluster doesn't exist or some other error occurred.
 		if !isStatus(err, http.StatusForbidden) {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, utilerrors.NewFromKubernetesError(err)
 		}
 		// Check if cluster really doesn't exist or some other error occurred.
 		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(ctx, project, clusterID, options); errGetUnsecured != nil {
-			return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
+			return nil, utilerrors.NewFromKubernetesError(errGetUnsecured)
 		}
 		// Cluster is not ready yet, return original error
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 	return cluster, nil
 }

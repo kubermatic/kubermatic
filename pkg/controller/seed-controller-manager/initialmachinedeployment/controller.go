@@ -23,12 +23,12 @@ import (
 
 	"go.uber.org/zap"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
@@ -201,6 +201,20 @@ func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request 
 	return nodeDeployment, nil
 }
 
+type credentialsData struct {
+	ctx               context.Context
+	KubermaticCluster *kubermaticv1.Cluster
+	Client            ctrlruntimeclient.Client
+}
+
+func (d credentialsData) Cluster() *kubermaticv1.Cluster {
+	return d.KubermaticCluster
+}
+
+func (d credentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.Client)(configVar, key)
+}
+
 func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, log *zap.SugaredLogger, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	datacenter, err := r.getTargetDatacenter(cluster)
 	if err != nil {
@@ -212,8 +226,8 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, log *za
 		return fmt.Errorf("failed to get SSH keys: %w", err)
 	}
 
-	data := common.CredentialsData{
-		Ctx:               ctx,
+	data := &credentialsData{
+		ctx:               ctx,
 		KubermaticCluster: cluster,
 		Client:            r,
 	}
