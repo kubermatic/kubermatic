@@ -26,7 +26,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
@@ -344,7 +343,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	}
 	authToken := ""
 	if spec.UseToken {
-		t := ctx.Value(middleware.RawTokenContextKey)
+		t := ctx.Value("raw-auth-token") // TODO: This cannot work since the KKP API got removed
 		token, ok := t.(string)
 		if !ok || token == "" {
 			return false, fmt.Errorf("failed to get authentication token")

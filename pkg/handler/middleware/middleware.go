@@ -16,19 +16,13 @@ limitations under the License.
 
 package middleware
 
-import (
-	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-)
+// Key defines a dedicated type for keys to use on contexts.
+type Key string
 
 const (
-	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx.
-	RawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
-
 	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx.
-	ClusterProviderContextKey kubermaticcontext.Key = "cluster-provider"
+	ClusterProviderContextKey Key = "cluster-provider"
 
 	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx.
-	PrivilegedClusterProviderContextKey kubermaticcontext.Key = "privileged-cluster-provider"
-
-	UserCRContextKey = kubermaticcontext.UserCRContextKey
+	PrivilegedClusterProviderContextKey Key = "privileged-cluster-provider"
 )

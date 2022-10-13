@@ -18,49 +18,7 @@ package provider
 
 import (
 	"context"
-	"fmt"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // UserInfoGetter is a function to retrieve a UserInfo.
 type UserInfoGetter = func(ctx context.Context, projectID string) (*UserInfo, error)
-
-func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGetter, error) {
-	return func(ctx context.Context, projectID string) (*UserInfo, error) {
-		user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticv1.User)
-		if !ok {
-			// This happens if middleware.UserSaver is not enabled.
-			return nil, fmt.Errorf("unable to get authenticated user object")
-		}
-
-		groups := sets.NewString()
-		roles := sets.NewString()
-
-		if projectID != "" {
-			var err error
-			groups, err = userProjectMapper.MapUserToGroups(ctx, user, projectID)
-			if err != nil {
-				return nil, err
-			}
-
-			roles, err = userProjectMapper.MapUserToRoles(ctx, user, projectID)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			for _, group := range user.Spec.Groups {
-				groupName := group
-				if projectID != "" {
-					groupName += fmt.Sprintf("-%s", projectID)
-				}
-				groups.Insert(groupName)
-			}
-		}
-
-		return &UserInfo{Email: user.Spec.Email, Groups: groups.List(), IsAdmin: user.Spec.IsAdmin, Roles: roles}, nil
-	}, nil
-}
