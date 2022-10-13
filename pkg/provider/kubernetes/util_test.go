@@ -20,32 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	"gopkg.in/square/go-jose.v2/jwt"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const (
-	// TestFakeToken signed JWT token with fake data.
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDQ0NjQ1OTYsImlhdCI6MTY0OTc3MDE5NiwibmJmIjoxNjQ5NzcwMTk2LCJwcm9qZWN0X2lkIjoidGVzdFByb2plY3QiLCJ0b2tlbl9pZCI6InRlc3RUb2tlbiJ9.IGcnVhrTGeemEZ_dOGCRE1JXwpSMWJEbrG8hylpTEUY"
-
-	// TestFakeFinalizer is a dummy finalizer with no special meaning.
-	TestFakeFinalizer = "test.kubermatic.k8c.io/dummy"
-)
-
-type fakeJWTTokenGenerator struct {
-}
-
-// Generate generates new fake token.
-func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
-	return TestFakeToken, nil
-}
 
 func createAuthenitactedUser() *kubermaticv1.User {
 	testUserName := "user1"
@@ -57,13 +36,6 @@ func createAuthenitactedUser() *kubermaticv1.User {
 			Email: testUserEmail,
 		},
 	}
-}
-
-func createBinding(name, projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	binding := genBinding(projectID, email, group)
-	binding.Kind = kubermaticv1.UserProjectBindingKind
-	binding.Name = name
-	return binding
 }
 
 // genProject generates new empty project.
@@ -96,43 +68,6 @@ func defaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
 }
 
-// genBinding generates a binding.
-func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	return &kubermaticv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-		},
-		Spec: kubermaticv1.UserProjectBindingSpec{
-			UserEmail: email,
-			ProjectID: projectID,
-			Group:     fmt.Sprintf("%s-%s", group, projectID),
-		},
-	}
-}
-
-func genSecret(projectID, saID, name, id string) *corev1.Secret {
-	secret := &corev1.Secret{}
-	secret.Name = fmt.Sprintf("sa-token-%s", id)
-	secret.Type = "Opaque"
-	secret.Namespace = "kubermatic"
-	secret.Data = map[string][]byte{}
-	secret.Data["token"] = []byte(TestFakeToken)
-	secret.Labels = map[string]string{
-		kubermaticv1.ProjectIDLabelKey: projectID,
-		"name":                         name,
-	}
-	secret.OwnerReferences = []metav1.OwnerReference{
-		{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.UserKindName,
-			UID:        "",
-			Name:       saID,
-		},
-	}
-
-	return secret
-}
-
 func genClusterSpec(name string) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
@@ -155,7 +90,6 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 
 	cluster.Labels = labels
 	cluster.Name = name
-	cluster.Finalizers = []string{TestFakeFinalizer}
 	cluster.Spec = *genClusterSpec(name)
 	cluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail:     userEmail,
@@ -163,65 +97,4 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 	}
 
 	return cluster
-}
-
-func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
-	ct := &kubermaticv1.ConstraintTemplate{}
-	ct.Kind = "ConstraintTemplate"
-	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
-	ct.Name = name
-	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1.CRD{
-			Spec: constrainttemplatev1.CRDSpec{
-				Names: constrainttemplatev1.Names{
-					Kind:       "labelconstraint",
-					ShortNames: []string{"lc"},
-				},
-			},
-		},
-		Targets: []constrainttemplatev1.Target{
-			{
-				Target: "admission.k8s.gatekeeper.sh",
-				Rego: `
-		package k8srequiredlabels
-
-        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }`,
-			},
-		},
-		Selector: kubermaticv1.ConstraintTemplateSelector{
-			Providers: []string{"aws", "gcp"},
-			LabelSelector: metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "cluster",
-						Operator: metav1.LabelSelectorOpExists,
-					},
-				},
-				MatchLabels: map[string]string{
-					"deployment": "prod",
-					"domain":     "sales",
-				},
-			},
-		},
-	}
-
-	return ct
-}
-
-func genGroupProjectBinding(name, projectID, group, role string) *kubermaticv1.GroupProjectBinding {
-	gbp := &kubermaticv1.GroupProjectBinding{}
-	gbp.Name = name
-	gbp.Spec.Role = role
-	gbp.Spec.Group = group
-	gbp.Spec.ProjectID = projectID
-	gbp.Labels = map[string]string{
-		kubermaticv1.ProjectIDLabelKey: projectID,
-	}
-	return gbp
 }

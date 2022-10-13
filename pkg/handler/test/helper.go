@@ -100,8 +100,6 @@ const (
 	TestSeedDatacenter = "us-central1"
 	// TestServiceAccountHashKey authenticates the service account's token value using HMAC.
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
-	// TestFakeToken signed JWT token with fake data. It will expire after 3 years from 12-04-2022. To generate new token use kubermatic/pkg/serviceaccount/jwt_test.go.
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDQ0NjQ1OTYsImlhdCI6MTY0OTc3MDE5NiwibmJmIjoxNjQ5NzcwMTk2LCJwcm9qZWN0X2lkIjoidGVzdFByb2plY3QiLCJ0b2tlbl9pZCI6InRlc3RUb2tlbiJ9.IGcnVhrTGeemEZ_dOGCRE1JXwpSMWJEbrG8hylpTEUY"
 	// TestOSdomain OpenStack domain.
 	TestOSdomain = "OSdomain"
 	// TestOSuserPass OpenStack user password.
