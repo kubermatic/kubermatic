@@ -20,19 +20,15 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
-	"net/http"
 	"strings"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func GetOpenstackAvailabilityZones(datacenter *kubermaticv1.Datacenter, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]apiv1.OpenstackAvailabilityZone, error) {
@@ -285,19 +281,4 @@ func getOpenstackAuthURLAndRegion(userInfo *provider.UserInfo, seedsGetter provi
 	}
 
 	return dc.Spec.Openstack.AuthURL, dc.Spec.Openstack.Region, nil
-}
-
-func getCredentials(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) (*resources.OpenstackCredentials, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-	}
-
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	credentials, err := openstack.GetCredentialsForCluster(cloudSpec, secretKeySelector)
-	if err != nil {
-		return nil, err
-	}
-	return credentials, nil
 }
