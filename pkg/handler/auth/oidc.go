@@ -47,18 +47,6 @@ type OIDCToken struct {
 	IDToken string
 }
 
-// OIDCIssuerVerifier combines OIDCIssuer and TokenVerifier.
-type OIDCIssuerVerifier interface {
-	OIDCIssuer
-	TokenVerifier
-	RedirectURIPathGetter
-}
-
-type RedirectURIPathGetter interface {
-	// GetRedirectURI gets redirect URI for a given path
-	GetRedirectURI(path string) (string, error)
-}
-
 // OIDCIssuer exposes methods for getting OIDC tokens.
 type OIDCIssuer interface {
 	// AuthCodeURL returns a URL to OpenID provider's consent page
