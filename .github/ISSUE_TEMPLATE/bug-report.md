@@ -8,7 +8,7 @@ labels: kind/bug
 
 <!-- Try to provide as much information as possible.
 If you're reporting a security issue, please check the guidelines for reporting security issues:
-https://github.com/kubermatic/kubermatic/blob/master/CONTRIBUTING.md#reporting-a-security-vulnerability -->
+https://github.com/kubermatic/kubermatic/blob/main/CONTRIBUTING.md#reporting-a-security-vulnerability -->
 
 
 
@@ -27,7 +27,7 @@ https://github.com/kubermatic/kubermatic/blob/master/CONTRIBUTING.md#reporting-a
 ### How is your environment configured?
 
 - KKP version:
-- Shared or separate master/seed clusters?:
+- Shared or separate main/seed clusters?:
 
 ### Provide your KKP manifest here (if applicable)
 

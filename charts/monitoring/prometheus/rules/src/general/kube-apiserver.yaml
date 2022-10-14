@@ -40,7 +40,7 @@ groups:
       - alert: KubernetesApiserverDown
         annotations:
           message: KubernetesApiserver has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
         expr: absent(up{job="apiserver"} == 1)
         for: 15m
         labels:
@@ -51,7 +51,7 @@ groups:
       - alert: KubeAPIErrorsHigh
         annotations:
           message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
         expr: |
           sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
             /
@@ -65,7 +65,7 @@ groups:
       - alert: KubeAPITerminatedRequests
         annotations:
           message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
         expr: |
           sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
             /
@@ -79,7 +79,7 @@ groups:
       - alert: KubeAPITerminatedRequests
         annotations:
           message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
         expr: |
           sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
             /
@@ -93,7 +93,7 @@ groups:
       - alert: KubeAPIErrorsHigh
         annotations:
           message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
         expr: |
           sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
             /
@@ -107,7 +107,7 @@ groups:
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
         expr: |
           apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
           and
@@ -125,7 +125,7 @@ groups:
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
         expr: |
           apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
           and

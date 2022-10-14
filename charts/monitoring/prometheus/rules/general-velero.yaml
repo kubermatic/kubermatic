@@ -19,7 +19,7 @@ groups:
       - alert: VeleroBackupTakesTooLong
         annotations:
           message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
         expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600
         for: 5m
         labels:
@@ -29,7 +29,7 @@ groups:
       - alert: VeleroNoRecentBackup
         annotations:
           message: There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
         expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
         labels:
           severity: critical
