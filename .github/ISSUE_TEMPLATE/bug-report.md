@@ -27,7 +27,7 @@ https://github.com/kubermatic/kubermatic/blob/main/CONTRIBUTING.md#reporting-a-s
 ### How is your environment configured?
 
 - KKP version:
-- Shared or separate main/seed clusters?:
+- Shared or separate master/seed clusters?:
 
 ### Provide your KKP manifest here (if applicable)
 
