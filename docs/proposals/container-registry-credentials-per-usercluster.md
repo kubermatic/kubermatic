@@ -174,4 +174,4 @@ user cluster
   * Add docker support for writing node level registry credentials (analog to containerd)
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
-[ssh key agent]: https://docs.kubermatic.com/kubermatic/master/tutorials-howtos/administration/user-settings/user-ssh-key-agent/
+[ssh key agent]: https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/administration/user-settings/user-ssh-key-agent/

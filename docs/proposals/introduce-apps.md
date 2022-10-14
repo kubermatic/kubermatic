@@ -314,7 +314,7 @@ sequenceDiagram
     participant u8s as user-k8s-master
 
     activate ca
-    ca ->> ca: configure cluster spec <br> in the wizard 
+    ca ->> ca: configure cluster spec <br> in the wizard
     ca ->> kuber: get application list
     kuber ->> ca: list applications
     ca ->> ca: select applications
@@ -421,7 +421,7 @@ deactivate aic
 ## Alternatives considered
 
 - building our own package manager. The idea behind this was that we could also solve  the issue of having complex packages with dependencies. We have decided against this as it would require significant effort to implement, which is not worth it for this single feature. Additionally using for example helm also offers a basic variant of [handling dependencies](https://helm.sh/docs/chart_best_practices/dependencies/)
-- there has been [previous work](https://github.com/kubermatic/kubermatic/blob/master/docs/proposals/platform-extensions.md#competitive-landscape) done on considering KubeApps, Flux, OLM, and Kyma for this task
+- there has been [previous work](https://github.com/kubermatic/kubermatic/blob/main/docs/proposals/platform-extensions.md#competitive-landscape) done on considering KubeApps, Flux, OLM, and Kyma for this task
 - building an installation mechanism for Default as well as Custom Addons. This was the [original](https://github.com/kubermatic/kubermatic/pull/8125) idea for this proposal. We decided to move a way from this due to the following factors:
 
   - Default Addons are distinct from Custom Addons and often require other components outside the user cluster (e.g. kube-metrics)
