@@ -124,7 +124,7 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 
 // EnsureCSIInfraTokenAccess generates a service account token for KubeVirt CSI access.
 func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]byte, error) {
-	client, err := NewClient(infraKubeconfig)
+	client, err := NewClient(infraKubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -90,7 +90,7 @@ func kubeVirtPresets(ctx context.Context, client ctrlruntimeclient.Client, kubec
 }
 
 func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (apiv2.VirtualMachineInstancePresetList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 }
 
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 }
 
 func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.StorageClassList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func newAPIPreference(w preferenceWrapper) (*apiv2.VirtualMachinePreference, err
 // - concatenated with kubermatic standard from yaml manifests
 // The list is filtered based on the Resource Quota.
 func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (*apiv2.VirtualMachineInstancetypeList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +458,7 @@ func kubeVirtPreferences(ctx context.Context, client ctrlruntimeclient.Client, k
 // - concatenated with kubermatic standard from yaml manifests.
 // No filtering due to quota is needed.
 func KubeVirtPreferences(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (*apiv2.VirtualMachinePreferenceList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}

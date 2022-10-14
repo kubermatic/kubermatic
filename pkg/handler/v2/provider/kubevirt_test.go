@@ -169,7 +169,7 @@ var (
 )
 
 func setFakeNewKubeVirtClient(objects []ctrlruntimeclient.Object) {
-	providercommon.NewKubeVirtClient = func(kubeconfig string) (*kubevirt.Client, error) {
+	providercommon.NewKubeVirtClient = func(kubeconfig string, options kubevirt.ClientOptions) (*kubevirt.Client, error) {
 		return &kubevirt.Client{
 			Client: fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objects...).Build(),
 		}, nil

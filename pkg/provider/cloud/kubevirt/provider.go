@@ -58,7 +58,7 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clou
 		return err
 	}
 
-	return updateInfraStorageClassesInfo(ctx, spec, client)
+	return updateInfraStorageClassesInfo(ctx, client, spec)
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
@@ -171,7 +171,7 @@ func (k *kubevirt) GetClientForCluster(spec kubermaticv1.CloudSpec) (*Client, er
 		return nil, err
 	}
 
-	client, err := NewClient(kubeconfig)
+	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}

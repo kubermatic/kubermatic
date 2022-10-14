@@ -26,17 +26,29 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// Client represents a struct that includes controller runtime client and rest configuration.
+// Client represents a struct that includes controller runtime client and rest configuration
+// that is needed for service accounts kubeconfig generation.
 type Client struct {
 	ctrlruntimeclient.Client
 	// RestConfig represents a rest client configuration
 	RestConfig *restclient.Config
 }
 
-// NewClient returns controller runtime client that points to KubeVirt infra cluster.
-func NewClient(kubeconfig string) (*Client, error) {
+// ClientOptions allows to pass specific options that influence the client behaviour.
+type ClientOptions struct {
+	// ControllerRuntimeOptions represents the options coming from controller runtime.
+	ControllerRuntimeOptions ctrlruntimeclient.Options
+	// FakeObjects allows to inject custom objects for testing.
+	FakeObjects    []ctrlruntimeclient.Object
+	loadFakeClient bool
+}
+
+func newClient(kubeconfig string, opts ClientOptions) (*Client, error) {
+	var client ctrlruntimeclient.Client
+
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
 	if err != nil {
 		// if the decoding failed, the kubeconfig is sent already decoded without the need of decoding it,
@@ -49,9 +61,13 @@ func NewClient(kubeconfig string) (*Client, error) {
 		return nil, err
 	}
 
-	client, err := ctrlruntimeclient.New(restConfig, ctrlruntimeclient.Options{})
-	if err != nil {
-		return nil, err
+	if opts.loadFakeClient {
+		client = ctrlruntimeclientfake.NewClientBuilder().WithObjects(opts.FakeObjects...).Build()
+	} else {
+		client, err = ctrlruntimeclient.New(restConfig, opts.ControllerRuntimeOptions)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = kubevirtv1.AddToScheme(client.Scheme()); err != nil {
@@ -67,4 +83,15 @@ func NewClient(kubeconfig string) (*Client, error) {
 	}
 
 	return &Client{Client: client, RestConfig: restConfig}, nil
+}
+
+// NewClient returns controller runtime client that points to KubeVirt infra cluster.
+func NewClient(kubeconfig string, opts ClientOptions) (*Client, error) {
+	return newClient(kubeconfig, opts)
+}
+
+// NewFakeClient returns controller runtime fake client.
+func NewFakeClient(kubeconfig string, opts ClientOptions) (*Client, error) {
+	opts.loadFakeClient = true
+	return newClient(kubeconfig, opts)
 }

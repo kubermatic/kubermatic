@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package kubevirt
 
 import (
@@ -12,13 +28,13 @@ import (
 )
 
 const (
-	// InfraStorageClassAnnotation represents a storage class that should be initialized on user clusters
+	// InfraStorageClassAnnotation represents a storage class that should be initialized on user clusters.
 	infraStorageClassAnnotation = "kubevirt-initialization.k8c.io/initialize-sc"
 )
 
 type storageClassAnnotationFilter func(map[string]string) bool
 
-// ListStorageClasses returns list of storage classes filtered by annotations
+// ListStorageClasses returns list of storage classes filtered by annotations.
 func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, annotationFilter storageClassAnnotationFilter) (apiv2.StorageClassList, error) {
 	storageClassList := storagev1.StorageClassList{}
 	if err := client.List(ctx, &storageClassList); err != nil {
@@ -34,7 +50,7 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 	return res, nil
 }
 
-func updateInfraStorageClassesInfo(ctx context.Context, spec *kubermaticv1.CloudSpec, client ctrlruntimeclient.Client) error {
+func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.CloudSpec) error {
 	storageClassList, err := ListStorageClasses(ctx, client, func(m map[string]string) bool {
 		return m[infraStorageClassAnnotation] == "true"
 	})
