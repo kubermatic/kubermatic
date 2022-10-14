@@ -49,7 +49,7 @@ fi
 
 if [ -z "$UIDOCKERTAG" ]; then
   echo "Finding latest dashboard master revision..."
-  UIDOCKERTAG=$(git ls-remote https://github.com/kubermatic/dashboard refs/heads/master | awk '{print $1}')
+  UIDOCKERTAG=$(git ls-remote https://github.com/kubermatic/dashboard refs/heads/main | awk '{print $1}')
   echo
 fi
 

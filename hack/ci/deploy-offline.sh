@@ -67,9 +67,16 @@ function finish {
 }
 trap finish EXIT
 
+# dashboard's primary branch was renamed before KKP's, so until KKP follows suite,
+# we have to temporarily adjust the branch name here
+UIBRANCH="${PULL_BASE_REF:-master}"
+if [ "$UIBRANCH" == "master" ]; then
+  UIBRANCH=main
+fi
+
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
-export UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+export UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
 export KUBERMATICCOMMIT="${GIT_HEAD_HASH}"
 
 make kubermatic-installer

@@ -32,7 +32,15 @@ export GIT_TAG="$(git rev-parse HEAD)"
 # or the name of the base branch in case of a PR. Since this is running
 # for untagged revisions, we cannot refer to the same revision in the
 # dashboard and must instead get the dashboard's latest revision.
-export DASHBOARD_GIT_TAG="$(get_latest_dashboard_hash "$PULL_BASE_REF")"
+UIBRANCH="${PULL_BASE_REF:-master}"
+
+# dashboard's primary branch was renamed before KKP's, so until KKP follows suite,
+# we have to temporarily adjust the branch name here
+if [ "$UIBRANCH" == "master" ]; then
+  UIBRANCH=main
+fi
+
+export DASHBOARD_GIT_TAG="$(get_latest_dashboard_hash "$UIBRANCH")"
 
 git config --global user.email "dev@kubermatic.com"
 git config --global user.name "Prow CI Robot"
