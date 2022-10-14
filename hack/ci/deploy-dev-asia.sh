@@ -15,7 +15,7 @@
 # limitations under the License.
 
 ### This script is used as a postsubmit job and updates the dev-asia seed
-### cluster after every commit to master.
+### cluster after every commit to main.
 
 set -euo pipefail
 

@@ -39,22 +39,22 @@ git clone git@github.com:kubermatic/docs.git $TARGET_DIR
 cd $TARGET_DIR
 
 # copy interesting files over
-mkdir -p data/kubermatic/master
-mkdir -p content/kubermatic/master/data
+mkdir -p data/kubermatic/main
+mkdir -p content/kubermatic/main/data
 
 for resource in seed kubermaticConfiguration applicationDefinition applicationInstallation; do
   for edition in ce ee; do
-    cp ../docs/zz_generated.$resource.$edition.yaml content/kubermatic/master/data/$resource.$edition.yaml
+    cp ../docs/zz_generated.$resource.$edition.yaml content/kubermatic/main/data/$resource.$edition.yaml
   done
 
   # for backwards compatibility with the scripting in the docs repository
-  cp ../docs/zz_generated.$resource.ce.yaml content/kubermatic/master/data/$resource.yaml
+  cp ../docs/zz_generated.$resource.ce.yaml content/kubermatic/main/data/$resource.yaml
 done
 
-cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondata.go
-cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/master/data/prometheusdata.go
-cp ../cmd/kubermatic-api/swagger.json content/kubermatic/master/data/swagger.json
-cp ../addonresources.json content/kubermatic/master/data/addonresources.json
+cp ../docs/zz_generated.addondata.go.txt content/kubermatic/main/data/addondata.go
+cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/main/data/prometheusdata.go
+cp ../cmd/kubermatic-api/swagger.json content/kubermatic/main/data/swagger.json
+cp ../addonresources.json content/kubermatic/main/data/addonresources.json
 
 # re-create Prometheus runbook
 make runbook

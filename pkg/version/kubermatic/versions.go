@@ -32,7 +32,7 @@ var (
 	// to v2.34.0-912-dd79178e to v3.0.1).
 	// Also this value does not necessarily reflect the current release branch,
 	// as releases are tagged on the release branch and on those tags are not
-	// visible from the master branch.
+	// visible from the main branch.
 	gitVersion string
 
 	// kubermaticDockerTag is a magic variable containing the tag / git commit hash

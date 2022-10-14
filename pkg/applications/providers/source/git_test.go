@@ -394,7 +394,7 @@ func checkOnlyDesiredReferences(repository *git.Repository, desiredRefSet map[st
 	if err := iter.ForEach(func(reference *plumbing.Reference) error {
 		shortName := reference.Name().Short()
 		if shortName != "HEAD" {
-			// avoid duplicate like master and origin/master
+			// avoid duplicate like main and origin/main
 			name := strings.Split(shortName, "/")
 			refSet[name[len(name)-1]] = struct{}{}
 		}
@@ -498,13 +498,13 @@ func newGitSSHServer(repoPath string, pub string, t *testing.T) string {
 //
 // the repository has the following structure:
 //   - C5 (feature-1) add subdir2/file5
-//     | * C4 (master) add file4
+//     | * C4 (main) add file4
 //     | * C3 add file3
 //     |/
 //   - C2 (tag: v1.0.0) subdir/file2
 //   - C1 add file1
 //
-// The content of the repository for master branch is:
+// The content of the repository for main branch is:
 // .
 // ├── file1
 // ├── file3
@@ -529,9 +529,9 @@ func createGitRepository(t *testing.T, temp string) repoInfo {
 	repo, err := git.PlainInit(repoDir, false)
 	fatalOnErr(err, "failed to init git repository", t)
 
-	// create master with 4 commits
-	err = repo.CreateBranch(&config.Branch{Name: "master"})
-	fatalOnErr(err, "failed to create master branch", t)
+	// create main with 4 commits
+	err = repo.CreateBranch(&config.Branch{Name: "main"})
+	fatalOnErr(err, "failed to create main branch", t)
 
 	worktree, err := repo.Worktree()
 	fatalOnErr(err, "failed to get worktree", t)
@@ -539,7 +539,7 @@ func createGitRepository(t *testing.T, temp string) repoInfo {
 	createFileAndCommit(repoDir, "file1", "content of file1", worktree, t)
 	c2Hash := createFileAndCommit(repoDir, "subdir/file2", "content of file2", worktree, t)
 	c3Hash := createFileAndCommit(repoDir, "file3", "content of file3", worktree, t)
-	masterHash := createFileAndCommit(repoDir, "file4", "content of file4", worktree, t)
+	mainHash := createFileAndCommit(repoDir, "file4", "content of file4", worktree, t)
 
 	// create breanch feature-1 from commit c2
 	err = worktree.Checkout(&git.CheckoutOptions{Hash: c2Hash, Branch: plumbing.NewBranchReferenceName("feature-1"), Create: true})
@@ -554,7 +554,7 @@ func createGitRepository(t *testing.T, temp string) repoInfo {
 		// The git server implementation used for testing expect a bare git repository. So we point on on the .git
 		// directory of our non-bare repository.
 		Name:           "/repo1/.git",
-		MasterBranch:   ref{Name: "master", Hash: masterHash.String()},
+		MasterBranch:   ref{Name: "main", Hash: mainHash.String()},
 		FeatureBranch:  ref{Name: "feature-1", Hash: featureHash.String()},
 		CommitInMaster: ref{Name: c3Hash.String(), Hash: c3Hash.String()},
 		Tag:            ref{Name: "v1.0.0", Hash: tag.Hash().String()},

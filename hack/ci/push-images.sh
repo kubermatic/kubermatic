@@ -28,8 +28,8 @@ GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-# we only want to create the "latest" tag if we're building the master branch
-if [ "$GIT_BRANCH" == "master" ]; then
+# we only want to create the "latest" tag if we're building the main branch
+if [ "$GIT_BRANCH" == "main" ]; then
   TAGS="$TAGS latest"
 fi
 
@@ -61,9 +61,9 @@ if [ -z "$GIT_HEAD_TAG" ]; then
   fi
 
   # the dasboard only publishes Docker images for tagged releases and all
-  # master branch revisions; this means for Kubermatic tests in release branches
+  # main branch revisions; this means for Kubermatic tests in release branches
   # we need to use the latest tagged dashboard of the same branch
-  if [ "$UIBRANCH" == "master" ]; then
+  if [ "$UIBRANCH" == "main" ]; then
     UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
   else
     UIDOCKERTAG="$(get_latest_dashboard_tag "${UIBRANCH}")"

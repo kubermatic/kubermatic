@@ -20,7 +20,7 @@
 ### significantly speeds up CI jobs, as much fewer packages have to be
 ### compiled.
 ###
-### A dedicated postsubmit job that runs after every change to the master
+### A dedicated postsubmit job that runs after every change to the main
 ### branch is keeping the cache up-to-date.
 
 set -euo pipefail
@@ -64,7 +64,7 @@ CACHE_VERSION="${PULL_BASE_SHA:-}"
 # Periodics just use their head ref
 if [[ -z "${CACHE_VERSION}" ]]; then
   CACHE_VERSION="$(git rev-parse HEAD)"
-  GIT_BRANCH="master"
+  GIT_BRANCH="main"
 fi
 
 # normalize branch name to prevent accidental directories being created
@@ -75,7 +75,7 @@ URL="${GOCACHE_MINIO_ADDRESS}/kubermatic/${GIT_BRANCH}/${ARCHIVE_NAME}"
 
 # Do not go through the retry loop when there is nothing, but do try the
 # first few parents if no cache was found. This is helpful for retests happening
-# quickly after something got merged to master and no gocache for the most
+# quickly after something got merged to main and no gocache for the most
 # recent commit exists yet. In this case, taking the previous commit's
 # cache is better than nothing. This also helps for postsubmits, where the current
 # commit (the one that got merged) cannot have a cache yet.

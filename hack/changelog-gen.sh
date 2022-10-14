@@ -46,8 +46,8 @@ if [ "$NEW_RELEASE" == "" ]; then
   usage
 fi
 
-if [ "$(git rev-parse --abbrev-ref HEAD)" == "master" ]; then
-  echo "Error, releases must not be created on master branch!"
+if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ]; then
+  echo "Error, releases must not be created on main branch!"
   exit 1
 fi
 
