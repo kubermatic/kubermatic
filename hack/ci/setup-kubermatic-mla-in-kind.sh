@@ -189,6 +189,8 @@ cortex:
     replicas: 1
   alertmanager:
     replicas: 1
+  nginx:
+    replicas: 1
 
 loki-distributed:
   ingester:
