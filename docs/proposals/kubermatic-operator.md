@@ -114,7 +114,7 @@ created by the cluster admin.
 
 ## Non-Goals
 
-* Running arbitrary combinations of components (master branch of X and fearure-xyz branch
+* Running arbitrary combinations of components (main branch of X and fearure-xyz branch
   of Y).
 * Setting up DNS after the LoadBalancers have been created is not something for the operator,
   this remains something for the cluster admin to do.

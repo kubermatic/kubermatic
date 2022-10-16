@@ -18,7 +18,7 @@ groups:
       - alert: KubermaticTooManyUnhandledErrors
         annotations:
           message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
         expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
         for: 10m
         labels:
@@ -32,7 +32,7 @@ groups:
       - alert: KubermaticClusterDeletionTakesTooLong
         annotations:
           message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
         expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
         for: 0m
         labels:
@@ -50,7 +50,7 @@ groups:
       - alert: KubermaticAddonDeletionTakesTooLong
         annotations:
           message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
         expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
         for: 0m
         labels:
@@ -68,7 +68,7 @@ groups:
           message:
             Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related
             resources created for more than 30min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
         expr: |
           kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_created
           - kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_deleted
@@ -85,7 +85,7 @@ groups:
       - alert: KubermaticSeedControllerManagerDown
         annotations:
           message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
         expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-seed-controller-manager"} == 1)
         for: 15m
         labels:
@@ -99,7 +99,7 @@ groups:
       - alert: OpenVPNServerDown
         annotations:
           message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
         expr: (kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"} != kube_deployment_spec_replicas{cluster!="",deployment="openvpn-server"}) and count(kubermatic_cluster_info) > 0
         for: 15m
         labels:
@@ -110,7 +110,7 @@ groups:
       - alert: UserClusterPrometheusAbsent
         annotations:
           message: There is no Prometheus in cluster {{ $labels.name }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
         expr: |
           (
             kubermatic_cluster_info * on (name) group_left

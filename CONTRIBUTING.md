@@ -25,7 +25,7 @@ This can easily be done with the `--signoff` option to `git commit`.
 Note that we're requiring all commits in a PR to be signed-off. If you already created a PR, you can sign-off all existing commits by rebasing with the `--signoff` flag.
 
 ```
-git rebase --signoff origin/master
+git rebase --signoff origin/main
 ```
 
 By doing this you state that you can certify the following (from https://developercertificate.org/):
@@ -92,7 +92,7 @@ Due to their public nature, GitHub and mailing lists are not appropriate places 
 
 This is a rough outline of what a contributor's workflow looks like:
 
-- Create a topic branch from where you want to base your work (usually master).
+- Create a topic branch from where you want to base your work (usually main).
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.

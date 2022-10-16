@@ -72,4 +72,4 @@ Object *v1.Deployment cluster-sdj8g66xcv/openvpn-server differs from the one, ge
 ```
 
 Based on that information the fields can be set in the code.
-If the field is not specific to a certain resource, a [defaulting wrapper can be introduced/updated](https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/reconciling/wrapper.go#L44)
+If the field is not specific to a certain resource, a [defaulting wrapper can be introduced/updated](https://github.com/kubermatic/kubermatic/blob/main/pkg/resources/reconciling/wrapper.go#L44)

@@ -172,7 +172,7 @@ groups:
       - alert: NodeFilesystemSpaceFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
         expr: |
           predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
           and
@@ -187,7 +187,7 @@ groups:
       - alert: NodeFilesystemSpaceFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
         expr: |
           predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
           and
@@ -202,7 +202,7 @@ groups:
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
         expr: |
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
@@ -215,7 +215,7 @@ groups:
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
         expr: |
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
           and
@@ -228,7 +228,7 @@ groups:
       - alert: NodeFilesystemFilesOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
         expr: |
           node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
@@ -241,7 +241,7 @@ groups:
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
         expr: |
           predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
           and
@@ -256,7 +256,7 @@ groups:
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
         expr: |
           predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
           and
@@ -271,7 +271,7 @@ groups:
       - alert: NodeFilesystemOutOfFiles
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
         expr: |
           node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
           and
@@ -284,7 +284,7 @@ groups:
       - alert: NodeNetworkReceiveErrs
         annotations:
           message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes)."
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
         expr: increase(node_network_receive_errs_total[2m]) > 10
         for: 1h
         labels:
@@ -294,7 +294,7 @@ groups:
       - alert: NodeNetworkTransmitErrs
         annotations:
           message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes)."
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
         expr: increase(node_network_transmit_errs_total[2m]) > 10
         for: 1h
         labels:

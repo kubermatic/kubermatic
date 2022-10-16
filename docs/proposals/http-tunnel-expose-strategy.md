@@ -136,7 +136,7 @@ CONNECT requests, we have implemented mTLS between the two Envoy pods
 *   Adding new expose strategy and documenting - O(2d)
 *   E2E testing - O(10d)
 
-[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/tutorials-howtos/networking/expose-strategies/
+[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/networking/expose-strategies/
 [k8s_service_issue]: https://github.com/kubernetes/kubernetes/pull/47588
 [k8s_ipvs_deep_dive]: https://kubernetes.io/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/
 [http2_connect_rfc]: https://tools.ietf.org/html/rfc7540#section-8.3

@@ -27,7 +27,7 @@ This section covers the process to create a new Kubermatic release. Reflects the
     - A release branch(example: `release/v2.15`) has been created in:
       - https://github.com/kubermatic/kubermatic
       - https://github.com/kubermatic/dashboard
-1. Duplicate the `master` documentation for KKP in https://github.com/kubermatic/docs
+1. Duplicate the `main` documentation for KKP in https://github.com/kubermatic/docs
    (i.e. copy the content, data, etc. files and adjust accordingly)
 1. Adjust postsubmit jobs in the infra repo to start running for
    the new release branch
@@ -37,7 +37,7 @@ This section covers the process to create a new Kubermatic release. Reflects the
     - Tag the matching release in `kubermatic` repo
     - Ensure it's built and pushed successfully
 1. Documentation:
-    - Update changelog (using https://github.com/kubermatic/gchl in `master` branch of Kubermatic repo)
+    - Update changelog (using https://github.com/kubermatic/gchl in `main` branch of Kubermatic repo)
       - Remember to include changes from the `dashboard` repo as well, if any
     - Copy it over to matching chapters and branches in docs
       - Strip the Github links from the GCHL version

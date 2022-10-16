@@ -45,7 +45,7 @@ func validGitSource() *appskubermaticv1.GitSource {
 	return &appskubermaticv1.GitSource{
 		Remote: "https://localhost/repo.git",
 		Ref: appskubermaticv1.GitReference{
-			Branch: "master",
+			Branch: "main",
 		},
 		Path:        "/",
 		Credentials: nil,
@@ -124,7 +124,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "",
-						Ref:         appskubermaticv1.GitReference{Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -342,7 +342,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -372,7 +372,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794", Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -387,7 +387,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Branch: "master", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
+						Ref:         appskubermaticv1.GitReference{Branch: "main", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -432,7 +432,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -492,7 +492,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "abc", Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Commit: "abc", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -522,7 +522,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong", Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
@@ -537,7 +537,7 @@ func TestValidateGitRef(t *testing.T) {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
 						Remote:      "https://localhost/repo.git",
-						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794", Branch: "master"},
+						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
 					}}
