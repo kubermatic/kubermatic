@@ -90,6 +90,11 @@ if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
   # as it could just be a git hash and we need to ensure a proper semver version
   set_helm_charts_version "${GIT_HEAD_TAG:-v9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
 
+  # make sure that the main Docker image contains ready made CRDs, as the installer
+  # will take them from the operator chart and not use the compiled-in versions.
+  copy_crds_to_chart
+  set_crds_version_annotation
+
   set -f # prevent globbing, do word splitting
   # shellcheck disable=SC2086
   retry 5 ./hack/release-docker-images.sh $TAGS
