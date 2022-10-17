@@ -48,7 +48,7 @@ var (
 )
 
 const (
-	envoyImageName = "envoyproxy/envoy"
+	envoyImageName = "docker.io/envoyproxy/envoy"
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet.
