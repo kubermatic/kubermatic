@@ -419,7 +419,7 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: 'envoyproxy/envoy:v1.18.3'
+          image: 'docker.io/envoyproxy/envoy:v1.18.3'
           ports:
             - containerPort: 8080
               name: proxy
