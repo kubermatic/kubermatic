@@ -26,7 +26,7 @@ minio:
   ## process used to create secret for prometheus ServiceMonitor).
   ##
   helmKubectlJqImage:
-    repository: bskim45/helm-kubectl-jq
+    repository: docker.io/bskim45/helm-kubectl-jq
     tag: 3.1.0
     pullPolicy: IfNotPresent
   ## minio server mode, i.e. standalone or distributed.

@@ -81,7 +81,7 @@ grafana:
   ##
   # schedulerName: "default-scheduler"
   image:
-    repository: grafana/grafana
+    repository: docker.io/grafana/grafana
     # Overrides the Grafana image tag whose default is the chart appVersion
     tag: ""
     sha: ""
@@ -95,7 +95,7 @@ grafana:
     #   - myRegistrKeySecretName
   testFramework:
     enabled: true
-    image: "bats/bats"
+    image: "docker.io/bats/bats"
     tag: "v1.4.1"
     imagePullPolicy: IfNotPresent
     securityContext: {}
@@ -124,7 +124,7 @@ grafana:
   ## Assign a PriorityClassName to pods if set
   # priorityClassName:
   downloadDashboardsImage:
-    repository: curlimages/curl
+    repository: docker.io/curlimages/curl
     tag: 7.85.0
     sha: ""
     pullPolicy: IfNotPresent
@@ -309,7 +309,7 @@ grafana:
     ## initChownData container image
     ##
     image:
-      repository: busybox
+      repository: docker.io/library/busybox
       tag: "1.31.1"
       sha: ""
       pullPolicy: IfNotPresent

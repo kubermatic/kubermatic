@@ -1190,7 +1190,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.7-alpine
+          image: docker.io/library/memcached:1.6.7-alpine
           imagePullPolicy: IfNotPresent
           args:
             - -I 32m
@@ -1286,7 +1286,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.7-alpine
+          image: docker.io/library/memcached:1.6.7-alpine
           imagePullPolicy: IfNotPresent
           args:
             - -I 32m
@@ -1382,7 +1382,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.7-alpine
+          image: docker.io/library/memcached:1.6.7-alpine
           imagePullPolicy: IfNotPresent
           args:
             - -I 32m
@@ -1478,7 +1478,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: memcached
-          image: docker.io/memcached:1.6.7-alpine
+          image: docker.io/library/memcached:1.6.7-alpine
           imagePullPolicy: IfNotPresent
           args:
             - -I 32m

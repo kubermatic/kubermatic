@@ -65,7 +65,7 @@ data:
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: minio-lifecycle-mgr
@@ -79,7 +79,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: minio
-              image: minio/mc
+              image: docker.io/minio/mc:latest
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh

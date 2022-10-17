@@ -196,7 +196,7 @@ This version requires Helm >= 3.1.0.
 | `downloadDashboards.env`                  | Environment variables to be passed to the `download-dashboards` container | `{}`                        |
 | `downloadDashboards.envFromSecret`        | Name of a Kubernetes secret (must be manually created in the same namespace) containing values to be added to the environment. Can be templated | `""` |
 | `downloadDashboards.resources`            | Resources of `download-dashboards` container  | `{}`                                                    |
-| `downloadDashboardsImage.repository`      | Curl docker image repo                        | `curlimages/curl`                                       |
+| `downloadDashboardsImage.repository`      | Curl docker image repo                        | `docker.io/curlimages/curl`                             |
 | `downloadDashboardsImage.tag`             | Curl docker image tag                         | `7.73.0`                                                |
 | `downloadDashboardsImage.sha`             | Curl docker image sha (optional)              | `""`                                                    |
 | `downloadDashboardsImage.pullPolicy`      | Curl docker image pull policy                 | `IfNotPresent`                                          |

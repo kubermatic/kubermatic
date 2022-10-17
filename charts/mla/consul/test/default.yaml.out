@@ -270,7 +270,7 @@ spec:
             name: release-name-consul-server-config
       containers:
         - name: consul
-          image: "hashicorp/consul:1.10.3"
+          image: "docker.io/hashicorp/consul:1.10.3"
           env:
             - name: ADVERTISE_IP
               valueFrom:
@@ -398,7 +398,7 @@ metadata:
 spec:
   containers:
     - name: consul-test
-      image: "hashicorp/consul:1.10.3"
+      image: "docker.io/hashicorp/consul:1.10.3"
       env:
         - name: HOST_IP
           valueFrom:
