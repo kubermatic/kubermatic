@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
+	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/install/images/docker"
@@ -151,6 +152,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
+	deploymentCreators = append(deploymentCreators, k8sdashboard.DeploymentCreator(templateData.ImageRegistry))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
