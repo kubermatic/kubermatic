@@ -216,7 +216,7 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 			IsSpotInstance:                false,
 			SpotInstanceMaxPrice:          "",
 			SpotInstancePersistentRequest: false,
-			SubnetID:                      "subnet-01d796b6b81cab01c",
+			SubnetID:                      "subnet-0373d73f016db25c7",
 			VolumeSize:                    pointer.Int32(64),
 			VolumeType:                    pointer.String("standard"),
 		},
@@ -234,7 +234,7 @@ func (a aws) CloudSpec() models.CloudSpec {
 			RouteTableID:            "",
 			SecretAccessKey:         os.Getenv("AWS_SECRET_ACCESS_KEY"),
 			SecurityGroupID:         "",
-			VPCID:                   "vpc-819f62e9",
+			VPCID:                   "vpc-05dba8c3284fc2836",
 		},
 	}
 }
