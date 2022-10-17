@@ -90,7 +90,7 @@ consul:
     # image: "hashicorp/consul-enterprise:1.10.0-ent"
     # ```
     # @default: hashicorp/consul:<latest version>
-    #image: "hashicorp/consul:1.10.3"
+    image: "docker.io/hashicorp/consul:1.10.3"
 
     # Array of objects containing image pull secret names that will be applied to each service account.
     # This can be used to reference image pull secrets if using a custom consul or consul-k8s-control-plane Docker image.
@@ -302,7 +302,7 @@ consul:
     # connect-injected sidecar proxies and mesh, terminating, and ingress gateways.
     # See https://www.consul.io/docs/connect/proxies/envoy for full compatibility matrix between Consul and Envoy.
     # @default: envoyproxy/envoy-alpine:<latest supported version>
-    imageEnvoy: "envoyproxy/envoy-alpine:v1.18.4"
+    imageEnvoy: "docker.io/envoyproxy/envoy-alpine:v1.18.4"
     # Configuration for running this Helm chart on the Red Hat OpenShift platform.
     # This Helm chart currently supports OpenShift v4.x+.
     openshift:

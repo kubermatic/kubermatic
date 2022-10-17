@@ -26,7 +26,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: minio
-              image: minio/mc
+              image: docker.io/minio/mc:latest
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh

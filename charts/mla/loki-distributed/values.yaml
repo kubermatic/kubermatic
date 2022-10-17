@@ -1063,7 +1063,7 @@ loki-distributed:
       # -- The Docker registry for the memcached
       registry: docker.io
       # -- Memcached Docker image repository
-      repository: memcached
+      repository: library/memcached
       # -- Memcached Docker image tag
       tag: 1.6.7-alpine
       # -- Memcached Docker image pull policy

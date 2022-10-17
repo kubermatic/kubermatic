@@ -17,7 +17,7 @@ alertmanagerProxy:
     backendAddress: cortex-alertmanager
     backendPort: 8080
     image:
-      repository: "envoyproxy/envoy"
+      repository: "docker.io/envoyproxy/envoy"
       tag: "v1.18.3"
     replicas: 1
     resources:

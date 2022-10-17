@@ -302,7 +302,7 @@ spec:
         runAsUser: 472
       initContainers:
         - name: init-chown-data
-          image: "busybox:1.31.1"
+          image: "docker.io/library/busybox:1.31.1"
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
@@ -408,7 +408,7 @@ spec:
   serviceAccountName: release-name-grafana-test
   containers:
     - name: release-name-test
-      image: "bats/bats:v1.4.1"
+      image: "docker.io/bats/bats:v1.4.1"
       imagePullPolicy: "IfNotPresent"
       command: ["/opt/bats/bin/bats", "-t", "/tests/run.sh"]
       volumeMounts:
