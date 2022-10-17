@@ -21,7 +21,7 @@ promtail:
     enabled: true
     fsInotifyMaxUserInstances: 256
     image:
-      repository: docker.io/library/busybox
+      repository: library/busybox
 
   podAnnotations:
     prometheus.io/scrape: "true"
